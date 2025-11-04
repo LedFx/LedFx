@@ -215,16 +215,45 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
         elif isinstance(validator.schema, list):
             # Handle arrays
             if validator.schema:
-                item_type = voluptuous_validator_to_ts_type(
-                    validator.schema[0], for_universal
-                )
-                return f"{item_type}[]"
+                item_validator = validator.schema[0]
+                # Check if this is a reference to a named schema (like PlaylistItem)
+                if hasattr(item_validator, '__name__') and item_validator.__name__.endswith('Item'):
+                    # Generate interface name from the schema class name
+                    item_type_name = get_class_name_for_ts(item_validator.__name__)
+                    return f"{item_type_name}[]"
+                else:
+                    item_type = voluptuous_validator_to_ts_type(
+                        item_validator, for_universal
+                    )
+                    return f"{item_type}[]"
             return "any[]"
         else:
             _LOGGER.warning(
                 f"Unhandled vol.Schema type: {type(validator.schema)}. Defaulting 'any'."
             )
             return "any"
+    elif isinstance(validator, list):
+        # Handle direct list validators like [PlaylistItem]
+        if validator:
+            item_validator = validator[0]
+            # Special case: check if this looks like PlaylistItem schema
+            if (isinstance(item_validator, vol.Schema) and 
+                isinstance(item_validator.schema, dict) and
+                'scene_id' in str(item_validator.schema)):
+                return "PlaylistItem[]"
+            # Check if the item is a schema reference or a direct schema
+            elif hasattr(item_validator, '__name__') and item_validator.__name__.endswith('Item'):
+                # This is likely a reference to a schema class like PlaylistItem
+                # Generate the corresponding TypeScript interface name
+                item_type_name = get_class_name_for_ts(item_validator.__name__)
+                return f"{item_type_name}[]"
+            else:
+                # Handle as a normal validator
+                item_type = voluptuous_validator_to_ts_type(
+                    item_validator, for_universal
+                )
+                return f"{item_type}[]"
+        return "any[]"
 
     elif isinstance(validator, (vol.Range, vol.Length)):
         return "any"
@@ -890,6 +919,67 @@ def generate_typescript_types() -> str:
         _LOGGER.error(f"Failed to generate Scene config: {e}")
         output_ts_string += f"// Failed Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
 
+    # --- 6.6. Generate Playlist Config and API Response Types ---
+    playlist_config_interface_name = "PlaylistConfig"
+    playlist_item_interface_name = "PlaylistItem"
+    timing_jitter_interface_name = "TimingJitter"
+    timing_interface_name = "PlaylistTiming"
+    try:
+        _LOGGER.info("Generating Playlist config interfaces...")
+        from ledfx.playlists import PlaylistSchema, PlaylistItem, JitterSchema, TimingSchema
+
+        # Generate TimingJitter interface
+        if isinstance(JitterSchema, vol.Schema):
+            output_ts_string += "// Playlist Timing Jitter Configuration\n"
+            timing_jitter_interface = generate_ts_interface_from_voluptuous(
+                timing_jitter_interface_name,
+                JitterSchema,
+            )
+            output_ts_string += f"{timing_jitter_interface}\n\n"
+        else:
+            _LOGGER.warning("JitterSchema is not a voluptuous Schema")
+            output_ts_string += f"// Fallback Timing Jitter Config\nexport interface {timing_jitter_interface_name} {{ enabled?: boolean; factor_min?: number; factor_max?: number; }}\n\n"
+
+        # Generate PlaylistTiming interface
+        if isinstance(TimingSchema, vol.Schema):
+            output_ts_string += "// Playlist Timing Configuration\n"
+            timing_interface = generate_ts_interface_from_voluptuous(
+                timing_interface_name,
+                TimingSchema,
+            )
+            output_ts_string += f"{timing_interface}\n\n"
+        else:
+            _LOGGER.warning("TimingSchema is not a voluptuous Schema")
+            output_ts_string += f"// Fallback Timing Config\nexport interface {timing_interface_name} {{ jitter?: {timing_jitter_interface_name}; }}\n\n"
+
+        # Generate PlaylistItem interface
+        if isinstance(PlaylistItem, vol.Schema):
+            output_ts_string += "// Playlist Item Configuration\n"
+            playlist_item_interface = generate_ts_interface_from_voluptuous(
+                playlist_item_interface_name,
+                PlaylistItem,
+            )
+            output_ts_string += f"{playlist_item_interface}\n\n"
+        else:
+            _LOGGER.warning("PlaylistItem is not a voluptuous Schema")
+            output_ts_string += f"// Fallback Playlist Item Config\nexport interface {playlist_item_interface_name} {{ scene_id: string; duration_ms?: number; }}\n\n"
+
+        # Generate main PlaylistConfig interface
+        if isinstance(PlaylistSchema, vol.Schema):
+            output_ts_string += "// Playlist Configuration\n"
+            playlist_interface = generate_ts_interface_from_voluptuous(
+                playlist_config_interface_name,
+                PlaylistSchema,
+            )
+            output_ts_string += f"{playlist_interface}\n\n"
+        else:
+            _LOGGER.warning("PlaylistSchema is not a voluptuous Schema")
+            output_ts_string += f"// Fallback Playlist Config\nexport interface {playlist_config_interface_name} {{ id: string; name: string; items: {playlist_item_interface_name}[]; [key: string]: any; }}\n\n"
+
+    except Exception as e:
+        _LOGGER.error(f"Failed to generate Playlist config: {e}")
+        output_ts_string += f"// Failed Playlist Config\nexport interface {playlist_config_interface_name} {{ id: string; name: string; items: any[]; [key: string]: any; }}\n\n"
+
     # Generate Scene API Response Types
     output_ts_string += "// Scene API Response Types\n"
     output_ts_string += "/**\n * Represents the effect configuration stored in a scene for a virtual.\n * @category Scenes\n */\n"
@@ -931,6 +1021,114 @@ def generate_typescript_types() -> str:
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
 
+    # --- 6.7. Generate Playlist API Response Types ---
+    output_ts_string += "// Playlist API Response Types\n"
+    
+    # Playlist runtime state type
+    output_ts_string += "/**\n * Runtime state of an active playlist (ephemeral data).\n * @category Playlists\n */\n"
+    output_ts_string += "export interface PlaylistRuntimeState {\n"
+    output_ts_string += "  active_playlist: string;\n"
+    output_ts_string += "  index: number;\n"
+    output_ts_string += "  order: number[];\n"
+    output_ts_string += "  scenes: string[];\n"
+    output_ts_string += "  scene_id: string;\n"
+    output_ts_string += "  mode: 'sequence' | 'shuffle';\n"
+    output_ts_string += "  paused: boolean;\n"
+    output_ts_string += "  remaining_ms: number;\n"
+    output_ts_string += "  effective_duration_ms: number;\n"
+    output_ts_string += f"  timing: {timing_interface_name};\n"
+    output_ts_string += "}\n\n"
+
+    # Playlist object with proper typing
+    output_ts_string += "/**\n * Represents a single Playlist with its configuration.\n * @category Playlists\n */\n"
+    output_ts_string += "export interface Playlist {\n"
+    output_ts_string += "  id: string;\n"
+    output_ts_string += f"  config: {playlist_config_interface_name};\n"
+    output_ts_string += "}\n\n"
+
+    # GET /api/playlists response
+    output_ts_string += "/**\n * Response for GET /api/playlists.\n * @category REST\n */\n"
+    output_ts_string += "export interface GetPlaylistsApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += f"  playlists: Record<string, {playlist_config_interface_name}>;\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
+    # GET /api/playlists/{id} response
+    output_ts_string += "/**\n * Response for GET /api/playlists/{id}.\n * @category REST\n */\n"
+    output_ts_string += "export interface GetSinglePlaylistApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
+    # POST /api/playlists response (create/replace)
+    output_ts_string += "/**\n * Response for POST /api/playlists (playlist creation/replacement).\n * @category REST\n */\n"
+    output_ts_string += "export interface CreatePlaylistApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
+    # PUT /api/playlists control actions request types
+    output_ts_string += "/**\n * Request body for playlist control actions via PUT /api/playlists.\n * @category REST\n */\n"
+    output_ts_string += "export type PlaylistControlRequest = \n"
+    output_ts_string += "  | {\n"
+    output_ts_string += '      action: "start";\n'
+    output_ts_string += "      id: string;\n"
+    output_ts_string += "      mode?: 'sequence' | 'shuffle';\n"
+    output_ts_string += f"      timing?: {timing_interface_name};\n"
+    output_ts_string += "    }\n"
+    output_ts_string += '  | { action: "stop" }\n'
+    output_ts_string += '  | { action: "pause" }\n'
+    output_ts_string += '  | { action: "resume" }\n'
+    output_ts_string += '  | { action: "next" }\n'
+    output_ts_string += '  | { action: "prev" }\n'
+    output_ts_string += '  | { action: "state" };\n\n'
+
+    # PUT /api/playlists control response
+    output_ts_string += "/**\n * Response for PUT /api/playlists control actions.\n * @category REST\n */\n"
+    output_ts_string += "export interface PlaylistControlApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  data?: { state: PlaylistRuntimeState };\n"
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
+    # DELETE /api/playlists request/response
+    output_ts_string += "/**\n * Request body for DELETE /api/playlists.\n * @category REST\n */\n"
+    output_ts_string += "export interface DeletePlaylistRequest {\n"
+    output_ts_string += "  id: string;\n"
+    output_ts_string += "}\n\n"
+
+    output_ts_string += "/**\n * Response for DELETE /api/playlists.\n * @category REST\n */\n"
+    output_ts_string += "export interface DeletePlaylistApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+
+    # Playlist events
+    output_ts_string += "// Playlist Event Types\n"
+    output_ts_string += "/**\n * Base payload for playlist events.\n * @category Events\n */\n"
+    output_ts_string += "export interface PlaylistEventPayload {\n"
+    output_ts_string += "  playlist_id: string;\n"
+    output_ts_string += "  index?: number;\n"
+    output_ts_string += "  scene_id?: string;\n"
+    output_ts_string += "  effective_duration_ms?: number;\n"
+    output_ts_string += "  remaining_ms?: number;\n"
+    output_ts_string += "}\n\n"
+
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
@@ -943,6 +1141,9 @@ def generate_typescript_types() -> str:
     # Scenes alias
     output_ts_string += "/**\n * Convenience type for the API response containing multiple Scene objects.\n * @category General\n */\n"
     output_ts_string += "export type Scenes = GetScenesApiResponse;\n"
+    # Playlists alias
+    output_ts_string += "/**\n * Convenience type for the API response containing multiple Playlist objects.\n * @category General\n */\n"
+    output_ts_string += "export type Playlists = GetPlaylistsApiResponse;\n"
     output_ts_string += "\n"
 
     _LOGGER.info("TypeScript generation finished.")
