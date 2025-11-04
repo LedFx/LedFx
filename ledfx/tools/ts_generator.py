@@ -217,9 +217,13 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
             if validator.schema:
                 item_validator = validator.schema[0]
                 # Check if this is a reference to a named schema (like PlaylistItem)
-                if hasattr(item_validator, '__name__') and item_validator.__name__.endswith('Item'):
+                if hasattr(
+                    item_validator, "__name__"
+                ) and item_validator.__name__.endswith("Item"):
                     # Generate interface name from the schema class name
-                    item_type_name = get_class_name_for_ts(item_validator.__name__)
+                    item_type_name = get_class_name_for_ts(
+                        item_validator.__name__
+                    )
                     return f"{item_type_name}[]"
                 else:
                     item_type = voluptuous_validator_to_ts_type(
@@ -237,12 +241,16 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
         if validator:
             item_validator = validator[0]
             # Special case: check if this looks like PlaylistItem schema
-            if (isinstance(item_validator, vol.Schema) and 
-                isinstance(item_validator.schema, dict) and
-                'scene_id' in str(item_validator.schema)):
+            if (
+                isinstance(item_validator, vol.Schema)
+                and isinstance(item_validator.schema, dict)
+                and "scene_id" in str(item_validator.schema)
+            ):
                 return "PlaylistItem[]"
             # Check if the item is a schema reference or a direct schema
-            elif hasattr(item_validator, '__name__') and item_validator.__name__.endswith('Item'):
+            elif hasattr(
+                item_validator, "__name__"
+            ) and item_validator.__name__.endswith("Item"):
                 # This is likely a reference to a schema class like PlaylistItem
                 # Generate the corresponding TypeScript interface name
                 item_type_name = get_class_name_for_ts(item_validator.__name__)
@@ -926,7 +934,12 @@ def generate_typescript_types() -> str:
     timing_interface_name = "PlaylistTiming"
     try:
         _LOGGER.info("Generating Playlist config interfaces...")
-        from ledfx.playlists import PlaylistSchema, PlaylistItem, JitterSchema, TimingSchema
+        from ledfx.playlists import (
+            JitterSchema,
+            PlaylistItem,
+            PlaylistSchema,
+            TimingSchema,
+        )
 
         # Generate TimingJitter interface
         if isinstance(JitterSchema, vol.Schema):
@@ -1023,7 +1036,7 @@ def generate_typescript_types() -> str:
 
     # --- 6.7. Generate Playlist API Response Types ---
     output_ts_string += "// Playlist API Response Types\n"
-    
+
     # Playlist runtime state type
     output_ts_string += "/**\n * Runtime state of an active playlist (ephemeral data).\n * @category Playlists\n */\n"
     output_ts_string += "export interface PlaylistRuntimeState {\n"
@@ -1047,10 +1060,14 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # GET /api/playlists response
-    output_ts_string += "/**\n * Response for GET /api/playlists.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for GET /api/playlists.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface GetPlaylistsApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
-    output_ts_string += f"  playlists: Record<string, {playlist_config_interface_name}>;\n"
+    output_ts_string += (
+        f"  playlists: Record<string, {playlist_config_interface_name}>;\n"
+    )
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
 
@@ -1058,7 +1075,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "/**\n * Response for GET /api/playlists/{id}.\n * @category REST\n */\n"
     output_ts_string += "export interface GetSinglePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
-    output_ts_string += f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
+    output_ts_string += (
+        f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
+    )
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
 
@@ -1066,7 +1085,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "/**\n * Response for POST /api/playlists (playlist creation/replacement).\n * @category REST\n */\n"
     output_ts_string += "export interface CreatePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
-    output_ts_string += f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
+    output_ts_string += (
+        f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
+    )
     output_ts_string += "  payload?: {\n"
     output_ts_string += '    type: "success" | "error";\n'
     output_ts_string += "    reason: string;\n"
@@ -1108,7 +1129,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "  id: string;\n"
     output_ts_string += "}\n\n"
 
-    output_ts_string += "/**\n * Response for DELETE /api/playlists.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for DELETE /api/playlists.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface DeletePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
     output_ts_string += "  payload?: {\n"
@@ -1120,7 +1143,9 @@ def generate_typescript_types() -> str:
 
     # Playlist events
     output_ts_string += "// Playlist Event Types\n"
-    output_ts_string += "/**\n * Base payload for playlist events.\n * @category Events\n */\n"
+    output_ts_string += (
+        "/**\n * Base payload for playlist events.\n * @category Events\n */\n"
+    )
     output_ts_string += "export interface PlaylistEventPayload {\n"
     output_ts_string += "  playlist_id: string;\n"
     output_ts_string += "  index?: number;\n"
