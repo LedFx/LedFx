@@ -221,9 +221,9 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
                     item_validator, "__name__"
                 ) and item_validator.__name__.endswith("Item"):
                     # Generate interface name from the schema class name
-                    item_type_name = get_class_name_for_ts(
-                        item_validator.__name__
-                    )
+                    item_type_name = item_validator.__name__  
+                    if item_type_name and not item_type_name[0].isupper():  
+                        item_type_name = get_class_name_for_ts(item_type_name)  
                     return f"{item_type_name}[]"
                 else:
                     item_type = voluptuous_validator_to_ts_type(
@@ -253,7 +253,10 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
             ) and item_validator.__name__.endswith("Item"):
                 # This is likely a reference to a schema class like PlaylistItem
                 # Generate the corresponding TypeScript interface name
-                item_type_name = get_class_name_for_ts(item_validator.__name__)
+                item_type_name = item_validator.__name__  
+                if item_type_name and not item_type_name[0].isupper():  
+                    item_type_name = get_class_name_for_ts(item_type_name)  
+
                 return f"{item_type_name}[]"
             else:
                 # Handle as a normal validator
