@@ -115,7 +115,10 @@ class LedFxCore:
                 self.loop = uvloop.new_event_loop()
                 _LOGGER.info("Using uvloop for asyncio loop")
             except ImportError:
-                self.loop = asyncio.get_event_loop()
+                try:
+                    self.loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    self.loop = asyncio.new_event_loop()
                 _LOGGER.info("Reverting to asyncio loop")
         asyncio.set_event_loop(self.loop)
 
