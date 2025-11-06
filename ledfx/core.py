@@ -106,28 +106,28 @@ class LedFxCore:
         self.ci_testing = ci_testing
         self.generate_typescript_types = generate_typescript_types
         self.offline_mode = offline_mode
-        if sys.platform == "win32":
-            self.loop = asyncio.ProactorEventLoop()
-        else:
+        
+        try:
+            import uvloop
+            self.loop = uvloop.new_event_loop()
+            _LOGGER.info("Using uvloop for asyncio loop")
+        except ImportError:
             try:
-                import uvloop
-
-                self.loop = uvloop.new_event_loop()
-                _LOGGER.info("Using uvloop for asyncio loop")
+                import winloop
+                self.loop = winloop.new_event_loop()
+                _LOGGER.info("Using winloop for asyncio loop")
             except ImportError:
-                try:
-                    self.loop = asyncio.get_running_loop()
-                except RuntimeError:
-                    self.loop = asyncio.new_event_loop()
-                _LOGGER.info("Reverting to asyncio loop")
-        asyncio.set_event_loop(self.loop)
-
-        # self.loop.set_debug(True)
-
+                self.loop = asyncio.new_event_loop()
+                _LOGGER.info("Using standard asyncio loop")
+    
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
+        asyncio.set_event_loop(self.loop)
 
+        if self.config.get("debug_asyncio", False):
+            self.loop.set_debug(True)
+        
         if self.icon:
             self.setup_icon_menu()
 

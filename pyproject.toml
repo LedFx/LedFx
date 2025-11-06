@@ -34,6 +34,7 @@ dependencies = [
     "pybase64~=1.4.0",
     "mss~=10.1.0",
     "uvloop>=0.16.0; sys_platform != \"win32\"",
+    "winloop>=0.3.1; sys_platform == \"win32\"",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
     "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
