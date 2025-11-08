@@ -50,6 +50,11 @@ class Waterfall(Twod, GradientEffect):
                 description="Seconds for the waterfall to drop from the top to bottom of the matrix",
                 default=3.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
+            vol.Optional(
+                "fade_out",
+                description="Fade out the waterfall effect",
+                default=0.0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
         }
     )
 
@@ -88,6 +93,7 @@ class Waterfall(Twod, GradientEffect):
         self.grad_roll = self._config["gradient_roll"]
         self.max = self._config["max_vs_mean"]
         self.drop_secs = self._config["drop_secs"]
+        self.fade_out = self._config["fade_out"]
 
     def do_once(self):
         """
@@ -121,6 +127,41 @@ class Waterfall(Twod, GradientEffect):
         if self.center:
             self.drop_tick = self.drop_tick * 2
         self.drop_remainder = 0.0
+
+        # generate a grey scale fade mask based on fade_out
+        self.fade_mask = None
+        self.black_bg = None
+        if self.fade_out > 0.0:
+            # Create fade mask - fades linearly in scroll direction
+            self.fade_mask = Image.new("L", (self.r_width, self.r_height))
+            mask_draw = ImageDraw.Draw(self.fade_mask)
+
+            if self.center:
+                for y in range(self.r_height):
+                    distance = abs(y - self.half_height)
+                    fade_factor = max(
+                        0.0,
+                        1.0
+                        - (distance / self.half_height) * self.fade_out * 2.0,
+                    )
+                    grey_value = int(fade_factor * 255)
+                    mask_draw.line(
+                        (0, y, self.r_width - 1, y), fill=grey_value
+                    )
+            else:
+                for y in range(self.r_height):
+                    fade_factor = max(
+                        0.0, 1.0 - (y / self.half_height) * self.fade_out
+                    )
+                    grey_value = int(fade_factor * 255)
+                    mask_draw.line(
+                        (0, y, self.r_width - 1, y), fill=grey_value
+                    )
+
+            # Cache black background for compositing
+            self.black_bg = Image.new(
+                "RGB", (self.r_width, self.r_height), (0, 0, 0)
+            )
 
     def audio_data_updated(self, data):
         """
@@ -231,6 +272,7 @@ class Waterfall(Twod, GradientEffect):
         """
         Render the current frame of the effect.
         """
+
         if self.test:
             self.draw_test(self.m_draw)
 
@@ -239,5 +281,11 @@ class Waterfall(Twod, GradientEffect):
         self.process_history()
 
         self.draw_normal()
+
+        # Apply fade out effect if enabled
+        if self.fade_out > 0.0:
+            self.matrix = Image.composite(
+                self.matrix, self.black_bg, self.fade_mask
+            )
 
         self.roll_gradient()
