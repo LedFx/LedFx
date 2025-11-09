@@ -53,7 +53,7 @@ class TwinklySquaresDevice(NetworkedDevice):
                 f"Twinkly Squares device {self.name} info: %s", info.data
             )
         except Exception as e:
-            _LOGGER.error(
+            _LOGGER.warning(
                 f"Failed to activate Twinkly Squares device {self.name}: {e}"
             )
             self.ctrl = None
@@ -153,7 +153,7 @@ class TwinklySquaresDevice(NetworkedDevice):
             collisions = {
                 idx: count for idx, count in counts.items() if count > 1
             }
-            _LOGGER.error(
+            _LOGGER.warning(
                 f"LED layout collision: {len(collisions)} duplicates found"
             )
             raise ValueError(
