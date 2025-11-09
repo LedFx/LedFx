@@ -623,7 +623,7 @@ class Devices(RegistryLoader):
                 )
             except Exception as e:
                 # be very prolific on ignoring devices if they are bad
-                _LOGGER.exception(
+                _LOGGER.warning(
                     f"Failed to load device {device.get('id', 'unknown')}: {e}"
                 )
 
