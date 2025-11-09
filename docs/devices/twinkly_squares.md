@@ -75,7 +75,7 @@ The icon displayed in the UI. Can be from Material Design Icons (MDI) or Materia
 - **MDI format**: `mdi:<icon-name-in-kebab-case>`
   - [Material Design Icons](https://pictogrammers.com/library/mdi/)
   - Example: `mdi:grid`
-  
+
 - **MUI format**: `<IconNameInCamelCase>`
   - [Material UI Icons](https://mui.com/material-ui/material-icons/)
   - Example: `GridOn`
