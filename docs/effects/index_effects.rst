@@ -19,6 +19,7 @@ Effects
    matrix/flame
    matrix/radial
    matrix/soap
+   matrix/waterfall
 
 1d Strip
 --------
