@@ -63,10 +63,12 @@ The number of 8×8 Twinkly Squares panels in your configuration.
 - **Minimum**: 1
 - **Example**: If you have 4 panels arranged in a 2×2 grid, set this to `4`
 
-The pixel count is automatically calculated as `64 × panel_count`. You don't need to manually set the pixel count.
+```{note}
+Both the pixel count and matrix dimensions (rows) are **automatically detected** when the device activates. LedFx queries the Twinkly controller for the LED layout and calculates:
+- Total pixel count (automatically set to match the actual LED count)
+- Matrix height/rows (automatically set based on the detected grid dimensions)
 
-```{Warning}
-Currently, LedFX does not automatically set the row count for the device. It must be changed from its default value of 1, Click the down arrow, on the top right of you new device, select Settings and edit the ROWS value accordingly. For a 3 height by 2 wide squares panel configuration, rows would be 3 squares x 8 pixels = 24 rows.
+You don't need to manually configure these values - they will be set correctly when the device first connects!
 ```
 
 ### Icon Name
@@ -93,11 +95,15 @@ Rate at which effects are updated and pushed to the device. It is not known what
 LedFx automatically handles the complex coordinate mapping required for Twinkly Squares as long as the Twinkly Squares have been preconfigured in the Twinkly App:
 
 1. **Layout Discovery**: When the device activates, LedFx queries the Twinkly device for its LED layout coordinates
-2. **Grid Calculation**: The actual grid dimensions are calculated from the coordinate distribution
-3. **Permutation Mapping**: A permutation array is built to map LedFx's raster-order pixels to Twinkly's native layout
-4. **Coordinate Normalization**: LED positions are normalized and mapped to the correct grid positions
+2. **Grid Calculation**: The actual grid dimensions (width × height) are calculated from the coordinate distribution
+3. **Auto-Configuration**: 
+   - The pixel count is verified and updated if needed
+   - The virtual's row count is automatically set to match the detected matrix height
+   - All changes are saved to configuration
+4. **Permutation Mapping**: A permutation array is built to map LedFx's raster-order pixels to Twinkly's native layout
+5. **Coordinate Normalization**: LED positions are normalized and mapped to the correct grid positions
 
-This all happens automatically - you don't need to configure any coordinate mappings manually.
+This all happens automatically during activation - you don't need to manually configure pixel counts, matrix dimensions, or coordinate mappings.
 
 ### Realtime Protocol
 

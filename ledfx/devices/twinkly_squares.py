@@ -76,13 +76,35 @@ class TwinklySquaresDevice(NetworkedDevice):
             f"Twinkly grid: {actual_width}×{actual_height} = {actual_width * actual_height} LEDs"
         )
 
+        # Cache the matrix dimensions for virtual configuration
+        self.matrix_width = actual_width
+        self.matrix_height = actual_height
+
         self.perm = self.build_twinkly_perm(
             coords_xy, actual_width, actual_height, flip_y=True
         )
 
+        config_changed = False
+
+        # Update pixel count if different
         if self._config["pixel_count"] != self.leds:
             self._config["pixel_count"] = self.leds
-            # force a config save
+            config_changed = True
+
+        # Update associated virtuals with the detected matrix height
+        for virtual in self._ledfx.virtuals.values():
+            if virtual.is_device == self.id:
+                if virtual.config.get("rows", 1) != self.matrix_height:
+                    _LOGGER.info(
+                        f"Updating virtual {virtual.id} rows from {virtual.config.get('rows', 1)} to {self.matrix_height}"
+                    )
+                    virtual.config = {"rows": self.matrix_height}
+                    virtual.virtual_cfg["config"]["rows"] = self.matrix_height
+                    config_changed = True
+                break  # Only one virtual can be is_device for this device
+
+        # Save config only once if anything changed
+        if config_changed:
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
