@@ -1022,7 +1022,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     output_ts_string += "/**\n * Stored scene plus runtime state that LedFx exposes via the API.\n * @category Scenes\n */\n"
-    output_ts_string += "export interface SceneState extends StoredSceneConfig {\n"
+    output_ts_string += (
+        "export interface SceneState extends StoredSceneConfig {\n"
+    )
     output_ts_string += "  active: boolean;\n"
     output_ts_string += "}\n\n"
 
