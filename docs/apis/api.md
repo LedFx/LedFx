@@ -1111,11 +1111,112 @@ can be saved as a \"scene\".
 
 **GET**
 
-Get all saved scenes
+Get all saved scenes. Get also includes an `active` flag that will return `true` if the state of the `virtuals` in the scene config matches the current real state of the virtuals. That is to say, if all devices/virtuals are currently showing what the scene config defines - then the scene is considered active.
+
+An example response below:
+
+```
+{
+  "status": "success",
+  "scenes": {
+    "living-room": {
+      "name": "Living Room",
+      "scene_image": "Wallpaper",
+      "scene_midiactivate": null,
+      "scene_payload": null,
+      "scene_puturl": null,
+      "scene_tags": null,
+      "virtuals": {
+        "wled-breland-nightstand": {},
+        "wled-dining-room": {},
+        "wled-lr-behind-couch-2": {
+          "config": {
+            "background_brightness": 1.0,
+            "background_color": "#000000",
+            "blur": 3.0,
+            "brightness": 1.0,
+            "color_high": "#0000ff",
+            "color_lows": "#ff0000",
+            "color_mids": "#00ff00",
+            "decay_per_sec": 0.5,
+            "diag": false,
+            "flip": false,
+            "mirror": true,
+            "scroll_per_sec": 0.7,
+            "threshold": 0.0
+          },
+          "type": "scroll_plus"
+        },
+        "wled-lr-curvelamp2": {
+          "config": {
+            "background_brightness": 1.0,
+            "background_color": "#000000",
+            "blur": 0.0,
+            "brightness": 0.14,
+            "color_high": "#00ffff",
+            "color_lows": "#ffc800",
+            "color_mids": "#ffc800",
+            "decay_per_sec": 0.0,
+            "diag": false,
+            "flip": false,
+            "mirror": true,
+            "scroll_per_sec": 1.2,
+            "threshold": 0.7
+          },
+          "type": "scroll_plus"
+        },
+        "wled-lr-moss2": {
+          "config": {
+            "background_brightness": 1.0,
+            "background_color": "#000000",
+            "blur": 3.0,
+            "brightness": 1.0,
+            "color_high": "#0000ff",
+            "color_lows": "#ff0000",
+            "color_mids": "#00ff00",
+            "decay_per_sec": 0.5,
+            "diag": false,
+            "flip": false,
+            "mirror": true,
+            "scroll_per_sec": 1.2,
+            "threshold": 0.0
+          },
+          "type": "scroll_plus"
+        }
+      },
+      "active": true
+    },
+    "off": {
+      "name": "Off",
+      "virtuals": {
+        "wled-breland-nightstand": {},
+        "wled-dining-room": {},
+        "wled-lr-behind-couch-2": {},
+        "wled-lr-curvelamp2": {},
+        "wled-lr-moss2": {}
+      },
+      "scene_image": "Wallpaper",
+      "scene_puturl": null,
+      "scene_tags": null,
+      "scene_payload": null,
+      "scene_midiactivate": null,
+      "active": false
+    }
+  }
+}
+```
+
+In this case - the `Living Room` scene is consdiered `active` - as the virtuals/devices are playing what the scene defines. `Off` is not considered `active` since the virutals in the scene config are currently showing a different effect. If you were to manually start an effect on a new virtual/device - both `Living Room` and `Off` would not be `active` as the scene config would deviate from the currently playing config. 
 
 **PUT**
 
-Set effects and configs of all devices to those specified in a scene
+Set effects and configs of all devices to those specified in a scene. You can also activate a scene by using `PUT` to the `/api/scenes` endpoint as follows:
+
+```
+{"id":"living-room","action":"activate"}
+```
+
+Note that you must pass the `id` - not the `name`.
 
 **POST**
 
