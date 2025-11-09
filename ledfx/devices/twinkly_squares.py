@@ -37,8 +37,7 @@ class TwinklySquaresDevice(NetworkedDevice):
     def flush(self, data):
         pixel_data = data.astype(np.uint8)
         # do the magic or reordering the whole frame according to the precalculated perm mapping
-        reodered = pixel_data[self.perm]
-        frame = reodered.tobytes()
+        frame = pixel_data[self.perm].tobytes()
         # the xled lib supports large packets with version 3, but not persistent sockets
         self.ctrl.set_rt_frame_socket(io.BytesIO(frame), version=3)
 
