@@ -50,7 +50,9 @@ class TwinklySquaresDevice(NetworkedDevice):
             self.ctrl.set_brightness(100)
             self.ctrl.set_mode("rt")
             info = self.ctrl.get_device_info()
-            _LOGGER.debug(f"Twinkly Squares device {self.name} info: %s", info.data)
+            _LOGGER.debug(
+                f"Twinkly Squares device {self.name} info: %s", info.data
+            )
         except Exception as e:
             _LOGGER.error(
                 f"Failed to activate Twinkly Squares device {self.name}: {e}"
