@@ -96,7 +96,7 @@ LedFx automatically handles the complex coordinate mapping required for Twinkly 
 
 1. **Layout Discovery**: When the device activates, LedFx queries the Twinkly device for its LED layout coordinates
 2. **Grid Calculation**: The actual grid dimensions (width × height) are calculated from the coordinate distribution
-3. **Auto-Configuration**: 
+3. **Auto-Configuration**:
    - The pixel count is verified and updated if needed
    - The virtual's row count is automatically set to match the detected matrix height
    - All changes are saved to configuration
