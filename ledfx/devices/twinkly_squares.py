@@ -120,7 +120,6 @@ class TwinklySquaresDevice(NetworkedDevice):
 
     def build_twinkly_perm(self, coords_xy, width, height, flip_y=True):
         N = coords_xy.shape[0]
-        assert width * height == N
 
         # Find actual min/max of coordinates (don't assume -1 to 1)
         x_min, x_max = coords_xy[:, 0].min(), coords_xy[:, 0].max()
