@@ -18,7 +18,7 @@ The following shows the four presets, ACID, DARK SKY, OCEAN VIEW and RGB.
 
 ## Settings
 
-The Watefall effect includes a few unique controls:
+The Waterfall effect includes a few unique controls:
 
 ![Splash](/_static/effects/matrix/waterfall/reset.png)
 
@@ -77,7 +77,7 @@ Using max makes the effect more responsive to peaks and transients, while mean p
 
 ### BACKGROUND COLOR and BACKGROUND BRIGHTNESS
 
-These settings only apply when FADE OUT is non zero
+These settings only apply when FADE OUT is non-zero
 
 - **Background Color**: Sets the color that the waterfall fades toward, default is Black
 - **Background Brightness**: Controls the brightness of the background, default is 1.0
