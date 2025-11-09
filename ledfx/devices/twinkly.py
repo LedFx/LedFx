@@ -45,17 +45,25 @@ class TwinklyDevice(NetworkedDevice):
 
     def activate(self):
         self.ctrl = xled.HighControlInterface(self._config["ip_address"])
-        self.ctrl.turn_on()
-        self.ctrl.set_brightness(100)
-        self.ctrl.set_mode("rt")
-        self.udp_client = UDPClient(
-            port=REALTIME_UDP_PORT_NUMBER,
-            destination_host=self.config["ip_address"],
-        )
-        info = self.ctrl.get_device_info()
-        _LOGGER.debug(f"Twinkly device {self.name} info: %s", info.data)
+        try:
+            self.ctrl.turn_on()
+            self.ctrl.set_brightness(100)
+            self.ctrl.set_mode("rt")
+            self.udp_client = UDPClient(
+                port=REALTIME_UDP_PORT_NUMBER,
+                destination_host=self.config["ip_address"],
+            )
+            info = self.ctrl.get_device_info()
+            _LOGGER.debug(f"Twinkly device {self.name} info: %s", info.data)
+        except Exception as e:
+            _LOGGER.error(
+                f"Failed to activate Twinkly device {self.name}: {e}"
+            )
+            self.ctrl = None
+            self.udp_client = None
+            self.set_offline()
+            return
         self.leds = info["number_of_led"]
-
         layout = self.ctrl.get_led_layout()
         cords = layout["coordinates"]
         coords_xy = np.array(
