@@ -20,12 +20,12 @@ class Waterfall(Twod, GradientEffect):
     NAME = "Waterfall"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
-        "background_color",
-        "background_brightness",
         "background_mode",
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "max_vs_mean",
+        "background_color",
+        "background_brightness",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -94,6 +94,8 @@ class Waterfall(Twod, GradientEffect):
         self.max = self._config["max_vs_mean"]
         self.drop_secs = self._config["drop_secs"]
         self.fade_out = self._config["fade_out"]
+        # we are going to do our own special thing with background color so disable default behavior
+        self.bg_color_use = False
 
     def do_once(self):
         """
@@ -158,9 +160,8 @@ class Waterfall(Twod, GradientEffect):
                         (0, y, self.r_width - 1, y), fill=grey_value
                     )
 
-            # Cache black background for compositing
-            self.black_bg = Image.new(
-                "RGB", (self.r_width, self.r_height), (0, 0, 0)
+            self.waterfall_background = Image.new(
+                "RGB", (self.r_width, self.r_height), self._bg_color_pil
             )
 
     def audio_data_updated(self, data):
@@ -285,7 +286,7 @@ class Waterfall(Twod, GradientEffect):
         # Apply fade out effect if enabled
         if self.fade_out > 0.0:
             self.matrix = Image.composite(
-                self.matrix, self.black_bg, self.fade_mask
+                self.matrix, self.waterfall_background, self.fade_mask
             )
 
         self.roll_gradient()

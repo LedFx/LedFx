@@ -400,17 +400,17 @@ class Effect(BaseRegistry):
                 self._config = validated_config
 
             bg_color = parse_color(self._config["background_color"])
-            # if bg color is black then we don't need to do anything with it
+            # if bg color is black then flag we don't need to run at render time
             self.bg_color_use = bg_color != parse_color(LEDFX_COLORS["black"])
 
-            if self.bg_color_use:
-                self._bg_color = (
-                    np.array(bg_color) * self._config["background_brightness"]
-                )
-                self._bg_color_pil = tuple(
-                    int(c * self._config["background_brightness"])
-                    for c in bg_color
-                )
+            # calculate colors always as they are used sometimes anyway
+            self._bg_color = (
+                np.array(bg_color) * self._config["background_brightness"]
+            )
+            self._bg_color_pil = tuple(
+                int(c * self._config["background_brightness"])
+                for c in bg_color
+            )
 
             self.flip = self._config["flip"]
             self.mirror = self._config["mirror"]
