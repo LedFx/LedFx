@@ -65,7 +65,6 @@ class TwinklySquaresDevice(NetworkedDevice):
         coords_xy = np.array(
             [[c["x"], c["y"]] for c in cords], dtype=np.float32
         )
-        N = coords_xy.shape[0]
 
         # Calculate actual grid dimensions from coordinate distribution
         x01_temp = (coords_xy[:, 0] + 1.0) * 0.5
