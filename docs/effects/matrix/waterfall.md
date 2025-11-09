@@ -69,7 +69,7 @@ When enabled, the effect becomes symmetrical, with the newest audio data always 
 Controls how audio intensity is calculated for each frequency band.
 
 - **Default**: False (uses mean/average)
-- **Options**: 
+- **Options**:
   - False: Uses the mean (average) value of frequencies in each band
   - True: Uses the maximum value of frequencies in each band
 
