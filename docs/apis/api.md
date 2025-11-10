@@ -1111,7 +1111,7 @@ can be saved as a \"scene\".
 
 **GET**
 
-Get all saved scenes. Get also includes an `active` flag that will return `true` if the state of the `virtuals` in the scene config matches the current real state of the virtuals. That is to say, if all devices/virtuals are currently showing what the scene config defines - then the scene is considered `active`. Put another way - if the activation of a given scene would be a no-op - then `active` will return `true`. 
+Get all saved scenes. Get also includes an `active` flag that will return `true` if the state of the `virtuals` in the scene config matches the current real state of the virtuals. That is to say, if all devices/virtuals are currently showing what the scene config defines - then the scene is considered `active`. Put another way - if the activation of a given scene would be a no-op - then `active` will return `true`.
 
 An example response below:
 
