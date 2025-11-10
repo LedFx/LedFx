@@ -11,3 +11,4 @@ Devices
    ddp
    govee
    osc
+   twinkly_squares
