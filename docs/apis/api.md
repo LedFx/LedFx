@@ -1206,7 +1206,7 @@ An example response below:
 }
 ```
 
-In this case - the `Living Room` scene is considered `active` - as the virtuals/devices are playing what the scene defines. `Off` is not considered `active` since the virtuals in the scene config are currently showing a different effect. If you were to manually start an effect on a new virtual/device - both `Living Room` and `Off` would not be `active` as the scene config would deviate from the currently playing config. 
+In this case - the `Living Room` scene is considered `active` - as the virtuals/devices are playing what the scene defines. `Off` is not considered `active` since the virtuals in the scene config are currently showing a different effect. If you were to manually start an effect on a new virtual/device - both `Living Room` and `Off` would not be `active` as the scene config would deviate from the currently playing config.
 
 **PUT**
 
