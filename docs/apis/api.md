@@ -1111,11 +1111,11 @@ can be saved as a \"scene\".
 
 **GET**
 
-Get all saved scenes. Get also includes an `active` flag that will return `true` if the state of the `virtuals` in the scene config matches the current real state of the virtuals. That is to say, if all devices/virtuals are currently showing what the scene config defines - then the scene is considered active.
+Get all saved scenes. Get also includes an `active` flag that will return `true` if the state of the `virtuals` in the scene config matches the current real state of the virtuals. That is to say, if all devices/virtuals are currently showing what the scene config defines - then the scene is considered `active`.
 
 An example response below:
 
-```
+```json
 {
   "status": "success",
   "scenes": {
@@ -1206,13 +1206,13 @@ An example response below:
 }
 ```
 
-In this case - the `Living Room` scene is consdiered `active` - as the virtuals/devices are playing what the scene defines. `Off` is not considered `active` since the virutals in the scene config are currently showing a different effect. If you were to manually start an effect on a new virtual/device - both `Living Room` and `Off` would not be `active` as the scene config would deviate from the currently playing config.
+In this case - the `Living Room` scene is considered `active` - as the virtuals/devices are playing what the scene defines. `Off` is not considered `active` since the virtuals in the scene config are currently showing a different effect. If you were to manually start an effect on a new virtual/device - both `Living Room` and `Off` would not be `active` as the scene config would deviate from the currently playing config. 
 
 **PUT**
 
 Set effects and configs of all devices to those specified in a scene. You can also activate a scene by using `PUT` to the `/api/scenes` endpoint as follows:
 
-```
+```json
 {"id":"living-room","action":"activate"}
 ```
 
