@@ -22,11 +22,11 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.9.0 # Replace by any tag/version: https://github.com/psf/black/tags
+    rev: 25.11.0 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
       - id: black
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.0
+    rev: v3.21.1
     hooks:
       - id: pyupgrade
         args: [--py39-plus]
