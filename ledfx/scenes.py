@@ -164,6 +164,41 @@ class Scenes:
         self._ledfx.events.fire_event(SceneDeletedEvent(scene_id))
         self.save_to_config()
 
+    def is_active(self, scene_id):
+        """Return True when the current virtual state matches the scene definition."""
+
+        scene = self.get(scene_id)
+        if not scene:
+            return False
+
+        virtuals = scene.get("virtuals") or {}
+        for virtual_id, expected_effect in virtuals.items():
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if virtual is None:
+                return False
+
+            current_effect = virtual.active_effect
+
+            if not expected_effect:
+                if current_effect is not None:
+                    return False
+                continue
+
+            if current_effect is None:
+                return False
+
+            if getattr(current_effect, "type", None) != expected_effect.get(
+                "type"
+            ):
+                return False
+
+            current_config = getattr(current_effect, "config", None) or {}
+            expected_config = expected_effect.get("config") or {}
+            if current_config != expected_config:
+                return False
+
+        return True
+
     def __iter__(self):
         return iter(self._scenes)
 
