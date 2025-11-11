@@ -95,23 +95,23 @@ Python 3.10 installed.
     $ source ~/ledfx-venv/bin/activate
     $ pip install numpy>=2.0.0 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
-    $ pip install aubio==0.4.9 --no-cache-dir
+    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
     $ pip install numpy>=2.0.0 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
-    $ pip install aubio==0.4.9 --no-cache-dir
+    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
     $ pip install --force-reinstall ledfx
     $ ledfx --open-ui
     $ ledfx --open-ui
     ```
 
-2.  If you get a numpy/aubio error please do the following:
+2.  If you get a numpy/aubio-ledfx error please do the following:
 
     ``` console
-    $ pip uninstall numpy aubio
+    $ pip uninstall numpy aubio-ledfx
     $ pip install numpy>=2.0.0 --no-cache-dir
-    $ pip install aubio==0.4.9 --no-cache-dir
+    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
     $ pip install numpy>=2.0.0 --no-cache-dir
-    $ pip install aubio==0.4.9 --no-cache-dir
+    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
     ```
 
 3.  Launch LedFx with the `--open-ui` option to launch the back end and automatically open the front end in the browser:
