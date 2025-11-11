@@ -23,9 +23,15 @@ class ScenesEndpoint(RestEndpoint):
         Returns:
             web.Response: The response containing the scenes.
         """
+        scenes_with_state = {}
+        for scene_id, scene_config in self._ledfx.config["scenes"].items():
+            scene_payload = dict(scene_config)
+            scene_payload["active"] = self._ledfx.scenes.is_active(scene_id)
+            scenes_with_state[scene_id] = scene_payload
+
         response = {
             "status": "success",
-            "scenes": self._ledfx.config["scenes"],
+            "scenes": scenes_with_state,
         }
         return await self.bare_request_success(response)
 
