@@ -51,7 +51,7 @@ Warning
 aubio-ledfx library which is a critical part of the audio processing for LedFX builds from source
 and can fail to build in many ways.
 
-One common problem for example is if your Windows language is not English and uses non standard characters
+One common problem for example is if your Windows language is not English and uses non-standard characters
 
 In that case, reach out in the LedFX discord dev_chat channel and ask for an aubio-ledfx wheel for the version of python you are developing on. 3.12 is preferred!
 ::::
