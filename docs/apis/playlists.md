@@ -53,6 +53,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - `items[*]` *(array of objects)*:
   - `scene_id` *(string, required)*: Existing scene identifier.
   - `duration_ms` *(int, optional)*: Overrides default duration for this item.
+  - **Empty list**: If `items` is an empty array `[]`, the playlist will dynamically resolve to all available scenes at start time. This allows a "play all scenes" playlist that automatically includes new scenes without manual updates.
 - `default_duration_ms` *(int, optional)*: Used when an item omits `duration_ms`. If both are absent, the server enforces a minimum/default behavior (implementation enforces a minimum of 500ms per item).
 - `mode` *(string)*: `"sequence"` (in order) or `"shuffle"` (randomized once per cycle).
 - `timing.jitter.enabled` *(bool, optional)*: Toggle per-transition duration randomization.

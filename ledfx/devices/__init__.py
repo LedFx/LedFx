@@ -621,8 +621,11 @@ class Devices(RegistryLoader):
                     config=device["config"],
                     ledfx=self._ledfx,
                 )
-            except vol.MultipleInvalid as e:
-                _LOGGER.exception(e)
+            except Exception as e:
+                # be very prolific on ignoring devices if they are bad
+                _LOGGER.warning(
+                    f"Failed to load device {device.get('id', 'unknown')}: {e}"
+                )
 
     def deactivate_devices(self):
         for device in self.values():

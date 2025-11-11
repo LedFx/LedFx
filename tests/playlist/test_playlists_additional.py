@@ -11,7 +11,7 @@ from ledfx.playlists import PlaylistManager
 class DummyCoreWithEvents:
     def __init__(self, tmpdir):
         self.config_dir = tmpdir
-        self.config = {"playlists": {}}
+        self.config = {"playlists": {}, "scenes": {}}
         self.scenes = type(
             "S",
             (),
@@ -115,14 +115,40 @@ async def test_get_playlists_endpoint_returns_empty_when_no_playlists(
 
 
 @pytest.mark.asyncio
-async def test_start_rejects_empty_playlist(tmp_path):
+async def test_empty_playlist_resolves_to_all_scenes(tmp_path):
+    """Empty items list should resolve to all available scenes at start time."""
     core = DummyCoreWithEvents(str(tmp_path))
+    # Add some scenes to the config (matches real LedFx structure)
+    core.config["scenes"] = {"scene1": {}, "scene2": {}, "scene3": {}}
     manager = PlaylistManager(core)
 
     await manager.create_or_replace(
         {"id": "empty", "name": "Empty", "items": []}
     )
     ok = await manager.start("empty")
+    # Should succeed because empty list resolves to all scenes
+    assert ok is True
+
+    # Verify runtime items were populated with all scene IDs
+    state = await manager.get_state()
+    assert state.get("active_playlist") == "empty"
+
+    await manager.stop()
+
+
+@pytest.mark.asyncio
+async def test_empty_playlist_fails_when_no_scenes(tmp_path):
+    """Empty items list should fail if there are no scenes available."""
+    core = DummyCoreWithEvents(str(tmp_path))
+    # No scenes available
+    core.config["scenes"] = {}
+    manager = PlaylistManager(core)
+
+    await manager.create_or_replace(
+        {"id": "empty", "name": "Empty", "items": []}
+    )
+    ok = await manager.start("empty")
+    # Should fail because no scenes to resolve to
     assert ok is False
 
 
@@ -147,4 +173,52 @@ async def test_jitter_bounds(tmp_path):
     assert eff is not None
     # should be between 500 (clamp) and 2000 (1k * 2.0)
     assert 500 <= eff <= 2000
+    await manager.stop()
+
+
+@pytest.mark.asyncio
+async def test_empty_playlist_get_state_returns_scenes(tmp_path):
+    """get_state should return the resolved scenes list for empty playlists."""
+    core = DummyCoreWithEvents(str(tmp_path))
+    # Add scenes in a specific order
+    core.config["scenes"] = {
+        "scene-alpha": {},
+        "scene-beta": {},
+        "scene-gamma": {},
+    }
+    manager = PlaylistManager(core)
+
+    # Create empty playlist in sequence mode
+    await manager.create_or_replace(
+        {
+            "id": "empty-seq",
+            "name": "Empty Sequence",
+            "items": [],
+            "mode": "sequence",
+        }
+    )
+    ok = await manager.start("empty-seq")
+    assert ok is True
+
+    # Get state and verify scenes are included
+    state = await manager.get_state()
+    assert state.get("active_playlist") == "empty-seq"
+    assert state.get("mode") == "sequence"
+
+    # Should have scenes list with all scene IDs
+    scenes = state.get("scenes")
+    assert scenes is not None
+    assert len(scenes) == 3
+    # In sequence mode, should match the order from config
+    assert set(scenes) == {"scene-alpha", "scene-beta", "scene-gamma"}
+
+    # Should have order matching scenes
+    order = state.get("order")
+    assert order is not None
+    assert len(order) == 3
+
+    # Verify scene_id is set to current item
+    scene_id = state.get("scene_id")
+    assert scene_id in {"scene-alpha", "scene-beta", "scene-gamma"}
+
     await manager.stop()
