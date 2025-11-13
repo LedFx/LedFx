@@ -103,7 +103,6 @@ Python 3.10 installed.
     ``` console
     $ pip uninstall numpy aubio-ledfx
     $ pip install numpy>=2.0.0 --no-cache-dir
-    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
     $ pip install aubio-ledfx>=0.4.11 --no-cache-dir
     ```
 
