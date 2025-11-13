@@ -22,6 +22,7 @@ from functools import lru_cache
 from importlib import metadata
 from itertools import chain
 from logging.handlers import QueueHandler
+from pathlib import Path
 from platform import (
     processor,
     python_build,
@@ -34,6 +35,7 @@ from platform import (
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
 from typing import Callable
+from urllib.parse import urlparse
 
 import netifaces
 import numpy as np
@@ -1481,6 +1483,150 @@ def build_browser_request(url: str) -> urllib.request.Request:
     return urllib.request.Request(url, headers=headers)
 
 
+# Security: Blocked IP ranges for SSRF prevention
+BLOCKED_IP_RANGES = [
+    ipaddress.ip_network("127.0.0.0/8"),  # Loopback
+    ipaddress.ip_network("10.0.0.0/8"),  # Private
+    ipaddress.ip_network("172.16.0.0/12"),  # Private
+    ipaddress.ip_network("192.168.0.0/16"),  # Private
+    ipaddress.ip_network("169.254.0.0/16"),  # Link-local (AWS metadata, etc.)
+    ipaddress.ip_network("::1/128"),  # IPv6 loopback
+    ipaddress.ip_network("fc00::/7"),  # IPv6 private
+    ipaddress.ip_network("fe80::/10"),  # IPv6 link-local
+]
+
+
+def get_allowed_image_dirs():
+    """
+    Get list of allowed directories for image file access.
+    Returns list of Path objects.
+    """
+    allowed_dirs = []
+
+    # Allow assets directory
+    if LEDFX_ASSETS_PATH:
+        assets_images = Path(LEDFX_ASSETS_PATH) / "images"
+        if assets_images.exists():
+            allowed_dirs.append(assets_images)
+
+    # Allow config directory images subfolder
+    try:
+        from ledfx.config import get_default_config_directory
+
+        config_dir = get_default_config_directory()
+        config_images = Path(config_dir) / "images"
+        # Create directory if it doesn't exist
+        config_images.mkdir(parents=True, exist_ok=True)
+        allowed_dirs.append(config_images)
+    except Exception as e:
+        _LOGGER.warning(
+            f"Could not set up config directory for images: {e}"
+        )
+
+    return allowed_dirs
+
+
+def validate_file_path(file_path, allowed_dirs=None):
+    """
+    Validate and sanitize a file path to prevent directory traversal attacks.
+
+    Args:
+        file_path (str): User-provided file path
+        allowed_dirs (list): List of allowed base directories (Path objects)
+                           If None, uses default allowed directories
+
+    Returns:
+        Path: Resolved Path object if valid
+
+    Raises:
+        ValueError: If path is invalid or outside allowed directories
+    """
+    if allowed_dirs is None:
+        allowed_dirs = get_allowed_image_dirs()
+
+    if not allowed_dirs:
+        raise ValueError(
+            "No allowed directories configured for file access"
+        )
+
+    try:
+        # Convert to Path and resolve to absolute path (follows symlinks)
+        path = Path(file_path).resolve()
+
+        # Check if path is within any allowed directory
+        for allowed_dir in allowed_dirs:
+            allowed_dir = allowed_dir.resolve()
+            try:
+                # Check if path is relative to allowed_dir
+                path.relative_to(allowed_dir)
+                # If we get here, path is within allowed_dir
+                if path.is_file():
+                    return path
+                else:
+                    raise ValueError(
+                        f"Path {file_path} is not a file or does not exist"
+                    )
+            except ValueError:
+                # Path is not relative to this allowed_dir, try next
+                continue
+
+        # Path is not in any allowed directory
+        raise ValueError(
+            f"Access denied: {file_path} is not in allowed directories"
+        )
+
+    except Exception as e:
+        raise ValueError(f"Invalid file path: {e}")
+
+
+def validate_url(url):
+    """
+    Validate URL to prevent SSRF (Server-Side Request Forgery) attacks.
+
+    Args:
+        url (str): User-provided URL
+
+    Returns:
+        str: Validated URL string
+
+    Raises:
+        ValueError: If URL is invalid or points to blocked resource
+    """
+    try:
+        parsed = urlparse(url)
+
+        # Only allow http/https
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Invalid URL scheme: {parsed.scheme}. Only http and https are allowed."
+            )
+
+        # Hostname must be present
+        hostname = parsed.hostname
+        if not hostname:
+            raise ValueError("URL must have a hostname")
+
+        # Resolve hostname to IP to check for SSRF
+        try:
+            ip = socket.gethostbyname(hostname)
+            ip_obj = ipaddress.ip_address(ip)
+
+            # Check against blocked ranges
+            for blocked_range in BLOCKED_IP_RANGES:
+                if ip_obj in blocked_range:
+                    raise ValueError(
+                        f"Access denied: {ip} is in a blocked IP range (SSRF prevention)"
+                    )
+
+        except socket.gaierror as e:
+            raise ValueError(f"Cannot resolve hostname {hostname}: {e}")
+
+        return url
+
+    except Exception as e:
+        raise ValueError(f"Invalid URL: {e}")
+
+
 def open_gif(gif_path):
     """
     Open a gif from a local file or url
@@ -1496,12 +1642,26 @@ def open_gif(gif_path):
         gif_path = gif_path.strip()
         _LOGGER.info(f"Attempting to open GIF: {gif_path}")
         if gif_path.startswith(("http://", "https://")):
-            req = build_browser_request(gif_path)
-            with urllib.request.urlopen(req) as url:
+            # Validate URL to prevent SSRF attacks
+            try:
+                validated_url = validate_url(gif_path)
+            except ValueError as e:
+                _LOGGER.warning(f"URL validation failed: {e}")
+                return None
+
+            req = build_browser_request(validated_url)
+            with urllib.request.urlopen(req, timeout=10) as url:
                 gif = Image.open(url)
                 _LOGGER.debug("Remote image source downloaded and opened.")
         else:
-            gif = Image.open(gif_path)  # Directly open for local files
+            # Validate local file path to prevent directory traversal
+            try:
+                validated_path = validate_file_path(gif_path)
+            except ValueError as e:
+                _LOGGER.warning(f"File path validation failed: {e}")
+                return None
+
+            gif = Image.open(validated_path)
             _LOGGER.debug("Local image source opened.")
 
         # protect against single frame image like png, jpg
@@ -1530,14 +1690,28 @@ def open_image(image_path):
         image_path = image_path.strip()
         _LOGGER.info(f"Attempting to open image: {image_path}")
         if image_path.startswith(("http://", "https://")):
-            req = build_browser_request(image_path)
-            with urllib.request.urlopen(req) as url:
+            # Validate URL to prevent SSRF attacks
+            try:
+                validated_url = validate_url(image_path)
+            except ValueError as e:
+                _LOGGER.warning(f"URL validation failed: {e}")
+                return None
+
+            req = build_browser_request(validated_url)
+            with urllib.request.urlopen(req, timeout=10) as url:
                 image = Image.open(url)
                 _LOGGER.debug("Remote image downloaded and opened.")
                 return image
 
         else:
-            image = Image.open(image_path)  # Directly open for local files
+            # Validate local file path to prevent directory traversal
+            try:
+                validated_path = validate_file_path(image_path)
+            except ValueError as e:
+                _LOGGER.warning(f"File path validation failed: {e}")
+                return None
+
+            image = Image.open(validated_path)
             _LOGGER.debug("Local Image opened.")
             return image
     except Exception as e:
