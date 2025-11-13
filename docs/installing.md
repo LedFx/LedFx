@@ -87,20 +87,14 @@ Python 3.10 installed.
 
     ``` console
     $ brew install python@3.12
-    $ brew install python@3.12
     $ brew install portaudio --HEAD
     $ brew install virtualenv
-    $ virtualenv -p python3.12 ~/ledfx-venv
     $ virtualenv -p python3.12 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
     $ pip install numpy>=2.0.0 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
-    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
-    $ pip install numpy>=2.0.0 --no-cache-dir
-    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
-    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
+    $ pip install aubio-ledfx>=0.4.11 --no-cache-dir
     $ pip install --force-reinstall ledfx
-    $ ledfx --open-ui
     $ ledfx --open-ui
     ```
 
@@ -109,9 +103,8 @@ Python 3.10 installed.
     ``` console
     $ pip uninstall numpy aubio-ledfx
     $ pip install numpy>=2.0.0 --no-cache-dir
-    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
-    $ pip install numpy>=2.0.0 --no-cache-dir
-    $ pip install aubio-ledfx==0.4.10a1 --no-cache-dir
+    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
+    $ pip install aubio-ledfx>=0.4.11 --no-cache-dir
     ```
 
 3.  Launch LedFx with the `--open-ui` option to launch the back end and automatically open the front end in the browser:
