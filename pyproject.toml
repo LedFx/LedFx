@@ -44,7 +44,7 @@ dependencies = [
     "xled>=0.7.0",
 ]
 name = "LedFx"
-version = "2.1.1"
+version = "2.1.2"
 description = "A network based light effect controller"
 readme = "README.rst"
 
