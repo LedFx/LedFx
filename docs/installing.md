@@ -91,8 +91,8 @@ Python 3.10 installed.
     $ brew install virtualenv
     $ virtualenv -p python3.12 ~/ledfx-venv
     $ source ~/ledfx-venv/bin/activate
-    $ pip install numpy>=2.0.0 --no-cache-dir
     $ export CFLAGS="-Wno-incompatible-function-pointer-types"
+    $ pip install numpy>=2.0.0 --no-cache-dir
     $ pip install aubio-ledfx>=0.4.11 --no-cache-dir
     $ pip install --force-reinstall ledfx
     $ ledfx --open-ui
