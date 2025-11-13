@@ -2,7 +2,7 @@
 import os
 from hiddenimports import hiddenimports
 from ledfx.consts import PROJECT_VERSION
-from PyInstaller.utils.hooks import collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_dynamic_libs, collect_data_files, collect_submodules
 
 spec_root = os.path.abspath(SPECPATH)
 
@@ -10,8 +10,10 @@ venv_root = os.path.abspath(os.path.join(SPECPATH, '..'))
 block_cipher = None
 print(venv_root)
 
-# Collect NumPy binaries (required for NumPy 2.x)
+# Collect NumPy binaries and data files (required for NumPy 2.x)
 numpy_binaries = collect_dynamic_libs('numpy')
+numpy_datas = collect_data_files('numpy', include_py_files=True)
+numpy_hiddenimports = collect_submodules('numpy')
 # Remove the ledfx.env file if it exists
 os.remove("ledfx.env") if os.path.exists("ledfx.env") else None
 
@@ -39,8 +41,8 @@ with open('ledfx.env', 'a') as file:
 a = Analysis([f'{spec_root}\\ledfx\\__main__.py'],
              pathex=[f'{spec_root}', f'{spec_root}\\ledfx'],
              binaries=numpy_binaries,
-             datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')],
-             hiddenimports=hiddenimports,
+             datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')] + numpy_datas,
+             hiddenimports=hiddenimports + numpy_hiddenimports,
              hookspath=[f'{venv_root}\\lib\\site-packages\\pyupdater\\hooks'],
              runtime_hooks=[],
              excludes=[],
