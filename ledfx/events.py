@@ -20,6 +20,7 @@ class Event:
     VISUALISATION_UPDATE = "visualisation_update"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
+    EFFECT_UPDATED = "effect_updated"
     EFFECT_CLEARED = "effect_cleared"
     SCENE_ACTIVATED = "scene_activated"
     SCENE_DELETED = "scene_deleted"
@@ -175,16 +176,18 @@ class VirtualUpdateEvent(Event):
 class GlobalPauseEvent(Event):
     """Event emitted when all virtuals are paused"""
 
-    def __init__(self):
+    def __init__(self, paused: bool):
         super().__init__(Event.GLOBAL_PAUSE)
+        self.paused = paused
 
 
 class VirtualPauseEvent(Event):
     """Event emitted when virtual updated paused"""
 
-    def __init__(self, virtual_id: str):
+    def __init__(self, virtual_id: str, paused: bool):
         super().__init__(Event.VIRTUAL_PAUSE)
         self.virtual_id = virtual_id
+        self.paused = paused
 
 
 class AudioDeviceChangeEvent(Event):
@@ -229,21 +232,39 @@ class VisualisationUpdateEvent(Event):
 
 
 class EffectSetEvent(Event):
-    """Event emitted when an effect is set or updated"""
+    """Event emitted when an effect is set"""
 
-    def __init__(self, effect_name, effect_id, effect_config, virtual_id):
+    def __init__(
+        self,
+        effect_name: str,
+        effect_id: str,
+        virtual_id: str,
+    ):
         super().__init__(Event.EFFECT_SET)
         self.effect_name = effect_name
         self.effect_id = effect_id
-        self.effect_config = effect_config
+        self.virtual_id = virtual_id
+
+
+class EffectUpdatedEvent(Event):
+    """Event emitted when an effect is updated"""
+
+    def __init__(
+        self,
+        effect_id: str,
+        virtual_id: str,
+    ):
+        super().__init__(Event.EFFECT_UPDATED)
+        self.effect_id = effect_id
         self.virtual_id = virtual_id
 
 
 class EffectClearedEvent(Event):
     """Event emitted when an effect is cleared"""
 
-    def __init__(self):
+    def __init__(self, virtual_id: str):
         super().__init__(Event.EFFECT_CLEARED)
+        self.virtual_id = virtual_id
 
 
 class SceneActivatedEvent(Event):

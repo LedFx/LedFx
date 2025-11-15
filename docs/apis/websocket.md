@@ -149,6 +149,171 @@ Will generate a client_sync event sent to all active websockets that are subscri
 }
 ```
 
+## System Events
+
+System events are loosely related events emitted when changes are made that effect the system as a whole. e.g. global pause, system configuration changes, audio input device changes, etc.
+
+### global_pause
+The `global_pause` event is emitted when the global paused state is changed. This state can be changed via the Web UI, the REST API, or via a command line argument.
+
+**Payload Example:**
+```json
+{
+  "event_type": "global_pause",
+  "paused": true
+}
+```
+
+**Fields:**
+- `event_type`: Always `"global_pause"`.
+- `paused`: Current paused state.
+
+### base_config_update
+The `base_config_update` event is emitted when the system configuration is updated.
+
+**Payload Example:**
+```json
+{
+  "event_type": "base_config_update",
+  "config": {
+    // TODO
+  }
+}
+```
+
+**Fields:**
+- `event_type`: Always `"base_config_update"`.
+- `config`: The updated system configuration.
+
+### audio_input_device_changed
+The `audio_input_device_changed` event is emitted when the an audio reactive effect is enabled and the configured audio device is changed.
+
+**Payload Example:**
+```json
+{
+  "event_type": "audio_input_device_changed",
+  "audio_input_device_name": "ALSA: default"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"audio_input_device_changed"`.
+- `audio_input_device_name`: The friendly name of the selected audio device.
+
+## Virtuals Events
+
+Virtuals events allow a client to be notified of changes to a virtual's active state or configuration.
+
+### virtual_pause
+The `virtual_pause` event is emitted when the active state of a virtual changes.
+
+**Payload Example:**
+```json
+{
+  "event_type": "virtual_pause",
+  "virtual_id": "my_virtual_id",
+  "paused": true
+}
+```
+
+**Fields:**
+- `event_type`: Always `"virtual_pause"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `paused`: Current paused state of virtual entity.
+
+### virtual_update
+The `virtual_update` event is emitted when a virtual's pixels are updated.
+
+**Payload Example:**
+```json
+{
+  "event_type": "virtual_update",
+  "virtual_id": "my_virtual_id",
+  "pixels": [
+    // Array of pixel state
+  ]
+}
+```
+
+**Fields:**
+- `event_type`: Always `"virtual_update"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `pixels`: Array of current pixel state.
+
+### virtual_config_update
+The `virtual_config_update` event is emitted when a virtual's configuration is updated.
+
+**Payload Example:**
+```json
+{
+  "event_type": "virtual_config_update",
+  "virtual_id": "my_virtual_id",
+  "config" : {
+    // TODO
+  }
+}
+```
+
+**Fields:**
+- `event_type`: Always `"virtual_config_update"`.
+- `virtual_id`: Identifier of the virtual entity.
+- `config`: Configuration of the virtual entity.
+
+## Effect Events
+
+Effect events allow a client to be notified of changes to the active effect and it's configuration.
+
+### effect_set
+The `effect_set` event is emitted when a new effect is set on a virtual. This event may be emitted when changing certain effect configurations when the update triggers a transition.
+
+**Payload Example:**
+```json
+{
+  "event_type": "effect_set",
+  "effect_name": "Energy 2",
+  "effect_id": "energy2",
+  "virtual_id": "my_virtual_id"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"effect_set"`.
+- `effect_name`: Friendly name of the effect.
+- `effect_id`: Identifier of the effect.
+- `virtual_id`: Identifier of the virtual entity.
+
+### effect_updated
+The `effect_updated` event is emitted when a virtual's active effect's configuration changes.
+
+**Payload Example:**
+```json
+{
+  "event_type": "effect_updated",
+  "effect_id": "effect_id",
+  "virtual_id": "my_virtual_id"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"effect_updated"`.
+- `effect_id`: Identifier of the effect.
+- `virtual_id`: Identifier of the virtual entity.
+
+### effect_cleared
+The `effect_cleared` event is emitted when an effect is removed from a virtual.
+
+**Payload Example:**
+```json
+{
+  "event_type": "effect_cleared",
+  "virtual_id": "my_virtual_id"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"effect_cleared"`.
+- `virtual_id`: Identifier of the virtual entity.
+
 ## Diagnostic Events
 
 Diagnostic events are intended to allow improved visibility of performance and development diagnostic via live front end rather than log analysis.
