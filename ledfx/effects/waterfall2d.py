@@ -110,7 +110,8 @@ class Waterfall(Twod, GradientEffect):
                 start, int(((self.r_width / float(self.bands)) * (i + 1)) - 1)
             )
             self.bandsx.append([start, end])
-        self.half_height = int(self.r_height // 2)
+        # protect from 0 half_height and divide by zero risk
+        self.half_height = max(1, int(self.r_height // 2))
         self.half_odd = bool(self.r_height % 2)
 
         if (
