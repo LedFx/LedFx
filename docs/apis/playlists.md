@@ -90,7 +90,8 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 |-------:|-------------------------------|----------------------------------------|
 |  POST  | `/api/playlists`              | Create or replace (upsert) a playlist  |
 |   PUT  | `/api/playlists`              | Control/mutate an existing playlist    |
-| DELETE | `/api/playlists`              | Delete a playlist                      |
+| DELETE | `/api/playlists`              | Delete a playlist (legacy, requires JSON body) |
+| DELETE | `/api/playlists/{id}`         | Delete a playlist (RESTful)            |
 |   GET  | `/api/playlists`              | List all playlists                     |
 |   GET  | `/api/playlists/{id}`         | Get playlist details                   |
 
@@ -212,9 +213,9 @@ These actions operate on the currently active playlist and don't require an `id`
 
 ---
 
-## DELETE `/api/playlists` — Delete
+## DELETE `/api/playlists` — Delete (Legacy)
 
-Stops the playlist if active, then deletes it.
+Stops the playlist if active, then deletes it. Requires JSON body with playlist ID.
 
 ### Body
 ```json
@@ -224,6 +225,21 @@ Stops the playlist if active, then deletes it.
 ### Responses
 **200 OK (success)** — playlist deleted.
 **200 OK (failed)** — playlist not found error envelope.
+
+---
+
+## DELETE `/api/playlists/{id}` — Delete (RESTful)
+
+Stops the playlist if active, then deletes it. The playlist ID is specified in the URL path.
+
+### Responses
+**200 OK (success)** — playlist deleted.
+**200 OK (failed)** — playlist not found error envelope.
+
+### Example
+```bash
+curl -X DELETE http://localhost:8888/api/playlists/evening-cycle
+```
 
 ---
 
