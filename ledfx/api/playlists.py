@@ -158,11 +158,15 @@ class PlaylistsEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
-            return await self.json_decode_error()
+            return await self.invalid_request(
+                "id required in JSON body, or use DELETE /api/playlists/{id}"
+            )
 
         pid = data.get("id")
         if pid is None:
-            return await self.invalid_request("id required")
+            return await self.invalid_request(
+                "id required in JSON body, or use DELETE /api/playlists/{id}"
+            )
 
         await self._ensure_manager()
         ok = await self._ledfx.playlists.delete(pid)
