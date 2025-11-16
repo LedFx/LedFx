@@ -2,6 +2,18 @@
 
 **Twinkly Squares** are modular LED panel systems that can be arranged in various configurations. LedFx now supports Twinkly Squares devices through their realtime UDP protocol, enabling audio-reactive visualizations on these LED panels.
 
+```{attention}
+**Multiple Device Testing Needed!**
+
+If you have **two or more Twinkly Squares devices** (separate controllers, not just multiple panels on one controller), we need your help! There is a known issue with the underlying xled library where running multiple devices simultaneously may cause "Address already in use" socket errors due to ephemeral port exhaustion.
+
+We're working on a solution, but need real-world testing to validate the fix. If you're willing to test multiple Twinkly devices with LedFx, please:
+- Join the [LedFx Discord](https://discord.gg/xyyHEquZKQ) and mention you have multiple Twinkly devices
+- Report any issues you experience on [GitHub](https://github.com/LedFx/LedFx/issues)
+
+Your feedback will help us ensure rock-solid support for multi-device setups! 🙏
+```
+
 ```{Warning}
 ONLY rectangular configurations are supported, for example 6 panels can be 1x6, 2x3, 3x2 and 6x1
 
