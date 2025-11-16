@@ -1,4 +1,5 @@
 import logging
+import socket
 import threading
 
 import numpy as np
@@ -6,6 +7,7 @@ import sacn
 import voluptuous as vol
 
 from ledfx.devices import NetworkedDevice
+from ledfx.utils import check_if_ip_is_broadcast
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,6 +90,17 @@ class E131Device(NetworkedDevice):
             # Some variables are immutable and must be called here
             self._sacn = sacn.sACNsender(source_name=self.name)
 
+            # Check if the provided IP address is a broadcast address
+            is_broadcast = False
+            if not multicast:
+                is_broadcast = check_if_ip_is_broadcast(
+                    self._config["ip_address"]
+                )
+                if is_broadcast:
+                    _LOGGER.info(
+                        f"Detected broadcast address {self._config['ip_address']} for device {self.config['name']}"
+                    )
+
             for universe in range(
                 self._config["universe"], self._config["universe_end"] + 1
             ):
@@ -100,6 +113,20 @@ class E131Device(NetworkedDevice):
 
             self._sacn.start()
             self._sacn.manual_flush = True
+
+            # Enable broadcast socket option if a broadcast address is detected
+            if is_broadcast:
+                try:
+                    self._sacn._sender_handler.socket._socket.setsockopt(
+                        socket.SOL_SOCKET, socket.SO_BROADCAST, 1
+                    )
+                    _LOGGER.info(
+                        f"Enabled SO_BROADCAST socket option for device {self.config['name']}"
+                    )
+                except OSError as e:
+                    _LOGGER.warning(
+                        f"Failed to enable SO_BROADCAST socket option: {e}"
+                    )
 
             _LOGGER.info(f"sACN sender for {self.config['name']} started.")
             super().activate()
