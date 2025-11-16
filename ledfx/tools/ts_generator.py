@@ -1129,9 +1129,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # DELETE /api/playlists response (id is passed as path parameter)
-    output_ts_string += (
-        "/**\n * Response for DELETE /api/playlists/{id}.\n * @category REST\n */\n"
-    )
+    output_ts_string += "/**\n * Response for DELETE /api/playlists/{id}.\n * @category REST\n */\n"
     output_ts_string += "export interface DeletePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
     output_ts_string += "  payload?: {\n"
@@ -1154,9 +1152,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "  remaining_ms?: number;\n"
     output_ts_string += "}\n\n"
 
- # --- 6.8. Generate Virtual Presets API Response Types ---
+    # --- 6.8. Generate Virtual Presets API Response Types ---
     output_ts_string += "// Virtual Presets API Response Types\n"
-    
+
     # Preset object with active flag
     output_ts_string += "/**\n * Represents a single preset with its configuration and active status.\n * @category Presets\n */\n"
     output_ts_string += "export interface Preset {\n"
@@ -1164,7 +1162,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "  config: EffectConfig;\n"
     output_ts_string += "  active: boolean;\n"
     output_ts_string += "}\n\n"
-    
+
     # GET /api/virtuals/{virtual_id}/presets response
     output_ts_string += "/**\n * Response for GET /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
     output_ts_string += "export interface GetVirtualPresetsApiResponse {\n"
@@ -1175,7 +1173,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "  user_presets: Record<string, Preset>;\n"
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
-    
+
     # PUT /api/virtuals/{virtual_id}/presets request
     output_ts_string += "/**\n * Request body for PUT /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
     output_ts_string += "export interface SetVirtualPresetRequest {\n"
@@ -1183,7 +1181,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "  effect_id: EffectType;\n"
     output_ts_string += '  preset_id: string; // Use "reset" with ledfx_presets to reset to defaults\n'
     output_ts_string += "}\n\n"
-    
+
     # PUT /api/virtuals/{virtual_id}/presets response
     output_ts_string += "/**\n * Response for PUT /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
     output_ts_string += "export interface SetVirtualPresetApiResponse {\n"
@@ -1195,13 +1193,13 @@ def generate_typescript_types() -> str:
     output_ts_string += "  };\n"
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
-    
+
     # POST /api/virtuals/{virtual_id}/presets request
     output_ts_string += "/**\n * Request body for POST /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
     output_ts_string += "export interface CreateVirtualPresetRequest {\n"
     output_ts_string += "  name: string;\n"
     output_ts_string += "}\n\n"
-    
+
     # POST /api/virtuals/{virtual_id}/presets response
     output_ts_string += "/**\n * Response for POST /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
     output_ts_string += "export interface CreateVirtualPresetApiResponse {\n"
@@ -1213,7 +1211,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "  };\n"
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
-    
+
     # DELETE /api/virtuals/{virtual_id}/presets response
     output_ts_string += "/**\n * Response for DELETE /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
     output_ts_string += "export interface DeleteVirtualPresetApiResponse {\n"
@@ -1221,7 +1219,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "  effect: {};\n"
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
-    
+
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
