@@ -1013,18 +1013,13 @@ def generate_typescript_types() -> str:
     output_ts_string += "  scene_payload?: string;\n"
     output_ts_string += "  scene_midiactivate?: string;\n"
     output_ts_string += "  virtuals?: Record<string, SceneVirtualEffect>; // virtual_id -> effect config\n"
+    output_ts_string += "  active?: boolean;\n"
     output_ts_string += "}\n\n"
 
-    output_ts_string += "/**\n * Represents a single Scene with its effect configurations.\n * @category Scenes\n */\n"
+    output_ts_string += "/**\n * Represents a single Scene with its effect configurations including ID and active state.\n * @category Scenes\n */\n"
     output_ts_string += "export interface Scene {\n"
     output_ts_string += "  id: string;\n"
     output_ts_string += "  config: StoredSceneConfig;\n"
-    output_ts_string += "}\n\n"
-
-    output_ts_string += "/**\n * Stored scene plus runtime state that LedFx exposes via the API.\n * @category Scenes\n */\n"
-    output_ts_string += (
-        "export interface SceneState extends StoredSceneConfig {\n"
-    )
     output_ts_string += "  active: boolean;\n"
     output_ts_string += "}\n\n"
 
@@ -1033,7 +1028,7 @@ def generate_typescript_types() -> str:
     )
     output_ts_string += "export interface GetScenesApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
-    output_ts_string += "  scenes: Record<string, SceneState>;\n"
+    output_ts_string += "  scenes: Record<string, StoredSceneConfig>;\n"
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
 
@@ -1133,14 +1128,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
 
-    # DELETE /api/playlists request/response
-    output_ts_string += "/**\n * Request body for DELETE /api/playlists.\n * @category REST\n */\n"
-    output_ts_string += "export interface DeletePlaylistRequest {\n"
-    output_ts_string += "  id: string;\n"
-    output_ts_string += "}\n\n"
-
+    # DELETE /api/playlists response (id is passed as path parameter)
     output_ts_string += (
-        "/**\n * Response for DELETE /api/playlists.\n * @category REST\n */\n"
+        "/**\n * Response for DELETE /api/playlists/{id}.\n * @category REST\n */\n"
     )
     output_ts_string += "export interface DeletePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
@@ -1164,6 +1154,74 @@ def generate_typescript_types() -> str:
     output_ts_string += "  remaining_ms?: number;\n"
     output_ts_string += "}\n\n"
 
+ # --- 6.8. Generate Virtual Presets API Response Types ---
+    output_ts_string += "// Virtual Presets API Response Types\n"
+    
+    # Preset object with active flag
+    output_ts_string += "/**\n * Represents a single preset with its configuration and active status.\n * @category Presets\n */\n"
+    output_ts_string += "export interface Preset {\n"
+    output_ts_string += "  name: string;\n"
+    output_ts_string += "  config: EffectConfig;\n"
+    output_ts_string += "  active: boolean;\n"
+    output_ts_string += "}\n\n"
+    
+    # GET /api/virtuals/{virtual_id}/presets response
+    output_ts_string += "/**\n * Response for GET /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
+    output_ts_string += "export interface GetVirtualPresetsApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  virtual: string;\n"
+    output_ts_string += "  effect: EffectType;\n"
+    output_ts_string += "  ledfx_presets: Record<string, Preset>;\n"
+    output_ts_string += "  user_presets: Record<string, Preset>;\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+    
+    # PUT /api/virtuals/{virtual_id}/presets request
+    output_ts_string += "/**\n * Request body for PUT /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
+    output_ts_string += "export interface SetVirtualPresetRequest {\n"
+    output_ts_string += '  category: "ledfx_presets" | "user_presets";\n'
+    output_ts_string += "  effect_id: EffectType;\n"
+    output_ts_string += '  preset_id: string; // Use "reset" with ledfx_presets to reset to defaults\n'
+    output_ts_string += "}\n\n"
+    
+    # PUT /api/virtuals/{virtual_id}/presets response
+    output_ts_string += "/**\n * Response for PUT /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
+    output_ts_string += "export interface SetVirtualPresetApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  effect: {\n"
+    output_ts_string += "    config: EffectConfig;\n"
+    output_ts_string += "    name: string;\n"
+    output_ts_string += "    type: EffectType;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+    
+    # POST /api/virtuals/{virtual_id}/presets request
+    output_ts_string += "/**\n * Request body for POST /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
+    output_ts_string += "export interface CreateVirtualPresetRequest {\n"
+    output_ts_string += "  name: string;\n"
+    output_ts_string += "}\n\n"
+    
+    # POST /api/virtuals/{virtual_id}/presets response
+    output_ts_string += "/**\n * Response for POST /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
+    output_ts_string += "export interface CreateVirtualPresetApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  preset: {\n"
+    output_ts_string += "    id: string;\n"
+    output_ts_string += "    name: string;\n"
+    output_ts_string += "    config: EffectConfig;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+    
+    # DELETE /api/virtuals/{virtual_id}/presets response
+    output_ts_string += "/**\n * Response for DELETE /api/virtuals/{virtual_id}/presets.\n * @category REST\n */\n"
+    output_ts_string += "export interface DeleteVirtualPresetApiResponse {\n"
+    output_ts_string += '  status: "success" | "error";\n'
+    output_ts_string += "  effect: {};\n"
+    output_ts_string += "  message?: string;\n"
+    output_ts_string += "}\n\n"
+    
     # --- 7. Generate Convenience Type Aliases ---
 
     output_ts_string += "// Convenience Type Aliases using Universal Configs\n"
