@@ -2,7 +2,6 @@
 Unit tests for E131 device broadcast address detection
 """
 
-import socket
 import unittest
 from unittest.mock import MagicMock, Mock, patch
 
@@ -31,18 +30,21 @@ class TestE131BroadcastDetection(unittest.TestCase):
         }
 
     @patch("ledfx.devices.e131.check_if_ip_is_broadcast")
+    @patch("ledfx.devices.e131.BroadcastAwareSenderSocket")
     @patch("ledfx.devices.e131.sacn")
     def test_broadcast_address_detection_enabled(
-        self, mock_sacn, mock_check_broadcast
+        self, mock_sacn, mock_broadcast_socket_class, mock_check_broadcast
     ):
-        """Test that SO_BROADCAST is enabled when broadcast address is detected"""
+        """Test that custom broadcast socket is used when broadcast address is detected"""
         # Setup
         mock_check_broadcast.return_value = True
 
-        # Create mock sender with proper structure
+        # Create mock for the custom socket instance
+        mock_custom_socket = Mock()
+        mock_broadcast_socket_class.return_value = mock_custom_socket
+
+        # Create mock sender
         mock_sender = MagicMock()
-        mock_socket = Mock()
-        mock_sender._sender_handler.socket._socket = mock_socket
         mock_sacn.sACNsender.return_value = mock_sender
 
         # Create device and initialize destination
@@ -53,24 +55,31 @@ class TestE131BroadcastDetection(unittest.TestCase):
         # Verify broadcast check was called
         mock_check_broadcast.assert_called_once_with("192.168.1.255")
 
-        # Verify SO_BROADCAST socket option was set
-        mock_socket.setsockopt.assert_called_once_with(
-            socket.SOL_SOCKET, socket.SO_BROADCAST, 1
+        # Verify custom socket was created
+        mock_broadcast_socket_class.assert_called_once()
+
+        # Verify broadcast address was registered with the socket
+        mock_custom_socket.add_broadcast_address.assert_called_once_with(
+            "192.168.1.255"
         )
+
+        # Verify sACNsender was created with the custom socket
+        mock_sacn.sACNsender.assert_called_once()
+        call_kwargs = mock_sacn.sACNsender.call_args[1]
+        self.assertIn("socket", call_kwargs)
+        self.assertEqual(call_kwargs["socket"], mock_custom_socket)
 
     @patch("ledfx.devices.e131.check_if_ip_is_broadcast")
     @patch("ledfx.devices.e131.sacn")
     def test_broadcast_address_detection_disabled(
         self, mock_sacn, mock_check_broadcast
     ):
-        """Test that SO_BROADCAST is not enabled for non-broadcast addresses"""
+        """Test that standard socket is used for non-broadcast addresses"""
         # Setup
         mock_check_broadcast.return_value = False
 
-        # Create mock sender with proper structure
+        # Create mock sender
         mock_sender = MagicMock()
-        mock_socket = Mock()
-        mock_sender._sender_handler.socket._socket = mock_socket
         mock_sacn.sACNsender.return_value = mock_sender
 
         # Create device with regular IP and activate
@@ -83,8 +92,10 @@ class TestE131BroadcastDetection(unittest.TestCase):
         # Verify broadcast check was called
         mock_check_broadcast.assert_called_once_with("192.168.1.100")
 
-        # Verify SO_BROADCAST socket option was NOT set
-        mock_socket.setsockopt.assert_not_called()
+        # Verify sACNsender was created without custom socket
+        mock_sacn.sACNsender.assert_called_once()
+        call_kwargs = mock_sacn.sACNsender.call_args[1]
+        self.assertNotIn("socket", call_kwargs)
 
     @patch("ledfx.devices.e131.check_if_ip_is_broadcast")
     @patch("ledfx.devices.e131.sacn")
@@ -93,10 +104,8 @@ class TestE131BroadcastDetection(unittest.TestCase):
     ):
         """Test that broadcast check is skipped when using multicast mode"""
         # Setup
-        # Create mock sender with proper structure
+        # Create mock sender
         mock_sender = MagicMock()
-        mock_socket = Mock()
-        mock_sender._sender_handler.socket._socket = mock_socket
         mock_sacn.sACNsender.return_value = mock_sender
 
         # Create device with multicast and activate
@@ -109,37 +118,10 @@ class TestE131BroadcastDetection(unittest.TestCase):
         # Verify broadcast check was NOT called
         mock_check_broadcast.assert_not_called()
 
-        # Verify SO_BROADCAST socket option was NOT set
-        mock_socket.setsockopt.assert_not_called()
-
-    @patch("ledfx.devices.e131.check_if_ip_is_broadcast")
-    @patch("ledfx.devices.e131.sacn")
-    def test_broadcast_socket_option_error_handling(
-        self, mock_sacn, mock_check_broadcast
-    ):
-        """Test that socket option errors are handled gracefully"""
-        # Setup
-        mock_check_broadcast.return_value = True
-
-        # Create mock sender with proper structure
-        mock_sender = MagicMock()
-        mock_socket = Mock()
-        mock_socket.setsockopt.side_effect = OSError("Socket error")
-        mock_sender._sender_handler.socket._socket = mock_socket
-        mock_sacn.sACNsender.return_value = mock_sender
-
-        # Create device and activate - should not raise exception
-        device = E131Device(self.ledfx_mock, self.base_config)
-        device._destination = "192.168.1.255"
-        device.activate()
-
-        # Verify broadcast check was called
-        mock_check_broadcast.assert_called_once_with("192.168.1.255")
-
-        # Verify SO_BROADCAST socket option was attempted
-        mock_socket.setsockopt.assert_called_once_with(
-            socket.SOL_SOCKET, socket.SO_BROADCAST, 1
-        )
+        # Verify sACNsender was created without custom socket
+        mock_sacn.sACNsender.assert_called_once()
+        call_kwargs = mock_sacn.sACNsender.call_args[1]
+        self.assertNotIn("socket", call_kwargs)
 
 
 if __name__ == "__main__":

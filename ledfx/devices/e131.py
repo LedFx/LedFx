@@ -12,6 +12,45 @@ from ledfx.utils import check_if_ip_is_broadcast
 _LOGGER = logging.getLogger(__name__)
 
 
+class BroadcastAwareSenderSocket(
+    sacn.sending.sender_socket_udp.SenderSocketUDP
+):
+    """
+    Custom sACN socket that automatically enables SO_BROADCAST when
+    sending to broadcast addresses. Extends the standard UDP sender socket.
+    """
+
+    def __init__(self, listener, bind_address: str, bind_port: int, fps: int):
+        super().__init__(listener, bind_address, bind_port, fps)
+        self._broadcast_addresses = set()
+
+    def add_broadcast_address(self, address: str):
+        """Register an address as a broadcast address"""
+        self._broadcast_addresses.add(address)
+
+    def send_unicast(self, data, destination: str) -> None:
+        """
+        Override send_unicast to enable SO_BROADCAST when sending to
+        registered broadcast addresses
+        """
+        if destination in self._broadcast_addresses:
+            # Enable SO_BROADCAST for this send operation
+            # Note: Accessing self._socket here is acceptable as we're in a subclass
+            # This follows the same pattern as send_multicast and send_broadcast
+            # in the parent class
+            try:
+                self._socket.setsockopt(
+                    socket.SOL_SOCKET, socket.SO_BROADCAST, 1
+                )
+            except OSError as e:
+                self._logger.warning(
+                    f"Failed to enable SO_BROADCAST for {destination}: {e}"
+                )
+
+        # Call parent's send_unicast
+        super().send_unicast(data, destination)
+
+
 class E131Device(NetworkedDevice):
     """E1.31 device support"""
 
@@ -86,12 +125,9 @@ class E131Device(NetworkedDevice):
                     f"sACN sender already started for device {self.id}"
                 )
 
-            # Configure sACN and start the dedicated thread to flush the buffer
-            # Some variables are immutable and must be called here
-            self._sacn = sacn.sACNsender(source_name=self.name)
-
             # Check if the provided IP address is a broadcast address
             is_broadcast = False
+            custom_socket = None
             if not multicast:
                 is_broadcast = check_if_ip_is_broadcast(
                     self._config["ip_address"]
@@ -100,6 +136,27 @@ class E131Device(NetworkedDevice):
                     _LOGGER.info(
                         f"Detected broadcast address {self._config['ip_address']} for device {self.config['name']}"
                     )
+                    # Create a custom socket that will handle broadcast
+                    # We pass this to sACNsender via its public socket parameter
+                    custom_socket = BroadcastAwareSenderSocket(
+                        listener=None,  # Will be set by sACNsender
+                        bind_address="0.0.0.0",
+                        bind_port=5568,
+                        fps=self._config.get("refresh_rate", 30),
+                    )
+                    custom_socket.add_broadcast_address(
+                        self._config["ip_address"]
+                    )
+
+            # Configure sACN and start the dedicated thread to flush the buffer
+            # Some variables are immutable and must be called here
+            # If we detected a broadcast address, pass our custom socket
+            if custom_socket:
+                self._sacn = sacn.sACNsender(
+                    source_name=self.name, socket=custom_socket
+                )
+            else:
+                self._sacn = sacn.sACNsender(source_name=self.name)
 
             for universe in range(
                 self._config["universe"], self._config["universe_end"] + 1
@@ -114,19 +171,10 @@ class E131Device(NetworkedDevice):
             self._sacn.start()
             self._sacn.manual_flush = True
 
-            # Enable broadcast socket option if a broadcast address is detected
             if is_broadcast:
-                try:
-                    self._sacn._sender_handler.socket._socket.setsockopt(
-                        socket.SOL_SOCKET, socket.SO_BROADCAST, 1
-                    )
-                    _LOGGER.info(
-                        f"Enabled SO_BROADCAST socket option for device {self.config['name']}"
-                    )
-                except OSError as e:
-                    _LOGGER.warning(
-                        f"Failed to enable SO_BROADCAST socket option: {e}"
-                    )
+                _LOGGER.info(
+                    f"Enabled broadcast mode for device {self.config['name']}"
+                )
 
             _LOGGER.info(f"sACN sender for {self.config['name']} started.")
             super().activate()
