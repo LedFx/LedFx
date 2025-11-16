@@ -81,5 +81,3 @@ These settings only apply when FADE OUT is non-zero
 
 - **Background Color**: Sets the color that the waterfall fades toward, default is Black
 - **Background Brightness**: Controls the brightness of the background, default is 1.0
-
----

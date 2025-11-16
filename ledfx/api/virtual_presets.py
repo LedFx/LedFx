@@ -18,6 +18,31 @@ _LOGGER = logging.getLogger(__name__)
 class VirtualPresetsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/presets"
 
+    def _add_active_flags(self, presets_dict, active_effect_config):
+        """
+        Add 'active' flag to each preset based on whether it matches the active effect config.
+
+        Args:
+            presets_dict: Dictionary of presets to annotate
+            active_effect_config: Config of the currently active effect
+
+        Returns:
+            Dictionary with each preset annotated with 'active' boolean
+        """
+        annotated_presets = {}
+        for preset_id, preset_data in presets_dict.items():
+            preset_with_flag = dict(preset_data)
+            preset_config = preset_data.get("config", {})
+            # Compare configs - both must be dicts and equal
+            preset_with_flag["active"] = (
+                preset_config == active_effect_config
+                if isinstance(preset_config, dict)
+                and isinstance(active_effect_config, dict)
+                else False
+            )
+            annotated_presets[preset_id] = preset_with_flag
+        return annotated_presets
+
     async def get(self, virtual_id) -> web.Response:
         """
         Get presets for active effect of a virtual
@@ -51,12 +76,21 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         custom = inject_missing_default_keys(custom, default)
 
+        # Add active flags to presets based on current effect config
+        active_effect_config = virtual.active_effect.config
+        default_with_active = self._add_active_flags(
+            default, active_effect_config
+        )
+        custom_with_active = self._add_active_flags(
+            custom, active_effect_config
+        )
+
         response = {
             "status": "success",
             "virtual": virtual_id,
             "effect": effect_id,
-            "ledfx_presets": default,
-            "user_presets": custom,
+            "ledfx_presets": default_with_active,
+            "user_presets": custom_with_active,
         }
         return await self.bare_request_success(response)
 

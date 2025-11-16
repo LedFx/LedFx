@@ -747,7 +747,50 @@ configs) with the matching *virtual_id* as JSON
 
 **GET**
 
-Get preset effect configs for active effect of a virtual
+Get preset effect configs for active effect of a virtual. The response includes an `active` flag for each preset that returns `true` if the preset's configuration exactly matches the virtual's currently active effect configuration. This allows clients to easily identify which preset (if any) is currently being displayed on the virtual.
+
+Example response for a virtual running the `singleColor` effect with the "Blue" preset active:
+
+``` json
+{
+  "status": "success",
+  "virtual": "my-virtual",
+  "effect": "singleColor",
+  "ledfx_presets": {
+    "blue": {
+      "name": "Blue",
+      "config": {
+        "color": "#0000ff",
+        "brightness": 1,
+        // ... additional effect config parameters
+      },
+      "active": true
+    },
+    "green": {
+      "name": "Green",
+      "config": {
+        "color": "#00ff00",
+        "brightness": 1,
+        // ... additional effect config parameters
+      },
+      "active": false
+    }
+  },
+  "user_presets": {
+    "my-custom-color": {
+      "name": "My Custom Color",
+      "config": {
+        "color": "#ff00ff",
+        "brightness": 1,
+        // ... additional effect config parameters
+      },
+      "active": false
+    }
+  }
+}
+```
+
+In this example, the "Blue" preset is marked `active: true` because its configuration matches what's currently playing on the virtual. The other presets are marked `active: false`.
 
 **PUT**
 
