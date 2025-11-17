@@ -1714,7 +1714,9 @@ def find_matching_preset(
         return None, None
 
     # Check ledfx_presets first
-    ledfx_defaults = generate_defaults(ledfx_presets, ledfx_effects, effect_type)
+    ledfx_defaults = generate_defaults(
+        ledfx_presets, ledfx_effects, effect_type
+    )
     for preset_id, preset_data in ledfx_defaults.items():
         preset_config = preset_data.get("config", {})
         if configs_match(preset_config, effect_config):
