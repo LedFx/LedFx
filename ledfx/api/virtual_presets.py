@@ -4,9 +4,8 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.config import configs_match, save_config
 from ledfx.utils import (
-    configs_match,
     generate_default_config,
     generate_defaults,
     generate_id,
