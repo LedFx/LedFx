@@ -173,3 +173,145 @@ def test_add_active_flags_value_type_sensitivity(preset_endpoint):
 
     assert result["preset1"]["active"] is False
     assert result["preset2"]["active"] is True
+
+
+def test_add_active_flags_ignores_advanced_key(preset_endpoint):
+    """Test that the 'advanced' key is ignored when comparing configs"""
+    presets = {
+        "preset1": {
+            "name": "Preset One",
+            "config": {"speed": 2, "color": "red", "advanced": False},
+        },
+        "preset2": {
+            "name": "Preset Two",
+            "config": {"speed": 2, "color": "red", "advanced": True},
+        },
+        "preset3": {
+            "name": "Preset Three",
+            "config": {"speed": 2, "color": "red"},  # No advanced key
+        },
+    }
+    active_config = {"speed": 2, "color": "red", "advanced": True}
+
+    result = preset_endpoint._add_active_flags(presets, active_config)
+
+    # All presets should be active since 'advanced' is ignored
+    assert result["preset1"]["active"] is True
+    assert result["preset2"]["active"] is True
+    assert result["preset3"]["active"] is True
+
+
+def test_add_active_flags_advanced_only_in_preset(preset_endpoint):
+    """Test when 'advanced' key exists only in preset config"""
+    presets = {
+        "preset1": {
+            "name": "Preset One",
+            "config": {"speed": 2, "color": "red", "advanced": False},
+        },
+    }
+    active_config = {"speed": 2, "color": "red"}  # No advanced key
+
+    result = preset_endpoint._add_active_flags(presets, active_config)
+
+    # Should match since 'advanced' is ignored
+    assert result["preset1"]["active"] is True
+
+
+def test_add_active_flags_advanced_only_in_active(preset_endpoint):
+    """Test when 'advanced' key exists only in active effect config"""
+    presets = {
+        "preset1": {
+            "name": "Preset One",
+            "config": {"speed": 2, "color": "red"},  # No advanced key
+        },
+    }
+    active_config = {"speed": 2, "color": "red", "advanced": True}
+
+    result = preset_endpoint._add_active_flags(presets, active_config)
+
+    # Should match since 'advanced' is ignored
+    assert result["preset1"]["active"] is True
+
+
+def test_add_active_flags_advanced_ignored_but_other_mismatch(preset_endpoint):
+    """Test that 'advanced' is ignored but other mismatches are detected"""
+    presets = {
+        "preset1": {
+            "name": "Preset One",
+            "config": {"speed": 2, "color": "red", "advanced": False},
+        },
+        "preset2": {
+            "name": "Preset Two",
+            "config": {"speed": 3, "color": "red", "advanced": True},
+        },
+    }
+    active_config = {"speed": 2, "color": "red", "advanced": True}
+
+    result = preset_endpoint._add_active_flags(presets, active_config)
+
+    # preset1 should match (speed matches, advanced ignored)
+    assert result["preset1"]["active"] is True
+    # preset2 should not match (speed differs, even though advanced is ignored)
+    assert result["preset2"]["active"] is False
+
+
+def test_add_active_flags_ignores_diag_key(preset_endpoint):
+    """Test that the 'diag' key is ignored when comparing configs"""
+    presets = {
+        "preset1": {
+            "name": "Preset One",
+            "config": {"speed": 2, "color": "red", "diag": False},
+        },
+        "preset2": {
+            "name": "Preset Two",
+            "config": {"speed": 2, "color": "red", "diag": True},
+        },
+        "preset3": {
+            "name": "Preset Three",
+            "config": {"speed": 2, "color": "red"},  # No diag key
+        },
+    }
+    active_config = {"speed": 2, "color": "red", "diag": True}
+
+    result = preset_endpoint._add_active_flags(presets, active_config)
+
+    # All presets should be active since 'diag' is ignored
+    assert result["preset1"]["active"] is True
+    assert result["preset2"]["active"] is True
+    assert result["preset3"]["active"] is True
+
+
+def test_add_active_flags_ignores_both_advanced_and_diag(preset_endpoint):
+    """Test that both 'advanced' and 'diag' keys are ignored simultaneously"""
+    presets = {
+        "preset1": {
+            "name": "Preset One",
+            "config": {
+                "speed": 2,
+                "color": "red",
+                "advanced": False,
+                "diag": False,
+            },
+        },
+        "preset2": {
+            "name": "Preset Two",
+            "config": {
+                "speed": 2,
+                "color": "red",
+                "advanced": True,
+                "diag": True,
+            },
+        },
+    }
+    active_config = {
+        "speed": 2,
+        "color": "red",
+        "advanced": False,
+        "diag": True,
+    }
+
+    result = preset_endpoint._add_active_flags(presets, active_config)
+
+    # Both should match since advanced and diag are ignored
+    assert result["preset1"]["active"] is True
+    assert result["preset2"]["active"] is True
