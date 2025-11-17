@@ -6,6 +6,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.utils import (
+    configs_match,
     generate_default_config,
     generate_defaults,
     generate_id,
@@ -33,30 +34,9 @@ class VirtualPresetsEndpoint(RestEndpoint):
         for preset_id, preset_data in presets_dict.items():
             preset_with_flag = dict(preset_data)
             preset_config = preset_data.get("config", {})
-
-            # Compare configs - both must be dicts and equal
-            # Exclude "advanced" and "diag" keys as they're UI-only and don't affect the effect
-            if isinstance(preset_config, dict) and isinstance(
-                active_effect_config, dict
-            ):
-                # Create copies without the ignored keys for comparison
-                ignored_keys = {"advanced", "diag"}
-                preset_config_filtered = {
-                    k: v
-                    for k, v in preset_config.items()
-                    if k not in ignored_keys
-                }
-                active_config_filtered = {
-                    k: v
-                    for k, v in active_effect_config.items()
-                    if k not in ignored_keys
-                }
-                preset_with_flag["active"] = (
-                    preset_config_filtered == active_config_filtered
-                )
-            else:
-                preset_with_flag["active"] = False
-
+            preset_with_flag["active"] = configs_match(
+                preset_config, active_effect_config
+            )
             annotated_presets[preset_id] = preset_with_flag
         return annotated_presets
 
