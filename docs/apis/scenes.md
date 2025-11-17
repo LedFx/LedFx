@@ -215,13 +215,18 @@ Preset matching ignores UI-only keys like `advanced` and `diag` when comparing c
 
 ### Error Responses
 
-**404 Not Found** - Scene does not exist:
+**200 OK with error payload** - Scene does not exist:
 ```json
 {
   "status": "failed",
-  "reason": "Scene {scene_id} does not exist"
+  "payload": {
+    "type": "error",
+    "reason": "Scene {scene_id} does not exist"
+  }
 }
 ```
+
+Note: Errors return 200 status code for snackbar compatibility in the UI.
 
 ---
 
@@ -376,13 +381,18 @@ Delete a scene by ID.
 
 ### Error Responses
 
-**400 Bad Request** - Scene does not exist:
+**200 OK with error payload** - Scene does not exist:
 ```json
 {
   "status": "failed",
-  "reason": "Scene {scene_id} does not exist"
+  "payload": {
+    "type": "error",
+    "reason": "Scene {scene_id} does not exist"
+  }
 }
 ```
+
+Note: Errors return 200 status code for snackbar compatibility in the UI.
 
 ---
 
