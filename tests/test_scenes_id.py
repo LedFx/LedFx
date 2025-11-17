@@ -17,7 +17,7 @@ class _DummyEffectClass:
 
 
 class _DummyEffects:
-    def get_class(self, effect_id):
+    def get_class(self, _effect_id):
         return _DummyEffectClass
 
 
