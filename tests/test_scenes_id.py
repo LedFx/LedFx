@@ -78,7 +78,9 @@ async def test_get_scene_returns_error_for_nonexistent_scene():
     endpoint = SceneEndpoint(ledfx)
 
     response = await endpoint.get("nonexistent")
-    assert response.status == 400
+    assert response.status == 200
+    data = json.loads(response.body.decode())
+    assert data["status"] == "failed"
 
 
 @pytest.mark.asyncio
