@@ -2,7 +2,7 @@ import logging
 
 import voluptuous as vol
 
-from ledfx.config import save_config
+from ledfx.config import configs_match, save_config
 from ledfx.events import SceneActivatedEvent, SceneDeletedEvent
 from ledfx.utils import generate_id
 
@@ -194,7 +194,7 @@ class Scenes:
 
             current_config = getattr(current_effect, "config", None) or {}
             expected_config = expected_effect.get("config") or {}
-            if current_config != expected_config:
+            if not configs_match(current_config, expected_config):
                 return False
 
         return True
