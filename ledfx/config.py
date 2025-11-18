@@ -53,7 +53,7 @@ VISUALISATION_CONFIG_KEYS = [
     "visualisation_maxlen",
 ]
 
-UI_ONLY_KEYS_IGNORED_FOR_CONFIG_COMPARISION = {"advanced", "diag"}
+UI_ONLY_KEYS_IGNORED_FOR_CONFIG_COMPARISON = ["advanced", "diag"]
 
 
 # Transmission types for pixel visualisation on frontend
@@ -934,7 +934,7 @@ def filter_config_for_comparison(config):
     return {
         k: v
         for k, v in config.items()
-        if k not in UI_ONLY_KEYS_IGNORED_FOR_CONFIG_COMPARISION
+        if k not in UI_ONLY_KEYS_IGNORED_FOR_CONFIG_COMPARISON
     }
 
 
