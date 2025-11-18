@@ -2,8 +2,9 @@ import logging
 import queue
 import threading
 import time
-from collections import deque
+from collections import deque, defaultdict
 from functools import cached_property, lru_cache
+from time import perf_counter
 
 import aubio
 import numpy as np
@@ -846,7 +847,11 @@ class AudioInputSource:
         """
         Process all required FFT configurations.
         Groups by hop size for efficient resampling, then computes each unique FFT.
+        Includes dev-mode timing instrumentation for performance monitoring.
         """
+        # Check if dev mode is enabled for profiling
+        dev_enabled = hasattr(self._ledfx, 'dev_enabled') and self._ledfx.dev_enabled()
+        
         if not volume_above_threshold:
             # Set all frequency domains to null when below threshold
             for config in self._required_fft_configs:
@@ -899,10 +904,19 @@ class AudioInputSource:
                             processed = self.pre_emphasis(audio_sample)
                         
                         # Compute FFT using the appropriate phase vocoder
+                        # Wrap with timing if dev mode enabled
                         if config in self._phase_vocoders:
-                            self._frequency_domains[config] = (
-                                self._phase_vocoders[config](processed)
-                            )
+                            if dev_enabled:
+                                t0 = perf_counter()
+                                self._frequency_domains[config] = (
+                                    self._phase_vocoders[config](processed)
+                                )
+                                elapsed_us = (perf_counter() - t0) * 1_000_000
+                                self._fft_timings[config].append(elapsed_us)
+                            else:
+                                self._frequency_domains[config] = (
+                                    self._phase_vocoders[config](processed)
+                                )
                             self._fft_computed[config] = True
                     else:
                         # Use null if audio not available
@@ -910,6 +924,14 @@ class AudioInputSource:
                             self._frequency_domain_nulls[config]
                         )
                         self._fft_computed[config] = True
+        
+        # Log FFT performance stats periodically in dev mode
+        if dev_enabled and hasattr(self, '_fft_frame_counter'):
+            self._fft_frame_counter += 1
+            # Log every 120 frames (1 second at 120 FPS)
+            if self._fft_frame_counter >= 120:
+                self._log_fft_performance_stats()
+                self._fft_frame_counter = 0
 
     def audio_sample(self, raw=False):
         """Returns the raw audio sample"""
@@ -1257,6 +1279,11 @@ class AudioAnalysisSource(AudioInputSource):
 
         self.beat_prev_time = time.time()
         self.beat_power_history = deque(maxlen=self.beat_power_history_len)
+        
+        # Dev-mode FFT profiling infrastructure
+        self._fft_timings = defaultdict(lambda: deque(maxlen=120))
+        self._fft_frame_counter = 0
+        self._last_fft_stats_log_time = time.time()
 
     def update_config(self, config):
         validated_config = self.CONFIG_SCHEMA(config)
@@ -1421,6 +1448,83 @@ class AudioAnalysisSource(AudioInputSource):
                 _LOGGER.debug(
                     f"FFT config ({fft_size}, {hop_size}) used by: {analyses[0]}"
                 )
+    
+    def _log_fft_performance_stats(self):
+        """
+        Log FFT performance statistics (dev mode only).
+        Called every 120 frames (~1 second at 120 FPS).
+        """
+        if not hasattr(self, '_fft_timings') or not self._fft_timings:
+            return
+        
+        # Build map of which analyses use which FFT configs
+        config_usage_map = {}
+        
+        if hasattr(self, '_onset_fft_config'):
+            config = self._onset_fft_config
+            if config not in config_usage_map:
+                config_usage_map[config] = []
+            config_usage_map[config].append('onset')
+        
+        if hasattr(self, '_tempo_fft_config'):
+            config = self._tempo_fft_config
+            if config not in config_usage_map:
+                config_usage_map[config] = []
+            config_usage_map[config].append('tempo')
+        
+        if hasattr(self, '_pitch_fft_config'):
+            config = self._pitch_fft_config
+            if config not in config_usage_map:
+                config_usage_map[config] = []
+            config_usage_map[config].append('pitch')
+        
+        # Add melbank configs
+        if hasattr(self.melbanks, 'get_required_fft_configs'):
+            melbank_configs = list(self.melbanks.get_required_fft_configs())
+            for i, config in enumerate(melbank_configs):
+                if config not in config_usage_map:
+                    config_usage_map[config] = []
+                config_usage_map[config].append(f'melbank_{i}')
+        
+        # Calculate and log stats for each FFT config
+        total_time_us = 0
+        stats_lines = []
+        
+        for config, timings in sorted(self._fft_timings.items()):
+            if len(timings) == 0:
+                continue
+            
+            fft_size, hop_size = config
+            timings_array = np.array(timings)
+            
+            mean_us = np.mean(timings_array)
+            p95_us = np.percentile(timings_array, 95)
+            max_us = np.max(timings_array)
+            
+            # Get usage info
+            usage = config_usage_map.get(config, ['unknown'])
+            
+            stats_lines.append(
+                f"  ({fft_size},{hop_size}): mean={mean_us:.1f}µs p95={p95_us:.1f}µs max={max_us:.1f}µs "
+                f"shared_by=[{','.join(usage)}]"
+            )
+            
+            total_time_us += mean_us
+        
+        # Calculate frame budget percentage (at 120 FPS, frame budget is ~8.3ms)
+        frame_budget_ms = 1000.0 / self._analysis_fps if hasattr(self, '_analysis_fps') else 8.33
+        total_time_ms = total_time_us / 1000.0
+        budget_pct = (total_time_ms / frame_budget_ms) * 100.0
+        
+        # Log performance summary
+        _LOGGER.info(
+            "FFT performance (last 120 frames):\n%s\n  Total: %.2fms (%.1f%% of %.2fms frame budget at %d FPS)",
+            '\n'.join(stats_lines),
+            total_time_ms,
+            budget_pct,
+            frame_budget_ms,
+            self._analysis_fps if hasattr(self, '_analysis_fps') else 120,
+        )
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
