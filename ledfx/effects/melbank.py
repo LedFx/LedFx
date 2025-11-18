@@ -100,7 +100,7 @@ class Melbank:
         self._config = self.CONFIG_SCHEMA(config)
         self.sample_rate = sample_rate
         # Get the actual FFT size from the audio source
-        self._fft_size = getattr(audio, 'fft_size', FFT_SIZE)
+        self._fft_size = getattr(audio, "fft_size", FFT_SIZE)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
         # a=0.4  -> roughly equivalent to filter_banks ** 2.0
@@ -447,7 +447,9 @@ class Melbanks:
     def __init__(self, ledfx, audio, config, sample_rate=None):
         self._ledfx = ledfx
         self._audio = audio
-        self.sample_rate = sample_rate or getattr(audio, "stream_sample_rate", DEFAULT_INPUT_SAMPLE_RATE)
+        self.sample_rate = sample_rate or getattr(
+            audio, "stream_sample_rate", DEFAULT_INPUT_SAMPLE_RATE
+        )
         self.update_config(config)
         self.dev_enabled = self._ledfx.dev_enabled()
 
@@ -474,7 +476,9 @@ class Melbanks:
                     },
                 }
                 melbank_id = generate_id(melbank_config["name"])
-                melbank = Melbank(self._audio, melbank_config, self.sample_rate)
+                melbank = Melbank(
+                    self._audio, melbank_config, self.sample_rate
+                )
                 self.melbank_processors.append(melbank)
                 self.melbank_collection.append(
                     {"id": melbank_id, "config": melbank_config}
@@ -494,7 +498,9 @@ class Melbanks:
                 melbank_config["coeffs_type"] = self.melbanks_config[
                     "coeffs_type"
                 ]
-                melbank = Melbank(self._audio, melbank_config, self.sample_rate)
+                melbank = Melbank(
+                    self._audio, melbank_config, self.sample_rate
+                )
                 self.melbank_processors.append(melbank)
                 _LOGGER.debug(f"Melbank {melbank_id} loaded from config.")
 
