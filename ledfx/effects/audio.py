@@ -27,6 +27,75 @@ _LOGGER = logging.getLogger(__name__)
 MIN_MIDI = 21
 MAX_MIDI = 108
 
+# Multi-FFT Analysis Presets
+# Each preset defines (fft_size, hop_size) tuples for different analysis types
+# Format: {preset_name: {analysis_type: (fft_size, hop_size)}}
+FFT_PRESETS = {
+    "balanced": {
+        "onset": (1024, 256),
+        "tempo": (2048, 367),
+        "pitch": (4096, 367),
+        "melbanks": [(1024, 256), (2048, 367), (4096, 367)],
+    },
+    "low_latency": {
+        "onset": (512, 128),
+        "tempo": (1024, 183),
+        "pitch": (2048, 183),
+        "melbanks": [(512, 128), (1024, 183), (2048, 183)],
+    },
+    "high_precision": {
+        "onset": (2048, 512),
+        "tempo": (4096, 734),
+        "pitch": (8192, 734),
+        "melbanks": [(2048, 512), (4096, 734), (8192, 734)],
+    },
+}
+
+
+def _validate_fft_hop_pair(fft_size, hop_size, name="FFT config"):
+    """
+    Validate FFT size and hop size parameters.
+    
+    Args:
+        fft_size: FFT window size, must be a positive power of 2
+        hop_size: Hop size (samples per frame), must be positive and <= fft_size
+        name: Name of the configuration for error messages
+        
+    Returns:
+        tuple: (fft_size, hop_size) if valid
+        
+    Raises:
+        vol.Invalid: If validation fails
+    """
+    if fft_size <= 0 or (fft_size & (fft_size - 1)) != 0:
+        raise vol.Invalid(
+            f"{name}: fft_size must be a positive power of 2, got {fft_size}"
+        )
+    if hop_size <= 0:
+        raise vol.Invalid(
+            f"{name}: hop_size must be positive, got {hop_size}"
+        )
+    if hop_size > fft_size:
+        raise vol.Invalid(
+            f"{name}: hop_size ({hop_size}) must be <= fft_size ({fft_size})"
+        )
+    return (fft_size, hop_size)
+
+
+# Validate all presets on module load
+for preset_name, preset_config in FFT_PRESETS.items():
+    for analysis_type, config in preset_config.items():
+        if analysis_type == "melbanks":
+            for i, (fft, hop) in enumerate(config):
+                _validate_fft_hop_pair(
+                    fft, hop, f"Preset '{preset_name}' melbank {i}"
+                )
+        else:
+            fft, hop = config
+            _validate_fft_hop_pair(
+                fft, hop, f"Preset '{preset_name}' {analysis_type}"
+            )
+
 
 class AudioInputSource:
     _audio_stream_active = False
@@ -158,12 +227,23 @@ class AudioInputSource:
         default_device_index = AudioInputSource.default_device_index()
         AudioInputSource.valid_device_indexes()
         AudioInputSource.input_devices()
+        
+        def validate_fft_hop_override(value):
+            """Validate user-provided (fft_size, hop_size) tuple override."""
+            if not isinstance(value, (list, tuple)) or len(value) != 2:
+                raise vol.Invalid(
+                    "FFT override must be a tuple/list of [fft_size, hop_size]"
+                )
+            fft_size, hop_size = int(value[0]), int(value[1])
+            return _validate_fft_hop_pair(fft_size, hop_size, "FFT override")
+        
         return vol.Schema(
             {
                 vol.Optional("analysis_fps", default=120): int,
                 vol.Optional(
                     "input_sample_rate", default=DEFAULT_INPUT_SAMPLE_RATE
                 ): int,
+                # Legacy single FFT size (migrated to preset automatically)
                 vol.Optional("fft_size", default=FFT_SIZE): int,
                 vol.Optional("min_volume", default=0.2): vol.All(
                     vol.Coerce(float), vol.Range(min=0.0, max=1.0)
@@ -176,6 +256,29 @@ class AudioInputSource:
                     default=0,
                     description="Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
                 ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5000)),
+                # Multi-FFT configuration
+                vol.Optional(
+                    "fft_preset",
+                    default="balanced",
+                    description="Preset configuration for FFT sizes across analysis types. Options: balanced (default), low_latency, high_precision.",
+                ): vol.In(list(FFT_PRESETS.keys())),
+                vol.Optional(
+                    "fft_tempo_override",
+                    description="Override tempo analysis FFT config as [fft_size, hop_size]. Example: [2048, 367]",
+                ): validate_fft_hop_override,
+                vol.Optional(
+                    "fft_onset_override",
+                    description="Override onset detection FFT config as [fft_size, hop_size]. Example: [1024, 256]",
+                ): validate_fft_hop_override,
+                vol.Optional(
+                    "fft_pitch_override",
+                    description="Override pitch detection FFT config as [fft_size, hop_size]. Example: [4096, 367]",
+                ): validate_fft_hop_override,
+                vol.Optional(
+                    "melbank_fft_mode",
+                    default="tiered",
+                    description="Method for assigning FFT sizes to melbanks. 'tiered' uses preset configs, 'formula' calculates based on max frequency.",
+                ): vol.In(["tiered", "formula"]),
             },
             extra=vol.ALLOW_EXTRA,
         )
@@ -222,6 +325,17 @@ class AudioInputSource:
                 "mic_rate"
             )
             legacy_keys.append("mic_rate")
+        
+        # Migrate legacy single fft_size to preset system
+        # If user has a custom fft_size but no preset specified, apply "balanced" preset
+        if "fft_size" in normalized_config and "fft_preset" not in normalized_config:
+            # Check if it's not the default FFT_SIZE, indicating user customization
+            if normalized_config["fft_size"] != FFT_SIZE:
+                _LOGGER.info(
+                    "Migrating legacy fft_size=%d to multi-FFT preset system. Using 'balanced' preset.",
+                    normalized_config["fft_size"]
+                )
+            normalized_config.setdefault("fft_preset", "balanced")
 
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(normalized_config)
         self._validate_audio_config()
@@ -294,10 +408,68 @@ class AudioInputSource:
                 self.fft_size,
             )
             base_hop = self.fft_size
-        self.hop_size = base_hop
-        _LOGGER.debug(
-            f"Rebuilding audio analysis graph with stream_sample_rate: {self.stream_sample_rate}, hop_size: {self.hop_size}, fft_size: {self.fft_size}, analysis_fps: {self._analysis_fps}"
+    def _rebuild_analysis_graph(self, stream_sample_rate):
+        """
+        Build multi-FFT analysis infrastructure.
+        
+        Resampling Strategy:
+        - samplerate.Resampler instances are stateful and designed for streaming
+        - We create one Resampler per unique hop size to maintain independent state
+        - Each resampler processes the incoming audio to produce the required hop length
+        - This avoids state conflicts and provides clean resampling for each configuration
+        """
+        stream_sample_rate = int(stream_sample_rate)
+        if stream_sample_rate <= 0:
+            return
+
+        self.stream_sample_rate = stream_sample_rate
+        # Keep legacy single fft_size for backward compatibility
+        self.fft_size = self._config["fft_size"]
+        self._analysis_fps = self._config["analysis_fps"]
+
+        # hop size equals samples per analysis frame (frames per second).
+        # This is the "default" hop for legacy compatibility
+        base_hop = max(
+            1, int(round(self.stream_sample_rate / self._analysis_fps))
         )
+        if base_hop > self.fft_size:
+            _LOGGER.warning(
+                "Configured hop size (%s) exceeds fft_size (%s); clamping to fft_size",
+                base_hop,
+                self.fft_size,
+            )
+            base_hop = self.fft_size
+        self.hop_size = base_hop
+        
+        # Multi-FFT infrastructure
+        # Dictionary of resamplers keyed by hop size
+        # Each hop size gets its own resampler instance to maintain independent state
+        self._resamplers = {}
+        
+        # Dictionary of phase vocoders keyed by (fft_size, hop_size) tuple
+        self._phase_vocoders = {}
+        
+        # Dictionary of frequency domain results keyed by (fft_size, hop_size) tuple
+        self._frequency_domains = {}
+        
+        # Dictionary of null (zero) frequency domains for silence
+        self._frequency_domain_nulls = {}
+        
+        # Dictionary of resampled audio buffers keyed by hop size
+        self._raw_audio_samples = {}
+        
+        # Set of required FFT configurations, populated during initialise_analysis
+        # Each entry is a (fft_size, hop_size) tuple
+        self._required_fft_configs = set()
+        
+        # Track which FFTs have been computed this frame (reset each frame)
+        self._fft_computed = {}
+        
+        _LOGGER.debug(
+            f"Rebuilding audio analysis graph with stream_sample_rate: {self.stream_sample_rate}, base_hop: {self.hop_size}, base_fft: {self.fft_size}, analysis_fps: {self._analysis_fps}"
+        )
+        
+        # Legacy single FFT setup for backward compatibility
         freq_domain_length = (self.fft_size // 2) + 1
         self._raw_audio_sample = np.zeros(self.hop_size, dtype=np.float32)
         self._phase_vocoder = aubio.pvoc(self.fft_size, self.hop_size)
@@ -314,6 +486,45 @@ class AudioInputSource:
     def on_analysis_parameters_changed(self):
         """Hook for subclasses to rebuild aubio objects when rates change."""
         return
+    
+    def _preallocate_fft_resources(self):
+        """
+        Pre-allocate all FFT resources based on required configurations.
+        Called after _required_fft_configs is populated by AudioAnalysisSource.
+        """
+        if not hasattr(self, '_required_fft_configs'):
+            return
+        
+        # Group configs by hop size to create resamplers
+        hop_sizes = set(hop for (fft, hop) in self._required_fft_configs)
+        
+        for hop_size in hop_sizes:
+            if hop_size not in self._resamplers:
+                self._resamplers[hop_size] = samplerate.Resampler(
+                    "sinc_fastest", channels=1
+                )
+                self._raw_audio_samples[hop_size] = np.zeros(
+                    hop_size, dtype=np.float32
+                )
+                _LOGGER.debug(f"Pre-allocated resampler for hop_size={hop_size}")
+        
+        # Pre-allocate phase vocoders and frequency domains for each config
+        for (fft_size, hop_size) in self._required_fft_configs:
+            if (fft_size, hop_size) not in self._phase_vocoders:
+                self._phase_vocoders[(fft_size, hop_size)] = aubio.pvoc(
+                    fft_size, hop_size
+                )
+                self._frequency_domain_nulls[(fft_size, hop_size)] = aubio.cvec(
+                    fft_size
+                )
+                # Initialize to null/zero
+                self._frequency_domains[(fft_size, hop_size)] = (
+                    self._frequency_domain_nulls[(fft_size, hop_size)]
+                )
+                _LOGGER.debug(
+                    f"Pre-allocated phase vocoder for FFT config ({fft_size}, {hop_size})"
+                )
+
 
     def activate(self):
         if self._audio is None:
@@ -587,6 +798,12 @@ class AudioInputSource:
         core functionality that will be used for every audio effect
         should be done here. Everything else should be deferred until
         queried by an effect.
+        
+        Multi-FFT Mode:
+        - Computes FFTs for all required analysis types based on _required_fft_configs
+        - Deduplicates shared FFT configs to avoid redundant computation
+        - Resample audio once per unique hop size for efficiency
+        - All FFTs are recomputed fresh each frame (no cross-frame caching)
         """
         # clean up nans that have been mysteriously appearing..
         self._raw_audio_sample[np.isnan(self._raw_audio_sample)] = 0
@@ -596,9 +813,16 @@ class AudioInputSource:
         self._volume = max(0, min(1, self._volume))
         self._volume_filter.update(self._volume)
 
-        # Calculate the frequency domain from the filtered data and
-        # force all zeros when below the volume threshold
-        if self._volume_filter.value > self._config["min_volume"]:
+        # Reset FFT computation tracking for this frame
+        self._fft_computed.clear()
+        
+        # Check volume threshold
+        volume_above_threshold = (
+            self._volume_filter.value > self._config["min_volume"]
+        )
+        
+        # Legacy single FFT computation for backward compatibility
+        if volume_above_threshold:
             self._processed_audio_sample = self._raw_audio_sample
 
             # Perform a pre-emphasis to balance the highs and lows
@@ -613,6 +837,79 @@ class AudioInputSource:
             )
         else:
             self._frequency_domain = self._frequency_domain_null
+        
+        # Multi-FFT processing if configs are defined
+        if hasattr(self, '_required_fft_configs') and self._required_fft_configs:
+            self._process_multi_fft(volume_above_threshold)
+    
+    def _process_multi_fft(self, volume_above_threshold):
+        """
+        Process all required FFT configurations.
+        Groups by hop size for efficient resampling, then computes each unique FFT.
+        """
+        if not volume_above_threshold:
+            # Set all frequency domains to null when below threshold
+            for config in self._required_fft_configs:
+                self._frequency_domains[config] = self._frequency_domain_nulls[config]
+                self._fft_computed[config] = True
+            return
+        
+        # Group configs by hop size for efficient resampling
+        hop_size_groups = {}
+        for (fft_size, hop_size) in self._required_fft_configs:
+            if hop_size not in hop_size_groups:
+                hop_size_groups[hop_size] = []
+            hop_size_groups[hop_size].append((fft_size, hop_size))
+        
+        # Process each hop size group
+        for hop_size, configs in hop_size_groups.items():
+            # Resample audio once for this hop size
+            if hop_size in self._resamplers:
+                in_sample_len = len(self._raw_audio_sample)
+                if in_sample_len != hop_size:
+                    resampled = self._resamplers[hop_size].process(
+                        self._raw_audio_sample,
+                        hop_size / in_sample_len,
+                    )
+                else:
+                    resampled = self._raw_audio_sample.copy()
+                
+                # Store resampled audio for this hop size
+                if len(resampled) == hop_size:
+                    self._raw_audio_samples[hop_size] = resampled
+                else:
+                    # Malformed resampling, use zeros
+                    self._raw_audio_samples[hop_size] = np.zeros(
+                        hop_size, dtype=np.float32
+                    )
+                    _LOGGER.debug(
+                        f"Malformed resample for hop={hop_size}: got {len(resampled)} samples"
+                    )
+            
+            # Process each FFT config for this hop size
+            for config in configs:
+                if config not in self._fft_computed or not self._fft_computed[config]:
+                    fft_size, hop_size = config
+                    audio_sample = self._raw_audio_samples.get(hop_size)
+                    
+                    if audio_sample is not None and len(audio_sample) == hop_size:
+                        # Apply pre-emphasis if available
+                        processed = audio_sample
+                        if hasattr(self, 'pre_emphasis') and self.pre_emphasis:
+                            processed = self.pre_emphasis(audio_sample)
+                        
+                        # Compute FFT using the appropriate phase vocoder
+                        if config in self._phase_vocoders:
+                            self._frequency_domains[config] = (
+                                self._phase_vocoders[config](processed)
+                            )
+                            self._fft_computed[config] = True
+                    else:
+                        # Use null if audio not available
+                        self._frequency_domains[config] = (
+                            self._frequency_domain_nulls[config]
+                        )
+                        self._fft_computed[config] = True
 
     def audio_sample(self, raw=False):
         """Returns the raw audio sample"""
