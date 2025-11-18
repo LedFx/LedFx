@@ -40,6 +40,8 @@ class AudioInputSource:
     _subscriber_threshold = 0
     _timer = None
     _last_active = None
+    _last_callback_time = None
+    _callback_idle_logged = False
 
     @staticmethod
     def device_index_validator(val):
@@ -508,6 +510,10 @@ class AudioInputSource:
         # time_start = time.time()
         # self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
         raw_sample = np.frombuffer(in_data, dtype=np.float32)
+        
+        # Track when we last received audio data
+        self._last_callback_time = time.time()
+        self._callback_idle_logged = False
 
         in_sample_len = len(raw_sample)
         out_sample_len = self.hop_size
@@ -726,10 +732,10 @@ class AudioAnalysisSource(AudioInputSource):
                             lambda: self._tempo.set_adaptive_winlen(1)) 
         self._enable_tempo_feature("tempogram (single scale)",
                                 lambda: self._tempo.set_use_tempogram(1))
-        self._enable_tempo_feature(
-            "multiscale tempogram",
-            lambda: self._tempo.set_multiscale_tempogram(1),
-        )
+        # self._enable_tempo_feature(
+        #     "multiscale tempogram",
+        #     lambda: self._tempo.set_multiscale_tempogram(1),
+        # )
 
    
         self._onset = aubio.onset(self._config["onset_method"], *fft_params)
@@ -779,12 +785,12 @@ class AudioAnalysisSource(AudioInputSource):
         # Minimum aubio tempo confidence required to achieve initial lock (0.0-1.0)
         # Must be sustained alongside 4 stable beats to achieve lock
         # Set lower than typical aubio values since confidence is often low even with good detection
-        self.beat_lock_confidence_min = 0.10
+        self.beat_lock_confidence_min = 0.05  # Lowered for faster lock
         
         # Maximum allowable deviation ratio for locked beats (0.0-1.0)
         # If beat period drifts more than this percentage from stable period, unlock counter increments
         # 0.18 = 18% maximum drift tolerance
-        self.beat_unlock_deviation = 0.18
+        self.beat_unlock_deviation = 0.20  # Increased for more tolerance
         
         # Multiplier for beat period to determine "missed beat" timeout (in beat periods)
         # If no beat detected for (beat_period * beat_miss_unlock_factor) seconds, lock is released
@@ -799,6 +805,25 @@ class AudioAnalysisSource(AudioInputSource):
         # Most recent confidence value from aubio tempo tracker (0.0-1.0)
         # Cached for debugging and display purposes
         self.latest_tempo_confidence = 0.0
+        
+        # Track last time we logged status to avoid spamming logs
+        # Used for periodic status updates when beat locked but no beats detected
+        self.last_status_log_time = time.time()
+        
+        # Track number of consecutive frames without beat detection
+        # Used to debounce transition logging (only log after sustained silence)
+        self.frames_without_beat = 0
+        
+        # Number of consecutive frames without beats before we log the transition
+        # At 120 FPS, 10 frames = ~83ms of silence
+        self.frames_without_beat_threshold = 10
+        
+        # Audio callback watchdog - monitors if callbacks stop completely
+        self.audio_callback_watchdog_interval = 2.0  # Check every 2 seconds
+        self.audio_callback_idle_timeout = 1.0  # Idle if no callbacks for 1 second
+        self._watchdog_thread = None
+        self._watchdog_stop_event = threading.Event()
+        self._start_audio_watchdog()
 
         # freq power
         self.freq_power_raw = np.zeros(len(self.freq_max_mels))
@@ -877,6 +902,49 @@ class AudioAnalysisSource(AudioInputSource):
         self.beat_unlock_counter = 0
         self.beat_periods_history.clear()
 
+    def _start_audio_watchdog(self):
+        """Start the audio callback watchdog thread."""
+        if self._watchdog_thread is None or not self._watchdog_thread.is_alive():
+            self._watchdog_stop_event.clear()
+            self._watchdog_thread = threading.Thread(
+                target=self._audio_watchdog_loop,
+                name="AudioWatchdog",
+                daemon=True
+            )
+            self._watchdog_thread.start()
+            _LOGGER.debug("Audio callback watchdog started")
+
+    def _stop_audio_watchdog(self):
+        """Stop the audio callback watchdog thread."""
+        if self._watchdog_thread and self._watchdog_thread.is_alive():
+            self._watchdog_stop_event.set()
+            self._watchdog_thread.join(timeout=3.0)
+            _LOGGER.debug("Audio callback watchdog stopped")
+
+    def _audio_watchdog_loop(self):
+        """Background thread that monitors audio callback health."""
+        while not self._watchdog_stop_event.wait(self.audio_callback_watchdog_interval):
+            now = time.time()
+            
+            # Check if audio callbacks have stopped
+            if (self._last_callback_time is not None and 
+                not self._callback_idle_logged and
+                now - self._last_callback_time > self.audio_callback_idle_timeout):
+                
+                if self.beat_lock_achieved:
+                    locked_bpm = 60.0 / self.beat_period if self.beat_period > 0 else 0.0
+                    _LOGGER.info(
+                        "Beat tracker idle - no audio data for %.2fs (was locked at %.1f BPM)",
+                        now - self._last_callback_time,
+                        locked_bpm,
+                    )
+                else:
+                    _LOGGER.debug(
+                        "Beat tracker idle - no audio data for %.2fs (no lock achieved)",
+                        now - self._last_callback_time,
+                    )
+                self._callback_idle_logged = True
+
     def _update_tempo_lock_state(self, detected_period, confidence):
         """Evaluate whether the tempo lock should be maintained or released."""
         if detected_period <= 0:
@@ -891,13 +959,18 @@ class AudioAnalysisSource(AudioInputSource):
 
         reason = None
         if self.beat_lock_achieved:
-            if confidence < self.beat_unlock_confidence:
+            # Require either good confidence OR very stable period to maintain lock
+            # This prevents unlock for simple audio sources (metronomes) with perfect timing but low confidence
+            if confidence < self.beat_unlock_confidence and drift > 0.05:
+                # Both confidence AND stability are poor
                 self.beat_unlock_counter += 1
-                reason = f"confidence {confidence:.2f}"
+                reason = f"confidence {confidence:.2f} and drift {drift * 100:.1f}%"
             elif drift > self.beat_unlock_deviation:
+                # Drift alone is too high
                 self.beat_unlock_counter += 1
                 reason = f"drift {drift * 100:.1f}%"
             else:
+                # Either good confidence OR good stability - maintain lock
                 self.beat_unlock_counter = 0
                 return
 
@@ -1082,9 +1155,11 @@ class AudioAnalysisSource(AudioInputSource):
             if self.beat_period:
                 ratio = raw_period / self.beat_period
                 if 0.45 <= ratio <= 0.55:
-                    raw_period = self.beat_period / 2
-                elif 1.9 <= ratio <= 2.1:
+                    # Aubio reporting double the tempo (half the period) - double the period
                     raw_period = self.beat_period * 2
+                elif 1.9 <= ratio <= 2.1:
+                    # Aubio reporting half the tempo (double the period) - halve the period
+                    raw_period = self.beat_period / 2
 
             # Update lock state based on confidence and drift
             self._update_tempo_lock_state(raw_period, confidence)
@@ -1102,11 +1177,13 @@ class AudioAnalysisSource(AudioInputSource):
             locked_bpm = 60.0 / stable_period
 
             # Check if we should achieve lock
+            # For simple audio sources (like metronomes), aubio confidence may be very low or zero
+            # So we primarily rely on period stability, with confidence as a secondary indicator
             if (
                 not self.beat_lock_achieved
                 and len(self.beat_periods_history) == self.beat_periods_history.maxlen
-                and deviation <= 0.1
-                and confidence >= self.beat_lock_confidence_min
+                and deviation <= 0.15  # Increased tolerance for achieving lock
+                and (confidence >= self.beat_lock_confidence_min or deviation <= 0.05)  # Lock with low deviation even if low confidence
             ):
                 self.beat_lock_achieved = True
                 self.beat_lock_time = now - self.first_beat_time
@@ -1137,15 +1214,50 @@ class AudioAnalysisSource(AudioInputSource):
 
             self.beat_timestamp = now
             oscillator = self.beat_counter
+            self.frames_without_beat = 0  # Reset counter when beat detected
         else:
             # No beat detected this frame - calculate oscillator position based on time
             effective_period = self.beat_period if (self.beat_period and self.beat_period > 0) else 1.0
             time_since_beat = now - self.beat_timestamp
+            
+            # Increment counter for frames without beats
+            self.frames_without_beat += 1
+            
+            # Log immediately when transitioning from beats to sustained silence
+            # Only log once after threshold frames without beats to avoid spam
+            if self.frames_without_beat == self.frames_without_beat_threshold:
+                if self.beat_lock_achieved:
+                    locked_bpm = 60.0 / self.beat_period if self.beat_period > 0 else 0.0
+                    _LOGGER.info(
+                        "Beat detection stopped - maintaining lock at %.1f BPM (time since last beat: %.3fs)",
+                        locked_bpm,
+                        time_since_beat,
+                    )
+                else:
+                    # Log at debug level when not locked
+                    _LOGGER.debug(
+                        "Beat detection stopped (no lock achieved, time since last beat: %.3fs)",
+                        time_since_beat,
+                    )
+                self.last_status_log_time = now  # Reset to avoid immediate duplicate log
+            
             oscillator = (
                 1 - (effective_period - time_since_beat) / effective_period
             ) + self.beat_counter
             # ensure it's between [0 and 4). useful when audio cuts
             oscillator = oscillator % 4
+            
+            # Periodic status logging when locked but no beats detected
+            # Log every 2 seconds to show we're still tracking
+            if self.beat_lock_achieved and (now - self.last_status_log_time) > 2.0:
+                locked_bpm = 60.0 / self.beat_period if self.beat_period > 0 else 0.0
+                _LOGGER.debug(
+                    "Beat locked at %.1f BPM (no beats for %.2fs, oscillator: %.2f)",
+                    locked_bpm,
+                    time_since_beat,
+                    oscillator,
+                )
+                self.last_status_log_time = now
         
         # Check for missed beats timeout (runs every frame, not just on beats)
         # This allows us to detect when beats stop coming and unlock accordingly
@@ -1157,6 +1269,13 @@ class AudioAnalysisSource(AudioInputSource):
             # Only check for missed beats if we're past the grace period
             if time_since_lock > self.beat_lock_grace_period:
                 if time_since_beat > effective_period * self.beat_miss_unlock_factor:
+                    _LOGGER.debug(
+                        "Checking missed beats: time_since_beat=%.2fs, threshold=%.2fs (period=%.3fs * factor=%.1f)",
+                        time_since_beat,
+                        effective_period * self.beat_miss_unlock_factor,
+                        effective_period,
+                        self.beat_miss_unlock_factor,
+                    )
                     self._reset_tempo_lock(f"missed beats for {time_since_beat:.2f}s")
         
         return oscillator
@@ -1177,6 +1296,9 @@ class AudioAnalysisSource(AudioInputSource):
     def on_analysis_parameters_changed(self):
         if getattr(self, "_suspend_param_callbacks", False):
             return
+        # Stop watchdog before reinitializing
+        if hasattr(self, '_watchdog_thread'):
+            self._stop_audio_watchdog()
         super().on_analysis_parameters_changed()
         self.initialise_analysis()
 
