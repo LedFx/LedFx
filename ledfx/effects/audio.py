@@ -1001,7 +1001,11 @@ class AudioAnalysisSource(AudioInputSource):
         self._subscriber_threshold = len(self._callbacks)
 
     def initialise_analysis(self):
-        # melbanks
+        """
+        Initialize all audio analysis components with per-analysis FFT configurations.
+        Reads preset and applies user overrides for tempo, onset, and pitch analysis.
+        """
+        # Get current stream parameters
         stream_sample_rate = getattr(
             self,
             "stream_sample_rate",
@@ -1015,14 +1019,38 @@ class AudioAnalysisSource(AudioInputSource):
                 int(round(stream_sample_rate / self._config["analysis_fps"])),
             ),
         )
-        fft_size = self._config["fft_size"]
-        fft_params = (
-            fft_size,
-            hop_size,
-            stream_sample_rate,
+        
+        # Get the selected preset
+        preset_name = self._config.get("fft_preset", "balanced")
+        preset = FFT_PRESETS[preset_name]
+        
+        # Extract analysis-specific FFT configs from preset
+        # Apply user overrides if present
+        onset_fft, onset_hop = self._config.get(
+            "fft_onset_override", preset["onset"]
         )
-        tempo_params = fft_params
-
+        tempo_fft, tempo_hop = self._config.get(
+            "fft_tempo_override", preset["tempo"]
+        )
+        pitch_fft, pitch_hop = self._config.get(
+            "fft_pitch_override", preset["pitch"]
+        )
+        
+        # Store analysis-specific configs for later use
+        self._onset_fft_config = (onset_fft, onset_hop)
+        self._tempo_fft_config = (tempo_fft, tempo_hop)
+        self._pitch_fft_config = (pitch_fft, pitch_hop)
+        
+        # Create analysis-specific parameter tuples
+        onset_params = (onset_fft, onset_hop, stream_sample_rate)
+        tempo_params = (tempo_fft, tempo_hop, stream_sample_rate)
+        pitch_params = (pitch_fft, pitch_hop, stream_sample_rate)
+        
+        # Legacy single FFT params for backward compatibility
+        fft_size = self._config["fft_size"]
+        fft_params = (fft_size, hop_size, stream_sample_rate)
+        
+        # Initialize melbanks
         if not hasattr(self, "melbanks"):
             self.melbanks = Melbanks(
                 self._ledfx,
@@ -1037,8 +1065,10 @@ class AudioAnalysisSource(AudioInputSource):
             self.melbanks.update_config(
                 self._ledfx.config.get("melbanks", {}), persist=False
             )
-        # pitch, tempo, onset
+        
+        # Initialize tempo, onset, and pitch with their specific FFT configs
         self._tempo = aubio.tempo(self._config["tempo_method"], *tempo_params)
+        
         # Enable various tempo features
         # TODO: Make these configurable options
         self._enable_tempo_feature(
@@ -1063,15 +1093,39 @@ class AudioAnalysisSource(AudioInputSource):
             "tempogram (single scale)",
             lambda: self._tempo.set_use_tempogram(1),
         )
-        # self._enable_tempo_feature(
-        #     "multiscale tempogram",
-        #     lambda: self._tempo.set_multiscale_tempogram(1),
-        # )
-
-        self._onset = aubio.onset(self._config["onset_method"], *fft_params)
-        self._pitch = aubio.pitch(self._config["pitch_method"], *fft_params)
+        
+        self._onset = aubio.onset(self._config["onset_method"], *onset_params)
+        self._pitch = aubio.pitch(self._config["pitch_method"], *pitch_params)
         self._pitch.set_unit("midi")
         self._pitch.set_tolerance(self._config["pitch_tolerance"])
+        
+        # Populate required FFT configs
+        self._required_fft_configs = set()
+        self._required_fft_configs.add(self._onset_fft_config)
+        self._required_fft_configs.add(self._tempo_fft_config)
+        self._required_fft_configs.add(self._pitch_fft_config)
+        
+        # Get melbank FFT requirements if melbanks support it
+        if hasattr(self.melbanks, 'get_required_fft_configs'):
+            melbank_configs = self.melbanks.get_required_fft_configs()
+            self._required_fft_configs.update(melbank_configs)
+        
+        # Pre-allocate FFT resources based on requirements
+        self._preallocate_fft_resources()
+        
+        # Log the configuration
+        _LOGGER.info(
+            "Audio analysis initialized with preset '%s': "
+            "onset=%s, tempo=%s, pitch=%s",
+            preset_name,
+            self._onset_fft_config,
+            self._tempo_fft_config,
+            self._pitch_fft_config,
+        )
+        
+        # Log FFT sharing in dev mode
+        if hasattr(self._ledfx, 'dev_enabled') and self._ledfx.dev_enabled():
+            self._log_fft_sharing()
 
         # bar oscillator
         self.beat_counter = 0
@@ -1324,6 +1378,49 @@ class AudioAnalysisSource(AudioInputSource):
                 self._reset_tempo_lock(reason)
         else:
             self.beat_unlock_counter = 0
+    
+    def _log_fft_sharing(self):
+        """Log which analyses share which FFT configurations (dev mode only)."""
+        # Build a map of FFT configs to the analyses that use them
+        config_map = {}
+        
+        if hasattr(self, '_onset_fft_config'):
+            config = self._onset_fft_config
+            if config not in config_map:
+                config_map[config] = []
+            config_map[config].append('onset')
+        
+        if hasattr(self, '_tempo_fft_config'):
+            config = self._tempo_fft_config
+            if config not in config_map:
+                config_map[config] = []
+            config_map[config].append('tempo')
+        
+        if hasattr(self, '_pitch_fft_config'):
+            config = self._pitch_fft_config
+            if config not in config_map:
+                config_map[config] = []
+            config_map[config].append('pitch')
+        
+        # Add melbank configs if available
+        if hasattr(self.melbanks, 'get_required_fft_configs'):
+            melbank_configs = self.melbanks.get_required_fft_configs()
+            for i, config in enumerate(melbank_configs):
+                if config not in config_map:
+                    config_map[config] = []
+                config_map[config].append(f'melbank_{i}')
+        
+        # Log sharing information
+        for config, analyses in config_map.items():
+            fft_size, hop_size = config
+            if len(analyses) > 1:
+                _LOGGER.debug(
+                    f"FFT config ({fft_size}, {hop_size}) shared by: {', '.join(analyses)}"
+                )
+            else:
+                _LOGGER.debug(
+                    f"FFT config ({fft_size}, {hop_size}) used by: {analyses[0]}"
+                )
 
     def _invalidate_caches(self):
         """Invalidates the cache for all melbank related data"""
@@ -1337,17 +1434,39 @@ class AudioAnalysisSource(AudioInputSource):
 
     @lru_cache(maxsize=None)
     def pitch(self):
+        """
+        Returns the MIDI pitch value detected in the current audio frame.
+        Uses analysis-specific FFT configuration for optimal pitch detection.
+        """
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
-            return self._pitch(self.audio_sample(raw=True))[0]
+            # Use analysis-specific FFT if available
+            if hasattr(self, '_pitch_fft_config') and self._pitch_fft_config in self._frequency_domains:
+                # Get the frequency domain for pitch analysis
+                freq_domain = self._frequency_domains[self._pitch_fft_config]
+                return self._pitch.do(freq_domain)[0]
+            else:
+                # Fallback to legacy method
+                return self._pitch(self.audio_sample(raw=True))[0]
         except ValueError as e:
             _LOGGER.warning(e)
             return 0
 
     @lru_cache(maxsize=None)
     def onset(self):
+        """
+        Returns True if an onset (transient/attack) is detected in the current frame.
+        Uses analysis-specific FFT configuration for optimal onset detection.
+        """
         try:
-            return bool(self._onset(self.audio_sample(raw=True))[0])
+            # Use analysis-specific FFT if available
+            if hasattr(self, '_onset_fft_config') and self._onset_fft_config in self._frequency_domains:
+                # Get the frequency domain for onset analysis
+                freq_domain = self._frequency_domains[self._onset_fft_config]
+                return bool(self._onset.do(freq_domain)[0])
+            else:
+                # Fallback to legacy method
+                return bool(self._onset(self.audio_sample(raw=True))[0])
         except ValueError as e:
             _LOGGER.warning(e)
             return 0
@@ -1355,10 +1474,18 @@ class AudioAnalysisSource(AudioInputSource):
     @lru_cache(maxsize=None)
     def bpm_beat_now(self):
         """
-        Returns True if a beat is expected now based on BPM data
+        Returns True if a beat is expected now based on BPM/tempo tracking.
+        Uses analysis-specific FFT configuration for optimal tempo detection.
         """
         try:
-            return bool(self._tempo(self.audio_sample(raw=True))[0])
+            # Use analysis-specific FFT if available
+            if hasattr(self, '_tempo_fft_config') and self._tempo_fft_config in self._frequency_domains:
+                # Get the frequency domain for tempo analysis
+                freq_domain = self._frequency_domains[self._tempo_fft_config]
+                return bool(self._tempo.do(freq_domain)[0])
+            else:
+                # Fallback to legacy method
+                return bool(self._tempo(self.audio_sample(raw=True))[0])
         except ValueError as e:
             _LOGGER.warning(e)
             return False

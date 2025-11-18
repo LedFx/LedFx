@@ -94,13 +94,32 @@ class Melbank:
         extra=vol.ALLOW_EXTRA,
     )
 
-    def __init__(self, audio, config, sample_rate):
-        """Initialize all the melbank related variables"""
+    def __init__(self, audio, config, sample_rate, fft_size=None, hop_size=None):
+        """
+        Initialize all the melbank related variables.
+        
+        Args:
+            audio: Audio source object
+            config: Melbank configuration dictionary
+            sample_rate: Audio sample rate
+            fft_size: Optional FFT size override (defaults to FFT_SIZE)
+            hop_size: Optional hop size override (not currently used, reserved for future)
+        """
         self._audio = audio
         self._config = self.CONFIG_SCHEMA(config)
         self.sample_rate = sample_rate
-        # Get the actual FFT size from the audio source
-        self._fft_size = getattr(audio, "fft_size", FFT_SIZE)
+        
+        # Store FFT configuration - use provided fft_size or default to FFT_SIZE
+        self._fft_size = fft_size if fft_size is not None else FFT_SIZE
+        self._hop_size = hop_size  # Reserved for future use
+        
+        # Validate FFT size
+        if self._fft_size <= 0 or (self._fft_size & (self._fft_size - 1)) != 0:
+            _LOGGER.warning(
+                f"Invalid FFT size {self._fft_size} for melbank, using default {FFT_SIZE}"
+            )
+            self._fft_size = FFT_SIZE
+        
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
         # a=0.4  -> roughly equivalent to filter_banks ** 2.0
@@ -177,7 +196,7 @@ class Melbank:
         # Standard mel coefficients
         if self._config["coeffs_type"] == "mel":
             self.filterbank = aubio.filterbank(
-                self._config["samples"], FFT_SIZE
+                self._config["samples"], self._fft_size
             )
             self.filterbank.set_mel_coeffs(
                 self.sample_rate,
@@ -198,7 +217,7 @@ class Melbank:
         # HTK mel coefficients
         if self._config["coeffs_type"] == "htk":
             self.filterbank = aubio.filterbank(
-                self._config["samples"], FFT_SIZE
+                self._config["samples"], self._fft_size
             )
             self.filterbank.set_mel_coeffs_htk(
                 self.sample_rate,
@@ -454,15 +473,36 @@ class Melbanks:
         self.dev_enabled = self._ledfx.dev_enabled()
 
     def update_config(self, config, persist=True):
+        """
+        Update melbank configuration with support for per-melbank FFT sizing.
+        Assigns FFT sizes based on melbank_fft_mode (tiered or formula).
+        """
         self.melbanks_config = self.CONFIG_SCHEMA(config)
         self.melbank_collection = self._ledfx.config.get(
             "melbank_collection", []
         )
+        
+        # Get FFT assignment mode from audio config
+        melbank_fft_mode = getattr(self._audio, '_config', {}).get('melbank_fft_mode', 'tiered')
+        
+        # Get preset melbank FFT configs if using tiered mode
+        preset_name = getattr(self._audio, '_config', {}).get('fft_preset', 'balanced')
+        
+        # Import FFT_PRESETS from audio module
+        from ledfx.effects.audio import FFT_PRESETS
+        preset_melbank_configs = FFT_PRESETS.get(preset_name, {}).get('melbanks', [])
+        
         # set up the melbanks
         self.melbank_processors = []
+        self.melbank_fft_configs = []  # Track (fft_size, hop_size) for each melbank
 
         if not self.melbank_collection:  # if melbank_configs is empty
             for i, freq in enumerate(self.melbanks_config["max_frequencies"]):
+                # Determine FFT config for this melbank
+                fft_size, hop_size = self._get_fft_config_for_melbank(
+                    freq, i, melbank_fft_mode, preset_melbank_configs
+                )
+                
                 melbank_config = {
                     **self.DEFAULT_MELBANK_CONFIG,
                     **{
@@ -477,19 +517,31 @@ class Melbanks:
                 }
                 melbank_id = generate_id(melbank_config["name"])
                 melbank = Melbank(
-                    self._audio, melbank_config, self.sample_rate
+                    self._audio, melbank_config, self.sample_rate, 
+                    fft_size=fft_size, hop_size=hop_size
                 )
                 self.melbank_processors.append(melbank)
+                self.melbank_fft_configs.append((fft_size, hop_size))
                 self.melbank_collection.append(
                     {"id": melbank_id, "config": melbank_config}
                 )
-                _LOGGER.debug(f"Melbank {i} created from default config.")
+                _LOGGER.debug(
+                    f"Melbank {i} created from default config with FFT ({fft_size}, {hop_size})"
+                )
         else:  # if melbank_configs is not empty
-            for melbank in self.melbank_collection:
-
+            for i, melbank in enumerate(self.melbank_collection):
                 melbank_id = melbank["id"]
                 # Load the individual melbank config
                 melbank_config = melbank["config"]
+                
+                # Get max frequency for FFT sizing
+                freq = melbank_config.get("max_frequency", self.melbanks_config["max_frequencies"][i] if i < len(self.melbanks_config["max_frequencies"]) else MAX_FREQ)
+                
+                # Determine FFT config for this melbank
+                fft_size, hop_size = self._get_fft_config_for_melbank(
+                    freq, i, melbank_fft_mode, preset_melbank_configs
+                )
+                
                 # Apply the global melbanks_config to the individual melbank_config
                 melbank_config["samples"] = self.melbanks_config["samples"]
                 melbank_config["peak_isolation"] = self.melbanks_config[
@@ -499,10 +551,14 @@ class Melbanks:
                     "coeffs_type"
                 ]
                 melbank = Melbank(
-                    self._audio, melbank_config, self.sample_rate
+                    self._audio, melbank_config, self.sample_rate,
+                    fft_size=fft_size, hop_size=hop_size
                 )
                 self.melbank_processors.append(melbank)
-                _LOGGER.debug(f"Melbank {melbank_id} loaded from config.")
+                self.melbank_fft_configs.append((fft_size, hop_size))
+                _LOGGER.debug(
+                    f"Melbank {melbank_id} loaded from config with FFT ({fft_size}, {hop_size})"
+                )
 
         # some things  we do not want to have in the config for the melbanks - they are not user editable at an individual melbank level
         melbank_global_settings = ["samples", "peak_isolation", "coeffs_type"]
@@ -536,6 +592,75 @@ class Melbanks:
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
         self.minimum_volume = self._audio._config["min_volume"]
+    
+    def _get_fft_config_for_melbank(self, max_freq, index, mode, preset_configs):
+        """
+        Determine FFT configuration for a melbank based on max frequency and mode.
+        
+        Args:
+            max_freq: Maximum frequency of the melbank
+            index: Index of the melbank
+            mode: FFT assignment mode ('tiered' or 'formula')
+            preset_configs: List of (fft_size, hop_size) tuples from preset
+            
+        Returns:
+            tuple: (fft_size, hop_size) for this melbank
+        """
+        if mode == 'tiered':
+            # Assign based on max frequency thresholds
+            # ≤350Hz → smallest preset FFT
+            # 350-2000Hz → medium preset FFT
+            # >2000Hz → largest preset FFT
+            if max_freq <= 350 and len(preset_configs) > 0:
+                return preset_configs[0]
+            elif max_freq <= 2000 and len(preset_configs) > 1:
+                return preset_configs[1]
+            elif len(preset_configs) > 2:
+                return preset_configs[2]
+            elif len(preset_configs) > 0:
+                return preset_configs[-1]  # Use largest available
+            else:
+                # Fallback to default
+                return (FFT_SIZE, max(1, int(round(self.sample_rate / 120))))
+        
+        elif mode == 'formula':
+            # Calculate FFT size based on frequency
+            # fft_size = 2^(ceil(log2(max_freq / divisor)))
+            # Using hardcoded divisor of 10
+            import math
+            divisor = 10
+            power = math.ceil(math.log2(max(max_freq / divisor, 1)))
+            fft_size = 2 ** power
+            
+            # Clamp to reasonable range
+            fft_size = max(512, min(8192, fft_size))
+            
+            # Calculate hop size from analysis_fps
+            analysis_fps = getattr(self._audio, '_analysis_fps', 120)
+            hop_size = max(1, int(round(self.sample_rate / analysis_fps)))
+            
+            # Ensure hop_size <= fft_size
+            hop_size = min(hop_size, fft_size)
+            
+            return (fft_size, hop_size)
+        
+        # Default fallback
+        return (FFT_SIZE, max(1, int(round(self.sample_rate / 120))))
+    
+    def get_required_fft_configs(self):
+        """
+        Returns the set of (fft_size, hop_size) tuples required by all melbanks.
+        This is used by AudioAnalysisSource to pre-allocate FFT resources.
+        
+        Returns:
+            set: Set of (fft_size, hop_size) tuples
+        """
+        if hasattr(self, 'melbank_fft_configs'):
+            return set(self.melbank_fft_configs)
+        else:
+            # Fallback: use default FFT config for all melbanks
+            return {(FFT_SIZE, max(1, int(round(self.sample_rate / 120))))}
+
 
     def set_sample_rate(self, sample_rate):
         sample_rate = int(sample_rate)
