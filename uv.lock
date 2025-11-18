@@ -227,33 +227,10 @@ wheels = [
 [[package]]
 name = "aubio-ledfx"
 version = "0.4.11"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/ledfx/aubio-ledfx?branch=copilot%2Fimprove-tempo-utilities#adc8b5d8e83af50bd07c1fbce919830e36415b42" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.11' and platform_machine != 'aarch64' and sys_platform != 'darwin') or (python_full_version < '3.11' and platform_machine == 'aarch64' and sys_platform == 'darwin')" },
     { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.11' and platform_machine != 'aarch64' and sys_platform != 'darwin') or (python_full_version >= '3.11' and platform_machine == 'aarch64' and sys_platform == 'darwin')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/08/7c/4474bb4642dc36bc7f8931c04b89aa937f1e06d2a94d1f779e3797ec3525/aubio_ledfx-0.4.11.tar.gz", hash = "sha256:b5995b45b45780432a7cd6a6d3d8199a6f8f92adb9503cc5cdc609d3f2e15b54", size = 6253214, upload-time = "2025-11-13T07:17:41.707Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/60/530c3fd89bac40a1df3bb4313526f7b268292bb0c2dde0412bdc07e07d04/aubio_ledfx-0.4.11-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:1c71bc9a7dd7eed97689386725d283feeaf43846699f23cd82e3cb39539f08f8", size = 23554672, upload-time = "2025-11-13T07:16:36.147Z" },
-    { url = "https://files.pythonhosted.org/packages/ad/ac/e8d6e48dc097772549bd8c1bc507b35e49a2770d1a5563bd967740e4837e/aubio_ledfx-0.4.11-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:410fa42b3e5e952c829c040094da5908ceb07e6cfbf20fc480ddeb7ddc6847c7", size = 21988524, upload-time = "2025-11-13T07:16:40.147Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/8a/654e6678989a15d5d0f3641f05ae1c83a99c8fc497fe52cf503fc07bbe5a/aubio_ledfx-0.4.11-cp310-cp310-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d99ec5137ae61c4c9ab3d8ef7b79a6203713a2ac7af210c81db3da8095146d94", size = 4998376, upload-time = "2025-11-13T07:16:42.686Z" },
-    { url = "https://files.pythonhosted.org/packages/98/85/29f92e738a9ce5462fb3c307b8064f91d7d17267603be55f39f190d9884f/aubio_ledfx-0.4.11-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b5ef983954f23092b4c770807cdd05144356a6a6f9a07ecb59ea7877277a3acc", size = 5067671, upload-time = "2025-11-13T07:16:44.408Z" },
-    { url = "https://files.pythonhosted.org/packages/7f/19/4d661bfd2ab93bedbc426036713ad146893b847d771403fc8fe04a1af5e5/aubio_ledfx-0.4.11-cp310-cp310-win_amd64.whl", hash = "sha256:8dfa33d95d0e06d724fbd36c4e2bf227e0502a36af2b5be1c83c284cf2a4999c", size = 11361140, upload-time = "2025-11-13T07:16:46.709Z" },
-    { url = "https://files.pythonhosted.org/packages/cd/59/cc3825e837b620b706a066cdfef1bb26e0ea6b874fb134a1cd86da953fdd/aubio_ledfx-0.4.11-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:0914010b0776e5955bee712d5ab0a7c8ea46e7add69cc5de7699276433e3ee4c", size = 23554675, upload-time = "2025-11-13T07:16:49.882Z" },
-    { url = "https://files.pythonhosted.org/packages/95/47/1ef26da9d08de43bd7d99a471fc3cc6ddec2ab64fc4c8985a72135d42997/aubio_ledfx-0.4.11-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8da7c2e245df62a515e2a3bddea45077548f4ee76106795a26acd569f0c50ad5", size = 21988526, upload-time = "2025-11-13T07:16:53.003Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/57/34fd8d811ab1d4f35dc9afb8f4292b05ece671bbf94433598f9623dd09ae/aubio_ledfx-0.4.11-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:409cade8c866a34798cb12b166faeb1abae8cfce4de9102826c4dd33a3d2180a", size = 4998378, upload-time = "2025-11-13T07:16:55.616Z" },
-    { url = "https://files.pythonhosted.org/packages/67/e5/50fbf3499fe224e0216050dd4f6e021a83854f7e4f22a6d79a6aad15f3c4/aubio_ledfx-0.4.11-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5f9676b8f20d063ab7eca4d6c2358568d10b92ab7f1be909cfad321757c99186", size = 5067675, upload-time = "2025-11-13T07:16:57.391Z" },
-    { url = "https://files.pythonhosted.org/packages/6b/f5/471a53ff1f72f8ff009c8e40a2cfc3dccfdba1541076ec7e51c937f2780c/aubio_ledfx-0.4.11-cp311-cp311-win_amd64.whl", hash = "sha256:6dccf705f67ea2873e2189be39b53bb3276d507a2fd442e63da92f301b989e6e", size = 11361140, upload-time = "2025-11-13T07:16:59.539Z" },
-    { url = "https://files.pythonhosted.org/packages/1e/48/ca7705a8f84d4f89401355a07de96f32dd58e81c8a639968cc0ff85c8268/aubio_ledfx-0.4.11-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:77da517e2406da17977f71fed933bb890a00553208c2c76b7108af5a2cd296d7", size = 23554855, upload-time = "2025-11-13T07:17:02.946Z" },
-    { url = "https://files.pythonhosted.org/packages/31/f6/6253058c805a77e5911ae1242738a761907222a6e723eb64bc36fb3a30c6/aubio_ledfx-0.4.11-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d3b1192dfdac62f719bc29255ce5937683deca4b74e9e39a731e17ccecfb000b", size = 21988712, upload-time = "2025-11-13T07:17:06.779Z" },
-    { url = "https://files.pythonhosted.org/packages/f9/0f/46a81a5f2ac86fc4a7c0553e1efd61419f32153dc248732464bc2e583df1/aubio_ledfx-0.4.11-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:04be6ae31e5d10a04ae216ee37a170ad754350c4754321aea0f1c3d4889be33c", size = 4998657, upload-time = "2025-11-13T07:17:09.372Z" },
-    { url = "https://files.pythonhosted.org/packages/af/3c/cf1a478593e6084ed056d62eab8917b73ef29d77d7952d6981aaa46a79e5/aubio_ledfx-0.4.11-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b68e5d8e118a4f3fd75c2c2984e8de3d35aafb2b126a5623cc0b1f051994862c", size = 5067867, upload-time = "2025-11-13T07:17:10.926Z" },
-    { url = "https://files.pythonhosted.org/packages/87/f4/06a82f9290a889928ec6a61e86469ab29efa1803d0902a41ca6c3a347a91/aubio_ledfx-0.4.11-cp312-cp312-win_amd64.whl", hash = "sha256:58cd767692c63b89e7ba156f07d10c6f6ecb5a4102d9b74ceb43dc02c8b6efc5", size = 11361422, upload-time = "2025-11-13T07:17:12.957Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/a8/845aa369424433f4e1c690d9cedec03472a09cfda3a77349269f2cd02b7b/aubio_ledfx-0.4.11-cp313-cp313-macosx_10_15_x86_64.whl", hash = "sha256:c5d039a732ccf133e3f21e73614d06c4e526c97da575fc79ba2d7a3883a65970", size = 23554861, upload-time = "2025-11-13T07:17:16.449Z" },
-    { url = "https://files.pythonhosted.org/packages/15/53/ec35dc3190bbbc76a420d2e44a62584111dea88a75321023633df02f4165/aubio_ledfx-0.4.11-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:206b031f300df0fc4d336a4e8c23d9e00c94c13b256c34111f52827d804db63f", size = 21988712, upload-time = "2025-11-13T07:17:19.644Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/11/d83e850415e130c7458e4be4924249a0690109bd0f392d324714209eb173/aubio_ledfx-0.4.11-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d76212db70b2142410fdf6eb6e74fb591c9c30332e245a0e18c4850bfffab1c4", size = 4998657, upload-time = "2025-11-13T07:17:22.098Z" },
-    { url = "https://files.pythonhosted.org/packages/36/8c/4f08539c79d9231493ece54d997d0bc2ae85b8ff6349a6e37000d51e1aa6/aubio_ledfx-0.4.11-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e8d63cabbb1fb2865bdda5858a664d94caebd8a3e9abbe7f5c2efc1b4c1190fb", size = 5067872, upload-time = "2025-11-13T07:17:23.791Z" },
-    { url = "https://files.pythonhosted.org/packages/45/1f/9b915ad110725f200f7a3b7ddb7b49138f9ea6b61e352a0829587cb8f3a3/aubio_ledfx-0.4.11-cp313-cp313-win_amd64.whl", hash = "sha256:366a91757d38b7c7ea619fc607423ab5239269c5667ebbdcb287b6f66066175f", size = 11361425, upload-time = "2025-11-13T07:17:25.595Z" },
 ]
 
 [[package]]
@@ -1107,7 +1084,7 @@ docs = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
     { name = "aiohttp-cors", specifier = ">=0.7.0" },
-    { name = "aubio-ledfx", specifier = ">=0.4.11" },
+    { name = "aubio-ledfx", git = "https://github.com/ledfx/aubio-ledfx?branch=copilot%2Fimprove-tempo-utilities" },
     { name = "certifi", specifier = ">=2023.11.17" },
     { name = "cffi", specifier = ">=0.16.0" },
     { name = "cython", specifier = ">=3.0.7" },

@@ -121,6 +121,9 @@ asyncio_default_fixture_loop_scope = "function"
 link-mode = "copy"
 default-groups = []
 
+[tool.uv.sources]
+aubio-ledfx = { git = "https://github.com/ledfx/aubio-ledfx", branch = "copilot/improve-tempo-utilities" }
+
 
 [tool.black]
 line-length = 79
