@@ -776,7 +776,7 @@ def migrate_config(old_config):
         # Ensure fft_preset is set
         if "fft_preset" not in new_config["audio"]:
             new_config["audio"]["fft_preset"] = "balanced"
-    
+
     # Clear legacy melbank collection - will be regenerated with new FFT configs
     if "melbank_collection" in new_config and new_config["melbank_collection"]:
         _LOGGER.warning(

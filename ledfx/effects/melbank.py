@@ -94,10 +94,12 @@ class Melbank:
         extra=vol.ALLOW_EXTRA,
     )
 
-    def __init__(self, audio, config, sample_rate, fft_size=None, hop_size=None):
+    def __init__(
+        self, audio, config, sample_rate, fft_size=None, hop_size=None
+    ):
         """
         Initialize all the melbank related variables.
-        
+
         Args:
             audio: Audio source object
             config: Melbank configuration dictionary
@@ -108,18 +110,18 @@ class Melbank:
         self._audio = audio
         self._config = self.CONFIG_SCHEMA(config)
         self.sample_rate = sample_rate
-        
+
         # Store FFT configuration - use provided fft_size or default to FFT_SIZE
         self._fft_size = fft_size if fft_size is not None else FFT_SIZE
         self._hop_size = hop_size  # Reserved for future use
-        
+
         # Validate FFT size
         if self._fft_size <= 0 or (self._fft_size & (self._fft_size - 1)) != 0:
             _LOGGER.warning(
                 f"Invalid FFT size {self._fft_size} for melbank, using default {FFT_SIZE}"
             )
             self._fft_size = FFT_SIZE
-        
+
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
         # a=0.4  -> roughly equivalent to filter_banks ** 2.0
@@ -483,20 +485,29 @@ class Melbanks:
         self.melbank_collection = self._ledfx.config.get(
             "melbank_collection", []
         )
-        
+
         # Get FFT assignment mode from audio config
-        melbank_fft_mode = getattr(self._audio, '_config', {}).get('melbank_fft_mode', 'tiered')
-        
+        melbank_fft_mode = getattr(self._audio, "_config", {}).get(
+            "melbank_fft_mode", "tiered"
+        )
+
         # Get preset melbank FFT configs if using tiered mode
-        preset_name = getattr(self._audio, '_config', {}).get('fft_preset', 'balanced')
-        
+        preset_name = getattr(self._audio, "_config", {}).get(
+            "fft_preset", "balanced"
+        )
+
         # Import FFT_PRESETS from audio module
         from ledfx.effects.audio import FFT_PRESETS
-        preset_melbank_configs = FFT_PRESETS.get(preset_name, {}).get('melbanks', [])
-        
+
+        preset_melbank_configs = FFT_PRESETS.get(preset_name, {}).get(
+            "melbanks", []
+        )
+
         # set up the melbanks
         self.melbank_processors = []
-        self.melbank_fft_configs = []  # Track (fft_size, hop_size) for each melbank
+        self.melbank_fft_configs = (
+            []
+        )  # Track (fft_size, hop_size) for each melbank
 
         if not self.melbank_collection:  # if melbank_configs is empty
             for i, freq in enumerate(self.melbanks_config["max_frequencies"]):
@@ -504,7 +515,7 @@ class Melbanks:
                 fft_size, hop_size = self._get_fft_config_for_melbank(
                     freq, i, melbank_fft_mode, preset_melbank_configs
                 )
-                
+
                 melbank_config = {
                     **self.DEFAULT_MELBANK_CONFIG,
                     **{
@@ -519,8 +530,11 @@ class Melbanks:
                 }
                 melbank_id = generate_id(melbank_config["name"])
                 melbank = Melbank(
-                    self._audio, melbank_config, self.sample_rate, 
-                    fft_size=fft_size, hop_size=hop_size
+                    self._audio,
+                    melbank_config,
+                    self.sample_rate,
+                    fft_size=fft_size,
+                    hop_size=hop_size,
                 )
                 self.melbank_processors.append(melbank)
                 self.melbank_fft_configs.append((fft_size, hop_size))
@@ -535,15 +549,22 @@ class Melbanks:
                 melbank_id = melbank["id"]
                 # Load the individual melbank config
                 melbank_config = melbank["config"]
-                
+
                 # Get max frequency for FFT sizing
-                freq = melbank_config.get("max_frequency", self.melbanks_config["max_frequencies"][i] if i < len(self.melbanks_config["max_frequencies"]) else MAX_FREQ)
-                
+                freq = melbank_config.get(
+                    "max_frequency",
+                    (
+                        self.melbanks_config["max_frequencies"][i]
+                        if i < len(self.melbanks_config["max_frequencies"])
+                        else MAX_FREQ
+                    ),
+                )
+
                 # Determine FFT config for this melbank
                 fft_size, hop_size = self._get_fft_config_for_melbank(
                     freq, i, melbank_fft_mode, preset_melbank_configs
                 )
-                
+
                 # Apply the global melbanks_config to the individual melbank_config
                 melbank_config["samples"] = self.melbanks_config["samples"]
                 melbank_config["peak_isolation"] = self.melbanks_config[
@@ -553,8 +574,11 @@ class Melbanks:
                     "coeffs_type"
                 ]
                 melbank = Melbank(
-                    self._audio, melbank_config, self.sample_rate,
-                    fft_size=fft_size, hop_size=hop_size
+                    self._audio,
+                    melbank_config,
+                    self.sample_rate,
+                    fft_size=fft_size,
+                    hop_size=hop_size,
                 )
                 self.melbank_processors.append(melbank)
                 self.melbank_fft_configs.append((fft_size, hop_size))
@@ -594,26 +618,28 @@ class Melbanks:
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
         self.minimum_volume = self._audio._config["min_volume"]
-    
-    def _get_fft_config_for_melbank(self, max_freq, index, mode, preset_configs):
+
+    def _get_fft_config_for_melbank(
+        self, max_freq, index, mode, preset_configs
+    ):
         """
         Determine FFT configuration for a melbank based on max frequency and mode.
         All melbanks use the same hop size (base hop) - only FFT window sizes vary.
-        
+
         Args:
             max_freq: Maximum frequency of the melbank
             index: Index of the melbank
             mode: FFT assignment mode ('tiered' or 'formula')
             preset_configs: List of (fft_size, hop_size) tuples from preset
-            
+
         Returns:
             tuple: (fft_size, hop_size) for this melbank
         """
         # Get the base hop size from audio source
-        analysis_fps = getattr(self._audio, '_analysis_fps', 120)
+        analysis_fps = getattr(self._audio, "_analysis_fps", 120)
         base_hop_size = max(1, int(round(self.sample_rate / analysis_fps)))
-        
-        if mode == 'tiered':
+
+        if mode == "tiered":
             # Assign FFT size based on max frequency thresholds
             # All use the same hop size - only window size varies
             # ≤350Hz → smallest preset FFT
@@ -629,43 +655,45 @@ class Melbanks:
                 fft_size = preset_configs[-1][0]  # Use largest available
             else:
                 fft_size = FFT_SIZE  # Fallback to default
-            
+
             return (fft_size, base_hop_size)
-        
-        elif mode == 'formula':
+
+        elif mode == "formula":
             # Calculate FFT size based on frequency
             # fft_size = 2^(ceil(log2(max_freq / divisor)))
             # Using hardcoded divisor of 10
             import math
+
             divisor = 10
             power = math.ceil(math.log2(max(max_freq / divisor, 1)))
-            fft_size = 2 ** power
-            
+            fft_size = 2**power
+
             # Clamp to reasonable range
             fft_size = max(512, min(8192, fft_size))
-            
+
             # Ensure base_hop_size <= fft_size
             hop_size = min(base_hop_size, fft_size)
-            
+
             return (fft_size, hop_size)
-        
+
         # Default fallback
         return (FFT_SIZE, max(1, int(round(self.sample_rate / 120))))
-    
+
     def get_required_fft_configs(self):
         """
         Returns the set of (fft_size, hop_size) tuples required by all melbanks.
         This is used by AudioAnalysisSource to pre-allocate FFT resources.
-        
+
         Returns:
             set: Set of (fft_size, hop_size) tuples
         """
-        if hasattr(self, 'melbank_fft_configs'):
+        if hasattr(self, "melbank_fft_configs"):
             return set(self.melbank_fft_configs)
         else:
-            _LOGGER.error("Melbanks initialized without FFT configs - this should not happen")
+            _LOGGER.error(
+                "Melbanks initialized without FFT configs - this should not happen"
+            )
             return set()
-
 
     def set_sample_rate(self, sample_rate):
         sample_rate = int(sample_rate)
@@ -679,7 +707,7 @@ class Melbanks:
         # melbank function is directly referenced by the self.melbanks tuple.
         # melbank function is given the data buffer to operate directly on
         # rather than returning and assigning the data.
-        
+
         # Only do the melbank processing if the volume is above the threshold
         volume_threshold = (
             self._audio.volume(filtered=True) > self.minimum_volume
@@ -690,7 +718,9 @@ class Melbanks:
                 # Use per-melbank frequency domain from multi-FFT system
                 if i < len(self.melbank_fft_configs):
                     fft_config = self.melbank_fft_configs[i]
-                    frequency_domain = self._audio._frequency_domains.get(fft_config)
+                    frequency_domain = self._audio._frequency_domains.get(
+                        fft_config
+                    )
                     if frequency_domain is None:
                         _LOGGER.warning(
                             f"Melbank {i} FFT config {fft_config} not found in frequency domains"
@@ -699,7 +729,7 @@ class Melbanks:
                 else:
                     _LOGGER.warning(f"Melbank {i} has no FFT config")
                     continue
-                
+
                 proc(
                     frequency_domain,
                     self.melbanks[i],
