@@ -35,6 +35,8 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
         self.beat_now = 0
         self.phase = 0
         self.color_idx = 0
+        self.beat_timestamps = []  # Rolling window of beat timestamps
+        self.last_teleplot_time = 0  # Track last time we sent to teleplot
 
     def audio_data_updated(self, data):
         # Run linear beat oscillator through easing method
@@ -42,6 +44,28 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
             data.beat_oscillator(),
             data.bpm_beat_now(),
         )
+
+        # Track beats in 1-second rolling window
+        import time
+        from ledfx.utils import Teleplot 
+        current_time = time.time()
+        
+        if self.beat_now:
+            self.beat_timestamps.append(current_time)
+        
+        # Remove beats older than 10 seconds (list is in chronological order)
+        cutoff_time = current_time - 10.0
+        while self.beat_timestamps and self.beat_timestamps[0] < cutoff_time:
+            self.beat_timestamps.pop(0)
+        
+        # Calculate beats per minute from 10-second window
+        # (beats in 10 seconds) * 6 = beats per minute
+        self.beats_per_minute = len(self.beat_timestamps) * 6
+        
+        # Send to teleplot at 10 Hz (every 0.1 seconds)
+        if current_time - self.last_teleplot_time >= 0.1:
+            Teleplot.send(f"bpm:{self.beats_per_minute}")
+            self.last_teleplot_time = current_time
 
         # color change and phase
         if self.beat_now:
