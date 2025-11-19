@@ -24,7 +24,6 @@ dependencies = [
     "sacn>=1.9.0",
     "sentry-sdk>=1.40.4",
     "sounddevice>=0.4.6",
-    "samplerate>=0.2.1",
     "icmplib>=3.0.4",
     "voluptuous>=0.14.1",
     "zeroconf>=0.131.0",
@@ -42,6 +41,7 @@ dependencies = [
     "netifaces2>=0.0.22",
     "packaging>=21.0",
     "xled>=0.7.0",
+    "samplerate-ledfx>=0.2.3",
 ]
 name = "LedFx"
 version = "2.1.2"
