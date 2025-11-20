@@ -12,7 +12,7 @@ import pytest
 from PIL import Image
 
 from ledfx.libraries.cache import ImageCache
-from ledfx.utils import init_image_cache, open_gif, open_image
+from ledfx.utils import get_image_cache, init_image_cache, open_gif, open_image
 
 
 @pytest.fixture
@@ -404,18 +404,18 @@ class TestCacheFallbackOnError:
         self,
         mock_urlopen,
         mock_build_request,
-        cache,
         sample_image_data,
         tmp_path,
     ):
         """Test that open_image falls back to download if cached file is corrupted."""
 
-        # Initialize cache
+        # Initialize global cache
         init_image_cache(str(tmp_path), max_size_mb=1, max_items=5)
+        cache = get_image_cache()
 
         url = "https://example.com/test.png"
 
-        # First, cache a valid image
+        # First, cache a valid image using the global cache
         cache.put(url, sample_image_data, "image/png")
         cache_key = cache._generate_cache_key(url)
         cached_file = cache._get_cache_path(cache_key, ".png")
@@ -454,18 +454,18 @@ class TestCacheFallbackOnError:
         self,
         mock_urlopen,
         mock_build_request,
-        cache,
         sample_image_data,
         tmp_path,
     ):
         """Test that open_gif falls back to download if cached file is corrupted."""
 
-        # Initialize cache
+        # Initialize global cache
         init_image_cache(str(tmp_path), max_size_mb=1, max_items=5)
+        cache = get_image_cache()
 
         url = "https://example.com/test.gif"
 
-        # First, cache a valid image
+        # First, cache a valid image using the global cache
         cache.put(url, sample_image_data, "image/gif")
         cache_key = cache._generate_cache_key(url)
         cached_file = cache._get_cache_path(cache_key, ".gif")
