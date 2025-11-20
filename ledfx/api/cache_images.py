@@ -139,4 +139,3 @@ class CacheImagesEndpoint(RestEndpoint):
                 },
                 status=200,
             )
-
