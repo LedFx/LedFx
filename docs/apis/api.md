@@ -380,6 +380,8 @@ frames from a GIF image. Clients can request frames by providing either
 the URL or the local file path of the GIF resource. The frames are
 returned in JPEG format for efficient data transmission.
 
+**Note:** This endpoint now includes file type validation and caching. See the [Image Cache API](cache.md) documentation for details on security features and cache management.
+
 ### Endpoint Details
 
 -   **Endpoint Path**: `/api/get_gif_frames`
@@ -471,6 +473,8 @@ A RESTful endpoint designed for retrieving an image. Clients can request
 a file by providing either the URL or the local file path of the image
 resource. The image is returned in JPEG format for efficient data
 transmission.
+
+**Note:** This endpoint now includes file type validation and caching. See the [Image Cache API](cache.md) documentation for details on security features and cache management.
 
 ### Endpoint Details
 

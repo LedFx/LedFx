@@ -2,11 +2,14 @@ import asyncio
 import concurrent.futures
 import csv
 import datetime
+import imghdr
 import importlib
 import inspect
+import io
 import ipaddress
 import logging
 import math
+import mimetypes
 import os
 import pkgutil
 import re
@@ -46,6 +49,7 @@ from dotenv import load_dotenv
 from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
+from ledfx.libraries.cache import ImageCache
 
 # from asyncio import coroutines, ensure_future
 
@@ -1462,6 +1466,118 @@ def clip_at_limit(numbers, limit):
     return [num for num in numbers if num < limit]
 
 
+# =============================================================================
+# Image Security Validation Functions
+# =============================================================================
+
+# Constants for image security
+ALLOWED_IMAGE_EXTENSIONS = {
+    ".gif",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".ico",
+}
+
+ALLOWED_MIME_TYPES = {
+    "image/gif",
+    "image/png",
+    "image/jpeg",
+    "image/webp",
+    "image/bmp",
+    "image/tiff",
+    "image/x-icon",
+}
+
+ALLOWED_PIL_FORMATS = {
+    "GIF",
+    "PNG",
+    "JPEG",
+    "WEBP",
+    "BMP",
+    "TIFF",
+    "ICO",
+    "PPM",
+    "PGM",
+    "PBM",
+}
+
+# Image size limits
+MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
+MAX_IMAGE_PIXELS = 4096 * 4096  # Prevent decompression bombs
+DOWNLOAD_TIMEOUT = 30  # seconds
+
+
+def is_allowed_image_extension(path: str) -> bool:
+    """
+    Check if file extension is in allowlist.
+
+    Args:
+        path: File path to check
+
+    Returns:
+        bool: True if extension is allowed
+    """
+    ext = os.path.splitext(path.lower())[1]
+    return ext in ALLOWED_IMAGE_EXTENSIONS
+
+
+def validate_image_mime_type(file_path: str) -> bool:
+    """
+    Validate file MIME type using multiple methods.
+
+    Args:
+        file_path: Path to file to validate
+
+    Returns:
+        bool: True if MIME type is allowed
+    """
+    try:
+        # Check MIME type from file content
+        image_type = imghdr.what(file_path)
+        if image_type is None:
+            return False
+
+        # Additional MIME check
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type and mime_type not in ALLOWED_MIME_TYPES:
+            return False
+
+        return True
+    except Exception:
+        return False
+
+
+def validate_pil_image(image: Image.Image) -> bool:
+    """
+    Validate PIL image format and dimensions.
+
+    Args:
+        image: PIL Image object
+
+    Returns:
+        bool: True if image format and size are allowed
+    """
+    # Check format
+    if image.format not in ALLOWED_PIL_FORMATS:
+        _LOGGER.warning(f"Rejected unsupported image format: {image.format}")
+        return False
+
+    # Check pixel dimensions (prevent decompression bombs)
+    if image.width * image.height > MAX_IMAGE_PIXELS:
+        _LOGGER.warning(
+            f"Image too large: {image.width}x{image.height} pixels "
+            f"(max {MAX_IMAGE_PIXELS})"
+        )
+        return False
+
+    return True
+
+
 def build_browser_request(url: str) -> urllib.request.Request:
     """Minimal: add a desktop UA and same-origin Referer."""
     parsed = urllib.parse.urlsplit(url)
@@ -1481,28 +1597,152 @@ def build_browser_request(url: str) -> urllib.request.Request:
     return urllib.request.Request(url, headers=headers)
 
 
-def open_gif(gif_path):
+# Global image cache instance
+_image_cache = None
+
+
+def init_image_cache(
+    config_dir: str, max_size_mb: int = 500, max_items: int = 500
+):
     """
-    Open a gif from a local file or url
+    Initialize global image cache.
 
     Args:
-        gif_path: str
-            path to gif, webp, png or jpg file or url
-            Can handle any image source that PIL is capable of, not just gif
-    Returns:
-        Image: PIL Image object or None if failed to open
+        config_dir: LedFx configuration directory
+        max_size_mb: Maximum cache size in MB (default 500)
+        max_items: Maximum number of cached items (default 500)
     """
+    global _image_cache
+
+    _image_cache = ImageCache(config_dir, max_size_mb, max_items)
+    _LOGGER.info(
+        f"Image cache initialized: max {max_size_mb}MB, {max_items} items"
+    )
+
+
+def get_image_cache():
+    """Get the global image cache instance."""
+    return _image_cache
+
+
+def open_gif(gif_path, force_refresh=False):
+    """
+    Open a GIF image from a URL or local file path with file type validation.
+
+    Args:
+        gif_path: URL or local file path to the GIF
+        force_refresh: Force download from URL, bypassing cache (default False)
+
+    Returns:
+        PIL Image object or None if failed
+    """
+    gif_path = gif_path.strip()
+
     try:
-        gif_path = gif_path.strip()
-        _LOGGER.info(f"Attempting to open GIF: {gif_path}")
         if gif_path.startswith(("http://", "https://")):
+            # Check cache first (unless force_refresh)
+            if _image_cache and not force_refresh:
+                cached_path = _image_cache.get(gif_path)
+                if cached_path:
+                    try:
+                        gif = Image.open(cached_path)
+                        # Validate cached image
+                        if validate_pil_image(gif):
+                            # protect against single frame image like png, jpg
+                            if not hasattr(gif, "n_frames"):
+                                gif.n_frames = 1
+                            return gif
+                        else:
+                            _LOGGER.warning(
+                                f"Cached GIF failed validation, re-downloading: {gif_path}"
+                            )
+                            # Delete corrupt cache entry and fall through to download
+                            _image_cache.delete(gif_path)
+                    except Exception as e:
+                        _LOGGER.warning(
+                            f"Error reading cached GIF, re-downloading: {gif_path} : {e}"
+                        )
+                        # Delete corrupt cache entry and fall through to download
+                        _image_cache.delete(gif_path)
+
+            # Validate extension
+            if not is_allowed_image_extension(gif_path):
+                _LOGGER.error(f"URL has invalid image extension: {gif_path}")
+                return None
+
+            # Download with size limit and timeout
             req = build_browser_request(gif_path)
-            with urllib.request.urlopen(req) as url:
-                gif = Image.open(url)
-                _LOGGER.debug("Remote image source downloaded and opened.")
+            with urllib.request.urlopen(
+                req, timeout=DOWNLOAD_TIMEOUT
+            ) as response:
+                # Check content-length header
+                content_length = response.headers.get("Content-Length")
+                if (
+                    content_length
+                    and int(content_length) > MAX_IMAGE_SIZE_BYTES
+                ):
+                    _LOGGER.error(
+                        f"Image too large: {content_length} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                    )
+                    return None
+
+                # Read with limit
+                data = response.read(MAX_IMAGE_SIZE_BYTES + 1)
+                if len(data) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.error("Image exceeded size limit during download")
+                    return None
+
+                # Get headers for caching
+                etag = response.headers.get("ETag")
+                last_modified = response.headers.get("Last-Modified")
+                content_type = response.headers.get(
+                    "Content-Type", "image/jpeg"
+                )
+
+                gif = Image.open(io.BytesIO(data))
+
+                # Validate PIL format and dimensions
+                if not validate_pil_image(gif):
+                    _LOGGER.error(
+                        f"Invalid PIL format or dimensions: {gif_path}"
+                    )
+                    return None
+
+                # Cache the downloaded image
+                if _image_cache:
+                    _image_cache.put(
+                        gif_path, data, content_type, etag, last_modified
+                    )
         else:
-            gif = Image.open(gif_path)  # Directly open for local files
-            _LOGGER.debug("Local image source opened.")
+            # Local file
+            # Validate extension
+            if not is_allowed_image_extension(gif_path):
+                _LOGGER.error(f"File has invalid image extension: {gif_path}")
+                return None
+
+            # Check file exists and get size
+            if not os.path.exists(gif_path):
+                _LOGGER.error(f"File not found: {gif_path}")
+                return None
+
+            file_size = os.path.getsize(gif_path)
+            if file_size > MAX_IMAGE_SIZE_BYTES:
+                _LOGGER.error(
+                    f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                )
+                return None
+
+            # Validate MIME type
+            if not validate_image_mime_type(gif_path):
+                _LOGGER.error(f"Invalid image MIME type: {gif_path}")
+                return None
+
+            gif = Image.open(gif_path)
+
+            # Validate PIL format and dimensions
+            if not validate_pil_image(gif):
+                _LOGGER.error(f"Invalid PIL format or dimensions: {gif_path}")
+                return None
 
         # protect against single frame image like png, jpg
         if not hasattr(gif, "n_frames"):
@@ -1510,38 +1750,151 @@ def open_gif(gif_path):
 
         return gif
 
+    except urllib.error.HTTPError as e:
+        _LOGGER.warning(f"HTTP error fetching {gif_path}: {e.code} {e.reason}")
+        return None
+    except urllib.error.URLError as e:
+        _LOGGER.warning(f"URL error fetching {gif_path}: {e.reason}")
+        return None
     except Exception as e:
-        _LOGGER.warning(f"Failed to open gif : {gif_path} : {e}")
+        _LOGGER.warning(f"Failed to open gif: {gif_path} : {e}")
         return None
 
 
-def open_image(image_path):
+def open_image(image_path, force_refresh=False):
     """
-    Open an image from a local file or url
+    Open an image from a URL or local file path with file type validation.
 
     Args:
-        image_path: str
-            path to image file or url
+        image_path: URL or local file path to the image
+        force_refresh: Force download from URL, bypassing cache (default False)
+
     Returns:
-        Image: PIL Image object or None if failed to open
+        PIL Image object or None if failed
     """
+    image_path = image_path.strip()
 
     try:
-        image_path = image_path.strip()
-        _LOGGER.info(f"Attempting to open image: {image_path}")
         if image_path.startswith(("http://", "https://")):
-            req = build_browser_request(image_path)
-            with urllib.request.urlopen(req) as url:
-                image = Image.open(url)
-                _LOGGER.debug("Remote image downloaded and opened.")
-                return image
+            # Check cache first (unless force_refresh)
+            if _image_cache and not force_refresh:
+                cached_path = _image_cache.get(image_path)
+                if cached_path:
+                    try:
+                        image = Image.open(cached_path)
+                        # Validate cached image
+                        if validate_pil_image(image):
+                            return image
+                        else:
+                            _LOGGER.warning(
+                                f"Cached image failed validation, re-downloading: {image_path}"
+                            )
+                            # Delete corrupt cache entry and fall through to download
+                            _image_cache.delete(image_path)
+                    except Exception as e:
+                        _LOGGER.warning(
+                            f"Error reading cached image, re-downloading: {image_path} : {e}"
+                        )
+                        # Delete corrupt cache entry and fall through to download
+                        _image_cache.delete(image_path)
 
+            # Validate extension
+            if not is_allowed_image_extension(image_path):
+                _LOGGER.error(f"URL has invalid image extension: {image_path}")
+                return None
+
+            # Download with size limit and timeout
+            req = build_browser_request(image_path)
+            with urllib.request.urlopen(
+                req, timeout=DOWNLOAD_TIMEOUT
+            ) as response:
+                # Check content-length header
+                content_length = response.headers.get("Content-Length")
+                if (
+                    content_length
+                    and int(content_length) > MAX_IMAGE_SIZE_BYTES
+                ):
+                    _LOGGER.error(
+                        f"Image too large: {content_length} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                    )
+                    return None
+
+                # Read with limit
+                data = response.read(MAX_IMAGE_SIZE_BYTES + 1)
+                if len(data) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.error("Image exceeded size limit during download")
+                    return None
+
+                # Get headers for caching
+                etag = response.headers.get("ETag")
+                last_modified = response.headers.get("Last-Modified")
+                content_type = response.headers.get(
+                    "Content-Type", "image/jpeg"
+                )
+
+                image = Image.open(io.BytesIO(data))
+
+                # Validate PIL format and dimensions
+                if not validate_pil_image(image):
+                    _LOGGER.error(
+                        f"Invalid PIL format or dimensions: {image_path}"
+                    )
+                    return None
+
+                # Cache the downloaded image
+                if _image_cache:
+                    _image_cache.put(
+                        image_path, data, content_type, etag, last_modified
+                    )
+
+                return image
         else:
-            image = Image.open(image_path)  # Directly open for local files
-            _LOGGER.debug("Local Image opened.")
+            # Local file
+            # Validate extension
+            if not is_allowed_image_extension(image_path):
+                _LOGGER.error(
+                    f"File has invalid image extension: {image_path}"
+                )
+                return None
+
+            # Check file exists and get size
+            if not os.path.exists(image_path):
+                _LOGGER.error(f"File not found: {image_path}")
+                return None
+
+            file_size = os.path.getsize(image_path)
+            if file_size > MAX_IMAGE_SIZE_BYTES:
+                _LOGGER.error(
+                    f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                )
+                return None
+
+            # Validate MIME type
+            if not validate_image_mime_type(image_path):
+                _LOGGER.error(f"Invalid image MIME type: {image_path}")
+                return None
+
+            image = Image.open(image_path)
+
+            # Validate PIL format and dimensions
+            if not validate_pil_image(image):
+                _LOGGER.error(
+                    f"Invalid PIL format or dimensions: {image_path}"
+                )
+                return None
+
             return image
+
+    except urllib.error.HTTPError as e:
+        _LOGGER.warning(
+            f"HTTP error fetching {image_path}: {e.code} {e.reason}"
+        )
+        return None
+    except urllib.error.URLError as e:
+        _LOGGER.warning(f"URL error fetching {image_path}: {e.reason}")
+        return None
     except Exception as e:
-        _LOGGER.warning(f"Failed to open image : {image_path} : {e}")
+        _LOGGER.warning(f"Failed to open image: {image_path} : {e}")
         return None
 
 

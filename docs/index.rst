@@ -48,6 +48,7 @@
    :caption: LedFx API
 
    /apis/api
+   /apis/cache
    /apis/websocket
    /apis/scenes
    /apis/playlists
