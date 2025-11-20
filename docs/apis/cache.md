@@ -103,29 +103,37 @@ DELETE /api/cache/images
 
 ### Refresh Image
 
-Explicitly refresh a cached image by forcing re-download on next access.
+Clear a cached image to force re-download on next access.
+
+This endpoint removes the specified URL from the cache. The next time the image is requested via `/api/get_image` or `/api/get_gif_frames`, it will be re-downloaded from the origin server and cached again.
 
 **Endpoint:** `POST /api/cache/images/refresh`
 
 **Request Body:**
 ```json
 {
-  "url": "https://example.com/image.gif",
-  "force": false
+  "url": "https://example.com/image.gif"
 }
 ```
 
 **Parameters:**
-- `url` (required): The URL to refresh
-- `force` (optional, default false): If true, force download; if false, use conditional request (future feature)
+- `url` (required): The URL to clear from cache
 
-**Response:**
+**Response (entry was in cache):**
 ```json
 {
   "status": "success",
   "message": "Cache entry cleared. Image will be re-downloaded on next access.",
-  "url": "https://example.com/image.gif",
-  "force": false
+  "url": "https://example.com/image.gif"
+}
+```
+
+**Response (entry was not in cache):**
+```json
+{
+  "status": "success",
+  "message": "URL was not in cache (no action needed).",
+  "url": "https://example.com/image.gif"
 }
 ```
 
@@ -231,8 +239,10 @@ curl -X DELETE "http://localhost:8888/api/cache/images?url=https://old-domain.co
 ```bash
 curl -X POST http://localhost:8888/api/cache/images/refresh \
   -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/updated.gif", "force": true}'
+  -d '{"url": "https://example.com/updated.gif"}'
 ```
+
+Next access to this URL will download a fresh copy.
 
 ### Clear Entire Cache (Fresh Start)
 ```bash
