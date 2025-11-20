@@ -1,5 +1,7 @@
 """Tests for scene action field functionality."""
 
+from unittest.mock import patch
+
 from ledfx.scenes import Scenes
 
 
@@ -76,7 +78,8 @@ def _build_scenes_manager(scene_config, virtuals, presets=None):
 
 
 # Test action: ignore
-def test_action_ignore_leaves_virtual_unchanged():
+@patch("ledfx.scenes.save_config")
+def test_action_ignore_leaves_virtual_unchanged(mock_save):
     """Test that action 'ignore' leaves the virtual unchanged."""
     scene_id = "test-scene"
     scenes = {
@@ -101,7 +104,8 @@ def test_action_ignore_leaves_virtual_unchanged():
 
 
 # Test action: stop
-def test_action_stop_clears_effect():
+@patch("ledfx.scenes.save_config")
+def test_action_stop_clears_effect(mock_save):
     """Test that action 'stop' clears the virtual's effect."""
     scene_id = "test-scene"
     scenes = {
@@ -125,7 +129,8 @@ def test_action_stop_clears_effect():
 
 
 # Test action: forceblack
-def test_action_forceblack_sets_black_single_color():
+@patch("ledfx.scenes.save_config")
+def test_action_forceblack_sets_black_single_color(mock_save):
     """Test that action 'forceblack' sets Single Color effect with black."""
     scene_id = "test-scene"
     scenes = {
@@ -152,7 +157,8 @@ def test_action_forceblack_sets_black_single_color():
 
 
 # Test action: activate with explicit config
-def test_action_activate_with_explicit_config():
+@patch("ledfx.scenes.save_config")
+def test_action_activate_with_explicit_config(mock_save):
     """Test that action 'activate' applies the specified effect."""
     scene_id = "test-scene"
     scenes = {
@@ -183,7 +189,8 @@ def test_action_activate_with_explicit_config():
 
 
 # Test action: activate with preset
-def test_action_activate_with_preset():
+@patch("ledfx.scenes.save_config")
+def test_action_activate_with_preset(mock_save):
     """Test that action 'activate' resolves and applies a preset."""
     scene_id = "test-scene"
     scenes = {
@@ -221,7 +228,8 @@ def test_action_activate_with_preset():
 
 
 # Test action: activate with missing preset
-def test_action_activate_with_missing_preset_falls_back_to_reset():
+@patch("ledfx.scenes.save_config")
+def test_action_activate_with_missing_preset_falls_back_to_reset(mock_save):
     """Test that action 'activate' with missing preset falls back to reset preset."""
     scene_id = "test-scene"
     scenes = {
@@ -256,7 +264,8 @@ def test_action_activate_with_missing_preset_falls_back_to_reset():
 
 
 # Test legacy behavior: empty object
-def test_legacy_empty_object_behaves_as_ignore():
+@patch("ledfx.scenes.save_config")
+def test_legacy_empty_object_behaves_as_ignore(mock_save):
     """Test that empty object {} behaves as 'ignore' action."""
     scene_id = "test-scene"
     scenes = {
@@ -281,7 +290,8 @@ def test_legacy_empty_object_behaves_as_ignore():
 
 
 # Test legacy behavior: type and config present
-def test_legacy_type_config_behaves_as_activate():
+@patch("ledfx.scenes.save_config")
+def test_legacy_type_config_behaves_as_activate(mock_save):
     """Test that type/config without action behaves as 'activate'."""
     scene_id = "test-scene"
     scenes = {
@@ -310,7 +320,8 @@ def test_legacy_type_config_behaves_as_activate():
 
 
 # Test mixed actions in one scene
-def test_mixed_actions_in_scene():
+@patch("ledfx.scenes.save_config")
+def test_mixed_actions_in_scene(mock_save):
     """Test a scene with multiple virtuals using different actions."""
     scene_id = "test-scene"
     scenes = {
@@ -352,7 +363,8 @@ def test_mixed_actions_in_scene():
 
 
 # Test activate with invalid action config
-def test_action_activate_without_type_or_config_skips():
+@patch("ledfx.scenes.save_config")
+def test_action_activate_without_type_or_config_skips(mock_save):
     """Test that activate without type/config/preset skips the virtual."""
     scene_id = "test-scene"
     scenes = {
@@ -379,7 +391,8 @@ def test_action_activate_without_type_or_config_skips():
 
 
 # Test preset resolution from user_presets
-def test_preset_resolution_from_user_presets():
+@patch("ledfx.scenes.save_config")
+def test_preset_resolution_from_user_presets(mock_save):
     """Test that presets are resolved from user_presets as well."""
     scene_id = "test-scene"
     scenes = {
@@ -423,7 +436,8 @@ def test_preset_resolution_from_user_presets():
 
 
 # Test virtual missing from system
-def test_scene_activation_skips_missing_virtuals():
+@patch("ledfx.scenes.save_config")
+def test_scene_activation_skips_missing_virtuals(mock_save):
     """Test that scene activation continues when a virtual is missing."""
     scene_id = "test-scene"
     scenes = {
@@ -458,7 +472,8 @@ def test_scene_activation_skips_missing_virtuals():
 
 
 # Test invalid action value
-def test_unknown_action_value_treated_as_legacy():
+@patch("ledfx.scenes.save_config")
+def test_unknown_action_value_treated_as_legacy(mock_save):
     """Test that unknown action values fall through to legacy behavior."""
     scene_id = "test-scene"
     scenes = {
@@ -487,7 +502,8 @@ def test_unknown_action_value_treated_as_legacy():
 
 
 # Test scene with no virtuals
-def test_scene_with_no_virtuals_activates_successfully():
+@patch("ledfx.scenes.save_config")
+def test_scene_with_no_virtuals_activates_successfully(mock_save):
     """Test that a scene with no virtuals can be activated."""
     scene_id = "empty-scene"
     scenes = {
@@ -506,7 +522,8 @@ def test_scene_with_no_virtuals_activates_successfully():
 
 
 # Test reset preset
-def test_action_activate_with_reset_preset():
+@patch("ledfx.scenes.save_config")
+def test_action_activate_with_reset_preset(mock_save):
     """Test that the special 'reset' preset generates default config."""
     scene_id = "test-scene"
     scenes = {
