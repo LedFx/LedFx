@@ -108,7 +108,10 @@ class Scenes:
             # Legacy support: if no action field, infer from config
             if action is None:
                 # Empty dict or no type/config means ignore (legacy behavior)
-                if not virtual_config or ("type" not in virtual_config and "config" not in virtual_config):
+                if not virtual_config or (
+                    "type" not in virtual_config
+                    and "config" not in virtual_config
+                ):
                     action = "ignore"
                 else:
                     action = "activate"
@@ -136,20 +139,26 @@ class Scenes:
                 # Get effect type (required for both preset and explicit config)
                 effect_type = virtual_config.get("type")
                 if not effect_type:
-                    _LOGGER.warning(f"Invalid activate config for virtual {virtual_id}, missing required 'type' field")
+                    _LOGGER.warning(
+                        f"Invalid activate config for virtual {virtual_id}, missing required 'type' field"
+                    )
                     continue
-                
+
                 # Check if using preset
                 preset_name = virtual_config.get("preset")
                 if preset_name:
                     # Resolve preset from current library for this effect type
                     # (will fall back to reset preset if not found)
-                    effect_config = self._resolve_preset(effect_type, preset_name)
+                    effect_config = self._resolve_preset(
+                        effect_type, preset_name
+                    )
                 else:
                     # Use explicit config
                     effect_config = virtual_config.get("config")
                     if effect_config is None:
-                        _LOGGER.warning(f"Invalid activate config for virtual {virtual_id}, missing 'config' field")
+                        _LOGGER.warning(
+                            f"Invalid activate config for virtual {virtual_id}, missing 'config' field"
+                        )
                         continue
 
                 # Create and apply the effect
@@ -175,32 +184,40 @@ class Scenes:
 
     def _resolve_preset(self, effect_type, preset_name):
         """Resolve a preset name to effect config for a specific effect type.
-        
+
         Falls back to reset preset (factory defaults) if the requested preset is not found.
-        
+
         Args:
             effect_type: The effect type to search within
             preset_name: Name of the preset to resolve
-            
+
         Returns:
             dict: Effect config (always returns a valid config, falling back to reset)
         """
         # Handle special "reset" preset
         if preset_name == "reset":
             return generate_default_config(self._ledfx.effects, effect_type)
-        
+
         # Check ledfx_presets first
         ledfx_presets = self._ledfx.config.get("ledfx_presets", {})
-        if effect_type in ledfx_presets and preset_name in ledfx_presets[effect_type]:
+        if (
+            effect_type in ledfx_presets
+            and preset_name in ledfx_presets[effect_type]
+        ):
             return ledfx_presets[effect_type][preset_name].get("config", {})
-        
+
         # Check user_presets
         user_presets = self._ledfx.config.get("user_presets", {})
-        if effect_type in user_presets and preset_name in user_presets[effect_type]:
+        if (
+            effect_type in user_presets
+            and preset_name in user_presets[effect_type]
+        ):
             return user_presets[effect_type][preset_name].get("config", {})
-        
+
         # Preset not found, fall back to reset preset
-        _LOGGER.warning(f"Preset '{preset_name}' not found for effect '{effect_type}', falling back to reset preset")
+        _LOGGER.warning(
+            f"Preset '{preset_name}' not found for effect '{effect_type}', falling back to reset preset"
+        )
         return generate_default_config(self._ledfx.effects, effect_type)
 
     def deactivate(self, scene_id):

@@ -31,7 +31,9 @@ class ScenesEndpoint(RestEndpoint):
             # Add preset matching for each virtual's effect
             if "virtuals" in scene_payload:
                 virtuals_with_presets = {}
-                for virtual_id, effect_data in scene_payload["virtuals"].items():
+                for virtual_id, effect_data in scene_payload[
+                    "virtuals"
+                ].items():
                     virtual_payload = dict(effect_data)
                     if (
                         "type" in effect_data
@@ -261,21 +263,21 @@ class ScenesEndpoint(RestEndpoint):
 
                 # Preserve the entire virtual config including action field
                 virtual_config = {}
-                
+
                 # Copy action field if present
                 if "action" in virtual_data:
                     virtual_config["action"] = virtual_data["action"]
-                
+
                 # Copy type and config if present (for activate action or legacy)
                 if "type" in virtual_data:
                     virtual_config["type"] = virtual_data["type"]
                 if "config" in virtual_data:
                     virtual_config["config"] = virtual_data["config"]
-                
+
                 # Copy preset if present (for activate action with preset)
                 if "preset" in virtual_data:
                     virtual_config["preset"] = virtual_data["preset"]
-                
+
                 scene_config["virtuals"][virtualid] = virtual_config
 
         # Update the scene if it already exists, else create it

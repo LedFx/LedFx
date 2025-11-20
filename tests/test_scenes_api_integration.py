@@ -41,11 +41,19 @@ async def test_post_scene_preserves_action_fields():
     request_data = {
         "name": "Test Scene",
         "virtuals": {
-            "v1": {"action": "activate", "type": "bars", "config": {"speed": 2}},
+            "v1": {
+                "action": "activate",
+                "type": "bars",
+                "config": {"speed": 2},
+            },
             "v2": {"action": "stop"},
             "v3": {"action": "forceblack"},
             "v4": {"action": "ignore"},
-            "v5": {"action": "activate", "type": "scroll", "preset": "rainbow-scroll"},
+            "v5": {
+                "action": "activate",
+                "type": "scroll",
+                "preset": "rainbow-scroll",
+            },
         },
     }
 
@@ -58,7 +66,7 @@ async def test_post_scene_preserves_action_fields():
 
         assert data["status"] == "success"
         scene_config = data["scene"]["config"]
-        
+
         # Verify all action fields are preserved
         assert scene_config["virtuals"]["v1"]["action"] == "activate"
         assert scene_config["virtuals"]["v1"]["type"] == "bars"
@@ -93,7 +101,7 @@ async def test_post_scene_preserves_legacy_format():
 
         assert data["status"] == "success"
         scene_config = data["scene"]["config"]
-        
+
         # Legacy format should be preserved (no action field added)
         assert scene_config["virtuals"]["v1"]["type"] == "energy"
         assert "action" not in scene_config["virtuals"]["v1"]
@@ -125,12 +133,12 @@ async def test_post_scene_mixed_legacy_and_new():
 
         assert data["status"] == "success"
         scene_config = data["scene"]["config"]
-        
+
         # Legacy entries preserved
         assert scene_config["virtuals"]["v1"]["type"] == "bars"
         assert "action" not in scene_config["virtuals"]["v1"]
         assert scene_config["virtuals"]["v3"] == {}
-        
+
         # New format preserved
         assert scene_config["virtuals"]["v2"]["action"] == "stop"
         assert scene_config["virtuals"]["v4"]["action"] == "activate"
@@ -153,7 +161,7 @@ async def test_get_scenes_includes_preset_detection():
             },
         },
     }
-    
+
     endpoint = ScenesEndpoint(mock_ledfx)
 
     response = await endpoint.get()
@@ -162,7 +170,7 @@ async def test_get_scenes_includes_preset_detection():
     assert data["status"] == "success"
     assert "scenes" in data
     assert "scene-1" in data["scenes"]
-    
+
     # Check preset was detected and added
     virtual_config = data["scenes"]["scene-1"]["virtuals"]["v1"]
     assert virtual_config["preset"] == "rainbow-scroll"
@@ -185,7 +193,7 @@ async def test_get_scene_by_id_includes_preset_detection():
             },
         },
     }
-    
+
     endpoint = SceneEndpoint(mock_ledfx)
 
     response = await endpoint.get("my-scene")
@@ -193,7 +201,7 @@ async def test_get_scene_by_id_includes_preset_detection():
 
     assert data["status"] == "success"
     assert data["scene"]["id"] == "my-scene"
-    
+
     virtual_config = data["scene"]["config"]["virtuals"]["v1"]
     assert virtual_config["preset"] == "rainbow-scroll"
     assert virtual_config["preset_category"] == "ledfx_presets"
@@ -207,7 +215,7 @@ async def test_delete_scene_by_id_restful():
         "name": "Test Scene",
         "virtuals": {},
     }
-    
+
     endpoint = SceneEndpoint(mock_ledfx)
 
     with patch("ledfx.api.scenes_id.save_config") as mock_save:
@@ -216,7 +224,7 @@ async def test_delete_scene_by_id_restful():
 
         assert data["status"] == "success"
         assert "test-scene" in data["payload"]["reason"]
-        
+
         # Verify scene was deleted
         assert "test-scene" not in mock_ledfx.config["scenes"]
         mock_save.assert_called_once()
@@ -265,7 +273,7 @@ async def test_post_scene_with_upsert():
             "name": "Updated Scene",
             "virtuals": {"v1": {"action": "forceblack"}},
         }
-        
+
         mock_request.json = AsyncMock(return_value=request_data_2)
         response = await endpoint.post(mock_request)
         data = json.loads(response.body.decode())
@@ -273,7 +281,9 @@ async def test_post_scene_with_upsert():
         assert data["status"] == "success"
         assert data["scene"]["id"] == "my-scene"
         assert data["scene"]["config"]["name"] == "Updated Scene"
-        assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "forceblack"
+        assert (
+            data["scene"]["config"]["virtuals"]["v1"]["action"] == "forceblack"
+        )
 
 
 @pytest.mark.asyncio
@@ -290,14 +300,14 @@ async def test_get_scenes_handles_virtuals_without_type_or_config():
             },
         },
     }
-    
+
     endpoint = ScenesEndpoint(mock_ledfx)
 
     response = await endpoint.get()
     data = json.loads(response.body.decode())
 
     assert data["status"] == "success"
-    
+
     # Should not crash, and should not add preset fields for action-only virtuals
     virtuals = data["scenes"]["scene-1"]["virtuals"]
     assert "preset" not in virtuals["v1"]

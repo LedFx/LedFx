@@ -46,12 +46,14 @@ class _DummyEffects:
 
     def get_class(self, effect_id):
         """Mock get_class for generate_default_config support."""
+
         # Return a mock effect class with a get_combined_default_schema method
         class MockEffectClass:
             @staticmethod
             def get_combined_default_schema():
                 # Return a simple default config
                 return {"speed": 1.0, "brightness": 1.0, "color": "#ffffff"}
+
         return MockEffectClass
 
 
@@ -69,7 +71,9 @@ class _DummyLedFx:
 
 
 def _build_scenes_manager(scene_config, virtuals, presets=None):
-    dummy_ledfx = _DummyLedFx(scenes=scene_config, virtuals=virtuals, presets=presets)
+    dummy_ledfx = _DummyLedFx(
+        scenes=scene_config, virtuals=virtuals, presets=presets
+    )
     return Scenes(dummy_ledfx), dummy_ledfx
 
 
@@ -246,7 +250,11 @@ def test_action_activate_with_missing_preset_falls_back_to_reset():
     effect = ledfx.effects._created_effects[0]
     assert effect.type == "scroll"
     # Should fall back to reset/default config
-    assert effect.config == {"speed": 1.0, "brightness": 1.0, "color": "#ffffff"}
+    assert effect.config == {
+        "speed": 1.0,
+        "brightness": 1.0,
+        "color": "#ffffff",
+    }
 
 
 # Test legacy behavior: empty object
@@ -424,7 +432,11 @@ def test_scene_activation_skips_missing_virtuals():
         scene_id: {
             "name": "Test Scene",
             "virtuals": {
-                "v1": {"action": "activate", "type": "bars", "config": {"speed": 1}},
+                "v1": {
+                    "action": "activate",
+                    "type": "bars",
+                    "config": {"speed": 1},
+                },
                 "missing-virtual": {"action": "stop"},
                 "v2": {"action": "forceblack"},
             },
@@ -523,4 +535,8 @@ def test_action_activate_with_reset_preset():
     effect = ledfx.effects._created_effects[0]
     assert effect.type == "scroll"
     # Should have the default config from get_combined_default_schema
-    assert effect.config == {"speed": 1.0, "brightness": 1.0, "color": "#ffffff"}
+    assert effect.config == {
+        "speed": 1.0,
+        "brightness": 1.0,
+        "color": "#ffffff",
+    }

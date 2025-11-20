@@ -64,7 +64,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         assert data["status"] == "success"
         assert "scene" in data
         assert "id" in data["scene"]
-        
+
         # Verify all action fields are preserved
         scene_config = data["scene"]["config"]
         assert scene_config["virtuals"]["v1"]["action"] == "activate"
@@ -95,7 +95,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         assert resp.status == 200
         data = await resp.json()
         assert data["status"] == "success"
-        
+
         scene_config = data["scene"]["config"]
         assert scene_config["virtuals"]["v1"]["action"] == "activate"
         assert scene_config["virtuals"]["v1"]["preset"] == "rainbow-scroll"
@@ -125,7 +125,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         assert resp.status == 200
         data = await resp.json()
         assert data["status"] == "success"
-        
+
         scene_config = data["scene"]["config"]
         # Legacy format should be preserved
         assert scene_config["virtuals"]["v1"]["type"] == "energy"
@@ -179,18 +179,18 @@ class TestScenesEndpointGet(AioHTTPTestCase):
                 },
             },
         }
-        
+
         with patch("ledfx.api.scenes.find_matching_preset") as mock_find:
             mock_find.return_value = ("cool-preset", "ledfx_presets")
-            
+
             resp = await self.client.get("/api/scenes")
-            
+
             assert resp.status == 200
             data = await resp.json()
             assert data["status"] == "success"
             assert "scenes" in data
             assert "scene-1" in data["scenes"]
-            
+
             # Check preset was added
             virtual_config = data["scenes"]["scene-1"]["virtuals"]["v1"]
             assert virtual_config["preset"] == "cool-preset"
@@ -205,9 +205,9 @@ class TestScenesEndpointGet(AioHTTPTestCase):
             },
         }
         self.mock_ledfx.scenes.is_active.return_value = True
-        
+
         resp = await self.client.get("/api/scenes")
-        
+
         assert resp.status == 200
         data = await resp.json()
         assert data["scenes"]["scene-1"]["active"] is True
@@ -237,7 +237,7 @@ class TestSceneEndpointDelete(AioHTTPTestCase):
         data = await resp.json()
         assert data["status"] == "success"
         assert "test-scene" in data["payload"]["reason"]
-        
+
         # Verify scene was deleted
         assert "test-scene" not in self.mock_ledfx.config["scenes"]
         mock_save.assert_called_once()
@@ -278,14 +278,14 @@ class TestSceneEndpointGet(AioHTTPTestCase):
 
         with patch("ledfx.api.scenes_id.find_matching_preset") as mock_find:
             mock_find.return_value = ("rainbow-preset", "user_presets")
-            
+
             resp = await self.client.get("/api/scenes/my-scene")
-            
+
             assert resp.status == 200
             data = await resp.json()
             assert data["status"] == "success"
             assert data["scene"]["id"] == "my-scene"
-            
+
             virtual_config = data["scene"]["config"]["virtuals"]["v1"]
             assert virtual_config["preset"] == "rainbow-preset"
             assert virtual_config["preset_category"] == "user_presets"
@@ -297,7 +297,7 @@ async def test_scene_action_field_preservation():
     """Test that action fields are preserved through create/retrieve cycle."""
     mock_ledfx = MockLedFx()
     scenes_endpoint = ScenesEndpoint(mock_ledfx)
-    
+
     # Create a mock request with action fields
     request_data = {
         "name": "Action Test",
@@ -308,17 +308,17 @@ async def test_scene_action_field_preservation():
             "v4": {"action": "ignore"},
         },
     }
-    
+
     mock_request = AsyncMock()
     mock_request.json = AsyncMock(return_value=request_data)
-    
+
     with patch("ledfx.api.scenes.save_config"):
         response = await scenes_endpoint.post(mock_request)
         data = await response.json()
-        
+
         scene_id = data["scene"]["id"]
         virtuals = data["scene"]["config"]["virtuals"]
-        
+
         # Verify all action types are preserved
         assert virtuals["v1"]["action"] == "activate"
         assert virtuals["v1"]["preset"] == "rainbow"
