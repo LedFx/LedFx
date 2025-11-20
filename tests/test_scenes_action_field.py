@@ -1,7 +1,5 @@
 """Tests for scene action field functionality."""
 
-import pytest
-
 from ledfx.scenes import Scenes
 
 
