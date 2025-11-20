@@ -16,6 +16,7 @@ import socket
 import sys
 import time
 import timeit
+import urllib.parse
 import urllib.request
 from abc import ABC
 from collections import deque
