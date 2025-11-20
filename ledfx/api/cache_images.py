@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 class CacheImagesEndpoint(RestEndpoint):
     """
     REST API endpoint for image cache statistics and management.
-    
+
     Cache Policy:
     - Images cached indefinitely (no automatic expiration)
     - No TTL-based refresh
@@ -27,10 +27,10 @@ class CacheImagesEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         """
         Get cache statistics and entries.
-        
+
         Returns:
             JSON with cache stats including total size, count, and all cached entries
-            
+
         Example Response:
             {
                 "total_size": 52428800,
@@ -55,7 +55,7 @@ class CacheImagesEndpoint(RestEndpoint):
             }
         """
         cache = get_image_cache()
-        
+
         if not cache:
             return web.json_response(
                 {
@@ -71,23 +71,23 @@ class CacheImagesEndpoint(RestEndpoint):
             "refresh": "explicit only",
             "eviction": "LRU when limits exceeded",
         }
-        
+
         return web.json_response(stats, status=200)
 
     async def delete(self, request: web.Request) -> web.Response:
         """
         Clear cache for specific URL or entire cache.
-        
+
         Query Parameters:
             url (optional): Specific URL to clear from cache
-            
+
         Returns:
             JSON with cleared_count and freed_bytes
-            
+
         Examples:
             DELETE /api/cache/images?url=https://example.com/image.gif
             DELETE /api/cache/images  (clears entire cache)
-            
+
         Example Response:
             {
                 "status": "success",
@@ -96,7 +96,7 @@ class CacheImagesEndpoint(RestEndpoint):
             }
         """
         cache = get_image_cache()
-        
+
         if not cache:
             return web.json_response(
                 {
@@ -107,7 +107,7 @@ class CacheImagesEndpoint(RestEndpoint):
             )
 
         url = request.query.get("url")
-        
+
         if url:
             # Clear specific URL
             deleted = cache.delete(url)
@@ -150,16 +150,16 @@ class CacheRefreshEndpoint(RestEndpoint):
     async def post(self, request: web.Request) -> web.Response:
         """
         Explicitly refresh a cached image from origin server.
-        
+
         Request Body:
             {
                 "url": "https://example.com/image.gif",
                 "force": false  // Optional: true to force download, false for conditional request
             }
-            
+
         Returns:
             JSON with refresh result
-            
+
         Example Response:
             {
                 "status": "success",
@@ -169,7 +169,7 @@ class CacheRefreshEndpoint(RestEndpoint):
             }
         """
         cache = get_image_cache()
-        
+
         if not cache:
             return web.json_response(
                 {
@@ -190,7 +190,10 @@ class CacheRefreshEndpoint(RestEndpoint):
         url = data.get("url")
         if not url:
             return web.json_response(
-                {"status": "error", "message": "Missing 'url' in request body"},
+                {
+                    "status": "error",
+                    "message": "Missing 'url' in request body",
+                },
                 status=200,
             )
 
@@ -198,7 +201,7 @@ class CacheRefreshEndpoint(RestEndpoint):
 
         # Clear the URL from cache to force refresh on next access
         cache.delete(url)
-        
+
         return web.json_response(
             {
                 "status": "success",
