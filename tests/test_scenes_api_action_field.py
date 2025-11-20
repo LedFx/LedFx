@@ -162,7 +162,7 @@ class TestScenesEndpointGet(AioHTTPTestCase):
         app = web.Application()
         self.mock_ledfx = MockLedFx()
         endpoint = ScenesEndpoint(self.mock_ledfx)
-        app.router.add_get("/api/scenes", endpoint.get)
+        app.router.add_get("/api/scenes", endpoint.handler)
         return app
 
     async def test_get_scenes_with_preset_detection(self):
@@ -220,7 +220,7 @@ class TestSceneEndpointDelete(AioHTTPTestCase):
         app = web.Application()
         self.mock_ledfx = MockLedFx()
         endpoint = SceneEndpoint(self.mock_ledfx)
-        app.router.add_delete("/api/scenes/{scene_id}", endpoint.delete)
+        app.router.add_delete("/api/scenes/{scene_id}", endpoint.handler)
         return app
 
     @patch("ledfx.api.scenes_id.save_config")
@@ -259,7 +259,7 @@ class TestSceneEndpointGet(AioHTTPTestCase):
         app = web.Application()
         self.mock_ledfx = MockLedFx()
         endpoint = SceneEndpoint(self.mock_ledfx)
-        app.router.add_get("/api/scenes/{scene_id}", endpoint.get)
+        app.router.add_get("/api/scenes/{scene_id}", endpoint.handler)
         return app
 
     async def test_get_scene_with_preset_detection(self):
@@ -314,7 +314,7 @@ async def test_scene_action_field_preservation():
 
     with patch("ledfx.api.scenes.save_config"):
         response = await scenes_endpoint.post(mock_request)
-        data = await response.json()
+        data = json.loads(response.body.decode())
 
         scene_id = data["scene"]["id"]
         virtuals = data["scene"]["config"]["virtuals"]

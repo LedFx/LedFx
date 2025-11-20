@@ -14,12 +14,12 @@ class SceneEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/scenes/{scene_id}"
 
-    async def get(self, scene_id: str) -> web.Response:
+    async def get(self, scene_id) -> web.Response:
         """
         Get a single scene by ID.
 
         Args:
-            scene_id (str): The scene ID to retrieve.
+            scene_id (str): The scene ID from the URL path.
 
         Returns:
             web.Response: The response containing the scene.
@@ -69,12 +69,12 @@ class SceneEndpoint(RestEndpoint):
         }
         return await self.bare_request_success(response)
 
-    async def delete(self, scene_id: str) -> web.Response:
+    async def delete(self, scene_id) -> web.Response:
         """
         Delete a scene by ID (RESTful endpoint).
 
         Args:
-            scene_id (str): The scene ID to delete.
+            scene_id (str): The scene ID from the URL path.
 
         Returns:
             web.Response: The response indicating success or failure.
