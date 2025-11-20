@@ -2,7 +2,6 @@ import asyncio
 import concurrent.futures
 import csv
 import datetime
-import imghdr
 import importlib
 import inspect
 import io
@@ -1537,12 +1536,17 @@ def validate_image_mime_type(file_path: str) -> bool:
         bool: True if MIME type is allowed
     """
     try:
-        # Check MIME type from file content
-        image_type = imghdr.what(file_path)
-        if image_type is None:
-            return False
+        # Try to open with PIL to detect format from content
+        with Image.open(file_path) as img:
+            # PIL format detection (more reliable than imghdr)
+            if img.format is None:
+                return False
 
-        # Additional MIME check
+            # Check if PIL format is in allowed list
+            if img.format.upper() not in ALLOWED_PIL_FORMATS:
+                return False
+
+        # Additional MIME check using file extension
         mime_type, _ = mimetypes.guess_type(file_path)
         if mime_type and mime_type not in ALLOWED_MIME_TYPES:
             return False
