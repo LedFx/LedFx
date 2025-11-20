@@ -169,6 +169,7 @@ class ImageCache:
 
     def _enforce_limits(self):
         """Evict LRU entries if cache exceeds size or count limits."""
+        evicted = False
         while (
             self.metadata["total_size"] > self.max_size_bytes
             or self.metadata["total_count"] > self.max_items
@@ -189,6 +190,11 @@ class ImageCache:
                 f"Evicting LRU cache entry: {self.metadata['cache_entries'][lru_key]['url']}"
             )
             self._delete(lru_key)
+            evicted = True
+
+        # Persist metadata changes after eviction
+        if evicted:
+            self._save_metadata()
 
     def _delete(self, cache_key: str):
         """Remove entry from cache by cache key."""

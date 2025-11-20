@@ -1,7 +1,6 @@
 """API endpoints for image cache management."""
 
 import logging
-from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -14,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class CacheImagesEndpoint(RestEndpoint):
     """
     REST API endpoint for image cache statistics and management.
-    
+
     Cache Policy:
     - Images cached indefinitely (no automatic expiration)
     - No TTL-based refresh
@@ -27,10 +26,10 @@ class CacheImagesEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         """
         Get cache statistics and entries.
-        
+
         Returns:
             JSON with cache stats including total size, count, and all cached entries
-            
+
         Example Response:
             {
                 "total_size": 52428800,
@@ -55,7 +54,7 @@ class CacheImagesEndpoint(RestEndpoint):
             }
         """
         cache = get_image_cache()
-        
+
         if not cache:
             return web.json_response(
                 {
@@ -71,23 +70,23 @@ class CacheImagesEndpoint(RestEndpoint):
             "refresh": "explicit only",
             "eviction": "LRU when limits exceeded",
         }
-        
+
         return web.json_response(stats, status=200)
 
     async def delete(self, request: web.Request) -> web.Response:
         """
         Clear cache for specific URL or entire cache.
-        
+
         Query Parameters:
             url (optional): Specific URL to clear from cache
-            
+
         Returns:
             JSON with cleared_count and freed_bytes
-            
+
         Examples:
             DELETE /api/cache/images?url=https://example.com/image.gif
             DELETE /api/cache/images  (clears entire cache)
-            
+
         Example Response:
             {
                 "status": "success",
@@ -96,7 +95,7 @@ class CacheImagesEndpoint(RestEndpoint):
             }
         """
         cache = get_image_cache()
-        
+
         if not cache:
             return web.json_response(
                 {
@@ -107,7 +106,7 @@ class CacheImagesEndpoint(RestEndpoint):
             )
 
         url = request.query.get("url")
-        
+
         if url:
             # Clear specific URL
             deleted = cache.delete(url)
@@ -147,29 +146,31 @@ class CacheRefreshEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/cache/images/refresh"
 
-    async def post(self, request: web.Request) -> web.Response:
+    async def post(self, body) -> web.Response:
         """
-        Explicitly refresh a cached image from origin server.
-        
+        Clear a cached image to force re-download on next access.
+
+        This endpoint removes the specified URL from the cache, causing the image
+        to be re-downloaded from the origin server the next time it is requested
+        via open_image() or open_gif().
+
         Request Body:
             {
-                "url": "https://example.com/image.gif",
-                "force": false  // Optional: true to force download, false for conditional request
+                "url": "https://example.com/image.gif"
             }
-            
+
         Returns:
-            JSON with refresh result
-            
+            JSON with the cleared URL
+
         Example Response:
             {
                 "status": "success",
-                "message": "Image refreshed from origin",
-                "url": "https://example.com/image.gif",
-                "updated": true
+                "message": "Cache entry cleared. Image will be re-downloaded on next access.",
+                "url": "https://example.com/image.gif"
             }
         """
         cache = get_image_cache()
-        
+
         if not cache:
             return web.json_response(
                 {
@@ -179,32 +180,40 @@ class CacheRefreshEndpoint(RestEndpoint):
                 status=200,
             )
 
-        try:
-            data = await request.json()
-        except JSONDecodeError:
+        if not body or not isinstance(body, dict):
             return web.json_response(
                 {"status": "error", "message": "Invalid JSON in request body"},
                 status=200,
             )
 
-        url = data.get("url")
+        url = body.get("url")
         if not url:
             return web.json_response(
-                {"status": "error", "message": "Missing 'url' in request body"},
+                {
+                    "status": "error",
+                    "message": "Missing 'url' in request body",
+                },
                 status=200,
             )
 
-        force = data.get("force", False)
-
         # Clear the URL from cache to force refresh on next access
-        cache.delete(url)
-        
-        return web.json_response(
-            {
-                "status": "success",
-                "message": "Cache entry cleared. Image will be re-downloaded on next access.",
-                "url": url,
-                "force": force,
-            },
-            status=200,
-        )
+        deleted = cache.delete(url)
+
+        if deleted:
+            return web.json_response(
+                {
+                    "status": "success",
+                    "message": "Cache entry cleared. Image will be re-downloaded on next access.",
+                    "url": url,
+                },
+                status=200,
+            )
+        else:
+            return web.json_response(
+                {
+                    "status": "success",
+                    "message": "URL was not in cache (no action needed).",
+                    "url": url,
+                },
+                status=200,
+            )

@@ -25,7 +25,6 @@ Add to `config.json`:
 ```json
 {
   "image_cache": {
-    "enabled": true,
     "max_size_mb": 500,
     "max_items": 500
   }
@@ -138,7 +137,14 @@ The following endpoints use the cache automatically:
 
 ### Get Image
 
-**Endpoint:** `GET /api/get_image`
+**Endpoint:** `POST /api/get_image`
+
+**Request Body:**
+```json
+{
+  "path_url": "https://example.com/image.png"
+}
+```
 
 **Behavior:**
 - First request: Downloads image and caches it
@@ -147,7 +153,14 @@ The following endpoints use the cache automatically:
 
 ### Get GIF Frames
 
-**Endpoint:** `GET /api/get_gif_frames`
+**Endpoint:** `POST /api/get_gif_frames`
+
+**Request Body:**
+```json
+{
+  "path_url": "https://example.com/image.gif"
+}
+```
 
 **Behavior:**
 - First request: Downloads GIF and caches it
@@ -159,7 +172,7 @@ The following endpoints use the cache automatically:
 ## Cache Workflow
 
 ### First Access
-1. User requests image via `/api/get_image?path=https://example.com/image.gif`
+1. User requests image via `POST /api/get_image` with JSON body `{"path_url": "https://example.com/image.gif"}`
 2. Image not in cache → download from URL
 3. Validate file type (extension, MIME, PIL format)
 4. Validate size (max 10MB, max 4096×4096 pixels)
