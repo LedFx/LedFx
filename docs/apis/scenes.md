@@ -76,11 +76,11 @@ A **Scene** is a snapshot of effect configurations across multiple virtual LED d
     - `"ignore"`: Leave virtual unchanged (equivalent to empty object `{}`).
     - `"stop"`: Stop any playing effect on the virtual.
     - `"forceblack"`: Set the virtual to Single Color effect with black (#000000).
-    - `"activate"`: Apply the effect configuration (requires `type` and `config`, or `preset`).
+    - `"activate"`: Apply the effect configuration (requires `type` field, plus either `config` or `preset`).
     - If omitted: Behaves as legacy mode (empty `{}` means ignore, presence of `type`/`config` means activate).
-  - `type` *(string)*: Effect type identifier (required when `action` is `"activate"` and `preset` is not provided).
-  - `config` *(object)*: Effect configuration parameters (required when `action` is `"activate"` and `preset` is not provided).
-  - `preset` *(string)*: Preset name to apply (alternative to `type`/`config` when `action` is `"activate"`). If preset doesn't exist at activation time, it will be ignored.
+  - `type` *(string)*: Effect type identifier (required when `action` is `"activate"`).
+  - `config` *(object)*: Effect configuration parameters (required when `action` is `"activate"` unless `preset` is provided).
+  - `preset` *(string)*: Preset name to apply instead of explicit `config` (when `action` is `"activate"`). Must be combined with `type` to identify which effect's preset library to search. If preset doesn't exist at activation time, the effect will automatically fall back to the `reset` preset (factory defaults).
 - `scene_image` *(string, optional)*: UI image/icon identifier.
 - `scene_tags` *(string, optional)*: Comma-separated tags for categorization.
 - `scene_puturl` *(string, optional)*: HTTP endpoint to call when scene activates.
@@ -109,11 +109,15 @@ The `action` field provides fine-grained control over how each virtual is affect
 {
   "virtual-id": {
     "action": "activate",
+    "type": "scroll_plus",
     "preset": "rainbow-scroll"
   }
 }
 ```
-At scene activation time, the preset is resolved from the current preset library. If the preset doesn't exist, the virtual is left unchanged.
+At scene activation time, the preset is resolved from the specified effect type's preset library (searching both system and user presets). If the preset doesn't exist for that effect type, the effect will automatically fall back to the `reset` preset (factory defaults).
+
+**Special Presets:**
+- `"reset"`: Generates the default configuration for the specified effect type. This is always available for any effect and restores factory default settings. This is also used as an automatic fallback when a requested preset is not found.
 
 ### Active State Logic
 
@@ -650,10 +654,12 @@ curl -X POST http://localhost:8888/api/scenes \
     "virtuals":{
       "strip1":{
         "action":"activate",
+        "type":"scroll_plus",
         "preset":"rainbow-scroll"
       },
       "strip2":{
         "action":"activate",
+        "type":"singleColor",
         "preset":"bass-pulse"
       },
       "strip3":{
