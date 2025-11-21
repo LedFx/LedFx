@@ -411,7 +411,7 @@ All responses return **Status Code 200** with JSON body (for frontend snackbar c
         -   `status` (String): `"success"`
         -   `frame_count` (Integer): The number of frames extracted from the image
         -   `frames` (List): A list of base64-encoded strings, each representing a frame in JPEG format
-        
+
 -   **Failure**:
     -   Body:
         -   `status` (String): `"error"` or `"failed"`
@@ -535,7 +535,7 @@ All responses return **Status Code 200** with JSON body (for frontend snackbar c
     -   Body:
         -   `status` (String): `"success"`
         -   `image` (String): Base64-encoded JPEG image data
-        
+
 -   **Failure**:
     -   Body:
         -   `status` (String): `"error"` or `"failed"`

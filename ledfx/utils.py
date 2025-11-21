@@ -1635,7 +1635,7 @@ def get_image_cache():
 def validate_local_path(file_path: str) -> bool:
     """
     Validate that local file path is within allowed directories (path traversal protection).
-    
+
     Allowed directories:
     - Config directory (user data)
     - LEDFX_ASSETS_PATH (built-in assets for presets)
@@ -1647,7 +1647,9 @@ def validate_local_path(file_path: str) -> bool:
         bool: True if path is safe and within allowed directories
     """
     if not _config_dir:
-        _LOGGER.warning("Config directory not initialized, rejecting local file access")
+        _LOGGER.warning(
+            "Config directory not initialized, rejecting local file access"
+        )
         return False
 
     try:
@@ -1774,7 +1776,9 @@ def open_gif(gif_path, force_refresh=False):
             # Local file
             # Path traversal protection
             if not validate_local_path(gif_path):
-                _LOGGER.error(f"Path traversal blocked or path outside config directory: {gif_path}")
+                _LOGGER.error(
+                    f"Path traversal blocked or path outside config directory: {gif_path}"
+                )
                 return None
 
             # Validate extension
@@ -1914,7 +1918,9 @@ def open_image(image_path, force_refresh=False):
             # Local file
             # Path traversal protection
             if not validate_local_path(image_path):
-                _LOGGER.error(f"Path traversal blocked or path outside config directory: {image_path}")
+                _LOGGER.error(
+                    f"Path traversal blocked or path outside config directory: {image_path}"
+                )
                 return None
 
             # Validate extension
