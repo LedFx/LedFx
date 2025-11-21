@@ -121,12 +121,28 @@ At scene activation time, the preset is resolved from the specified effect type'
 
 ### Active State Logic
 
-A scene is considered `active` when:
-- All virtuals in the scene match their current running state
-- Effect types and configurations are identical
-- Activating the scene would be a no-op
+A scene is considered `active` when all virtuals in the scene match their expected state based on their action type:
 
-If any virtual differs from the scene definition, `active` returns `false`.
+- **`action: "ignore"`**: Always matches (virtual is skipped in comparison)
+- **`action: "stop"`**: Matches when the virtual has no active effect
+- **`action: "forceblack"`**: Matches when the virtual has a Single Color effect with black (#000000)
+- **`action: "activate"`**: Matches when the virtual has the specified effect type and configuration
+  - For explicit `config`: Current effect config must match the specified config
+  - For `preset`: Current effect config must match the resolved preset config
+- **Legacy format** (no action field):
+  - Empty object `{}`: Treated as `"ignore"` (always matches)
+  - Object with `type`/`config`: Treated as `"activate"` (must match effect and config)
+
+If any virtual differs from its expected state based on the action, `active` returns `false`.
+
+**Examples:**
+
+- Scene with `action: "ignore"` on a virtual is always active regardless of the virtual's current state
+- Scene with `action: "stop"` is active only when the virtual has no effect running
+- Scene with `action: "forceblack"` is active only when the virtual shows black (Single Color #000000)
+- Scene with `action: "activate"` and preset is active when the virtual's effect matches the resolved preset configuration
+
+If any virtual referenced in the scene no longer exists, the scene is not active.
 
 ---
 

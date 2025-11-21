@@ -257,37 +257,87 @@ class Scenes:
         self.save_to_config()
 
     def is_active(self, scene_id):
-        """Return True when the current virtual state matches the scene definition."""
+        """Return True when the current virtual state matches the scene definition.
+
+        Handles all action types: ignore, stop, forceblack, activate.
+        Also supports legacy format (no action field).
+        """
 
         scene = self.get(scene_id)
         if not scene:
             return False
 
         virtuals = scene.get("virtuals") or {}
-        for virtual_id, expected_effect in virtuals.items():
+        for virtual_id, virtual_config in virtuals.items():
             virtual = self._ledfx.virtuals.get(virtual_id)
             if virtual is None:
                 return False
 
             current_effect = virtual.active_effect
+            action = virtual_config.get("action")
 
-            if not expected_effect:
-                if current_effect is not None:
-                    return False
+            # Legacy support: if no action field, infer from config
+            if action is None:
+                # Empty dict or no type/config means ignore (legacy behavior)
+                if not virtual_config or (
+                    "type" not in virtual_config
+                    and "config" not in virtual_config
+                ):
+                    action = "ignore"
+                else:
+                    action = "activate"
+
+            # Process action
+            if action == "ignore":
+                # Virtual should remain unchanged - always matches
                 continue
 
-            if current_effect is None:
-                return False
+            elif action == "stop":
+                # Virtual should have no active effect
+                if current_effect is not None:
+                    return False
 
-            if getattr(current_effect, "type", None) != expected_effect.get(
-                "type"
-            ):
-                return False
+            elif action == "forceblack":
+                # Virtual should have singleColor effect with #000000
+                if current_effect is None:
+                    return False
+                if getattr(current_effect, "type", None) != "singleColor":
+                    return False
+                current_config = getattr(current_effect, "config", None) or {}
+                if current_config.get("color") != "#000000":
+                    return False
 
-            current_config = getattr(current_effect, "config", None) or {}
-            expected_config = expected_effect.get("config") or {}
-            if not configs_match(current_config, expected_config):
-                return False
+            elif action == "activate":
+                # Virtual should have matching effect type and config
+                expected_type = virtual_config.get("type")
+                if not expected_type:
+                    # Invalid config, can't be active
+                    return False
+
+                if current_effect is None:
+                    return False
+
+                if getattr(current_effect, "type", None) != expected_type:
+                    return False
+
+                # For preset-based activation, resolve the preset to compare configs
+                preset_name = virtual_config.get("preset")
+                if preset_name:
+                    expected_config = self._resolve_preset(
+                        expected_type, preset_name
+                    )
+                else:
+                    expected_config = virtual_config.get("config")
+                    if expected_config is None:
+                        # Invalid config, can't be active
+                        return False
+
+                current_config = getattr(current_effect, "config", None) or {}
+                if not configs_match(current_config, expected_config):
+                    return False
+
+            # Unknown actions are skipped during activation, so they don't affect active state
+            # (treat as "ignore")
 
         return True
 
