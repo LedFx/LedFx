@@ -376,11 +376,18 @@ return an error message
 ### Overview
 
 A RESTful endpoint designed for extracting and returning individual
-frames from a GIF image. Clients can request frames by providing either
-the URL or the local file path of the GIF resource. The frames are
+frames from a GIF or animated image. Clients can request frames by providing either
+the URL or the local file path of the image resource. The frames are
 returned in JPEG format for efficient data transmission.
 
-**Note:** This endpoint now includes file type validation and caching. See the [Image Cache API](cache.md) documentation for details on security features and cache management.
+**Security Features:**
+- ✅ File type validation (triple-layer: extension + MIME + PIL format)
+- ✅ Size limits (10MB max file size, 4096×4096 pixels max)
+- ✅ Path traversal protection (local files restricted to config dir and assets dir)
+- ✅ Download timeout (30 seconds)
+- ✅ Automatic caching with corruption recovery
+
+See the [Image Cache API](cache.md) documentation for cache management.
 
 ### Endpoint Details
 
@@ -389,79 +396,104 @@ returned in JPEG format for efficient data transmission.
 ### Request
 
 -   **Method**: POST
--   **Request Data**:
-    -   `path_url` (String): The URL or local file path of the GIF image
+-   **Request Body** (JSON):
+    -   `path_url` (String, required): The URL or local file path of the GIF/animated image
         from which frames are to be extracted.
+        - **Remote URLs**: `http://` or `https://` URLs will be downloaded and cached automatically
+        - **Local files**: Must be within config directory or LEDFX_ASSETS_PATH (security restriction)
 
 ### Response
 
+All responses return **Status Code 200** with JSON body (for frontend snackbar compatibility).
+
 -   **Success**:
-    -   Status Code: 200
     -   Body:
-        -   `frame_count` (Integer): The number of frames extracted from
-            the GIF.
-        -   `frames` (List): A list of base64 encoded strings, each
-            representing a frame in JPEG format.
+        -   `status` (String): `"success"`
+        -   `frame_count` (Integer): The number of frames extracted from the image
+        -   `frames` (List): A list of base64-encoded strings, each representing a frame in JPEG format
+        
 -   **Failure**:
-    -   Status Code: 400 (Bad Request)
-        -   When JSON decoding fails or the required attribute
-            `path_url` is not provided.
-    -   Status Code: 404 (Not Found)
-        -   When the GIF image at the specified URL or file path cannot
-            be opened or processed.
+    -   Body:
+        -   `status` (String): `"error"` or `"failed"`
+        -   `reason` (String): Error description (e.g., "Failed to open gif from: <path_url>")
 
 ### Error Handling
 
-In case of an error, the endpoint returns a JSON object with the
-following structure:
+The endpoint returns status code 200 for all responses (success and error) to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
+
+**Common error reasons:**
+- `"Required attribute "path_url" was not provided"` - Missing required parameter
+- `"Failed to open gif from: <path>"` - Image validation failed, file not found, or path traversal blocked
+- Invalid JSON body
+
+Error response structure:
 
 ``` json
 {
   "status": "failed",
-  "reason": "<error reason>"
+  "reason": "<error description>"
 }
 ```
 
 ### Usage Example
 
-#### Requesting GIF Frames
+#### Requesting GIF Frames from Remote URL
 
-To request frames from a GIF image, send a GET request with either the
-URL or local file path in the request data:
+To request frames from a GIF image, send a POST request with JSON body:
 
 ``` json
 {
-  "path_url": "http://example.com/image.gif"
+  "path_url": "https://example.com/animated.gif"
 }
 ```
 
-Or, for a local file:
+**Note:** Remote images are automatically cached. Subsequent requests for the same URL will use the cached version unless explicitly refreshed via the cache API.
+
+#### Requesting GIF Frames from Local File
+
+For a local file (must be within config directory or assets directory):
 
 ``` json
 {
-  "path_url": "/path/to/local/image.gif"
+  "path_url": "/path/to/local/animation.gif"
 }
 ```
 
-Windows example
+Windows example:
 
 ``` json
 {
-  "path_url": "C:\\path\\to\\local\\image.gif"
+  "path_url": "C:\\Users\\username\\.ledfx\\gifs\\custom.gif"
 }
 ```
 
-#### Sample Response
+**Security Note:** Local file paths are restricted to:
+- Config directory (e.g., `~/.ledfx/` or `C:\Users\username\.ledfx\`)
+- LEDFX_ASSETS_PATH (built-in preset assets)
 
-A successful response with two extracted frames might look like this:
+Attempts to access files outside these directories will be blocked with error response.
+
+#### Sample Success Response
+
+A successful response with two extracted frames:
 
 ``` json
 {
+  "status": "success",
   "frame_count": 2,
   "frames": [
-    "<base64-encoded JPEG data>",
-    "<base64-encoded JPEG data>"
+    "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsL...",
+    "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsL..."
   ]
+}
+```
+
+#### Sample Error Response
+
+``` json
+{
+  "status": "failed",
+  "reason": "Failed to open gif from: /invalid/path.gif"
 }
 ```
 
@@ -474,7 +506,14 @@ a file by providing either the URL or the local file path of the image
 resource. The image is returned in JPEG format for efficient data
 transmission.
 
-**Note:** This endpoint now includes file type validation and caching. See the [Image Cache API](cache.md) documentation for details on security features and cache management.
+**Security Features:**
+- ✅ File type validation (triple-layer: extension + MIME + PIL format)
+- ✅ Size limits (10MB max file size, 4096×4096 pixels max)
+- ✅ Path traversal protection (local files restricted to config dir and assets dir)
+- ✅ Download timeout (30 seconds)
+- ✅ Automatic caching with corruption recovery
+
+See the [Image Cache API](cache.md) documentation for cache management.
 
 ### Endpoint Details
 
@@ -483,50 +522,60 @@ transmission.
 ### Request
 
 -   **Method**: POST
--   **Request Data**:
-    -   `path_url` (String): The URL or local file path of the image
-        from to be opened.
+-   **Request Body** (JSON):
+    -   `path_url` (String, required): The URL or local file path of the image to be opened.
+        - **Remote URLs**: `http://` or `https://` URLs will be downloaded and cached automatically
+        - **Local files**: Must be within config directory or LEDFX_ASSETS_PATH (security restriction)
 
 ### Response
 
+All responses return **Status Code 200** with JSON body (for frontend snackbar compatibility).
+
 -   **Success**:
-    -   Status Code: 200
     -   Body:
-        -   `image` (String): A base64 encoded image in JPEG format.
+        -   `status` (String): `"success"`
+        -   `image` (String): Base64-encoded JPEG image data
+        
 -   **Failure**:
-    -   Status Code: 400 (Bad Request)
-        -   When JSON decoding fails or the required attribute
-            `path_url` is not provided.
-    -   Status Code: 404 (Not Found)
-        -   When the image at the specified URL or file path cannot be
-            opened or processed.
+    -   Body:
+        -   `status` (String): `"error"` or `"failed"`
+        -   `reason` (String): Error description (e.g., "Failed to open image from: <path_url>")
 
 ### Error Handling
 
-In case of an error, the endpoint returns a JSON object with the
-following structure:
+The endpoint returns status code 200 for all responses (success and error) to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
+
+**Common error reasons:**
+- `"Required attribute "path_url" was not provided"` - Missing required parameter
+- `"Failed to open image from: <path>"` - Image validation failed, file not found, or path traversal blocked
+- Invalid JSON body
+
+Error response structure:
 
 ``` json
 {
   "status": "failed",
-  "reason": "<error reason>"
+  "reason": "<error description>"
 }
 ```
 
 ### Usage Example
 
-#### Requesting Image
+#### Requesting Remote Image
 
-To request an image, send a GET request with either the URL or local
-file path in the request data:
+To request an image from a URL, send a POST request with JSON body:
 
 ``` json
 {
-  "path_url": "http://example.com/image.gif"
+  "path_url": "https://example.com/image.gif"
 }
 ```
 
-Or, for a local file:
+**Note:** Remote images are automatically cached. Subsequent requests for the same URL will use the cached version unless explicitly refreshed via the cache API.
+
+#### Requesting Local File
+
+For a local file (must be within config directory or assets directory):
 
 ``` json
 {
@@ -534,21 +583,35 @@ Or, for a local file:
 }
 ```
 
-Windows example
+Windows example:
 
 ``` json
 {
-  "path_url": "C:\\path\\to\\local\\image.gif"
+  "path_url": "C:\\Users\\username\\.ledfx\\images\\custom.gif"
 }
 ```
 
-#### Sample Response
+**Security Note:** Local file paths are restricted to:
+- Config directory (e.g., `~/.ledfx/` or `C:\Users\username\.ledfx\`)
+- LEDFX_ASSETS_PATH (built-in preset assets)
 
-A successful response with image data might look like this:
+Attempts to access files outside these directories (e.g., `/etc/passwd`, `C:\Windows\System32\*`) will be blocked with error response.
+
+#### Sample Success Response
 
 ``` json
 {
-  "image": "<base64-encoded JPEG data>"
+  "status": "success",
+  "image": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a..."
+}
+```
+
+#### Sample Error Response
+
+``` json
+{
+  "status": "failed",
+  "reason": "Failed to open image from: /invalid/path.gif"
 }
 ```
 

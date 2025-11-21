@@ -1602,8 +1602,9 @@ def build_browser_request(url: str) -> urllib.request.Request:
     return urllib.request.Request(url, headers=headers)
 
 
-# Global image cache instance
+# Global image cache instance and config directory
 _image_cache = None
+_config_dir = None
 
 
 def init_image_cache(
@@ -1617,8 +1618,9 @@ def init_image_cache(
         max_size_mb: Maximum cache size in MB (default 500)
         max_items: Maximum number of cached items (default 500)
     """
-    global _image_cache
+    global _image_cache, _config_dir
 
+    _config_dir = os.path.abspath(config_dir)
     _image_cache = ImageCache(config_dir, max_size_mb, max_items)
     _LOGGER.info(
         f"Image cache initialized: max {max_size_mb}MB, {max_items} items"
@@ -1628,6 +1630,56 @@ def init_image_cache(
 def get_image_cache():
     """Get the global image cache instance."""
     return _image_cache
+
+
+def validate_local_path(file_path: str) -> bool:
+    """
+    Validate that local file path is within allowed directories (path traversal protection).
+    
+    Allowed directories:
+    - Config directory (user data)
+    - LEDFX_ASSETS_PATH (built-in assets for presets)
+
+    Args:
+        file_path: Local file path to validate
+
+    Returns:
+        bool: True if path is safe and within allowed directories
+    """
+    if not _config_dir:
+        _LOGGER.warning("Config directory not initialized, rejecting local file access")
+        return False
+
+    try:
+        # Resolve to absolute path and normalize
+        abs_path = os.path.abspath(os.path.realpath(file_path))
+        abs_config = os.path.abspath(os.path.realpath(_config_dir))
+        abs_assets = os.path.abspath(os.path.realpath(LEDFX_ASSETS_PATH))
+
+        # Check if file is within config directory tree
+        try:
+            common_config = os.path.commonpath([abs_path, abs_config])
+            if common_config == abs_config:
+                return True
+        except ValueError:
+            pass  # Different drives on Windows, continue to check assets
+
+        # Check if file is within assets directory tree
+        try:
+            common_assets = os.path.commonpath([abs_path, abs_assets])
+            if common_assets == abs_assets:
+                return True
+        except ValueError:
+            pass  # Different drives on Windows
+
+        _LOGGER.warning(
+            f"Path traversal attempt blocked: {file_path} is outside allowed directories"
+        )
+        return False
+
+    except (ValueError, OSError) as e:
+        _LOGGER.warning(f"Invalid path rejected: {file_path} : {e}")
+        return False
 
 
 def open_gif(gif_path, force_refresh=False):
@@ -1720,6 +1772,11 @@ def open_gif(gif_path, force_refresh=False):
                     )
         else:
             # Local file
+            # Path traversal protection
+            if not validate_local_path(gif_path):
+                _LOGGER.error(f"Path traversal blocked or path outside config directory: {gif_path}")
+                return None
+
             # Validate extension
             if not is_allowed_image_extension(gif_path):
                 _LOGGER.error(f"File has invalid image extension: {gif_path}")
@@ -1855,6 +1912,11 @@ def open_image(image_path, force_refresh=False):
                 return image
         else:
             # Local file
+            # Path traversal protection
+            if not validate_local_path(image_path):
+                _LOGGER.error(f"Path traversal blocked or path outside config directory: {image_path}")
+                return None
+
             # Validate extension
             if not is_allowed_image_extension(image_path):
                 _LOGGER.error(
