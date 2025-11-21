@@ -190,7 +190,7 @@ class TestIntegrationOpenImage:
         """Test opening valid local PNG file."""
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
-        
+
         img = Image.new("RGB", (100, 100), color="green")
         img_path = tmp_path / "test.png"
         img.save(img_path, "PNG")
@@ -203,7 +203,7 @@ class TestIntegrationOpenImage:
         """Test that file with invalid extension is rejected."""
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
-        
+
         txt_file = tmp_path / "file.txt"
         txt_file.write_text("not an image")
 
@@ -214,7 +214,7 @@ class TestIntegrationOpenImage:
         """Test that nonexistent file returns None."""
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
-        
+
         result = open_image(str(tmp_path / "nonexistent.png"))
         assert result is None
 
@@ -264,7 +264,7 @@ class TestIntegrationOpenGif:
         """Test opening valid local GIF file."""
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
-        
+
         img = Image.new("RGB", (50, 50), color="blue")
         gif_path = tmp_path / "test.gif"
         img.save(gif_path, "GIF")
@@ -278,7 +278,7 @@ class TestIntegrationOpenGif:
         """Test that single-frame images get n_frames attribute."""
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
-        
+
         img = Image.new("RGB", (50, 50), color="yellow")
         png_path = tmp_path / "single.png"
         img.save(png_path, "PNG")
