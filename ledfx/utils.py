@@ -1531,13 +1531,14 @@ def validate_image_mime_type(file_path: str) -> bool:
     Validate file MIME type using multiple methods.
 
     Args:
-        file_path: Path to file to validate
+        file_path: Path to file to validate (must be pre-validated by validate_local_path)
 
     Returns:
         bool: True if MIME type is allowed
     """
     try:
         # Try to open with PIL to detect format from content
+        # lgtm[py/path-injection] - file_path is validated by validate_local_path before calling this function
         with Image.open(file_path) as img:
             # PIL format detection (more reliable than imghdr)
             if img.format is None:
@@ -1790,10 +1791,12 @@ def open_gif(gif_path, force_refresh=False):
                 return None
 
             # Check file exists and get size
+            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             if not os.path.exists(validated_path):
                 _LOGGER.error(f"File not found: {gif_path}")
                 return None
 
+            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             file_size = os.path.getsize(validated_path)
             if file_size > MAX_IMAGE_SIZE_BYTES:
                 _LOGGER.error(
@@ -1806,6 +1809,7 @@ def open_gif(gif_path, force_refresh=False):
                 _LOGGER.error(f"Invalid image MIME type: {gif_path}")
                 return None
 
+            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             gif = Image.open(validated_path)
 
             # Validate PIL format and dimensions
@@ -1936,10 +1940,12 @@ def open_image(image_path, force_refresh=False):
                 return None
 
             # Check file exists and get size
+            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             if not os.path.exists(validated_path):
                 _LOGGER.error(f"File not found: {image_path}")
                 return None
 
+            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             file_size = os.path.getsize(validated_path)
             if file_size > MAX_IMAGE_SIZE_BYTES:
                 _LOGGER.error(
@@ -1952,6 +1958,7 @@ def open_image(image_path, force_refresh=False):
                 _LOGGER.error(f"Invalid image MIME type: {image_path}")
                 return None
 
+            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             image = Image.open(validated_path)
 
             # Validate PIL format and dimensions
