@@ -1632,7 +1632,7 @@ def get_image_cache():
     return _image_cache
 
 
-def validate_local_path(file_path: str) -> bool:
+def validate_local_path(file_path: str) -> tuple[bool, str | None]:
     """
     Validate that local file path is within allowed directories (path traversal protection).
 
@@ -1644,13 +1644,14 @@ def validate_local_path(file_path: str) -> bool:
         file_path: Local file path to validate
 
     Returns:
-        bool: True if path is safe and within allowed directories
+        tuple: (is_valid, validated_path) where validated_path is the absolute normalized path
+               or None if validation failed
     """
     if not _config_dir:
         _LOGGER.warning(
             "Config directory not initialized, rejecting local file access"
         )
-        return False
+        return False, None
 
     try:
         # Resolve to absolute path and normalize
@@ -1662,7 +1663,7 @@ def validate_local_path(file_path: str) -> bool:
         try:
             common_config = os.path.commonpath([abs_path, abs_config])
             if common_config == abs_config:
-                return True
+                return True, abs_path
         except ValueError:
             pass  # Different drives on Windows, continue to check assets
 
@@ -1670,18 +1671,18 @@ def validate_local_path(file_path: str) -> bool:
         try:
             common_assets = os.path.commonpath([abs_path, abs_assets])
             if common_assets == abs_assets:
-                return True
+                return True, abs_path
         except ValueError:
             pass  # Different drives on Windows
 
         _LOGGER.warning(
             f"Path traversal attempt blocked: {file_path} is outside allowed directories"
         )
-        return False
+        return False, None
 
     except (ValueError, OSError) as e:
         _LOGGER.warning(f"Invalid path rejected: {file_path} : {e}")
-        return False
+        return False, None
 
 
 def open_gif(gif_path, force_refresh=False):
@@ -1775,23 +1776,25 @@ def open_gif(gif_path, force_refresh=False):
         else:
             # Local file
             # Path traversal protection
-            if not validate_local_path(gif_path):
+            is_valid, validated_path = validate_local_path(gif_path)
+            if not is_valid:
                 _LOGGER.error(
                     f"Path traversal blocked or path outside config directory: {gif_path}"
                 )
                 return None
 
+            # Use validated path for all subsequent operations
             # Validate extension
-            if not is_allowed_image_extension(gif_path):
+            if not is_allowed_image_extension(validated_path):
                 _LOGGER.error(f"File has invalid image extension: {gif_path}")
                 return None
 
             # Check file exists and get size
-            if not os.path.exists(gif_path):
+            if not os.path.exists(validated_path):
                 _LOGGER.error(f"File not found: {gif_path}")
                 return None
 
-            file_size = os.path.getsize(gif_path)
+            file_size = os.path.getsize(validated_path)
             if file_size > MAX_IMAGE_SIZE_BYTES:
                 _LOGGER.error(
                     f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
@@ -1799,11 +1802,11 @@ def open_gif(gif_path, force_refresh=False):
                 return None
 
             # Validate MIME type
-            if not validate_image_mime_type(gif_path):
+            if not validate_image_mime_type(validated_path):
                 _LOGGER.error(f"Invalid image MIME type: {gif_path}")
                 return None
 
-            gif = Image.open(gif_path)
+            gif = Image.open(validated_path)
 
             # Validate PIL format and dimensions
             if not validate_pil_image(gif):
@@ -1917,25 +1920,27 @@ def open_image(image_path, force_refresh=False):
         else:
             # Local file
             # Path traversal protection
-            if not validate_local_path(image_path):
+            is_valid, validated_path = validate_local_path(image_path)
+            if not is_valid:
                 _LOGGER.error(
                     f"Path traversal blocked or path outside config directory: {image_path}"
                 )
                 return None
 
+            # Use validated path for all subsequent operations
             # Validate extension
-            if not is_allowed_image_extension(image_path):
+            if not is_allowed_image_extension(validated_path):
                 _LOGGER.error(
                     f"File has invalid image extension: {image_path}"
                 )
                 return None
 
             # Check file exists and get size
-            if not os.path.exists(image_path):
+            if not os.path.exists(validated_path):
                 _LOGGER.error(f"File not found: {image_path}")
                 return None
 
-            file_size = os.path.getsize(image_path)
+            file_size = os.path.getsize(validated_path)
             if file_size > MAX_IMAGE_SIZE_BYTES:
                 _LOGGER.error(
                     f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
@@ -1943,11 +1948,11 @@ def open_image(image_path, force_refresh=False):
                 return None
 
             # Validate MIME type
-            if not validate_image_mime_type(image_path):
+            if not validate_image_mime_type(validated_path):
                 _LOGGER.error(f"Invalid image MIME type: {image_path}")
                 return None
 
-            image = Image.open(image_path)
+            image = Image.open(validated_path)
 
             # Validate PIL format and dimensions
             if not validate_pil_image(image):
