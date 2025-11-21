@@ -474,7 +474,7 @@ def test_scene_activation_skips_missing_virtuals(mock_save):
 # Test invalid action value
 @patch("ledfx.scenes.save_config")
 def test_unknown_action_value_treated_as_legacy(mock_save):
-    """Test that unknown action values fall through to legacy behavior."""
+    """Test that unknown action values are ignored/skipped and no effect is created."""
     scene_id = "test-scene"
     scenes = {
         scene_id: {
@@ -495,9 +495,8 @@ def test_unknown_action_value_treated_as_legacy(mock_save):
     manager, ledfx = _build_scenes_manager(scenes, virtuals)
     result = manager.activate(scene_id)
 
-    # Should still succeed, treating unknown as legacy activate
+    # Should still succeed; unknown action is skipped, no effect should be created
     assert result is True
-    # Effect should not be created because unknown action is not handled
     assert len(ledfx.effects._created_effects) == 0
 
 

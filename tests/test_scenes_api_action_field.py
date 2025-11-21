@@ -316,7 +316,6 @@ async def test_scene_action_field_preservation():
         response = await scenes_endpoint.post(mock_request)
         data = json.loads(response.body.decode())
 
-        scene_id = data["scene"]["id"]
         virtuals = data["scene"]["config"]["virtuals"]
 
         # Verify all action types are preserved
