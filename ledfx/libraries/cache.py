@@ -3,8 +3,8 @@
 import hashlib
 import json
 import logging
+import os
 from datetime import datetime
-from pathlib import Path
 from typing import Optional
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,16 +35,16 @@ class ImageCache:
             max_size_mb: Maximum cache size in megabytes (default 500)
             max_items: Maximum number of cached items (default 500)
         """
-        self.cache_dir = Path(config_dir) / "cache" / "images"
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.metadata_file = self.cache_dir / "metadata.json"
+        self.cache_dir = os.path.join(config_dir, "cache", "images")
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self.metadata_file = os.path.join(self.cache_dir, "metadata.json")
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.max_items = max_items
         self.metadata = self._load_metadata()
 
     def _load_metadata(self) -> dict:
         """Load cache metadata from disk."""
-        if self.metadata_file.exists():
+        if os.path.exists(self.metadata_file):
             try:
                 with open(self.metadata_file) as f:
                     return json.load(f)
@@ -65,11 +65,11 @@ class ImageCache:
         """Generate cache key from URL using SHA-256 hash."""
         return hashlib.sha256(url.encode("utf-8")).hexdigest()
 
-    def _get_cache_path(self, cache_key: str, extension: str = ".jpg") -> Path:
+    def _get_cache_path(self, cache_key: str, extension: str = ".jpg") -> str:
         """Get filesystem path for cached image."""
-        return self.cache_dir / f"{cache_key}{extension}"
+        return os.path.join(self.cache_dir, f"{cache_key}{extension}")
 
-    def get(self, url: str) -> Optional[Path]:
+    def get(self, url: str) -> Optional[str]:
         """
         Get cached image if available (no expiration check).
 
@@ -84,7 +84,7 @@ class ImageCache:
 
         if entry:
             cache_path = self._get_cache_path(cache_key, entry["extension"])
-            if cache_path.exists():
+            if os.path.exists(cache_path):
                 # Update access tracking
                 entry["last_accessed"] = datetime.utcnow().isoformat()
                 entry["access_count"] = entry.get("access_count", 0) + 1
@@ -202,9 +202,9 @@ class ImageCache:
             entry = self.metadata["cache_entries"][cache_key]
             cache_path = self._get_cache_path(cache_key, entry["extension"])
 
-            if cache_path.exists():
+            if os.path.exists(cache_path):
                 try:
-                    cache_path.unlink()
+                    os.remove(cache_path)
                 except Exception as e:
                     _LOGGER.warning(
                         f"Failed to delete cache file {cache_path}: {e}"

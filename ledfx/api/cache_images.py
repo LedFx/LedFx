@@ -56,12 +56,9 @@ class CacheImagesEndpoint(RestEndpoint):
         cache = get_image_cache()
 
         if not cache:
-            return web.json_response(
-                {
-                    "status": "error",
-                    "message": "Image cache not initialized",
-                },
-                status=200,
+            return await self.invalid_request(
+                message="Image cache not initialized",
+                type="error",
             )
 
         stats = cache.get_stats()
@@ -71,7 +68,7 @@ class CacheImagesEndpoint(RestEndpoint):
             "eviction": "LRU when limits exceeded",
         }
 
-        return web.json_response(stats, status=200)
+        return await self.bare_request_success(stats)
 
     async def delete(self, request: web.Request) -> web.Response:
         """
@@ -97,12 +94,9 @@ class CacheImagesEndpoint(RestEndpoint):
         cache = get_image_cache()
 
         if not cache:
-            return web.json_response(
-                {
-                    "status": "error",
-                    "message": "Image cache not initialized",
-                },
-                status=200,
+            return await self.invalid_request(
+                message="Image cache not initialized",
+                type="error",
             )
 
         url = request.query.get("url")
@@ -111,31 +105,21 @@ class CacheImagesEndpoint(RestEndpoint):
             # Clear specific URL
             deleted = cache.delete(url)
             if deleted:
-                return web.json_response(
-                    {
-                        "status": "success",
-                        "message": f"Cleared cache for URL: {url}",
-                        "cleared_count": 1,
-                    },
-                    status=200,
+                return await self.request_success(
+                    type="success",
+                    message=f"Cleared cache for URL: {url}",
+                    data={"cleared_count": 1},
                 )
             else:
-                return web.json_response(
-                    {
-                        "status": "error",
-                        "message": f"URL not found in cache: {url}",
-                        "cleared_count": 0,
-                    },
-                    status=200,
+                return await self.invalid_request(
+                    message=f"URL not found in cache: {url}",
+                    type="warning",
                 )
         else:
             # Clear entire cache
             result = cache.clear()
-            return web.json_response(
-                {
-                    "status": "success",
-                    "message": "Entire cache cleared",
-                    **result,
-                },
-                status=200,
+            return await self.request_success(
+                type="success",
+                message="Entire cache cleared",
+                data=result,
             )

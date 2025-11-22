@@ -41,48 +41,36 @@ class CacheRefreshEndpoint(RestEndpoint):
         cache = get_image_cache()
 
         if not cache:
-            return web.json_response(
-                {
-                    "status": "error",
-                    "message": "Image cache not initialized",
-                },
-                status=200,
+            return await self.invalid_request(
+                message="Image cache not initialized",
+                type="error",
             )
 
         if not body or not isinstance(body, dict):
-            return web.json_response(
-                {"status": "error", "message": "Invalid JSON in request body"},
-                status=200,
+            return await self.invalid_request(
+                message="Invalid JSON in request body",
+                type="error",
             )
 
         url = body.get("url")
         if not url:
-            return web.json_response(
-                {
-                    "status": "error",
-                    "message": "Missing 'url' in request body",
-                },
-                status=200,
+            return await self.invalid_request(
+                message="Missing 'url' in request body",
+                type="error",
             )
 
         # Clear the URL from cache to force refresh on next access
         deleted = cache.delete(url)
 
         if deleted:
-            return web.json_response(
-                {
-                    "status": "success",
-                    "message": "Cache entry cleared. Image will be re-downloaded on next access.",
-                    "url": url,
-                },
-                status=200,
+            return await self.request_success(
+                type="success",
+                message="Cache entry cleared. Image will be re-downloaded on next access.",
+                data={"url": url},
             )
         else:
-            return web.json_response(
-                {
-                    "status": "success",
-                    "message": "URL was not in cache (no action needed).",
-                    "url": url,
-                },
-                status=200,
+            return await self.request_success(
+                type="info",
+                message="URL was not in cache (no action needed).",
+                data={"url": url},
             )

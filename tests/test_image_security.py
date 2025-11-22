@@ -5,6 +5,7 @@ Tests file type validation (extension, MIME type, PIL format) and size limits.
 """
 
 import io
+import os
 from unittest.mock import MagicMock, patch
 
 from PIL import Image
@@ -76,7 +77,7 @@ class TestMimeTypeValidation:
         """Test valid PNG file passes MIME validation."""
         # Create a small valid PNG
         img = Image.new("RGB", (10, 10), color="red")
-        img_path = tmp_path / "test.png"
+        img_path = os.path.join(tmp_path, "test.png")
         img.save(img_path, "PNG")
 
         assert validate_image_mime_type(str(img_path))
@@ -84,22 +85,24 @@ class TestMimeTypeValidation:
     def test_valid_jpeg(self, tmp_path):
         """Test valid JPEG file passes MIME validation."""
         img = Image.new("RGB", (10, 10), color="blue")
-        img_path = tmp_path / "test.jpg"
+        img_path = os.path.join(tmp_path, "test.jpg")
         img.save(img_path, "JPEG")
 
         assert validate_image_mime_type(str(img_path))
 
     def test_invalid_text_file(self, tmp_path):
         """Test that text file fails MIME validation."""
-        txt_path = tmp_path / "test.txt"
-        txt_path.write_text("This is not an image")
+        txt_path = os.path.join(tmp_path, "test.txt")
+        with open(txt_path, "w") as f:
+            f.write("This is not an image")
 
         assert not validate_image_mime_type(str(txt_path))
 
     def test_spoofed_extension(self, tmp_path):
         """Test that text file with .png extension fails MIME validation."""
-        fake_png = tmp_path / "fake.png"
-        fake_png.write_text("This is actually text")
+        fake_png = os.path.join(tmp_path, "fake.png")
+        with open(fake_png, "w") as f:
+            f.write("This is actually text")
 
         assert not validate_image_mime_type(str(fake_png))
 
@@ -174,7 +177,7 @@ class TestFileSizeLimits:
 
     def test_local_file_too_large(self, tmp_path):
         """Test that local files exceeding 10MB are rejected."""
-        large_file = tmp_path / "large.png"
+        large_file = os.path.join(tmp_path, "large.png")
         # Create file larger than 10MB
         with open(large_file, "wb") as f:
             f.write(b"x" * (11 * 1024 * 1024))
@@ -192,7 +195,7 @@ class TestIntegrationOpenImage:
         init_image_cache(str(tmp_path))
 
         img = Image.new("RGB", (100, 100), color="green")
-        img_path = tmp_path / "test.png"
+        img_path = os.path.join(tmp_path, "test.png")
         img.save(img_path, "PNG")
 
         result = open_image(str(img_path))
@@ -204,8 +207,9 @@ class TestIntegrationOpenImage:
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
 
-        txt_file = tmp_path / "file.txt"
-        txt_file.write_text("not an image")
+        txt_file = os.path.join(tmp_path, "file.txt")
+        with open(txt_file, "w") as f:
+            f.write("not an image")
 
         result = open_image(str(txt_file))
         assert result is None
@@ -215,7 +219,7 @@ class TestIntegrationOpenImage:
         # Initialize cache to set config_dir for path validation
         init_image_cache(str(tmp_path))
 
-        result = open_image(str(tmp_path / "nonexistent.png"))
+        result = open_image(os.path.join(tmp_path, "nonexistent.png"))
         assert result is None
 
     @patch("ledfx.utils.build_browser_request")
@@ -266,7 +270,7 @@ class TestIntegrationOpenGif:
         init_image_cache(str(tmp_path))
 
         img = Image.new("RGB", (50, 50), color="blue")
-        gif_path = tmp_path / "test.gif"
+        gif_path = os.path.join(tmp_path, "test.gif")
         img.save(gif_path, "GIF")
 
         result = open_gif(str(gif_path))
@@ -280,7 +284,7 @@ class TestIntegrationOpenGif:
         init_image_cache(str(tmp_path))
 
         img = Image.new("RGB", (50, 50), color="yellow")
-        png_path = tmp_path / "single.png"
+        png_path = os.path.join(tmp_path, "single.png")
         img.save(png_path, "PNG")
 
         result = open_gif(str(png_path))
@@ -568,3 +572,144 @@ BAD SCENARIOS (Should Fail):
 15. Hostnames that resolve to blocked IP addresses
 16. Non-HTTP/HTTPS URL schemes in local file path handling (file://, ftp://, data:, javascript:, etc.)
 """
+
+
+class TestPathTraversalNaughtyStrings:
+    """Test path traversal protection with naughty strings from big-list-of-naughty-strings."""
+
+    def test_path_traversal_attempts(self, tmp_path):
+        """Test that various path traversal attempts are blocked."""
+        # Initialize cache to set config_dir for path validation
+        init_image_cache(str(tmp_path))
+
+        # Path traversal patterns from big-list-of-naughty-strings
+        naughty_paths = [
+            # Classic path traversal
+            "../etc/passwd",
+            "../../etc/passwd",
+            "../../../etc/passwd",
+            "../../../../etc/passwd",
+            # With image extension
+            "../../../etc/passwd.png",
+            "../../etc/shadow.jpg",
+            # Windows path traversal
+            "..\\..\\..\\Windows\\System32\\config\\SAM",
+            "..\\..\\..\\Windows\\System32\\config\\SAM.png",
+            # Encoded path traversal
+            "%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd",
+            "..%2F..%2F..%2Fetc%2Fpasswd",
+            # Double encoded
+            "%252e%252e%252f%252e%252e%252f%252e%252e%252fetc%252fpasswd",
+            # Unicode encoding
+            "..%c0%af..%c0%af..%c0%afetc%c0%afpasswd",
+            # Various separators
+            "....//....//....//etc/passwd",
+            "..../..../..../etc/passwd",
+            # Null byte injection
+            "../../../etc/passwd%00.png",
+            "../../../etc/passwd\x00.png",
+            # Absolute paths (should be outside allowed dirs)
+            "/etc/passwd.png",
+            "/etc/shadow.jpg",
+            "C:\\Windows\\System32\\config\\SAM.png",
+            "/root/.ssh/id_rsa.png",
+            # Mixed separators
+            "..\\../..\\../etc/passwd",
+            "../\\../\\../etc/passwd",
+            # Overlong paths
+            "." * 1000 + "/etc/passwd.png",
+            # Special characters
+            "../etc/passwd\n.png",
+            "../etc/passwd\r\n.png",
+            "../etc/passwd\t.png",
+        ]
+
+        for naughty_path in naughty_paths:
+            result = open_image(naughty_path)
+            assert (
+                result is None
+            ), f"Path traversal attempt should fail: {naughty_path}"
+
+            result = open_gif(naughty_path)
+            assert (
+                result is None
+            ), f"Path traversal attempt should fail: {naughty_path}"
+
+    def test_url_injection_attempts(self):
+        """Test that URL injection attempts are blocked."""
+        # URL injection patterns from big-list-of-naughty-strings
+        naughty_urls = [
+            # Protocol injection
+            "http://example.com@127.0.0.1/image.png",
+            "http://127.0.0.1@example.com/image.png",
+            "http://127.0.0.1%2f@example.com/image.png",
+            # Port manipulation
+            "http://127.0.0.1:80/image.png",
+            "http://127.0.0.1:8080/image.png",
+            "http://localhost:80/image.png",
+            # IPv6 variants
+            "http://[::1]:80/image.png",
+            "http://[0:0:0:0:0:0:0:1]/image.png",
+            "http://[::ffff:127.0.0.1]/image.png",
+            # URL encoding tricks
+            "http://127.0.0.1%09/image.png",
+            "http://127.0.0.1%0a/image.png",
+            "http://127.0.0.1%0d/image.png",
+            # Octal representation
+            "http://0177.0.0.1/image.png",
+            "http://0x7f.0.0.1/image.png",
+            # Integer representation
+            "http://2130706433/image.png",  # 127.0.0.1 as integer
+            # Localhost variations
+            "http://localhost/image.png",
+            "http://LOCALHOST/image.png",
+            "http://127.1/image.png",
+        ]
+
+        for naughty_url in naughty_urls:
+            result = open_image(naughty_url)
+            # Should be blocked by SSRF protection or URL validation
+            assert (
+                result is None
+            ), f"URL injection attempt should fail: {naughty_url}"
+
+            result = open_gif(naughty_url)
+            assert (
+                result is None
+            ), f"URL injection attempt should fail: {naughty_url}"
+
+    def test_special_filename_attacks(self, tmp_path):
+        """Test that special filename attacks are blocked."""
+        # Initialize cache to set config_dir for path validation
+        init_image_cache(str(tmp_path))
+
+        # Special filenames from big-list-of-naughty-strings
+        naughty_filenames = [
+            # Reserved names on Windows
+            "CON.png",
+            "PRN.jpg",
+            "AUX.gif",
+            "NUL.png",
+            "COM1.jpg",
+            "LPT1.png",
+            # NTFS alternate data streams
+            "test.png::$DATA",
+            "image.jpg:hidden.txt",
+            # Long filenames
+            "A" * 300 + ".png",
+            # Control characters
+            "test\x00.png",
+            "test\x01\x02\x03.png",
+            # Unicode homoglyphs
+            "іmage.png",  # Cyrillic і instead of latin i
+            "imаge.png",  # Cyrillic а instead of latin a
+        ]
+
+        for naughty_filename in naughty_filenames:
+            # Create path (most will fail at file system level anyway)
+            test_path = os.path.join(tmp_path, naughty_filename)
+            result = open_image(test_path)
+            # Should fail either due to validation or file not existing
+            assert (
+                result is None
+            ), f"Special filename should be rejected or fail: {naughty_filename}"

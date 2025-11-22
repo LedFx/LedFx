@@ -5,7 +5,7 @@ Tests cache operations: hit/miss, LRU eviction, refresh, clear, persistence, met
 """
 
 import io
-from pathlib import Path
+import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -18,9 +18,9 @@ from ledfx.utils import get_image_cache, init_image_cache, open_gif, open_image
 @pytest.fixture
 def temp_cache_dir(tmp_path):
     """Create a temporary cache directory."""
-    cache_dir = tmp_path / "test_cache"
-    cache_dir.mkdir()
-    return str(cache_dir)
+    cache_dir = os.path.join(str(tmp_path), "test_cache")
+    os.makedirs(cache_dir, exist_ok=True)
+    return cache_dir
 
 
 @pytest.fixture
@@ -53,8 +53,8 @@ class TestCacheBasicOperations:
         """Test cache directory is created if it doesn't exist."""
         # Create cache - this should create the directory
         cache = ImageCache(temp_cache_dir, max_size_mb=10, max_items=100)
-        cache_dir = Path(temp_cache_dir) / "cache" / "images"
-        assert cache_dir.exists()
+        cache_dir = os.path.join(temp_cache_dir, "cache", "images")
+        assert os.path.exists(cache_dir)
 
     def test_cache_miss(self, cache):
         """Test cache miss returns None."""
@@ -68,7 +68,7 @@ class TestCacheBasicOperations:
 
         cached_path = cache.get(url)
         assert cached_path is not None
-        assert cached_path.exists()
+        assert os.path.exists(cached_path)
 
         # Verify cached file contains correct data
         with open(cached_path, "rb") as f:
