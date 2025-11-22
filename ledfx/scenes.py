@@ -4,7 +4,6 @@ import voluptuous as vol
 
 from ledfx.config import (
     configs_match,
-    filter_config_for_comparison,
     save_config,
 )
 from ledfx.events import SceneActivatedEvent, SceneDeletedEvent
