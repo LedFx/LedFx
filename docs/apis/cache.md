@@ -1,8 +1,8 @@
-# Image Cache API
+# Images and Cache APIs
 
 ## Overview
 
-LedFx provides API endpoints for managing cached images from remote URLs. The cache implements a "cache and keep" policy with explicit control.
+LedFx provides API endpoints for retrieving and managing images. Remote images are automatically cached with a "cache and keep" policy, providing performance benefits while giving you explicit control over cache management.
 
 ## Cache Policy
 
@@ -141,39 +141,267 @@ This endpoint removes the specified URL from the cache. The next time the image 
 
 ## Image Request Endpoints
 
-The following endpoints use the cache automatically:
+### /api/get_image
 
-### Get Image
+A RESTful endpoint designed for retrieving an image. Clients can request
+a file by providing either the URL or the local file path of the image
+resource. The image is returned in JPEG format for efficient data
+transmission.
 
-**Endpoint:** `POST /api/get_image`
+**Security Features:**
+- ✅ File type validation (triple-layer: extension + MIME + PIL format)
+- ✅ Size limits (10MB max file size, 4096×4096 pixels max)
+- ✅ Path traversal protection (local files restricted to config dir and assets dir)
+- ✅ SSRF protection (blocks private networks, loopback, link-local, cloud metadata endpoints)
+- ✅ URL scheme validation (only http/https for remote, no schemes for local files)
+- ✅ Download timeout (30 seconds)
+- ✅ Automatic caching with corruption recovery
 
-**Request Body:**
-```json
+#### Endpoint Details
+
+-   **Endpoint Path**: `/api/get_image`
+
+#### Request
+
+-   **Method**: POST
+-   **Request Body** (JSON):
+    -   `path_url` (String, required): The URL or local file path of the image to be opened.
+        - **Remote URLs**: Only `http://` or `https://` URLs are allowed. Downloaded and cached automatically.
+        - **Local files**: Plain file paths only (no URL schemes). Must be within config directory or LEDFX_ASSETS_PATH.
+
+#### Response
+
+All responses return **Status Code 200** with JSON body (for frontend snackbar compatibility).
+
+-   **Success**:
+    -   Body:
+        -   `status` (String): `"success"`
+        -   `image` (String): Base64-encoded JPEG image data
+
+-   **Failure**:
+    -   Body:
+        -   `status` (String): `"error"` or `"failed"`
+        -   `reason` (String): Error description (e.g., "Failed to open image from: <path_url>")
+
+#### Error Handling
+
+The endpoint returns status code 200 for all responses (success and error) to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
+
+**Common error reasons:**
+- `"Required attribute "path_url" was not provided"` - Missing required parameter
+- `"Failed to open image from: <path>"` - Image validation failed, file not found, or path traversal blocked
+- Invalid JSON body
+
+Error response structure:
+
+``` json
 {
-  "path_url": "https://example.com/image.png"
+  "status": "failed",
+  "reason": "<error description>"
 }
 ```
 
-**Behavior:**
-- First request: Downloads image and caches it
-- Subsequent requests: Returns cached version
-- No automatic expiration
+#### Usage Example
 
-### Get GIF Frames
+##### Requesting Remote Image
 
-**Endpoint:** `POST /api/get_gif_frames`
+To request an image from a URL, send a POST request with JSON body:
 
-**Request Body:**
-```json
+``` json
 {
   "path_url": "https://example.com/image.gif"
 }
 ```
 
-**Behavior:**
-- First request: Downloads GIF and caches it
-- Subsequent requests: Extracts frames from cached version
-- No automatic expiration
+**Note:** Remote images are automatically cached. Subsequent requests for the same URL will use the cached version unless explicitly refreshed via the cache API.
+
+##### Requesting Local File
+
+For a local file (must be within config directory or assets directory):
+
+``` json
+{
+  "path_url": "/path/to/local/image.gif"
+}
+```
+
+Windows example:
+
+``` json
+{
+  "path_url": "C:\\Users\\username\\.ledfx\\images\\custom.gif"
+}
+```
+
+**Security Note:**
+
+Local file paths are restricted to:
+- Config directory (e.g., `~/.ledfx/` or `C:\Users\username\.ledfx\`)
+- LEDFX_ASSETS_PATH (built-in preset assets)
+
+Remote URLs are protected against SSRF attacks by blocking:
+- Private networks (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7)
+- Loopback addresses (127.0.0.0/8, ::1/128)
+- Link-local addresses (169.254.0.0/16, fe80::/10)
+- Cloud metadata endpoints (169.254.169.254, metadata.google.internal)
+
+URL schemes other than http/https are rejected (file://, ftp://, javascript:, etc.).
+
+Attempts to access blocked resources (e.g., `/etc/passwd`, `C:\Windows\System32\*`, `http://127.0.0.1/`, `file:///etc/passwd`) will be blocked with error response.
+
+##### Sample Success Response
+
+``` json
+{
+  "status": "success",
+  "image": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a..."
+}
+```
+
+##### Sample Error Response
+
+``` json
+{
+  "status": "failed",
+  "reason": "Failed to open image from: /invalid/path.gif"
+}
+```
+
+---
+
+### /api/get_gif_frames
+
+A RESTful endpoint designed for extracting and returning individual
+frames from a GIF or animated image. Clients can request frames by providing either
+the URL or the local file path of the image resource. The frames are
+returned in JPEG format for efficient data transmission.
+
+**Security Features:**
+- ✅ File type validation (triple-layer: extension + MIME + PIL format)
+- ✅ Size limits (10MB max file size, 4096×4096 pixels max)
+- ✅ Path traversal protection (local files restricted to config dir and assets dir)
+- ✅ SSRF protection (blocks private networks, loopback, link-local, cloud metadata endpoints)
+- ✅ URL scheme validation (only http/https for remote, no schemes for local files)
+- ✅ Download timeout (30 seconds)
+- ✅ Automatic caching with corruption recovery
+
+#### Endpoint Details
+
+-   **Endpoint Path**: `/api/get_gif_frames`
+
+#### Request
+
+-   **Method**: POST
+-   **Request Body** (JSON):
+    -   `path_url` (String, required): The URL or local file path of the GIF/animated image
+        from which frames are to be extracted.
+        - **Remote URLs**: Only `http://` or `https://` URLs are allowed. Downloaded and cached automatically.
+        - **Local files**: Plain file paths only (no URL schemes). Must be within config directory or LEDFX_ASSETS_PATH.
+
+#### Response
+
+All responses return **Status Code 200** with JSON body (for frontend snackbar compatibility).
+
+-   **Success**:
+    -   Body:
+        -   `status` (String): `"success"`
+        -   `frame_count` (Integer): The number of frames extracted from the image
+        -   `frames` (List): A list of base64-encoded strings, each representing a frame in JPEG format
+
+-   **Failure**:
+    -   Body:
+        -   `status` (String): `"error"` or `"failed"`
+        -   `reason` (String): Error description (e.g., "Failed to open gif from: <path_url>")
+
+#### Error Handling
+
+The endpoint returns status code 200 for all responses (success and error) to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
+
+**Common error reasons:**
+- `"Required attribute "path_url" was not provided"` - Missing required parameter
+- `"Failed to open gif from: <path>"` - Image validation failed, file not found, or path traversal blocked
+- Invalid JSON body
+
+Error response structure:
+
+``` json
+{
+  "status": "failed",
+  "reason": "<error description>"
+}
+```
+
+#### Usage Example
+
+##### Requesting GIF Frames from Remote URL
+
+To request frames from a GIF image, send a POST request with JSON body:
+
+``` json
+{
+  "path_url": "https://example.com/animated.gif"
+}
+```
+
+**Note:** Remote images are automatically cached. Subsequent requests for the same URL will use the cached version unless explicitly refreshed via the cache API.
+
+##### Requesting GIF Frames from Local File
+
+For a local file (must be within config directory or assets directory):
+
+``` json
+{
+  "path_url": "/path/to/local/animation.gif"
+}
+```
+
+Windows example:
+
+``` json
+{
+  "path_url": "C:\\Users\\username\\.ledfx\\gifs\\custom.gif"
+}
+```
+
+**Security Note:**
+
+Local file paths are restricted to:
+- Config directory (e.g., `~/.ledfx/` or `C:\Users\username\.ledfx\`)
+- LEDFX_ASSETS_PATH (built-in preset assets)
+
+Remote URLs are protected against SSRF attacks by blocking:
+- Private networks (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7)
+- Loopback addresses (127.0.0.0/8, ::1/128)
+- Link-local addresses (169.254.0.0/16, fe80::/10)
+- Cloud metadata endpoints (169.254.169.254, metadata.google.internal)
+
+URL schemes other than http/https are rejected (file://, ftp://, javascript:, etc.).
+
+Attempts to access blocked resources will return an error response.
+
+##### Sample Success Response
+
+A successful response with two extracted frames:
+
+``` json
+{
+  "status": "success",
+  "frame_count": 2,
+  "frames": [
+    "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsL...",
+    "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsL..."
+  ]
+}
+```
+
+##### Sample Error Response
+
+``` json
+{
+  "status": "failed",
+  "reason": "Failed to open gif from: /invalid/path.gif"
+}
+```
 
 ---
 

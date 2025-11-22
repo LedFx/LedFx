@@ -1511,18 +1511,134 @@ MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 MAX_IMAGE_PIXELS = 4096 * 4096  # Prevent decompression bombs
 DOWNLOAD_TIMEOUT = 30  # seconds
 
+# Blocked IP ranges for SSRF protection
+BLOCKED_IP_NETWORKS = [
+    # IPv4 Loopback
+    ipaddress.ip_network("127.0.0.0/8"),
+    # IPv4 Private networks
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    # IPv4 Link-local
+    ipaddress.ip_network("169.254.0.0/16"),
+    # IPv4 Reserved ranges
+    ipaddress.ip_network("0.0.0.0/8"),
+    ipaddress.ip_network("240.0.0.0/4"),
+    # IPv4 Multicast
+    ipaddress.ip_network("224.0.0.0/4"),
+    # IPv6 Loopback
+    ipaddress.ip_network("::1/128"),
+    # IPv6 Unspecified
+    ipaddress.ip_network("::/128"),
+    # IPv6 Private/ULA
+    ipaddress.ip_network("fc00::/7"),
+    ipaddress.ip_network("fd00::/8"),
+    # IPv6 Link-local
+    ipaddress.ip_network("fe80::/10"),
+    # IPv6 Multicast
+    ipaddress.ip_network("ff00::/8"),
+]
+
+# Cloud metadata endpoints (commonly targeted in SSRF attacks)
+BLOCKED_HOSTNAMES = [
+    "169.254.169.254",  # AWS, Azure, GCP metadata
+    "metadata.google.internal",  # GCP
+    "169.254.170.2",  # AWS ECS metadata
+]
+
+
+def is_blocked_ip(ip_str: str) -> bool:
+    """
+    Check if an IP address is in the blocklist.
+
+    Args:
+        ip_str: IP address string to check
+
+    Returns:
+        bool: True if IP is blocked
+    """
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        for network in BLOCKED_IP_NETWORKS:
+            if ip in network:
+                return True
+        return False
+    except ValueError:
+        # Invalid IP address
+        return True
+
+
+def validate_url_safety(url: str) -> tuple[bool, str]:
+    """
+    Validate URL for SSRF protection by checking scheme, hostname, and resolved IP.
+
+    Args:
+        url: URL to validate
+
+    Returns:
+        tuple: (is_safe, error_message)
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+
+        # Only allow HTTP/HTTPS
+        if parsed.scheme not in ("http", "https"):
+            return False, f"Protocol '{parsed.scheme}' not allowed"
+
+        hostname = parsed.hostname
+        if not hostname:
+            return False, "No hostname found in URL"
+
+        # Check against blocked hostname list
+        if hostname.lower() in BLOCKED_HOSTNAMES:
+            return False, f"Hostname '{hostname}' is blocked"
+
+        # Resolve hostname to IP addresses
+        try:
+            addr_info = socket.getaddrinfo(
+                hostname,
+                parsed.port or (443 if parsed.scheme == "https" else 80),
+                socket.AF_UNSPEC,
+                socket.SOCK_STREAM,
+            )
+        except socket.gaierror as e:
+            return False, f"Failed to resolve hostname '{hostname}': {e}"
+
+        # Check all resolved IPs
+        for family, socktype, proto, canonname, sockaddr in addr_info:
+            ip_str = sockaddr[0]
+
+            # Check if IP is blocked
+            if is_blocked_ip(ip_str):
+                return False, f"URL resolves to blocked IP address: {ip_str}"
+
+        return True, ""
+
+    except Exception as e:
+        return False, f"URL validation error: {e}"
+
 
 def is_allowed_image_extension(path: str) -> bool:
     """
     Check if file extension is in allowlist.
 
     Args:
-        path: File path to check
+        path: File path or URL to check
 
     Returns:
         bool: True if extension is allowed
     """
-    ext = os.path.splitext(path.lower())[1]
+    # Parse URL to remove query strings and fragments
+    parsed = urllib.parse.urlparse(path)
+
+    # Use parsed path component for URLs (http/https or if netloc is present)
+    if parsed.scheme in ("http", "https") or parsed.netloc:
+        path_to_check = parsed.path
+    else:
+        # Keep original path for local files
+        path_to_check = path
+
+    ext = os.path.splitext(path_to_check.lower())[1]
     return ext in ALLOWED_IMAGE_EXTENSIONS
 
 
@@ -1731,6 +1847,14 @@ def open_gif(gif_path, force_refresh=False):
                 _LOGGER.error(f"URL has invalid image extension: {gif_path}")
                 return None
 
+            # Validate URL safety (SSRF protection)
+            is_safe, error_msg = validate_url_safety(gif_path)
+            if not is_safe:
+                _LOGGER.error(
+                    f"URL blocked for security: {gif_path} - {error_msg}"
+                )
+                return None
+
             # Download with size limit and timeout
             req = build_browser_request(gif_path)
             with urllib.request.urlopen(
@@ -1759,6 +1883,8 @@ def open_gif(gif_path, force_refresh=False):
                 content_type = response.headers.get(
                     "Content-Type", "image/jpeg"
                 )
+                # Normalize content type by stripping parameters
+                content_type = content_type.split(";")[0].strip().lower()
 
                 gif = Image.open(io.BytesIO(data))
 
@@ -1776,6 +1902,16 @@ def open_gif(gif_path, force_refresh=False):
                     )
         else:
             # Local file
+            # Reject any URL schemes (file://, ftp://, etc.)
+            # Note: http/https are handled in the if branch above
+            parsed = urllib.parse.urlparse(gif_path)
+            # Allow single-letter schemes (Windows drive letters like C:)
+            if parsed.scheme and len(parsed.scheme) > 1:
+                _LOGGER.error(
+                    f"Invalid URL scheme '{parsed.scheme}' for local file: {gif_path}"
+                )
+                return None
+
             # Path traversal protection
             is_valid, validated_path = validate_local_path(gif_path)
             if not is_valid:
@@ -1876,6 +2012,14 @@ def open_image(image_path, force_refresh=False):
                 _LOGGER.error(f"URL has invalid image extension: {image_path}")
                 return None
 
+            # Validate URL safety (SSRF protection)
+            is_safe, error_msg = validate_url_safety(image_path)
+            if not is_safe:
+                _LOGGER.error(
+                    f"URL blocked for security: {image_path} - {error_msg}"
+                )
+                return None
+
             # Download with size limit and timeout
             req = build_browser_request(image_path)
             with urllib.request.urlopen(
@@ -1904,6 +2048,8 @@ def open_image(image_path, force_refresh=False):
                 content_type = response.headers.get(
                     "Content-Type", "image/jpeg"
                 )
+                # Normalize content type by stripping parameters
+                content_type = content_type.split(";")[0].strip().lower()
 
                 image = Image.open(io.BytesIO(data))
 
@@ -1923,6 +2069,16 @@ def open_image(image_path, force_refresh=False):
                 return image
         else:
             # Local file
+            # Reject any URL schemes (file://, ftp://, etc.)
+            # Note: http/https are handled in the if branch above
+            parsed = urllib.parse.urlparse(image_path)
+            # Allow single-letter schemes (Windows drive letters like C:)
+            if parsed.scheme and len(parsed.scheme) > 1:
+                _LOGGER.error(
+                    f"Invalid URL scheme '{parsed.scheme}' for local file: {image_path}"
+                )
+                return None
+
             # Path traversal protection
             is_valid, validated_path = validate_local_path(image_path)
             if not is_valid:

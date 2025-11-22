@@ -289,6 +289,256 @@ class TestIntegrationOpenGif:
         assert result.n_frames == 1
 
 
+class TestSSRFProtection:
+    """Test SSRF (Server-Side Request Forgery) protection for URL validation."""
+
+    def test_loopback_ipv4_blocked(self):
+        """Test that loopback addresses are blocked."""
+        from ledfx.utils import validate_url_safety
+
+        # Test various loopback addresses
+        blocked_urls = [
+            "http://127.0.0.1/image.jpg",
+            "http://127.1.2.3/image.png",
+            "http://127.255.255.255/image.gif",
+        ]
+        for url in blocked_urls:
+            is_safe, error_msg = validate_url_safety(url)
+            assert not is_safe, f"{url} should be blocked"
+            assert "blocked ip" in error_msg.lower()
+
+    def test_private_networks_blocked(self):
+        """Test that private network addresses are blocked."""
+        from ledfx.utils import validate_url_safety
+
+        blocked_urls = [
+            "http://10.0.0.1/image.jpg",
+            "http://10.255.255.255/image.png",
+            "http://172.16.0.1/image.gif",
+            "http://172.31.255.255/image.jpg",
+            "http://192.168.1.1/image.png",
+            "http://192.168.255.255/image.gif",
+        ]
+        for url in blocked_urls:
+            is_safe, error_msg = validate_url_safety(url)
+            assert not is_safe, f"{url} should be blocked"
+            assert "blocked ip" in error_msg.lower()
+
+    def test_link_local_blocked(self):
+        """Test that link-local addresses are blocked."""
+        from ledfx.utils import validate_url_safety
+
+        blocked_urls = [
+            "http://169.254.0.1/image.jpg",
+            "http://169.254.169.254/image.png",  # AWS metadata
+            "http://169.254.170.2/image.gif",  # ECS metadata
+        ]
+        for url in blocked_urls:
+            is_safe, error_msg = validate_url_safety(url)
+            assert not is_safe, f"{url} should be blocked"
+
+    def test_metadata_endpoints_blocked(self):
+        """Test that cloud metadata endpoints are blocked by hostname."""
+        from ledfx.utils import validate_url_safety
+
+        # Direct IP check
+        is_safe, error_msg = validate_url_safety(
+            "http://169.254.169.254/latest/meta-data/"
+        )
+        assert not is_safe
+        assert "blocked" in error_msg.lower()
+
+    def test_ipv6_loopback_blocked(self):
+        """Test that IPv6 loopback is blocked."""
+        from ledfx.utils import validate_url_safety
+
+        blocked_urls = [
+            "http://[::1]/image.jpg",
+            "http://[0:0:0:0:0:0:0:1]/image.png",
+        ]
+        for url in blocked_urls:
+            is_safe, error_msg = validate_url_safety(url)
+            assert not is_safe, f"{url} should be blocked"
+
+    def test_ipv6_private_blocked(self):
+        """Test that IPv6 private addresses are blocked."""
+        from ledfx.utils import validate_url_safety
+
+        blocked_urls = [
+            "http://[fc00::1]/image.jpg",
+            "http://[fd00::1]/image.png",
+            "http://[fe80::1]/image.gif",  # Link-local
+        ]
+        for url in blocked_urls:
+            is_safe, error_msg = validate_url_safety(url)
+            assert not is_safe, f"{url} should be blocked"
+
+    def test_invalid_protocols_blocked(self):
+        """Test that non-HTTP/HTTPS protocols are blocked."""
+        from ledfx.utils import validate_url_safety
+
+        blocked_urls = [
+            "file:///etc/passwd",
+            "ftp://example.com/image.jpg",
+            "gopher://example.com/image.png",
+            "data:image/png;base64,abc123",
+        ]
+        for url in blocked_urls:
+            is_safe, error_msg = validate_url_safety(url)
+            assert not is_safe, f"{url} should be blocked"
+            assert "not allowed" in error_msg.lower()
+
+    @patch("socket.getaddrinfo")
+    def test_dns_rebinding_protection(self, mock_getaddrinfo):
+        """Test that hostnames resolving to blocked IPs are rejected."""
+        from ledfx.utils import validate_url_safety
+
+        # Mock DNS resolution to return a private IP
+        mock_getaddrinfo.return_value = [
+            (
+                2,
+                1,
+                6,
+                "",
+                ("192.168.1.1", 80),
+            )  # AF_INET, SOCK_STREAM, private IP
+        ]
+
+        is_safe, error_msg = validate_url_safety(
+            "http://evil.example.com/image.jpg"
+        )
+        assert not is_safe
+        assert "blocked ip" in error_msg.lower()
+        assert "192.168.1.1" in error_msg
+
+    @patch("socket.getaddrinfo")
+    def test_valid_public_url_allowed(self, mock_getaddrinfo):
+        """Test that valid public URLs are allowed."""
+        from ledfx.utils import validate_url_safety
+
+        # Mock DNS resolution to return a public IP
+        mock_getaddrinfo.return_value = [
+            (2, 1, 6, "", ("93.184.216.34", 80))  # example.com IP
+        ]
+
+        is_safe, error_msg = validate_url_safety(
+            "http://example.com/image.jpg"
+        )
+        assert is_safe
+        assert error_msg == ""
+
+    def test_open_image_blocks_ssrf(self):
+        """Test that open_image rejects SSRF attempts."""
+        # Test with loopback address
+        result = open_image("http://127.0.0.1/image.jpg")
+        assert result is None
+
+        # Test with private network
+        result = open_image("http://192.168.1.1/image.png")
+        assert result is None
+
+        # Test with metadata endpoint
+        result = open_image("http://169.254.169.254/image.gif")
+        assert result is None
+
+    def test_open_gif_blocks_ssrf(self):
+        """Test that open_gif rejects SSRF attempts."""
+        # Test with loopback address
+        result = open_gif("http://127.0.0.1/animation.gif")
+        assert result is None
+
+        # Test with private network
+        result = open_gif("http://10.0.0.1/animation.gif")
+        assert result is None
+
+
+class TestLocalFileSchemeValidation:
+    """Test that non-HTTP/HTTPS URL schemes are rejected for local file paths."""
+
+    def test_file_scheme_rejected_in_open_image(self):
+        """Test that file:// URLs are rejected."""
+        result = open_image("file:///etc/passwd")
+        assert result is None
+
+        result = open_image("file:///C:/Windows/System32/config/SAM")
+        assert result is None
+
+    def test_file_scheme_rejected_in_open_gif(self):
+        """Test that file:// URLs are rejected."""
+        result = open_gif("file:///etc/passwd")
+        assert result is None
+
+    def test_ftp_scheme_rejected_in_open_image(self):
+        """Test that ftp:// URLs are rejected."""
+        result = open_image("ftp://example.com/image.jpg")
+        assert result is None
+
+    def test_ftp_scheme_rejected_in_open_gif(self):
+        """Test that ftp:// URLs are rejected."""
+        result = open_gif("ftp://example.com/image.gif")
+        assert result is None
+
+    def test_data_uri_rejected_in_open_image(self):
+        """Test that data: URIs are rejected."""
+        result = open_image(
+            "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        )
+        assert result is None
+
+    def test_javascript_scheme_rejected(self):
+        """Test that javascript: URLs are rejected."""
+        result = open_image("javascript:alert('xss')")
+        assert result is None
+
+        result = open_gif("javascript:void(0)")
+        assert result is None
+
+    def test_other_schemes_rejected(self):
+        """Test that various other URL schemes are rejected."""
+        schemes = ["gopher", "telnet", "ssh", "sftp", "smb", "ldap"]
+        for scheme in schemes:
+            result = open_image(f"{scheme}://example.com/image.jpg")
+            assert result is None, f"{scheme}:// should be rejected"
+
+            result = open_gif(f"{scheme}://example.com/image.gif")
+            assert result is None, f"{scheme}:// should be rejected"
+
+
+class TestURLParsing:
+    """Test URL parsing for extension validation with query strings and fragments."""
+
+    def test_url_with_query_string(self):
+        """Test that URLs with query strings are handled correctly."""
+        assert is_allowed_image_extension(
+            "https://example.com/image.jpg?size=large&quality=high"
+        )
+        assert is_allowed_image_extension(
+            "https://example.com/photo.png?token=abc123"
+        )
+
+    def test_url_with_fragment(self):
+        """Test that URLs with fragments are handled correctly."""
+        assert is_allowed_image_extension(
+            "https://example.com/image.gif#section"
+        )
+        assert is_allowed_image_extension("https://example.com/photo.webp#top")
+
+    def test_url_with_query_and_fragment(self):
+        """Test that URLs with both query strings and fragments work."""
+        assert is_allowed_image_extension(
+            "https://example.com/image.png?v=2#preview"
+        )
+
+    def test_url_with_invalid_extension_and_query(self):
+        """Test that invalid extensions are still caught with query strings."""
+        assert not is_allowed_image_extension(
+            "https://example.com/file.txt?type=image"
+        )
+        assert not is_allowed_image_extension(
+            "https://example.com/script.py?download=true"
+        )
+
+
 # Test Scenarios Documentation
 """
 GOOD SCENARIOS (Should Pass):
@@ -297,6 +547,8 @@ GOOD SCENARIOS (Should Pass):
 3. Images with dimensions <= 4096x4096 pixels
 4. Remote URLs with correct Content-Length headers
 5. Files with correct MIME types matching their content
+6. URLs pointing to public IP addresses
+7. URLs with query strings and fragments
 
 BAD SCENARIOS (Should Fail):
 1. Files with disallowed extensions (.txt, .pdf, .exe, etc.)
@@ -308,4 +560,11 @@ BAD SCENARIOS (Should Fail):
 7. Images with unsupported PIL formats
 8. Nonexistent files
 9. URLs with invalid extensions
+10. URLs pointing to loopback addresses (127.0.0.0/8, ::1)
+11. URLs pointing to private networks (10/8, 172.16/12, 192.168/16, fc00::/7)
+12. URLs pointing to link-local addresses (169.254/16, fe80::/10)
+13. URLs pointing to cloud metadata endpoints (169.254.169.254)
+14. URLs using non-HTTP/HTTPS protocols in remote requests (validated by validate_url_safety)
+15. Hostnames that resolve to blocked IP addresses
+16. Non-HTTP/HTTPS URL schemes in local file path handling (file://, ftp://, data:, javascript:, etc.)
 """
