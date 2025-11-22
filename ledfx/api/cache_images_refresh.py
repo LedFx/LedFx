@@ -19,24 +19,15 @@ class CacheRefreshEndpoint(RestEndpoint):
         """
         Clear a cached image to force re-download on next access.
 
-        This endpoint removes the specified URL from the cache, causing the image
-        to be re-downloaded from the origin server the next time it is requested
-        via open_image() or open_gif().
+        Removes the specified URL from cache. Next request will re-download
+        from origin server and cache the fresh copy.
 
         Request Body:
-            {
-                "url": "https://example.com/image.gif"
-            }
+            url (required): URL to clear from cache
 
         Returns:
-            JSON with the cleared URL
-
-        Example Response:
-            {
-                "status": "success",
-                "message": "Cache entry cleared. Image will be re-downloaded on next access.",
-                "url": "https://example.com/image.gif"
-            }
+            Success response with URL (type: success if cached, info if not cached),
+            or error response if request invalid or cache not initialized.
         """
         cache = get_image_cache()
 

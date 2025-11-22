@@ -16,7 +16,7 @@ LedFx is a real-time LED visualization system that synchronizes LED lighting wit
 
 ## Development Environment
 
-- **Python Version**: 3.10-3.13 supported
+- **Python Version**: 3.10-3.13 supported (requires-python = ">=3.10,<3.14")
 - **Build System**: `uv` workspace with `pyproject.toml`
 - **License**: GPL-3.0
 - **Dependencies**: Audio processing (aubio-ledfx, sounddevice), LED control (openrgb-python, sacn), web framework (aiohttp)
@@ -25,20 +25,25 @@ LedFx is a real-time LED visualization system that synchronizes LED lighting wit
 ### Workspace Structure
 ```
 ledfx/                    # Main package
-├── effects/             # Effect implementations (50+ files)
-├── devices/             # Device drivers (WLED, E1.31, DDP, etc.)
 ├── api/                 # REST API endpoints
+├── devices/             # Device drivers (WLED, E1.31, DDP, etc.)
+├── effects/             # Effect implementations (50+ files)
 ├── integrations/        # External service integrations
-├── rust/               # Rust-accelerated effects
-├── core.py             # Application core
-├── virtuals.py         # Virtual LED strip management
-└── config.py           # Configuration management
+├── libraries/           # Shared libraries (cache, lifxdev)
+├── rust/                # Rust-accelerated effects
+├── tools/               # Development tools (TypeScript generator, etc.)
+├── color.py             # Color manipulation utilities
+├── config.py            # Configuration management
+├── core.py              # Application core
+├── events.py            # Event system
+├── utils.py             # Utility functions and BaseRegistry
+└── virtuals.py          # Virtual LED strip management
 ```
 
 ## Effect System Architecture
 
 ### Effect Base Class (`ledfx/effects/__init__.py`)
-All effects inherit from the `Effect` base class which provides:
+All effects inherit from the `Effect` base class (which extends `BaseRegistry` from `utils.py`) which provides:
 - **Pixel Management**: `self.pixels` array for RGB values
 - **Configuration**: Voluptuous schema validation
 - **Rendering**: `render()` method for effect computation
@@ -79,7 +84,8 @@ class MyEffect(Effect):
 - **OSC**: Open Sound Control protocol
 
 ### Device Base Classes
-- `Device`: Base device class
+All devices inherit from `BaseRegistry` (from `utils.py`):
+- `Device`: Base device class with CONFIG_SCHEMA
 - `NetworkedDevice`: IP-based devices with address resolution
 - `UDPDevice`: UDP-based network devices
 - `SerialDevice`: Serial port devices
@@ -112,11 +118,25 @@ Virtuals abstract physical LED hardware, allowing:
 ## API Design
 
 ### REST Endpoints
-- `/api/devices` - Device management
+Key API endpoints include:
 - `/api/virtuals` - Virtual strip control
 - `/api/effects` - Effect library
+- `/api/devices` - Device management
 - `/api/config` - Configuration management
-- `/api/audio` - Audio device settings
+- `/api/scenes` - Scene coordination
+- `/api/integrations` - External service connections
+- `/api/cache/images` - Image cache management
+
+### REST API Implementation Standards
+
+**IMPORTANT**: Always use `RestEndpoint` base class helper methods instead of direct `web.json_response()` calls for consistent response formatting and frontend snackbar notifications.
+
+#### Helper Methods
+- **`await self.request_success(type, message, data=None)`** - Operations needing user feedback (type: "success", "info", "warning", "error")
+- **`await self.bare_request_success(data)`** - Operations without snackbar notifications
+- **`await self.invalid_request(message, type="error")`** - Validation errors and failures
+
+Do NOT use `web.json_response()` directly.
 
 ### WebSocket Events
 - Real-time pixel updates
@@ -131,6 +151,12 @@ Virtuals abstract physical LED hardware, allowing:
 - **flake8**: Linting with E501 line length relaxed
 - **isort**: Import organization
 - **Type Hints**: Use where beneficial
+
+### Path Handling Standards
+
+**IMPORTANT**: Always use `os.path` module for path operations, NOT `pathlib`. This is the established codebase convention with 20+ uses throughout the project.
+
+Use `os.path.join()` for path construction, `os.path.exists()` for checks, `os.makedirs()` for directory creation, and `os.remove()` for file deletion. Do NOT use pathlib's `Path()` or `/` operator.
 
 ### Performance Considerations
 - **NumPy**: Use vectorized operations for pixel manipulation
@@ -150,6 +176,16 @@ Virtuals abstract physical LED hardware, allowing:
 - **Device Mocking**: Mock network devices for testing
 - **Configuration Validation**: Test schema validation
 - **API Testing**: Integration tests for REST endpoints
+- **Security Testing**: Use big-list-of-naughty-strings patterns for input validation
+
+### Security Testing Guidelines
+
+When testing input validation, especially for file paths and URLs, use patterns from the big-list-of-naughty-strings project to test:
+
+1. **Path Traversal**: `../`, encoded variants, null bytes, mixed separators
+2. **URL Injection**: Protocol injection, IP obfuscation, localhost variants
+3. **Special Filenames**: Reserved names (CON, PRN, NUL), control characters, homoglyphs
+4. **SSRF Protection**: Loopback addresses, private networks, metadata endpoints
 
 ## Common Tasks
 

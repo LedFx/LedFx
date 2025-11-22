@@ -28,30 +28,8 @@ class CacheImagesEndpoint(RestEndpoint):
         Get cache statistics and entries.
 
         Returns:
-            JSON with cache stats including total size, count, and all cached entries
-
-        Example Response:
-            {
-                "total_size": 52428800,
-                "total_count": 45,
-                "max_size": 524288000,
-                "max_count": 500,
-                "cache_policy": {
-                    "expiration": "none",
-                    "refresh": "explicit only",
-                    "eviction": "LRU when limits exceeded"
-                },
-                "entries": [
-                    {
-                        "url": "https://example.com/image.gif",
-                        "cached_at": "2024-01-15T10:30:00Z",
-                        "last_accessed": "2024-01-20T14:20:00Z",
-                        "access_count": 42,
-                        "file_size": 524288,
-                        "content_type": "image/gif"
-                    }
-                ]
-            }
+            Bare JSON response with cache stats (total_size, total_count, entries)
+            or error response if cache not initialized.
         """
         cache = get_image_cache()
 
@@ -75,21 +53,11 @@ class CacheImagesEndpoint(RestEndpoint):
         Clear cache for specific URL or entire cache.
 
         Query Parameters:
-            url (optional): Specific URL to clear from cache
+            url (optional): Specific URL to clear. If omitted, clears entire cache.
 
         Returns:
-            JSON with cleared_count and freed_bytes
-
-        Examples:
-            DELETE /api/cache/images?url=https://example.com/image.gif
-            DELETE /api/cache/images  (clears entire cache)
-
-        Example Response:
-            {
-                "status": "success",
-                "cleared_count": 1,
-                "freed_bytes": 524288
-            }
+            Success response with cleared_count (and freed_bytes for full clear),
+            or error response if URL not found or cache not initialized.
         """
         cache = get_image_cache()
 

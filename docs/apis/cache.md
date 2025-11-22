@@ -39,7 +39,7 @@ Get current cache statistics including all cached entries.
 
 **Endpoint:** `GET /api/cache/images`
 
-**Response:**
+**Success Response (bare response - no status wrapper):**
 ```json
 {
   "total_size": 52428800,
@@ -61,6 +61,17 @@ Get current cache statistics including all cached entries.
       "content_type": "image/gif"
     }
   ]
+}
+```
+
+**Error Response (cache not initialized):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Image cache not initialized"
+  }
 }
 ```
 
@@ -89,13 +100,43 @@ Clear entire cache:
 DELETE /api/cache/images
 ```
 
-**Response:**
+**Success Response (specific URL):**
 ```json
 {
   "status": "success",
-  "message": "Entire cache cleared",
-  "cleared_count": 45,
-  "freed_bytes": 52428800
+  "payload": {
+    "type": "success",
+    "reason": "Cleared cache for URL: https://example.com/image.gif"
+  },
+  "data": {
+    "cleared_count": 1
+  }
+}
+```
+
+**Success Response (entire cache):**
+```json
+{
+  "status": "success",
+  "payload": {
+    "type": "success",
+    "reason": "Entire cache cleared"
+  },
+  "data": {
+    "cleared_count": 45,
+    "freed_bytes": 52428800
+  }
+}
+```
+
+**Error Response (URL not found):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "warning",
+    "reason": "URL not found in cache: https://example.com/notfound.gif"
+  }
 }
 ```
 
@@ -119,21 +160,42 @@ This endpoint removes the specified URL from the cache. The next time the image 
 **Parameters:**
 - `url` (required): The URL to clear from cache
 
-**Response (entry was in cache):**
+**Success Response (entry was in cache):**
 ```json
 {
   "status": "success",
-  "message": "Cache entry cleared. Image will be re-downloaded on next access.",
-  "url": "https://example.com/image.gif"
+  "payload": {
+    "type": "success",
+    "reason": "Cache entry cleared. Image will be re-downloaded on next access."
+  },
+  "data": {
+    "url": "https://example.com/image.gif"
+  }
 }
 ```
 
-**Response (entry was not in cache):**
+**Success Response (entry was not in cache):**
 ```json
 {
   "status": "success",
-  "message": "URL was not in cache (no action needed).",
-  "url": "https://example.com/image.gif"
+  "payload": {
+    "type": "info",
+    "reason": "URL was not in cache (no action needed)."
+  },
+  "data": {
+    "url": "https://example.com/image.gif"
+  }
+}
+```
+
+**Error Response (invalid request):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Missing 'url' in request body"
+  }
 }
 ```
 
