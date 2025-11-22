@@ -53,7 +53,11 @@ VISUALISATION_CONFIG_KEYS = [
     "visualisation_maxlen",
 ]
 
-UI_ONLY_KEYS_IGNORED_FOR_CONFIG_COMPARISON = ["advanced", "diag"]
+UI_ONLY_KEYS_IGNORED_FOR_CONFIG_COMPARISON = [
+    "advanced",
+    "diag",
+    "gradient_name",  # UI field that gets expanded to gradient value
+]
 
 
 # Transmission types for pixel visualisation on frontend
