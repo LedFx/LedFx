@@ -1,4 +1,15 @@
+from unittest.mock import patch
+
+import pytest
+
 from ledfx.scenes import Scenes
+
+
+@pytest.fixture(autouse=True)
+def mock_generate_default_config():
+    """Mock generate_default_config to return empty dict for all tests."""
+    with patch("ledfx.scenes.generate_default_config", return_value={}):
+        yield
 
 
 class _DummyEvents:
@@ -18,6 +29,12 @@ class _DummyEffect:
         self.config = config
 
 
+class _DummyEffects:
+    """Dummy effects registry for testing."""
+
+    pass
+
+
 class _DummyLedFx:
     def __init__(
         self, scenes=None, virtuals=None, presets=None, user_presets=None
@@ -30,6 +47,7 @@ class _DummyLedFx:
         }
         self.virtuals = virtuals or {}
         self.events = _DummyEvents()
+        self.effects = _DummyEffects()
 
 
 def _build_scenes_manager(
