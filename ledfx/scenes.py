@@ -337,13 +337,15 @@ class Scenes:
                         return False
 
                 current_config = getattr(current_effect, "config", None) or {}
-                
+
                 # Normalize the expected config by filling in defaults for missing keys
                 # This ensures legacy scenes (with fewer keys) match current effects (with new keys)
                 # The current config doesn't need normalization as it's the running effect with all keys
-                default_config = generate_default_config(self._ledfx.effects, expected_type)
+                default_config = generate_default_config(
+                    self._ledfx.effects, expected_type
+                )
                 normalized_expected = {**default_config, **expected_config}
-                
+
                 if not configs_match(current_config, normalized_expected):
                     return False
 
