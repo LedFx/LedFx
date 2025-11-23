@@ -139,10 +139,6 @@ Key API endpoints include:
 
 Do NOT use `web.json_response()` directly.
 
-#### JSON Request Body Handling
-
-**IMPORTANT**: Use `request: web.Request` parameter, parse with `await request.json()` in try/except, return `await self.json_decode_error()` on JSONDecodeError.
-
 ### WebSocket Events
 - Real-time pixel updates
 - Configuration changes
