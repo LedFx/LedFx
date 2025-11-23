@@ -254,13 +254,6 @@ class ScenesEndpoint(RestEndpoint):
                 if not isinstance(virtual_data, dict):
                     continue
 
-                # Validate preset requires type
-                if "preset" in virtual_data and "type" not in virtual_data:
-                    _LOGGER.warning(
-                        f"Virtual '{virtualid}' has 'preset' field but missing required 'type' field. "
-                        "Preset will be ignored at activation."
-                    )
-
                 # Preserve the entire virtual config including action field
                 virtual_config = {}
 
@@ -275,8 +268,15 @@ class ScenesEndpoint(RestEndpoint):
                     virtual_config["config"] = virtual_data["config"]
 
                 # Copy preset if present (for activate action with preset)
+                # Only save preset if type is also present (preset requires type)
                 if "preset" in virtual_data:
-                    virtual_config["preset"] = virtual_data["preset"]
+                    if "type" in virtual_data:
+                        virtual_config["preset"] = virtual_data["preset"]
+                    else:
+                        _LOGGER.warning(
+                            f"Virtual '{virtualid}' has 'preset' field but missing required 'type' field. "
+                            "Preset field will not be saved."
+                        )
 
                 scene_config["virtuals"][virtualid] = virtual_config
 

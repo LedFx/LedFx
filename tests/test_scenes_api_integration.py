@@ -120,7 +120,11 @@ async def test_post_scene_mixed_legacy_and_new():
             "v1": {"type": "bars", "config": {"speed": 1}},  # Legacy
             "v2": {"action": "stop"},  # New
             "v3": {},  # Legacy empty
-            "v4": {"action": "activate", "preset": "rainbow-scroll"},  # New
+            "v4": {
+                "action": "activate",
+                "type": "scroll",
+                "preset": "rainbow-scroll",
+            },  # New
         },
     }
 

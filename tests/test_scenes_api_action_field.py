@@ -81,6 +81,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
             "virtuals": {
                 "v1": {
                     "action": "activate",
+                    "type": "scroll",
                     "preset": "rainbow-scroll",
                 },
             },
@@ -98,9 +99,10 @@ class TestScenesEndpointPost(AioHTTPTestCase):
 
         scene_config = data["scene"]["config"]
         assert scene_config["virtuals"]["v1"]["action"] == "activate"
+        assert scene_config["virtuals"]["v1"]["type"] == "scroll"
         assert scene_config["virtuals"]["v1"]["preset"] == "rainbow-scroll"
-        # Should not have type/config when using preset
-        assert "type" not in scene_config["virtuals"]["v1"]
+        # Should not have config when using preset
+        assert "config" not in scene_config["virtuals"]["v1"]
 
     @patch("ledfx.api.scenes.save_config")
     async def test_create_scene_legacy_format(self, mock_save):
@@ -302,7 +304,11 @@ async def test_scene_action_field_preservation():
     request_data = {
         "name": "Action Test",
         "virtuals": {
-            "v1": {"action": "activate", "preset": "rainbow"},
+            "v1": {
+                "action": "activate",
+                "type": "scroll",
+                "preset": "rainbow",
+            },
             "v2": {"action": "stop"},
             "v3": {"action": "forceblack"},
             "v4": {"action": "ignore"},
