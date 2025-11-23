@@ -280,7 +280,7 @@ def get_ssl_certs(config_dir) -> tuple:
     key_path = os.path.join(ssl_dir, PRIVATE_KEY_FILE)
     chain_path = os.path.join(ssl_dir, CHAIN_KEY_FILE)
 
-    if os.path.isfile(key_path) and os.path.isfile(key_path):
+    if os.path.isfile(key_path) and os.path.isfile(chain_path):
         return (chain_path, key_path)
     return None
 
