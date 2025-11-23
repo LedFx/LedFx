@@ -554,3 +554,296 @@ def test_action_activate_with_reset_preset(mock_save):
         "brightness": 1.0,
         "color": "#ffffff",
     }
+
+
+# Test preset fallback behavior when preset doesn't exist
+@patch("ledfx.scenes.save_config")
+def test_action_activate_preset_fallback_to_default(mock_save):
+    """Test that missing preset falls back to generate_default_config."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {
+                    "action": "activate",
+                    "type": "scroll",
+                    "preset": "nonexistent-preset",
+                },
+            },
+        }
+    }
+    virtuals = {
+        "v1": _DummyVirtual("v1"),
+    }
+
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    assert len(ledfx.effects._created_effects) == 1
+    effect = ledfx.effects._created_effects[0]
+    assert effect.type == "scroll"
+    # Should fall back to default config
+    assert effect.config == {
+        "speed": 1.0,
+        "brightness": 1.0,
+        "color": "#ffffff",
+    }
+
+
+# Test user_presets are consulted
+@patch("ledfx.scenes.save_config")
+def test_action_activate_with_user_preset(mock_save):
+    """Test that user_presets are checked in addition to ledfx_presets."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {
+                    "action": "activate",
+                    "type": "gradient",
+                    "preset": "my-user-preset",
+                },
+            },
+        }
+    }
+    virtuals = {
+        "v1": _DummyVirtual("v1"),
+    }
+
+    dummy_ledfx = _DummyLedFx(
+        scenes=scenes,
+        virtuals=virtuals,
+        presets={},
+    )
+    # Add user preset
+    dummy_ledfx.config["user_presets"] = {
+        "gradient": {
+            "my-user-preset": {
+                "name": "My User Preset",
+                "config": {"colors": ["#ff0000", "#00ff00", "#0000ff"]},
+            }
+        }
+    }
+    manager = Scenes(dummy_ledfx)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    assert len(dummy_ledfx.effects._created_effects) == 1
+    effect = dummy_ledfx.effects._created_effects[0]
+    assert effect.type == "gradient"
+    assert effect.config == {"colors": ["#ff0000", "#00ff00", "#0000ff"]}
+
+
+# Test ledfx_presets are consulted before user_presets
+@patch("ledfx.scenes.save_config")
+def test_action_activate_ledfx_presets_priority(mock_save):
+    """Test that ledfx_presets are checked before user_presets."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {
+                    "action": "activate",
+                    "type": "scroll",
+                    "preset": "rainbow-scroll",
+                },
+            },
+        }
+    }
+    virtuals = {
+        "v1": _DummyVirtual("v1"),
+    }
+
+    dummy_ledfx = _DummyLedFx(
+        scenes=scenes,
+        virtuals=virtuals,
+        presets={
+            "scroll": {
+                "rainbow-scroll": {
+                    "name": "Rainbow Scroll (System)",
+                    "config": {"speed": 2.0, "gradient": "rainbow"},
+                }
+            }
+        },
+    )
+    # Also add a user preset with same name
+    dummy_ledfx.config["user_presets"] = {
+        "scroll": {
+            "rainbow-scroll": {
+                "name": "Rainbow Scroll (User)",
+                "config": {"speed": 5.0, "gradient": "custom"},
+            }
+        }
+    }
+    manager = Scenes(dummy_ledfx)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    assert len(dummy_ledfx.effects._created_effects) == 1
+    effect = dummy_ledfx.effects._created_effects[0]
+    assert effect.type == "scroll"
+    # Should use ledfx_presets, not user_presets
+    assert effect.config == {"speed": 2.0, "gradient": "rainbow"}
+
+
+# Test unknown action values are treated as ignore/skipped
+@patch("ledfx.scenes.save_config")
+def test_unknown_action_value_is_ignored(mock_save):
+    """Test that unknown action values are skipped (no effect created)."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {
+                    "action": "unknown_action_type",
+                    "type": "bars",
+                    "config": {"speed": 1},
+                },
+                "v2": {
+                    "action": "activate",
+                    "type": "scroll",
+                    "config": {"speed": 2},
+                },
+            },
+        }
+    }
+    initial_effect_v1 = _DummyEffect("existing", {"speed": 10})
+    virtuals = {
+        "v1": _DummyVirtual("v1", initial_effect_v1),
+        "v2": _DummyVirtual("v2"),
+    }
+
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    # v1 should be unchanged (unknown action treated as ignore)
+    assert virtuals["v1"].active_effect == initial_effect_v1
+    assert virtuals["v1"]._cleared is False
+    # v2 should have new effect
+    assert len(ledfx.effects._created_effects) == 1
+    assert virtuals["v2"].active_effect.type == "scroll"
+
+
+# Test missing type field with activate action
+@patch("ledfx.scenes.save_config")
+def test_action_activate_missing_type_field(mock_save):
+    """Test that activate action without type field is skipped."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {
+                    "action": "activate",
+                    "config": {"speed": 1},
+                    # Missing required 'type' field
+                },
+                "v2": {
+                    "action": "activate",
+                    "type": "scroll",
+                    "config": {"speed": 2},
+                },
+            },
+        }
+    }
+    virtuals = {
+        "v1": _DummyVirtual("v1"),
+        "v2": _DummyVirtual("v2"),
+    }
+
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    # v1 should not have an effect created (missing type)
+    assert virtuals["v1"].active_effect is None
+    # v2 should have effect
+    assert len(ledfx.effects._created_effects) == 1
+    assert virtuals["v2"].active_effect.type == "scroll"
+
+
+# Test missing config with activate action (no preset)
+@patch("ledfx.scenes.save_config")
+def test_action_activate_missing_config_and_preset(mock_save):
+    """Test that activate action without config or preset is skipped."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {
+                    "action": "activate",
+                    "type": "scroll",
+                    # Missing both 'config' and 'preset'
+                },
+                "v2": {
+                    "action": "activate",
+                    "type": "bars",
+                    "config": {"speed": 1},
+                },
+            },
+        }
+    }
+    virtuals = {
+        "v1": _DummyVirtual("v1"),
+        "v2": _DummyVirtual("v2"),
+    }
+
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    # v1 should not have an effect created (missing config/preset)
+    assert virtuals["v1"].active_effect is None
+    # v2 should have effect
+    assert len(ledfx.effects._created_effects) == 1
+    assert virtuals["v2"].active_effect.type == "bars"
+
+
+# Test multiple unknown actions in one scene
+@patch("ledfx.scenes.save_config")
+def test_multiple_unknown_actions_in_scene(mock_save):
+    """Test scene with multiple unknown action types."""
+    scene_id = "test-scene"
+    scenes = {
+        scene_id: {
+            "name": "Test Scene",
+            "virtuals": {
+                "v1": {"action": "pause"},  # Unknown
+                "v2": {"action": "resume"},  # Unknown
+                "v3": {
+                    "action": "activate",
+                    "type": "scroll",
+                    "config": {"speed": 1},
+                },  # Valid
+                "v4": {"action": "mute"},  # Unknown
+            },
+        }
+    }
+    initial_v1 = _DummyEffect("existing1", {})
+    initial_v2 = _DummyEffect("existing2", {})
+    initial_v4 = _DummyEffect("existing4", {})
+    virtuals = {
+        "v1": _DummyVirtual("v1", initial_v1),
+        "v2": _DummyVirtual("v2", initial_v2),
+        "v3": _DummyVirtual("v3"),
+        "v4": _DummyVirtual("v4", initial_v4),
+    }
+
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    result = manager.activate(scene_id)
+
+    assert result is True
+    # Unknown actions should leave virtuals unchanged
+    assert virtuals["v1"].active_effect == initial_v1
+    assert virtuals["v2"].active_effect == initial_v2
+    assert virtuals["v4"].active_effect == initial_v4
+    # Only v3 should have new effect
+    assert len(ledfx.effects._created_effects) == 1
+    assert virtuals["v3"].active_effect.type == "scroll"
