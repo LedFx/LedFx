@@ -148,14 +148,14 @@ If any virtual referenced in the scene no longer exists, the scene is not active
 
 ## Endpoints Summary
 
-| Method | Path                    | Purpose                                    |
-|-------:|-------------------------|--------------------------------------------|
-|  POST  | `/api/scenes`           | Create or replace (upsert) a scene         |
-|   PUT  | `/api/scenes`           | Control/mutate an existing scene           |
-| DELETE | `/api/scenes`           | Delete a scene (legacy, requires JSON body)|
-| DELETE | `/api/scenes/{id}`      | Delete a scene (RESTful)                   |
-|   GET  | `/api/scenes`           | List all scenes with active flags          |
-|   GET  | `/api/scenes/{id}`      | Get scene details                          |
+| Method | Path                        | Purpose                                    |
+|-------:|-----------------------------|--------------------------------------------|
+|  POST  | `/api/scenes`               | Create or replace (upsert) a scene         |
+|   PUT  | `/api/scenes`               | Control/mutate an existing scene           |
+| DELETE | `/api/scenes`               | Delete a scene (legacy, requires JSON body)|
+| DELETE | `/api/scenes/{scene_id}`    | Delete a scene (RESTful)                   |
+|   GET  | `/api/scenes`               | List all scenes with active flags          |
+|   GET  | `/api/scenes/{scene_id}`    | Get scene details                          |
 
 **Conventions:**
 - `Content-Type: application/json` for request bodies.
@@ -214,6 +214,7 @@ When `virtuals` is omitted, the scene automatically captures all currently activ
     },
     "strip2": {
       "action": "activate",
+      "type": "scroll_plus",
       "preset": "rainbow-scroll"
     },
     "strip3": {
@@ -255,9 +256,9 @@ When `virtuals` is omitted, the scene automatically captures all currently activ
     - `"forceblack"`: Apply Single Color effect with black.
     - `"activate"`: Apply effect (requires `type`/`config` or `preset`).
     - If `action` omitted: Legacy behavior (empty `{}` = ignore, `type`/`config` present = activate).
-  - `type` *(string)*: Effect type identifier (required for `action: "activate"` without preset).
-  - `config` *(object)*: Effect configuration parameters (required for `action: "activate"` without preset).
-  - `preset` *(string)*: Preset name (alternative to `type`/`config` for `action: "activate"`).
+  - `type` *(string)*: Effect type identifier (required for `action: "activate"`).
+  - `config` *(object)*: Effect configuration parameters (required for `action: "activate"` when not using `preset`).
+  - `preset` *(string)*: Preset name to use instead of explicit `config` (when `action: "activate"`). Must be combined with `type` to identify which effect's preset library to search.
 - `scene_image` *(string, optional)*: UI image/icon identifier (defaults to "Wallpaper").
 - `scene_tags` *(string, optional)*: Comma-separated tags for categorization.
 - `scene_puturl` *(string, optional)*: HTTP endpoint to call when scene activates.
@@ -745,9 +746,9 @@ curl -X GET http://localhost:8888/api/scenes/living-room
 ```python
 VirtualActionSchema = vol.Schema({
   vol.Optional("action"): vol.In(["ignore", "stop", "forceblack", "activate"]),
-  vol.Optional("type"): str,  # Required if action="activate" and preset not provided
+  vol.Optional("type"): str,  # Required if action="activate"
   vol.Optional("config"): dict,  # Required if action="activate" and preset not provided
-  vol.Optional("preset"): str,  # Alternative to type/config for action="activate"
+  vol.Optional("preset"): str,  # Alternative to config for action="activate", requires type
 })
 
 SceneSchema = vol.Schema({
@@ -763,12 +764,12 @@ SceneSchema = vol.Schema({
 ```
 
 **Validation rules:**
-- If `action` is `"activate"`, either (`type` and `config`) or `preset` must be provided
+- If `action` is `"activate"`, `type` is required, and either `config` or `preset` must be provided
 - If `action` is `"ignore"`, `"stop"`, or `"forceblack"`, no other fields are required
 - If `action` is omitted:
   - Empty object `{}` is valid (legacy ignore behavior)
   - Object with `type` and `config` is valid (legacy activate behavior)
-  - Preset field alone is not valid without explicit `action: "activate"`
+  - `preset` field requires both `action: "activate"` and `type` to be valid
 
 ---
 
