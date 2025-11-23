@@ -48,6 +48,7 @@ from ledfx.utils import (
     async_fire_and_forget,
     currently_frozen,
     get_sorted_physical_ips,
+    init_image_cache,
     pixels_boost,
     resize_pixels,
     shape_to_fit_len,
@@ -388,6 +389,15 @@ class LedFxCore:
             self.icon.notify(
                 "Started in background.\nUse the tray icon to open.", "LedFx"
             )
+
+        # Initialize image cache
+        cache_config = self.config.get("image_cache", {})
+        init_image_cache(
+            self.config_dir,
+            max_size_mb=cache_config.get("max_size_mb", 500),
+            max_items=cache_config.get("max_items", 500),
+        )
+
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
