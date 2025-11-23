@@ -20,6 +20,7 @@ Effects
    matrix/radial
    matrix/soap
    matrix/waterfall
+   matrix/number
 
 1d Strip
 --------

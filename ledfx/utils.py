@@ -1140,15 +1140,12 @@ class RegistryLoader:
         for name in found:
             self.reload_module(name)
 
-    def create(self, type, id=None, *args, **kwargs):
-        """Loads and creates a object from the registry by type"""
 
+    def create(self, type, id=None, *args, **kwargs):
+        """Loads and creates an object from the registry by type. If type is missing, logs a warning and returns None instead of raising."""
         if type not in self._cls.registry():
-            raise AttributeError(
-                ("Couldn't find '{}' in the {} registry").format(
-                    type, self._cls.__name__.lower()
-                )
-            )
+            _LOGGER.warning(f"Couldn't find '{type}' in the {self._cls.__name__.lower()} registry. Skipping creation.")
+            return None
 
         id = id or type
 
@@ -1159,8 +1156,7 @@ class RegistryLoader:
             id = f"{dupe_id}-{dupe_index}"
             dupe_index = dupe_index + 1
 
-        # Create the new object based on the registry entires and
-        # validate the schema.
+        # Create the new object based on the registry entries and validate the schema.
         _cls = self._cls.registry().get(type)
         _config = kwargs.pop("config", None)
         if _config is not None:

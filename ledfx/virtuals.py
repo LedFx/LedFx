@@ -486,6 +486,9 @@ class Virtual:
             self.flush_pending_clear_frame()
 
             self._active_effect = effect
+            if self._active_effect is None:
+                _LOGGER.warning(f"No effect was set (effect is None). Skipping activation for virtual '{self.id}'.")
+                return
             self._active_effect.activate(self)
             self._ledfx.events.fire_event(
                 EffectSetEvent(
