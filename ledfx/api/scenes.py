@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.config import find_matching_preset, save_config
 from ledfx.effects import DummyEffect
 from ledfx.utils import generate_id
 
@@ -18,7 +18,7 @@ class ScenesEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """
-        Get all scenes.
+        Get all scenes with preset detection.
 
         Returns:
             web.Response: The response containing the scenes.
@@ -27,6 +27,34 @@ class ScenesEndpoint(RestEndpoint):
         for scene_id, scene_config in self._ledfx.config["scenes"].items():
             scene_payload = dict(scene_config)
             scene_payload["active"] = self._ledfx.scenes.is_active(scene_id)
+
+            # Add preset matching for each virtual's effect
+            if "virtuals" in scene_payload:
+                virtuals_with_presets = {}
+                for virtual_id, effect_data in scene_payload[
+                    "virtuals"
+                ].items():
+                    virtual_payload = dict(effect_data)
+                    if (
+                        "type" in effect_data
+                        and "config" in effect_data
+                        and effect_data["config"]
+                    ):
+                        effect_type = effect_data["type"]
+                        effect_config = effect_data["config"]
+                        preset_id, category = find_matching_preset(
+                            self._ledfx.config["ledfx_presets"],
+                            self._ledfx.config["user_presets"],
+                            self._ledfx.effects,
+                            effect_type,
+                            effect_config,
+                        )
+                        if preset_id:
+                            virtual_payload["preset"] = preset_id
+                            virtual_payload["preset_category"] = category
+                    virtuals_with_presets[virtual_id] = virtual_payload
+                scene_payload["virtuals"] = virtuals_with_presets
+
             scenes_with_state[scene_id] = scene_payload
 
         response = {
@@ -175,7 +203,7 @@ class ScenesEndpoint(RestEndpoint):
         if scene_image is None:
             scene_image = "Wallpaper"
         if scene_name is None or scene_name == "":
-            error_message = "Required attribute 'scene_name' was not provided"
+            error_message = "Required attribute 'name' was not provided"
             _LOGGER.warning(error_message)
 
             return await self.invalid_request(error_message)
@@ -222,12 +250,35 @@ class ScenesEndpoint(RestEndpoint):
             virtuals = data.get("virtuals")
 
             for virtualid in virtuals:
-                virtual = data.get("virtuals")[virtualid]
-                if bool(virtual):
-                    effect = {}
-                    effect["type"] = virtual["type"]
-                    effect["config"] = virtual["config"]
-                    scene_config["virtuals"][virtualid] = effect
+                virtual_data = virtuals[virtualid]
+                if not isinstance(virtual_data, dict):
+                    continue
+
+                # Preserve the entire virtual config including action field
+                virtual_config = {}
+
+                # Copy action field if present
+                if "action" in virtual_data:
+                    virtual_config["action"] = virtual_data["action"]
+
+                # Copy type and config if present (for activate action or legacy)
+                if "type" in virtual_data:
+                    virtual_config["type"] = virtual_data["type"]
+                if "config" in virtual_data:
+                    virtual_config["config"] = virtual_data["config"]
+
+                # Copy preset if present (for activate action with preset)
+                # Only save preset if type is also present (preset requires type)
+                if "preset" in virtual_data:
+                    if "type" in virtual_data:
+                        virtual_config["preset"] = virtual_data["preset"]
+                    else:
+                        _LOGGER.warning(
+                            f"Virtual '{virtualid}' has 'preset' field but missing required 'type' field. "
+                            "Preset field will not be saved."
+                        )
+
+                scene_config["virtuals"][virtualid] = virtual_config
 
         # Update the scene if it already exists, else create it
         self._ledfx.config["scenes"][scene_id] = scene_config

@@ -2,9 +2,12 @@ import logging
 
 import voluptuous as vol
 
-from ledfx.config import configs_match, save_config
+from ledfx.config import (
+    configs_match,
+    save_config,
+)
 from ledfx.events import SceneActivatedEvent, SceneDeletedEvent
-from ledfx.utils import generate_id
+from ledfx.utils import generate_default_config, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -90,7 +93,7 @@ class Scenes:
         self.save_to_config()
 
     def activate(self, scene_id):
-        """Activate a scene"""
+        """Activate a scene with support for action field"""
         scene = self.get(scene_id)
         if not scene:
             _LOGGER.error(f"No scene found with id: {scene_id}")
@@ -100,21 +103,75 @@ class Scenes:
             virtual = self._ledfx.virtuals.get(virtual_id)
             if not virtual:
                 # virtual has been deleted since scene was created
-                # remove from scene?
                 continue
-            # Set effect of virtual to that saved in the scene,
-            # clear active effect of virtual if no effect in scene
-            if scene["virtuals"][virtual.id]:
-                # Create the effect and add it to the virtual
+
+            virtual_config = scene["virtuals"][virtual.id]
+            action = virtual_config.get("action")
+
+            # Legacy support: if no action field, infer from config
+            if action is None:
+                # Empty dict or no type/config means ignore (legacy behavior)
+                if not virtual_config or (
+                    "type" not in virtual_config
+                    and "config" not in virtual_config
+                ):
+                    action = "ignore"
+                else:
+                    action = "activate"
+
+            # Process action
+            if action == "ignore":
+                # Leave virtual unchanged
+                continue
+
+            elif action == "stop":
+                # Stop any playing effect
+                virtual.clear_effect()
+
+            elif action == "forceblack":
+                # Set to Single Color effect with black
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx,
-                    type=scene["virtuals"][virtual.id]["type"],
-                    config=scene["virtuals"][virtual.id]["config"],
+                    type="singleColor",
+                    config={"color": "#000000"},
                 )
                 virtual.set_effect(effect)
                 virtual.update_effect_config(effect)
-            else:
-                virtual.clear_effect()
+
+            elif action == "activate":
+                # Get effect type (required for both preset and explicit config)
+                effect_type = virtual_config.get("type")
+                if not effect_type:
+                    _LOGGER.warning(
+                        f"Invalid activate config for virtual {virtual_id}, missing required 'type' field"
+                    )
+                    continue
+
+                # Check if using preset
+                preset_name = virtual_config.get("preset")
+                if preset_name:
+                    # Resolve preset from current library for this effect type
+                    # (will fall back to reset preset if not found)
+                    effect_config = self._resolve_preset(
+                        effect_type, preset_name
+                    )
+                else:
+                    # Use explicit config
+                    effect_config = virtual_config.get("config")
+                    if effect_config is None:
+                        _LOGGER.warning(
+                            f"Invalid activate config for virtual {virtual_id}, missing 'config' field"
+                        )
+                        continue
+
+                # Create and apply the effect
+                effect = self._ledfx.effects.create(
+                    ledfx=self._ledfx,
+                    type=effect_type,
+                    config=effect_config,
+                )
+                virtual.set_effect(effect)
+                virtual.update_effect_config(effect)
 
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
 
@@ -127,6 +184,44 @@ class Scenes:
             _LOGGER.exception("Failed to save config after scene activation")
 
         return True
+
+    def _resolve_preset(self, effect_type, preset_name):
+        """Resolve a preset name to effect config for a specific effect type.
+
+        Falls back to reset preset (factory defaults) if the requested preset is not found.
+
+        Args:
+            effect_type: The effect type to search within
+            preset_name: Name of the preset to resolve
+
+        Returns:
+            dict: Effect config (always returns a valid config, falling back to reset)
+        """
+        # Handle special "reset" preset
+        if preset_name == "reset":
+            return generate_default_config(self._ledfx.effects, effect_type)
+
+        # Check ledfx_presets first
+        ledfx_presets = self._ledfx.config.get("ledfx_presets", {})
+        if (
+            effect_type in ledfx_presets
+            and preset_name in ledfx_presets[effect_type]
+        ):
+            return ledfx_presets[effect_type][preset_name].get("config", {})
+
+        # Check user_presets
+        user_presets = self._ledfx.config.get("user_presets", {})
+        if (
+            effect_type in user_presets
+            and preset_name in user_presets[effect_type]
+        ):
+            return user_presets[effect_type][preset_name].get("config", {})
+
+        # Preset not found, fall back to reset preset
+        _LOGGER.warning(
+            f"Preset '{preset_name}' not found for effect '{effect_type}', falling back to reset preset"
+        )
+        return generate_default_config(self._ledfx.effects, effect_type)
 
     def deactivate(self, scene_id):
         """Deactivate the effects defined in a scene by clearing those virtuals."""
@@ -165,37 +260,96 @@ class Scenes:
         self.save_to_config()
 
     def is_active(self, scene_id):
-        """Return True when the current virtual state matches the scene definition."""
+        """Return True when the current virtual state matches the scene definition.
+
+        Handles all action types: ignore, stop, forceblack, activate.
+        Also supports legacy format (no action field).
+        """
 
         scene = self.get(scene_id)
         if not scene:
             return False
 
         virtuals = scene.get("virtuals") or {}
-        for virtual_id, expected_effect in virtuals.items():
+        for virtual_id, virtual_config in virtuals.items():
             virtual = self._ledfx.virtuals.get(virtual_id)
             if virtual is None:
                 return False
 
             current_effect = virtual.active_effect
+            action = virtual_config.get("action")
 
-            if not expected_effect:
-                if current_effect is not None:
-                    return False
+            # Legacy support: if no action field, infer from config
+            if action is None:
+                # Empty dict or no type/config means ignore (legacy behavior)
+                if not virtual_config or (
+                    "type" not in virtual_config
+                    and "config" not in virtual_config
+                ):
+                    action = "ignore"
+                else:
+                    action = "activate"
+
+            # Process action
+            if action == "ignore":
+                # Virtual should remain unchanged - always matches
                 continue
 
-            if current_effect is None:
-                return False
+            elif action == "stop":
+                # Virtual should have no active effect
+                if current_effect is not None:
+                    return False
 
-            if getattr(current_effect, "type", None) != expected_effect.get(
-                "type"
-            ):
-                return False
+            elif action == "forceblack":
+                # Virtual should have singleColor effect with #000000
+                if current_effect is None:
+                    return False
+                if getattr(current_effect, "type", None) != "singleColor":
+                    return False
+                current_config = getattr(current_effect, "config", None) or {}
+                if current_config.get("color") != "#000000":
+                    return False
 
-            current_config = getattr(current_effect, "config", None) or {}
-            expected_config = expected_effect.get("config") or {}
-            if not configs_match(current_config, expected_config):
-                return False
+            elif action == "activate":
+                # Virtual should have matching effect type and config
+                expected_type = virtual_config.get("type")
+                if not expected_type:
+                    # Invalid config, can't be active
+                    return False
+
+                if current_effect is None:
+                    return False
+
+                if getattr(current_effect, "type", None) != expected_type:
+                    return False
+
+                # For preset-based activation, resolve the preset to compare configs
+                preset_name = virtual_config.get("preset")
+                if preset_name:
+                    expected_config = self._resolve_preset(
+                        expected_type, preset_name
+                    )
+                else:
+                    expected_config = virtual_config.get("config")
+                    if expected_config is None:
+                        # Invalid config, can't be active
+                        return False
+
+                current_config = getattr(current_effect, "config", None) or {}
+
+                # Normalize the expected config by filling in defaults for missing keys
+                # This ensures legacy scenes (with fewer keys) match current effects (with new keys)
+                # The current config doesn't need normalization as it's the running effect with all keys
+                default_config = generate_default_config(
+                    self._ledfx.effects, expected_type
+                )
+                normalized_expected = {**default_config, **expected_config}
+
+                if not configs_match(current_config, normalized_expected):
+                    return False
+
+            # Unknown actions are skipped during activation, so they don't affect active state
+            # (treat as "ignore")
 
         return True
 
