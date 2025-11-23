@@ -135,8 +135,13 @@ Key API endpoints include:
 - **`await self.request_success(type, message, data=None)`** - Operations needing user feedback (type: "success", "info", "warning", "error")
 - **`await self.bare_request_success(data)`** - Operations without snackbar notifications
 - **`await self.invalid_request(message, type="error")`** - Validation errors and failures
+- **`await self.json_decode_error()`** - JSON parsing errors (use in try/except with JSONDecodeError)
 
 Do NOT use `web.json_response()` directly.
+
+#### JSON Request Body Handling
+
+**IMPORTANT**: Use `request: web.Request` parameter, parse with `await request.json()` in try/except, return `await self.json_decode_error()` on JSONDecodeError.
 
 ### WebSocket Events
 - Real-time pixel updates

@@ -1,6 +1,7 @@
 """API endpoint for refreshing cached images."""
 
 import logging
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -15,7 +16,7 @@ class CacheRefreshEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/cache/images/refresh"
 
-    async def post(self, body) -> web.Response:
+    async def post(self, request: web.Request) -> web.Response:
         """
         Clear a cached image to force re-download on next access.
 
@@ -37,13 +38,12 @@ class CacheRefreshEndpoint(RestEndpoint):
                 type="error",
             )
 
-        if not body or not isinstance(body, dict):
-            return await self.invalid_request(
-                message="Invalid JSON in request body",
-                type="error",
-            )
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return await self.json_decode_error()
 
-        url = body.get("url")
+        url = data.get("url")
         if not url:
             return await self.invalid_request(
                 message="Missing 'url' in request body",
