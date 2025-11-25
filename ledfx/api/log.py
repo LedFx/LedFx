@@ -1,8 +1,8 @@
 import asyncio
 import json
 import logging
-import time
 import threading
+import time
 from concurrent import futures
 
 from aiohttp import web
@@ -16,8 +16,9 @@ LOG_HISTORY_MAXLEN = 30
 # constants for PUT log support
 # Configurable TTL for rate limiter entries (seconds) tracking IP sources
 RATE_LIMIT_TTL_SECONDS = 1800  # 30 minutes default
-MAX_LEN = 200 # max log message length
-RATE_LIMIT_SECONDS = 1 # seconds between allowed posts per IP source
+MAX_LEN = 200  # max log message length
+RATE_LIMIT_SECONDS = 1  # seconds between allowed posts per IP source
+
 
 class LogEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/log"
@@ -28,7 +29,6 @@ class LogEndpoint(RestEndpoint):
         # In-memory rate limit: {ip: last_post_time}
         self._rate_limit = {}
         self._rate_limit_lock = threading.Lock()
-
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -62,8 +62,11 @@ class LogEndpoint(RestEndpoint):
         # Thread-safe rate limiting and TTL-based cleanup
         with self._rate_limit_lock:
             # Prune expired entries
-            expired = [ip for ip, ts in self._rate_limit.items()
-                       if now - ts > RATE_LIMIT_TTL_SECONDS]
+            expired = [
+                ip
+                for ip, ts in self._rate_limit.items()
+                if now - ts > RATE_LIMIT_TTL_SECONDS
+            ]
             for ip in expired:
                 del self._rate_limit[ip]
 
