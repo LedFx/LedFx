@@ -1,4 +1,3 @@
-
 import asyncio
 import json
 import logging
@@ -36,19 +35,23 @@ class LogEndpoint(RestEndpoint):
             return await self.invalid_request("Text must be a string.")
 
         # Sanitize: ASCII only, strip, max length
-        sanitized = ''.join([c for c in text.strip() if 32 <= ord(c) < 127])
+        sanitized = "".join([c for c in text.strip() if 32 <= ord(c) < 127])
         if len(sanitized) > MAX_LEN:
             sanitized = sanitized[:MAX_LEN]
 
         if not sanitized:
-            return await self.invalid_request("Text must contain ASCII characters.")
+            return await self.invalid_request(
+                "Text must contain ASCII characters."
+            )
 
         # Rate limit by IP
         peer_ip = request.remote or "unknown"
         now = time.time()
         last = self._rate_limit.get(peer_ip, 0)
         if now - last < RATE_LIMIT_SECONDS:
-            return await self.invalid_request("Rate limit exceeded. Try again later.", type="warning")
+            return await self.invalid_request(
+                "Rate limit exceeded. Try again later.", type="warning"
+            )
         self._rate_limit[peer_ip] = now
 
         _LOGGER.info(f"Frontend log: {sanitized}")
