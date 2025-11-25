@@ -45,7 +45,7 @@ Allows the frontend to post a line of text to the backend log. The message is sa
     "status": "failed",
     "payload": {
       "type": "invalid-input",
-      "reason": "Missing required field 'message'."
+      "reason": "Missing required field 'text'."
     }
   }
   ```

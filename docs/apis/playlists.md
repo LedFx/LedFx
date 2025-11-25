@@ -279,7 +279,7 @@ Client->>Backend: PUT /api/playlists {id: "My Playlist", action: "start"}
 %% Playlist started (WebSocket event)
 Backend-->>Client: playlist_started
 
-Note over Client: On playlist_started recieved<br>request state to get scenes order
+Note over Client: On playlist_started received<br>request state to get scenes order
 Client->>Backend: PUT /api/playlists {action: "state"}
 Backend->>Client: Playlist state (scenes order, index)
 

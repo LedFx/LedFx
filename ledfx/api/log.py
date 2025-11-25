@@ -30,35 +30,6 @@ class LogEndpoint(RestEndpoint):
         self._rate_limit = {}
         self._rate_limit_lock = threading.Lock()
 
-    async def post(self, request: web.Request, body) -> web.Response:
-        MAX_LEN = 200
-        RATE_LIMIT_SECONDS = 1
-
-        # Check if it's multipart/form-data (image upload)
-        if request.content_type.startswith("multipart/form-data"):
-            try:
-                filename = body.get("filename", "unknown")
-                file_type = body.get("type", "unknown")
-                file = body.get("file")
-
-                if file:
-                    file_content = file.file.read()
-                    file_size = len(file_content)
-
-                    _LOGGER.info(
-                        f"Image received: filename={filename}, type={file_type}, size={file_size} bytes"
-                    )
-
-                return await self.bare_request_success({"status": "success"})
-
-            except Exception as e:
-                _LOGGER.error(f"Error reading image data: {e}")
-                return await self.invalid_request(
-                    f"Failed to read image: {str(e)}"
-                )
-
-        # Original JSON text log handling
-
     async def post(self, request: web.Request) -> web.Response:
         """
         Accepts log messages from the frontend, with per-IP rate limiting.
