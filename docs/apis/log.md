@@ -19,7 +19,7 @@ Allows the frontend to post a line of text to the backend log. The message is sa
 - Only ASCII characters are accepted; non-ASCII are stripped.
 - Maximum length: 200 characters (longer input is truncated).
 - Leading/trailing whitespace is removed.
-- Requests are rate-limited to 1 per 2 seconds per client IP.
+- Requests are rate-limited to 1 per 1 second per client IP.
 - The sanitized message is logged via `_LOGGER.info` on the backend.
 
 ### Responses
@@ -74,12 +74,12 @@ Establishes a WebSocket connection to stream backend log messages in real time.
 ### Message Format
 Each log message is sent as a JSON object, typically matching the backend's log record structure. Example:
 
-```json
+```text
 {
   "level": "INFO",
   "message": "System started",
-  "timestamp": "2025-11-24T12:34:56.789Z",
-  ...
+  "timestamp": "2025-11-24T12:34:56.789Z"
+  // other fields...
 }
 ```
 
@@ -87,4 +87,3 @@ Each log message is sent as a JSON object, typically matching the backend's log 
 - This endpoint is intended for real-time log monitoring in the frontend or admin tools.
 - No authentication is required by default.
 
----
