@@ -33,16 +33,20 @@ Allows the frontend to post a line of text to the backend log. The message is sa
   ```json
   {
     "status": "failed",
-    "type": "warning",
-    "reason": "Rate limit exceeded. Try again later."
+    "payload": {
+      "type": "rate-limit",
+      "reason": "Too many requests. Try again in 10 seconds."
+    }
   }
   ```
-  or
+- **200 OK** (invalid input):
   ```json
   {
     "status": "failed",
-    "type": "error",
-    "reason": "Text must contain ASCII characters."
+    "payload": {
+      "type": "invalid-input",
+      "reason": "Missing required field 'message'."
+    }
   }
   ```
 
