@@ -1,6 +1,8 @@
+
 import asyncio
 import json
 import logging
+import time
 from concurrent import futures
 
 from aiohttp import web
@@ -17,6 +19,40 @@ class LogEndpoint(RestEndpoint):
 
     def __init__(self, ledfx):
         self.logwebsocket = LogWebsocket(ledfx, ledfx.logqueue)
+
+        # Simple in-memory rate limit: {ip: last_post_time}
+        self._rate_limit = {}
+
+    async def post(self, request: web.Request) -> web.Response:
+        MAX_LEN = 200
+        RATE_LIMIT_SECONDS = 1
+        try:
+            data = await request.json()
+        except Exception:
+            return await self.json_decode_error()
+
+        text = data.get("text", "")
+        if not isinstance(text, str):
+            return await self.invalid_request("Text must be a string.")
+
+        # Sanitize: ASCII only, strip, max length
+        sanitized = ''.join([c for c in text.strip() if 32 <= ord(c) < 127])
+        if len(sanitized) > MAX_LEN:
+            sanitized = sanitized[:MAX_LEN]
+
+        if not sanitized:
+            return await self.invalid_request("Text must contain ASCII characters.")
+
+        # Rate limit by IP
+        peer_ip = request.remote or "unknown"
+        now = time.time()
+        last = self._rate_limit.get(peer_ip, 0)
+        if now - last < RATE_LIMIT_SECONDS:
+            return await self.invalid_request("Rate limit exceeded. Try again later.", type="warning")
+        self._rate_limit[peer_ip] = now
+
+        _LOGGER.info(f"Frontend log: {sanitized}")
+        return await self.bare_request_success({"status": "success"})
 
     async def get(self, request: web.Request) -> web.Response:
         return await self.logwebsocket.handle(request)
