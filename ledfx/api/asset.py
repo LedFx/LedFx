@@ -34,25 +34,24 @@ class AssetEndpoint(RestEndpoint):
         # Decode URI-encoded filename
         decoded_filename = unquote(filename)
         file_path = self.assets_dir / decoded_filename
-        
+
         if not file_path.exists():
             return await self.invalid_request(
                 f"Asset with filename '{decoded_filename}' not found"
             )
-        
+
         try:
             # Delete the file
             os.remove(file_path)
-            
+
             _LOGGER.info(f"Asset deleted: {decoded_filename}")
-            
+
             return await self.request_success(
                 type="success",
-                message=f"Asset '{decoded_filename}' deleted successfully"
+                message=f"Asset '{decoded_filename}' deleted successfully",
             )
-            
+
         except Exception as msg:
             error_message = f"Unable to delete asset {decoded_filename}: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
-

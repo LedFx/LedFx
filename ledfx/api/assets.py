@@ -30,33 +30,37 @@ class AssetsEndpoint(RestEndpoint):
         - web.Response: The response object containing the assets list or file.
         """
         # Check if a specific filename is requested
-        filename = request.match_info.get('filename')
-        
+        filename = request.match_info.get("filename")
+
         if filename:
             # Serve the actual file
             file_path = self.assets_dir / filename
             if not file_path.exists():
-                return await self.invalid_request(f"Asset '{filename}' not found")
-            
+                return await self.invalid_request(
+                    f"Asset '{filename}' not found"
+                )
+
             return web.FileResponse(file_path)
-        
+
         # Return list of all assets
         try:
             assets = []
             for file_path in self.assets_dir.iterdir():
                 if file_path.is_file():
                     stat = file_path.stat()
-                    assets.append({
-                        "id": file_path.name,
-                        "filename": file_path.name,
-                        "type": self._get_mime_type(file_path),
-                        "size": stat.st_size,
-                        "url": f"/api/assets/{file_path.name}",
-                        "path": str(file_path)
-                    })
-            
+                    assets.append(
+                        {
+                            "id": file_path.name,
+                            "filename": file_path.name,
+                            "type": self._get_mime_type(file_path),
+                            "size": stat.st_size,
+                            "url": f"/api/assets/{file_path.name}",
+                            "path": str(file_path),
+                        }
+                    )
+
             return await self.bare_request_success({"assets": assets})
-            
+
         except Exception as msg:
             error_message = f"Error listing assets: {msg}"
             _LOGGER.error(error_message)
@@ -74,29 +78,29 @@ class AssetsEndpoint(RestEndpoint):
         - web.Response: The response object indicating success or failure.
         """
         try:
-            filename = body.get('filename')
-            file_type = body.get('type')
-            file = body.get('file')
-            
+            filename = body.get("filename")
+            file_type = body.get("type")
+            file = body.get("file")
+
             if not file:
                 return await self.invalid_request("No file provided")
-            
+
             if not filename:
                 return await self.invalid_request("No filename provided")
-            
+
             # Read file content
             file_content = file.file.read()
             file_size = len(file_content)
-            
+
             # Save file to assets directory
             file_path = self.assets_dir / filename
-            with open(file_path, 'wb') as f:
+            with open(file_path, "wb") as f:
                 f.write(file_content)
-            
+
             _LOGGER.info(
                 f"Asset saved: filename={filename}, type={file_type}, size={file_size} bytes"
             )
-            
+
             return await self.request_success(
                 type="success",
                 message=f"Asset '{filename}' uploaded successfully",
@@ -104,10 +108,10 @@ class AssetsEndpoint(RestEndpoint):
                     "filename": filename,
                     "type": file_type,
                     "size": file_size,
-                    "url": f"/api/assets/{filename}"
-                }
+                    "url": f"/api/assets/{filename}",
+                },
             )
-            
+
         except Exception as msg:
             error_message = f"Error uploading asset: {msg}"
             _LOGGER.error(error_message)
@@ -125,11 +129,11 @@ class AssetsEndpoint(RestEndpoint):
         """
         ext = file_path.suffix.lower()
         mime_types = {
-            '.png': 'image/png',
-            '.jpg': 'image/jpeg',
-            '.jpeg': 'image/jpeg',
-            '.gif': 'image/gif',
-            '.webp': 'image/webp',
-            '.svg': 'image/svg+xml',
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".gif": "image/gif",
+            ".webp": "image/webp",
+            ".svg": "image/svg+xml",
         }
-        return mime_types.get(ext, 'application/octet-stream')
+        return mime_types.get(ext, "application/octet-stream")

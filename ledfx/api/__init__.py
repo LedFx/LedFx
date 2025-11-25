@@ -26,7 +26,7 @@ class RestEndpoint(BaseRegistry):
         body = None
         if request.has_body:
             # Check if it's multipart/form-data (file upload)
-            if request.content_type.startswith('multipart/form-data'):
+            if request.content_type.startswith("multipart/form-data"):
                 try:
                     body = await request.post()
                     _LOGGER.debug(
