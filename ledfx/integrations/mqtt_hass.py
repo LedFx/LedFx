@@ -158,14 +158,16 @@ class MQTT_HASS(Integration):
             )
 
         def publish_single_color_updated(event):
-            color = parse_color(event.effect_config.get("color"))
+            virtual = self._ledfx.virtuals.get(event.virtual_id)
+            effect = virtual.active_effect
+            color = parse_color(effect.config.get("color"))
             client.publish(
                 f"{self._config['topic']}/light/{event.virtual_id}/state",
                 json.dumps(
                     {
                         "state": "on",
                         "color": [color.red, color.green, color.blue],
-                        "effect": event.effect_config.get("color"),
+                        "effect": effect.config.get("color"),
                     }
                 ),
             )

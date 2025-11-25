@@ -491,7 +491,6 @@ class Virtual:
                 EffectSetEvent(
                     self._active_effect.name,
                     self._active_effect.id,
-                    self.active_effect.config,
                     self.id,
                 )
             )
@@ -511,7 +510,7 @@ class Virtual:
 
     def clear_effect(self):
         with self.lock:
-            self._ledfx.events.fire_event(EffectClearedEvent())
+            self._ledfx.events.fire_event(EffectClearedEvent(self.id))
             self.clear_transition_effect()
 
             if (
@@ -787,7 +786,9 @@ class Virtual:
             name=f"Virtual: {self.id}", target=self.thread_function
         )
         self._thread.start()
-        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
+        self._ledfx.events.fire_event(
+            VirtualPauseEvent(self.id, not self._active)
+        )
         # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
         self._ledfx.virtuals.check_and_deactivate_devices()
@@ -798,7 +799,9 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
         self.deactivate_segments()
-        self._ledfx.events.fire_event(VirtualPauseEvent(self.id))
+        self._ledfx.events.fire_event(
+            VirtualPauseEvent(self.id, not self._active)
+        )
         self._ledfx.virtuals.check_and_deactivate_devices()
 
     # @lru_cache(maxsize=32)
@@ -1411,7 +1414,7 @@ class Virtuals:
         self._paused = not self._paused
         for virtual in self.values():
             virtual._paused = self._paused
-        self._ledfx.events.fire_event(GlobalPauseEvent())
+        self._ledfx.events.fire_event(GlobalPauseEvent(self._paused))
 
     def get(self, *args):
         return self._virtuals.get(*args)
