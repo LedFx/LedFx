@@ -29,23 +29,23 @@ Allows the frontend to post a line of text to the backend log. The message is sa
     "status": "success"
   }
   ```
-- **200 OK** (rate limit or invalid input):
+- **200 OK** (rate limit exceeded):
   ```json
   {
     "status": "failed",
     "payload": {
-      "type": "rate-limit",
-      "reason": "Too many requests. Try again in 10 seconds."
+      "type": "warning",
+      "reason": "Rate limit exceeded. Try again later."
     }
   }
   ```
-- **200 OK** (invalid input):
+- **200 OK** (invalid input - empty or non-ASCII):
   ```json
   {
     "status": "failed",
     "payload": {
-      "type": "invalid-input",
-      "reason": "Missing required field 'text'."
+      "type": "error",
+      "reason": "Text must contain ASCII characters."
     }
   }
   ```
