@@ -7,6 +7,7 @@ from tests.conftest import all_effects, audio_configs
 from tests.test_definitions.coexistance import coexistance_tests
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
+from tests.test_definitions.log import log_api_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests
 from tests.test_definitions.virtual_config import virtual_config_tests
 from tests.test_utilities.consts import SERVER_PATH
@@ -34,6 +35,7 @@ test_groups = [
     ("audio_configs", audio_configs),
     ("virtual_config_tests", virtual_config_tests),
     ("coexistance_tests", coexistance_tests),
+    ("log_api_tests", log_api_tests),
 ]
 
 # Define a list of all test cases

@@ -261,6 +261,41 @@ curl -X DELETE http://localhost:8888/api/playlists/evening-cycle
 
 **200 OK (failed)** — playlist not found envelope.
 
+
+## Message Sequence Charts
+
+### Starting and Monitoring a Playlist
+
+Below is a message sequence chart (Mermaid syntax) for starting and monitoring a playlist called "My Playlist" (shuffle mode, 4 scenes) using REST APIs and WebSocket events.
+
+```{mermaid}
+sequenceDiagram
+participant Client
+participant Backend
+
+%% Start playlist (REST call)
+Client->>Backend: PUT /api/playlists {id: "My Playlist", action: "start"}
+
+%% Playlist started (WebSocket event)
+Backend-->>Client: playlist_started
+
+Note over Client: On playlist_started recieved<br>request state to get scenes order
+Client->>Backend: PUT /api/playlists {action: "state"}
+Backend->>Client: Playlist state (scenes order, index)
+
+loop For each scene advance
+  Backend-->>Client: playlist_advanced (index)
+  alt If index == 0 (new cycle)
+    note over Backend: Shuffle mode will<br>generate a new scenes order
+    note over Client: Index hitting zero<br>means we should read<br>scenes order again
+    Client->>Backend: PUT /api/playlists {action: "state"}
+    Backend->>Client: Playlist state (new scenes order)
+  end
+end
+
+Backend-->>Client: playlist_stopped
+```
+
 ---
 
 ## Examples (cURL)
