@@ -25,14 +25,27 @@ class RestEndpoint(BaseRegistry):
         )
         body = None
         if request.has_body:
-            try:
-                body = await request.json()
-            except JSONDecodeError:
-                body = await request.text()
-            finally:
-                _LOGGER.debug(
-                    f"LedFx API Request {short_uuid} payload: {body}"
-                )
+            # Check if it's multipart/form-data (file upload)
+            if request.content_type.startswith('multipart/form-data'):
+                try:
+                    body = await request.post()
+                    _LOGGER.debug(
+                        f"LedFx API Request {short_uuid} multipart payload: "
+                        f"fields={list(body.keys())}"
+                    )
+                except Exception as e:
+                    _LOGGER.error(f"Error parsing multipart data: {e}")
+                    body = None
+            else:
+                # Original JSON/text handling
+                try:
+                    body = await request.json()
+                except JSONDecodeError:
+                    body = await request.text()
+                finally:
+                    _LOGGER.debug(
+                        f"LedFx API Request {short_uuid} payload: {body}"
+                    )
 
         method = getattr(self, request.method.lower(), None)
         if not method:
