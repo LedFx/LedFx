@@ -62,7 +62,7 @@ class LogEndpoint(RestEndpoint):
     async def post(self, request: web.Request) -> web.Response:
         """
         Accepts log messages from the frontend, with per-IP rate limiting.
-        The rate limiter is thread-safe and prunes older than RATE_LIMIT_TTL_SECONDS 
+        The rate limiter is thread-safe and prunes older than RATE_LIMIT_TTL_SECONDS
         entries on each access.
         """
 
