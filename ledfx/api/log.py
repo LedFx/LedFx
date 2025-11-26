@@ -4,6 +4,7 @@ import logging
 import threading
 import time
 from concurrent import futures
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -13,7 +14,7 @@ from ledfx.events import Event
 _LOGGER = logging.getLogger(__name__)
 LOG_HISTORY_MAXLEN = 30
 
-# constants for PUT log support
+# constants for POST log support
 # Configurable TTL for rate limiter entries (seconds) tracking IP sources
 RATE_LIMIT_TTL_SECONDS = 1800  # 30 minutes default
 MAX_LEN = 200  # max log message length
@@ -39,14 +40,14 @@ class LogEndpoint(RestEndpoint):
 
         try:
             data = await request.json()
-        except Exception:
+        except JSONDecodeError:
             return await self.json_decode_error()
 
         text = data.get("text", "")
         if not isinstance(text, str):
-            return await self.invalid_request("Text must be a string.")
+            return await self.invalid_request("Text must be an ASCII string.")
 
-        # Sanitize: ASCII only, strip, max length
+        # Sanitize: printable ASCII only (32-126), strip, max length
         sanitized = "".join([c for c in text.strip() if 32 <= ord(c) < 127])
         if len(sanitized) > MAX_LEN:
             sanitized = sanitized[:MAX_LEN]
