@@ -1,7 +1,10 @@
 import asyncio
 import json
 import logging
+import threading
+import time
 from concurrent import futures
+from json import JSONDecodeError
 
 from aiohttp import web
 
@@ -11,12 +14,72 @@ from ledfx.events import Event
 _LOGGER = logging.getLogger(__name__)
 LOG_HISTORY_MAXLEN = 30
 
+# constants for POST log support
+# Configurable TTL for rate limiter entries (seconds) tracking IP sources
+RATE_LIMIT_TTL_SECONDS = 1800  # 30 minutes default
+MAX_LEN = 200  # max log message length
+RATE_LIMIT_SECONDS = 1  # seconds between allowed posts per IP source
+
 
 class LogEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/log"
 
     def __init__(self, ledfx):
         self.logwebsocket = LogWebsocket(ledfx, ledfx.logqueue)
+
+        # In-memory rate limit: {ip: last_post_time}
+        self._rate_limit = {}
+        self._rate_limit_lock = threading.Lock()
+
+    async def post(self, request: web.Request) -> web.Response:
+        """
+        Accepts log messages from the frontend, with per-IP rate limiting.
+        The rate limiter is thread-safe and prunes entries older than RATE_LIMIT_TTL_SECONDS
+        on each access.
+        """
+
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return await self.json_decode_error()
+
+        text = data.get("text", "")
+        if not isinstance(text, str):
+            return await self.invalid_request("Text must be an ASCII string.")
+
+        # Sanitize: printable ASCII only (32-126), strip, max length
+        sanitized = "".join([c for c in text.strip() if 32 <= ord(c) < 127])
+        if len(sanitized) > MAX_LEN:
+            sanitized = sanitized[:MAX_LEN]
+
+        if not sanitized:
+            return await self.invalid_request(
+                "Text must contain ASCII characters."
+            )
+
+        peer_ip = request.remote or "unknown"
+        now = time.time()
+
+        # Thread-safe rate limiting and TTL-based cleanup
+        with self._rate_limit_lock:
+            # Prune expired entries
+            expired = [
+                ip
+                for ip, ts in self._rate_limit.items()
+                if now - ts > RATE_LIMIT_TTL_SECONDS
+            ]
+            for ip in expired:
+                del self._rate_limit[ip]
+
+            last = self._rate_limit.get(peer_ip, 0)
+            if now - last < RATE_LIMIT_SECONDS:
+                return await self.invalid_request(
+                    "Rate limit exceeded. Try again later.", type="warning"
+                )
+            self._rate_limit[peer_ip] = now
+
+        _LOGGER.info(f"Frontend log: {sanitized}")
+        return await self.bare_request_success({"status": "success"})
 
     async def get(self, request: web.Request) -> web.Response:
         return await self.logwebsocket.handle(request)
