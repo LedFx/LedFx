@@ -49,6 +49,7 @@
 
    /apis/api
    /apis/cache
+   /apis/log
    /apis/websocket
    /apis/scenes
    /apis/playlists
