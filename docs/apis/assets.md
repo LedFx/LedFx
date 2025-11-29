@@ -295,7 +295,7 @@ async function uploadAsset(file, path) {
   });
 
   const result = await response.json();
-  
+
   if (result.status === 'success') {
     console.log('Asset uploaded:', result.data.path);
     return result.data.path;
