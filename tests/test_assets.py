@@ -332,9 +332,7 @@ class TestContentValidation:
     def test_fake_image_rejected(self):
         """Test that fake image (wrong content) is rejected."""
         fake_data = b"This is not actually an image file"
-        is_valid, error, image = validate_asset_content(
-            fake_data, "fake.png"
-        )
+        is_valid, error, image = validate_asset_content(fake_data, "fake.png")
         assert is_valid is False
         assert error is not None
         assert "not a valid image" in error.lower()
@@ -662,11 +660,15 @@ class TestListAssets:
         assert "icon2.png" in assets
         assert "icon3.png" in assets
 
-    def test_list_nested_assets(self, temp_config_dir, sample_png_data, sample_jpeg_data):
+    def test_list_nested_assets(
+        self, temp_config_dir, sample_png_data, sample_jpeg_data
+    ):
         """Test listing nested assets."""
         save_asset(temp_config_dir, "icon.png", sample_png_data)
         save_asset(temp_config_dir, "buttons/play.png", sample_png_data)
-        save_asset(temp_config_dir, "effects/fire/texture.jpg", sample_jpeg_data)
+        save_asset(
+            temp_config_dir, "effects/fire/texture.jpg", sample_jpeg_data
+        )
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 3
@@ -716,7 +718,9 @@ class TestListAssets:
         assert ".DS_Store" not in assets
         assert "Thumbs.db" not in assets
 
-    def test_list_ignores_non_image_files(self, temp_config_dir, sample_png_data):
+    def test_list_ignores_non_image_files(
+        self, temp_config_dir, sample_png_data
+    ):
         """Test that non-image files are ignored in listing."""
         assets_dir = get_assets_directory(temp_config_dir)
         ensure_assets_directory(temp_config_dir)
@@ -745,7 +749,9 @@ class TestListAssets:
 
     def test_list_uses_forward_slashes(self, temp_config_dir, sample_png_data):
         """Test that listing uses forward slashes consistently."""
-        save_asset(temp_config_dir, "folder/subfolder/image.png", sample_png_data)
+        save_asset(
+            temp_config_dir, "folder/subfolder/image.png", sample_png_data
+        )
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1

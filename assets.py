@@ -33,7 +33,17 @@ _LOGGER = logging.getLogger(__name__)
 ASSETS_DIRECTORY = "assets"  # Directory name under .ledfx/
 
 # Allowed image extensions for asset storage (matches ALLOWED_IMAGE_EXTENSIONS in utils.py)
-ALLOWED_ASSET_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tiff", ".tif", ".ico"}
+ALLOWED_ASSET_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".gif",
+    ".bmp",
+    ".tiff",
+    ".tif",
+    ".ico",
+}
 
 # Maximum file size for uploaded assets (2MB default)
 DEFAULT_MAX_ASSET_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
@@ -215,7 +225,11 @@ def validate_asset_content(
         # Validate using existing utility function
         # This checks format, dimensions, and other PIL-level validations
         if not validate_pil_image(image):
-            return False, "Image validation failed (invalid format or dimensions)", None
+            return (
+                False,
+                "Image validation failed (invalid format or dimensions)",
+                None,
+            )
 
         # Cross-check extension matches PIL format
         _, ext = os.path.splitext(file_path)
@@ -393,7 +407,9 @@ def save_asset(
             try:
                 os.remove(temp_path)
             except Exception as e:
-                _LOGGER.warning(f"Failed to clean up temp file {temp_path}: {e}")
+                _LOGGER.warning(
+                    f"Failed to clean up temp file {temp_path}: {e}"
+                )
 
 
 def delete_asset(
