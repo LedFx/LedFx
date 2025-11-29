@@ -2,6 +2,14 @@
 
 ## Backend Development
 
+:::: note
+::: title
+Note
+:::
+
+LedFx now uses [aubio-ledfx](https://pypi.org/project/aubio-ledfx/) which is hosted in pypi with full wheels, therefore it is no longer necessary to build from source. This removes many risks, and makes the LedFx development experience far simpler.
+::::
+
 ### Common Steps
 
 1. Install [python](https://www.python.org/downloads/) version 3.10 or above. 3.12 is the current preferred python release for general development.
@@ -45,35 +53,13 @@ Do not install python from the Windows Store - it will not work with these instr
 
 :::: note
 ::: title
-Warning
+Note
 :::
 
-aubio-ledfx library which is a critical part of the audio processing for LedFX builds from source
-and can fail to build in many ways.
-
-One common problem for example is if your Windows language is not English and uses non-standard characters
-
-In that case, reach out in the LedFX discord dev_chat channel and ask for an aubio-ledfx wheel for the version of python you are developing on. 3.12 is preferred!
+It is no longer necessary to install Build Tools for Visual Studio!
 ::::
 
-1. Install [Build Tools for Visual Studio 2022](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
-
-    - When asked for Workloads, select "Desktop development with C++"
-    - Included:
-        - C++ Build Tools core features
-        - C++ 2022 Redistributable Update
-        - C++ Core desktop features
-    - Optional:
-        - MSVC v143 - VS 2022 C++ x64/x86 build tools (vXX,XX)
-        - Windows SDK
-        - C++ CMake tools for Windows
-        - Testing tools core features - Build Tools
-        - C++ AddressSanitizer
-    - The default install options are appropriate.
-
-2. Reboot
-
-3. Enable audio loopback which is default for a user install, but needs a manual step for dev builds, by calling once
+1. Enable audio loopback which is default for a user install, but needs a manual step for dev builds, by calling once
 
     ``` console
     $ uv run ledfx-loopback-install
@@ -89,13 +75,7 @@ Note
 This assumes an apt based system such as ubuntu. If your system uses another package manager you should be able use it to get the required packages.
 ::::
 
-1. Within the shell in which you intend to install / build establish the follow build flag to ensure that GCC 14 does not throw errors on pre-existing weaknesses in the aubio-ledfx library during build time.
-
-    ```console
-    $ export CFLAGS="-Wno-incompatible-function-pointer-types"
-    ```
-
-2. Install system dependencies via `apt install`:
+1. Install system dependencies via `apt install`:
 
     ```console
     $ sudo apt install libatlas3-base \
