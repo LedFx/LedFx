@@ -11,7 +11,7 @@ import os
 import pytest
 from PIL import Image
 
-from assets import (
+from ledfx.assets import (
     DEFAULT_MAX_ASSET_SIZE_BYTES,
     delete_asset,
     ensure_assets_directory,
