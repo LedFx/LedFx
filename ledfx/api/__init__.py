@@ -24,7 +24,9 @@ class RestEndpoint(BaseRegistry):
             f"LedFx API Request {short_uuid}: {request.method} {request.path}"
         )
         body = None
-        if request.has_body:
+        # Skip body parsing for multipart requests - they need to use request.multipart()
+        content_type = request.headers.get("Content-Type", "")
+        if request.has_body and not content_type.startswith("multipart/"):
             try:
                 body = await request.json()
             except JSONDecodeError:
