@@ -164,14 +164,16 @@ class TestPathResolution:
         is_valid, abs_path, error = resolve_safe_asset_path(
             temp_config_dir, "C:\\Windows\\System32\\config"
         )
-        
+
         # On Windows: should be rejected as absolute path
         # On Unix: may be accepted as relative path (creating a file named "C:")
         # Either way, it must stay within assets directory if accepted
         if is_valid:
             # If accepted (Unix), verify it's within assets directory
             assets_dir = get_assets_directory(temp_config_dir)
-            assert abs_path.startswith(assets_dir), "Path must stay within assets directory"
+            assert abs_path.startswith(
+                assets_dir
+            ), "Path must stay within assets directory"
         else:
             # If rejected (Windows), verify proper error
             assert abs_path is None
