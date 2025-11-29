@@ -21,11 +21,7 @@ import tempfile
 
 import PIL.Image as Image
 
-from ledfx.utils import (
-    is_allowed_image_extension,
-    validate_image_mime_type,
-    validate_pil_image,
-)
+from ledfx.utils import validate_pil_image
 
 _LOGGER = logging.getLogger(__name__)
 

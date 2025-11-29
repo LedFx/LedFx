@@ -7,13 +7,11 @@ size limits, atomic writes, and listing behavior.
 
 import io
 import os
-import tempfile
 
 import pytest
 from PIL import Image
 
 from assets import (
-    ALLOWED_ASSET_EXTENSIONS,
     DEFAULT_MAX_ASSET_SIZE_BYTES,
     delete_asset,
     ensure_assets_directory,
@@ -609,12 +607,6 @@ class TestDeleteAsset:
         save_asset(
             temp_config_dir, "deep/nested/path/image.png", sample_png_data
         )
-
-        # Get the parent directory path
-        _, abs_path, _ = get_asset_path(
-            temp_config_dir, "deep/nested/path/image.png"
-        )
-        parent_dir = os.path.dirname(abs_path)
 
         # Delete the asset
         delete_asset(temp_config_dir, "deep/nested/path/image.png")
