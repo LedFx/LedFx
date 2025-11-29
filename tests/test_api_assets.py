@@ -53,7 +53,9 @@ class TestAssetsAPIUpload:
 
     def test_upload_valid_png(self, sample_png_bytes):
         """Test uploading a valid PNG asset."""
-        files = {"file": ("icon.png", io.BytesIO(sample_png_bytes), "image/png")}
+        files = {
+            "file": ("icon.png", io.BytesIO(sample_png_bytes), "image/png")
+        }
         data = {"path": "test_icon.png"}
 
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
@@ -63,11 +65,15 @@ class TestAssetsAPIUpload:
         assert result["data"]["path"] == "test_icon.png"
 
         # Cleanup
-        requests.delete(ASSETS_API_URL, params={"path": "test_icon.png"}, timeout=5)
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_icon.png"}, timeout=5
+        )
 
     def test_upload_invalid_extension(self, sample_png_bytes):
         """Test that invalid file extension is rejected."""
-        files = {"file": ("file.txt", io.BytesIO(sample_png_bytes), "text/plain")}
+        files = {
+            "file": ("file.txt", io.BytesIO(sample_png_bytes), "text/plain")
+        }
         data = {"path": "file.txt"}
 
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
@@ -90,7 +96,9 @@ class TestAssetsAPIUpload:
 
     def test_upload_path_traversal_rejected(self, sample_png_bytes):
         """Test that path traversal attempts are rejected."""
-        files = {"file": ("evil.png", io.BytesIO(sample_png_bytes), "image/png")}
+        files = {
+            "file": ("evil.png", io.BytesIO(sample_png_bytes), "image/png")
+        }
         data = {"path": "../../../etc/passwd"}
 
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
@@ -109,23 +117,31 @@ class TestAssetsAPIDownload:
     def test_download_existing_asset(self, sample_png_bytes):
         """Test downloading an existing asset."""
         # Upload first
-        files = {"file": ("download.png", io.BytesIO(sample_png_bytes), "image/png")}
+        files = {
+            "file": ("download.png", io.BytesIO(sample_png_bytes), "image/png")
+        }
         data = {"path": "test_download.png"}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
         assert resp.status_code == 200
 
         # Download
-        resp = requests.get(ASSETS_API_URL, params={"path": "test_download.png"}, timeout=5)
+        resp = requests.get(
+            ASSETS_API_URL, params={"path": "test_download.png"}, timeout=5
+        )
         assert resp.status_code == 200
         assert resp.headers["Content-Type"] == "image/png"
         assert resp.content == sample_png_bytes
 
         # Cleanup
-        requests.delete(ASSETS_API_URL, params={"path": "test_download.png"}, timeout=5)
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_download.png"}, timeout=5
+        )
 
     def test_download_nonexistent_asset(self):
         """Test that downloading non-existent asset returns 404."""
-        resp = requests.get(ASSETS_API_URL, params={"path": "nonexistent.png"}, timeout=5)
+        resp = requests.get(
+            ASSETS_API_URL, params={"path": "nonexistent.png"}, timeout=5
+        )
         assert resp.status_code == 404
         result = resp.json()
         assert result["status"] == "failed"
@@ -138,25 +154,33 @@ class TestAssetsAPIDelete:
     def test_delete_existing_asset(self, sample_png_bytes):
         """Test deleting an existing asset."""
         # Upload first
-        files = {"file": ("todelete.png", io.BytesIO(sample_png_bytes), "image/png")}
+        files = {
+            "file": ("todelete.png", io.BytesIO(sample_png_bytes), "image/png")
+        }
         data = {"path": "test_delete.png"}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
         assert resp.status_code == 200
 
         # Delete
-        resp = requests.delete(ASSETS_API_URL, params={"path": "test_delete.png"}, timeout=5)
+        resp = requests.delete(
+            ASSETS_API_URL, params={"path": "test_delete.png"}, timeout=5
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["status"] == "success"
         assert result["data"]["deleted"] is True
 
         # Verify it's gone
-        resp = requests.get(ASSETS_API_URL, params={"path": "test_delete.png"}, timeout=5)
+        resp = requests.get(
+            ASSETS_API_URL, params={"path": "test_delete.png"}, timeout=5
+        )
         assert resp.status_code == 404
 
     def test_delete_nonexistent_asset(self):
         """Test that deleting non-existent asset returns error."""
-        resp = requests.delete(ASSETS_API_URL, params={"path": "nonexistent.png"}, timeout=5)
+        resp = requests.delete(
+            ASSETS_API_URL, params={"path": "nonexistent.png"}, timeout=5
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["status"] == "failed"
@@ -171,7 +195,9 @@ class TestAssetsAPIIntegration:
         asset_path = "lifecycle_test.png"
 
         # 1. Upload
-        files = {"file": ("test.png", io.BytesIO(sample_png_bytes), "image/png")}
+        files = {
+            "file": ("test.png", io.BytesIO(sample_png_bytes), "image/png")
+        }
         data = {"path": asset_path}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
         assert resp.status_code == 200
@@ -185,12 +211,16 @@ class TestAssetsAPIIntegration:
         assert asset_path in result["assets"]
 
         # 3. Download - verify content
-        resp = requests.get(ASSETS_API_URL, params={"path": asset_path}, timeout=5)
+        resp = requests.get(
+            ASSETS_API_URL, params={"path": asset_path}, timeout=5
+        )
         assert resp.status_code == 200
         assert resp.content == sample_png_bytes
 
         # 4. Delete
-        resp = requests.delete(ASSETS_API_URL, params={"path": asset_path}, timeout=5)
+        resp = requests.delete(
+            ASSETS_API_URL, params={"path": asset_path}, timeout=5
+        )
         assert resp.status_code == 200
         result = resp.json()
         assert result["status"] == "success"
