@@ -2,7 +2,7 @@
 
 For a general overview read [copilot-instructions.md](https://github.com/LedFx/LedFx/blob/main/.github/copilot-instructions.md) in the .github directory.
 
-This file is also used to prime your copilot context if working in vscode.
+This file is also used to prime your copilot context if working in VS Code.
 
 The following are generated via AI assisted spelunking, but are then hand curated for relevance.
 

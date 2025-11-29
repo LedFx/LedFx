@@ -7,7 +7,7 @@
 Note
 :::
 
-LedFx now uses [aubio-ledfx](https://pypi.org/project/aubio-ledfx/) which is hosted in pypi with full wheels, therefore it is no longer necassary to build from source. This removes many risks, and makes the LedFx development experience far simpler.
+LedFx now uses [aubio-ledfx](https://pypi.org/project/aubio-ledfx/) which is hosted in pypi with full wheels, therefore it is no longer necessary to build from source. This removes many risks, and makes the LedFx development experience far simpler.
 ::::
 
 ### Common Steps
@@ -56,7 +56,7 @@ Do not install python from the Windows Store - it will not work with these instr
 Note
 :::
 
-It is no longer necassary to install Build Tools for Visual Studio!
+It is no longer necessary to install Build Tools for Visual Studio!
 ::::
 
 1. Enable audio loopback which is default for a user install, but needs a manual step for dev builds, by calling once
