@@ -30,7 +30,6 @@ ledfx/                    # Main package
 ├── effects/             # Effect implementations (50+ files)
 ├── integrations/        # External service integrations
 ├── libraries/           # Shared libraries (cache, lifxdev)
-├── rust/                # Rust-accelerated effects
 ├── tools/               # Development tools (TypeScript generator, etc.)
 ├── color.py             # Color manipulation utilities
 ├── config.py            # Configuration management
@@ -55,7 +54,6 @@ All effects inherit from the `Effect` base class (which extends `BaseRegistry` f
 2. **2D Effects**: Matrix-based effects for LED panels
 3. **1D Effects**: Linear strip effects
 4. **Temporal Effects**: Time-based animations
-5. **Rust Effects**: Performance-critical effects in Rust
 
 ### Common Effect Patterns
 ```python
@@ -163,7 +161,6 @@ Use `os.path.join()` for path construction, `os.path.exists()` for checks, `os.m
 - **NumPy**: Use vectorized operations for pixel manipulation
 - **Threading**: Protect shared state with locks
 - **Caching**: Cache expensive computations
-- **Rust Extensions**: Use for CPU-intensive effects
 
 ### Error Handling
 - **Graceful Degradation**: Continue operation when devices fail
@@ -207,7 +204,7 @@ When testing input validation, especially for file paths and URLs, use patterns 
 ### Performance Optimization
 - Profile with `cProfile` for CPU bottlenecks
 - Use `numpy` operations instead of Python loops
-- Consider Rust extensions for critical paths
+- Leverage vnoise for performance-critical noise generation
 - Cache expensive calculations
 - Optimize network transmission
 
