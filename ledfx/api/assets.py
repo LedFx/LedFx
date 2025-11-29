@@ -94,7 +94,7 @@ class AssetsEndpoint(RestEndpoint):
             part = await reader.next()
             if part is None:
                 break
-                
+
             if part.name == "file":
                 file_data = await part.read(decode=False)
             elif part.name == "path":
@@ -146,7 +146,9 @@ class AssetsEndpoint(RestEndpoint):
             )
 
         try:
-            success, error = assets.delete_asset(self._ledfx.config_dir, asset_path)
+            success, error = assets.delete_asset(
+                self._ledfx.config_dir, asset_path
+            )
 
             if not success:
                 return await self.invalid_request(
