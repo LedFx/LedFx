@@ -43,7 +43,7 @@
             "label": "Install Docs Dependencies",
             "type": "shell",
             "command": "uv",
-            "args": ["sync", "--group", "docs"],
+            "args": ["sync", "--all-groups"],
             "options": {
                 "cwd": "${workspaceFolder}",
                 "statusbar": {
