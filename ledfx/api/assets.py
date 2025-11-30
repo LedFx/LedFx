@@ -75,7 +75,7 @@ class AssetsEndpoint(RestEndpoint):
             self._ledfx.config_dir,
             asset_path,
             file_data,
-            allow_overwrite=False,
+            allow_overwrite=True,
         )
 
         if not success:

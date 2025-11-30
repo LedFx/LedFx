@@ -11,9 +11,12 @@ Assets are stored in:
 {config_dir}/.ledfx/assets/
 ```
 
-Where `{config_dir}` is the LedFx configuration directory.
+Where `{config_dir}` is the directory containing the `.ledfx` configuration folder (typically the user's home directory).
 
 **Example structure:**
+
+The directory structure under `assets/` is arbitrary and determined by the frontend or application using the API. Assets can be organized in any folder hierarchy as needed.
+
 ```
 .ledfx/
   assets/
@@ -61,7 +64,7 @@ Files are validated using Pillow to ensure they contain actual image data:
 
 ### Size Limits
 
-Default maximum file size is 2MB to prevent resource exhaustion.
+Default maximum file size is 10MB. This limit accounts for animated GIFs and WebP files which can be larger than static images.
 
 ### Automatic Cleanup
 
@@ -125,8 +128,8 @@ Upload a new image asset. Requires `multipart/form-data` encoding.
 - File must be a valid image (content-verified)
 - Extension must be in allowed list
 - Path must not contain traversal sequences (`..`, absolute paths, etc.)
-- File size must not exceed 2MB
-- Overwriting existing files is rejected by default
+- File size must not exceed 10MB
+- Uploading to an existing path will replace the file
 
 **Example:**
 ```javascript
@@ -205,6 +208,9 @@ Delete a specific asset and clean up empty directories.
 **Query Parameters (recommended):**
 - `path` (string, required) - Relative path to the asset to delete
 
+
+`DELETE /api/assets?path=icons/led.png`
+
 **OR Request Body (JSON, alternative):**
 ```json
 {
@@ -263,36 +269,12 @@ Result:
 
 ---
 
-## Use Cases
-
-### Effect Icons
-
-Store custom icons for effects:
-```bash
-curl -X POST http://localhost:8888/api/assets \
-  -F "file=@icon.png" \
-  -F "path=effects/rainbow/icon.png"
-```
-
-### Background Images
-
-Upload background images for visualizations:
-```bash
-curl -X POST http://localhost:8888/api/assets \
-  -F "file=@galaxy.jpg" \
-  -F "path=backgrounds/space/galaxy.jpg"
-```
-
-### Texture Maps
-
-Store texture maps for effects:
-```bash
 ## Error Handling
 
 All endpoints return HTTP 200 with status information in the JSON payload to support frontend notifications:
 
 **Success:**
-```json
+```text
 {
   "status": "success",
   "data": { ... }
@@ -311,48 +293,3 @@ All endpoints return HTTP 200 with status information in the JSON payload to sup
 ```
 
 **Note:** The download endpoint returns binary image data on success, or the standard JSON error response on failure (both with HTTP 200 status).
-    "type": "error",
-    "reason": "Detailed error message"
-  }
-}
-```
-
-The only exception is the download endpoint, which returns 404 for missing assets.
-
----
-
-## Example: Complete Upload Flow
-
-```javascript
-async function uploadAsset(file, path) {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('path', path);
-
-  const response = await fetch('/api/assets', {
-    method: 'POST',
-    body: formData
-  });
-
-  const result = await response.json();
-
-  if (result.status === 'success') {
-    console.log('Asset uploaded:', result.data.path);
-    return result.data.path;
-  } else {
-    throw new Error(result.payload.reason);
-  }
-}
-
-// Usage
-const fileInput = document.querySelector('input[type="file"]');
-const file = fileInput.files[0];
-
-try {
-  const assetPath = await uploadAsset(file, 'effects/my-effect/icon.png');
-  // Asset uploaded successfully
-} catch (error) {
-  // Handle error (validation failed, size exceeded, etc.)
-  console.error('Upload failed:', error.message);
-}
-```

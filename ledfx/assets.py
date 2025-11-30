@@ -41,8 +41,9 @@ ALLOWED_ASSET_EXTENSIONS = {
     ".ico",
 }
 
-# Maximum file size for uploaded assets (2MB default)
-DEFAULT_MAX_ASSET_SIZE_BYTES = 2 * 1024 * 1024  # 2 MB
+# Maximum file size for uploaded assets (10MB default)
+# Accounts for animated GIFs and WebP which can be larger
+DEFAULT_MAX_ASSET_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 # Files to ignore when listing assets
 IGNORED_FILES = {".DS_Store", "Thumbs.db", "desktop.ini"}
