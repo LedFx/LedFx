@@ -124,6 +124,7 @@ Key API endpoints include:
 - `/api/scenes` - Scene coordination
 - `/api/integrations` - External service connections
 - `/api/cache/images` - Image cache management
+- `/api/assets` - Secure asset storage and management 
 
 ### REST API Implementation Standards
 
@@ -167,6 +168,9 @@ Use `os.path.join()` for path construction, `os.path.exists()` for checks, `os.m
 ### Error Handling
 - **Graceful Degradation**: Continue operation when devices fail
 - **Logging**: Comprehensive logging with appropriate levels
+  - Use `_LOGGER.warning()` for expected client errors (invalid requests, missing resources)
+  - Reserve `_LOGGER.error()` for actual system errors to avoid Sentry noise
+  - Follow pattern from `scenes.py` and `config.py` for API error handling
 - **Validation**: Validate all user inputs
 - **Recovery**: Attempt reconnection for network devices
 
@@ -188,6 +192,15 @@ When testing input validation, especially for file paths and URLs, use patterns 
 4. **SSRF Protection**: Loopback addresses, private networks, metadata endpoints
 
 ## Common Tasks
+
+### Adding New API Endpoints
+1. Create new file in `ledfx/api/` with ONE `RestEndpoint` class per file
+2. Use `RestEndpoint` helper methods (`request_success`, `bare_request_success`, `invalid_request`)
+3. Never use `web.json_response()` directly
+4. Use `_LOGGER.warning()` for client errors, not `_LOGGER.error()` (avoid Sentry noise)
+5. Follow security patterns: path validation, input sanitization, content validation
+6. Write integration tests in `tests/test_api_*.py`
+7. Document in `docs/apis/*.md`
 
 ### Adding New Effects
 1. Create effect class inheriting from `Effect`
