@@ -199,6 +199,70 @@ fetch('/api/assets/download', {
 
 ---
 
+### Get Asset Thumbnail
+
+Retrieve a thumbnail version of an asset. Thumbnails are automatically generated on-demand with configurable maximum dimension, maintaining the original aspect ratio.
+
+**Endpoint:** `POST /api/assets/thumbnail`
+
+**Request Body (JSON):**
+```json
+{
+  "path": "backgrounds/galaxy.jpg"
+}
+```
+
+Or with custom size:
+```json
+{
+  "path": "backgrounds/galaxy.jpg",
+  "size": 256
+}
+```
+
+**Parameters:**
+- `path` (string, required) - Relative path to the asset
+- `size` (integer, optional) - Maximum dimension in pixels for longest axis (default: 128, range: 16-512)
+
+**Success Response:**
+- PNG image data with `Content-Type: image/png` header (HTTP 200)
+- Maximum dimension: As specified by `size` parameter (width or height, whichever is larger)
+- Aspect ratio: Preserved from original
+
+**Error Response (HTTP 200 with JSON):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Asset not found: backgrounds/galaxy.jpg"
+  }
+}
+```
+
+**Example:**
+```bash
+# Default 128px thumbnail
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "backgrounds/galaxy.jpg"}' \
+  --output thumbnail.png
+
+# Custom 256px thumbnail
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "backgrounds/galaxy.jpg", "size": 256}' \
+  --output thumbnail-large.png
+```
+
+**Notes:**
+- Thumbnails are generated on-demand and not cached
+- All thumbnails are returned as PNG regardless of source format
+- For animated images (GIF, WebP), the first frame is used
+- Size is clamped to range 16-512 pixels
+
+---
+
 ### Delete Asset
 
 Delete a specific asset and clean up empty directories.

@@ -17,6 +17,7 @@ from tests.test_utilities.consts import BASE_PORT
 # Test URLs
 ASSETS_API_URL = f"http://localhost:{BASE_PORT}/api/assets"
 ASSETS_DOWNLOAD_API_URL = f"http://localhost:{BASE_PORT}/api/assets/download"
+ASSETS_THUMBNAIL_API_URL = f"http://localhost:{BASE_PORT}/api/assets/thumbnail"
 
 
 @pytest.fixture
@@ -278,3 +279,181 @@ class TestAssetsAPIIntegration:
         assert resp.status_code == 200
         result = resp.json()
         assert asset_path not in result["assets"]
+
+
+class TestAssetsAPIThumbnail:
+    """Test POST /api/assets/thumbnail - generating thumbnails."""
+
+    def test_thumbnail_default_size(self, sample_png_bytes):
+        """Test generating thumbnail with default size (128px)."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_test.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumbnail.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_thumbnail.png"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify it's a valid PNG and size is correct
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert max(img.size) <= 128
+        assert img.size[0] <= 128 and img.size[1] <= 128
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_thumbnail.png"}, timeout=5
+        )
+
+    def test_thumbnail_custom_size(self, sample_png_bytes):
+        """Test generating thumbnail with custom size."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_custom.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumbnail_custom.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get 64px thumbnail
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_thumbnail_custom.png", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify size
+        img = Image.open(io.BytesIO(resp.content))
+        assert max(img.size) <= 64
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumbnail_custom.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_size_limits(self, sample_png_bytes):
+        """Test that thumbnail size is clamped to valid range."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_limits.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumbnail_limits.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Test size too small
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_thumbnail_limits.png", "size": 10},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "between" in result["payload"]["reason"].lower()
+
+        # Test size too large
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_thumbnail_limits.png", "size": 1000},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "between" in result["payload"]["reason"].lower()
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumbnail_limits.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_nonexistent_asset(self):
+        """Test that requesting thumbnail of non-existent asset returns error."""
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "nonexistent_thumbnail.png"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "not found" in result["payload"]["reason"].lower()
+
+    def test_thumbnail_missing_path(self):
+        """Test that missing path parameter returns error."""
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "path" in result["payload"]["reason"].lower()
+
+    def test_thumbnail_jpeg_source(self, sample_jpeg_bytes):
+        """Test generating PNG thumbnail from JPEG source."""
+        # Upload JPEG asset
+        files = {
+            "file": (
+                "thumb_jpeg.jpg",
+                io.BytesIO(sample_jpeg_bytes),
+                "image/jpeg",
+            )
+        }
+        data = {"path": "test_thumbnail.jpg"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_thumbnail.jpg"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify it's PNG (not JPEG)
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_thumbnail.jpg"}, timeout=5
+        )
