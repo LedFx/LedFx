@@ -153,9 +153,7 @@ class TestPathResolution:
         )
         assert is_valid is False
         assert abs_path is None
-        # Error message varies: "Invalid path format" on Windows, "Absolute paths" on Unix
-        assert error is not None
-        assert "Absolute paths" in error or "Invalid path" in error
+        assert "Absolute paths are not allowed" in error
 
     def test_windows_absolute_path_rejected(self, temp_config_dir):
         """Test that Windows absolute paths are rejected on Windows."""
@@ -204,7 +202,7 @@ class TestPathResolution:
         )
         assert is_valid is False
         assert abs_path is None
-        assert "Invalid path" in error
+        assert "Absolute paths are not allowed" in error
 
     def test_create_dirs_option(self, temp_config_dir):
         """Test that create_dirs option creates parent directories."""

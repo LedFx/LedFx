@@ -7,7 +7,7 @@ under `.ledfx/assets/` with strict security controls:
 
 - Path traversal protection (no ../, symlinks, or absolute paths)
 - File type validation (extension, MIME type, and PIL format checks)
-- Size limits enforcement (default 2MB max)
+- Size limits enforcement (default 10MB max)
 - Atomic write operations via temporary files
 - Safe path normalization and resolution
 
@@ -21,25 +21,12 @@ import tempfile
 
 import PIL.Image as Image
 
-from ledfx.utils import validate_pil_image
+from ledfx.utils import ALLOWED_IMAGE_EXTENSIONS, validate_pil_image
 
 _LOGGER = logging.getLogger(__name__)
 
 # Asset storage configuration
 ASSETS_DIRECTORY = "assets"  # Directory name under .ledfx/
-
-# Allowed image extensions for asset storage (matches ALLOWED_IMAGE_EXTENSIONS in utils.py)
-ALLOWED_ASSET_EXTENSIONS = {
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".webp",
-    ".gif",
-    ".bmp",
-    ".tiff",
-    ".tif",
-    ".ico",
-}
 
 # Maximum file size for uploaded assets (10MB default)
 # Accounts for animated GIFs and WebP which can be larger
@@ -183,8 +170,8 @@ def validate_asset_extension(file_path: str) -> tuple[bool, str | None]:
     _, ext = os.path.splitext(file_path)
     ext_lower = ext.lower()
 
-    if ext_lower not in ALLOWED_ASSET_EXTENSIONS:
-        allowed = ", ".join(sorted(ALLOWED_ASSET_EXTENSIONS))
+    if ext_lower not in ALLOWED_IMAGE_EXTENSIONS:
+        allowed = ", ".join(sorted(ALLOWED_IMAGE_EXTENSIONS))
         return (
             False,
             f"File extension '{ext}' not allowed. Allowed: {allowed}",
@@ -534,7 +521,7 @@ def list_assets(config_dir: str) -> list[str]:
                 # Optional: Only include files with allowed image extensions
                 # This makes the listing cleaner for API consumers
                 _, ext = os.path.splitext(filename)
-                if ext.lower() not in ALLOWED_ASSET_EXTENSIONS:
+                if ext.lower() not in ALLOWED_IMAGE_EXTENSIONS:
                     _LOGGER.debug(
                         f"Skipping non-image file in assets: {rel_path}"
                     )

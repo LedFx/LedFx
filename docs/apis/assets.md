@@ -222,7 +222,9 @@ Or with custom size:
 
 **Parameters:**
 - `path` (string, required) - Relative path to the asset
-- `size` (integer, optional) - Maximum dimension in pixels for longest axis (default: 128, range: 16-512)
+- `size` (integer, optional) - Maximum dimension in pixels for longest axis (default: 128)
+  - Must be an integer between 16 and 512
+  - Values outside this range will return a validation error
 
 **Success Response:**
 - PNG image data with `Content-Type: image/png` header (HTTP 200)
@@ -259,7 +261,7 @@ curl -X POST http://localhost:8888/api/assets/thumbnail \
 - Thumbnails are generated on-demand and not cached
 - All thumbnails are returned as PNG regardless of source format
 - For animated images (GIF, WebP), the first frame is used
-- Size is clamped to range 16-512 pixels
+- Size parameter must be between 16 and 512 pixels (validation enforced)
 
 ---
 
