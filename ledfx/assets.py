@@ -112,13 +112,9 @@ def resolve_safe_asset_path(
     # Normalize path separators and strip whitespace
     relative_path = relative_path.strip().replace("\\", "/")
 
-    # Reject absolute paths
-    if os.path.isabs(relative_path):
+    # Reject absolute paths (including leading slashes and protocol schemes)
+    if os.path.isabs(relative_path) or relative_path.startswith("/") or "://" in relative_path:
         return False, None, "Absolute paths are not allowed"
-
-    # Reject paths starting with / or containing protocol schemes
-    if relative_path.startswith("/") or "://" in relative_path:
-        return False, None, "Invalid path format"
 
     # Get the assets root directory
     assets_root = get_assets_directory(config_dir)
