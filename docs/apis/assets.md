@@ -158,12 +158,19 @@ Retrieve a specific asset file.
 **Parameters:**
 - `path` (string, required) - Relative path to the asset
 
-**Response:**
-- Binary image data with appropriate `Content-Type` header
+**Success Response:**
+- Binary image data with appropriate `Content-Type` header (HTTP 200)
 
-**Status Codes:**
-- `200 OK` - Asset found and returned
-- `200 OK` with error JSON - Asset does not exist or invalid path
+**Error Response (HTTP 200 with JSON):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Asset not found: icons/led.png"
+  }
+}
+```
 
 **Example:**
 ```bash
@@ -280,13 +287,6 @@ curl -X POST http://localhost:8888/api/assets \
 
 Store texture maps for effects:
 ```bash
-curl -X POST http://localhost:8888/api/assets \
-  -F "file=@fire.webp" \
-  -F "path=effects/fire/texture.webp"
-```
-
----
-
 ## Error Handling
 
 All endpoints return HTTP 200 with status information in the JSON payload to support frontend notifications:
@@ -304,6 +304,13 @@ All endpoints return HTTP 200 with status information in the JSON payload to sup
 {
   "status": "failed",
   "payload": {
+    "type": "error",
+    "reason": "Detailed error message"
+  }
+}
+```
+
+**Note:** The download endpoint returns binary image data on success, or the standard JSON error response on failure (both with HTTP 200 status).
     "type": "error",
     "reason": "Detailed error message"
   }
