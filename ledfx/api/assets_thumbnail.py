@@ -129,7 +129,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     )
 
             except Exception as e:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"Failed to generate thumbnail for {asset_path}: {e}"
                 )
                 return await self.internal_error(
@@ -137,7 +137,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                 )
 
         except Exception as e:
-            _LOGGER.error(f"Failed to process thumbnail request: {e}")
+            _LOGGER.warning(f"Failed to process thumbnail request: {e}")
             return await self.internal_error(
                 message=f"Failed to process request: {e}"
             )

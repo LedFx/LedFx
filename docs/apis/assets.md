@@ -77,7 +77,7 @@ When deleting assets, empty parent directories are automatically removed.
 
 ### List Assets
 
-Get a list of all available assets.
+Get a list of all available assets with metadata.
 
 **Endpoint:** `GET /api/assets`
 
@@ -85,12 +85,37 @@ Get a list of all available assets.
 ```json
 {
   "assets": [
-    "icon.png",
-    "backgrounds/galaxy.jpg",
-    "effects/fire/texture.webp"
+    {
+      "path": "icon.png",
+      "size": 15234,
+      "modified": "2025-11-30T10:30:00+00:00",
+      "width": 512,
+      "height": 512
+    },
+    {
+      "path": "backgrounds/galaxy.jpg",
+      "size": 234567,
+      "modified": "2025-11-28T14:22:15+00:00",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "path": "effects/fire/texture.webp",
+      "size": 45678,
+      "modified": "2025-11-25T09:15:30+00:00",
+      "width": 256,
+      "height": 256
+    }
   ]
 }
 ```
+
+**Metadata Fields:**
+- `path` (string) - Relative path to the asset
+- `size` (integer) - File size in bytes
+- `modified` (string) - ISO 8601 timestamp of last modification (UTC)
+- `width` (integer) - Image width in pixels
+- `height` (integer) - Image height in pixels
 
 **Entries sorted by:** Path name (alphabetical)
 

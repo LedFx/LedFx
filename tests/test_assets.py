@@ -640,7 +640,11 @@ class TestListAssets:
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1
-        assert "icon.png" in assets
+        assert assets[0]["path"] == "icon.png"
+        assert "size" in assets[0]
+        assert "modified" in assets[0]
+        assert "width" in assets[0]
+        assert "height" in assets[0]
 
     def test_list_multiple_assets(self, temp_config_dir, sample_png_data):
         """Test listing multiple assets."""
@@ -650,9 +654,10 @@ class TestListAssets:
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 3
-        assert "icon1.png" in assets
-        assert "icon2.png" in assets
-        assert "icon3.png" in assets
+        paths = [asset["path"] for asset in assets]
+        assert "icon1.png" in paths
+        assert "icon2.png" in paths
+        assert "icon3.png" in paths
 
     def test_list_nested_assets(
         self, temp_config_dir, sample_png_data, sample_jpeg_data
@@ -668,9 +673,10 @@ class TestListAssets:
         assert len(assets) == 3
 
         # Should return normalized relative paths
-        assert "icon.png" in assets
-        assert "buttons/play.png" in assets
-        assert "effects/fire/texture.jpg" in assets
+        paths = [asset["path"] for asset in assets]
+        assert "icon.png" in paths
+        assert "buttons/play.png" in paths
+        assert "effects/fire/texture.jpg" in paths
 
     def test_list_ignores_temp_files(self, temp_config_dir, sample_png_data):
         """Test that temp files are ignored in listing."""
@@ -687,8 +693,9 @@ class TestListAssets:
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1
-        assert "icon.png" in assets
-        assert "temp.tmp" not in assets
+        paths = [asset["path"] for asset in assets]
+        assert "icon.png" in paths
+        assert "temp.tmp" not in paths
 
     def test_list_ignores_system_files(self, temp_config_dir, sample_png_data):
         """Test that system files are ignored in listing."""
@@ -708,9 +715,10 @@ class TestListAssets:
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1
-        assert "icon.png" in assets
-        assert ".DS_Store" not in assets
-        assert "Thumbs.db" not in assets
+        paths = [asset["path"] for asset in assets]
+        assert "icon.png" in paths
+        assert ".DS_Store" not in paths
+        assert "Thumbs.db" not in paths
 
     def test_list_ignores_non_image_files(
         self, temp_config_dir, sample_png_data
@@ -729,8 +737,9 @@ class TestListAssets:
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1
-        assert "icon.png" in assets
-        assert "readme.txt" not in assets
+        paths = [asset["path"] for asset in assets]
+        assert "icon.png" in paths
+        assert "readme.txt" not in paths
 
     def test_list_sorted_output(self, temp_config_dir, sample_png_data):
         """Test that listing returns sorted results."""
@@ -739,7 +748,8 @@ class TestListAssets:
         save_asset(temp_config_dir, "beta.png", sample_png_data)
 
         assets = list_assets(temp_config_dir)
-        assert assets == ["alpha.png", "beta.png", "zebra.png"]
+        paths = [asset["path"] for asset in assets]
+        assert paths == ["alpha.png", "beta.png", "zebra.png"]
 
     def test_list_uses_forward_slashes(self, temp_config_dir, sample_png_data):
         """Test that listing uses forward slashes consistently."""
@@ -750,9 +760,9 @@ class TestListAssets:
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1
         # Should use forward slashes
-        assert "folder/subfolder/image.png" in assets
+        assert assets[0]["path"] == "folder/subfolder/image.png"
         # Should not contain backslashes
-        assert all("\\" not in asset for asset in assets)
+        assert all("\\" not in asset["path"] for asset in assets)
 
 
 class TestGetAssetPath:

@@ -19,6 +19,7 @@ import logging
 import mimetypes
 import os
 import tempfile
+from datetime import datetime, timezone
 
 import PIL.Image as Image
 
@@ -488,11 +489,11 @@ def _cleanup_empty_directories(config_dir: str, dir_path: str) -> None:
             break
 
 
-def list_assets(config_dir: str) -> list[str]:
+def list_assets(config_dir: str) -> list[dict]:
     """
-    List all assets in the assets directory recursively.
+    List all assets in the assets directory recursively with metadata.
 
-    Returns normalized relative paths (forward slashes) suitable for API responses.
+    Returns asset information including path, size, modification time, and dimensions.
     Filters out:
     - Temporary files (.tmp extension)
     - System files (.DS_Store, Thumbs.db, etc.)
@@ -502,7 +503,12 @@ def list_assets(config_dir: str) -> list[str]:
         config_dir: LedFx configuration directory path
 
     Returns:
-        List of relative asset paths (e.g., ["icon.png", "buttons/play.png"])
+        List of asset metadata dicts, each containing:
+            - path: Relative path (e.g., "icon.png", "buttons/play.png")
+            - size: File size in bytes
+            - modified: ISO 8601 timestamp of last modification
+            - width: Image width in pixels
+            - height: Image height in pixels
     """
     assets_root = get_assets_directory(config_dir)
 
@@ -543,12 +549,47 @@ def list_assets(config_dir: str) -> list[str]:
                     )
                     continue
 
-                assets.append(rel_path)
+                # Get file metadata
+                try:
+                    stat_info = os.stat(abs_path)
+                    file_size = stat_info.st_size
+                    modified_time = datetime.fromtimestamp(
+                        stat_info.st_mtime, tz=timezone.utc
+                    ).isoformat()
 
-        # Sort for consistent ordering
-        assets.sort()
+                    # Get image dimensions
+                    width, height = None, None
+                    try:
+                        with Image.open(abs_path) as img:
+                            width, height = img.size
+                    except Exception as e:
+                        _LOGGER.warning(
+                            f"Could not read dimensions for {rel_path}: {e}"
+                        )
+                        # Continue without dimensions rather than failing entirely
+                        width, height = 0, 0
 
-        _LOGGER.debug(f"Listed {len(assets)} assets")
+                    assets.append(
+                        {
+                            "path": rel_path,
+                            "size": file_size,
+                            "modified": modified_time,
+                            "width": width,
+                            "height": height,
+                        }
+                    )
+
+                except Exception as e:
+                    _LOGGER.warning(
+                        f"Could not get metadata for {rel_path}: {e}"
+                    )
+                    # Skip this file if we can't get its metadata
+                    continue
+
+        # Sort by path for consistent ordering
+        assets.sort(key=lambda x: x["path"])
+
+        _LOGGER.debug(f"Listed {len(assets)} assets with metadata")
         return assets
 
     except Exception as e:

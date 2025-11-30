@@ -22,17 +22,18 @@ class AssetsEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """
-        List all available assets.
+        List all available assets with metadata.
 
         Returns:
-            Bare JSON response with list of asset paths,
+            Bare JSON response with list of asset metadata objects,
+            each containing path, size, modified timestamp, width, and height,
             or error response if listing fails.
         """
         try:
             asset_list = assets.list_assets(self._ledfx.config_dir)
             return await self.bare_request_success({"assets": asset_list})
         except Exception as e:
-            _LOGGER.error(f"Failed to list assets: {e}")
+            _LOGGER.warning(f"Failed to list assets: {e}")
             return await self.internal_error(
                 message=f"Failed to list assets: {e}"
             )
@@ -141,7 +142,7 @@ class AssetsEndpoint(RestEndpoint):
             )
 
         except Exception as e:
-            _LOGGER.error(f"Failed to delete asset {asset_path}: {e}")
+            _LOGGER.warning(f"Failed to delete asset {asset_path}: {e}")
             return await self.internal_error(
                 message=f"Failed to delete asset: {e}"
             )

@@ -42,12 +42,24 @@ class TestAssetsAPIList:
     """Test GET /api/assets - listing assets."""
 
     def test_list_assets(self):
-        """Test listing assets."""
+        """Test listing assets with metadata."""
         resp = requests.get(ASSETS_API_URL, timeout=5)
         assert resp.status_code == 200
         data = resp.json()
         assert "assets" in data
         assert isinstance(data["assets"], list)
+
+        # If there are any assets, verify metadata structure
+        if len(data["assets"]) > 0:
+            asset = data["assets"][0]
+            assert "path" in asset
+            assert "size" in asset
+            assert "modified" in asset
+            assert "width" in asset
+            assert "height" in asset
+            assert isinstance(asset["size"], int)
+            assert isinstance(asset["width"], int)
+            assert isinstance(asset["height"], int)
 
 
 class TestAssetsAPIUpload:
@@ -250,11 +262,20 @@ class TestAssetsAPIIntegration:
         result = resp.json()
         assert result["status"] == "success"
 
-        # 2. List - verify it's in the list
+        # 2. List - verify it's in the list with metadata
         resp = requests.get(ASSETS_API_URL, timeout=5)
         assert resp.status_code == 200
         result = resp.json()
-        assert asset_path in result["assets"]
+        asset_paths = [asset["path"] for asset in result["assets"]]
+        assert asset_path in asset_paths
+        # Find the asset and verify metadata
+        asset_metadata = next(
+            a for a in result["assets"] if a["path"] == asset_path
+        )
+        assert "size" in asset_metadata
+        assert "modified" in asset_metadata
+        assert "width" in asset_metadata
+        assert "height" in asset_metadata
 
         # 3. Download - verify content
         resp = requests.post(
@@ -278,7 +299,8 @@ class TestAssetsAPIIntegration:
         resp = requests.get(ASSETS_API_URL, timeout=5)
         assert resp.status_code == 200
         result = resp.json()
-        assert asset_path not in result["assets"]
+        asset_paths = [asset["path"] for asset in result["assets"]]
+        assert asset_path not in asset_paths
 
 
 class TestAssetsAPIThumbnail:
