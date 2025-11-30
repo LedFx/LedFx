@@ -124,7 +124,7 @@ Key API endpoints include:
 - `/api/scenes` - Scene coordination
 - `/api/integrations` - External service connections
 - `/api/cache/images` - Image cache management
-- `/api/assets` - Secure asset storage and management 
+- `/api/assets` - Secure asset storage and management
 
 ### REST API Implementation Standards
 
