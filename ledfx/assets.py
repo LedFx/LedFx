@@ -16,12 +16,17 @@ Supported image formats: png, jpg, jpeg, webp, gif, bmp, tiff, tif, ico
 
 import io
 import logging
+import mimetypes
 import os
 import tempfile
 
 import PIL.Image as Image
 
-from ledfx.utils import ALLOWED_IMAGE_EXTENSIONS, validate_pil_image
+from ledfx.utils import (
+    ALLOWED_IMAGE_EXTENSIONS,
+    ALLOWED_MIME_TYPES,
+    validate_pil_image,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -190,7 +195,9 @@ def validate_asset_content(
     Validates:
     - File can be opened by Pillow
     - File format matches allowed formats
+    - MIME type matches allowed types
     - Image dimensions are within safe limits
+    - Extension matches PIL format
 
     Args:
         data: Binary image data to validate
@@ -212,6 +219,15 @@ def validate_asset_content(
             return (
                 False,
                 "Image validation failed (invalid format or dimensions)",
+                None,
+            )
+
+        # Check MIME type
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type and mime_type not in ALLOWED_MIME_TYPES:
+            return (
+                False,
+                f"Invalid MIME type: {mime_type} (not in allowed list)",
                 None,
             )
 
@@ -287,7 +303,7 @@ def save_asset(
     1. Path validation (no traversal, stays in assets directory)
     2. Extension validation (only allowed image types)
     3. Size validation (enforces max size limit)
-    4. Content validation (real image using Pillow)
+    4. Content validation (MIME type, PIL format, real image data)
     5. Overwrite protection (optional)
     6. Atomic write (temp file + rename)
 

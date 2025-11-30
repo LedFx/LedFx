@@ -7,7 +7,7 @@ LedFx provides secure API endpoints for managing image assets stored in the conf
 ## Asset Storage
 
 Assets are stored in:
-```
+```text
 {config_dir}/.ledfx/assets/
 ```
 
@@ -17,7 +17,7 @@ Where `{config_dir}` is the directory containing the `.ledfx` configuration fold
 
 The directory structure under `assets/` is arbitrary and determined by the frontend or application using the API. Assets can be organized in any folder hierarchy as needed.
 
-```
+```text
 .ledfx/
   assets/
     icon.png
@@ -59,7 +59,10 @@ All paths are validated to prevent directory traversal attacks:
 Files are validated using Pillow to ensure they contain actual image data:
 
 - Extension alone is not sufficient
-- File content must parse as valid image
+- MIME type must be in allowed list (image/png, image/jpeg, image/gif, etc.)
+- File content must parse as valid image with Pillow
+- PIL format must match allowed formats
+- Extension must match actual file content
 - Corrupted or fake images are rejected
 
 ### Size Limits
