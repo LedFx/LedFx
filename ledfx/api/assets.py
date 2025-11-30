@@ -20,57 +20,21 @@ class AssetsEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/assets"
 
-    async def get(self, request: web.Request) -> web.Response:
+    async def get(self) -> web.Response:
         """
-        List all assets or retrieve a specific asset file.
-
-        Query Parameters:
-            path (optional): Relative path to specific asset. If omitted, lists all assets.
+        List all available assets.
 
         Returns:
-            - Without path: JSON list of all assets
-            - With path: Binary image file with appropriate content-type
-            - Error response if path is invalid or asset not found
+            Bare JSON response with list of asset paths,
+            or error response if listing fails.
         """
-        asset_path = request.query.get("path")
-
-        if not asset_path:
-            # List all assets
-            try:
-                asset_list = assets.list_assets(self._ledfx.config_dir)
-                return await self.bare_request_success({"assets": asset_list})
-            except Exception as e:
-                _LOGGER.error(f"Failed to list assets: {e}")
-                return await self.internal_error(
-                    message=f"Failed to list assets: {e}"
-                )
-
-        # Get specific asset
         try:
-            exists, abs_path, error = assets.get_asset_path(
-                self._ledfx.config_dir, asset_path
-            )
-
-            if not exists:
-                return await self.invalid_request(
-                    message=error or f"Asset not found: {asset_path}",
-                    type="error",
-                    resp_code=404,
-                )
-
-            # Determine content type from extension
-            content_type = self._get_content_type(abs_path)
-
-            # Stream the file
-            return web.FileResponse(
-                path=abs_path,
-                headers={"Content-Type": content_type},
-            )
-
+            asset_list = assets.list_assets(self._ledfx.config_dir)
+            return await self.bare_request_success({"assets": asset_list})
         except Exception as e:
-            _LOGGER.error(f"Failed to retrieve asset {asset_path}: {e}")
+            _LOGGER.error(f"Failed to list assets: {e}")
             return await self.internal_error(
-                message=f"Failed to retrieve asset: {e}"
+                message=f"Failed to list assets: {e}"
             )
 
     async def post(self, request: web.Request) -> web.Response:
@@ -130,14 +94,28 @@ class AssetsEndpoint(RestEndpoint):
         """
         Delete an asset.
 
+        Supports both query parameter and JSON body for browser compatibility.
+
         Query Parameters:
-            path (required): Relative path to asset to delete
+            path (optional): Relative path to asset to delete
+
+        Request Body (JSON, fallback):
+            path (optional): Relative path to asset to delete
 
         Returns:
             Success response if asset was deleted,
             or error response if path is invalid or asset doesn't exist.
         """
+        # Try query parameter first (preferred for DELETE)
         asset_path = request.query.get("path")
+
+        # Fallback to JSON body if no query parameter
+        if not asset_path:
+            try:
+                data = await request.json()
+                asset_path = data.get("path")
+            except Exception:
+                pass
 
         if not asset_path:
             return await self.invalid_request(
@@ -167,31 +145,3 @@ class AssetsEndpoint(RestEndpoint):
             return await self.internal_error(
                 message=f"Failed to delete asset: {e}"
             )
-
-    def _get_content_type(self, file_path: str) -> str:
-        """
-        Determine content type from file extension.
-
-        Args:
-            file_path: Path to the file
-
-        Returns:
-            MIME type string
-        """
-        import os
-
-        ext = os.path.splitext(file_path)[1].lower()
-
-        content_types = {
-            ".png": "image/png",
-            ".jpg": "image/jpeg",
-            ".jpeg": "image/jpeg",
-            ".gif": "image/gif",
-            ".webp": "image/webp",
-            ".bmp": "image/bmp",
-            ".tiff": "image/tiff",
-            ".tif": "image/tiff",
-            ".ico": "image/x-icon",
-        }
-
-        return content_types.get(ext, "application/octet-stream")

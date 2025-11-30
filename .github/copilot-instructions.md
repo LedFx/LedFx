@@ -127,12 +127,14 @@ Key API endpoints include:
 
 ### REST API Implementation Standards
 
+**CRITICAL**: Each API file in `ledfx/api/` must contain exactly ONE `RestEndpoint` class. The RegistryLoader auto-discovery pattern requires one endpoint class per file for proper registration. If you need multiple related endpoints (e.g., main endpoint + download endpoint), create separate files following the naming pattern seen in cache API (`cache_images.py` + `cache_images_refresh.py`).
+
 **IMPORTANT**: Always use `RestEndpoint` base class helper methods instead of direct `web.json_response()` calls for consistent response formatting and frontend snackbar notifications.
 
 #### Helper Methods
 - **`await self.request_success(type, message, data=None)`** - Operations needing user feedback (type: "success", "info", "warning", "error")
 - **`await self.bare_request_success(data)`** - Operations without snackbar notifications
-- **`await self.invalid_request(message, type="error")`** - Validation errors and failures
+- **`await self.invalid_request(message, type="error")`** - Validation errors and failures (returns HTTP 200 with status:"failed" for frontend compatibility)
 - **`await self.json_decode_error()`** - JSON parsing errors (use in try/except with JSONDecodeError)
 
 Do NOT use `web.json_response()` directly.

@@ -146,26 +146,40 @@ fetch('/api/assets', {
 
 Retrieve a specific asset file.
 
-**Endpoint:** `GET /api/assets?path={asset_path}`
+**Endpoint:** `POST /api/assets/download`
 
-**Query Parameters:**
-- `path` (string) - Relative path to the asset (e.g., `icons/led.png`)
+**Request Body (JSON):**
+```json
+{
+  "path": "icons/led.png"
+}
+```
+
+**Parameters:**
+- `path` (string, required) - Relative path to the asset
 
 **Response:**
 - Binary image data with appropriate `Content-Type` header
 
 **Status Codes:**
 - `200 OK` - Asset found and returned
-- `404 Not Found` - Asset does not exist
+- `200 OK` with error JSON - Asset does not exist or invalid path
 
 **Example:**
 ```bash
-curl http://localhost:8888/api/assets?path=icons/led.png --output led.png
+curl -X POST http://localhost:8888/api/assets/download \
+  -H "Content-Type: application/json" \
+  -d '{"path": "icons/led.png"}' \
+  --output led.png
 ```
 
 ```javascript
 // Download asset
-fetch('/api/assets?path=icons/led.png')
+fetch('/api/assets/download', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ path: 'icons/led.png' })
+})
   .then(response => response.blob())
   .then(blob => {
     const url = URL.createObjectURL(blob);
@@ -179,17 +193,27 @@ fetch('/api/assets?path=icons/led.png')
 
 Delete a specific asset and clean up empty directories.
 
-**Endpoint:** `DELETE /api/assets?path={asset_path}`
+**Endpoint:** `DELETE /api/assets`
 
-**Query Parameters:**
-- `path` (string) - Relative path to the asset to delete
+**Query Parameters (recommended):**
+- `path` (string, required) - Relative path to the asset to delete
+
+**OR Request Body (JSON, alternative):**
+```json
+{
+  "path": "icons/led.png"
+}
+```
+
+**Note:** Query parameter method is preferred for browser compatibility. JSON body is supported as fallback.
 
 **Success Response:**
 ```json
 {
   "status": "success",
   "data": {
-    "deleted": true
+    "deleted": true,
+    "path": "icons/led.png"
   }
 }
 ```
@@ -205,15 +229,24 @@ Delete a specific asset and clean up empty directories.
 }
 ```
 
-**Example:**
+**Examples:**
+
+Using query parameter (recommended):
 ```bash
-curl -X DELETE http://localhost:8888/api/assets?path=icons/led.png
+curl -X DELETE "http://localhost:8888/api/assets?path=icons/led.png"
+```
+
+Using JSON body (alternative):
+```bash
+curl -X DELETE http://localhost:8888/api/assets \
+  -H "Content-Type: application/json" \
+  -d '{"path": "icons/led.png"}'
 ```
 
 **Note:** When deleting assets, empty parent directories are automatically removed:
 
-```
-DELETE /api/assets?path=effects/fire/texture.png
+```bash
+curl -X DELETE "http://localhost:8888/api/assets?path=effects/fire/texture.png"
 
 Result:
 - File deleted: effects/fire/texture.png
