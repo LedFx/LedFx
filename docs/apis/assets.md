@@ -211,28 +211,29 @@ Retrieve a thumbnail version of an asset. Thumbnails are automatically generated
 **Request Body (JSON):**
 ```json
 {
-  "path": "backgrounds/galaxy.jpg"
-}
-```
-
-Or with custom size:
-```json
-{
-  "path": "backgrounds/galaxy.jpg",
-  "size": 256
+  "path": "backgrounds/galaxy.jpg",      // required
+  "size": 256,                           // optional, default: 128
+  "dimension": "width"                   // optional, default: "max"
 }
 ```
 
 **Parameters:**
 - `path` (string, required) - Relative path to the asset
-- `size` (integer, optional) - Maximum dimension in pixels for longest axis (default: 128)
+- `size` (integer, optional) - Dimension size in pixels (default: 128)
   - Must be an integer between 16 and 512
   - Values outside this range will return a validation error
+- `dimension` (string, optional) - Which dimension to apply size to (default: "max")
+  - `"max"` - Apply size to longest axis (default behavior, maintains aspect ratio)
+  - `"width"` - Apply size to width, scale height proportionally
+  - `"height"` - Apply size to height, scale width proportionally
 
 **Success Response:**
 - PNG image data with `Content-Type: image/png` header (HTTP 200)
-- Maximum dimension: As specified by `size` parameter (width or height, whichever is larger)
-- Aspect ratio: Preserved from original
+- Dimensions: Calculated based on `size` and `dimension` parameters
+  - `dimension="max"`: Size applied to longest axis (default)
+  - `dimension="width"`: Width set to `size`, height scaled proportionally
+  - `dimension="height"`: Height set to `size`, width scaled proportionally
+- Aspect ratio: Always preserved from original
 
 **Error Response (HTTP 200 with JSON):**
 ```json
@@ -258,6 +259,18 @@ curl -X POST http://localhost:8888/api/assets/thumbnail \
   -H "Content-Type: application/json" \
   -d '{"path": "backgrounds/galaxy.jpg", "size": 256}' \
   --output thumbnail-large.png
+
+# 200px wide thumbnail (height scaled proportionally)
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "backgrounds/galaxy.jpg", "size": 200, "dimension": "width"}' \
+  --output thumbnail-200w.png
+
+# 150px tall thumbnail (width scaled proportionally)
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "backgrounds/galaxy.jpg", "size": 150, "dimension": "height"}' \
+  --output thumbnail-150h.png
 ```
 
 **Notes:**

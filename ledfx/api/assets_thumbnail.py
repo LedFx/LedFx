@@ -32,7 +32,11 @@ class AssetsThumbnailEndpoint(RestEndpoint):
 
         Request Body (JSON):
             path (required): Relative path to the asset
-            size (optional): Maximum dimension in pixels (default 128, range 16-512)
+            size (optional): Dimension size in pixels (default 128, range 16-512)
+            dimension (optional): Which dimension to apply size to (default "max")
+                - "max": Apply to longest axis (default)
+                - "width": Apply to width, scale height proportionally
+                - "height": Apply to height, scale width proportionally
 
         Returns:
             PNG image data with Content-Type: image/png header,
@@ -65,6 +69,14 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                 type="error",
             )
 
+        # Get and validate dimension parameter
+        dimension = data.get("dimension", "max")
+        if dimension not in ("max", "width", "height"):
+            return await self.invalid_request(
+                message='Dimension must be "max", "width", or "height"',
+                type="error",
+            )
+
         try:
             # Get the asset path
             exists, abs_path, error = assets.get_asset_path(
@@ -84,8 +96,27 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     if img.mode not in ("RGB", "L"):
                         img = img.convert("RGB")
 
-                    # Calculate thumbnail size maintaining aspect ratio
-                    img.thumbnail((size, size), Image.Resampling.LANCZOS)
+                    # Calculate thumbnail dimensions based on dimension parameter
+                    width, height = img.size
+
+                    if dimension == "width":
+                        # Fix width, scale height proportionally
+                        new_width = size
+                        new_height = int(height * (size / width))
+                    elif dimension == "height":
+                        # Fix height, scale width proportionally
+                        new_height = size
+                        new_width = int(width * (size / height))
+                    else:  # dimension == "max"
+                        # Use thumbnail() which applies size to longest axis
+                        img.thumbnail((size, size), Image.Resampling.LANCZOS)
+                        new_width, new_height = img.size
+
+                    # Resize if we calculated specific dimensions
+                    if dimension in ("width", "height"):
+                        img = img.resize(
+                            (new_width, new_height), Image.Resampling.LANCZOS
+                        )
 
                     # Save to bytes buffer as PNG
                     buffer = io.BytesIO()

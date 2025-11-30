@@ -457,3 +457,162 @@ class TestAssetsAPIThumbnail:
         requests.delete(
             ASSETS_API_URL, params={"path": "test_thumbnail.jpg"}, timeout=5
         )
+
+    def test_thumbnail_dimension_width(self, sample_png_bytes):
+        """Test generating thumbnail with fixed width dimension."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_width.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_dimension_width.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with width=200
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={
+                "path": "test_dimension_width.png",
+                "size": 200,
+                "dimension": "width",
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify width is exactly 200
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert img.size[0] == 200  # width should be exactly 200
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_dimension_width.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_dimension_height(self, sample_png_bytes):
+        """Test generating thumbnail with fixed height dimension."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_height.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_dimension_height.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with height=150
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={
+                "path": "test_dimension_height.png",
+                "size": 150,
+                "dimension": "height",
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify height is exactly 150
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert img.size[1] == 150  # height should be exactly 150
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_dimension_height.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_dimension_max(self, sample_png_bytes):
+        """Test generating thumbnail with max dimension (default behavior)."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_max.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_dimension_max.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with dimension=max
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={
+                "path": "test_dimension_max.png",
+                "size": 200,
+                "dimension": "max",
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify longest dimension is at most 200
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert max(img.size) <= 200
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_dimension_max.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_dimension_invalid(self, sample_png_bytes):
+        """Test that invalid dimension parameter returns error."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_invalid.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_dimension_invalid.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Try to get thumbnail with invalid dimension
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={
+                "path": "test_dimension_invalid.png",
+                "size": 128,
+                "dimension": "invalid",
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "max" in result["payload"]["reason"].lower()
+        assert "width" in result["payload"]["reason"].lower()
+        assert "height" in result["payload"]["reason"].lower()
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_dimension_invalid.png"},
+            timeout=5,
+        )
