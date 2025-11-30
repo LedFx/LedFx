@@ -377,7 +377,7 @@ class TestAssetsAPIThumbnail:
         )
 
     def test_thumbnail_size_limits(self, sample_png_bytes):
-        """Test that thumbnail size is clamped to valid range."""
+        """Test that out-of-range thumbnail sizes return a validation error."""
         # Upload asset first
         files = {
             "file": (
