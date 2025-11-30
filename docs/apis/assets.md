@@ -8,10 +8,10 @@ LedFx provides secure API endpoints for managing image assets stored in the conf
 
 Assets are stored in:
 ```text
-{config_dir}/.ledfx/assets/
+{config_dir}/assets/
 ```
 
-Where `{config_dir}` is the directory containing the `.ledfx` configuration folder (typically the user's home directory).
+Where `{config_dir}` is the LedFx configuration directory (e.g., `~/.ledfx` on Linux/macOS or `%USERPROFILE%\.ledfx` on Windows).
 
 **Example structure:**
 
