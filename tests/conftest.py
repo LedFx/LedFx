@@ -21,19 +21,45 @@ def _requires_ledfx_server(session) -> bool:
     """
     Check if any collected tests require the LedFx server.
 
-    Unit tests (like test_multifft) don't need the server.
-    Integration tests (like test_apis) do need it.
+    This function determines whether to start the LedFx server subprocess
+    based on the test paths specified. Unit tests (like test_multifft)
+    don't need the server, while integration tests (like test_apis) do.
+
+    Note: A more robust solution would use pytest markers (e.g., @pytest.mark.integration)
+    to explicitly tag tests that need the server. This heuristic approach is used
+    to avoid modifying all existing integration tests.
 
     Returns:
         True if tests require the LedFx server, False otherwise.
     """
-    # If items haven't been collected yet, check for markers in config
-    # This is a heuristic: if we're only running test_multifft, skip LedFx
+    # Known unit test directories that don't need LedFx server
+    unit_test_dirs = ["test_multifft"]
+
     if session.config.args:
+        # Check if ANY specified path explicitly targets a unit test directory
+        # Note: "tests" from addopts is the base directory, so we look for more specific paths
+        specific_unit_test_path = False
+        has_other_test_path = False
+
         for arg in session.config.args:
-            # If explicitly running only test_multifft tests, skip LedFx
-            if "test_multifft" in str(arg):
-                return False
+            arg_str = str(arg)
+            # Skip option arguments (like --verbose, --ignore)
+            if arg_str.startswith("-"):
+                continue
+            # Skip the generic "tests" base directory (from addopts)
+            if arg_str == "tests":
+                continue
+            # Check if this path targets a unit test directory
+            if any(unit_dir in arg_str for unit_dir in unit_test_dirs):
+                specific_unit_test_path = True
+            else:
+                has_other_test_path = True
+
+        # Only skip LedFx if we're specifically targeting unit tests
+        # and not also running other tests
+        if specific_unit_test_path and not has_other_test_path:
+            return False
+
     return True
 
 
