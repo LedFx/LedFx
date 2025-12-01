@@ -10,7 +10,6 @@ Part of Milestone 3: Parameter Optimization
 """
 
 import pytest
-import numpy as np
 
 from .parameter_sweep import (
     FFTConfig,

@@ -18,12 +18,11 @@ import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 
-from .optimizer import MultiObjectiveOptimizer, OptimizedConfig
-from .parameter_sweep import FFTConfig, SweepResult
+from .optimizer import MultiObjectiveOptimizer
+from .parameter_sweep import FFTConfig
 
 
 @dataclass
@@ -396,9 +395,7 @@ def generate_pareto_report(analyzer: ParetoAnalyzer) -> str:
         # Knee point
         knee = analyzer.find_knee_point(analysis_type)
         if knee:
-            lines.append(
-                f"\nKnee point (best trade-off):"
-            )
+            lines.append("\nKnee point (best trade-off):")
             lines.append(
                 f"  {knee.config.method} ({knee.config.fft_size}, {knee.config.hop_size})"
             )
@@ -411,7 +408,7 @@ def generate_pareto_report(analyzer: ParetoAnalyzer) -> str:
         lines.append(generate_ascii_plot(front))
 
         # Pareto points table
-        lines.append(f"\nPareto-optimal configurations:")
+        lines.append("\nPareto-optimal configurations:")
         lines.append(
             f"{'Method':<10} {'FFT':>5} {'Hop':>5} "
             f"{'Accuracy':>8} {'Latency':>10} {'Efficiency':>10}"

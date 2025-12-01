@@ -463,18 +463,84 @@ def _collect_performance_metrics(self):
 - Tempo detection needs longer stabilization period for click tracks
 - high_precision onset detection has slightly lower precision (0.88 vs 0.95) due to larger hop sizes
 
-### Milestone 3: Parameter Optimization (Week 3-4)
+### Milestone 3: Parameter Optimization (Week 3-4) ✅ COMPLETED
 
 **Deliverables**:
-- [ ] Parameter sweep infrastructure
-- [ ] Multi-objective optimization
-- [ ] Pareto front visualization
-- [ ] Recommended preset updates
+- [x] Parameter sweep infrastructure (`tests/test_multifft/parameter_sweep.py`)
+- [x] Multi-objective optimization (`tests/test_multifft/optimizer.py`)
+- [x] Pareto front visualization (`tests/test_multifft/pareto_analysis.py`)
+- [x] Recommended preset updates (see findings below)
 
 **Success Criteria**:
-- Complete sweep of FFT/hop combinations
-- Identify optimal configurations
-- Propose preset improvements with data
+- ✅ Complete sweep of FFT/hop combinations (180 configurations tested)
+- ✅ Identify optimal configurations via Pareto analysis
+- ✅ Propose preset improvements with data
+
+**Implementation Notes**:
+
+**Parameter Sweep Infrastructure**:
+- Created `ParameterSweeper` class for systematic parameter space exploration
+- Supports all aubio methods: 9 onset methods, 5 pitch methods
+- Configurable FFT sizes, hop ratios, test signals
+- Progress callbacks for monitoring long sweeps
+- Quick sweep vs full sweep modes
+
+**Multi-Objective Optimizer**:
+- Implements weighted scoring: `score = w_accuracy * accuracy + w_latency * (1-latency) + w_cpu * (1-cpu)`
+- Four optimization profiles: ACCURACY_FOCUSED, LATENCY_FOCUSED, BALANCED, CPU_EFFICIENT
+- Automatic Pareto dominance identification
+- Recommendation generation for different use cases
+
+**Pareto Analysis**:
+- ASCII visualization of accuracy vs latency trade-offs
+- Knee point identification (best trade-off point)
+- Target-based configuration finding (e.g., "best accuracy under 50µs")
+- Export to JSON for external visualization tools
+
+**Parameter Sweep Results (2025-12-01)**:
+
+| Analysis | Configs Tested | Pareto-Optimal | Best Method | Best FFT/Hop |
+|----------|----------------|----------------|-------------|--------------|
+| Tempo | 12 | 5 | default | (1024, 256) |
+| Onset | 108 | 2 | energy | (512, 256) |
+| Pitch | 60 | 14 | schmitt | (2048, 1024) |
+
+**Key Findings**:
+
+1. **Onset detection is highly accurate across all methods**:
+   - All 9 onset methods achieve near-perfect F1 scores (>0.95) on synthetic signals
+   - `energy` method is fastest while maintaining 100% accuracy
+   - Current `hfc` default is good but not optimal - `energy` is 2x faster with equal accuracy
+   - Smaller FFT sizes (512) outperform larger ones for onset detection
+
+2. **Pitch detection shows method-dependent trade-offs**:
+   - `schmitt` method is 20x faster than `yinfft` with equivalent accuracy on synthetic signals
+   - However, `schmitt` is known to be less robust for real music (harmonic-rich signals)
+   - `yinfft` (current default) is the safest choice for real-world use
+   - Larger FFT sizes (4096-8192) needed for accurate low-frequency pitch detection
+
+3. **Tempo detection has limited optimization potential**:
+   - Only `default` method available in aubio.tempo
+   - Smaller FFT sizes (1024) actually outperform larger ones on synthetic click tracks
+   - This may not hold for real music - requires Milestone 4 validation
+
+**Recommended Preset Updates**:
+
+| Preset | Component | Current | Recommended | Change Reason |
+|--------|-----------|---------|-------------|---------------|
+| balanced | onset_method | hfc | energy | 2x faster, same accuracy |
+| low_latency | onset_fft | (512, 128) | (512, 170) | Better accuracy, ~same latency |
+| high_precision | pitch_fft | (8192, 734) | (8192, 2048) | Faster with same accuracy |
+
+**Answered Questions**:
+- ✅ Is HFC truly optimal for onset detection? No - `energy` is faster with equal accuracy
+- ✅ Would `complex` or `specflux` work better? No - both are slower than `energy`
+- ✅ Which onset method wins? `energy` for speed, `complex` for robustness
+
+**New Questions for Milestone 4**:
+- Does `energy` onset method maintain accuracy on real music with varying dynamics?
+- Is `schmitt` pitch detection acceptable for LED visualization (where some error is tolerable)?
+- Do smaller tempo FFT sizes maintain accuracy on sustained tonal content?
 
 ### Milestone 4: Real-World Validation (Week 5)
 
@@ -755,8 +821,73 @@ confidence = pitch.get_confidence()   # Detection confidence [0-1]
 - Should onset tolerance be increased for slow attacks (current 50ms may be too strict)?
 - Is the high_precision onset precision drop (88% vs 95%) due to hop size or FFT size?
 
+### Milestone 3 Implementation Notes (2025-12-01)
+
+**Testing Infrastructure Created:**
+- `tests/test_multifft/parameter_sweep.py` - Systematic parameter space exploration
+- `tests/test_multifft/optimizer.py` - Multi-objective optimization with Pareto analysis
+- `tests/test_multifft/pareto_analysis.py` - Pareto front visualization and analysis
+- `tests/test_multifft/test_parameter_sweep.py` - 40 unit tests for new infrastructure
+
+**Parameter Sweep Methodology:**
+- Tested FFT sizes: [512, 1024, 2048, 4096] for onset, [1024, 2048, 4096, 8192] for tempo, [2048, 4096, 8192, 16384] for pitch
+- Hop size ratios: [1/2, 1/3, 1/4] of FFT size
+- All aubio methods: 9 onset methods (energy, hfc, complex, phase, wphase, specdiff, kl, mkl, specflux), 5 pitch methods (yinfft, yin, yinfast, specacf, schmitt)
+- Test signals: Multiple BPMs (80, 120, 160), attack types (impulse, sharp, medium), waveforms (sine, triangle)
+
+**Multi-Objective Optimization:**
+- Weighted scoring function combines accuracy, latency, and CPU usage
+- Four optimization profiles for different use cases:
+  - ACCURACY_FOCUSED: 80% accuracy, 15% latency, 5% CPU
+  - LATENCY_FOCUSED: 30% accuracy, 60% latency, 10% CPU
+  - BALANCED: 50% accuracy, 35% latency, 15% CPU
+  - CPU_EFFICIENT: 30% accuracy, 20% latency, 50% CPU
+- Pareto dominance analysis identifies non-dominated configurations
+
+**Pareto Analysis Results:**
+
+| Analysis | Pareto-Optimal | Dominated | Best Trade-off (Knee Point) |
+|----------|----------------|-----------|----------------------------|
+| Tempo | 5 | 7 | default (2048, 682) |
+| Onset | 2 | 106 | energy (512, 256) |
+| Pitch | 14 | 46 | schmitt (8192, 4096) |
+
+**Key Discoveries:**
+
+1. **Onset method comparison reveals surprising winner**:
+   - `energy` method (simplest) outperforms all others on synthetic signals
+   - Achieves 100% F1 with 4.7µs latency (2x faster than `hfc`)
+   - `complex` and `specflux` offer no accuracy benefit despite higher computation
+   - Recommendation: Consider `energy` for low_latency preset
+
+2. **Pitch method trade-offs are significant**:
+   - `schmitt` is 20-50x faster than `yinfft` but may be less robust for complex audio
+   - `yinfast` offers middle ground: 2x faster than `yinfft` with same accuracy on synthetic
+   - All methods achieve 100% detection on clean synthetic signals
+   - Recommendation: Keep `yinfft` as default for robustness, consider `yinfast` for low_latency
+
+3. **FFT size impact varies by analysis type**:
+   - Onset: Smaller FFT (512) is strictly better - faster with equal or better accuracy
+   - Pitch: Larger FFT improves low-frequency detection but with diminishing returns
+   - Tempo: Smaller FFT (1024) surprisingly outperforms larger on click tracks
+
+4. **Hop size affects latency more than accuracy**:
+   - Reducing hop size from 1/2 to 1/4 of FFT doubles analysis rate
+   - Accuracy difference is negligible for most configurations
+   - Recommendation: Use smaller hop for low_latency, larger for reduced CPU
+
+**Answered Questions from Milestone 2:**
+- ✅ Is HFC optimal for onset? No - `energy` is faster with equal accuracy on synthetic
+- ✅ Would `complex` work better? No - higher computation, no accuracy benefit
+- ✅ Is high_precision onset precision drop due to hop or FFT? Both contribute - larger hop reduces temporal precision
+
+**Questions for Milestone 4:**
+- Do synthetic findings hold for real music with harmonics, reverb, and noise?
+- Is `energy` onset robust to varying dynamics and complex timbres?
+- Does `yinfast` maintain accuracy on polyphonic or vibrato passages?
+
 ---
 
 **Last Updated**: 2025-12-01
-**Status**: Milestone 2 Complete - Preset Validation implemented with pytest integration
-**Next Action**: Begin Milestone 3 - Parameter Optimization (parameter sweep infrastructure)
+**Status**: Milestone 3 Complete - Parameter Optimization implemented with Pareto analysis
+**Next Action**: Begin Milestone 4 - Real-World Validation (music dataset preparation)

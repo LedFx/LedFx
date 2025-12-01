@@ -13,18 +13,14 @@ Sweep Dimensions:
 Part of Milestone 3: Parameter Optimization
 """
 
-import itertools
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Callable
 
 import aubio
 import numpy as np
 
-from .ground_truth_schema import SignalDefinition
 from .metrics import (
-    AnalysisResult,
-    PerformanceMetrics,
     calculate_onset_metrics,
     calculate_pitch_metrics,
     calculate_tempo_metrics,
