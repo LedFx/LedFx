@@ -20,6 +20,7 @@ from pathlib import Path
 import numpy as np
 
 from .ground_truth_schema import (
+    STANDARD_ATTACK_TYPES,
     BeatAnnotation,
     GroundTruth,
     OnsetAnnotation,
@@ -379,6 +380,7 @@ def generate_chromatic_scale(
 def add_noise(
     audio: np.ndarray,
     snr_db: float,
+    seed: int | None = None,
 ) -> np.ndarray:
     """
     Add white noise to audio at specified SNR.
@@ -386,6 +388,7 @@ def add_noise(
     Args:
         audio: Input audio samples
         snr_db: Signal-to-noise ratio in dB
+        seed: Random seed for reproducible noise generation (None for non-deterministic)
 
     Returns:
         Audio with added noise
@@ -399,8 +402,9 @@ def add_noise(
     snr_linear = 10 ** (snr_db / 10)
     noise_power = signal_power / snr_linear
 
-    # Generate noise
-    noise = np.sqrt(noise_power) * np.random.randn(len(audio))
+    # Generate noise (optionally with seed for reproducibility)
+    rng = np.random.default_rng(seed)
+    noise = np.sqrt(noise_power) * rng.standard_normal(len(audio))
 
     return (audio + noise).astype(np.float32)
 
@@ -410,6 +414,7 @@ def generate_complex_signal(
     duration: float = 30.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
     snr_db: float = 20.0,
+    noise_seed: int = 42,
 ) -> tuple[np.ndarray, SignalDefinition]:
     """
     Generate a complex test signal combining beats, onsets, and pitch.
@@ -419,6 +424,7 @@ def generate_complex_signal(
         duration: Duration in seconds
         sample_rate: Audio sample rate
         snr_db: Signal-to-noise ratio for added noise
+        noise_seed: Random seed for reproducible noise generation
 
     Returns:
         Tuple of (audio_samples, signal_definition)
@@ -450,7 +456,7 @@ def generate_complex_signal(
         audio[start_idx:end_idx] += tone[: end_idx - start_idx]
 
     # Add noise
-    audio = add_noise(audio, snr_db)
+    audio = add_noise(audio, snr_db, seed=noise_seed)
 
     # Normalize
     max_val = np.max(np.abs(audio))
@@ -532,7 +538,7 @@ def load_signal(
 
 # Standard test signal presets
 STANDARD_TEMPOS = [60, 80, 100, 120, 140, 160, 180]
-STANDARD_ATTACK_TYPES = ["impulse", "sharp", "medium", "slow"]
+# STANDARD_ATTACK_TYPES is imported from ground_truth_schema
 STANDARD_MIDI_RANGE = range(48, 73)  # C3 to C5
 
 
@@ -567,9 +573,14 @@ def generate_standard_test_set(
         )
         results.append(paths)
 
-    # Pitch signals (chromatic scale)
+    # Pitch signals (chromatic scale using STANDARD_MIDI_RANGE)
+    start_midi, end_midi = min(STANDARD_MIDI_RANGE), max(STANDARD_MIDI_RANGE)
     for waveform in ["sine", "triangle", "sawtooth", "square"]:
-        audio, signal_def = generate_chromatic_scale(waveform=waveform)
+        audio, signal_def = generate_chromatic_scale(
+            start_midi=start_midi,
+            end_midi=end_midi,
+            waveform=waveform,
+        )
         paths = save_signal(
             audio, signal_def, output_dir / "pitch", f"chromatic_{waveform}"
         )

@@ -276,8 +276,12 @@ def calculate_onset_metrics(
     return metrics
 
 
-def midi_to_cents(midi_a: float, midi_b: float) -> float:
-    """Calculate error in cents between two MIDI note values."""
+def midi_difference_to_cents(midi_a: float, midi_b: float) -> float:
+    """Calculate error in cents between two MIDI note values.
+
+    Each semitone (MIDI step) equals 100 cents, so the difference
+    in MIDI notes multiplied by 100 gives the error in cents.
+    """
     return (midi_a - midi_b) * 100.0
 
 
@@ -323,7 +327,7 @@ def calculate_pitch_metrics(
         median_midi = float(np.median(detected_midis))
 
         # Calculate error
-        error_cents = midi_to_cents(median_midi, expected.midi_note)
+        error_cents = midi_difference_to_cents(median_midi, expected.midi_note)
         abs_error = abs(error_cents)
 
         # Check for octave error (within 50 cents of ±1200 cents)

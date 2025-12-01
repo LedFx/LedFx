@@ -14,6 +14,7 @@ import numpy as np
 import pytest
 
 from .ground_truth_schema import (
+    STANDARD_ATTACK_TYPES,
     BeatAnnotation,
     GroundTruth,
     OnsetAnnotation,
@@ -24,7 +25,6 @@ from .ground_truth_schema import (
 )
 from .signal_generator import (
     DEFAULT_SAMPLE_RATE,
-    STANDARD_ATTACK_TYPES,
     STANDARD_TEMPOS,
     add_noise,
     generate_chromatic_scale,

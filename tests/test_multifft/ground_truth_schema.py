@@ -21,11 +21,14 @@ BEAT_SCHEMA = vol.Schema(
 )
 
 # Onset annotation schema
+# Shared constants for attack types
+STANDARD_ATTACK_TYPES = ["impulse", "sharp", "medium", "slow"]
+
 ONSET_SCHEMA = vol.Schema(
     {
         vol.Required("time"): vol.All(vol.Coerce(float), vol.Range(min=0)),
         vol.Optional("attack_ms"): vol.All(vol.Coerce(float), vol.Range(min=0)),
-        vol.Optional("type"): vol.In(["impulse", "sharp", "medium", "slow"]),
+        vol.Optional("type"): vol.In(STANDARD_ATTACK_TYPES),
     }
 )
 
