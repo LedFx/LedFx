@@ -179,7 +179,9 @@ def generate_fft_configs(
         fft_sizes = sweep_config.fft_sizes
     else:
         # Use analysis-type-specific defaults
-        fft_sizes = default_fft_sizes.get(analysis_type, sweep_config.fft_sizes)
+        fft_sizes = default_fft_sizes.get(
+            analysis_type, sweep_config.fft_sizes
+        )
 
     # Methods for each analysis type
     methods = {

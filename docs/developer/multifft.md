@@ -177,7 +177,7 @@ LedFx implements a beat lock mechanism for stable tempo visualization:
 
 1. **Lock Achievement**: Requires 4 consecutive beats with <15% deviation and minimum confidence
 2. **Grace Period**: 2-second protection after lock before unlock conditions are evaluated
-3. **Unlock Conditions**: 
+3. **Unlock Conditions**:
    - Low confidence AND high drift (>5%)
    - Very high drift alone (>20%)
    - Missed beats for >4 beat periods
