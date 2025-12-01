@@ -153,6 +153,8 @@ class AubioAnalyzer:
         self.tempo_times: list[float] = []
         self.onset_times: list[float] = []
         self.pitch_times: list[float] = []
+        # Track which tempo features are enabled
+        self.enabled_features: list[str] = []
 
     def _enable_tempo_features(self):
         """Enable various aubio tempo features if available."""
@@ -167,6 +169,7 @@ class AubioAnalyzer:
         for name, setter in features:
             try:
                 setter()
+                self.enabled_features.append(name)
             except (ValueError, RuntimeError, AttributeError):
                 pass  # Feature not available in this aubio build
 
