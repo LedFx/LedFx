@@ -1,0 +1,1 @@
+"""Generated test signals directory."""

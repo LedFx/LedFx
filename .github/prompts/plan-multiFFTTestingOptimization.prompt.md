@@ -394,18 +394,26 @@ def _collect_performance_metrics(self):
 
 ## Implementation Roadmap
 
-### Milestone 1: Foundation (Week 1)
+### Milestone 1: Foundation (Week 1) ✅ COMPLETED
 
 **Deliverables**:
-- [ ] Signal generation framework
-- [ ] Ground truth JSON schema
-- [ ] Basic test harness
-- [ ] Metric collection utilities
+- [x] Signal generation framework (`tests/test_multifft/signal_generator.py`)
+- [x] Ground truth JSON schema (`tests/test_multifft/ground_truth_schema.py`)
+- [x] Basic test harness (`tests/test_multifft/conftest.py`)
+- [x] Metric collection utilities (`tests/test_multifft/metrics.py`)
 
 **Success Criteria**:
-- Generate all signal types
-- Load and validate ground truth
-- Run one complete test case
+- ✅ Generate all signal types (tempo, onset, pitch, complex)
+- ✅ Load and validate ground truth (JSON schema with voluptuous validation)
+- ✅ Run one complete test case (`tests/test_multifft/test_signal_generation.py`)
+
+**Implementation Notes**:
+- Signal generator supports all standard tempos (60-180 BPM)
+- Four onset attack types: impulse, sharp, medium, slow
+- Pitch signals with multiple waveforms (sine, triangle, sawtooth, square)
+- Complex signals combine beats + melody + configurable noise (SNR 0-30 dB)
+- Metrics module calculates precision, recall, F1 for all analysis types
+- Tests verified manually due to main conftest.py requiring LedFx subprocess
 
 ### Milestone 2: Preset Validation (Week 2)
 
@@ -603,6 +611,33 @@ confidence = pitch.get_confidence()   # Detection confidence [0-1]
 
 *This section will be updated as testing progresses with discoveries, anomalies, and insights.*
 
+### Milestone 1 Implementation Notes (2025-12-01)
+
+**Testing Infrastructure Created:**
+- `tests/test_multifft/signal_generator.py` - Comprehensive signal generation
+- `tests/test_multifft/ground_truth_schema.py` - JSON schema with dataclasses
+- `tests/test_multifft/conftest.py` - Pytest fixtures and SignalPlayer utility
+- `tests/test_multifft/metrics.py` - Accuracy and performance metrics
+
+**Key Discoveries:**
+
+1. **Test Isolation Challenge**:
+   - Main `tests/conftest.py` requires LedFx subprocess with `uv` command
+   - Multi-FFT tests can run independently via direct Python execution
+   - Consider adding pytest markers to differentiate unit vs integration tests
+
+2. **Signal Generation Verification**:
+   - Click tracks generate correct beat count within ±1 beat tolerance
+   - Onset signals properly space attacks at configured intervals
+   - Chromatic scales correctly map MIDI notes 21-108 to frequencies
+   - Noise addition achieves target SNR within ±2dB
+
+3. **Metrics Module Capabilities**:
+   - Tempo metrics: BPM error, beat F1, timing error statistics
+   - Onset metrics: Precision, recall, F1 with configurable tolerance
+   - Pitch metrics: Detection rate, error in cents, octave error tracking
+   - All metrics support human-readable report formatting
+
 ### Initial Observations
 
 1. **Balanced Preset Rationale**:
@@ -631,5 +666,5 @@ confidence = pitch.get_confidence()   # Detection confidence [0-1]
 ---
 
 **Last Updated**: 2025-12-01
-**Status**: Planning Phase
-**Next Action**: Create signal generation framework (Milestone 1)
+**Status**: Milestone 1 Complete - Foundation implemented
+**Next Action**: Begin Milestone 2 - Preset Validation Tests
