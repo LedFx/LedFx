@@ -1164,7 +1164,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # GET /api/cache/images response
-    output_ts_string += "/**\n * Response for GET /api/cache/images.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for GET /api/cache/images.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface GetCacheImagesApiResponse {\n"
     output_ts_string += "  total_size: number;\n"
     output_ts_string += "  total_count: number;\n"
@@ -1217,7 +1219,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # GET /api/assets response
-    output_ts_string += "/**\n * Response for GET /api/assets.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for GET /api/assets.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface GetAssetsApiResponse {\n"
     output_ts_string += "  assets: AssetMetadata[];\n"
     output_ts_string += "}\n\n"
@@ -1236,7 +1240,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # DELETE /api/assets response
-    output_ts_string += "/**\n * Response for DELETE /api/assets.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for DELETE /api/assets.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface DeleteAssetApiResponse {\n"
     output_ts_string += '  status: "success" | "failed";\n'
     output_ts_string += "  data?: {\n"
@@ -1253,7 +1259,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "export interface ThumbnailRequest {\n"
     output_ts_string += "  path: string;\n"
     output_ts_string += "  size?: number; // 16-512, default 128\n"
-    output_ts_string += "  dimension?: 'max' | 'width' | 'height'; // default 'max'\n"
+    output_ts_string += (
+        "  dimension?: 'max' | 'width' | 'height'; // default 'max'\n"
+    )
     output_ts_string += "}\n\n"
 
     # --- 6.11. Generate Virtual Presets API Response Types ---
