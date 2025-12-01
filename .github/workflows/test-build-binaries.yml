@@ -102,7 +102,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          brew install portaudio
+          brew install portaudio opus libsndfile ffmpeg
 
       # Fix samplerate build on Python 3.10 with CMake 4.x
       - name: Set CMake policy minimum
@@ -155,7 +155,7 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          brew install portaudio mbedtls@2
+          brew install portaudio mbedtls@2 opus libsndfile ffmpeg
 
       # Fix samplerate build on Python 3.10 with CMake 4.x
       - name: Set CMake policy minimum

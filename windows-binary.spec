@@ -14,6 +14,10 @@ print(venv_root)
 numpy_binaries = collect_dynamic_libs('numpy')
 numpy_datas = collect_data_files('numpy', include_py_files=True)
 numpy_hiddenimports = collect_submodules('numpy')
+
+# Collect aubio binaries (for DLLs bundled via delvewheel)
+aubio_binaries = collect_dynamic_libs('aubio')
+
 # Remove the ledfx.env file if it exists
 os.remove("ledfx.env") if os.path.exists("ledfx.env") else None
 
@@ -40,7 +44,7 @@ with open('ledfx.env', 'a') as file:
     file.write('\n'.join(variables))
 a = Analysis([f'{spec_root}\\ledfx\\__main__.py'],
              pathex=[f'{spec_root}', f'{spec_root}\\ledfx'],
-             binaries=numpy_binaries,
+             binaries=numpy_binaries + aubio_binaries,
              datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')] + numpy_datas,
              hiddenimports=hiddenimports + numpy_hiddenimports,
              hookspath=[f'{venv_root}\\lib\\site-packages\\pyupdater\\hooks'],
