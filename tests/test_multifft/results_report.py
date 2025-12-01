@@ -19,11 +19,11 @@ from pathlib import Path
 import numpy as np
 
 from .metrics import (
+    AnalysisResult,
     OnsetMetrics,
     PerformanceMetrics,
     PitchMetrics,
     TempoMetrics,
-    TestResult,
 )
 
 
@@ -75,7 +75,7 @@ class ValidationReport:
 
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
     preset_summaries: dict[str, PresetSummary] = field(default_factory=dict)
-    raw_results: dict[str, list[TestResult]] = field(default_factory=dict)
+    raw_results: dict[str, list[AnalysisResult]] = field(default_factory=dict)
 
     # Overall statistics
     total_tests: int = 0
@@ -89,14 +89,14 @@ class ValidationReport:
     best_performance_preset: str = ""
 
     def add_preset_results(
-        self, preset_name: str, results: list[TestResult]
+        self, preset_name: str, results: list[AnalysisResult]
     ) -> None:
         """
         Add results from a preset to the report.
 
         Args:
             preset_name: Name of the preset
-            results: List of TestResult objects
+            results: List of AnalysisResult objects
         """
         self.raw_results[preset_name] = results
 

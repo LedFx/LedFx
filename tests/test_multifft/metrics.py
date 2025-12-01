@@ -108,8 +108,8 @@ class PerformanceMetrics:
 
 
 @dataclass
-class TestResult:
-    """Complete result from a single test."""
+class AnalysisResult:
+    """Complete result from a single analysis test."""
 
     test_name: str
     signal_type: str
@@ -362,7 +362,7 @@ def calculate_pitch_metrics(
 
 
 def check_test_passed(
-    test_result: TestResult,
+    test_result: AnalysisResult,
     criteria: TestCriteria,
 ) -> bool:
     """
@@ -414,7 +414,7 @@ def check_test_passed(
     return passed
 
 
-def format_metrics_report(test_result: TestResult) -> str:
+def format_metrics_report(test_result: AnalysisResult) -> str:
     """
     Format a test result as a human-readable report.
 

@@ -22,8 +22,8 @@ from .ground_truth_schema import (
     STANDARD_ATTACK_TYPES,
 )
 from .metrics import (
+    AnalysisResult,
     PerformanceMetrics,
-    TestResult,
     calculate_onset_metrics,
     calculate_pitch_metrics,
     calculate_tempo_metrics,
@@ -58,16 +58,16 @@ SAMPLE_RATE = 44100
 
 
 @dataclass
-class PresetTestResults:
+class PresetAnalysisResults:
     """Collection of test results for a single preset."""
 
     preset_name: str
-    tempo_results: list[TestResult] = field(default_factory=list)
-    onset_results: list[TestResult] = field(default_factory=list)
-    pitch_results: list[TestResult] = field(default_factory=list)
-    complex_results: list[TestResult] = field(default_factory=list)
+    tempo_results: list[AnalysisResult] = field(default_factory=list)
+    onset_results: list[AnalysisResult] = field(default_factory=list)
+    pitch_results: list[AnalysisResult] = field(default_factory=list)
+    complex_results: list[AnalysisResult] = field(default_factory=list)
 
-    def all_results(self) -> list[TestResult]:
+    def all_results(self) -> list[AnalysisResult]:
         """Return all test results."""
         return (
             self.tempo_results
@@ -302,7 +302,7 @@ def run_tempo_test(
     bpm: float,
     duration: float = 30.0,
     tolerance_ms: float = 50.0,
-) -> TestResult:
+) -> AnalysisResult:
     """
     Run tempo detection test for a specific preset and BPM.
 
@@ -313,7 +313,7 @@ def run_tempo_test(
         tolerance_ms: Beat timing tolerance in milliseconds
 
     Returns:
-        TestResult with tempo metrics
+        AnalysisResult with tempo metrics
     """
     # Generate test signal
     audio, signal_def = generate_click_track(
@@ -338,7 +338,7 @@ def run_tempo_test(
     )
 
     # Create result
-    result = TestResult(
+    result = AnalysisResult(
         test_name=f"{preset_name}_tempo_{bpm}bpm",
         signal_type="tempo",
         tempo_metrics=tempo_metrics,
@@ -365,7 +365,7 @@ def run_onset_test(
     interval_ms: float = 500.0,
     duration: float = 10.0,
     tolerance_ms: float = 50.0,
-) -> TestResult:
+) -> AnalysisResult:
     """
     Run onset detection test for a specific preset and attack type.
 
@@ -377,7 +377,7 @@ def run_onset_test(
         tolerance_ms: Onset timing tolerance in milliseconds
 
     Returns:
-        TestResult with onset metrics
+        AnalysisResult with onset metrics
     """
     # Generate test signal
     audio, signal_def = generate_onset_signal(
@@ -399,7 +399,7 @@ def run_onset_test(
     )
 
     # Create result
-    result = TestResult(
+    result = AnalysisResult(
         test_name=f"{preset_name}_onset_{attack_type}",
         signal_type="onset",
         onset_metrics=onset_metrics,
@@ -422,7 +422,7 @@ def run_pitch_test(
     end_midi: int = 72,
     note_duration: float = 0.5,
     tolerance_cents: float = 50.0,
-) -> TestResult:
+) -> AnalysisResult:
     """
     Run pitch detection test for a specific preset.
 
@@ -435,7 +435,7 @@ def run_pitch_test(
         tolerance_cents: Pitch tolerance in cents
 
     Returns:
-        TestResult with pitch metrics
+        AnalysisResult with pitch metrics
     """
     # Generate test signal
     audio, signal_def = generate_chromatic_scale(
@@ -461,7 +461,7 @@ def run_pitch_test(
     )
 
     # Create result
-    result = TestResult(
+    result = AnalysisResult(
         test_name=f"{preset_name}_pitch_{waveform}",
         signal_type="pitch",
         pitch_metrics=pitch_metrics,
@@ -484,7 +484,7 @@ def run_complex_test(
     bpm: float = 120,
     snr_db: float = 20.0,
     duration: float = 15.0,
-) -> TestResult:
+) -> AnalysisResult:
     """
     Run test on complex signal combining beats, melody, and noise.
 
@@ -495,7 +495,7 @@ def run_complex_test(
         duration: Signal duration in seconds
 
     Returns:
-        TestResult with tempo metrics (primary for complex signals)
+        AnalysisResult with tempo metrics (primary for complex signals)
     """
     # Generate test signal
     audio, signal_def = generate_complex_signal(
@@ -521,7 +521,7 @@ def run_complex_test(
     )
 
     # Create result
-    result = TestResult(
+    result = AnalysisResult(
         test_name=f"{preset_name}_complex_snr{snr_db}",
         signal_type="complex",
         tempo_metrics=tempo_metrics,
@@ -539,7 +539,7 @@ def run_complex_test(
     return result
 
 
-def run_all_preset_tests(preset_name: str) -> PresetTestResults:
+def run_all_preset_tests(preset_name: str) -> PresetAnalysisResults:
     """
     Run all validation tests for a single preset.
 
@@ -547,9 +547,9 @@ def run_all_preset_tests(preset_name: str) -> PresetTestResults:
         preset_name: Name of the FFT preset to test
 
     Returns:
-        PresetTestResults containing all test results
+        PresetAnalysisResults containing all test results
     """
-    results = PresetTestResults(preset_name=preset_name)
+    results = PresetAnalysisResults(preset_name=preset_name)
 
     # Tempo tests at various BPMs
     for bpm in [60, 100, 120, 140, 180]:
@@ -823,7 +823,7 @@ class TestFullValidation:
             print(f"  Total: {summary['total_tests']} tests")
             print(
                 f"  Passed: {summary['passed']}/{summary['total_tests']} "
-                f"({summary['pass_rate']*100:.1f}%)"
+                f"({summary['pass_rate'] * 100:.1f}%)"
             )
             print(
                 f"  Tempo: {summary['tempo_passed']}/{summary['tempo_tests']}"
