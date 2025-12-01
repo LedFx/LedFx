@@ -164,12 +164,22 @@ def generate_fft_configs(
     if sweep_config is None:
         sweep_config = SweepConfig()
 
-    # Default FFT sizes for each analysis type
-    fft_sizes = {
+    # Default FFT sizes for each analysis type (used when sweep_config has default fft_sizes)
+    default_fft_sizes = {
         "onset": [512, 1024, 2048, 4096],
         "tempo": [1024, 2048, 4096, 8192],
         "pitch": [2048, 4096, 8192, 16384],
-    }.get(analysis_type, sweep_config.fft_sizes)
+    }
+
+    # Use custom fft_sizes from sweep_config if explicitly different from default
+    # Otherwise use analysis-type-specific defaults
+    default_config = SweepConfig()
+    if sweep_config.fft_sizes != default_config.fft_sizes:
+        # Custom fft_sizes were provided
+        fft_sizes = sweep_config.fft_sizes
+    else:
+        # Use analysis-type-specific defaults
+        fft_sizes = default_fft_sizes.get(analysis_type, sweep_config.fft_sizes)
 
     # Methods for each analysis type
     methods = {
