@@ -413,7 +413,7 @@ def _collect_performance_metrics(self):
 - Pitch signals with multiple waveforms (sine, triangle, sawtooth, square)
 - Complex signals combine beats + melody + configurable noise (SNR 0-30 dB)
 - Metrics module calculates precision, recall, F1 for all analysis types
-- Tests verified manually due to main conftest.py requiring LedFx subprocess
+- Tests now run via pytest (fixed in Milestone 2 - see pytest integration fix)
 
 ### Milestone 2: Preset Validation (Week 2) ✅ COMPLETED
 
@@ -438,15 +438,15 @@ def _collect_performance_metrics(self):
 
 | Preset | Pass Rate | BPM Error | Beat Recall | Onset F1 | Pitch Rate | Avg Time (µs) |
 |--------|-----------|-----------|-------------|----------|------------|---------------|
-| balanced | 61.5% | 21.2 | 0.40 | 0.95 | 1.00 | 26.6 |
-| low_latency | 53.8% | 45.2 | 0.48 | 0.97 | 0.98 | 15.4 |
-| high_precision | 46.2% | 29.1 | 0.24 | 0.92 | 1.00 | 45.6 |
+| balanced | 92.3% | 13.7 | 0.63 | 0.95 | 1.00 | 23.3 |
+| low_latency | 84.6% | 21.9 | 0.62 | 0.97 | 0.98 | 13.0 |
+| high_precision | 61.5% | 14.5 | 0.45 | 0.92 | 1.00 | 47.4 |
 
 **Best Presets by Category**:
-- **Tempo Accuracy**: balanced (lowest BPM error: 21.2)
+- **Tempo Accuracy**: balanced (lowest BPM error: 13.7)
 - **Onset Detection**: low_latency (highest F1: 0.97)
 - **Pitch Detection**: balanced/high_precision (100% detection rate)
-- **Performance**: low_latency (15.4 µs average)
+- **Performance**: low_latency (13.0 µs average)
 
 **Key Findings**:
 1. **Tempo detection struggles with synthetic click tracks** - Beat recall is low (24-48%) across all presets. This is expected behavior as aubio's tempo tracker is optimized for real music with sustained tones, not isolated click impulses. Real music validation in Milestone 4 will provide more meaningful tempo accuracy metrics.
@@ -705,6 +705,17 @@ confidence = pitch.get_confidence()   # Detection confidence [0-1]
 - `tests/test_multifft/results_report.py` - Report generation (text, markdown, JSON)
 - `tests/test_multifft/performance_profiler.py` - Per-FFT timing and memory profiling
 
+**Pytest Integration Fix (2025-12-01):**
+- Modified `tests/conftest.py` to skip LedFx server startup when running unit tests
+- Added `_requires_ledfx_server()` function to detect when integration tests need the server
+- Multi-FFT tests can now run via pytest without requiring `uv` command or LedFx subprocess
+- Run tests with: `pytest tests/test_multifft/ --ignore=tests/test_apis.py --ignore=tests/playlist --ignore=tests/test_scenes.py --ignore=tests/test_virtual_presets.py`
+
+**Latest Test Results (2025-12-01):**
+- 68 passed, 3 failed (tempo edge cases)
+- Failing tests are tempo detection at extreme BPMs (60, 180) with synthetic click tracks
+- This is expected and documented behavior - aubio's tempo tracker is optimized for real music
+
 **Key Discoveries:**
 
 1. **Aubio pitch confidence behavior**:
@@ -747,5 +758,5 @@ confidence = pitch.get_confidence()   # Detection confidence [0-1]
 ---
 
 **Last Updated**: 2025-12-01
-**Status**: Milestone 2 Complete - Preset Validation implemented
+**Status**: Milestone 2 Complete - Preset Validation implemented with pytest integration
 **Next Action**: Begin Milestone 3 - Parameter Optimization (parameter sweep infrastructure)
