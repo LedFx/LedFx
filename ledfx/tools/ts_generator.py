@@ -1152,7 +1152,111 @@ def generate_typescript_types() -> str:
     output_ts_string += "  remaining_ms?: number;\n"
     output_ts_string += "}\n\n"
 
-    # --- 6.8. Generate Virtual Presets API Response Types ---
+    # --- 6.9. Generate Cache API Response Types ---
+    output_ts_string += "// Cache API Response Types\n"
+
+    # Cache entry metadata
+    output_ts_string += "/**\n * Represents a single cached image entry with metadata.\n * @category Cache\n */\n"
+    output_ts_string += "export interface CacheEntry {\n"
+    output_ts_string += "  url: string;\n"
+    output_ts_string += "  size: number;\n"
+    output_ts_string += "  cached_at: string;\n"
+    output_ts_string += "}\n\n"
+
+    # GET /api/cache/images response
+    output_ts_string += "/**\n * Response for GET /api/cache/images.\n * @category REST\n */\n"
+    output_ts_string += "export interface GetCacheImagesApiResponse {\n"
+    output_ts_string += "  total_size: number;\n"
+    output_ts_string += "  total_count: number;\n"
+    output_ts_string += "  entries: CacheEntry[];\n"
+    output_ts_string += "  cache_policy: {\n"
+    output_ts_string += "    expiration: string;\n"
+    output_ts_string += "    refresh: string;\n"
+    output_ts_string += "    eviction: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "}\n\n"
+
+    # DELETE /api/cache/images response
+    output_ts_string += "/**\n * Response for DELETE /api/cache/images.\n * @category REST\n */\n"
+    output_ts_string += "export interface DeleteCacheApiResponse {\n"
+    output_ts_string += '  status: "success" | "failed";\n'
+    output_ts_string += "  data?: {\n"
+    output_ts_string += "    cleared_count?: number;\n"
+    output_ts_string += "    freed_bytes?: number;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "warning" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "}\n\n"
+
+    # POST /api/cache/images/refresh response
+    output_ts_string += "/**\n * Response for POST /api/cache/images/refresh.\n * @category REST\n */\n"
+    output_ts_string += "export interface RefreshCacheApiResponse {\n"
+    output_ts_string += '  status: "success" | "failed";\n'
+    output_ts_string += "  data?: {\n"
+    output_ts_string += "    url: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "info" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "}\n\n"
+
+    # --- 6.10. Generate Assets API Response Types ---
+    output_ts_string += "// Assets API Response Types\n"
+
+    # Asset metadata
+    output_ts_string += "/**\n * Represents a single asset with metadata.\n * @category Assets\n */\n"
+    output_ts_string += "export interface AssetMetadata {\n"
+    output_ts_string += "  path: string;\n"
+    output_ts_string += "  size: number;\n"
+    output_ts_string += "  modified: string;\n"
+    output_ts_string += "  width: number;\n"
+    output_ts_string += "  height: number;\n"
+    output_ts_string += "}\n\n"
+
+    # GET /api/assets response
+    output_ts_string += "/**\n * Response for GET /api/assets.\n * @category REST\n */\n"
+    output_ts_string += "export interface GetAssetsApiResponse {\n"
+    output_ts_string += "  assets: AssetMetadata[];\n"
+    output_ts_string += "}\n\n"
+
+    # POST /api/assets response (upload)
+    output_ts_string += "/**\n * Response for POST /api/assets (asset upload).\n * @category REST\n */\n"
+    output_ts_string += "export interface UploadAssetApiResponse {\n"
+    output_ts_string += '  status: "success" | "failed";\n'
+    output_ts_string += "  data?: {\n"
+    output_ts_string += "    path: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "}\n\n"
+
+    # DELETE /api/assets response
+    output_ts_string += "/**\n * Response for DELETE /api/assets.\n * @category REST\n */\n"
+    output_ts_string += "export interface DeleteAssetApiResponse {\n"
+    output_ts_string += '  status: "success" | "failed";\n'
+    output_ts_string += "  data?: {\n"
+    output_ts_string += "    deleted: boolean;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "  payload?: {\n"
+    output_ts_string += '    type: "success" | "error";\n'
+    output_ts_string += "    reason: string;\n"
+    output_ts_string += "  };\n"
+    output_ts_string += "}\n\n"
+
+    # POST /api/assets/thumbnail request
+    output_ts_string += "/**\n * Request body for POST /api/assets/thumbnail.\n * @category REST\n */\n"
+    output_ts_string += "export interface ThumbnailRequest {\n"
+    output_ts_string += "  path: string;\n"
+    output_ts_string += "  size?: number; // 16-512, default 128\n"
+    output_ts_string += "  dimension?: 'max' | 'width' | 'height'; // default 'max'\n"
+    output_ts_string += "}\n\n"
+
+    # --- 6.11. Generate Virtual Presets API Response Types ---
     output_ts_string += "// Virtual Presets API Response Types\n"
 
     # Preset object with active flag
@@ -1235,6 +1339,12 @@ def generate_typescript_types() -> str:
     # Playlists alias
     output_ts_string += "/**\n * Convenience type for the API response containing multiple Playlist objects.\n * @category General\n */\n"
     output_ts_string += "export type Playlists = GetPlaylistsApiResponse;\n"
+    # Cache alias
+    output_ts_string += "/**\n * Convenience type for the API response containing cache statistics.\n * @category General\n */\n"
+    output_ts_string += "export type CacheStats = GetCacheImagesApiResponse;\n"
+    # Assets alias
+    output_ts_string += "/**\n * Convenience type for the API response containing multiple Asset objects.\n * @category General\n */\n"
+    output_ts_string += "export type Assets = GetAssetsApiResponse;\n"
     output_ts_string += "\n"
 
     _LOGGER.info("TypeScript generation finished.")
