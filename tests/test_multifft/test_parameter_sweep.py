@@ -92,22 +92,27 @@ class TestGenerateFFTConfigs:
         assert methods_used == {"default"}
 
     def test_custom_sweep_config(self):
-        """Test custom sweep configuration."""
+        """Test custom sweep configuration with custom FFT sizes and hop ratios."""
         config = SweepConfig(
             fft_sizes=[512, 1024],
             hop_ratios=[1 / 2, 1 / 4],
-            methods=["hfc"],
+            methods=["hfc"],  # Note: for analysis-specific types, this is ignored
         )
-        # For onset, should use ONSET_METHODS not custom methods
+        # For onset, analysis-specific methods (ONSET_METHODS) are used
         configs = generate_fft_configs("onset", config)
         # 2 fft sizes * 2 hop ratios * 9 onset methods = 36
-        assert len(configs) > 0
+        expected_count = 2 * 2 * len(ONSET_METHODS)
+        assert len(configs) == expected_count
+        # Verify all onset methods are present
+        methods_used = set(c.method for c in configs)
+        assert methods_used == set(ONSET_METHODS)
 
     def test_hop_sizes_are_valid(self):
-        """Test generated hop sizes are at least 64."""
+        """Test generated hop sizes are at least MIN_HOP_SIZE."""
+        from .parameter_sweep import MIN_HOP_SIZE
         configs = generate_fft_configs("onset")
         for config in configs:
-            assert config.hop_size >= 64
+            assert config.hop_size >= MIN_HOP_SIZE
 
 
 class TestSweepResult:

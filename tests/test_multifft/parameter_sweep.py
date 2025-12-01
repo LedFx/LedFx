@@ -33,6 +33,11 @@ from .signal_generator import (
 
 SAMPLE_RATE = 44100
 
+# Accuracy score thresholds
+BPM_ERROR_THRESHOLD = 10.0  # Max BPM error for full accuracy score
+CENTS_ERROR_THRESHOLD = 100.0  # Max cents error for full pitch accuracy score
+MIN_HOP_SIZE = 64  # Minimum hop size in samples
+
 
 @dataclass
 class FFTConfig:
@@ -177,8 +182,8 @@ def generate_fft_configs(
     for fft_size in fft_sizes:
         for hop_ratio in sweep_config.hop_ratios:
             hop_size = int(fft_size * hop_ratio)
-            # Ensure hop size is at least 64
-            hop_size = max(64, hop_size)
+            # Ensure hop size is at least MIN_HOP_SIZE
+            hop_size = max(MIN_HOP_SIZE, hop_size)
 
             for method in methods:
                 configs.append(
@@ -327,8 +332,8 @@ class ParameterSweeper:
             avg_recall = float(np.mean(all_recalls))
 
             # Accuracy score: combine BPM accuracy and beat recall
-            # BPM score: 1.0 at 0 error, 0.0 at 10+ BPM error
-            bpm_score = max(0.0, 1.0 - avg_bpm_error / 10.0)
+            # BPM score: 1.0 at 0 error, 0.0 at threshold+ BPM error
+            bpm_score = max(0.0, 1.0 - avg_bpm_error / BPM_ERROR_THRESHOLD)
             accuracy_score = 0.7 * bpm_score + 0.3 * avg_recall
 
             return SweepResult(
@@ -581,8 +586,8 @@ class ParameterSweeper:
             )
 
             # Accuracy score: combine detection rate and error
-            # Error score: 1.0 at 0 cents, 0.0 at 100+ cents
-            error_score = max(0.0, 1.0 - avg_error_cents / 100.0)
+            # Error score: 1.0 at 0 cents, 0.0 at threshold+ cents
+            error_score = max(0.0, 1.0 - avg_error_cents / CENTS_ERROR_THRESHOLD)
             accuracy_score = 0.7 * avg_detection_rate + 0.3 * error_score
 
             return SweepResult(

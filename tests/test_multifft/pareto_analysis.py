@@ -175,8 +175,10 @@ class ParetoAnalyzer:
             ParetoPoint at the knee, or None if not found
         """
         front = self.fronts.get(analysis_type)
-        if not front or len(front.points) < 3:
-            return front.points[0] if front and front.points else None
+        if not front or not front.points:
+            return None
+        if len(front.points) < 3:
+            return front.points[0]
 
         # Calculate curvature at each point
         # Knee is where curvature is maximized
