@@ -11,27 +11,27 @@ Part of Milestone 3: Parameter Optimization
 
 import pytest
 
-from .parameter_sweep import (
-    FFTConfig,
-    SweepConfig,
-    SweepResult,
-    ParameterSweeper,
-    generate_fft_configs,
-    ONSET_METHODS,
-    PITCH_METHODS,
-    run_quick_sweep,
-)
 from .optimizer import (
+    MultiObjectiveOptimizer,
     OptimizationProfile,
     OptimizationWeights,
     OptimizedConfig,
-    MultiObjectiveOptimizer,
     optimize_all_types,
 )
+from .parameter_sweep import (
+    ONSET_METHODS,
+    PITCH_METHODS,
+    FFTConfig,
+    ParameterSweeper,
+    SweepConfig,
+    SweepResult,
+    generate_fft_configs,
+    run_quick_sweep,
+)
 from .pareto_analysis import (
-    ParetoPoint,
-    ParetoFront,
     ParetoAnalyzer,
+    ParetoFront,
+    ParetoPoint,
     generate_ascii_plot,
 )
 
@@ -76,19 +76,19 @@ class TestGenerateFFTConfigs:
     def test_onset_configs_include_all_methods(self):
         """Test onset configs include all methods."""
         configs = generate_fft_configs("onset")
-        methods_used = set(c.method for c in configs)
+        methods_used = {c.method for c in configs}
         assert methods_used == set(ONSET_METHODS)
 
     def test_pitch_configs_include_all_methods(self):
         """Test pitch configs include all methods."""
         configs = generate_fft_configs("pitch")
-        methods_used = set(c.method for c in configs)
+        methods_used = {c.method for c in configs}
         assert methods_used == set(PITCH_METHODS)
 
     def test_tempo_configs_default_method(self):
         """Test tempo configs use default method."""
         configs = generate_fft_configs("tempo")
-        methods_used = set(c.method for c in configs)
+        methods_used = {c.method for c in configs}
         assert methods_used == {"default"}
 
     def test_custom_sweep_config(self):
@@ -96,7 +96,9 @@ class TestGenerateFFTConfigs:
         config = SweepConfig(
             fft_sizes=[512, 1024],
             hop_ratios=[1 / 2, 1 / 4],
-            methods=["hfc"],  # Note: for analysis-specific types, this is ignored
+            methods=[
+                "hfc"
+            ],  # Note: for analysis-specific types, this is ignored
         )
         # For onset, analysis-specific methods (ONSET_METHODS) are used
         configs = generate_fft_configs("onset", config)
@@ -104,12 +106,13 @@ class TestGenerateFFTConfigs:
         expected_count = 2 * 2 * len(ONSET_METHODS)
         assert len(configs) == expected_count
         # Verify all onset methods are present
-        methods_used = set(c.method for c in configs)
+        methods_used = {c.method for c in configs}
         assert methods_used == set(ONSET_METHODS)
 
     def test_hop_sizes_are_valid(self):
         """Test generated hop sizes are at least MIN_HOP_SIZE."""
         from .parameter_sweep import MIN_HOP_SIZE
+
         configs = generate_fft_configs("onset")
         for config in configs:
             assert config.hop_size >= MIN_HOP_SIZE
@@ -229,7 +232,9 @@ class TestOptimizationWeights:
 
     def test_from_profile_balanced(self):
         """Test balanced profile weights."""
-        weights = OptimizationWeights.from_profile(OptimizationProfile.BALANCED)
+        weights = OptimizationWeights.from_profile(
+            OptimizationProfile.BALANCED
+        )
         # Balanced should have accuracy as highest weight
         assert weights.accuracy >= weights.latency
         assert weights.accuracy >= weights.cpu
@@ -266,8 +271,10 @@ class TestMultiObjectiveOptimizer:
                 SweepResult(
                     config=config,
                     analysis_type="onset",
-                    accuracy_score=0.6 + i * 0.1,  # Higher accuracy for larger FFT
-                    mean_time_us=20.0 + i * 10.0,  # Higher latency for larger FFT
+                    accuracy_score=0.6
+                    + i * 0.1,  # Higher accuracy for larger FFT
+                    mean_time_us=20.0
+                    + i * 10.0,  # Higher latency for larger FFT
                     test_signals=3,
                     passed_tests=2,
                 )
@@ -322,10 +329,14 @@ class TestMultiObjectiveOptimizer:
     def test_weight_profile_affects_ranking(self, sample_results):
         """Test different profiles affect ranking."""
         accuracy_opt = MultiObjectiveOptimizer(
-            OptimizationWeights.from_profile(OptimizationProfile.ACCURACY_FOCUSED)
+            OptimizationWeights.from_profile(
+                OptimizationProfile.ACCURACY_FOCUSED
+            )
         )
         latency_opt = MultiObjectiveOptimizer(
-            OptimizationWeights.from_profile(OptimizationProfile.LATENCY_FOCUSED)
+            OptimizationWeights.from_profile(
+                OptimizationProfile.LATENCY_FOCUSED
+            )
         )
 
         acc_results = accuracy_opt.optimize(sample_results, "onset")

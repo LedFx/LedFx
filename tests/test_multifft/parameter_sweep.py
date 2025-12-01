@@ -292,7 +292,9 @@ class ParameterSweeper:
                 detected_beats = []
                 times = []
 
-                for i in range(0, len(audio) - config.hop_size, config.hop_size):
+                for i in range(
+                    0, len(audio) - config.hop_size, config.hop_size
+                ):
                     chunk = audio[i : i + config.hop_size].astype(np.float32)
                     t0 = time.perf_counter()
                     is_beat = tempo(chunk)
@@ -348,9 +350,7 @@ class ParameterSweeper:
                 p95_time_us=float(np.percentile(all_times, 95)),
                 max_time_us=float(np.max(all_times)),
                 test_signals=len(self.config.test_bpms),
-                passed_tests=sum(
-                    1 for e in all_bpm_errors if e < 5.0
-                ),
+                passed_tests=sum(1 for e in all_bpm_errors if e < 5.0),
             )
 
         return SweepResult(
@@ -437,7 +437,9 @@ class ParameterSweeper:
                 detected_onsets = []
                 times = []
 
-                for i in range(0, len(audio) - config.hop_size, config.hop_size):
+                for i in range(
+                    0, len(audio) - config.hop_size, config.hop_size
+                ):
                     chunk = audio[i : i + config.hop_size].astype(np.float32)
                     t0 = time.perf_counter()
                     is_onset = onset(chunk)
@@ -479,9 +481,7 @@ class ParameterSweeper:
                 p95_time_us=float(np.percentile(all_times, 95)),
                 max_time_us=float(np.max(all_times)),
                 test_signals=len(self.config.test_attack_types),
-                passed_tests=sum(
-                    1 for f1 in all_f1_scores if f1 >= 0.5
-                ),
+                passed_tests=sum(1 for f1 in all_f1_scores if f1 >= 0.5),
             )
 
         return SweepResult(
@@ -554,7 +554,9 @@ class ParameterSweeper:
                 detected_pitches = []
                 times = []
 
-                for i in range(0, len(audio) - config.hop_size, config.hop_size):
+                for i in range(
+                    0, len(audio) - config.hop_size, config.hop_size
+                ):
                     chunk = audio[i : i + config.hop_size].astype(np.float32)
                     t0 = time.perf_counter()
                     midi_note = float(pitch(chunk)[0])
@@ -587,7 +589,9 @@ class ParameterSweeper:
 
             # Accuracy score: combine detection rate and error
             # Error score: 1.0 at 0 cents, 0.0 at threshold+ cents
-            error_score = max(0.0, 1.0 - avg_error_cents / CENTS_ERROR_THRESHOLD)
+            error_score = max(
+                0.0, 1.0 - avg_error_cents / CENTS_ERROR_THRESHOLD
+            )
             accuracy_score = 0.7 * avg_detection_rate + 0.3 * error_score
 
             return SweepResult(
@@ -602,9 +606,7 @@ class ParameterSweeper:
                 p95_time_us=float(np.percentile(all_times, 95)),
                 max_time_us=float(np.max(all_times)),
                 test_signals=len(self.config.test_waveforms),
-                passed_tests=sum(
-                    1 for r in all_detection_rates if r >= 0.5
-                ),
+                passed_tests=sum(1 for r in all_detection_rates if r >= 0.5),
             )
 
         return SweepResult(

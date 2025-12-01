@@ -48,7 +48,9 @@ class OptimizationWeights:
             self.cpu /= total
 
     @classmethod
-    def from_profile(cls, profile: OptimizationProfile) -> "OptimizationWeights":
+    def from_profile(
+        cls, profile: OptimizationProfile
+    ) -> "OptimizationWeights":
         """Create weights from a predefined profile."""
         profiles = {
             OptimizationProfile.ACCURACY_FOCUSED: cls(0.8, 0.15, 0.05),
@@ -86,9 +88,7 @@ class OptimizedConfig:
     @property
     def config_id(self) -> str:
         """Unique identifier for this configuration."""
-        return (
-            f"{self.config.method}_{self.config.fft_size}_{self.config.hop_size}"
-        )
+        return f"{self.config.method}_{self.config.fft_size}_{self.config.hop_size}"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -343,9 +343,7 @@ class MultiObjectiveOptimizer:
 
         # Best latency (lowest latency among Pareto-optimal with accuracy >= 0.5)
         qualified = [c for c in pareto if c.accuracy_score >= 0.5]
-        best_latency = min(
-            qualified, key=lambda x: x.latency_us, default=None
-        )
+        best_latency = min(qualified, key=lambda x: x.latency_us, default=None)
 
         # Best balanced (middle ground)
         balanced_weights = OptimizationWeights.from_profile(
@@ -408,7 +406,9 @@ class MultiObjectiveOptimizer:
                     "current": current.to_dict(),
                     "rank": rank,
                     "total_configs": len(configs),
-                    "percentile": (len(configs) - rank + 1) / len(configs) * 100,
+                    "percentile": (len(configs) - rank + 1)
+                    / len(configs)
+                    * 100,
                     "is_pareto_optimal": current.is_pareto_optimal,
                     "suggested_improvement": (
                         best_similar.to_dict() if best_similar else None

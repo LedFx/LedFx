@@ -42,7 +42,9 @@ class ParetoPoint:
     def efficiency_ratio(self) -> float:
         """Ratio of accuracy to latency (higher is better)."""
         if self.latency_us > 0:
-            return self.accuracy / self.latency_us * 1000  # Scale for readability
+            return (
+                self.accuracy / self.latency_us * 1000
+            )  # Scale for readability
         return 0.0
 
 
@@ -152,7 +154,9 @@ class ParetoAnalyzer:
             cpu_diff = prev.cpu_estimate - curr.cpu_estimate
 
             if accuracy_diff > 0:
-                curr.marginal_latency_per_accuracy = latency_diff / accuracy_diff
+                curr.marginal_latency_per_accuracy = (
+                    latency_diff / accuracy_diff
+                )
                 curr.marginal_cpu_per_accuracy = cpu_diff / accuracy_diff
 
     def analyze_all(self) -> dict[str, ParetoFront]:
@@ -191,14 +195,18 @@ class ParetoAnalyzer:
             next_pt = front.points[i + 1]
 
             # Calculate curvature using cross product
-            v1 = (curr.accuracy - prev.accuracy, curr.latency_us - prev.latency_us)
-            v2 = (next_pt.accuracy - curr.accuracy, next_pt.latency_us - curr.latency_us)
+            v1 = (
+                curr.accuracy - prev.accuracy,
+                curr.latency_us - prev.latency_us,
+            )
+            v2 = (
+                next_pt.accuracy - curr.accuracy,
+                next_pt.latency_us - curr.latency_us,
+            )
 
             # Normalize to account for different scales
             # Scale latency to match accuracy range
-            scale = (
-                front.accuracy_range[1] - front.accuracy_range[0]
-            ) / max(
+            scale = (front.accuracy_range[1] - front.accuracy_range[0]) / max(
                 front.latency_range[1] - front.latency_range[0], 1
             )
 
@@ -239,7 +247,9 @@ class ParetoAnalyzer:
             return None
 
         # Filter points meeting latency constraint
-        qualified = [p for p in front.points if p.latency_us <= target_latency_us]
+        qualified = [
+            p for p in front.points if p.latency_us <= target_latency_us
+        ]
 
         if not qualified:
             # Return lowest latency point if none qualify
@@ -299,7 +309,9 @@ def generate_ascii_plot(
 
     lines = []
     lines.append(f"Pareto Front: {front.analysis_type.upper()}")
-    lines.append(f"Points: {len(front.points)} (of {front.total_configurations} total)")
+    lines.append(
+        f"Points: {len(front.points)} (of {front.total_configurations} total)"
+    )
     lines.append("")
 
     # Get ranges
