@@ -18,7 +18,6 @@ from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import (
     DEFAULT_INPUT_SAMPLE_RATE,
-    FFT_SIZE,
     Melbanks,
 )
 from ledfx.events import AudioDeviceChangeEvent, Event

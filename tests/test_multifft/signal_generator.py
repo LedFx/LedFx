@@ -14,7 +14,6 @@ All signals include accompanying ground truth data for validation.
 """
 
 import json
-import os
 from pathlib import Path
 
 import numpy as np

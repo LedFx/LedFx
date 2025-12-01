@@ -7,24 +7,15 @@ subsequent multi-FFT validation tests.
 """
 
 import json
-import tempfile
-from pathlib import Path
 
 import numpy as np
 import pytest
 
 from .ground_truth_schema import (
     STANDARD_ATTACK_TYPES,
-    BeatAnnotation,
-    GroundTruth,
-    OnsetAnnotation,
-    PitchAnnotation,
     SignalDefinition,
-    SignalMetadata,
-    TestCriteria,
 )
 from .signal_generator import (
-    DEFAULT_SAMPLE_RATE,
     STANDARD_TEMPOS,
     add_noise,
     generate_chromatic_scale,

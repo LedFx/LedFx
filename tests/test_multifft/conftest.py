@@ -8,7 +8,6 @@ Provides fixtures for:
 - Metrics collection
 """
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -22,8 +21,6 @@ from .signal_generator import (
     generate_click_track,
     generate_complex_signal,
     generate_onset_signal,
-    load_signal,
-    save_signal,
 )
 
 
