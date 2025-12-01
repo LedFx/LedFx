@@ -12,7 +12,7 @@ The system implements independent FFT configurations for different analysis type
 
 **FFT Presets:**
 - **balanced** (default): onset(1024,256), tempo(2048,367), pitch(4096,367)
-- **low_latency**: onset(512,128), tempo(1024,183), pitch(2048,183)  
+- **low_latency**: onset(512,128), tempo(1024,183), pitch(2048,183)
 - **high_precision**: onset(2048,512), tempo(4096,734), pitch(8192,734)
 
 **Key Architectural Features:**
@@ -49,7 +49,7 @@ The system implements independent FFT configurations for different analysis type
 - **Available Methods**: yinfft, yin, yinfast, schmitt, specacf
 
 #### Resampling
-- **Algorithm**: `"sinc_fastest"` 
+- **Algorithm**: `"sinc_fastest"`
 - **Strategy**: Independent resampler per unique hop size
 - **Tolerance**: 5% variance in output length
 
@@ -61,7 +61,7 @@ The system implements independent FFT configurations for different analysis type
 - **Frequency Resolution**: Δf = sample_rate / fft_size
   - Larger FFT → better frequency resolution, worse time resolution
   - Smaller FFT → better time resolution, worse frequency resolution
-  
+
 **Optimal Ranges by Analysis Type:**
 
 1. **Onset Detection**:
@@ -150,7 +150,7 @@ The system implements independent FFT configurations for different analysis type
    # Various attack transients
    - Impulse: delta function, instant attack
    - Sharp: 1ms attack time
-   - Medium: 10ms attack time  
+   - Medium: 10ms attack time
    - Slow: 50ms attack time
    - Mixed: Random combination every 500ms
    - Ground truth: Onset timestamps, attack time
@@ -216,7 +216,7 @@ tests/test_multifft/
 ├── test_signal_generation.py     # Validate synthetic signals
 ├── test_preset_validation.py     # Test all presets
 ├── test_tempo_tracking.py        # Tempo-specific tests
-├── test_onset_detection.py       # Onset-specific tests  
+├── test_onset_detection.py       # Onset-specific tests
 ├── test_pitch_detection.py       # Pitch-specific tests
 ├── test_resampling.py            # Resampler accuracy tests
 ├── test_fft_deduplication.py     # Performance optimization tests
@@ -288,13 +288,13 @@ tests/test_multifft/
 
 2. **Multi-Objective Scoring**:
    ```python
-   score = w_accuracy * accuracy_score 
-         - w_latency * latency_penalty 
+   score = w_accuracy * accuracy_score
+         - w_latency * latency_penalty
          - w_cpu * cpu_penalty
-   
+
    # Example weights for balanced preset
    w_accuracy = 0.6
-   w_latency = 0.3  
+   w_latency = 0.3
    w_cpu = 0.1
    ```
 
@@ -533,7 +533,7 @@ def _collect_performance_metrics(self):
 - **Mitigation**: Phase 4 real-world validation required
 - **Fallback**: Use synthetic for parameter bounds, real music for final tuning
 
-**Risk**: Optimization overfits to test dataset  
+**Risk**: Optimization overfits to test dataset
 - **Mitigation**: Cross-validation with held-out music
 - **Fallback**: Conservative preset updates, user override capability
 
@@ -570,7 +570,7 @@ confidence = tempo.get_confidence()   # Detection confidence [0-1]
 ```python
 onset = aubio.onset(method, fft_size, hop_size, sample_rate)
 onset.set_threshold(threshold)        # Detection threshold
-onset.set_silence(silence_threshold)  # Silence threshold in dB  
+onset.set_silence(silence_threshold)  # Silence threshold in dB
 onset.set_minioi_ms(min_interval)     # Minimum inter-onset interval
 detected = onset(samples)             # Returns 1 if onset detected
 ```
@@ -630,6 +630,6 @@ confidence = pitch.get_confidence()   # Detection confidence [0-1]
 
 ---
 
-**Last Updated**: 2025-12-01  
-**Status**: Planning Phase  
+**Last Updated**: 2025-12-01
+**Status**: Planning Phase
 **Next Action**: Create signal generation framework (Milestone 1)
