@@ -58,6 +58,12 @@ FFT_PRESETS = {
 
 SAMPLE_RATE = 44100
 
+# Minimum valid MIDI note for pitch detection (MIDI 21 = A0, lowest piano note)
+MIN_VALID_MIDI_NOTE = 20
+
+# Tolerance in ms for chord onset detection (relaxed due to slow attacks)
+CHORD_ONSET_TOLERANCE_MS = 75.0
+
 
 @dataclass
 class RealWorldValidationResult:
@@ -247,7 +253,7 @@ class RealWorldAnalyzer:
             frame_times.append((time.perf_counter() - t0) * 1_000_000)
 
             pitch_time = i / self.sample_rate
-            if midi_note > 20:  # Valid MIDI range
+            if midi_note > MIN_VALID_MIDI_NOTE:
                 detected_pitches.append((pitch_time, midi_note))
 
         self.frame_times.extend(frame_times)
@@ -415,7 +421,7 @@ def run_chord_progression_test(
     onset_metrics = calculate_onset_metrics(
         detected_onsets=detected_onsets,
         expected_onsets=signal_def.ground_truth.onsets,
-        tolerance_ms=75.0,  # Relaxed for slow chord attacks
+        tolerance_ms=CHORD_ONSET_TOLERANCE_MS,
     )
 
     # Determine pass/fail

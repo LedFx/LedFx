@@ -55,6 +55,7 @@ def generate_drum_sound(
     drum_type: str,
     duration: float,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
+    seed: int | None = 42,
 ) -> np.ndarray:
     """
     Generate a realistic drum sound with harmonics and envelope.
@@ -63,10 +64,13 @@ def generate_drum_sound(
         drum_type: 'kick', 'snare', or 'hihat'
         duration: Duration in seconds
         sample_rate: Audio sample rate
+        seed: Random seed for reproducible noise generation
 
     Returns:
         Audio samples as float32 array
     """
+    # Create random generator with optional seed for reproducibility
+    rng = np.random.default_rng(seed)
     num_samples = int(duration * sample_rate)
     t = np.arange(num_samples) / sample_rate
 
@@ -93,7 +97,7 @@ def generate_drum_sound(
         tone = np.sin(2 * np.pi * tone_freq * t)
 
         # Noise component (band-limited)
-        noise = np.random.randn(num_samples)
+        noise = rng.standard_normal(num_samples)
 
         # Mix: 30% tone, 70% noise
         mixed = 0.3 * tone + 0.7 * noise
@@ -107,7 +111,7 @@ def generate_drum_sound(
 
     elif drum_type == "hihat":
         # Hi-hat: filtered noise
-        noise = np.random.randn(num_samples)
+        noise = rng.standard_normal(num_samples)
 
         # High-pass filter simulation (simple differencing)
         filtered = np.diff(noise, prepend=0)

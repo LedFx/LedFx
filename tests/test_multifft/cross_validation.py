@@ -132,9 +132,12 @@ def generate_validation_findings(
         synthetic_tempo_accuracy = np.mean(
             [r.accuracy_score for r in synthetic_results.get("tempo", [])]
         )
-        realistic_tempo_accuracy = np.mean(
-            [r.get("accuracy_score", 0) for r in realistic_results.get("tempo", [{}])]
-        ) if realistic_results.get("tempo") else 0.0
+        realistic_tempo_list = realistic_results.get("tempo", [])
+        realistic_tempo_accuracy = (
+            np.mean([r.get("accuracy_score", 0) for r in realistic_tempo_list])
+            if realistic_tempo_list
+            else 0.0
+        )
 
         if realistic_tempo_accuracy >= synthetic_tempo_accuracy * 0.9:
             findings.append(
@@ -178,9 +181,12 @@ def generate_validation_findings(
         synthetic_onset_accuracy = np.mean(
             [r.accuracy_score for r in synthetic_results.get("onset", [])]
         )
-        realistic_onset_accuracy = np.mean(
-            [r.get("accuracy_score", 0) for r in realistic_results.get("onset", [{}])]
-        ) if realistic_results.get("onset") else 0.0
+        realistic_onset_list = realistic_results.get("onset", [])
+        realistic_onset_accuracy = (
+            np.mean([r.get("accuracy_score", 0) for r in realistic_onset_list])
+            if realistic_onset_list
+            else 0.0
+        )
 
         if realistic_onset_accuracy >= 0.8:
             findings.append(
@@ -212,9 +218,12 @@ def generate_validation_findings(
         synthetic_pitch_accuracy = np.mean(
             [r.accuracy_score for r in synthetic_results.get("pitch", [])]
         )
-        realistic_pitch_accuracy = np.mean(
-            [r.get("accuracy_score", 0) for r in realistic_results.get("pitch", [{}])]
-        ) if realistic_results.get("pitch") else 0.0
+        realistic_pitch_list = realistic_results.get("pitch", [])
+        realistic_pitch_accuracy = (
+            np.mean([r.get("accuracy_score", 0) for r in realistic_pitch_list])
+            if realistic_pitch_list
+            else 0.0
+        )
 
         if realistic_pitch_accuracy >= synthetic_pitch_accuracy * 0.8:
             findings.append(
