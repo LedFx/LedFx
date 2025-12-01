@@ -12,10 +12,9 @@ Part of Milestone 2: Accuracy Metrics Dashboard
 """
 
 import json
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 

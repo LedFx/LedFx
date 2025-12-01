@@ -20,27 +20,19 @@ import pytest
 
 from .ground_truth_schema import (
     STANDARD_ATTACK_TYPES,
-    SignalDefinition,
 )
 from .metrics import (
-    OnsetMetrics,
     PerformanceMetrics,
-    PitchMetrics,
-    TempoMetrics,
     TestResult,
     calculate_onset_metrics,
     calculate_pitch_metrics,
     calculate_tempo_metrics,
-    check_test_passed,
-    format_metrics_report,
 )
 from .signal_generator import (
-    STANDARD_TEMPOS,
     generate_chromatic_scale,
     generate_click_track,
     generate_complex_signal,
     generate_onset_signal,
-    midi_to_frequency,
 )
 
 # FFT Presets as defined in ledfx/effects/audio.py
@@ -191,7 +183,6 @@ class AubioAnalyzer:
             Tuple of (beat_times, detected_bpm, time_to_lock)
         """
         detected_beats = []
-        start_time = time.perf_counter()
         first_beat_time = None
         lock_time = 0.0
 
