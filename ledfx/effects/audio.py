@@ -488,9 +488,7 @@ class AudioInputSource:
             return
 
         # Extract unique hop sizes from all configurations
-        hop_sizes = sorted(
-            {hop for (fft, hop) in self._required_fft_configs}
-        )
+        hop_sizes = sorted({hop for (fft, hop) in self._required_fft_configs})
 
         # Pre-allocate independent resamplers for each hop size
         for hop_size in hop_sizes:
