@@ -160,7 +160,10 @@ class AubioAnalyzer:
         """Enable various aubio tempo features if available."""
         features = [
             ("multi_octave", lambda: self._tempo.set_multi_octave(1)),
-            ("onset_enhancement", lambda: self._tempo.set_onset_enhancement(1)),
+            (
+                "onset_enhancement",
+                lambda: self._tempo.set_onset_enhancement(1),
+            ),
             ("fft_autocorr", lambda: self._tempo.set_fft_autocorr(1)),
             ("dynamic_tempo", lambda: self._tempo.set_dynamic_tempo(1)),
             ("adaptive_winlen", lambda: self._tempo.set_adaptive_winlen(1)),

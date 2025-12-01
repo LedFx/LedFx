@@ -107,7 +107,9 @@ class FFTProfile:
             "call_count": self.call_count,
             "mean_time_us": self.mean_time_us,
             "std_time_us": self.std_time_us,
-            "min_time_us": self.min_time_us if self.min_time_us != float("inf") else 0.0,
+            "min_time_us": (
+                self.min_time_us if self.min_time_us != float("inf") else 0.0
+            ),
             "max_time_us": self.max_time_us,
             "p50_time_us": self.p50_time_us,
             "p95_time_us": self.p95_time_us,
@@ -184,11 +186,15 @@ class PresetProfile:
         metrics.mean_frame_time_us = self.mean_frame_time_us
         metrics.p95_frame_time_us = self.p95_frame_time_us
         metrics.p99_frame_time_us = self.p99_frame_time_us
-        metrics.max_frame_time_us = max(self.frame_times) if self.frame_times else 0.0
+        metrics.max_frame_time_us = (
+            max(self.frame_times) if self.frame_times else 0.0
+        )
         metrics.memory_mb = self.peak_memory_mb
 
         for analysis_type, profile in self.fft_profiles.items():
-            metrics.fft_timings[(profile.fft_size, profile.hop_size)] = profile.mean_time_us
+            metrics.fft_timings[(profile.fft_size, profile.hop_size)] = (
+                profile.mean_time_us
+            )
 
         return metrics
 
@@ -204,7 +210,8 @@ class PresetProfile:
             "frame_budget_at_120fps": self.frame_budget_at_120fps,
             "peak_memory_mb": self.peak_memory_mb,
             "fft_profiles": {
-                name: profile.to_dict() for name, profile in self.fft_profiles.items()
+                name: profile.to_dict()
+                for name, profile in self.fft_profiles.items()
             },
         }
 
@@ -225,7 +232,9 @@ class PerformanceProfiler:
     def start_preset(self, preset_name: str) -> None:
         """Start profiling a new preset."""
         if preset_name not in self.preset_profiles:
-            self.preset_profiles[preset_name] = PresetProfile(preset_name=preset_name)
+            self.preset_profiles[preset_name] = PresetProfile(
+                preset_name=preset_name
+            )
         self._current_preset = preset_name
 
         # Force garbage collection before profiling
@@ -242,7 +251,9 @@ class PerformanceProfiler:
     def end_frame(self) -> None:
         """Mark the end of a frame and record timing."""
         if self._current_preset and self._frame_start_time > 0:
-            elapsed_us = (time.perf_counter() - self._frame_start_time) * 1_000_000
+            elapsed_us = (
+                time.perf_counter() - self._frame_start_time
+            ) * 1_000_000
             self.preset_profiles[self._current_preset].record_frame(elapsed_us)
         self._frame_start_time = 0.0
 
@@ -276,7 +287,9 @@ class PerformanceProfiler:
         lines.append("")
 
         # Header
-        lines.append(f"{'Preset':<15} {'Mean (µs)':<12} {'P95 (µs)':<12} {'Max FPS':<10} {'Budget %':<10}")
+        lines.append(
+            f"{'Preset':<15} {'Mean (µs)':<12} {'P95 (µs)':<12} {'Max FPS':<10} {'Budget %':<10}"
+        )
         lines.append("-" * 60)
 
         for preset_name, profile in self.preset_profiles.items():
@@ -318,7 +331,7 @@ class PerformanceProfiler:
 
 
 def calculate_fft_deduplication_savings(
-    preset_configs: dict[str, tuple[int, int]]
+    preset_configs: dict[str, tuple[int, int]],
 ) -> dict[str, Any]:
     """
     Calculate potential savings from FFT deduplication.
@@ -340,7 +353,9 @@ def calculate_fft_deduplication_savings(
 
     # Calculate savings
     saved_configs = total_configs - len(unique_configs)
-    savings_percent = (saved_configs / total_configs * 100) if total_configs > 0 else 0
+    savings_percent = (
+        (saved_configs / total_configs * 100) if total_configs > 0 else 0
+    )
 
     return {
         "total_analyses": total_configs,
@@ -354,7 +369,9 @@ def calculate_fft_deduplication_savings(
     }
 
 
-def estimate_memory_usage(preset_configs: dict[str, tuple[int, int]]) -> dict[str, float]:
+def estimate_memory_usage(
+    preset_configs: dict[str, tuple[int, int]],
+) -> dict[str, float]:
     """
     Estimate memory usage for FFT configurations.
 

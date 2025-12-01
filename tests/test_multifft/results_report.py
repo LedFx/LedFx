@@ -178,19 +178,31 @@ class ValidationReport:
         if perf_metrics:
             summary.avg_frame_time_us = float(
                 np.mean(
-                    [m.mean_frame_time_us for m in perf_metrics if m.mean_frame_time_us > 0]
+                    [
+                        m.mean_frame_time_us
+                        for m in perf_metrics
+                        if m.mean_frame_time_us > 0
+                    ]
                     or [0]
                 )
             )
             summary.p95_frame_time_us = float(
                 np.mean(
-                    [m.p95_frame_time_us for m in perf_metrics if m.p95_frame_time_us > 0]
+                    [
+                        m.p95_frame_time_us
+                        for m in perf_metrics
+                        if m.p95_frame_time_us > 0
+                    ]
                     or [0]
                 )
             )
             summary.max_frame_time_us = float(
                 np.max(
-                    [m.max_frame_time_us for m in perf_metrics if m.max_frame_time_us > 0]
+                    [
+                        m.max_frame_time_us
+                        for m in perf_metrics
+                        if m.max_frame_time_us > 0
+                    ]
                     or [0]
                 )
             )
@@ -241,9 +253,9 @@ class ValidationReport:
             if s.avg_frame_time_us > 0
         ]
         if perf_presets:
-            self.best_performance_preset = min(perf_presets, key=lambda x: x[1])[
-                0
-            ]
+            self.best_performance_preset = min(
+                perf_presets, key=lambda x: x[1]
+            )[0]
 
 
 def generate_text_report(report: ValidationReport) -> str:
@@ -282,7 +294,9 @@ def generate_text_report(report: ValidationReport) -> str:
     lines.append(f"Best Tempo Accuracy: {report.best_tempo_preset or 'N/A'}")
     lines.append(f"Best Onset Detection: {report.best_onset_preset or 'N/A'}")
     lines.append(f"Best Pitch Detection: {report.best_pitch_preset or 'N/A'}")
-    lines.append(f"Best Performance: {report.best_performance_preset or 'N/A'}")
+    lines.append(
+        f"Best Performance: {report.best_performance_preset or 'N/A'}"
+    )
     lines.append("")
 
     # Per-preset details
@@ -290,41 +304,61 @@ def generate_text_report(report: ValidationReport) -> str:
         lines.append("-" * 70)
         lines.append(f"PRESET: {preset_name.upper()}")
         lines.append("-" * 70)
-        lines.append(f"Pass Rate: {summary.pass_rate:.1f}% ({summary.passed_tests}/{summary.total_tests})")
+        lines.append(
+            f"Pass Rate: {summary.pass_rate:.1f}% ({summary.passed_tests}/{summary.total_tests})"
+        )
         lines.append("")
 
         # Tempo stats
         if summary.tempo_tests > 0:
             lines.append("  Tempo Detection:")
-            lines.append(f"    Tests: {summary.tempo_passed}/{summary.tempo_tests} passed")
+            lines.append(
+                f"    Tests: {summary.tempo_passed}/{summary.tempo_tests} passed"
+            )
             lines.append(f"    Avg BPM Error: {summary.avg_bpm_error:.1f}")
             lines.append(f"    Avg Beat Recall: {summary.avg_beat_recall:.2f}")
-            lines.append(f"    Avg Beat Precision: {summary.avg_beat_precision:.2f}")
+            lines.append(
+                f"    Avg Beat Precision: {summary.avg_beat_precision:.2f}"
+            )
             lines.append("")
 
         # Onset stats
         if summary.onset_tests > 0:
             lines.append("  Onset Detection:")
-            lines.append(f"    Tests: {summary.onset_passed}/{summary.onset_tests} passed")
+            lines.append(
+                f"    Tests: {summary.onset_passed}/{summary.onset_tests} passed"
+            )
             lines.append(f"    Avg Recall: {summary.avg_onset_recall:.2f}")
-            lines.append(f"    Avg Precision: {summary.avg_onset_precision:.2f}")
+            lines.append(
+                f"    Avg Precision: {summary.avg_onset_precision:.2f}"
+            )
             lines.append(f"    Avg F1 Score: {summary.avg_onset_f1:.2f}")
             lines.append("")
 
         # Pitch stats
         if summary.pitch_tests > 0:
             lines.append("  Pitch Detection:")
-            lines.append(f"    Tests: {summary.pitch_passed}/{summary.pitch_tests} passed")
-            lines.append(f"    Avg Detection Rate: {summary.avg_detection_rate:.2f}")
+            lines.append(
+                f"    Tests: {summary.pitch_passed}/{summary.pitch_tests} passed"
+            )
+            lines.append(
+                f"    Avg Detection Rate: {summary.avg_detection_rate:.2f}"
+            )
             lines.append(f"    Avg Error: {summary.avg_error_cents:.1f} cents")
             lines.append("")
 
         # Performance stats
         if summary.avg_frame_time_us > 0:
             lines.append("  Performance:")
-            lines.append(f"    Avg Frame Time: {summary.avg_frame_time_us:.1f} µs")
-            lines.append(f"    P95 Frame Time: {summary.p95_frame_time_us:.1f} µs")
-            lines.append(f"    Max Frame Time: {summary.max_frame_time_us:.1f} µs")
+            lines.append(
+                f"    Avg Frame Time: {summary.avg_frame_time_us:.1f} µs"
+            )
+            lines.append(
+                f"    P95 Frame Time: {summary.p95_frame_time_us:.1f} µs"
+            )
+            lines.append(
+                f"    Max Frame Time: {summary.max_frame_time_us:.1f} µs"
+            )
             lines.append("")
 
     lines.append("=" * 70)
@@ -371,7 +405,9 @@ def generate_markdown_report(report: ValidationReport) -> str:
     lines.append(f"| Tempo Accuracy | {report.best_tempo_preset or 'N/A'} |")
     lines.append(f"| Onset Detection | {report.best_onset_preset or 'N/A'} |")
     lines.append(f"| Pitch Detection | {report.best_pitch_preset or 'N/A'} |")
-    lines.append(f"| Performance | {report.best_performance_preset or 'N/A'} |")
+    lines.append(
+        f"| Performance | {report.best_performance_preset or 'N/A'} |"
+    )
     lines.append("")
 
     # Comparison table
@@ -379,8 +415,12 @@ def generate_markdown_report(report: ValidationReport) -> str:
     lines.append("")
     lines.append("### Accuracy Metrics")
     lines.append("")
-    lines.append("| Preset | Pass Rate | BPM Error | Beat Recall | Onset F1 | Pitch Rate |")
-    lines.append("|--------|-----------|-----------|-------------|----------|------------|")
+    lines.append(
+        "| Preset | Pass Rate | BPM Error | Beat Recall | Onset F1 | Pitch Rate |"
+    )
+    lines.append(
+        "|--------|-----------|-----------|-------------|----------|------------|"
+    )
 
     for preset_name, summary in report.preset_summaries.items():
         lines.append(
@@ -407,33 +447,51 @@ def generate_markdown_report(report: ValidationReport) -> str:
     for preset_name, summary in report.preset_summaries.items():
         lines.append(f"## {preset_name.replace('_', ' ').title()} Preset")
         lines.append("")
-        lines.append(f"**Pass Rate:** {summary.pass_rate:.1f}% ({summary.passed_tests}/{summary.total_tests})")
+        lines.append(
+            f"**Pass Rate:** {summary.pass_rate:.1f}% ({summary.passed_tests}/{summary.total_tests})"
+        )
         lines.append("")
 
         if summary.tempo_tests > 0:
             lines.append("### Tempo Detection")
             lines.append("")
-            lines.append(f"- Tests: {summary.tempo_passed}/{summary.tempo_tests} passed")
+            lines.append(
+                f"- Tests: {summary.tempo_passed}/{summary.tempo_tests} passed"
+            )
             lines.append(f"- Average BPM Error: {summary.avg_bpm_error:.1f}")
-            lines.append(f"- Average Beat Recall: {summary.avg_beat_recall:.2f}")
-            lines.append(f"- Average Beat Precision: {summary.avg_beat_precision:.2f}")
+            lines.append(
+                f"- Average Beat Recall: {summary.avg_beat_recall:.2f}"
+            )
+            lines.append(
+                f"- Average Beat Precision: {summary.avg_beat_precision:.2f}"
+            )
             lines.append("")
 
         if summary.onset_tests > 0:
             lines.append("### Onset Detection")
             lines.append("")
-            lines.append(f"- Tests: {summary.onset_passed}/{summary.onset_tests} passed")
+            lines.append(
+                f"- Tests: {summary.onset_passed}/{summary.onset_tests} passed"
+            )
             lines.append(f"- Average Recall: {summary.avg_onset_recall:.2f}")
-            lines.append(f"- Average Precision: {summary.avg_onset_precision:.2f}")
+            lines.append(
+                f"- Average Precision: {summary.avg_onset_precision:.2f}"
+            )
             lines.append(f"- Average F1 Score: {summary.avg_onset_f1:.2f}")
             lines.append("")
 
         if summary.pitch_tests > 0:
             lines.append("### Pitch Detection")
             lines.append("")
-            lines.append(f"- Tests: {summary.pitch_passed}/{summary.pitch_tests} passed")
-            lines.append(f"- Average Detection Rate: {summary.avg_detection_rate:.2f}")
-            lines.append(f"- Average Error: {summary.avg_error_cents:.1f} cents")
+            lines.append(
+                f"- Tests: {summary.pitch_passed}/{summary.pitch_tests} passed"
+            )
+            lines.append(
+                f"- Average Detection Rate: {summary.avg_detection_rate:.2f}"
+            )
+            lines.append(
+                f"- Average Error: {summary.avg_error_cents:.1f} cents"
+            )
             lines.append("")
 
     return "\n".join(lines)
@@ -556,7 +614,11 @@ def print_dashboard(report: ValidationReport) -> None:
     # Overall status
     if report.total_tests > 0:
         pass_rate = (report.total_passed / report.total_tests) * 100
-        status = "✓ PASS" if pass_rate >= 80 else "⚠ WARN" if pass_rate >= 50 else "✗ FAIL"
+        status = (
+            "✓ PASS"
+            if pass_rate >= 80
+            else "⚠ WARN" if pass_rate >= 50 else "✗ FAIL"
+        )
         print(f"\nStatus: {status} ({pass_rate:.0f}% pass rate)")
     print(f"Tests: {report.total_passed}/{report.total_tests} passed")
 
@@ -566,9 +628,21 @@ def print_dashboard(report: ValidationReport) -> None:
     print("├─────────────────┼────────┼──────────┼──────────┼──────────┤")
 
     for preset_name, summary in report.preset_summaries.items():
-        tempo_str = f"{summary.avg_bpm_error:.1f}err" if summary.tempo_tests > 0 else "N/A"
-        onset_str = f"{summary.avg_onset_f1:.2f}F1" if summary.onset_tests > 0 else "N/A"
-        pitch_str = f"{summary.avg_detection_rate:.2f}det" if summary.pitch_tests > 0 else "N/A"
+        tempo_str = (
+            f"{summary.avg_bpm_error:.1f}err"
+            if summary.tempo_tests > 0
+            else "N/A"
+        )
+        onset_str = (
+            f"{summary.avg_onset_f1:.2f}F1"
+            if summary.onset_tests > 0
+            else "N/A"
+        )
+        pitch_str = (
+            f"{summary.avg_detection_rate:.2f}det"
+            if summary.pitch_tests > 0
+            else "N/A"
+        )
         print(
             f"│ {preset_name:15s} │ {summary.pass_rate:5.1f}% │ {tempo_str:8s} │ "
             f"{onset_str:8s} │ {pitch_str:8s} │"
