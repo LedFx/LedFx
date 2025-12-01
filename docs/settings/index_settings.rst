@@ -8,3 +8,4 @@ Settings
    :maxdepth: 2
 
    general
+   audio
