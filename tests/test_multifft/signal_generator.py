@@ -260,7 +260,9 @@ def generate_tone(
     if waveform == "sine":
         audio = np.sin(phase)
     elif waveform == "triangle":
-        audio = 2 * np.abs(2 * (t * frequency - np.floor(t * frequency + 0.5))) - 1
+        audio = (
+            2 * np.abs(2 * (t * frequency - np.floor(t * frequency + 0.5))) - 1
+        )
     elif waveform == "sawtooth":
         audio = 2 * (t * frequency - np.floor(t * frequency + 0.5))
     elif waveform == "square":
@@ -559,7 +561,9 @@ def generate_standard_test_set(
     # Tempo signals
     for bpm in STANDARD_TEMPOS:
         audio, signal_def = generate_click_track(bpm=bpm, duration=30.0)
-        paths = save_signal(audio, signal_def, output_dir / "tempo", f"click_{bpm}bpm")
+        paths = save_signal(
+            audio, signal_def, output_dir / "tempo", f"click_{bpm}bpm"
+        )
         results.append(paths)
 
     # Onset signals

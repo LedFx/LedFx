@@ -253,8 +253,12 @@ def calculate_onset_metrics(
             timing_errors.append(best_error * 1000)
 
     metrics.correctly_detected_onsets = len(matched_expected)
-    metrics.missed_onsets = metrics.total_expected_onsets - len(matched_expected)
-    metrics.false_positive_onsets = len(detected_onsets) - len(matched_detected)
+    metrics.missed_onsets = metrics.total_expected_onsets - len(
+        matched_expected
+    )
+    metrics.false_positive_onsets = len(detected_onsets) - len(
+        matched_detected
+    )
 
     if len(detected_onsets) > 0:
         metrics.precision = len(matched_detected) / len(detected_onsets)
@@ -339,11 +343,15 @@ def calculate_pitch_metrics(
         errors_cents.append(error_cents)
 
     metrics.correctly_detected_pitches = correctly_detected
-    metrics.missed_pitches = metrics.total_expected_pitches - correctly_detected
+    metrics.missed_pitches = (
+        metrics.total_expected_pitches - correctly_detected
+    )
     metrics.octave_errors = octave_errors
 
     if metrics.total_expected_pitches > 0:
-        metrics.detection_rate = correctly_detected / metrics.total_expected_pitches
+        metrics.detection_rate = (
+            correctly_detected / metrics.total_expected_pitches
+        )
 
     if errors_cents:
         metrics.mean_error_cents = float(np.mean(errors_cents))

@@ -266,7 +266,10 @@ class TestPitchSignalGeneration:
         pitches = signal_def.ground_truth.pitches
         for i, pitch in enumerate(pitches):
             assert pitch.midi_note == midi_notes[i]
-            assert abs(pitch.frequency_hz - midi_to_frequency(midi_notes[i])) < 0.1
+            assert (
+                abs(pitch.frequency_hz - midi_to_frequency(midi_notes[i]))
+                < 0.1
+            )
             assert pitch.start_time == i * 1.0
             assert pitch.end_time == (i + 1) * 1.0
 
@@ -379,8 +382,12 @@ class TestSignalSaveLoad:
         # Verify definition
         assert loaded_def.signal_type == signal_def.signal_type
         assert loaded_def.metadata.bpm == signal_def.metadata.bpm
-        assert loaded_def.metadata.sample_rate == signal_def.metadata.sample_rate
-        assert len(loaded_def.ground_truth.beats) == len(signal_def.ground_truth.beats)
+        assert (
+            loaded_def.metadata.sample_rate == signal_def.metadata.sample_rate
+        )
+        assert len(loaded_def.ground_truth.beats) == len(
+            signal_def.ground_truth.beats
+        )
 
     def test_save_creates_directories(self, temp_signal_dir, sample_rate):
         """Test that save creates nested directories."""
@@ -389,7 +396,9 @@ class TestSignalSaveLoad:
         )
 
         nested_dir = temp_signal_dir / "deep" / "nested" / "path"
-        audio_path, gt_path = save_signal(audio, signal_def, nested_dir, "test")
+        audio_path, gt_path = save_signal(
+            audio, signal_def, nested_dir, "test"
+        )
 
         assert audio_path.exists()
         assert gt_path.exists()

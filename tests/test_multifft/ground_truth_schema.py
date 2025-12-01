@@ -15,7 +15,9 @@ import voluptuous as vol
 BEAT_SCHEMA = vol.Schema(
     {
         vol.Required("time"): vol.All(vol.Coerce(float), vol.Range(min=0)),
-        vol.Optional("beat_number"): vol.All(vol.Coerce(int), vol.Range(min=1)),
+        vol.Optional("beat_number"): vol.All(
+            vol.Coerce(int), vol.Range(min=1)
+        ),
         vol.Optional("bar"): vol.All(vol.Coerce(int), vol.Range(min=1)),
     }
 )
@@ -27,7 +29,9 @@ STANDARD_ATTACK_TYPES = ["impulse", "sharp", "medium", "slow"]
 ONSET_SCHEMA = vol.Schema(
     {
         vol.Required("time"): vol.All(vol.Coerce(float), vol.Range(min=0)),
-        vol.Optional("attack_ms"): vol.All(vol.Coerce(float), vol.Range(min=0)),
+        vol.Optional("attack_ms"): vol.All(
+            vol.Coerce(float), vol.Range(min=0)
+        ),
         vol.Optional("type"): vol.In(STANDARD_ATTACK_TYPES),
     }
 )
@@ -298,9 +302,13 @@ class SignalDefinition:
             tc = validated["test_criteria"]
             test_criteria = TestCriteria(
                 tempo_tolerance_bpm=tc.get("tempo_tolerance_bpm", 2.0),
-                beat_timing_tolerance_ms=tc.get("beat_timing_tolerance_ms", 50.0),
+                beat_timing_tolerance_ms=tc.get(
+                    "beat_timing_tolerance_ms", 50.0
+                ),
                 min_detection_rate=tc.get("min_detection_rate", 0.95),
-                onset_timing_tolerance_ms=tc.get("onset_timing_tolerance_ms", 50.0),
+                onset_timing_tolerance_ms=tc.get(
+                    "onset_timing_tolerance_ms", 50.0
+                ),
                 pitch_tolerance_cents=tc.get("pitch_tolerance_cents", 50.0),
             )
 
