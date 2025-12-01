@@ -286,7 +286,9 @@ def generate_bass_note(
         envelope[:attack_samples] = np.linspace(0, 1, attack_samples)
     if release_samples > 0 and sustain_samples + attack_samples < num_samples:
         release_start = attack_samples + sustain_samples
-        envelope[release_start:] = np.linspace(1, 0, num_samples - release_start)
+        envelope[release_start:] = np.linspace(
+            1, 0, num_samples - release_start
+        )
 
     audio = audio * envelope
 
@@ -431,7 +433,9 @@ def generate_chord(
 
 
 def generate_chord_progression(
-    progression: list[tuple[list[int], float]],  # [([notes], duration_beats), ...]
+    progression: list[
+        tuple[list[int], float]
+    ],  # [([notes], duration_beats), ...]
     bpm: float = 120.0,
     sample_rate: int = DEFAULT_SAMPLE_RATE,
 ) -> tuple[np.ndarray, SignalDefinition]:
@@ -601,7 +605,9 @@ def generate_full_mix(
         (38, 1),  # D2
         (41, 1),  # F2
     ] * (num_bars // 1 + 1)
-    bass, bass_def = generate_bass_line(bass_notes[:num_bars * 4], bpm, sample_rate)
+    bass, bass_def = generate_bass_line(
+        bass_notes[: num_bars * 4], bpm, sample_rate
+    )
 
     # Generate chord progression
     chords = [
@@ -623,10 +629,14 @@ def generate_full_mix(
 
     # Apply effects
     if include_reverb:
-        mix = add_reverb(mix, decay=0.2, delay_ms=25.0, sample_rate=sample_rate)
+        mix = add_reverb(
+            mix, decay=0.2, delay_ms=25.0, sample_rate=sample_rate
+        )
 
     if include_dynamics:
-        mix = add_dynamics(mix, variation=0.2, period_seconds=4.0, sample_rate=sample_rate)
+        mix = add_dynamics(
+            mix, variation=0.2, period_seconds=4.0, sample_rate=sample_rate
+        )
 
     # Final normalization
     max_val = np.max(np.abs(mix))
@@ -735,7 +745,9 @@ def generate_realistic_test_set(
                 bpm=bpm,
                 sample_rate=DEFAULT_SAMPLE_RATE,
             )
-            signal_def.metadata.description = f"Bass line: {line_name} @ {bpm} BPM"
+            signal_def.metadata.description = (
+                f"Bass line: {line_name} @ {bpm} BPM"
+            )
             results.append((audio, signal_def))
 
     # Generate chord progressions
@@ -746,7 +758,9 @@ def generate_realistic_test_set(
                 bpm=bpm,
                 sample_rate=DEFAULT_SAMPLE_RATE,
             )
-            signal_def.metadata.description = f"Chord progression: {prog_name} @ {bpm} BPM"
+            signal_def.metadata.description = (
+                f"Chord progression: {prog_name} @ {bpm} BPM"
+            )
             results.append((audio, signal_def))
 
     # Generate full mixes at various tempos

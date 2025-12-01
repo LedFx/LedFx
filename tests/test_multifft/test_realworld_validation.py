@@ -201,7 +201,9 @@ class RealWorldAnalyzer:
         self.frame_times.extend(frame_times)
         return detected_beats, detected_bpm, frame_times
 
-    def analyze_onsets(self, audio: np.ndarray) -> tuple[list[float], list[float]]:
+    def analyze_onsets(
+        self, audio: np.ndarray
+    ) -> tuple[list[float], list[float]]:
         """
         Detect onsets in audio signal.
 
@@ -369,7 +371,10 @@ def run_bass_line_test(
     )
 
     # Determine pass/fail
-    passed = pitch_metrics.detection_rate >= signal_def.test_criteria.min_detection_rate
+    passed = (
+        pitch_metrics.detection_rate
+        >= signal_def.test_criteria.min_detection_rate
+    )
 
     return RealWorldValidationResult(
         test_name=f"{preset_name}_{line_name}_{bpm}bpm",
@@ -539,8 +544,12 @@ def run_cross_validation(
             syn_beats, syn_def.ground_truth.beats, syn_bpm, 120.0
         )
 
-        result.synthetic_accuracy = 1.0 - min(1.0, syn_metrics.bpm_error / 10.0)
-        result.synthetic_latency_us = float(np.mean(syn_times)) if syn_times else 0.0
+        result.synthetic_accuracy = 1.0 - min(
+            1.0, syn_metrics.bpm_error / 10.0
+        )
+        result.synthetic_latency_us = (
+            float(np.mean(syn_times)) if syn_times else 0.0
+        )
 
         # Realistic: drum pattern
         real_audio, real_def = generate_drum_pattern(
@@ -560,17 +569,25 @@ def run_cross_validation(
             real_error = abs(real_bpm - 60)
 
         result.realistic_accuracy = 1.0 - min(1.0, real_error / 10.0)
-        result.realistic_latency_us = float(np.mean(real_times)) if real_times else 0.0
+        result.realistic_latency_us = (
+            float(np.mean(real_times)) if real_times else 0.0
+        )
 
     elif analysis_type == "onset":
         # Synthetic: impulse
-        syn_audio, syn_def = generate_onset_signal("impulse", interval_ms=500.0)
+        syn_audio, syn_def = generate_onset_signal(
+            "impulse", interval_ms=500.0
+        )
         analyzer = RealWorldAnalyzer(preset_name)
         syn_onsets, syn_times = analyzer.analyze_onsets(syn_audio)
-        syn_metrics = calculate_onset_metrics(syn_onsets, syn_def.ground_truth.onsets)
+        syn_metrics = calculate_onset_metrics(
+            syn_onsets, syn_def.ground_truth.onsets
+        )
 
         result.synthetic_accuracy = syn_metrics.f1_score
-        result.synthetic_latency_us = float(np.mean(syn_times)) if syn_times else 0.0
+        result.synthetic_latency_us = (
+            float(np.mean(syn_times)) if syn_times else 0.0
+        )
 
         # Realistic: drum pattern (onsets)
         real_audio, real_def = generate_drum_pattern(
@@ -578,10 +595,14 @@ def run_cross_validation(
         )
         analyzer2 = RealWorldAnalyzer(preset_name)
         real_onsets, real_times = analyzer2.analyze_onsets(real_audio)
-        real_metrics = calculate_onset_metrics(real_onsets, real_def.ground_truth.onsets)
+        real_metrics = calculate_onset_metrics(
+            real_onsets, real_def.ground_truth.onsets
+        )
 
         result.realistic_accuracy = real_metrics.f1_score
-        result.realistic_latency_us = float(np.mean(real_times)) if real_times else 0.0
+        result.realistic_latency_us = (
+            float(np.mean(real_times)) if real_times else 0.0
+        )
 
     elif analysis_type == "pitch":
         # Synthetic: sine waves
@@ -595,7 +616,9 @@ def run_cross_validation(
         )
 
         result.synthetic_accuracy = syn_metrics.detection_rate
-        result.synthetic_latency_us = float(np.mean(syn_times)) if syn_times else 0.0
+        result.synthetic_latency_us = (
+            float(np.mean(syn_times)) if syn_times else 0.0
+        )
 
         # Realistic: bass line
         real_audio, real_def = generate_bass_line(
@@ -608,12 +631,18 @@ def run_cross_validation(
         )
 
         result.realistic_accuracy = real_metrics.detection_rate
-        result.realistic_latency_us = float(np.mean(real_times)) if real_times else 0.0
+        result.realistic_latency_us = (
+            float(np.mean(real_times)) if real_times else 0.0
+        )
 
     # Calculate comparison metrics
-    result.accuracy_delta = result.realistic_accuracy - result.synthetic_accuracy
+    result.accuracy_delta = (
+        result.realistic_accuracy - result.synthetic_accuracy
+    )
     if result.synthetic_accuracy > 0:
-        result.accuracy_ratio = result.realistic_accuracy / result.synthetic_accuracy
+        result.accuracy_ratio = (
+            result.realistic_accuracy / result.synthetic_accuracy
+        )
     else:
         result.accuracy_ratio = 0.0
 
@@ -625,7 +654,9 @@ def run_cross_validation(
     elif result.accuracy_ratio >= 0.5:
         result.findings = "Realistic performance moderately degraded (50-70%)"
     else:
-        result.findings = "Significant accuracy drop on realistic signals (<50%)"
+        result.findings = (
+            "Significant accuracy drop on realistic signals (<50%)"
+        )
 
     return result
 
@@ -651,7 +682,9 @@ class TestDrumPatterns:
     @pytest.mark.parametrize("preset", FFT_PRESETS.keys())
     def test_electronic_pattern(self, preset):
         """Test tempo detection on electronic drum pattern."""
-        result = run_drum_pattern_test(preset, "electronic_4_on_floor", num_bars=8)
+        result = run_drum_pattern_test(
+            preset, "electronic_4_on_floor", num_bars=8
+        )
         print(f"\n{result.test_name}: {result.notes}")
         assert result.raw_metrics.get("detected_bpm", 0) > 0
 
@@ -826,13 +859,17 @@ class TestRealWorldSummary:
         print("-" * 70)
 
         for preset in FFT_PRESETS:
-            preset_cv = [cv for cv in cross_validation if cv.preset_name == preset]
+            preset_cv = [
+                cv for cv in cross_validation if cv.preset_name == preset
+            ]
             avg_ratio = (
                 sum(cv.accuracy_ratio for cv in preset_cv) / len(preset_cv)
                 if preset_cv
                 else 0
             )
-            print(f"\n{preset}: avg synthetic-to-realistic ratio = {avg_ratio:.2f}")
+            print(
+                f"\n{preset}: avg synthetic-to-realistic ratio = {avg_ratio:.2f}"
+            )
             for cv in preset_cv:
                 print(f"  {cv.analysis_type}: {cv.findings}")
 

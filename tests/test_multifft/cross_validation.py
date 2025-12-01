@@ -97,7 +97,10 @@ def calculate_accuracy_correlation(
     Returns:
         Correlation coefficient (-1 to 1)
     """
-    if len(synthetic_scores) != len(realistic_scores) or len(synthetic_scores) < 2:
+    if (
+        len(synthetic_scores) != len(realistic_scores)
+        or len(synthetic_scores) < 2
+    ):
         return 0.0
 
     syn_arr = np.array(synthetic_scores)
@@ -296,7 +299,9 @@ def generate_preset_recommendations(
             ]
 
             # Determine if change is needed
-            confirmed = any(f.category == "confirmed" for f in relevant_findings)
+            confirmed = any(
+                f.category == "confirmed" for f in relevant_findings
+            )
 
             if confirmed:
                 # Current config is validated
@@ -323,12 +328,19 @@ def generate_preset_recommendations(
                 rec_fft = fft
                 rec_hop = hop
                 rec_method = method
-                justification = "Current configuration acceptable with minor caveats"
+                justification = (
+                    "Current configuration acceptable with minor caveats"
+                )
 
-                if analysis_type == "onset" and preset_name != "high_precision":
+                if (
+                    analysis_type == "onset"
+                    and preset_name != "high_precision"
+                ):
                     # Energy method is faster with equal accuracy
                     rec_method = "energy"
-                    justification = "Energy method recommended for improved performance"
+                    justification = (
+                        "Energy method recommended for improved performance"
+                    )
 
                 recommendations.append(
                     PresetRecommendation(
@@ -372,7 +384,11 @@ def generate_validation_report(
     realistic_count = sum(len(r) for r in realistic_results.values())
 
     # Calculate aggregate metrics
-    all_synthetic = [r.accuracy_score for results in synthetic_results.values() for r in results]
+    all_synthetic = [
+        r.accuracy_score
+        for results in synthetic_results.values()
+        for r in results
+    ]
     all_realistic = [
         r.get("accuracy_score", 0)
         for results in realistic_results.values()
@@ -385,10 +401,14 @@ def generate_validation_report(
     # Calculate correlation if we have paired data
     correlation = 0.0
     if len(all_synthetic) == len(all_realistic) and len(all_synthetic) > 2:
-        correlation = calculate_accuracy_correlation(all_synthetic, all_realistic)
+        correlation = calculate_accuracy_correlation(
+            all_synthetic, all_realistic
+        )
 
     # Generate findings
-    findings = generate_validation_findings(synthetic_results, realistic_results)
+    findings = generate_validation_findings(
+        synthetic_results, realistic_results
+    )
 
     # Generate recommendations
     recommendations = generate_preset_recommendations(findings, optimizer)
@@ -407,7 +427,9 @@ def generate_validation_report(
     ]
 
     for finding in findings:
-        summary_lines.append(f"  [{finding.category.upper()}] {finding.analysis_type}: {finding.finding}")
+        summary_lines.append(
+            f"  [{finding.category.upper()}] {finding.analysis_type}: {finding.finding}"
+        )
 
     summary_lines.append("")
     summary_lines.append("Recommendations:")
@@ -419,7 +441,9 @@ def generate_validation_report(
                 f"{rec.current_method} -> {rec.recommended_method}"
             )
     else:
-        summary_lines.append("  No critical changes required. Current presets validated.")
+        summary_lines.append(
+            "  No critical changes required. Current presets validated."
+        )
 
     return ValidationReport(
         timestamp=datetime.now().isoformat(),
@@ -457,8 +481,12 @@ def format_validation_report(report: ValidationReport) -> str:
     lines.append(f"Total tests: {report.total_tests}")
     lines.append(f"  Synthetic: {report.synthetic_tests}")
     lines.append(f"  Realistic: {report.realistic_tests}")
-    lines.append(f"Overall synthetic accuracy: {report.overall_synthetic_accuracy:.3f}")
-    lines.append(f"Overall realistic accuracy: {report.overall_realistic_accuracy:.3f}")
+    lines.append(
+        f"Overall synthetic accuracy: {report.overall_synthetic_accuracy:.3f}"
+    )
+    lines.append(
+        f"Overall realistic accuracy: {report.overall_realistic_accuracy:.3f}"
+    )
     lines.append(f"Accuracy correlation: {report.accuracy_correlation:.3f}")
 
     lines.append("")
