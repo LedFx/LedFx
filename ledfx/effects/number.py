@@ -1,7 +1,7 @@
 import logging
 
-import voluptuous as vol
 import numpy as np
+import voluptuous as vol
 from PIL import ImageFont
 
 from ledfx.effects.texter2d import Texter2d
@@ -99,7 +99,7 @@ class Number(Texter2d):
         self.digits_before = self._config.get("whole_digits", 3)
         self.digits_after = self._config.get("decimal_digits", 2)
         self.negative = self._config.get("negative", False)
-        
+
         # Set the value update method based on selected source
         self.value_update_method = self.VALUE_SOURCE_MAPPING[
             self._config["value_source"]
@@ -126,7 +126,6 @@ class Number(Texter2d):
             Teleplot.send(f"BPM_Conf:{self.display_value:.3f}")
         else:
             _LOGGER.error("BPM Confidence: NaN")
-    
 
     def _format_number(self, value, digits_before, digits_after):
         """
