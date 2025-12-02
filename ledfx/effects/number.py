@@ -1,7 +1,7 @@
 import logging
 
-import numpy as np
 import voluptuous as vol
+import numpy as np
 from PIL import ImageFont
 from ledfx.utils import Teleplot
 
@@ -24,6 +24,12 @@ class Number(Texter2d):
 
     NAME = "Number"
     CATEGORY = "Diagnostic"
+
+    # Mapping of display value options to their respective update methods
+    VALUE_SOURCE_MAPPING = {
+        "BPM": "update_bpm",
+        "BPM Confidence": "update_bpm_confidence",
+    }
 
     # Hide parent effect-specific options that don't apply to numeric display
     HIDDEN_KEYS = Texter2d.HIDDEN_KEYS + [
@@ -55,6 +61,11 @@ class Number(Texter2d):
         {
             **Texter2d.CONFIG_SCHEMA.schema,  # Inherit parent schema
             vol.Optional(
+                "value_source",
+                description="Source of the numeric value to display",
+                default=list(VALUE_SOURCE_MAPPING.keys())[0],
+            ): vol.In(list(VALUE_SOURCE_MAPPING.keys())),
+            vol.Optional(
                 "whole_digits",
                 description="Number of digits to reserve before decimal point (for stable text size)",
                 default=3,
@@ -85,19 +96,34 @@ class Number(Texter2d):
         self.digits_before = self._config.get("whole_digits", 3)
         self.digits_after = self._config.get("decimal_digits", 2)
         self.negative = self._config.get("negative", False)
+        
+        # Set the value update method based on selected source
+        self.value_update_method = self.VALUE_SOURCE_MAPPING[
+            self._config["value_source"]
+        ]
 
     def audio_data_updated(self, data):
         """
         Update display value based on audio data.
 
-        By default, displays the bar oscillator value.
-        Override this method or set self.display_value externally for custom values.
+        Calls the configured value update method to populate self.display_value.
         """
-        self.current_bpm = data._tempo.get_bpm()  # Returns current tempo
-        self.confidence = data._tempo.get_confidence()
-        self.display_value = self.current_bpm
-        Teleplot.send(f"BPM:{self.current_bpm}")
-        Teleplot.send(f"Confidence:{self.confidence}")
+        # Call the selected update method to populate display_value
+        getattr(self, self.value_update_method)(data)
+
+    def update_bpm(self, data):
+        """Update display value with current BPM."""
+        self.display_value = data._tempo.get_bpm()
+        Teleplot.send(f"BPM:{self.display_value}")
+
+    def update_bpm_confidence(self, data):
+        """Update display value with BPM detection confidence."""
+        self.display_value = data._tempo.get_confidence()
+        if not np.isnan(self.display_value):
+            Teleplot.send(f"BPM_Conf:{self.display_value:.3f}")
+        else:
+            _LOGGER.error("BPM Confidence: NaN")
+    
 
     def _format_number(self, value, digits_before, digits_after):
         """
