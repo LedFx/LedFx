@@ -8,6 +8,7 @@
    /launch
    /developer/developer
    /developer/architecture
+   /developer/multifft
    /README
 
 .. toctree::

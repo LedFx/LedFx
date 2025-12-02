@@ -766,6 +766,25 @@ def migrate_config(old_config):
     if new_config.get("audio", {}).get("min_volume", 0) > 1:
         new_config["audio"]["min_volume"] = 0.2
 
+    # Remove legacy FFT configuration - multi-FFT system uses presets instead
+    if "audio" in new_config and "fft_size" in new_config["audio"]:
+        old_fft = new_config["audio"].pop("fft_size", None)
+        _LOGGER.warning(
+            f"Removed legacy fft_size={old_fft} from audio config. "
+            "Multi-FFT system will use preset='balanced' by default."
+        )
+        # Ensure fft_preset is set
+        if "fft_preset" not in new_config["audio"]:
+            new_config["audio"]["fft_preset"] = "balanced"
+
+    # Clear legacy melbank collection - will be regenerated with new FFT configs
+    if "melbank_collection" in new_config and new_config["melbank_collection"]:
+        _LOGGER.warning(
+            "Clearing legacy melbank_collection. Melbanks will be regenerated "
+            "with multi-FFT configurations on startup."
+        )
+        new_config["melbank_collection"] = []
+
     # Handle equalizer2d flip_vertical inversion for versions prior to 2.3.6
     # In 2.3.6, we fixed the upside-down rendering when ring=False and center=False
     # So we need to invert flip_vertical to maintain the same visual appearance

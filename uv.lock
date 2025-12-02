@@ -1031,7 +1031,7 @@ dependencies = [
     { name = "requests" },
     { name = "rpi-ws281x", marker = "sys_platform == 'linux'" },
     { name = "sacn" },
-    { name = "samplerate" },
+    { name = "samplerate-ledfx" },
     { name = "sentry-sdk" },
     { name = "sounddevice" },
     { name = "stupidartnet" },
@@ -1109,7 +1109,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2.31.0" },
     { name = "rpi-ws281x", marker = "sys_platform == 'linux'", specifier = ">=4.3.0" },
     { name = "sacn", specifier = ">=1.9.0" },
-    { name = "samplerate", specifier = ">=0.2.1" },
+    { name = "samplerate-ledfx", specifier = ">=0.2.5" },
     { name = "sentry-sdk", specifier = ">=1.40.4" },
     { name = "sounddevice", specifier = ">=0.4.6" },
     { name = "stupidartnet", specifier = ">=1.6.0,<2.0.0" },
@@ -2773,21 +2773,35 @@ wheels = [
 ]
 
 [[package]]
-name = "samplerate"
-version = "0.2.2"
+name = "samplerate-ledfx"
+version = "0.2.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/78/b9/6db4045509ea5d709ff6147971ca0625f898c0c32fc61a2f8f76c016d61b/samplerate-0.2.2.tar.gz", hash = "sha256:40964bfa28d33bc948389d958c2e742585f21891d8372ebba89260f491a15caa", size = 21626, upload-time = "2025-10-10T23:14:02.732Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/48/ecd1f0c3e024c748c882bd1dcbb5c8e0f11814bdb7294e3516a4ca6e55c2/samplerate_ledfx-0.2.5.tar.gz", hash = "sha256:2983cbb467e14bf227c675f6d174e512e8749b2f9281fa28694c35711d2a71dc", size = 64175, upload-time = "2025-11-27T22:17:30.37Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/77/6c/397ec88acbee0171d7ac8fc4e167d18bddfc61f4f417e8b44661254622f5/samplerate-0.2.2-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:99b47c238ef7216b87ccf5e8860b94b527cceef7a8add38f146e75f6efec257f", size = 2899412, upload-time = "2025-10-10T23:16:56.367Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/7d/e8d8f5f2ed9124148e8ee3c91330a7715704e689b416580c8a6db990cd35/samplerate-0.2.2-cp310-cp310-win_amd64.whl", hash = "sha256:0aa6ae933cb85eac5ffdebc38abc198be890c2bcbac263c30301699d651e9513", size = 1458762, upload-time = "2025-10-10T23:17:19.917Z" },
-    { url = "https://files.pythonhosted.org/packages/2d/e4/dd57ac31cf73b0acb6661f74cff8043bb25b5f37867b26e37c753d1b0cf7/samplerate-0.2.2-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:a41fe7a8c68101bf9900ba415cf2a0a58199bba9cac15e0a3b22b70006705b29", size = 2901869, upload-time = "2025-10-10T23:14:26.266Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/aa/b17359705cdb70d995e14e324195502b41ba4d84789fba321a27926f3c0d/samplerate-0.2.2-cp311-cp311-win_amd64.whl", hash = "sha256:86fb8eb9a6c75d4c17f8125e203d29bf2d87bf5ce0e671184ba5111f015c9264", size = 1459355, upload-time = "2025-10-10T23:19:55.296Z" },
-    { url = "https://files.pythonhosted.org/packages/af/cd/6ac82cf1e121bc1c3c46c4214d0cb1025a2bb6d48aa18a21becc4d9b953e/samplerate-0.2.2-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:3f30fea3e42b51e2441cf464e24c4744fa0b9a837b7beefb6a8eb6cc72af1e51", size = 2903112, upload-time = "2025-10-10T23:14:18.739Z" },
-    { url = "https://files.pythonhosted.org/packages/86/c1/e4079d3893d568bce8f7d9125dd2474f621b67937e953632077988aae6e9/samplerate-0.2.2-cp312-cp312-win_amd64.whl", hash = "sha256:1170c5e4f68d9c1bbec2fce1549108838a473058f69cca7bc377e053ee43457b", size = 1459874, upload-time = "2025-10-10T23:16:59.827Z" },
+    { url = "https://files.pythonhosted.org/packages/0d/ad/cb00b1802ff80a60071f6cf998a9a289f475101c5dc67d0cb0008b6a0a2b/samplerate_ledfx-0.2.5-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0413d6bf7ad7f32ce5e83cf4421e7e0dacc6006aa6738a99ea3546fc8a45ae6a", size = 1453992, upload-time = "2025-11-27T22:17:50.18Z" },
+    { url = "https://files.pythonhosted.org/packages/59/d7/3f38fd5140119c38f5a3e691633df3108fac0945b92e106126358680e57f/samplerate_ledfx-0.2.5-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:b7666f7976521193e99a05b65ccee3415202cffef884b787813f9635b646cd05", size = 1454854, upload-time = "2025-11-27T22:18:01.985Z" },
+    { url = "https://files.pythonhosted.org/packages/49/28/7d3a0cbf017274d644e25bc4697636cd5f2103c30ca9e04442482e01ecda/samplerate_ledfx-0.2.5-cp310-cp310-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:c557757566f56be5b9f87785a66144b9b53d2d98b9d4e4a42de3c837fec204e9", size = 1456477, upload-time = "2025-11-27T22:17:42.592Z" },
+    { url = "https://files.pythonhosted.org/packages/48/51/c0f0d5e2d1736759192d6f814373832b61e29b7276edbc681aa79dea132d/samplerate_ledfx-0.2.5-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:a58bc39f916b1f39ad49e55fb09c8bc8e53241a99c8d8ffdbea5313f5ccf2740", size = 1477215, upload-time = "2025-11-27T22:17:45.516Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/9d/38dee50032119b7a276dd59396b2737a2344f67655ae15df66935368cc88/samplerate_ledfx-0.2.5-cp310-cp310-win_amd64.whl", hash = "sha256:e82df42144f377db4baf676b9ca6ec968934e787240de36715782c1071e7c0c4", size = 1461200, upload-time = "2025-11-27T22:17:34.458Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/9a/9ce92501022d3a32b6b5fd43ff14bca061709273c8c6a7c3fb1e95c1c8b1/samplerate_ledfx-0.2.5-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:199521b766c57d90ccb0f328e7f40494d3cf2915d2ec99aacf2bd96e567590b7", size = 1455203, upload-time = "2025-11-27T22:17:54.727Z" },
+    { url = "https://files.pythonhosted.org/packages/18/1e/8800c8c9972aa323c0852c27c74e679866a72d49eed258678b0364e99088/samplerate_ledfx-0.2.5-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:5898bfc990e702c61de7d82b7b3d3a99eabe9f8666c7e30f43a6a8cdb6d74e27", size = 1456221, upload-time = "2025-11-27T22:17:46.648Z" },
+    { url = "https://files.pythonhosted.org/packages/01/a3/a2841ff3a8b3d0c34b88aabae20beafe93a02c19daca7fa06db3ef40d142/samplerate_ledfx-0.2.5-cp311-cp311-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dd969645f117c2d8ac747b725487287dced3e398ffa44265c095b327bd83516e", size = 1457563, upload-time = "2025-11-27T22:17:35.511Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/a9/82293a75da03667c6231623af7e2d217013f62953697a55fbaff5ae4770b/samplerate_ledfx-0.2.5-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9bc27721813ee221baea2fa2fef5f202b99f76ab8cb74876ba80e5597f1ad444", size = 1478765, upload-time = "2025-11-27T22:17:51.311Z" },
+    { url = "https://files.pythonhosted.org/packages/66/22/be577c11d73fe9b0ef39108c1e92e6aadeb071a6dfc9b4ea35ef5611735c/samplerate_ledfx-0.2.5-cp311-cp311-win_amd64.whl", hash = "sha256:ca25a10856d2a81d2acb025c093f5e8fafb29c026ae5d1294b5f34a1afe559a3", size = 1461808, upload-time = "2025-11-27T22:17:32.213Z" },
+    { url = "https://files.pythonhosted.org/packages/23/7c/e42f100673b954045df7d6e9ac91b365757b4284288017f2e9250163b18b/samplerate_ledfx-0.2.5-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:e75e3b4b048499a92551aa340b97b23376dc8d52e9c7030bfe3822cc374fad88", size = 1456050, upload-time = "2025-11-27T22:17:29.401Z" },
+    { url = "https://files.pythonhosted.org/packages/14/fb/a5edbd52ea639eddb965eb51a2dfe4454cd530a67a4400a02eab20b96f8a/samplerate_ledfx-0.2.5-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:06661f34daec9c72e5da9ea375247406becd8abadeb2a830256ea5a06d4699af", size = 1456110, upload-time = "2025-11-27T22:17:58.315Z" },
+    { url = "https://files.pythonhosted.org/packages/97/f9/824aed75905ddc74e5d414998a18d951372a77fc003fed1865fc2da73056/samplerate_ledfx-0.2.5-cp312-cp312-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f341487fa66e9758cc41c2cbca5614dd6d0b4ced6a59114ba0199b4bcdd0699d", size = 1459468, upload-time = "2025-11-27T22:17:44.154Z" },
+    { url = "https://files.pythonhosted.org/packages/54/89/3d2edcd3360c9251cded94b09ac71bb9f4cddd8c347753e2802b9542deb5/samplerate_ledfx-0.2.5-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c27bf49958a2fea5d8f5be6fea1bbab84c7bbc539044ab0b47983b62c5d44661", size = 1480987, upload-time = "2025-11-27T22:17:47.686Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/1c/244dee0f17254e92c0292078830236bef0a5c912da28f90e4ec2bb1f3e83/samplerate_ledfx-0.2.5-cp312-cp312-win_amd64.whl", hash = "sha256:9f5f4c208538fd1376bac003bf5e6304f4293ab1d1287d7acac26cf0cadd2e50", size = 1462335, upload-time = "2025-11-27T22:17:33.38Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/df/79319df66a97d41dce48cae49f6c3722292af9a26370c95dd48765053c5c/samplerate_ledfx-0.2.5-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:ba05353ba3bb55900bc31abe72e809384efaf53c50a3f351793f03f4aef59c17", size = 1456120, upload-time = "2025-11-27T22:18:04.511Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/e6/e6ae0e1bfa39a4fc6a20cadcff03a9ae544a130f028e2a617374d6e6a096/samplerate_ledfx-0.2.5-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:4606d36315db27233df8986c375baae0e00f2b3cd34dc755a4943fa8805dca68", size = 1456199, upload-time = "2025-11-27T22:17:41.521Z" },
+    { url = "https://files.pythonhosted.org/packages/0b/25/da0849e87c812d170bfbac421c705aaa45b6d91e2ba7aa1fb555ad8c246d/samplerate_ledfx-0.2.5-cp313-cp313-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f053d0d7fb29eb65472c2a57fe8e50f7a46c1aa54d663808869c0f1bc0c782a0", size = 1459555, upload-time = "2025-11-27T22:17:36.662Z" },
+    { url = "https://files.pythonhosted.org/packages/ad/45/30087db4561738a352e7b85d6215dc3832a903cc96960caa7e3a7baa688b/samplerate_ledfx-0.2.5-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:8c1ba69762fa3cfa7c3cc44fa5cc50ce390371f058a64c7dcdc5d824ead59e61", size = 1480983, upload-time = "2025-11-27T22:17:28.048Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/84/ae2cf69e473a4a1ec92ce9af3d1ffae51ae3f340b80c163e4bc299645e79/samplerate_ledfx-0.2.5-cp313-cp313-win_amd64.whl", hash = "sha256:13d43612dc7b3a1c85fc1ba66eab5505aaf8ec9b29456c96627b3a7ac8b381de", size = 1462347, upload-time = "2025-11-27T22:17:59.47Z" },
 ]
 
 [[package]]
