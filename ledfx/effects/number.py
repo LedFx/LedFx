@@ -3,6 +3,7 @@ import logging
 import numpy as np
 import voluptuous as vol
 from PIL import ImageFont
+from ledfx.utils import Teleplot
 
 from ledfx.effects.texter2d import Texter2d
 from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
@@ -92,8 +93,11 @@ class Number(Texter2d):
         By default, displays the bar oscillator value.
         Override this method or set self.display_value externally for custom values.
         """
-        # Example: Display bar oscillator as default
-        self.display_value = data.bar_oscillator()
+        self.current_bpm = data._tempo.get_bpm()  # Returns current tempo
+        self.confidence = data._tempo.get_confidence()
+        self.display_value = self.current_bpm
+        Teleplot.send(f"BPM:{self.current_bpm}")
+        Teleplot.send(f"Confidence:{self.confidence}")
 
     def _format_number(self, value, digits_before, digits_after):
         """
