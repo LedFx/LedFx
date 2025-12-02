@@ -92,6 +92,9 @@ class Number(Texter2d):
 
     def config_updated(self, config):
         """Update configuration and regenerate sentence with formatted number."""
+        # Call parent to initialize text_color, resize_method, impulse filters, etc.
+        super().config_updated(config)
+        
         # Store digit configuration
         self.digits_before = self._config.get("whole_digits", 3)
         self.digits_after = self._config.get("decimal_digits", 2)

@@ -21,24 +21,24 @@ The **Number** effect is a diagnostic matrix effect that displays a numeric valu
 
 ### Normal Settings
 
-| Key                | Type    | Default   | Description |
-|--------------------|---------|-----------|-------------|
-| `display_value`    | float   | 0.0       | The number to display. Can be set dynamically via API or automation. |
-| `whole_digits`     | int     | 2         | Number of digits before the decimal point (minimum width). |
-| `decimal_digits`   | int     | 0         | Number of digits after the decimal point. |
-| `color`            | color   | #ffffff   | Text color. |
-| `background_color` | color   | #000000   | Background color. |
+| Key              | Type   | Default        | Description |
+|------------------|--------|----------------|-------------|
+| `value_source`   | string | BPM            | Source of the numeric value to display (BPM, BPM Confidence). |
+| `whole_digits`   | int    | 3              | Number of digits to reserve before decimal point (for stable text size). |
+| `decimal_digits` | int    | 2              | Number of digits to display after decimal point (for stable text size). |
+| `negative`       | bool   | false          | Support negative values (include negative sign in sizing). |
 
 ### Advanced Settings
 
-| Key                | Type    | Default   | Description |
-|--------------------|---------|-----------|-------------|
-| `negative`         | bool    | false     | Reserve space for a negative sign (for template sizing). |
-| `centered`         | bool    | true      | Center the text horizontally and vertically. |
-| `height_percent`   | int     | 100       | Text height as a percent of the matrix height. |
-| `font`             | string  | (default) | Font name or path. |
+| Key            | Type   | Default   | Description |
+|----------------|--------|-----------|-------------|
+| `text_color`   | color  | #ffffff   | Text color. |
+| `font`         | string | (default) | Font name or path. |
+| `resize_method`| string | LANCZOS   | Image resize method for text rendering. |
 
 **Notes:**
 - `whole_digits` and `decimal_digits` control the template used for sizing, so the text size remains stable as the value changes.
 - If `negative` is enabled, space is reserved for a minus sign in the template sizing, even if the value is always positive.
-- `centered` is recommended for most use cases.
+- The effect is automatically centered (enforced internally).
+- `display_value` is an instance attribute that can be set programmatically but is not a config option.
+- The following parent options are hidden: `background_color`, `background_mode`, `height_percent`, `gradient`, and various text animation options.
