@@ -1140,11 +1140,12 @@ class RegistryLoader:
         for name in found:
             self.reload_module(name)
 
-
     def create(self, type, id=None, *args, **kwargs):
         """Loads and creates an object from the registry by type. If type is missing, logs a warning and returns None instead of raising."""
         if type not in self._cls.registry():
-            _LOGGER.warning(f"Couldn't find '{type}' in the {self._cls.__name__.lower()} registry. Skipping creation.")
+            _LOGGER.warning(
+                f"Couldn't find '{type}' in the {self._cls.__name__.lower()} registry. Skipping creation."
+            )
             return None
 
         id = id or type

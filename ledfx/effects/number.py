@@ -2,10 +2,9 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+from PIL import ImageFont
 
 from ledfx.effects.texter2d import Texter2d
-
-from PIL import ImageFont
 from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
 
 _LOGGER = logging.getLogger(__name__)
@@ -14,17 +13,17 @@ _LOGGER = logging.getLogger(__name__)
 class Number(Texter2d):
     """
     Display a numeric value at maximum text size on a matrix for diagnostic purposes.
-    
+
     This effect inherits from Texter2d and automatically formats and displays a numeric
     value at the largest possible size that fits on the matrix. The text updates every
     render frame to show real-time diagnostic information.
-    
+
     The display value can be set externally by modifying self.display_value.
     """
-    
+
     NAME = "Number"
     CATEGORY = "Diagnostic"
-    
+
     # Hide parent effect-specific options that don't apply to numeric display
     HIDDEN_KEYS = Texter2d.HIDDEN_KEYS + [
         "text",
@@ -44,9 +43,13 @@ class Number(Texter2d):
         "gradient",
         "background_color",
     ]
-    
-    ADVANCED_KEYS = Texter2d.ADVANCED_KEYS + ["resize_method", "font", "text_color"]
-    
+
+    ADVANCED_KEYS = Texter2d.ADVANCED_KEYS + [
+        "resize_method",
+        "font",
+        "text_color",
+    ]
+
     CONFIG_SCHEMA = vol.Schema(
         {
             **Texter2d.CONFIG_SCHEMA.schema,  # Inherit parent schema
@@ -67,30 +70,31 @@ class Number(Texter2d):
             ): bool,
         },
     )
-    
+
     def __init__(self, ledfx, config):
         # Initialize display value that can be set externally
         self.display_value = 0.0
         # Force speed_option_1 to 0 for centered display
         config["speed_option_1"] = 0
         super().__init__(ledfx, config)
-    
+
     def config_updated(self, config):
         """Update configuration and regenerate sentence with formatted number."""
         # Store digit configuration
         self.digits_before = self._config.get("whole_digits", 3)
         self.digits_after = self._config.get("decimal_digits", 2)
         self.negative = self._config.get("negative", False)
-    
+
     def audio_data_updated(self, data):
         """
         Update display value based on audio data.
-        
-        By default, displays the bar oscillator value. 
+
+        By default, displays the bar oscillator value.
         Override this method or set self.display_value externally for custom values.
         """
         # Example: Display bar oscillator as default
         self.display_value = data.bar_oscillator()
+
     def _format_number(self, value, digits_before, digits_after):
         """
         Format a number with specified digits before and after decimal point.
@@ -112,44 +116,52 @@ class Number(Texter2d):
         Return a format string for a number with the given digit configuration.
         """
         if digits_after > 0:
-            total_width = digits_before + 1 + digits_after  # +1 for decimal point
+            total_width = (
+                digits_before + 1 + digits_after
+            )  # +1 for decimal point
             return f"{{:0{total_width}.{digits_after}f}}"
         else:
             return f"{{:0{digits_before}.0f}}"
-    
+
     def _calculate_font_size(self):
         """
         Calculate optimal font size that fits both width and height of the matrix.
-        
+
         Uses a template with maximum width (all 9's) to ensure any value will fit.
-        
+
         Returns
         -------
         int
             Font size in points that will fit the text on the matrix
         """
-        
+
         # Create template text with maximum width using all 9's and negative sign
         # This ensures the font size will fit any actual value
         # Use the same logic as the format string, but with all 9's for width
         if self.digits_after > 0:
-            template_value = float("9" * self.digits_before + "." + "9" * self.digits_after)
+            template_value = float(
+                "9" * self.digits_before + "." + "9" * self.digits_after
+            )
         else:
             template_value = float("9" * self.digits_before)
-        template_text = self._number_format_string(self.digits_before, self.digits_after).format(template_value)
+        template_text = self._number_format_string(
+            self.digits_before, self.digits_after
+        ).format(template_value)
         if self.negative:
             template_text = "-" + template_text
-        
+
         # Start with height-based size
-        target_height = round(self.r_height * self._config["height_percent"] / 100)
-        
+        target_height = round(
+            self.r_height * self._config["height_percent"] / 100
+        )
+
         # Don't go smaller than 4pt
         min_size = 4
         max_size = target_height
         best_size = min_size
-        
+
         font_path = FONT_MAPPINGS[self._config["font"]]
-        
+
         # Search from largest to smallest for best fit
         for size in range(max_size, min_size - 1, -1):
             try:
@@ -157,23 +169,21 @@ class Number(Texter2d):
                 bbox = font.getbbox(template_text)
                 text_width = bbox[2] - bbox[0]
                 text_height = bbox[3] - bbox[1]
-                
+
                 # Check if text fits in both dimensions
                 if text_width <= self.r_width and text_height <= self.r_height:
                     best_size = size
                     break
             except Exception:
                 continue
-        
+
         return best_size
-    
+
     def do_once(self):
         """Initialize the sentence object with initial formatted number."""
         # Update text before sentence creation
         self._config["text"] = self._format_number(
-            self.display_value,
-            self.digits_before,
-            self.digits_after
+            self.display_value, self.digits_before, self.digits_after
         )
         # Call parent do_once which creates the sentence
         super().do_once()
@@ -188,16 +198,14 @@ class Number(Texter2d):
         )
         # Re-initialize positioning for centered display
         self.side_scroll_init()
-    
+
     def draw(self):
         """
         Draw the numeric display. Updates the text and sentence if the value changed.
         """
         # Format the current value
         new_text = self._format_number(
-            self.display_value,
-            self.digits_before,
-            self.digits_after
+            self.display_value, self.digits_before, self.digits_after
         )
         # Only regenerate sentence if text changed (performance optimization)
         if new_text != self._config["text"]:
@@ -213,6 +221,7 @@ class Number(Texter2d):
             self.side_scroll_init()
         # Call parent draw which handles the actual drawing
         super().draw()
+
 
 # Example of how to use this effect with custom values:
 #
