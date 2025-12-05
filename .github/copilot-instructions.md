@@ -154,6 +154,10 @@ Do NOT use `web.json_response()` directly.
 - **isort**: Import organization
 - **Type Hints**: Use where beneficial
 
+### Import Statement Placement
+
+- Always place all import statements at the top of each Python file, before any module-level code, class, or function definitions. Do not use inline or local imports except for rare cases (e.g., to avoid circular dependencies or for performance-critical code paths).
+
 ### Path Handling Standards
 
 **IMPORTANT**: Always use `os.path` module for path operations, NOT `pathlib`. This is the established codebase convention with 20+ uses throughout the project.

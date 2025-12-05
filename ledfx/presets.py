@@ -3,6 +3,48 @@ import os
 from ledfx.consts import LEDFX_ASSETS_PATH
 
 ledfx_presets = {
+    "number": {
+        "clock": {
+            "config": {
+                "advanced": False,
+                "alpha": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "decimal_digits": 2,
+                "deep_diag": False,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "font": "Roboto Black",
+                "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                "gradient_roll": 0.0,
+                "height_percent": 100,
+                "impulse_decay": 0.1,
+                "mirror": False,
+                "multiplier": 1.0,
+                "negative": False,
+                "option_1": False,
+                "option_2": False,
+                "resize_method": "Fast",
+                "rotate": 0,
+                "speed_option_1": 0.0,
+                "test": False,
+                "text": "22:03:41",
+                "text_color": "#00ff7f",
+                "text_effect": "Side Scroll",
+                "use_gradient": False,
+                "value_option_1": 0.5,
+                "value_source": "Time (HH:MM:SS)",
+                "whole_digits": 3,
+            },
+            "name": "Clock",
+        }
+    },
     "flame2d": {
         "bass-red": {
             "config": {
