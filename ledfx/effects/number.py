@@ -1,8 +1,10 @@
 import logging
+from datetime import datetime
+
 import numpy as np
 import voluptuous as vol
 from PIL import ImageFont
-from datetime import datetime
+
 from ledfx.effects.texter2d import Texter2d
 from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
 from ledfx.utils import Teleplot
@@ -104,7 +106,7 @@ class Number(Texter2d):
         ]
         self.is_time_hhmm = self._config["value_source"] == "Time (HH:MM)"
         self.is_time_hhmmss = self._config["value_source"] == "Time (HH:MM:SS)"
-        
+
     def update_time_hhmm(self, data=None):
         """Update display value with current time as HH:MM string."""
         self.display_value = datetime.now().strftime("%H:%M")
@@ -112,7 +114,6 @@ class Number(Texter2d):
     def update_time_hhmmss(self, data=None):
         """Update display value with current time as HH:MM:SS string."""
         self.display_value = datetime.now().strftime("%H:%M:%S")
-
 
     def audio_data_updated(self, data):
         """
@@ -149,7 +150,9 @@ class Number(Texter2d):
         negative = value < 0
         if self.negative and negative:
             # Reserve space for sign
-            format_str = self._number_format_string(digits_before - 1, digits_after)
+            format_str = self._number_format_string(
+                digits_before - 1, digits_after
+            )
             try:
                 formatted = format_str.format(abs(value))
             except (ValueError, OverflowError):
@@ -158,12 +161,14 @@ class Number(Texter2d):
                 else:
                     formatted = "#" * (digits_before - 1)
             # Prepend '-' unless overflow pattern
-            if formatted and formatted[0] == '#':
-                formatted = '-' + formatted
+            if formatted and formatted[0] == "#":
+                formatted = "-" + formatted
             else:
-                formatted = '-' + formatted
+                formatted = "-" + formatted
         else:
-            format_str = self._number_format_string(digits_before, digits_after)
+            format_str = self._number_format_string(
+                digits_before, digits_after
+            )
             try:
                 formatted = format_str.format(abs(value))
             except (ValueError, OverflowError):
