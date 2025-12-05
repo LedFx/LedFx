@@ -31,11 +31,14 @@ The **Number** effect is a diagnostic matrix effect that displays a numeric valu
 
 ### Advanced Settings
 
-| Key            | Type   | Default   | Description |
-|----------------|--------|-----------|-------------|
-| `text_color`   | color  | #ffffff   | Text color. |
-| `font`         | string | (default) | Font name or path. |
-| `resize_method`| string | LANCZOS   | Image resize method for text rendering. |
+| Key                      | Type   | Default   | Description |
+|--------------------------|--------|-----------|-------------|
+| `text_color`             | color  | #ffffff   | Text color. |
+| `font`                   | string | Press Start 2 P | Font name or path. |
+| `resize_method`          | string | LANCZOS   | Image resize method for text rendering. |
+| `background_brightness`  | float  | 1.0       | Background brightness level. |
+| `background_mode`        | string | additive | Background display mode. |
+| `background_color`       | color  | #000000   | Background color. |
 
 **Notes:**
 - `whole_digits` and `decimal_digits` control the template used for sizing in numeric modes, so the text size remains stable as the value changes. These settings do not apply to time display modes.
@@ -43,4 +46,3 @@ The **Number** effect is a diagnostic matrix effect that displays a numeric valu
 - Time modes (HH:MM and HH:MM:SS) update every frame regardless of audio input, ensuring the clock is always accurate.
 - The effect is automatically centered (enforced internally).
 - `display_value` is an instance attribute that can be set programmatically but is not a config option.
-- The following parent options are hidden: `background_color`, `background_mode`, `height_percent`, `gradient`, and various text animation options.
