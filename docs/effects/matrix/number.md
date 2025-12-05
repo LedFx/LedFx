@@ -2,15 +2,16 @@
 
 ## Overview
 
-The **Number** effect is a diagnostic matrix effect that displays a numeric value at the maximum possible text size on a matrix. It inherits from the Texter2d effect and is designed for real-time monitoring and debugging of numeric values on LED matrices.
+The **Number** effect is a diagnostic matrix effect that displays a numeric value or time at the maximum possible text size on a matrix. It inherits from the Texter2d effect and is designed for real-time monitoring, debugging, and displaying time on LED matrices.
 
 ## Features
 
-- **Maximum Text Size**: Automatically displays numbers at the largest size that fits on the matrix
-- **Real-time Updates**: Updates the displayed value every render frame
+- **Maximum Text Size**: Automatically displays numbers or time at the largest size that fits on the matrix
+- **Real-time Updates**: Updates the displayed value every render frame (time modes update regardless of audio input)
 - **Stable Display**: Configurable digit width ensures the text size remains stable regardless of the actual value
+- **Time Display**: Can display current time in HH:MM or HH:MM:SS format
 - **Easy Integration**: Simple interface for setting diagnostic values from anywhere in the codebase
-- **Audio Integration**: By default displays audio metrics, but easily customizable
+- **Audio Integration**: By default displays audio metrics (BPM, BPM Confidence), but also supports time display
 
 ## Configuration
 
@@ -23,10 +24,10 @@ The **Number** effect is a diagnostic matrix effect that displays a numeric valu
 
 | Key              | Type   | Default        | Description |
 |------------------|--------|----------------|-------------|
-| `value_source`   | string | BPM            | Source of the numeric value to display (BPM, BPM Confidence). |
-| `whole_digits`   | int    | 3              | Number of digits to reserve before decimal point (for stable text size). |
-| `decimal_digits` | int    | 2              | Number of digits to display after decimal point (for stable text size). |
-| `negative`       | bool   | false          | Support negative values (include negative sign in sizing). |
+| `value_source`   | string | BPM            | Source of the value to display (BPM, BPM Confidence, Time (HH:MM), Time (HH:MM:SS)). |
+| `whole_digits`   | int    | 3              | Number of digits to reserve before decimal point (for stable text size, numeric modes only). |
+| `decimal_digits` | int    | 2              | Number of digits to display after decimal point (for stable text size, numeric modes only). |
+| `negative`       | bool   | false          | Support negative values (include negative sign in sizing, numeric modes only). |
 
 ### Advanced Settings
 
@@ -37,8 +38,9 @@ The **Number** effect is a diagnostic matrix effect that displays a numeric valu
 | `resize_method`| string | LANCZOS   | Image resize method for text rendering. |
 
 **Notes:**
-- `whole_digits` and `decimal_digits` control the template used for sizing, so the text size remains stable as the value changes.
-- If `negative` is enabled, space is reserved for a minus sign in the template sizing, even if the value is always positive.
+- `whole_digits` and `decimal_digits` control the template used for sizing in numeric modes, so the text size remains stable as the value changes. These settings do not apply to time display modes.
+- If `negative` is enabled, space is reserved for a minus sign in the template sizing, and negative values will display with a '-' prefix. This only applies to numeric modes.
+- Time modes (HH:MM and HH:MM:SS) update every frame regardless of audio input, ensuring the clock is always accurate.
 - The effect is automatically centered (enforced internally).
 - `display_value` is an instance attribute that can be set programmatically but is not a config option.
 - The following parent options are hidden: `background_color`, `background_mode`, `height_percent`, `gradient`, and various text animation options.
