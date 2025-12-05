@@ -40,11 +40,11 @@ ledfx_presets = {
                 "use_gradient": False,
                 "value_option_1": 0.5,
                 "value_source": "Time (HH:MM:SS)",
-                "whole_digits": 3
+                "whole_digits": 3,
             },
-            "name": "Clock"
+            "name": "Clock",
         }
-    },    
+    },
     "flame2d": {
         "bass-red": {
             "config": {
