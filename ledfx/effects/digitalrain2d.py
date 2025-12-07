@@ -29,7 +29,7 @@ class Line:
         draw(draw, image, width, beat_osc): Draws the line on the image.
     """
 
-    def __init__(self, nx, color, offset, speed, fade_multipliers):
+    def __init__(self, nx, color, offset, speed, fade_multipliers, line_width, segment):
         self.nx = nx
         self.ny = 0
         self.color = color
@@ -40,6 +40,8 @@ class Line:
         self.impulse_index = int(offset * 3)
         self.fade_multipliers = fade_multipliers
         self.num_segments = len(fade_multipliers)
+        self.line_width = line_width
+        self.segment = segment
 
     def update(self, run_seconds, passed, tail, impulse):
         ###
@@ -64,38 +66,35 @@ class Line:
             return False
         return True
 
-    def draw(self, draw, image, width, beat_osc):
+    def draw(self, draw, image, beat_osc):
         ###
         # Draw the line on the image
         #
         # Args:
         #   draw: The ImageDraw object to draw on.
         #   image: The image to draw on.
-        #   width: The width of the line.
         #   beat_osc: The beat oscillator value.
         ###
 
         x = int(self.nx * image.width)
         y = int(self.ny * image.height)
-        line_width = max(1, int(image.width * (width / 100.0)))
-        tail_length = int(image.height * self.tail)
 
-        segment = (tail_length - line_width) / self.num_segments
+        # Only render tail if segment > 0 (guards against degenerate geometry)
+        if self.segment > 0:
+            for i in range(self.num_segments):
+                y_start = int(y - (self.line_width - 1) - self.segment * i)
+                y_end = int(y_start - self.segment)
 
-        for i in range(self.num_segments):
-            y_start = y - (line_width - 1) - segment * i
-            y_end = y_start - segment
+                # Use pre-calculated fade and convert once
+                faded_color = (self.color * self.fade_multipliers[i]).astype(
+                    np.uint8
+                )
 
-            # Use pre-calculated fade and convert once
-            faded_color = (self.color * self.fade_multipliers[i]).astype(
-                np.uint8
-            )
-
-            draw.line(
-                (x, y_start, x, y_end),
-                width=line_width,
-                fill=tuple(faded_color),
-            )
+                draw.line(
+                    (x, y_start, x, y_end),
+                    width=self.line_width,
+                    fill=tuple(faded_color),
+                )
 
         beat_roll = beat_osc + self.offset
         beat_roll = beat_roll - np.floor(beat_roll)
@@ -107,8 +106,8 @@ class Line:
         ).astype(np.uint8)
 
         draw.line(
-            (x, y, x, y - (line_width - 1)),
-            width=line_width,
+            (x, int(y), x, int(y - (self.line_width - 1))),
+            width=self.line_width,
             fill=tuple(head_color),
         )
 
@@ -211,6 +210,17 @@ class DigitalRain2d(Twod, GradientEffect):
         self.fade_multipliers = np.array(
             [1.0 - i / (num_segments - 1) for i in range(num_segments)]
         )
+        
+        # Pre-calculate line geometry based on current dimensions
+        self.line_width = max(1, int(self.r_width * (self._config["width"] / 100.0)))
+        tail_length = int(self.r_height * (self._config["tail"] / 100.0))
+        self.tail_pixels = tail_length - self.line_width
+        
+        # Calculate segment size for tail rendering (guard against degenerate geometry)
+        if self.tail_pixels > 0:
+            self.segment = self.tail_pixels / num_segments
+        else:
+            self.segment = 0  # Skip tail rendering when tail is too short
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
@@ -247,6 +257,8 @@ class DigitalRain2d(Twod, GradientEffect):
                     line_random,
                     0.1 + line_random * 0.9,
                     self.fade_multipliers,
+                    self.line_width,
+                    self.segment,
                 )
             )
 
@@ -270,4 +282,4 @@ class DigitalRain2d(Twod, GradientEffect):
 
         # Draw all remaining lines
         for line in self.lines:
-            line.draw(self.m_draw, self.matrix, self.width, self.beat_osc)
+            line.draw(self.m_draw, self.matrix, self.beat_osc)
