@@ -29,7 +29,9 @@ class Line:
         draw(draw, image, width, beat_osc): Draws the line on the image.
     """
 
-    def __init__(self, nx, color, offset, speed, fade_multipliers, line_width, segment):
+    def __init__(
+        self, nx, color, offset, speed, fade_multipliers, line_width, segment
+    ):
         self.nx = nx
         self.ny = 0
         self.color = color
@@ -210,12 +212,14 @@ class DigitalRain2d(Twod, GradientEffect):
         self.fade_multipliers = np.array(
             [1.0 - i / (num_segments - 1) for i in range(num_segments)]
         )
-        
+
         # Pre-calculate line geometry based on current dimensions
-        self.line_width = max(1, int(self.r_width * (self._config["width"] / 100.0)))
+        self.line_width = max(
+            1, int(self.r_width * (self._config["width"] / 100.0))
+        )
         tail_length = int(self.r_height * (self._config["tail"] / 100.0))
         self.tail_pixels = tail_length - self.line_width
-        
+
         # Calculate segment size for tail rendering (guard against degenerate geometry)
         if self.tail_pixels > 0:
             self.segment = self.tail_pixels / num_segments
