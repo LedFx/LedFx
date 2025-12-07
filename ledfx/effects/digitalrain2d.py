@@ -29,7 +29,7 @@ class Line:
         draw(draw, image, width, beat_osc): Draws the line on the image.
     """
 
-    def __init__(self, nx, color, offset, speed):
+    def __init__(self, nx, color, offset, speed, fade_multipliers):
         self.nx = nx
         self.ny = 0
         self.color = color
@@ -38,6 +38,8 @@ class Line:
         self.tail = 0.5
         self.offset = offset
         self.impulse_index = int(offset * 3)
+        self.fade_multipliers = fade_multipliers
+        self.num_segments = len(fade_multipliers)
 
     def update(self, run_seconds, passed, tail, impulse):
         ###
@@ -78,28 +80,36 @@ class Line:
         line_width = max(1, int(image.width * (width / 100.0)))
         tail_length = int(image.height * self.tail)
 
-        segment = (tail_length - line_width) / 10.0
-        for i in range(10):
+        segment = (tail_length - line_width) / self.num_segments
+
+        for i in range(self.num_segments):
             y_start = y - (line_width - 1) - segment * i
             y_end = y_start - segment
+
+            # Use pre-calculated fade and convert once
+            faded_color = (self.color * self.fade_multipliers[i]).astype(
+                np.uint8
+            )
 
             draw.line(
                 (x, y_start, x, y_end),
                 width=line_width,
-                fill=tuple((self.color * (1.0 - i * 0.09)).astype(int)),
+                fill=tuple(faded_color),
             )
 
         beat_roll = beat_osc + self.offset
         beat_roll = beat_roll - np.floor(beat_roll)
 
+        # Pre-calculate white color with beat
+        head_color = (
+            np.array([255, 255, 255], dtype=np.float32)
+            * (0.5 + beat_roll * 0.5)
+        ).astype(np.uint8)
+
         draw.line(
             (x, y, x, y - (line_width - 1)),
             width=line_width,
-            fill=tuple(
-                (np.array([255, 255, 255]) * (0.5 + beat_roll * 0.5)).astype(
-                    int
-                )
-            ),
+            fill=tuple(head_color),
         )
 
 
@@ -108,7 +118,7 @@ class DigitalRain2d(Twod, GradientEffect):
     CATEGORY = "Matrix"
     # add keys you want hidden or in advanced here
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient_roll"]
-    ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
+    ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["tail_segments", "impulse_decay"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -142,6 +152,11 @@ class DigitalRain2d(Twod, GradientEffect):
                 description="Code line tail length as a % of the matrix",
                 default=67,
             ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
+            vol.Optional(
+                "tail_segments",
+                description="Number of tail segments",
+                default=10,
+            ): vol.All(vol.Coerce(int), vol.Range(min=2, max=30)),
             vol.Optional(
                 "impulse_decay",
                 description="Decay filter applied to the impulse for development",
@@ -191,6 +206,11 @@ class DigitalRain2d(Twod, GradientEffect):
     def do_once(self):
         super().do_once()
         self.count = max(1, int(self._config["count"] * self.r_width))
+        # Pre-calculate fade multipliers for line tail segments based on config
+        num_segments = max(2, self._config["tail_segments"])
+        self.fade_multipliers = np.array(
+            [1.0 - i / (num_segments - 1) for i in range(num_segments)]
+        )
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator
@@ -226,6 +246,7 @@ class DigitalRain2d(Twod, GradientEffect):
                     color,
                     line_random,
                     0.1 + line_random * 0.9,
+                    self.fade_multipliers,
                 )
             )
 
@@ -238,10 +259,15 @@ class DigitalRain2d(Twod, GradientEffect):
             self.last_added -= 1.0 / self.add_speed
             self.add_line()
 
-        # olderst lines are first which suits z order
-        for line in self.lines[:]:
-            if not line.update(
+        # Filter out dead lines in one pass instead of removing during iteration
+        self.lines = [
+            line
+            for line in self.lines
+            if line.update(
                 self.run_seconds, self.passed, self.tail, self.impulse
-            ):
-                self.lines.remove(line)
+            )
+        ]
+
+        # Draw all remaining lines
+        for line in self.lines:
             line.draw(self.m_draw, self.matrix, self.width, self.beat_osc)
