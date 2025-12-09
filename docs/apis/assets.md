@@ -2,16 +2,27 @@
 
 ## Overview
 
-LedFx provides secure API endpoints for managing image assets stored in the configuration directory. Assets are stored under `.ledfx/assets/` with comprehensive security controls including path traversal protection, content validation, and size limits.
+LedFx provides secure API endpoints for managing image assets from two sources:
+
+1. **User Assets** (`GET/POST/DELETE /api/assets`) - User-uploaded images stored in the configuration directory under `.ledfx/assets/` with full read/write access and comprehensive security controls including path traversal protection, content validation, and size limits.
+
+2. **Built-in Assets** (`GET /api/assets_fixed`) - Pre-installed GIFs and images bundled with LedFx in `ledfx_assets/gifs/`. These are read-only and provide default assets for effects.
 
 ## Asset Storage
 
-Assets are stored in:
+**User Assets** are stored in:
 ```text
 {config_dir}/assets/
 ```
 
 Where `{config_dir}` is the LedFx configuration directory (e.g., `~/.ledfx` on Linux/macOS or `%USERPROFILE%\.ledfx` on Windows).
+
+**Built-in Assets** are bundled with LedFx installation:
+```text
+{ledfx_assets}/gifs/
+```
+
+Where `{ledfx_assets}` is the LedFx installation assets directory containing pre-installed GIFs and images.
 
 **Example structure:**
 
@@ -19,7 +30,7 @@ The directory structure under `assets/` is arbitrary and determined by the front
 
 ```text
 .ledfx/
-  assets/
+  assets/                    # User-uploaded assets (read/write)
     icon.png
     backgrounds/
       galaxy.jpg
@@ -27,7 +38,40 @@ The directory structure under `assets/` is arbitrary and determined by the front
     effects/
       fire/
         texture.png
+
+ledfx_assets/
+  gifs/                      # Built-in assets (read-only)
+    skull.gif
+    catfixed.gif
+    bumble.gif
+    pixelart/
+      animation.gif
 ```
+
+## Asset Source Selection
+
+LedFx provides **clear separation** between user assets and built-in assets using an explicit prefix system:
+
+### Path Syntax
+
+- **User assets**: Use path without prefix
+  - Example: `"backgrounds/galaxy.jpg"` → `{config_dir}/assets/backgrounds/galaxy.jpg`
+  - Example: `"skull.gif"` → `{config_dir}/assets/skull.gif`
+
+- **Built-in assets**: Use `builtin://` prefix
+  - Example: `"builtin://skull.gif"` → `{ledfx_assets}/gifs/skull.gif`
+  - Example: `"builtin://pixelart/dj_bird.gif"` → `{ledfx_assets}/gifs/pixelart/dj_bird.gif`
+
+### Endpoint Support
+
+| Endpoint | User Assets | Built-in Assets |
+|----------|-------------|------------------|
+| `GET /api/assets` | ✅ List only | ❌ |
+| `GET /api/assets_fixed` | ❌ | ✅ List only |
+| `POST /api/assets/download` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
+| `POST /api/assets/thumbnail` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
+| `POST /api/assets` (upload) | ✅ | ❌ Read-only |
+| `DELETE /api/assets` | ✅ | ❌ Read-only |
 
 ## Supported Image Formats
 
@@ -75,9 +119,9 @@ When deleting assets, empty parent directories are automatically removed.
 
 ## API Endpoints
 
-### List Assets
+### List User Assets
 
-Get a list of all available assets with metadata.
+Get a list of all user-uploaded assets with metadata from `{config_dir}/assets/`.
 
 **Endpoint:** `GET /api/assets`
 
@@ -90,21 +134,20 @@ Get a list of all available assets with metadata.
       "size": 15234,
       "modified": "2025-11-30T10:30:00+00:00",
       "width": 512,
-      "height": 512
+      "height": 512,
+      "format": "PNG",
+      "n_frames": 1,
+      "is_animated": false
     },
     {
       "path": "backgrounds/galaxy.jpg",
       "size": 234567,
       "modified": "2025-11-28T14:22:15+00:00",
       "width": 1920,
-      "height": 1080
-    },
-    {
-      "path": "effects/fire/texture.webp",
-      "size": 45678,
-      "modified": "2025-11-25T09:15:30+00:00",
-      "width": 256,
-      "height": 256
+      "height": 1080,
+      "format": "JPEG",
+      "n_frames": 1,
+      "is_animated": false
     }
   ]
 }
@@ -114,10 +157,78 @@ Get a list of all available assets with metadata.
 - `path` (string) - Relative path to the asset
 - `size` (integer) - File size in bytes
 - `modified` (string) - ISO 8601 timestamp of last modification (UTC)
-- `width` (integer) - Image width in pixels
-- `height` (integer) - Image height in pixels
+- `width` (integer) - Image width in pixels (0 if unreadable)
+- `height` (integer) - Image height in pixels (0 if unreadable)
+- `format` (string|null) - Image format detected by PIL (e.g., "PNG", "JPEG", "GIF", "WEBP")
+- `n_frames` (integer) - Number of frames (1 for static images, >1 for animated GIF/WebP)
+- `is_animated` (boolean) - True if the image contains multiple frames (animated GIF or WebP)
 
 **Entries sorted by:** Path name (alphabetical)
+
+---
+
+### List Built-in Assets
+
+Get a list of all built-in assets with metadata from `{ledfx_assets}/gifs/`.
+
+**Endpoint:** `GET /api/assets_fixed`
+
+**Success Response (bare response - no status wrapper):**
+```json
+{
+  "assets": [
+    {
+      "path": "skull.gif",
+      "size": 123456,
+      "modified": "2025-10-15T08:30:00+00:00",
+      "width": 64,
+      "height": 64,
+      "format": "GIF",
+      "n_frames": 12,
+      "is_animated": true
+    },
+    {
+      "path": "catfixed.gif",
+      "size": 234567,
+      "modified": "2025-10-15T08:30:00+00:00",
+      "width": 48,
+      "height": 48,
+      "format": "GIF",
+      "n_frames": 8,
+      "is_animated": true
+    },
+    {
+      "path": "pixelart/dj_bird.gif",
+      "size": 345678,
+      "modified": "2025-10-15T08:30:00+00:00",
+      "width": 128,
+      "height": 128,
+      "format": "GIF",
+      "n_frames": 24,
+      "is_animated": true
+    }
+  ]
+}
+```
+
+**Metadata Fields:**
+- `path` (string) - Relative path to the built-in asset from `ledfx_assets/gifs/`
+  - Root-level: `"skull.gif"` (refers to `ledfx_assets/gifs/skull.gif`)
+  - Subdirectory: `"pixelart/dj_bird.gif"` (refers to `ledfx_assets/gifs/pixelart/dj_bird.gif`)
+- `size` (integer) - File size in bytes
+- `modified` (string) - ISO 8601 timestamp of last modification (UTC)
+- `width` (integer) - Image width in pixels (0 if unreadable)
+- `height` (integer) - Image height in pixels (0 if unreadable)
+- `format` (string|null) - Image format detected by PIL (e.g., "PNG", "JPEG", "GIF", "WEBP")
+- `n_frames` (integer) - Number of frames (1 for static images, >1 for animated GIF/WebP)
+- `is_animated` (boolean) - True if the image contains multiple frames (animated GIF or WebP)
+
+**Entries sorted by:** Path name (alphabetical)
+
+**Notes:**
+- Built-in assets are **read-only** - they can be used in effects but cannot be modified or deleted via the API
+- This endpoint lists **only** built-in assets - use `GET /api/assets` to list user-uploaded assets
+- To guarantee accessing a built-in asset (not a user override), check this list first and verify the user hasn't uploaded a file with the same path
 
 ---
 
@@ -229,21 +340,38 @@ fetch('/api/assets/download', {
 
 ### Get Asset Thumbnail
 
-Retrieve a thumbnail version of an asset. Thumbnails are automatically generated on-demand with configurable maximum dimension, maintaining the original aspect ratio.
+Generate a thumbnail of an asset on-demand.
+
+**Supports both user and built-in assets** using explicit path syntax:
+- **User assets**: Path without prefix (e.g., `"backgrounds/image.jpg"`)
+- **Built-in assets**: Path with `builtin://` prefix (e.g., `"builtin://skull.gif"`)
 
 **Endpoint:** `POST /api/assets/thumbnail`
 
 **Request Body (JSON):**
 ```json
+// User asset
 {
-  "path": "backgrounds/galaxy.jpg",      // required
+  "path": "backgrounds/galaxy.jpg",      // User asset (no prefix)
   "size": 256,                           // optional, default: 128
   "dimension": "width"                   // optional, default: "max"
+}
+
+// Built-in asset
+{
+  "path": "builtin://skull.gif",         // Built-in asset (builtin:// prefix)
+  "size": 128
 }
 ```
 
 **Parameters:**
-- `path` (string, required) - Relative path to the asset
+- `path` (string, required) - Path to the asset with explicit source selection
+  - **User assets** (no prefix): `{config_dir}/assets/{path}`
+    - `"backgrounds/galaxy.jpg"` → `{config_dir}/assets/backgrounds/galaxy.jpg`
+    - `"my-image.png"` → `{config_dir}/assets/my-image.png`
+  - **Built-in assets** (`builtin://` prefix): `{ledfx_assets}/gifs/{path}`
+    - `"builtin://skull.gif"` → `{ledfx_assets}/gifs/skull.gif`
+    - `"builtin://pixelart/dj_bird.gif"` → `{ledfx_assets}/gifs/pixelart/dj_bird.gif`
 - `size` (integer, optional) - Dimension size in pixels (default: 128)
   - Must be an integer between 16 and 512
   - Values outside this range will return a validation error
@@ -266,18 +394,30 @@ Retrieve a thumbnail version of an asset. Thumbnails are automatically generated
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "Asset not found: backgrounds/galaxy.jpg"
+    "reason": "Asset not found in user assets or built-in assets: backgrounds/galaxy.jpg"
   }
 }
 ```
 
 **Example:**
 ```bash
-# Default 128px thumbnail
+# User asset: Default 128px thumbnail
 curl -X POST http://localhost:8888/api/assets/thumbnail \
   -H "Content-Type: application/json" \
   -d '{"path": "backgrounds/galaxy.jpg"}' \
   --output thumbnail.png
+
+# Built-in asset (root level): Thumbnail of skull.gif
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "builtin://skull.gif", "size": 64}' \
+  --output skull-thumb.png
+
+# Built-in asset (subdirectory): Thumbnail from pixelart folder
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "builtin://pixelart/dj_bird.gif", "size": 128}' \
+  --output dj-bird-thumb.png
 
 # Custom 256px thumbnail
 curl -X POST http://localhost:8888/api/assets/thumbnail \

@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 
 import PIL.Image as Image
 
+from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.utils import (
     ALLOWED_IMAGE_EXTENSIONS,
     ALLOWED_MIME_TYPES,
@@ -99,6 +100,32 @@ def resolve_safe_asset_path(
             - absolute_path: Resolved absolute path within assets directory (None if invalid)
             - error_message: Description of validation failure (None if valid)
     """
+    assets_root = get_assets_directory(config_dir)
+    return _resolve_safe_path_in_directory(
+        assets_root, relative_path, create_dirs, "assets"
+    )
+
+
+def _resolve_safe_path_in_directory(
+    root_dir: str,
+    relative_path: str,
+    create_dirs: bool = False,
+    directory_name: str = "directory",
+) -> tuple[bool, str | None, str | None]:
+    """
+    Internal helper to resolve and validate a path within a root directory.
+
+    Provides security protection against path traversal, absolute paths, and symlink escapes.
+
+    Args:
+        root_dir: Root directory to constrain paths within
+        relative_path: User-provided relative path
+        create_dirs: If True, create parent directories if they don't exist
+        directory_name: Name of directory type for error messages
+
+    Returns:
+        tuple: (is_valid, absolute_path, error_message)
+    """
     if not relative_path:
         return False, None, "Empty path provided"
 
@@ -113,31 +140,29 @@ def resolve_safe_asset_path(
     ):
         return False, None, "Absolute paths are not allowed"
 
-    # Get the assets root directory
-    assets_root = get_assets_directory(config_dir)
-
     try:
-        # Join with assets directory and resolve to absolute path
+        # Join with root directory and resolve to absolute path
         # This handles normalization and resolves any ../ components
-        candidate_path = os.path.join(assets_root, relative_path)
+        candidate_path = os.path.join(root_dir, relative_path)
         resolved_path = os.path.abspath(os.path.realpath(candidate_path))
+        normalized_root = os.path.abspath(os.path.realpath(root_dir))
 
-        # Ensure the resolved path is still within the assets directory
+        # Ensure the resolved path is still within the root directory
         # Use commonpath to verify containment (works across platforms)
         try:
-            common = os.path.commonpath([resolved_path, assets_root])
-            if common != assets_root:
+            common = os.path.commonpath([resolved_path, normalized_root])
+            if common != normalized_root:
                 return (
                     False,
                     None,
-                    "Path escapes assets directory (path traversal blocked)",
+                    f"Path escapes {directory_name} directory (path traversal blocked)",
                 )
         except ValueError:
             # Different drives on Windows or other path incompatibility
             return (
                 False,
                 None,
-                "Path is outside assets directory (different drive/root)",
+                f"Path is outside {directory_name} directory (different drive/root)",
             )
 
         # Create parent directories if requested
@@ -146,7 +171,9 @@ def resolve_safe_asset_path(
             if not os.path.exists(parent_dir):
                 try:
                     os.makedirs(parent_dir, exist_ok=True)
-                    _LOGGER.debug(f"Created asset subdirectory: {parent_dir}")
+                    _LOGGER.debug(
+                        f"Created {directory_name} subdirectory: {parent_dir}"
+                    )
                 except OSError as e:
                     return (
                         False,
@@ -159,6 +186,60 @@ def resolve_safe_asset_path(
     except (ValueError, OSError) as e:
         _LOGGER.warning(f"Path resolution failed for '{relative_path}': {e}")
         return False, None, f"Invalid path: {e}"
+
+
+def validate_asset_extension(file_path: str) -> tuple[bool, str | None]:
+    """
+    Validate that a file has an allowed image extension.
+
+    Args:
+        file_path: Path to the file (only extension is checked)
+
+    Returns:
+        tuple: (is_valid, error_message)
+            - is_valid: True if extension is allowed
+            - error_message: Description of issue (None if valid)
+    """
+    _, ext = os.path.splitext(file_path)
+    ext_lower = ext.lower()
+
+    if ext_lower not in ALLOWED_IMAGE_EXTENSIONS:
+        return (
+            False,
+            f"File extension {ext} is not allowed. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}",
+        )
+
+    return True, None
+
+
+def get_image_metadata(
+    abs_path: str,
+) -> tuple[int, int, str | None, int, bool]:
+    """
+    Extract metadata from an image file.
+
+    Args:
+        abs_path: Absolute path to the image file
+
+    Returns:
+        tuple: (width, height, format, n_frames, is_animated)
+            - width: Image width in pixels (0 if cannot read)
+            - height: Image height in pixels (0 if cannot read)
+            - format: Image format string ('PNG', 'JPEG', 'GIF', 'WEBP', etc.) or None
+            - n_frames: Number of frames for animated images (1 for static)
+            - is_animated: True if image has multiple frames
+    """
+    try:
+        with Image.open(abs_path) as img:
+            width, height = img.size
+            img_format = img.format  # 'PNG', 'JPEG', 'GIF', 'WEBP', etc.
+            # Get frame count for animated formats (GIF, WebP)
+            n_frames = getattr(img, "n_frames", 1)
+            is_animated = n_frames > 1
+            return width, height, img_format, n_frames, is_animated
+    except Exception as e:
+        _LOGGER.warning(f"Could not read image metadata for {abs_path}: {e}")
+        return 0, 0, None, 1, False
 
 
 def validate_asset_extension(file_path: str) -> tuple[bool, str | None]:
@@ -489,6 +570,111 @@ def _cleanup_empty_directories(config_dir: str, dir_path: str) -> None:
             break
 
 
+def _list_assets_from_directory(
+    root_dir: str, log_prefix: str = "assets"
+) -> list[dict]:
+    """
+    List all image assets in a directory recursively with metadata.
+
+    Internal helper function that walks a directory tree and extracts metadata
+    for all image files.
+
+    Args:
+        root_dir: Root directory to scan for assets
+        log_prefix: Prefix for log messages (e.g., "assets", "built-in assets")
+
+    Returns:
+        List of asset metadata dicts, each containing:
+            - path: Relative path from root_dir
+            - size: File size in bytes
+            - modified: ISO 8601 timestamp of last modification
+            - width: Image width in pixels
+            - height: Image height in pixels
+            - format: Image format (e.g., "PNG", "JPEG", "GIF", "WEBP")
+            - n_frames: Number of frames (1 for static images, >1 for animations)
+            - is_animated: Boolean indicating if image is animated
+    """
+    if not os.path.exists(root_dir):
+        _LOGGER.debug(
+            f"{log_prefix.capitalize()} directory does not exist: {root_dir}"
+        )
+        return []
+
+    assets = []
+
+    try:
+        # Walk the directory recursively
+        for root, _dirs, files in os.walk(root_dir):
+            for filename in files:
+                # Skip ignored system files
+                if filename in IGNORED_FILES:
+                    continue
+
+                # Skip temporary files
+                if filename.endswith(".tmp") or filename.startswith(".asset_"):
+                    continue
+
+                # Get absolute path
+                abs_path = os.path.join(root, filename)
+
+                # Get relative path from root directory
+                rel_path = os.path.relpath(abs_path, root_dir)
+
+                # Normalize to forward slashes for consistency
+                rel_path = rel_path.replace("\\", "/")
+
+                # Only include files with allowed image extensions
+                _, ext = os.path.splitext(filename)
+                if ext.lower() not in ALLOWED_IMAGE_EXTENSIONS:
+                    _LOGGER.debug(
+                        f"Skipping non-image file in {log_prefix}: {rel_path}"
+                    )
+                    continue
+
+                # Get file metadata
+                try:
+                    stat_info = os.stat(abs_path)
+                    file_size = stat_info.st_size
+                    modified_time = datetime.fromtimestamp(
+                        stat_info.st_mtime, tz=timezone.utc
+                    ).isoformat()
+
+                    # Get image dimensions and animation metadata
+                    width, height, img_format, n_frames, is_animated = (
+                        get_image_metadata(abs_path)
+                    )
+
+                    assets.append(
+                        {
+                            "path": rel_path,
+                            "size": file_size,
+                            "modified": modified_time,
+                            "width": width,
+                            "height": height,
+                            "format": img_format,
+                            "n_frames": n_frames,
+                            "is_animated": is_animated,
+                        }
+                    )
+
+                except Exception as e:
+                    _LOGGER.warning(
+                        f"Could not get metadata for {log_prefix} {rel_path}: {e}"
+                    )
+                    # Skip this file if we can't get its metadata
+                    continue
+
+        # Sort by path for consistent ordering
+        assets.sort(key=lambda x: x["path"])
+
+        _LOGGER.debug(f"Listed {len(assets)} {log_prefix} with metadata")
+
+    except Exception as e:
+        _LOGGER.error(f"Error listing {log_prefix}: {e}")
+
+    return assets
+
+
 def list_assets(config_dir: str) -> list[dict]:
     """
     List all assets in the assets directory recursively with metadata.
@@ -509,92 +695,12 @@ def list_assets(config_dir: str) -> list[dict]:
             - modified: ISO 8601 timestamp of last modification
             - width: Image width in pixels
             - height: Image height in pixels
+            - format: Image format (e.g., "PNG", "JPEG", "GIF", "WEBP")
+            - n_frames: Number of frames (1 for static images, >1 for animations)
+            - is_animated: Boolean indicating if image is animated
     """
     assets_root = get_assets_directory(config_dir)
-
-    # Ensure assets directory exists
-    if not os.path.exists(assets_root):
-        _LOGGER.debug("Assets directory does not exist, returning empty list")
-        return []
-
-    assets = []
-
-    try:
-        # Walk the assets directory recursively
-        for root, _dirs, files in os.walk(assets_root):
-            for filename in files:
-                # Skip ignored system files
-                if filename in IGNORED_FILES:
-                    continue
-
-                # Skip temporary files
-                if filename.endswith(".tmp") or filename.startswith(".asset_"):
-                    continue
-
-                # Get absolute path
-                abs_path = os.path.join(root, filename)
-
-                # Get relative path from assets root
-                rel_path = os.path.relpath(abs_path, assets_root)
-
-                # Normalize to forward slashes for consistency
-                rel_path = rel_path.replace("\\", "/")
-
-                # Optional: Only include files with allowed image extensions
-                # This makes the listing cleaner for API consumers
-                _, ext = os.path.splitext(filename)
-                if ext.lower() not in ALLOWED_IMAGE_EXTENSIONS:
-                    _LOGGER.debug(
-                        f"Skipping non-image file in assets: {rel_path}"
-                    )
-                    continue
-
-                # Get file metadata
-                try:
-                    stat_info = os.stat(abs_path)
-                    file_size = stat_info.st_size
-                    modified_time = datetime.fromtimestamp(
-                        stat_info.st_mtime, tz=timezone.utc
-                    ).isoformat()
-
-                    # Get image dimensions
-                    width, height = None, None
-                    try:
-                        with Image.open(abs_path) as img:
-                            width, height = img.size
-                    except Exception as e:
-                        _LOGGER.warning(
-                            f"Could not read dimensions for {rel_path}: {e}"
-                        )
-                        # Continue without dimensions rather than failing entirely
-                        width, height = 0, 0
-
-                    assets.append(
-                        {
-                            "path": rel_path,
-                            "size": file_size,
-                            "modified": modified_time,
-                            "width": width,
-                            "height": height,
-                        }
-                    )
-
-                except Exception as e:
-                    _LOGGER.warning(
-                        f"Could not get metadata for {rel_path}: {e}"
-                    )
-                    # Skip this file if we can't get its metadata
-                    continue
-
-        # Sort by path for consistent ordering
-        assets.sort(key=lambda x: x["path"])
-
-        _LOGGER.debug(f"Listed {len(assets)} assets with metadata")
-        return assets
-
-    except Exception as e:
-        _LOGGER.error(f"Failed to list assets: {e}")
-        return []
+    return _list_assets_from_directory(assets_root, "assets")
 
 
 def get_asset_path(
@@ -631,3 +737,59 @@ def get_asset_path(
         return False, None, f"Not a file: {relative_path}"
 
     return True, absolute_path, None
+
+
+def get_asset_or_builtin_path(
+    config_dir: str, relative_path: str
+) -> tuple[bool, str | None, str | None]:
+    """
+    Get the absolute path to an asset file from either user assets or built-in assets.
+
+    Uses explicit prefix to differentiate sources:
+    - "builtin://path" -> Built-in assets from LEDFX_ASSETS_PATH/gifs/
+    - "path" (no prefix) -> User assets from config_dir/assets/
+
+    Args:
+        config_dir: LedFx configuration directory path
+        relative_path: Relative path to the asset, optionally with "builtin://" prefix
+
+    Returns:
+        tuple: (exists, absolute_path, error_message)
+            - exists: True if asset exists and is accessible
+            - absolute_path: Full path to asset file (None if not found)
+            - error_message: Description of issue (None if successful)
+
+    Examples:
+        "backgrounds/galaxy.jpg" -> User asset at {config_dir}/assets/backgrounds/galaxy.jpg
+        "builtin://skull.gif" -> Built-in asset at {ledfx_assets}/gifs/skull.gif
+        "builtin://pixelart/dj_bird.gif" -> Built-in at {ledfx_assets}/gifs/pixelart/dj_bird.gif
+    """
+    # Check for builtin:// prefix
+    if relative_path.startswith("builtin://"):
+        # Built-in asset requested explicitly
+        actual_path = relative_path[10:]  # Remove "builtin://" prefix
+        gifs_root = os.path.join(LEDFX_ASSETS_PATH, "gifs")
+
+        # Use the same path validation as user assets
+        is_valid, resolved_path, error = _resolve_safe_path_in_directory(
+            gifs_root,
+            actual_path,
+            create_dirs=False,
+            directory_name="built-in assets",
+        )
+
+        if not is_valid:
+            return False, None, error
+
+        # Check if file exists
+        if not os.path.exists(resolved_path):
+            return False, None, f"Built-in asset not found: {actual_path}"
+
+        # Ensure it's a file
+        if not os.path.isfile(resolved_path):
+            return False, None, f"Not a file: {actual_path}"
+
+        return True, resolved_path, None
+
+    # No prefix - user asset
+    return get_asset_path(config_dir, relative_path)

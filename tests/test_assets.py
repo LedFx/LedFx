@@ -860,3 +860,234 @@ class TestSecurityPatterns:
         # Should either succeed or fail gracefully (OS limits)
         # No crash or security issue
         assert success is True or error is not None
+
+
+class TestAnimationMetadata:
+    """Test animation metadata extraction in list_assets()."""
+
+    @pytest.fixture
+    def sample_animated_gif_data(self):
+        """Generate sample animated GIF image data."""
+        frames = []
+        for i in range(5):
+            # Create 5 frames with different colors
+            img = Image.new("RGB", (50, 50), color=(255, i * 50, 0))
+            frames.append(img)
+
+        img_bytes = io.BytesIO()
+        frames[0].save(
+            img_bytes,
+            "GIF",
+            save_all=True,
+            append_images=frames[1:],
+            duration=100,
+            loop=0,
+        )
+        return img_bytes.getvalue()
+
+    def test_static_png_metadata(self, temp_config_dir, sample_png_data):
+        """Test that static PNG has correct animation metadata."""
+        ensure_assets_directory(temp_config_dir)
+        success, abs_path, error = save_asset(
+            temp_config_dir, "static.png", sample_png_data
+        )
+        assert success is True
+
+        assets = list_assets(temp_config_dir)
+        assert len(assets) == 1
+
+        asset = assets[0]
+        assert asset["format"] == "PNG"
+        assert asset["n_frames"] == 1
+        assert asset["is_animated"] is False
+
+    def test_static_jpeg_metadata(self, temp_config_dir, sample_jpeg_data):
+        """Test that static JPEG has correct animation metadata."""
+        ensure_assets_directory(temp_config_dir)
+        success, abs_path, error = save_asset(
+            temp_config_dir, "photo.jpg", sample_jpeg_data
+        )
+        assert success is True
+
+        assets = list_assets(temp_config_dir)
+        asset = assets[0]
+        assert asset["format"] == "JPEG"
+        assert asset["n_frames"] == 1
+        assert asset["is_animated"] is False
+
+    def test_static_gif_metadata(self, temp_config_dir, sample_gif_data):
+        """Test that static GIF has correct animation metadata."""
+        ensure_assets_directory(temp_config_dir)
+        success, abs_path, error = save_asset(
+            temp_config_dir, "static.gif", sample_gif_data
+        )
+        assert success is True
+
+        assets = list_assets(temp_config_dir)
+        asset = assets[0]
+        assert asset["format"] == "GIF"
+        assert asset["n_frames"] == 1
+        assert asset["is_animated"] is False
+
+    def test_animated_gif_metadata(
+        self, temp_config_dir, sample_animated_gif_data
+    ):
+        """Test that animated GIF has correct animation metadata."""
+        ensure_assets_directory(temp_config_dir)
+        success, abs_path, error = save_asset(
+            temp_config_dir, "animated.gif", sample_animated_gif_data
+        )
+        assert success is True
+
+        assets = list_assets(temp_config_dir)
+        asset = assets[0]
+        assert asset["format"] == "GIF"
+        assert asset["n_frames"] == 5
+        assert asset["is_animated"] is True
+
+    def test_webp_metadata(self, temp_config_dir, sample_webp_data):
+        """Test that WEBP has correct animation metadata."""
+        ensure_assets_directory(temp_config_dir)
+        success, abs_path, error = save_asset(
+            temp_config_dir, "image.webp", sample_webp_data
+        )
+        assert success is True
+
+        assets = list_assets(temp_config_dir)
+        asset = assets[0]
+        assert asset["format"] == "WEBP"
+        assert asset["n_frames"] == 1
+        assert asset["is_animated"] is False
+
+
+class TestGetAssetOrBuiltinPath:
+    """Test get_asset_or_builtin_path() with explicit prefix-based selection."""
+
+    def test_user_asset_without_prefix(self, temp_config_dir, sample_png_data):
+        """Test that user assets are accessed without prefix."""
+        from ledfx.assets import get_asset_or_builtin_path
+
+        # Create user asset
+        ensure_assets_directory(temp_config_dir)
+        success, user_path, error = save_asset(
+            temp_config_dir, "test.png", sample_png_data
+        )
+        assert success is True
+
+        # get_asset_or_builtin_path without prefix should find user asset
+        exists, resolved_path, error = get_asset_or_builtin_path(
+            temp_config_dir, "test.png"
+        )
+        assert exists is True
+        assert error is None
+        assert resolved_path == user_path
+
+    def test_builtin_asset_with_prefix(self, temp_config_dir):
+        """Test that built-in assets are accessed with builtin:// prefix."""
+        from ledfx.assets import get_asset_or_builtin_path
+        from ledfx.consts import LEDFX_ASSETS_PATH
+
+        # Ensure LEDFX_ASSETS_PATH/gifs directory exists
+        builtin_gifs_dir = os.path.join(LEDFX_ASSETS_PATH, "gifs")
+        if not os.path.exists(builtin_gifs_dir):
+            pytest.skip("Built-in assets directory not available")
+
+        # Find any built-in GIF
+        builtin_files = [
+            f
+            for f in os.listdir(builtin_gifs_dir)
+            if f.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+        ]
+
+        if len(builtin_files) == 0:
+            pytest.skip("No built-in assets available for testing")
+
+        test_file = builtin_files[0]
+
+        # get_asset_or_builtin_path with builtin:// prefix should find built-in asset
+        exists, resolved_path, error = get_asset_or_builtin_path(
+            temp_config_dir, f"builtin://{test_file}"
+        )
+        assert exists is True
+        assert error is None
+        assert resolved_path is not None
+        assert os.path.exists(resolved_path)
+
+    def test_nonexistent_user_asset(self, temp_config_dir):
+        """Test that non-existent user assets return exists=False."""
+        from ledfx.assets import get_asset_or_builtin_path
+
+        exists, resolved_path, error = get_asset_or_builtin_path(
+            temp_config_dir, "doesnotexist.png"
+        )
+        assert exists is False
+        assert resolved_path is None
+        assert "not found" in error.lower()
+
+    def test_nonexistent_builtin_asset(self, temp_config_dir):
+        """Test that non-existent built-in assets return exists=False."""
+        from ledfx.assets import get_asset_or_builtin_path
+
+        exists, resolved_path, error = get_asset_or_builtin_path(
+            temp_config_dir, "builtin://doesnotexist.gif"
+        )
+        assert exists is False
+        assert resolved_path is None
+        assert "not found" in error.lower()
+
+    def test_builtin_path_traversal_rejected(self, temp_config_dir):
+        """Test that path traversal is rejected for built-in assets."""
+        from ledfx.assets import get_asset_or_builtin_path
+
+        exists, resolved_path, error = get_asset_or_builtin_path(
+            temp_config_dir, "builtin://../../../etc/passwd"
+        )
+        assert exists is False
+        assert resolved_path is None
+        assert error is not None
+
+    def test_builtin_nested_path(self, temp_config_dir):
+        """Test that nested paths work for built-in assets with builtin:// prefix."""
+        from ledfx.assets import get_asset_or_builtin_path
+        from ledfx.consts import LEDFX_ASSETS_PATH
+
+        # Check if there are subdirectories in built-in gifs
+        builtin_gifs_dir = os.path.join(LEDFX_ASSETS_PATH, "gifs")
+        if not os.path.exists(builtin_gifs_dir):
+            pytest.skip("Built-in assets directory not available")
+
+        # Find any subdirectory with images
+        for root, dirs, files in os.walk(builtin_gifs_dir):
+            for file in files:
+                if file.lower().endswith(
+                    (".png", ".jpg", ".jpeg", ".gif", ".webp")
+                ):
+                    # Get relative path from gifs directory
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, builtin_gifs_dir)
+
+                    # Test nested path resolution with builtin:// prefix
+                    exists, resolved_path, error = get_asset_or_builtin_path(
+                        temp_config_dir, f"builtin://{rel_path}"
+                    )
+                    assert exists is True
+                    assert error is None
+                    # Normalize paths for comparison (case-insensitive on Windows)
+                    assert os.path.normcase(resolved_path) == os.path.normcase(
+                        full_path
+                    )
+                    return
+
+        pytest.skip("No nested built-in assets available for testing")
+
+    def test_empty_path_rejected(self, temp_config_dir):
+        """Test that empty path is rejected."""
+        from ledfx.assets import get_asset_or_builtin_path
+
+        exists, resolved_path, error = get_asset_or_builtin_path(
+            temp_config_dir, ""
+        )
+        assert exists is False
+        assert resolved_path is None
+        # Empty path gets treated as directory, not a file
+        assert error is not None

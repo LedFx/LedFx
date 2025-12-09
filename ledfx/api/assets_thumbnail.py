@@ -22,6 +22,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
     REST API endpoint for generating asset thumbnails on-demand.
 
     Generates PNG thumbnails with configurable size, maintaining aspect ratio.
+    Supports both user-uploaded assets and built-in assets from LEDFX_ASSETS_PATH.
     """
 
     ENDPOINT_PATH = "/api/assets/thumbnail"
@@ -78,8 +79,8 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             )
 
         try:
-            # Get the asset path
-            exists, abs_path, error = assets.get_asset_path(
+            # Get the asset path (checks both user assets and built-in assets)
+            exists, abs_path, error = assets.get_asset_or_builtin_path(
                 self._ledfx.config_dir, asset_path
             )
 
