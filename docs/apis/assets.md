@@ -290,15 +290,27 @@ Retrieve a specific asset file.
 
 **Endpoint:** `POST /api/assets/download`
 
+**Supports both user and built-in assets** using explicit path syntax:
+- **User assets**: Path without prefix (e.g., `"icons/led.png"`)
+- **Built-in assets**: Path with `builtin://` prefix (e.g., `"builtin://skull.gif"`)
+
 **Request Body (JSON):**
 ```json
+// User asset
 {
   "path": "icons/led.png"
+}
+
+// Built-in asset
+{
+  "path": "builtin://skull.gif"
 }
 ```
 
 **Parameters:**
-- `path` (string, required) - Relative path to the asset
+- `path` (string, required) - Path to the asset with explicit source selection
+  - **User assets** (no prefix): `{config_dir}/assets/{path}`
+  - **Built-in assets** (`builtin://` prefix): `{ledfx_assets}/gifs/{path}`
 
 **Success Response:**
 - Binary image data with appropriate `Content-Type` header (HTTP 200)
@@ -316,18 +328,47 @@ Retrieve a specific asset file.
 
 **Example:**
 ```bash
+# Unix/Linux/macOS:
+
+# User asset
 curl -X POST http://localhost:8888/api/assets/download \
   -H "Content-Type: application/json" \
   -d '{"path": "icons/led.png"}' \
   --output led.png
+
+# Built-in asset
+curl -X POST http://localhost:8888/api/assets/download \
+  -H "Content-Type: application/json" \
+  -d '{"path": "builtin://skull.gif"}' \
+  --output skull.gif
+
+# Windows (CMD/PowerShell):
+
+# User asset
+curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"icons/led.png\"}" --output led.png
+
+# Built-in asset
+curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\"}" --output skull.gif
 ```
 
 ```javascript
-// Download asset
+// Download user asset
 fetch('/api/assets/download', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ path: 'icons/led.png' })
+})
+  .then(response => response.blob())
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    // Use the image...
+  });
+
+// Download built-in asset
+fetch('/api/assets/download', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ path: 'builtin://skull.gif' })
 })
   .then(response => response.blob())
   .then(blob => {
@@ -401,6 +442,8 @@ Generate a thumbnail of an asset on-demand.
 
 **Example:**
 ```bash
+# Unix/Linux/macOS:
+
 # User asset: Default 128px thumbnail
 curl -X POST http://localhost:8888/api/assets/thumbnail \
   -H "Content-Type: application/json" \
@@ -436,6 +479,17 @@ curl -X POST http://localhost:8888/api/assets/thumbnail \
   -H "Content-Type: application/json" \
   -d '{"path": "backgrounds/galaxy.jpg", "size": 150, "dimension": "height"}' \
   --output thumbnail-150h.png
+
+# Windows (CMD/PowerShell) - escape inner quotes with backslash:
+
+# User asset: Default 128px thumbnail
+curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\"}" --output thumbnail.png
+
+# Built-in asset with size parameter
+curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\", \"size\": 64}" --output skull-thumb.png
+
+# Custom 256px thumbnail
+curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\", \"size\": 256}" --output thumbnail-large.png
 ```
 
 **Notes:**

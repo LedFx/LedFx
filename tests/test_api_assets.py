@@ -168,6 +168,47 @@ class TestAssetsAPIDownload:
         assert result["status"] == "failed"
         assert "not found" in result["payload"]["reason"].lower()
 
+    def test_download_builtin_asset(self):
+        """Test downloading a built-in asset using builtin:// prefix."""
+        # Get list of built-in assets
+        resp = requests.get(
+            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+        )
+        assert resp.status_code == 200
+        builtin_assets = resp.json().get("assets", [])
+
+        if not builtin_assets:
+            pytest.skip("No built-in assets available for testing")
+
+        # Download first built-in asset with builtin:// prefix
+        builtin_asset = builtin_assets[0]
+        builtin_path = f"builtin://{builtin_asset['path']}"
+
+        resp = requests.post(
+            ASSETS_DOWNLOAD_API_URL,
+            json={"path": builtin_path},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        # Content-Type should match the actual file type
+        assert "image/" in resp.headers["Content-Type"]
+        # Should get binary data
+        assert len(resp.content) > 0
+
+    def test_download_builtin_nonexistent(self):
+        """Test that downloading non-existent built-in asset returns error."""
+        resp = requests.post(
+            ASSETS_DOWNLOAD_API_URL,
+            json={"path": "builtin://nonexistent.gif"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "not found" in result["payload"]["reason"].lower()
+
 
 class TestAssetsAPIDelete:
     """Test DELETE /api/assets - deleting assets."""

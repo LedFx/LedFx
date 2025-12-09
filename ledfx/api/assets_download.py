@@ -15,8 +15,8 @@ class AssetsDownloadEndpoint(RestEndpoint):
     """
     REST API endpoint for downloading individual assets.
 
-    Separate endpoint for downloading to maintain consistency with cache API pattern
-    of using JSON request bodies instead of query parameters.
+    Supports both user-uploaded assets and built-in assets from LEDFX_ASSETS_PATH.
+    Use 'builtin://' prefix for built-in assets, no prefix for user assets.
     """
 
     ENDPOINT_PATH = "/api/assets/download"
@@ -27,6 +27,8 @@ class AssetsDownloadEndpoint(RestEndpoint):
 
         Request Body (JSON):
             path (required): Relative path to the asset
+                - User assets: "icons/led.png" (no prefix)
+                - Built-in assets: "builtin://skull.gif" (builtin:// prefix)
 
         Returns:
             Binary image file with appropriate Content-Type header,
@@ -46,7 +48,8 @@ class AssetsDownloadEndpoint(RestEndpoint):
             )
 
         try:
-            exists, abs_path, error = assets.get_asset_path(
+            # Get the asset path (checks both user assets and built-in assets)
+            exists, abs_path, error = assets.get_asset_or_builtin_path(
                 self._ledfx.config_dir, asset_path
             )
 
