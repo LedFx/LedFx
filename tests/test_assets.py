@@ -888,7 +888,7 @@ class TestAnimationMetadata:
     def test_static_png_metadata(self, temp_config_dir, sample_png_data):
         """Test that static PNG has correct animation metadata."""
         ensure_assets_directory(temp_config_dir)
-        success, abs_path, error = save_asset(
+        success, _abs_path, _error = save_asset(
             temp_config_dir, "static.png", sample_png_data
         )
         assert success is True
@@ -904,7 +904,7 @@ class TestAnimationMetadata:
     def test_static_jpeg_metadata(self, temp_config_dir, sample_jpeg_data):
         """Test that static JPEG has correct animation metadata."""
         ensure_assets_directory(temp_config_dir)
-        success, abs_path, error = save_asset(
+        success, _abs_path, _error = save_asset(
             temp_config_dir, "photo.jpg", sample_jpeg_data
         )
         assert success is True
@@ -918,7 +918,7 @@ class TestAnimationMetadata:
     def test_static_gif_metadata(self, temp_config_dir, sample_gif_data):
         """Test that static GIF has correct animation metadata."""
         ensure_assets_directory(temp_config_dir)
-        success, abs_path, error = save_asset(
+        success, _abs_path, _error = save_asset(
             temp_config_dir, "static.gif", sample_gif_data
         )
         assert success is True
@@ -934,7 +934,7 @@ class TestAnimationMetadata:
     ):
         """Test that animated GIF has correct animation metadata."""
         ensure_assets_directory(temp_config_dir)
-        success, abs_path, error = save_asset(
+        success, _abs_path, _error = save_asset(
             temp_config_dir, "animated.gif", sample_animated_gif_data
         )
         assert success is True
@@ -948,7 +948,7 @@ class TestAnimationMetadata:
     def test_webp_metadata(self, temp_config_dir, sample_webp_data):
         """Test that WEBP has correct animation metadata."""
         ensure_assets_directory(temp_config_dir)
-        success, abs_path, error = save_asset(
+        success, _abs_path, _error = save_asset(
             temp_config_dir, "image.webp", sample_webp_data
         )
         assert success is True
@@ -1057,7 +1057,7 @@ class TestGetAssetOrBuiltinPath:
             pytest.skip("Built-in assets directory not available")
 
         # Find any subdirectory with images
-        for root, dirs, files in os.walk(builtin_gifs_dir):
+        for root, _dirs, files in os.walk(builtin_gifs_dir):
             for file in files:
                 if file.lower().endswith(
                     (".png", ".jpg", ".jpeg", ".gif", ".webp")

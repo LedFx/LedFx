@@ -188,30 +188,6 @@ def _resolve_safe_path_in_directory(
         return False, None, f"Invalid path: {e}"
 
 
-def validate_asset_extension(file_path: str) -> tuple[bool, str | None]:
-    """
-    Validate that a file has an allowed image extension.
-
-    Args:
-        file_path: Path to the file (only extension is checked)
-
-    Returns:
-        tuple: (is_valid, error_message)
-            - is_valid: True if extension is allowed
-            - error_message: Description of issue (None if valid)
-    """
-    _, ext = os.path.splitext(file_path)
-    ext_lower = ext.lower()
-
-    if ext_lower not in ALLOWED_IMAGE_EXTENSIONS:
-        return (
-            False,
-            f"File extension {ext} is not allowed. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}",
-        )
-
-    return True, None
-
-
 def get_image_metadata(
     abs_path: str,
 ) -> tuple[int, int, str | None, int, bool]:
