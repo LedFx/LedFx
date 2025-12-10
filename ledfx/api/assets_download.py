@@ -17,13 +17,40 @@ class AssetsDownloadEndpoint(RestEndpoint):
 
     Supports both user-uploaded assets and built-in assets from LEDFX_ASSETS_PATH.
     Use 'builtin://' prefix for built-in assets, no prefix for user assets.
+
+    Supports both GET and POST methods:
+    - GET: /api/assets/download?path=icons/led.png (browser-friendly)
+    - POST: JSON body with {"path": "icons/led.png"} (programmatic use)
     """
 
     ENDPOINT_PATH = "/api/assets/download"
 
+    async def get(self, request: web.Request) -> web.Response:
+        """
+        Download a specific asset file via GET request.
+
+        Query Parameters:
+            path (required): Relative path to the asset
+                - User assets: "icons/led.png" (no prefix)
+                - Built-in assets: "builtin://skull.gif" (builtin:// prefix)
+
+        Returns:
+            Binary image file with appropriate Content-Type header,
+            or error response if path is invalid or asset not found.
+        """
+        asset_path = request.query.get("path")
+
+        if not asset_path:
+            return await self.invalid_request(
+                message='Required query parameter "path" was not provided',
+                type="error",
+            )
+
+        return await self._download(request, asset_path)
+
     async def post(self, request: web.Request) -> web.Response:
         """
-        Download a specific asset file.
+        Download a specific asset file via POST request.
 
         Request Body (JSON):
             path (required): Relative path to the asset
@@ -47,6 +74,21 @@ class AssetsDownloadEndpoint(RestEndpoint):
                 type="error",
             )
 
+        return await self._download(request, asset_path)
+
+    async def _download(
+        self, request: web.Request, asset_path: str
+    ) -> web.Response:
+        """
+        Internal helper to download an asset given its path.
+
+        Args:
+            request: The aiohttp request object
+            asset_path: Relative path to the asset (may include builtin:// prefix)
+
+        Returns:
+            Binary file response or JSON error response
+        """
         try:
             # Get the asset path (checks both user assets and built-in assets)
             exists, abs_path, error = assets.get_asset_or_builtin_path(

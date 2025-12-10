@@ -285,11 +285,66 @@ curl -X POST http://localhost:8888/api/assets -F "file=@/path/to/image.png" -F "
 
 Retrieve a specific asset file.
 
-**Endpoint:** `POST /api/assets/download`
+**Supports both GET and POST methods:**
+- **GET** (recommended for browsers): Query parameter-based, ideal for `<img>`, `<video>`, download links
+- **POST**: JSON body-based, ideal for programmatic access
 
 **Supports both user and built-in assets** using explicit path syntax:
 - **User assets**: Path without prefix (e.g., `"icons/led.png"`)
 - **Built-in assets**: Path with `builtin://` prefix (e.g., `"builtin://skull.gif"`)
+
+#### GET Request (Browser-Friendly)
+
+**Endpoint:** `GET /api/assets/download?path={asset_path}`
+
+**Query Parameters:**
+- `path` (string, required) - Path to the asset with explicit source selection
+  - **User assets** (no prefix): `{config_dir}/assets/{path}`
+  - **Built-in assets** (`builtin://` prefix): `{ledfx_assets}/gifs/{path}`
+
+**Success Response:**
+- Binary image data with appropriate `Content-Type` header (HTTP 200)
+
+**Error Response (HTTP 200 with JSON):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Asset not found: icons/led.png"
+  }
+}
+```
+
+**Examples:**
+```bash
+# User asset
+curl "http://localhost:8888/api/assets/download?path=icons/led.png" --output led.png
+
+# Built-in asset (note: builtin:// is URL-encoded as builtin%3A%2F%2F)
+curl "http://localhost:8888/api/assets/download?path=builtin://skull.gif" --output skull.gif
+```
+
+**Browser Usage:**
+```html
+<!-- User asset in img tag -->
+<img src="http://localhost:8888/api/assets/download?path=icons/led.png" alt="LED Icon">
+
+<!-- Built-in asset in img tag -->
+<img src="http://localhost:8888/api/assets/download?path=builtin://skull.gif" alt="Skull Animation">
+
+<!-- Download link -->
+<a href="http://localhost:8888/api/assets/download?path=backgrounds/galaxy.jpg" download>Download Background</a>
+```
+
+**Notes:**
+- The `builtin://` prefix will be automatically URL-encoded by browsers when used in HTML attributes
+- Query parameter approach is ideal for direct browser integration (`<img src="...">`, `<video src="...">`, etc.)
+- Returns the same binary file content as POST method
+
+#### POST Request (Programmatic)
+
+**Endpoint:** `POST /api/assets/download`
 
 **Request Body (JSON):**
 ```json
@@ -323,7 +378,7 @@ Retrieve a specific asset file.
 }
 ```
 
-**Example:**
+**Examples:**
 ```bash
 # User asset
 curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"icons/led.png\"}" --output led.png
@@ -331,6 +386,11 @@ curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: applica
 # Built-in asset
 curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\"}" --output skull.gif
 ```
+
+**Notes:**
+- POST method is primarily for programmatic use with JSON-based API clients
+- Returns the same binary file content as GET method
+- Both methods use identical path resolution and security checks
 
 ---
 

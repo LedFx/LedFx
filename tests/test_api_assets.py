@@ -231,6 +231,78 @@ class TestAssetsAPIDownload:
         assert result["status"] == "failed"
         assert "not found" in result["payload"]["reason"].lower()
 
+    def test_download_get_existing_asset(self, sample_png_bytes):
+        """Test downloading an existing asset via GET request."""
+        # Upload first
+        files = {
+            "file": ("download.png", io.BytesIO(sample_png_bytes), "image/png")
+        }
+        data = {"path": "test_download_get.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Download via GET
+        resp = requests.get(
+            ASSETS_DOWNLOAD_API_URL,
+            params={"path": "test_download_get.png"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+        assert resp.content == sample_png_bytes
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_download_get.png"}, timeout=5
+        )
+
+    def test_download_get_nonexistent_asset(self):
+        """Test that downloading non-existent asset via GET returns error."""
+        resp = requests.get(
+            ASSETS_DOWNLOAD_API_URL,
+            params={"path": "nonexistent_get.png"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "not found" in result["payload"]["reason"].lower()
+
+    def test_download_get_builtin_asset(self):
+        """Test downloading a built-in asset via GET using builtin:// prefix."""
+        # Get list of built-in assets
+        resp = requests.get(
+            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+        )
+        assert resp.status_code == 200
+        builtin_assets = resp.json().get("assets", [])
+
+        if not builtin_assets:
+            pytest.skip("No built-in assets available for testing")
+
+        # Download first built-in asset with builtin:// prefix
+        builtin_asset = builtin_assets[0]
+        builtin_path = f"builtin://{builtin_asset['path']}"
+
+        resp = requests.get(
+            ASSETS_DOWNLOAD_API_URL,
+            params={"path": builtin_path},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        # Content-Type should match the actual file type
+        assert "image/" in resp.headers["Content-Type"]
+        # Should get binary data
+        assert len(resp.content) > 0
+
+    def test_download_get_missing_path_parameter(self):
+        """Test that GET without path parameter returns error."""
+        resp = requests.get(ASSETS_DOWNLOAD_API_URL, timeout=5)
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "path" in result["payload"]["reason"].lower()
+
 
 class TestAssetsAPIDelete:
     """Test DELETE /api/assets - deleting assets."""
