@@ -208,7 +208,9 @@ def validate_local_path(
                or None if validation failed
     """
     if not allowed_directories:
-        _LOGGER.warning("No allowed directories configured for path validation")
+        _LOGGER.warning(
+            "No allowed directories configured for path validation"
+        )
         return False, None
 
     try:
