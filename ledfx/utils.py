@@ -54,14 +54,11 @@ from ledfx.security_utils import (
     MAX_IMAGE_SIZE_BYTES,
     build_browser_request,
     is_allowed_image_extension,
+    resolve_safe_path_in_directory,
     validate_image_mime_type,
-)
-from ledfx.security_utils import (
-    validate_local_path as _validate_local_path_impl,
-)
-from ledfx.security_utils import (
+    validate_local_path,
     validate_pil_image,
-    validate_url_safety,
+    validate_url_safety
 )
 
 # from asyncio import coroutines, ensure_future
@@ -1510,9 +1507,9 @@ def get_image_cache():
     return _image_cache
 
 
-def validate_local_path(file_path: str) -> tuple[bool, str | None]:
+def validate_local_image_path(file_path: str) -> tuple[bool, str | None]:
     """
-    Validate that local file path is within allowed directories (path traversal protection).
+    Validate that local image file path is within allowed directories (path traversal protection).
 
     Allowed directories:
     - Config directory (user data)
@@ -1532,61 +1529,9 @@ def validate_local_path(file_path: str) -> tuple[bool, str | None]:
         return False, None
 
     # Delegate to centralized security function
-    return _validate_local_path_impl(
+    return validate_local_path(
         file_path, [_config_dir, LEDFX_ASSETS_PATH]
     )
-
-
-def _resolve_asset_path(
-    root_dir: str, relative_path: str, asset_type: str = "asset"
-) -> tuple[bool, str | None]:
-    """
-    Resolve and validate a relative path within a root directory.
-
-    Provides security protection against path traversal, absolute paths, and empty paths.
-
-    Args:
-        root_dir: Root directory to constrain paths within
-        relative_path: User-provided relative path
-        asset_type: Type of asset for error messages (e.g., "user asset", "built-in asset")
-
-    Returns:
-        tuple: (is_valid, absolute_path or None)
-    """
-    # Normalize path separators
-    normalized_path = relative_path.replace("\\", "/").strip()
-
-    # Reject empty path
-    if not normalized_path:
-        _LOGGER.warning(f"{asset_type} path cannot be empty")
-        return False, None
-
-    # Reject absolute paths
-    if os.path.isabs(normalized_path):
-        _LOGGER.warning(
-            f"Absolute paths not allowed for {asset_type}: {normalized_path}"
-        )
-        return False, None
-
-    # Construct full path
-    resolved_path = os.path.normpath(os.path.join(root_dir, normalized_path))
-
-    # Security check: ensure resolved path is within root_dir
-    try:
-        common = os.path.commonpath([root_dir, resolved_path])
-        if not os.path.normpath(common) == os.path.normpath(root_dir):
-            _LOGGER.warning(
-                f"Path traversal attempt blocked for {asset_type}: {normalized_path}"
-            )
-            return False, None
-    except ValueError:
-        # Paths on different drives on Windows
-        _LOGGER.warning(
-            f"Invalid path for {asset_type} (different drive): {normalized_path}"
-        )
-        return False, None
-
-    return True, resolved_path
 
 
 def _validate_and_open_image(
@@ -1684,10 +1629,11 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
             gifs_root = os.path.join(LEDFX_ASSETS_PATH, "gifs")
 
             # Resolve and validate path
-            is_valid, resolved_path = _resolve_asset_path(
-                gifs_root, actual_path, "built-in asset"
+            is_valid, resolved_path, error = resolve_safe_path_in_directory(
+                gifs_root, actual_path, create_dirs=False, directory_name="built-in assets"
             )
             if not is_valid:
+                _LOGGER.warning(f"Built-in asset path validation failed: {error}")
                 return None
 
             # Validate and open the image
@@ -1805,10 +1751,11 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 assets_root = os.path.join(config_dir, "assets")
 
                 # Resolve and validate path
-                is_valid, resolved_path = _resolve_asset_path(
-                    assets_root, gif_path, "user asset"
+                is_valid, resolved_path, error = resolve_safe_path_in_directory(
+                    assets_root, gif_path, create_dirs=False, directory_name="user assets"
                 )
                 if not is_valid:
+                    _LOGGER.warning(f"User asset path validation failed: {error}")
                     return None
 
                 # Validate and open the image
@@ -1818,7 +1765,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 return gif if gif else None
             else:
                 # Legacy: absolute path or no config_dir - use existing validation
-                is_valid, validated_path = validate_local_path(gif_path)
+                is_valid, validated_path = validate_local_image_path(gif_path)
                 if not is_valid:
                     _LOGGER.warning(
                         f"Path traversal blocked or path outside config directory: {gif_path}"
@@ -1956,7 +1903,7 @@ def open_image(image_path, force_refresh=False):
                 return None
 
             # Path traversal protection
-            is_valid, validated_path = validate_local_path(image_path)
+            is_valid, validated_path = validate_local_image_path(image_path)
             if not is_valid:
                 _LOGGER.warning(
                     f"Path traversal blocked or path outside config directory: {image_path}"
