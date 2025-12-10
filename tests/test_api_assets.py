@@ -39,6 +39,28 @@ def sample_jpeg_bytes():
     return img_bytes.getvalue()
 
 
+@pytest.fixture
+def sample_animated_gif_bytes():
+    """Generate sample animated GIF image bytes (3 frames)."""
+    frames = []
+    # Create 3 frames with different colors
+    for color in ["red", "green", "blue"]:
+        img = Image.new("RGB", (100, 100), color=color)
+        frames.append(img)
+    
+    # Save as animated GIF
+    img_bytes = io.BytesIO()
+    frames[0].save(
+        img_bytes,
+        format="GIF",
+        save_all=True,
+        append_images=frames[1:],
+        duration=100,  # 100ms per frame
+        loop=0,
+    )
+    return img_bytes.getvalue()
+
+
 class TestAssetsAPIList:
     """Test GET /api/assets - listing assets."""
 
@@ -681,6 +703,192 @@ class TestAssetsAPIThumbnail:
             timeout=5,
         )
 
+    def test_thumbnail_animated_gif_default(self, sample_animated_gif_bytes):
+        """Test generating animated WebP thumbnail from GIF (default animated=true)."""
+        # Upload animated GIF asset
+        files = {
+            "file": (
+                "animated.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_animated.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail (default animated=true)
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_animated.gif", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/webp"
+
+        # Verify it's an animated WebP
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "WEBP"
+        assert getattr(img, "is_animated", False) is True
+        assert getattr(img, "n_frames", 1) == 3  # Should have 3 frames
+        
+        # Verify dimensions are correct for first frame
+        assert max(img.size) <= 64
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_animated.gif"}, timeout=5
+        )
+
+    def test_thumbnail_animated_gif_explicit_true(self, sample_animated_gif_bytes):
+        """Test generating animated WebP thumbnail with explicit animated=true."""
+        # Upload animated GIF asset
+        files = {
+            "file": (
+                "animated2.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_animated2.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with explicit animated=true
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_animated2.gif", "size": 64, "animated": True},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/webp"
+
+        # Verify it's an animated WebP
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "WEBP"
+        assert getattr(img, "is_animated", False) is True
+        assert getattr(img, "n_frames", 1) == 3
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_animated2.gif"}, timeout=5
+        )
+
+    def test_thumbnail_animated_gif_static(self, sample_animated_gif_bytes):
+        """Test generating static PNG thumbnail from GIF with animated=false."""
+        # Upload animated GIF asset
+        files = {
+            "file": (
+                "animated_static.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_animated_static.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with animated=false
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_animated_static.gif", "size": 64, "animated": False},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify it's a static PNG (first frame only)
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        # PNG should not have is_animated or should be False
+        assert getattr(img, "is_animated", False) is False
+        assert max(img.size) <= 64
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_animated_static.gif"},
+            timeout=5,
+        )
+
+    def test_thumbnail_animated_string_parameter(self, sample_animated_gif_bytes):
+        """Test that animated parameter accepts string values like 'true'/'false'."""
+        # Upload animated GIF asset
+        files = {
+            "file": (
+                "animated_string.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_animated_string.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Test with string "false"
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_animated_string.gif", "size": 64, "animated": "false"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Test with string "true"
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_animated_string.gif", "size": 64, "animated": "true"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/webp"
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_animated_string.gif"},
+            timeout=5,
+        )
+
+    def test_thumbnail_builtin_animated(self):
+        """Test generating animated thumbnail from builtin animated asset."""
+        # Test with a known builtin animated GIF (skull.gif exists in ledfx_assets)
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "builtin://skull.gif", "size": 64, "animated": True},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/webp"
+
+        # Verify it's an animated WebP
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "WEBP"
+        assert max(img.size) <= 64
+
+    def test_thumbnail_builtin_static(self):
+        """Test generating static PNG from builtin animated asset with animated=false."""
+        # Test with a known builtin animated GIF
+        resp = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "builtin://skull.gif", "size": 64, "animated": False},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify it's a static PNG
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert max(img.size) <= 64
+
 
 class TestAssetsAPIAnimationMetadata:
     """Test GET /api/assets - animation metadata in asset listings."""
@@ -823,12 +1031,13 @@ class TestAssetsThumbnailBuiltinSupport:
         )
 
         assert resp.status_code == 200
-        assert resp.headers["Content-Type"] == "image/png"
+        # Built-in assets may be animated (WebP) or static (PNG)
+        assert resp.headers["Content-Type"] in ("image/png", "image/webp")
         assert len(resp.content) > 0
 
-        # Verify it's a valid PNG image
+        # Verify it's a valid image
         img = Image.open(io.BytesIO(resp.content))
-        assert img.format == "PNG"
+        assert img.format in ("PNG", "WEBP")
         assert img.width <= 64
         assert img.height <= 64
 
@@ -909,7 +1118,8 @@ class TestAssetsThumbnailBuiltinSupport:
         )
 
         assert resp.status_code == 200
-        assert resp.headers["Content-Type"] == "image/png"
+        # Built-in assets may be animated (WebP) or static (PNG)
+        assert resp.headers["Content-Type"] in ("image/png", "image/webp")
 
     def test_thumbnail_builtin_nonexistent(self):
         """Test that requesting thumbnail for non-existent built-in asset returns error."""

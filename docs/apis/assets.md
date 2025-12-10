@@ -271,12 +271,9 @@ Upload a new image asset. Requires `multipart/form-data` encoding.
 - Uploading to an existing path will replace the file
 
 **Example:**
-```javascript
-const formData = new FormData();
-formData.append('file', imageFile);
-formData.append('path', 'icons/led.png');
-
-fetch('/api/assets', {
+```bash
+curl -X POST http://localhost:8888/api/assets -F "file=@/path/to/image.png" -F "path=icons/led.png"
+```
   method: 'POST',
   body: formData
 });
@@ -328,53 +325,11 @@ Retrieve a specific asset file.
 
 **Example:**
 ```bash
-# Unix/Linux/macOS:
-
-# User asset
-curl -X POST http://localhost:8888/api/assets/download \
-  -H "Content-Type: application/json" \
-  -d '{"path": "icons/led.png"}' \
-  --output led.png
-
-# Built-in asset
-curl -X POST http://localhost:8888/api/assets/download \
-  -H "Content-Type: application/json" \
-  -d '{"path": "builtin://skull.gif"}' \
-  --output skull.gif
-
-# Windows (CMD/PowerShell):
-
 # User asset
 curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"icons/led.png\"}" --output led.png
 
 # Built-in asset
 curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\"}" --output skull.gif
-```
-
-```javascript
-// Download user asset
-fetch('/api/assets/download', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ path: 'icons/led.png' })
-})
-  .then(response => response.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    // Use the image...
-  });
-
-// Download built-in asset
-fetch('/api/assets/download', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ path: 'builtin://skull.gif' })
-})
-  .then(response => response.blob())
-  .then(blob => {
-    const url = URL.createObjectURL(blob);
-    // Use the image...
-  });
 ```
 
 ---
@@ -395,13 +350,15 @@ Generate a thumbnail of an asset on-demand.
 {
   "path": "backgrounds/galaxy.jpg",      // User asset (no prefix)
   "size": 256,                           // optional, default: 128
-  "dimension": "width"                   // optional, default: "max"
+  "dimension": "width",                  // optional, default: "max"
+  "animated": true                       // optional, default: true
 }
 
 // Built-in asset
 {
   "path": "builtin://skull.gif",         // Built-in asset (builtin:// prefix)
-  "size": 128
+  "size": 128,
+  "animated": false                      // Get static PNG of first frame
 }
 ```
 
@@ -420,9 +377,15 @@ Generate a thumbnail of an asset on-demand.
   - `"max"` - Apply size to longest axis (default behavior, maintains aspect ratio)
   - `"width"` - Apply size to width, scale height proportionally
   - `"height"` - Apply size to height, scale width proportionally
+- `animated` (boolean, optional) - For multi-frame images, preserve animation (default: true)
+  - `true` - Return animated WebP for animated images (GIF, multi-frame WebP)
+  - `false` - Return static PNG of first frame only
 
 **Success Response:**
-- PNG image data with `Content-Type: image/png` header (HTTP 200)
+**Success Response:**
+- Image data with appropriate `Content-Type` header (HTTP 200)
+  - **Static images**: PNG format (`Content-Type: image/png`)
+  - **Animated images**: WebP format (`Content-Type: image/webp`, preserves animation)
 - Dimensions: Calculated based on `size` and `dimension` parameters
   - `dimension="max"`: Size applied to longest axis (default)
   - `dimension="width"`: Width set to `size`, height scaled proportionally
@@ -442,60 +405,23 @@ Generate a thumbnail of an asset on-demand.
 
 **Example:**
 ```bash
-# Unix/Linux/macOS:
-
-# User asset: Default 128px thumbnail
-curl -X POST http://localhost:8888/api/assets/thumbnail \
-  -H "Content-Type: application/json" \
-  -d '{"path": "backgrounds/galaxy.jpg"}' \
-  --output thumbnail.png
-
-# Built-in asset (root level): Thumbnail of skull.gif
-curl -X POST http://localhost:8888/api/assets/thumbnail \
-  -H "Content-Type: application/json" \
-  -d '{"path": "builtin://skull.gif", "size": 64}' \
-  --output skull-thumb.png
-
-# Built-in asset (subdirectory): Thumbnail from pixelart folder
-curl -X POST http://localhost:8888/api/assets/thumbnail \
-  -H "Content-Type: application/json" \
-  -d '{"path": "builtin://pixelart/dj_bird.gif", "size": 128}' \
-  --output dj-bird-thumb.png
-
-# Custom 256px thumbnail
-curl -X POST http://localhost:8888/api/assets/thumbnail \
-  -H "Content-Type: application/json" \
-  -d '{"path": "backgrounds/galaxy.jpg", "size": 256}' \
-  --output thumbnail-large.png
-
-# 200px wide thumbnail (height scaled proportionally)
-curl -X POST http://localhost:8888/api/assets/thumbnail \
-  -H "Content-Type: application/json" \
-  -d '{"path": "backgrounds/galaxy.jpg", "size": 200, "dimension": "width"}' \
-  --output thumbnail-200w.png
-
-# 150px tall thumbnail (width scaled proportionally)
-curl -X POST http://localhost:8888/api/assets/thumbnail \
-  -H "Content-Type: application/json" \
-  -d '{"path": "backgrounds/galaxy.jpg", "size": 150, "dimension": "height"}' \
-  --output thumbnail-150h.png
-
-# Windows (CMD/PowerShell) - escape inner quotes with backslash:
-
 # User asset: Default 128px thumbnail
 curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\"}" --output thumbnail.png
 
-# Built-in asset with size parameter
-curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\", \"size\": 64}" --output skull-thumb.png
+# Built-in animated asset (returns WebP)
+curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\", \"size\": 64}" --output skull-thumb.webp
 
 # Custom 256px thumbnail
 curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\", \"size\": 256}" --output thumbnail-large.png
+
+# Width-constrained thumbnail
+curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\", \"size\": 200, \"dimension\": \"width\"}" --output thumbnail-200w.png
 ```
 
 **Notes:**
 - Thumbnails are generated on-demand and not cached
-- All thumbnails are returned as PNG regardless of source format
-- For animated images (GIF, WebP), the first frame is used
+- Static images return PNG format
+- Animated images (GIF, WebP with multiple frames) return animated WebP format
 - Size parameter must be between 16 and 512 pixels (validation enforced)
 
 ---
