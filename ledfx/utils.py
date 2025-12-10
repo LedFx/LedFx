@@ -2015,7 +2015,9 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 # Read with limit
                 data = response.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning("Image exceeded size limit during download")
+                    _LOGGER.warning(
+                        "Image exceeded size limit during download"
+                    )
                     return None
 
                 # Get headers for caching
@@ -2141,7 +2143,9 @@ def open_image(image_path, force_refresh=False):
 
             # Validate extension
             if not is_allowed_image_extension(image_path):
-                _LOGGER.warning(f"URL has invalid image extension: {image_path}")
+                _LOGGER.warning(
+                    f"URL has invalid image extension: {image_path}"
+                )
                 return None
 
             # Validate URL safety (SSRF protection)
@@ -2171,7 +2175,9 @@ def open_image(image_path, force_refresh=False):
                 # Read with limit
                 data = response.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning("Image exceeded size limit during download")
+                    _LOGGER.warning(
+                        "Image exceeded size limit during download"
+                    )
                     return None
 
                 # Get headers for caching
