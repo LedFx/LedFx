@@ -94,7 +94,7 @@ class Imagespin(Twod):
             url_path = self._config["image_source"]
 
         if url_path != "":
-            self.bass_image = open_gif(url_path)
+            self.bass_image = open_gif(url_path, config_dir=self._ledfx.config_dir)
             if self.bass_image:
                 _LOGGER.info(f"pre scaled {self.bass_image.size}")
 

@@ -1799,20 +1799,154 @@ def validate_local_path(file_path: str) -> tuple[bool, str | None]:
         return False, None
 
 
-def open_gif(gif_path, force_refresh=False):
+def _resolve_asset_path(
+    root_dir: str, relative_path: str, asset_type: str = "asset"
+) -> tuple[bool, str | None]:
+    """
+    Resolve and validate a relative path within a root directory.
+    
+    Provides security protection against path traversal, absolute paths, and empty paths.
+    
+    Args:
+        root_dir: Root directory to constrain paths within
+        relative_path: User-provided relative path
+        asset_type: Type of asset for error messages (e.g., "user asset", "built-in asset")
+    
+    Returns:
+        tuple: (is_valid, absolute_path or None)
+    """
+    # Normalize path separators
+    normalized_path = relative_path.replace("\\", "/").strip()
+    
+    # Reject empty path
+    if not normalized_path:
+        _LOGGER.error(f"{asset_type} path cannot be empty")
+        return False, None
+    
+    # Reject absolute paths
+    if os.path.isabs(normalized_path):
+        _LOGGER.error(f"Absolute paths not allowed for {asset_type}: {normalized_path}")
+        return False, None
+    
+    # Construct full path
+    resolved_path = os.path.normpath(os.path.join(root_dir, normalized_path))
+    
+    # Security check: ensure resolved path is within root_dir
+    try:
+        common = os.path.commonpath([root_dir, resolved_path])
+        if not os.path.normpath(common) == os.path.normpath(root_dir):
+            _LOGGER.error(f"Path traversal attempt blocked for {asset_type}: {normalized_path}")
+            return False, None
+    except ValueError:
+        # Paths on different drives on Windows
+        _LOGGER.error(f"Invalid path for {asset_type} (different drive): {normalized_path}")
+        return False, None
+    
+    return True, resolved_path
+
+
+def _validate_and_open_image(
+    resolved_path: str, original_path: str, check_size: bool = True
+) -> Image.Image | None:
+    """
+    Validate and open an image file with security checks.
+    
+    Args:
+        resolved_path: Absolute path to the image file
+        original_path: Original path for error messages
+        check_size: Whether to check file size limits
+    
+    Returns:
+        PIL Image object or None if validation fails
+    """
+    # Check file exists
+    if not os.path.exists(resolved_path):
+        _LOGGER.error(f"File not found: {original_path}")
+        return None
+        
+    if not os.path.isfile(resolved_path):
+        _LOGGER.error(f"Path is not a file: {original_path}")
+        return None
+    
+    # Validate extension
+    if not is_allowed_image_extension(resolved_path):
+        _LOGGER.error(f"Invalid image extension: {original_path}")
+        return None
+    
+    # Check file size
+    if check_size:
+        file_size = os.path.getsize(resolved_path)
+        if file_size > MAX_IMAGE_SIZE_BYTES:
+            _LOGGER.error(
+                f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+            )
+            return None
+    
+    # Validate MIME type
+    if not validate_image_mime_type(resolved_path):
+        _LOGGER.error(f"Invalid image MIME type: {original_path}")
+        return None
+    
+    # Open the image
+    try:
+        gif = Image.open(resolved_path)
+    except Exception as e:
+        _LOGGER.error(f"Failed to open image: {original_path} : {e}")
+        return None
+    
+    # Validate PIL format and dimensions
+    if not validate_pil_image(gif):
+        _LOGGER.error(f"Invalid PIL format or dimensions: {original_path}")
+        return None
+    
+    # Protect against single frame image like png, jpg
+    if not hasattr(gif, "n_frames"):
+        gif.n_frames = 1
+    
+    return gif
+
+
+def open_gif(gif_path, force_refresh=False, config_dir=None):
     """
     Open a GIF image from a URL or local file path with file type validation.
+    
+    Supports:
+    - URLs: http://, https:// (with caching)
+    - Built-in assets: builtin://path (from LEDFX_ASSETS_PATH/gifs/)
+    - User assets: plain paths like "my_animation.gif" (from config_dir/assets/) - requires config_dir
+    - Legacy: absolute/relative local file paths (validated within config directory)
 
     Args:
-        gif_path: URL or local file path to the GIF
+        gif_path: URL, builtin://path, or plain filename/path to the image
         force_refresh: Force download from URL, bypassing cache (default False)
+        config_dir: LedFx config directory (required for user assets and local paths)
 
     Returns:
         PIL Image object or None if failed
+        
+    Examples:
+        "https://example.com/image.gif" -> Downloads and caches
+        "builtin://skull.gif" -> Built-in asset from LEDFX_ASSETS_PATH/gifs/
+        "builtin://pixelart/dj_bird.gif" -> Nested built-in asset
+        "my_animation.gif" -> User asset from config_dir/assets/my_animation.gif (when config_dir provided)
+        "subfolder/animation.gif" -> User asset from config_dir/assets/subfolder/animation.gif
     """
     gif_path = gif_path.strip()
 
     try:
+        # Handle builtin:// prefix
+        if gif_path.startswith("builtin://"):
+            actual_path = gif_path[10:]  # Remove "builtin://" prefix
+            gifs_root = os.path.join(LEDFX_ASSETS_PATH, "gifs")
+            
+            # Resolve and validate path
+            is_valid, resolved_path = _resolve_asset_path(gifs_root, actual_path, "built-in asset")
+            if not is_valid:
+                return None
+            
+            # Validate and open the image
+            return _validate_and_open_image(resolved_path, gif_path, check_size=False)
+        
         if gif_path.startswith(("http://", "https://")):
             # Check cache first (unless force_refresh)
             if _image_cache and not force_refresh:
@@ -1898,9 +2032,9 @@ def open_gif(gif_path, force_refresh=False):
                         gif_path, data, content_type, etag, last_modified
                     )
         else:
-            # Local file
+            # Local file or user asset
             # Reject any URL schemes (file://, ftp://, etc.)
-            # Note: http/https are handled in the if branch above
+            # Note: http/https and builtin:// are handled in the if branches above
             parsed = urllib.parse.urlparse(gif_path)
             # Allow single-letter schemes (Windows drive letters like C:)
             if parsed.scheme and len(parsed.scheme) > 1:
@@ -1909,52 +2043,31 @@ def open_gif(gif_path, force_refresh=False):
                 )
                 return None
 
-            # Path traversal protection
-            is_valid, validated_path = validate_local_path(gif_path)
-            if not is_valid:
-                _LOGGER.error(
-                    f"Path traversal blocked or path outside config directory: {gif_path}"
-                )
-                return None
-
-            # Use validated path for all subsequent operations
-            # Validate extension
-            if not is_allowed_image_extension(validated_path):
-                _LOGGER.error(f"File has invalid image extension: {gif_path}")
-                return None
-
-            # Check file exists and get size
-            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
-            if not os.path.exists(validated_path):
-                _LOGGER.error(f"File not found: {gif_path}")
-                return None
-
-            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
-            file_size = os.path.getsize(validated_path)
-            if file_size > MAX_IMAGE_SIZE_BYTES:
-                _LOGGER.error(
-                    f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
-                )
-                return None
-
-            # Validate MIME type
-            if not validate_image_mime_type(validated_path):
-                _LOGGER.error(f"Invalid image MIME type: {gif_path}")
-                return None
-
-            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
-            gif = Image.open(validated_path)
-
-            # Validate PIL format and dimensions
-            if not validate_pil_image(gif):
-                _LOGGER.error(f"Invalid PIL format or dimensions: {gif_path}")
-                return None
-
-        # protect against single frame image like png, jpg
-        if not hasattr(gif, "n_frames"):
-            gif.n_frames = 1
-
-        return gif
+            # If config_dir is provided and path is relative, treat as user asset
+            if config_dir and not os.path.isabs(gif_path):
+                # User asset - resolve to config_dir/assets/
+                assets_root = os.path.join(config_dir, "assets")
+                
+                # Resolve and validate path
+                is_valid, resolved_path = _resolve_asset_path(assets_root, gif_path, "user asset")
+                if not is_valid:
+                    return None
+                
+                # Validate and open the image
+                gif = _validate_and_open_image(resolved_path, gif_path, check_size=True)
+                return gif if gif else None
+            else:
+                # Legacy: absolute path or no config_dir - use existing validation
+                is_valid, validated_path = validate_local_path(gif_path)
+                if not is_valid:
+                    _LOGGER.error(
+                        f"Path traversal blocked or path outside config directory: {gif_path}"
+                    )
+                    return None
+                
+                # Validate and open the image
+                gif = _validate_and_open_image(validated_path, gif_path, check_size=True)
+                return gif if gif else None
 
     except urllib.error.HTTPError as e:
         _LOGGER.warning(f"HTTP error fetching {gif_path}: {e.code} {e.reason}")
