@@ -2026,11 +2026,17 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                     )
                     return None
 
+                # Protect against single frame image like png, jpg
+                if not hasattr(gif, "n_frames"):
+                    gif.n_frames = 1
+
                 # Cache the downloaded image
                 if _image_cache:
                     _image_cache.put(
                         gif_path, data, content_type, etag, last_modified
                     )
+                
+                return gif
         else:
             # Local file or user asset
             # Reject any URL schemes (file://, ftp://, etc.)
