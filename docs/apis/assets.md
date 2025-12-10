@@ -458,7 +458,7 @@ Delete a user asset and clean up empty directories.
 #### **Endpoint:** `DELETE /api/assets`
 
 **Query Parameters (recommended):**
-```
+```bash
 DELETE /api/assets?path=icons/led.png
 ```
 
