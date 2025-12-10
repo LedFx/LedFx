@@ -47,7 +47,7 @@ def sample_animated_gif_bytes():
     for color in ["red", "green", "blue"]:
         img = Image.new("RGB", (100, 100), color=color)
         frames.append(img)
-    
+
     # Save as animated GIF
     img_bytes = io.BytesIO()
     frames[0].save(
@@ -732,7 +732,7 @@ class TestAssetsAPIThumbnail:
         assert img.format == "WEBP"
         assert getattr(img, "is_animated", False) is True
         assert getattr(img, "n_frames", 1) == 3  # Should have 3 frames
-        
+
         # Verify dimensions are correct for first frame
         assert max(img.size) <= 64
 
@@ -741,7 +741,9 @@ class TestAssetsAPIThumbnail:
             ASSETS_API_URL, params={"path": "test_animated.gif"}, timeout=5
         )
 
-    def test_thumbnail_animated_gif_explicit_true(self, sample_animated_gif_bytes):
+    def test_thumbnail_animated_gif_explicit_true(
+        self, sample_animated_gif_bytes
+    ):
         """Test generating animated WebP thumbnail with explicit animated=true."""
         # Upload animated GIF asset
         files = {
@@ -793,7 +795,11 @@ class TestAssetsAPIThumbnail:
         # Get thumbnail with animated=false
         resp = requests.post(
             ASSETS_THUMBNAIL_API_URL,
-            json={"path": "test_animated_static.gif", "size": 64, "animated": False},
+            json={
+                "path": "test_animated_static.gif",
+                "size": 64,
+                "animated": False,
+            },
             headers={"Content-Type": "application/json"},
             timeout=5,
         )
@@ -814,7 +820,9 @@ class TestAssetsAPIThumbnail:
             timeout=5,
         )
 
-    def test_thumbnail_animated_string_parameter(self, sample_animated_gif_bytes):
+    def test_thumbnail_animated_string_parameter(
+        self, sample_animated_gif_bytes
+    ):
         """Test that animated parameter accepts string values like 'true'/'false'."""
         # Upload animated GIF asset
         files = {
@@ -831,7 +839,11 @@ class TestAssetsAPIThumbnail:
         # Test with string "false"
         resp = requests.post(
             ASSETS_THUMBNAIL_API_URL,
-            json={"path": "test_animated_string.gif", "size": 64, "animated": "false"},
+            json={
+                "path": "test_animated_string.gif",
+                "size": 64,
+                "animated": "false",
+            },
             headers={"Content-Type": "application/json"},
             timeout=5,
         )
@@ -841,7 +853,11 @@ class TestAssetsAPIThumbnail:
         # Test with string "true"
         resp = requests.post(
             ASSETS_THUMBNAIL_API_URL,
-            json={"path": "test_animated_string.gif", "size": 64, "animated": "true"},
+            json={
+                "path": "test_animated_string.gif",
+                "size": 64,
+                "animated": "true",
+            },
             headers={"Content-Type": "application/json"},
             timeout=5,
         )
@@ -877,7 +893,11 @@ class TestAssetsAPIThumbnail:
         # Test with a known builtin animated GIF
         resp = requests.post(
             ASSETS_THUMBNAIL_API_URL,
-            json={"path": "builtin://skull.gif", "size": 64, "animated": False},
+            json={
+                "path": "builtin://skull.gif",
+                "size": 64,
+                "animated": False,
+            },
             headers={"Content-Type": "application/json"},
             timeout=5,
         )

@@ -20,13 +20,13 @@ MAX_THUMBNAIL_SIZE = 512
 def _calculate_thumbnail_dimensions(width, height, size, dimension):
     """
     Calculate thumbnail dimensions based on the requested size and dimension mode.
-    
+
     Args:
         width: Original image width in pixels
         height: Original image height in pixels
         size: Target size in pixels
         dimension: Dimension mode - "max", "width", or "height"
-        
+
     Returns:
         tuple: (new_width, new_height) for the thumbnail
     """
@@ -44,7 +44,7 @@ def _calculate_thumbnail_dimensions(width, height, size, dimension):
         else:
             new_height = size
             new_width = int(width * (size / height))
-    
+
     return new_width, new_height
 
 
@@ -143,36 +143,39 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     # Check if image is animated
                     is_animated_image = getattr(img, "is_animated", False)
                     n_frames = getattr(img, "n_frames", 1)
-                    
+
                     if animated and is_animated_image and n_frames > 1:
                         # Process animated image - create WebP thumbnail
                         frames = []
                         durations = []
-                        
+
                         for frame_idx in range(n_frames):
                             img.seek(frame_idx)
                             frame = img.copy()
-                            
+
                             # Convert frame to RGB if necessary
                             if frame.mode not in ("RGB", "RGBA"):
                                 frame = frame.convert("RGBA")
-                            
+
                             # Calculate dimensions
                             width, height = frame.size
-                            new_width, new_height = _calculate_thumbnail_dimensions(
-                                width, height, size, dimension
+                            new_width, new_height = (
+                                _calculate_thumbnail_dimensions(
+                                    width, height, size, dimension
+                                )
                             )
-                            
+
                             # Resize frame
                             resized_frame = frame.resize(
-                                (new_width, new_height), Image.Resampling.LANCZOS
+                                (new_width, new_height),
+                                Image.Resampling.LANCZOS,
                             )
                             frames.append(resized_frame)
-                            
+
                             # Get frame duration (default 100ms if not available)
                             duration = img.info.get("duration", 100)
                             durations.append(duration)
-                        
+
                         # Save as animated WebP
                         buffer = io.BytesIO()
                         frames[0].save(
@@ -185,7 +188,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                             optimize=True,
                         )
                         buffer.seek(0)
-                        
+
                         return web.Response(
                             body=buffer.read(),
                             headers={"Content-Type": "image/webp"},
@@ -195,15 +198,17 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                         # For animated images with animated=false, use first frame
                         if is_animated_image and n_frames > 1:
                             img.seek(0)  # Get first frame
-                        
+
                         # Convert to RGB if necessary (handles RGBA, P, etc.)
                         if img.mode not in ("RGB", "L"):
                             img = img.convert("RGB")
 
                         # Calculate thumbnail dimensions based on dimension parameter
                         width, height = img.size
-                        new_width, new_height = _calculate_thumbnail_dimensions(
-                            width, height, size, dimension
+                        new_width, new_height = (
+                            _calculate_thumbnail_dimensions(
+                                width, height, size, dimension
+                            )
                         )
 
                         # Resize image
