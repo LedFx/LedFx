@@ -303,6 +303,64 @@ class TestAssetsAPIDownload:
         assert result["status"] == "failed"
         assert "path" in result["payload"]["reason"].lower()
 
+    def test_download_post_path_traversal_rejected(self):
+        """Test that POST download rejects path traversal attempts."""
+        resp = requests.post(
+            ASSETS_DOWNLOAD_API_URL,
+            json={"path": "../../../etc/passwd"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+
+    def test_download_get_path_traversal_rejected(self):
+        """Test that GET download rejects path traversal attempts."""
+        resp = requests.get(
+            ASSETS_DOWNLOAD_API_URL,
+            params={"path": "../../../etc/passwd"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+
+    def test_download_post_absolute_path_rejected(self):
+        """Test that POST download rejects absolute paths."""
+        resp = requests.post(
+            ASSETS_DOWNLOAD_API_URL,
+            json={"path": "/etc/passwd"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+
+    def test_download_get_absolute_path_rejected(self):
+        """Test that GET download rejects absolute paths."""
+        resp = requests.get(
+            ASSETS_DOWNLOAD_API_URL,
+            params={"path": "/etc/passwd"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+
+    def test_download_builtin_path_traversal_rejected(self):
+        """Test that builtin:// prefix also rejects path traversal."""
+        resp = requests.post(
+            ASSETS_DOWNLOAD_API_URL,
+            json={"path": "builtin://../../../etc/passwd"},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+
 
 class TestAssetsAPIDelete:
     """Test DELETE /api/assets - deleting assets."""

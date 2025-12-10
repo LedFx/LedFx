@@ -68,6 +68,7 @@ LedFx provides **clear separation** between user assets and built-in assets usin
 |----------|-------------|------------------|
 | `GET /api/assets` | ✅ List only | ❌ |
 | `GET /api/assets_fixed` | ❌ | ✅ List only |
+| `GET /api/assets/download` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
 | `POST /api/assets/download` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
 | `POST /api/assets/thumbnail` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
 | `POST /api/assets` (upload) | ✅ | ❌ Read-only |
@@ -274,100 +275,91 @@ Upload a new image asset. Requires `multipart/form-data` encoding.
 ```bash
 curl -X POST http://localhost:8888/api/assets -F "file=@/path/to/image.png" -F "path=icons/led.png"
 ```
-  method: 'POST',
-  body: formData
-});
-```
 
 ---
 
 ### Download Asset
 
-Retrieve a specific asset file.
+Download a specific asset file (user or built-in).
 
-**Supports both GET and POST methods:**
-- **GET** (recommended for browsers): Query parameter-based, ideal for `<img>`, `<video>`, download links
-- **POST**: JSON body-based, ideal for programmatic access
+**Methods:** Both GET and POST supported
+- **GET** - Browser-friendly, query parameters
+- **POST** - Programmatic, JSON body
 
-**Supports both user and built-in assets** using explicit path syntax:
-- **User assets**: Path without prefix (e.g., `"icons/led.png"`)
-- **Built-in assets**: Path with `builtin://` prefix (e.g., `"builtin://skull.gif"`)
+**Asset Sources:**
+- **User assets**: No prefix → `{config_dir}/assets/{path}`
+- **Built-in assets**: `builtin://` prefix → `{ledfx_assets}/gifs/{path}`
 
-#### GET Request (Browser-Friendly)
+#### GET /api/assets/download
 
-**Endpoint:** `GET /api/assets/download?path={asset_path}`
+Browser-friendly method using query parameters.
 
 **Query Parameters:**
-- `path` (string, required) - Path to the asset with explicit source selection
-  - **User assets** (no prefix): `{config_dir}/assets/{path}`
-  - **Built-in assets** (`builtin://` prefix): `{ledfx_assets}/gifs/{path}`
+- `path` (string, required) - Asset path
+  - User: `"icons/led.png"`
+  - Built-in: `"builtin://skull.gif"`
 
-**Success Response:**
-- Binary image data with appropriate `Content-Type` header (HTTP 200)
-
-**Error Response (HTTP 200 with JSON):**
-```json
-{
-  "status": "failed",
-  "payload": {
-    "type": "error",
-    "reason": "Asset not found: icons/led.png"
-  }
-}
-```
+**Response:**
+- **Success**: Binary image data with `Content-Type` header (HTTP 200)
+- **Error**: JSON error message (HTTP 200)
 
 **Examples:**
 ```bash
 # User asset
 curl "http://localhost:8888/api/assets/download?path=icons/led.png" --output led.png
 
-# Built-in asset (note: builtin:// is URL-encoded as builtin%3A%2F%2F)
+# Built-in asset
 curl "http://localhost:8888/api/assets/download?path=builtin://skull.gif" --output skull.gif
 ```
 
 **Browser Usage:**
 ```html
-<!-- User asset in img tag -->
+<!-- User asset -->
 <img src="http://localhost:8888/api/assets/download?path=icons/led.png" alt="LED Icon">
 
-<!-- Built-in asset in img tag -->
-<img src="http://localhost:8888/api/assets/download?path=builtin://skull.gif" alt="Skull Animation">
+<!-- Built-in asset -->
+<img src="http://localhost:8888/api/assets/download?path=builtin://skull.gif" alt="Skull">
 
 <!-- Download link -->
-<a href="http://localhost:8888/api/assets/download?path=backgrounds/galaxy.jpg" download>Download Background</a>
+<a href="http://localhost:8888/api/assets/download?path=galaxy.jpg" download>Download</a>
 ```
 
-**Notes:**
-- The `builtin://` prefix will be automatically URL-encoded by browsers when used in HTML attributes
-- Query parameter approach is ideal for direct browser integration (`<img src="...">`, `<video src="...">`, etc.)
-- Returns the same binary file content as POST method
+#### POST /api/assets/download
 
-#### POST Request (Programmatic)
+Programmatic method using JSON body.
 
-**Endpoint:** `POST /api/assets/download`
-
-**Request Body (JSON):**
+**Request Body:**
 ```json
-// User asset
 {
-  "path": "icons/led.png"
+  "path": "icons/led.png"              // User asset
 }
-
-// Built-in asset
+```
+```json
 {
-  "path": "builtin://skull.gif"
+  "path": "builtin://skull.gif"        // Built-in asset
 }
 ```
 
-**Parameters:**
-- `path` (string, required) - Path to the asset with explicit source selection
-  - **User assets** (no prefix): `{config_dir}/assets/{path}`
-  - **Built-in assets** (`builtin://` prefix): `{ledfx_assets}/gifs/{path}`
+**Response:**
+- **Success**: Binary image data with `Content-Type` header (HTTP 200)
+- **Error**: JSON error message (HTTP 200)
 
-**Success Response:**
-- Binary image data with appropriate `Content-Type` header (HTTP 200)
+**Examples:**
+```bash
+# User asset
+curl -X POST http://localhost:8888/api/assets/download \
+  -H "Content-Type: application/json" \
+  -d '{"path": "icons/led.png"}' \
+  --output led.png
 
-**Error Response (HTTP 200 with JSON):**
+# Built-in asset
+curl -X POST http://localhost:8888/api/assets/download \
+  -H "Content-Type: application/json" \
+  -d '{"path": "builtin://skull.gif"}' \
+  --output skull.gif
+```
+
+**Error Response:**
 ```json
 {
   "status": "failed",
@@ -378,134 +370,119 @@ curl "http://localhost:8888/api/assets/download?path=builtin://skull.gif" --outp
 }
 ```
 
-**Examples:**
-```bash
-# User asset
-curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"icons/led.png\"}" --output led.png
-
-# Built-in asset
-curl -X POST http://localhost:8888/api/assets/download -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\"}" --output skull.gif
-```
-
-**Notes:**
-- POST method is primarily for programmatic use with JSON-based API clients
-- Returns the same binary file content as GET method
-- Both methods use identical path resolution and security checks
-
 ---
 
 ### Get Asset Thumbnail
 
-Generate a thumbnail of an asset on-demand.
-
-**Supports both user and built-in assets** using explicit path syntax:
-- **User assets**: Path without prefix (e.g., `"backgrounds/image.jpg"`)
-- **Built-in assets**: Path with `builtin://` prefix (e.g., `"builtin://skull.gif"`)
+Generate a thumbnail for an asset (user or built-in).
 
 **Endpoint:** `POST /api/assets/thumbnail`
 
-**Request Body (JSON):**
-```json
-// User asset
-{
-  "path": "backgrounds/galaxy.jpg",      // User asset (no prefix)
-  "size": 256,                           // optional, default: 128
-  "dimension": "width",                  // optional, default: "max"
-  "animated": true                       // optional, default: true
-}
+**Asset Sources:**
+- **User assets**: No prefix → `{config_dir}/assets/{path}`
+- **Built-in assets**: `builtin://` prefix → `{ledfx_assets}/gifs/{path}`
 
-// Built-in asset
+**Request Body:**
+```json
 {
-  "path": "builtin://skull.gif",         // Built-in asset (builtin:// prefix)
-  "size": 128,
-  "animated": false                      // Get static PNG of first frame
+  "path": "backgrounds/galaxy.jpg",    // Required: asset path
+  "size": 256,                         // Optional: 16-512, default: 128
+  "dimension": "width",                // Optional: "max"|"width"|"height", default: "max"
+  "animated": true                     // Optional: preserve animation, default: true
 }
 ```
 
 **Parameters:**
-- `path` (string, required) - Path to the asset with explicit source selection
-  - **User assets** (no prefix): `{config_dir}/assets/{path}`
-    - `"backgrounds/galaxy.jpg"` → `{config_dir}/assets/backgrounds/galaxy.jpg`
-    - `"my-image.png"` → `{config_dir}/assets/my-image.png`
-  - **Built-in assets** (`builtin://` prefix): `{ledfx_assets}/gifs/{path}`
-    - `"builtin://skull.gif"` → `{ledfx_assets}/gifs/skull.gif`
-    - `"builtin://pixelart/dj_bird.gif"` → `{ledfx_assets}/gifs/pixelart/dj_bird.gif`
-- `size` (integer, optional) - Dimension size in pixels (default: 128)
-  - Must be an integer between 16 and 512
-  - Values outside this range will return a validation error
-- `dimension` (string, optional) - Which dimension to apply size to (default: "max")
-  - `"max"` - Apply size to longest axis (default behavior, maintains aspect ratio)
-  - `"width"` - Apply size to width, scale height proportionally
-  - `"height"` - Apply size to height, scale width proportionally
-- `animated` (boolean, optional) - For multi-frame images, preserve animation (default: true)
-  - `true` - Return animated WebP for animated images (GIF, multi-frame WebP)
-  - `false` - Return static PNG of first frame only
+- `path` (string, required) - Asset path
+  - User: `"backgrounds/galaxy.jpg"`
+  - Built-in: `"builtin://skull.gif"`
+- `size` (integer, optional) - Dimension in pixels (16-512, default: 128)
+- `dimension` (string, optional) - Sizing mode (default: "max")
+  - `"max"` - Size to longest axis (maintains aspect ratio)
+  - `"width"` - Set width to size, scale height proportionally
+  - `"height"` - Set height to size, scale width proportionally
+- `animated` (boolean, optional) - Preserve animation (default: true)
+  - `true` - Return animated WebP for GIF/WebP
+  - `false` - Return static PNG of first frame
 
-**Success Response:**
-**Success Response:**
-- Image data with appropriate `Content-Type` header (HTTP 200)
-  - **Static images**: PNG format (`Content-Type: image/png`)
-  - **Animated images**: WebP format (`Content-Type: image/webp`, preserves animation)
-- Dimensions: Calculated based on `size` and `dimension` parameters
-  - `dimension="max"`: Size applied to longest axis (default)
-  - `dimension="width"`: Width set to `size`, height scaled proportionally
-  - `dimension="height"`: Height set to `size`, width scaled proportionally
-- Aspect ratio: Always preserved from original
+**Response:**
+- **Success**: Thumbnail image (HTTP 200)
+  - Static: PNG format (`image/png`)
+  - Animated: WebP format (`image/webp`)
+- **Error**: JSON error message (HTTP 200)
 
-**Error Response (HTTP 200 with JSON):**
+**Examples:**
+```bash
+# Default 128px thumbnail (user asset)
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "backgrounds/galaxy.jpg"}' \
+  --output thumb.png
+
+# 64px animated thumbnail (built-in asset)
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "builtin://skull.gif", "size": 64}' \
+  --output skull-thumb.webp
+
+# 256px width-constrained thumbnail
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "image.png", "size": 256, "dimension": "width"}' \
+  --output thumb-256w.png
+
+# Static PNG of first frame
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "builtin://skull.gif", "animated": false}' \
+  --output skull-static.png
+```
+
+**Error Response:**
 ```json
 {
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "Asset not found in user assets or built-in assets: backgrounds/galaxy.jpg"
+    "reason": "Asset not found: backgrounds/galaxy.jpg"
   }
 }
 ```
-
-**Example:**
-```bash
-# User asset: Default 128px thumbnail
-curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\"}" --output thumbnail.png
-
-# Built-in animated asset (returns WebP)
-curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"builtin://skull.gif\", \"size\": 64}" --output skull-thumb.webp
-
-# Custom 256px thumbnail
-curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\", \"size\": 256}" --output thumbnail-large.png
-
-# Width-constrained thumbnail
-curl -X POST http://localhost:8888/api/assets/thumbnail -H "Content-Type: application/json" -d "{\"path\": \"backgrounds/galaxy.jpg\", \"size\": 200, \"dimension\": \"width\"}" --output thumbnail-200w.png
-```
-
-**Notes:**
-- Thumbnails are generated on-demand and not cached
-- Static images return PNG format
-- Animated images (GIF, WebP with multiple frames) return animated WebP format
-- Size parameter must be between 16 and 512 pixels (validation enforced)
 
 ---
 
 ### Delete Asset
 
-Delete a specific asset and clean up empty directories.
+Delete a user asset and clean up empty directories.
 
 **Endpoint:** `DELETE /api/assets`
 
 **Query Parameters (recommended):**
-- `path` (string, required) - Relative path to the asset to delete
+```
+DELETE /api/assets?path=icons/led.png
+```
 
-
-`DELETE /api/assets?path=icons/led.png`
-
-**OR Request Body (JSON, alternative):**
+**OR Request Body (alternative):**
 ```json
 {
   "path": "icons/led.png"
 }
 ```
 
-**Note:** Query parameter method is preferred for browser compatibility. JSON body is supported as fallback.
+**Response:**
+- **Success**: Confirmation with deleted path (HTTP 200)
+- **Error**: JSON error message (HTTP 200)
+
+**Examples:**
+```bash
+# Query parameter (recommended)
+curl -X DELETE "http://localhost:8888/api/assets?path=icons/led.png"
+
+# JSON body (alternative)
+curl -X DELETE http://localhost:8888/api/assets \
+  -H "Content-Type: application/json" \
+  -d '{"path": "icons/led.png"}'
+```
 
 **Success Response:**
 ```json
@@ -529,30 +506,7 @@ Delete a specific asset and clean up empty directories.
 }
 ```
 
-**Examples:**
-
-Using query parameter (recommended):
-```bash
-curl -X DELETE "http://localhost:8888/api/assets?path=icons/led.png"
-```
-
-Using JSON body (alternative):
-```bash
-curl -X DELETE http://localhost:8888/api/assets \
-  -H "Content-Type: application/json" \
-  -d '{"path": "icons/led.png"}'
-```
-
-**Note:** When deleting assets, empty parent directories are automatically removed:
-
-```bash
-curl -X DELETE "http://localhost:8888/api/assets?path=effects/fire/texture.png"
-
-Result:
-- File deleted: effects/fire/texture.png
-- Removed empty directory: effects/fire/
-- Removed empty directory: effects/
-```
+**Note:** Empty parent directories are automatically removed after deleting an asset.
 
 ---
 
