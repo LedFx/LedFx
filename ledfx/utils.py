@@ -2045,7 +2045,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                     _image_cache.put(
                         gif_path, data, content_type, etag, last_modified
                     )
-                
+
                 return gif
         else:
             # Local file or user asset
