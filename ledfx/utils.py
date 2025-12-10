@@ -8,7 +8,6 @@ import io
 import ipaddress
 import logging
 import math
-import mimetypes
 import os
 import pkgutil
 import re
@@ -50,6 +49,20 @@ from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 from ledfx.libraries.cache import ImageCache
+from ledfx.security_utils import (
+    DOWNLOAD_TIMEOUT,
+    MAX_IMAGE_SIZE_BYTES,
+    build_browser_request,
+    is_allowed_image_extension,
+    validate_image_mime_type,
+)
+from ledfx.security_utils import (
+    validate_local_path as _validate_local_path_impl,
+)
+from ledfx.security_utils import (
+    validate_pil_image,
+    validate_url_safety,
+)
 
 # from asyncio import coroutines, ensure_future
 
@@ -1467,255 +1480,6 @@ def clip_at_limit(numbers, limit):
 # Image Security Validation Functions
 # =============================================================================
 
-# Constants for image security
-ALLOWED_IMAGE_EXTENSIONS = {
-    ".gif",
-    ".png",
-    ".jpg",
-    ".jpeg",
-    ".webp",
-    ".bmp",
-    ".tiff",
-    ".tif",
-    ".ico",
-}
-
-ALLOWED_MIME_TYPES = {
-    "image/gif",
-    "image/png",
-    "image/jpeg",
-    "image/webp",
-    "image/bmp",
-    "image/tiff",
-    "image/x-icon",
-}
-
-ALLOWED_PIL_FORMATS = {
-    "GIF",
-    "PNG",
-    "JPEG",
-    "WEBP",
-    "BMP",
-    "TIFF",
-    "ICO",
-    "PPM",
-    "PGM",
-    "PBM",
-}
-
-# Image size limits
-MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
-MAX_IMAGE_PIXELS = 4096 * 4096  # Prevent decompression bombs
-DOWNLOAD_TIMEOUT = 30  # seconds
-
-# Blocked IP ranges for SSRF protection
-BLOCKED_IP_NETWORKS = [
-    # IPv4 Loopback
-    ipaddress.ip_network("127.0.0.0/8"),
-    # IPv4 Private networks
-    ipaddress.ip_network("10.0.0.0/8"),
-    ipaddress.ip_network("172.16.0.0/12"),
-    ipaddress.ip_network("192.168.0.0/16"),
-    # IPv4 Link-local
-    ipaddress.ip_network("169.254.0.0/16"),
-    # IPv4 Reserved ranges
-    ipaddress.ip_network("0.0.0.0/8"),
-    ipaddress.ip_network("240.0.0.0/4"),
-    # IPv4 Multicast
-    ipaddress.ip_network("224.0.0.0/4"),
-    # IPv6 Loopback
-    ipaddress.ip_network("::1/128"),
-    # IPv6 Unspecified
-    ipaddress.ip_network("::/128"),
-    # IPv6 Private/ULA
-    ipaddress.ip_network("fc00::/7"),
-    ipaddress.ip_network("fd00::/8"),
-    # IPv6 Link-local
-    ipaddress.ip_network("fe80::/10"),
-    # IPv6 Multicast
-    ipaddress.ip_network("ff00::/8"),
-]
-
-# Cloud metadata endpoints (commonly targeted in SSRF attacks)
-BLOCKED_HOSTNAMES = [
-    "169.254.169.254",  # AWS, Azure, GCP metadata
-    "metadata.google.internal",  # GCP
-    "169.254.170.2",  # AWS ECS metadata
-]
-
-
-def is_blocked_ip(ip_str: str) -> bool:
-    """
-    Check if an IP address is in the blocklist.
-
-    Args:
-        ip_str: IP address string to check
-
-    Returns:
-        bool: True if IP is blocked
-    """
-    try:
-        ip = ipaddress.ip_address(ip_str)
-        for network in BLOCKED_IP_NETWORKS:
-            if ip in network:
-                return True
-        return False
-    except ValueError:
-        # Invalid IP address
-        return True
-
-
-def validate_url_safety(url: str) -> tuple[bool, str]:
-    """
-    Validate URL for SSRF protection by checking scheme, hostname, and resolved IP.
-
-    Args:
-        url: URL to validate
-
-    Returns:
-        tuple: (is_safe, error_message)
-    """
-    try:
-        parsed = urllib.parse.urlparse(url)
-
-        # Only allow HTTP/HTTPS
-        if parsed.scheme not in ("http", "https"):
-            return False, f"Protocol '{parsed.scheme}' not allowed"
-
-        hostname = parsed.hostname
-        if not hostname:
-            return False, "No hostname found in URL"
-
-        # Check against blocked hostname list
-        if hostname.lower() in BLOCKED_HOSTNAMES:
-            return False, f"Hostname '{hostname}' is blocked"
-
-        # Resolve hostname to IP addresses
-        try:
-            addr_info = socket.getaddrinfo(
-                hostname,
-                parsed.port or (443 if parsed.scheme == "https" else 80),
-                socket.AF_UNSPEC,
-                socket.SOCK_STREAM,
-            )
-        except socket.gaierror as e:
-            return False, f"Failed to resolve hostname '{hostname}': {e}"
-
-        # Check all resolved IPs
-        for family, socktype, proto, canonname, sockaddr in addr_info:
-            ip_str = sockaddr[0]
-
-            # Check if IP is blocked
-            if is_blocked_ip(ip_str):
-                return False, f"URL resolves to blocked IP address: {ip_str}"
-
-        return True, ""
-
-    except Exception as e:
-        return False, f"URL validation error: {e}"
-
-
-def is_allowed_image_extension(path: str) -> bool:
-    """
-    Check if file extension is in allowlist.
-
-    Args:
-        path: File path or URL to check
-
-    Returns:
-        bool: True if extension is allowed
-    """
-    # Parse URL to remove query strings and fragments
-    parsed = urllib.parse.urlparse(path)
-
-    # Use parsed path component for URLs (http/https or if netloc is present)
-    if parsed.scheme in ("http", "https") or parsed.netloc:
-        path_to_check = parsed.path
-    else:
-        # Keep original path for local files
-        path_to_check = path
-
-    ext = os.path.splitext(path_to_check.lower())[1]
-    return ext in ALLOWED_IMAGE_EXTENSIONS
-
-
-def validate_image_mime_type(file_path: str) -> bool:
-    """
-    Validate file MIME type using multiple methods.
-
-    Args:
-        file_path: Path to file to validate (must be pre-validated by validate_local_path)
-
-    Returns:
-        bool: True if MIME type is allowed
-    """
-    try:
-        # Try to open with PIL to detect format from content
-        # lgtm[py/path-injection] - file_path is validated by validate_local_path before calling this function
-        with Image.open(file_path) as img:
-            # PIL format detection (more reliable than imghdr)
-            if img.format is None:
-                return False
-
-            # Check if PIL format is in allowed list
-            if img.format.upper() not in ALLOWED_PIL_FORMATS:
-                return False
-
-        # Additional MIME check using file extension
-        mime_type, _ = mimetypes.guess_type(file_path)
-        if mime_type and mime_type not in ALLOWED_MIME_TYPES:
-            return False
-
-        return True
-    except Exception:
-        return False
-
-
-def validate_pil_image(image: Image.Image) -> bool:
-    """
-    Validate PIL image format and dimensions.
-
-    Args:
-        image: PIL Image object
-
-    Returns:
-        bool: True if image format and size are allowed
-    """
-    # Check format
-    if image.format not in ALLOWED_PIL_FORMATS:
-        _LOGGER.warning(f"Rejected unsupported image format: {image.format}")
-        return False
-
-    # Check pixel dimensions (prevent decompression bombs)
-    if image.width * image.height > MAX_IMAGE_PIXELS:
-        _LOGGER.warning(
-            f"Image too large: {image.width}x{image.height} pixels "
-            f"(max {MAX_IMAGE_PIXELS})"
-        )
-        return False
-
-    return True
-
-
-def build_browser_request(url: str) -> urllib.request.Request:
-    """Minimal: add a desktop UA and same-origin Referer."""
-    parsed = urllib.parse.urlsplit(url)
-    origin = (
-        f"{parsed.scheme}://{parsed.netloc}/"
-        if parsed.scheme and parsed.netloc
-        else ""
-    )
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/141.0.0.0 Safari/537.36"
-        ),
-        "Referer": origin,  # helps with sites that block direct hotlinks (e.g., JSTOR)
-    }
-    return urllib.request.Request(url, headers=headers)
-
-
 # Global image cache instance and config directory
 _image_cache = None
 _config_dir = None
@@ -1767,36 +1531,10 @@ def validate_local_path(file_path: str) -> tuple[bool, str | None]:
         )
         return False, None
 
-    try:
-        # Resolve to absolute path and normalize
-        abs_path = os.path.abspath(os.path.realpath(file_path))
-        abs_config = os.path.abspath(os.path.realpath(_config_dir))
-        abs_assets = os.path.abspath(os.path.realpath(LEDFX_ASSETS_PATH))
-
-        # Check if file is within config directory tree
-        try:
-            common_config = os.path.commonpath([abs_path, abs_config])
-            if common_config == abs_config:
-                return True, abs_path
-        except ValueError:
-            pass  # Different drives on Windows, continue to check assets
-
-        # Check if file is within assets directory tree
-        try:
-            common_assets = os.path.commonpath([abs_path, abs_assets])
-            if common_assets == abs_assets:
-                return True, abs_path
-        except ValueError:
-            pass  # Different drives on Windows
-
-        _LOGGER.warning(
-            f"Path traversal attempt blocked: {file_path} is outside allowed directories"
-        )
-        return False, None
-
-    except (ValueError, OSError) as e:
-        _LOGGER.warning(f"Invalid path rejected: {file_path} : {e}")
-        return False, None
+    # Delegate to centralized security function
+    return _validate_local_path_impl(
+        file_path, [_config_dir, LEDFX_ASSETS_PATH]
+    )
 
 
 def _resolve_asset_path(

@@ -24,9 +24,10 @@ from datetime import datetime, timezone
 import PIL.Image as Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
-from ledfx.utils import (
+from ledfx.security_utils import (
     ALLOWED_IMAGE_EXTENSIONS,
     ALLOWED_MIME_TYPES,
+    resolve_safe_path_in_directory,
     validate_pil_image,
 )
 
@@ -101,91 +102,9 @@ def resolve_safe_asset_path(
             - error_message: Description of validation failure (None if valid)
     """
     assets_root = get_assets_directory(config_dir)
-    return _resolve_safe_path_in_directory(
+    return resolve_safe_path_in_directory(
         assets_root, relative_path, create_dirs, "assets"
     )
-
-
-def _resolve_safe_path_in_directory(
-    root_dir: str,
-    relative_path: str,
-    create_dirs: bool = False,
-    directory_name: str = "directory",
-) -> tuple[bool, str | None, str | None]:
-    """
-    Internal helper to resolve and validate a path within a root directory.
-
-    Provides security protection against path traversal, absolute paths, and symlink escapes.
-
-    Args:
-        root_dir: Root directory to constrain paths within
-        relative_path: User-provided relative path
-        create_dirs: If True, create parent directories if they don't exist
-        directory_name: Name of directory type for error messages
-
-    Returns:
-        tuple: (is_valid, absolute_path, error_message)
-    """
-    if not relative_path:
-        return False, None, "Empty path provided"
-
-    # Normalize path separators and strip whitespace
-    relative_path = relative_path.strip().replace("\\", "/")
-
-    # Reject absolute paths (including leading slashes and protocol schemes)
-    if (
-        os.path.isabs(relative_path)
-        or relative_path.startswith("/")
-        or "://" in relative_path
-    ):
-        return False, None, "Absolute paths are not allowed"
-
-    try:
-        # Join with root directory and resolve to absolute path
-        # This handles normalization and resolves any ../ components
-        candidate_path = os.path.join(root_dir, relative_path)
-        resolved_path = os.path.abspath(os.path.realpath(candidate_path))
-        normalized_root = os.path.abspath(os.path.realpath(root_dir))
-
-        # Ensure the resolved path is still within the root directory
-        # Use commonpath to verify containment (works across platforms)
-        try:
-            common = os.path.commonpath([resolved_path, normalized_root])
-            if common != normalized_root:
-                return (
-                    False,
-                    None,
-                    f"Path escapes {directory_name} directory (path traversal blocked)",
-                )
-        except ValueError:
-            # Different drives on Windows or other path incompatibility
-            return (
-                False,
-                None,
-                f"Path is outside {directory_name} directory (different drive/root)",
-            )
-
-        # Create parent directories if requested
-        if create_dirs:
-            parent_dir = os.path.dirname(resolved_path)
-            if not os.path.exists(parent_dir):
-                try:
-                    os.makedirs(parent_dir, exist_ok=True)
-                    _LOGGER.debug(
-                        f"Created {directory_name} subdirectory: {parent_dir}"
-                    )
-                except OSError as e:
-                    return (
-                        False,
-                        None,
-                        f"Failed to create parent directories: {e}",
-                    )
-
-        return True, resolved_path, None
-
-    except (ValueError, OSError) as e:
-        _LOGGER.warning(f"Path resolution failed for '{relative_path}': {e}")
-        return False, None, f"Invalid path: {e}"
 
 
 def get_image_metadata(
@@ -747,7 +666,7 @@ def get_asset_or_builtin_path(
         gifs_root = os.path.join(LEDFX_ASSETS_PATH, "gifs")
 
         # Use the same path validation as user assets
-        is_valid, resolved_path, error = _resolve_safe_path_in_directory(
+        is_valid, resolved_path, error = resolve_safe_path_in_directory(
             gifs_root,
             actual_path,
             create_dirs=False,
