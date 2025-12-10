@@ -28,18 +28,8 @@ def test_user_asset_path():
         # Test plain path resolution (should resolve to config_dir/assets/test.gif)
         result = open_gif("test.gif", config_dir=tmpdir)
 
-        if result is None:
-            print(
-                "❌ FAILED: Plain path 'test.gif' did not resolve to user asset"
-            )
-            return False
-        else:
-            print("✅ PASSED: Plain path 'test.gif' resolved to user asset")
-            print(f"   Config dir: {tmpdir}")
-            print(f"   Assets dir: {assets_dir}")
-            print(f"   Expected: {test_gif_path}")
-            result.close()
-            return True
+        assert result is not None, "Plain path 'test.gif' did not resolve to user asset"
+        result.close()
 
 
 def test_builtin_still_works():
@@ -47,13 +37,8 @@ def test_builtin_still_works():
     # Test with a known built-in asset
     result = open_gif("builtin://skull.gif")
 
-    if result is None:
-        print("❌ FAILED: builtin://skull.gif did not load")
-        return False
-    else:
-        print("✅ PASSED: builtin://skull.gif loaded successfully")
-        result.close()
-        return True
+    assert result is not None, "builtin://skull.gif did not load"
+    result.close()
 
 
 def test_nested_user_asset_path():
@@ -70,31 +55,23 @@ def test_nested_user_asset_path():
         # Test nested path resolution
         result = open_gif("subfolder/nested.gif", config_dir=tmpdir)
 
-        if result is None:
-            print(
-                "❌ FAILED: Nested path 'subfolder/nested.gif' did not resolve"
-            )
-            return False
-        else:
-            print(
-                "✅ PASSED: Nested path 'subfolder/nested.gif' resolved to user asset"
-            )
-            result.close()
-            return True
+        assert result is not None, "Nested path 'subfolder/nested.gif' did not resolve"
+        result.close()
 
 
 if __name__ == "__main__":
     print("Testing user asset path resolution...\n")
 
-    test1 = test_user_asset_path()
-    print()
-    test2 = test_builtin_still_works()
-    print()
-    test3 = test_nested_user_asset_path()
-    print()
+    print("Test 1: User asset path")
+    test_user_asset_path()
+    print("✅ PASSED\n")
 
-    if test1 and test2 and test3:
-        print("🎉 All tests passed!")
-    else:
-        print("❌ Some tests failed")
-        exit(1)
+    print("Test 2: Builtin still works")
+    test_builtin_still_works()
+    print("✅ PASSED\n")
+
+    print("Test 3: Nested user asset path")
+    test_nested_user_asset_path()
+    print("✅ PASSED\n")
+
+    print("🎉 All tests passed!")
