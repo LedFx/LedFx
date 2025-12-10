@@ -149,10 +149,14 @@ class Keybeat2d(Twod, GifBase):
         # attempt to load gif, default on error or no url to test pattern
         if self.last_gif != self.image_location:
             if self.image_location:
-                self.gif = open_gif(self.image_location, config_dir=self._ledfx.config_dir)
+                self.gif = open_gif(
+                    self.image_location, config_dir=self._ledfx.config_dir
+                )
 
             if self.gif is None:
-                self.gif = open_gif(self.default, config_dir=self._ledfx.config_dir)
+                self.gif = open_gif(
+                    self.default, config_dir=self._ledfx.config_dir
+                )
                 self.force_fit = True
 
             iterator = ImageSequence.Iterator(self.gif)
