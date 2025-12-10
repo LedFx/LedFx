@@ -40,18 +40,18 @@ def _calculate_thumbnail_dimensions(width, height, size, dimension):
 
     if dimension == "width":
         new_width = size
-        new_height = int(height * (size / width))
+        new_height = max(1, int(height * (size / width)))
     elif dimension == "height":
         new_height = size
-        new_width = int(width * (size / height))
+        new_width = max(1, int(width * (size / height)))
     else:  # dimension == "max"
         # Apply size to longest axis, maintaining aspect ratio
         if width > height:
             new_width = size
-            new_height = int(height * (size / width))
+            new_height = max(1, int(height * (size / width)))
         else:
             new_height = size
-            new_width = int(width * (size / height))
+            new_width = max(1, int(width * (size / height)))
 
     return new_width, new_height
 
