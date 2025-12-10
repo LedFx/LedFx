@@ -6,7 +6,6 @@ and that cache operations work correctly with thumbnail variants.
 """
 
 import os
-from unittest.mock import patch
 
 import pytest
 

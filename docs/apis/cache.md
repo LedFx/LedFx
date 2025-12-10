@@ -92,17 +92,17 @@ Clear specific URL from cache or clear entire cache.
 **Examples:**
 
 Clear specific URL:
-```
+```bash
 DELETE /api/cache/images?url=https://example.com/image.gif
 ```
 
 Clear all thumbnail variants for an asset:
-```
+```bash
 DELETE /api/cache/images?url=asset://backgrounds/galaxy.jpg&all_variants=true
 ```
 
 Clear entire cache:
-```
+```bash
 DELETE /api/cache/images
 ```
 
