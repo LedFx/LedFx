@@ -62,17 +62,18 @@ class GifPlayer(Twod, GifBase):
         super().do_once()
 
         gif_path = self._config["image_location"]
+        config_dir = self._ledfx.config_dir
         # If for some unknown reason the url_path is blank (someone saved a preset with no string)/
         if gif_path == "":
             # Show animated LedFx logo
-            self.gif = open_gif(self.DEFAULT_GIF_PATH)
+            self.gif = open_gif(self.DEFAULT_GIF_PATH, config_dir=config_dir)
         else:
             # Try to open the url
-            self.gif = open_gif(gif_path)
+            self.gif = open_gif(gif_path, config_dir=config_dir)
         # If the URL doesn't work
         if self.gif is None:
             # Show the animated LedFx logo
-            self.gif = open_gif(self.DEFAULT_GIF_PATH)
+            self.gif = open_gif(self.DEFAULT_GIF_PATH, config_dir=config_dir)
 
         self.process_gif()
         # Seed the frame data with the first frame

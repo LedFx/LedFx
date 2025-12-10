@@ -17,11 +17,53 @@ MIN_THUMBNAIL_SIZE = 16
 MAX_THUMBNAIL_SIZE = 512
 
 
+def _calculate_thumbnail_dimensions(width, height, size, dimension):
+    """
+    Calculate thumbnail dimensions based on the requested size and dimension mode.
+
+    Args:
+        width: Original image width in pixels
+        height: Original image height in pixels
+        size: Target size in pixels
+        dimension: Dimension mode - "max", "width", or "height"
+
+    Returns:
+        tuple: (new_width, new_height) for the thumbnail
+
+    Raises:
+        ValueError: If width or height are not positive non-zero integers
+    """
+    if width <= 0 or height <= 0:
+        raise ValueError(
+            f"Width and height must be positive non-zero integers, got width={width}, height={height}"
+        )
+
+    if dimension == "width":
+        new_width = size
+        new_height = max(1, int(height * (size / width)))
+    elif dimension == "height":
+        new_height = size
+        new_width = max(1, int(width * (size / height)))
+    else:  # dimension == "max"
+        # Apply size to longest axis, maintaining aspect ratio
+        if width > height:
+            new_width = size
+            new_height = max(1, int(height * (size / width)))
+        else:
+            new_height = size
+            new_width = max(1, int(width * (size / height)))
+
+    return new_width, new_height
+
+
 class AssetsThumbnailEndpoint(RestEndpoint):
     """
     REST API endpoint for generating asset thumbnails on-demand.
 
-    Generates PNG thumbnails with configurable size, maintaining aspect ratio.
+    Generates thumbnails with configurable size, maintaining aspect ratio.
+    - Static images: PNG format
+    - Animated images: WebP format (preserves animation)
+    Supports both user-uploaded assets and built-in assets from LEDFX_ASSETS_PATH.
     """
 
     ENDPOINT_PATH = "/api/assets/thumbnail"
@@ -37,10 +79,15 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                 - "max": Apply to longest axis (default)
                 - "width": Apply to width, scale height proportionally
                 - "height": Apply to height, scale width proportionally
+            animated (optional): For multi-frame images, preserve animation (default true)
+                - true: Return animated WebP for animated images
+                - false: Return static PNG of first frame
 
         Returns:
-            PNG image data with Content-Type: image/png header,
-            or error response if path is invalid or asset not found.
+            PNG or WebP image data with appropriate Content-Type header.
+            - Static images: image/png
+            - Animated images (when animated=true): image/webp
+            - Animated images (when animated=false): image/png (first frame only)
         """
         try:
             data = await request.json()
@@ -77,9 +124,18 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                 type="error",
             )
 
+        # Get and validate animated parameter
+        animated = data.get("animated", True)
+        if not isinstance(animated, bool):
+            # Try to convert string to bool
+            if isinstance(animated, str):
+                animated = animated.lower() in ("true", "1", "yes")
+            else:
+                animated = bool(animated)
+
         try:
-            # Get the asset path
-            exists, abs_path, error = assets.get_asset_path(
+            # Get the asset path (checks both user assets and built-in assets)
+            exists, abs_path, error = assets.get_asset_or_builtin_path(
                 self._ledfx.config_dir, asset_path
             )
 
@@ -92,41 +148,92 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             # Open and generate thumbnail
             try:
                 with Image.open(abs_path) as img:
-                    # Convert to RGB if necessary (handles RGBA, P, etc.)
-                    if img.mode not in ("RGB", "L"):
-                        img = img.convert("RGB")
+                    # Check if image is animated
+                    is_animated_image = getattr(img, "is_animated", False)
+                    n_frames = getattr(img, "n_frames", 1)
 
-                    # Calculate thumbnail dimensions based on dimension parameter
-                    width, height = img.size
+                    if animated and is_animated_image and n_frames > 1:
+                        # Process animated image - create WebP thumbnail
+                        frames = []
+                        durations = []
 
-                    if dimension == "width":
-                        # Fix width, scale height proportionally
-                        new_width = size
-                        new_height = int(height * (size / width))
-                    elif dimension == "height":
-                        # Fix height, scale width proportionally
-                        new_height = size
-                        new_width = int(width * (size / height))
-                    else:  # dimension == "max"
-                        # Use thumbnail() which applies size to longest axis
-                        img.thumbnail((size, size), Image.Resampling.LANCZOS)
-                        new_width, new_height = img.size
+                        for frame_idx in range(n_frames):
+                            img.seek(frame_idx)
+                            frame = img.copy()
 
-                    # Resize if we calculated specific dimensions
-                    if dimension in ("width", "height"):
+                            # Convert frame to RGBA for consistency
+                            # This ensures palette/grayscale frames are handled properly
+                            if frame.mode != "RGBA":
+                                frame = frame.convert("RGBA")
+
+                            # Calculate dimensions
+                            width, height = frame.size
+                            new_width, new_height = (
+                                _calculate_thumbnail_dimensions(
+                                    width, height, size, dimension
+                                )
+                            )
+
+                            # Resize frame
+                            resized_frame = frame.resize(
+                                (new_width, new_height),
+                                Image.Resampling.LANCZOS,
+                            )
+                            frames.append(resized_frame)
+
+                            # Get frame duration (default 100ms if not available)
+                            duration = img.info.get("duration", 100)
+                            durations.append(duration)
+
+                        # Save as animated WebP
+                        buffer = io.BytesIO()
+                        frames[0].save(
+                            buffer,
+                            format="WEBP",
+                            save_all=True,
+                            append_images=frames[1:],
+                            duration=durations,
+                            loop=0,
+                            optimize=True,
+                        )
+                        buffer.seek(0)
+
+                        return web.Response(
+                            body=buffer.read(),
+                            headers={"Content-Type": "image/webp"},
+                        )
+                    else:
+                        # Process static image - create PNG thumbnail
+                        # For animated images with animated=false, use first frame
+                        if is_animated_image and n_frames > 1:
+                            img.seek(0)  # Get first frame
+
+                        # Convert to RGB if necessary (handles RGBA, P, etc.)
+                        if img.mode not in ("RGB", "L"):
+                            img = img.convert("RGB")
+
+                        # Calculate thumbnail dimensions based on dimension parameter
+                        width, height = img.size
+                        new_width, new_height = (
+                            _calculate_thumbnail_dimensions(
+                                width, height, size, dimension
+                            )
+                        )
+
+                        # Resize image
                         img = img.resize(
                             (new_width, new_height), Image.Resampling.LANCZOS
                         )
 
-                    # Save to bytes buffer as PNG
-                    buffer = io.BytesIO()
-                    img.save(buffer, format="PNG", optimize=True)
-                    buffer.seek(0)
+                        # Save to bytes buffer as PNG
+                        buffer = io.BytesIO()
+                        img.save(buffer, format="PNG", optimize=True)
+                        buffer.seek(0)
 
-                    return web.Response(
-                        body=buffer.read(),
-                        headers={"Content-Type": "image/png"},
-                    )
+                        return web.Response(
+                            body=buffer.read(),
+                            headers={"Content-Type": "image/png"},
+                        )
 
             except Exception as e:
                 _LOGGER.warning(
