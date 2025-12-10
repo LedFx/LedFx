@@ -28,7 +28,9 @@ def test_user_asset_path():
         # Test plain path resolution (should resolve to config_dir/assets/test.gif)
         result = open_gif("test.gif", config_dir=tmpdir)
 
-        assert result is not None, "Plain path 'test.gif' did not resolve to user asset"
+        assert (
+            result is not None
+        ), "Plain path 'test.gif' did not resolve to user asset"
         result.close()
 
 
@@ -55,7 +57,9 @@ def test_nested_user_asset_path():
         # Test nested path resolution
         result = open_gif("subfolder/nested.gif", config_dir=tmpdir)
 
-        assert result is not None, "Nested path 'subfolder/nested.gif' did not resolve"
+        assert (
+            result is not None
+        ), "Nested path 'subfolder/nested.gif' did not resolve"
         result.close()
 
 
