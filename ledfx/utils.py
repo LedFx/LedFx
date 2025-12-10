@@ -58,7 +58,7 @@ from ledfx.security_utils import (
     validate_image_mime_type,
     validate_local_path,
     validate_pil_image,
-    validate_url_safety
+    validate_url_safety,
 )
 
 # from asyncio import coroutines, ensure_future
@@ -1529,9 +1529,7 @@ def validate_local_image_path(file_path: str) -> tuple[bool, str | None]:
         return False, None
 
     # Delegate to centralized security function
-    return validate_local_path(
-        file_path, [_config_dir, LEDFX_ASSETS_PATH]
-    )
+    return validate_local_path(file_path, [_config_dir, LEDFX_ASSETS_PATH])
 
 
 def _validate_and_open_image(
@@ -1630,10 +1628,15 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
 
             # Resolve and validate path
             is_valid, resolved_path, error = resolve_safe_path_in_directory(
-                gifs_root, actual_path, create_dirs=False, directory_name="built-in assets"
+                gifs_root,
+                actual_path,
+                create_dirs=False,
+                directory_name="built-in assets",
             )
             if not is_valid:
-                _LOGGER.warning(f"Built-in asset path validation failed: {error}")
+                _LOGGER.warning(
+                    f"Built-in asset path validation failed: {error}"
+                )
                 return None
 
             # Validate and open the image
@@ -1751,11 +1754,18 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 assets_root = os.path.join(config_dir, "assets")
 
                 # Resolve and validate path
-                is_valid, resolved_path, error = resolve_safe_path_in_directory(
-                    assets_root, gif_path, create_dirs=False, directory_name="user assets"
+                is_valid, resolved_path, error = (
+                    resolve_safe_path_in_directory(
+                        assets_root,
+                        gif_path,
+                        create_dirs=False,
+                        directory_name="user assets",
+                    )
                 )
                 if not is_valid:
-                    _LOGGER.warning(f"User asset path validation failed: {error}")
+                    _LOGGER.warning(
+                        f"User asset path validation failed: {error}"
+                    )
                     return None
 
                 # Validate and open the image
