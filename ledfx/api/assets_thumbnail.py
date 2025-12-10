@@ -29,7 +29,7 @@ def _calculate_thumbnail_dimensions(width, height, size, dimension):
 
     Returns:
         tuple: (new_width, new_height) for the thumbnail
-        
+
     Raises:
         ValueError: If width or height are not positive non-zero integers
     """
@@ -37,7 +37,7 @@ def _calculate_thumbnail_dimensions(width, height, size, dimension):
         raise ValueError(
             f"Width and height must be positive non-zero integers, got width={width}, height={height}"
         )
-    
+
     if dimension == "width":
         new_width = size
         new_height = int(height * (size / width))
