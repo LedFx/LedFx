@@ -61,15 +61,17 @@ class ImageCache:
         except Exception as e:
             _LOGGER.error(f"Failed to save cache metadata: {e}")
 
-    def _generate_cache_key(self, url: str, params: Optional[dict] = None) -> str:
+    def _generate_cache_key(
+        self, url: str, params: Optional[dict] = None
+    ) -> str:
         """
         Generate cache key from URL and optional parameters using SHA-256 hash.
-        
+
         Args:
             url: The URL or asset path
             params: Optional dict of parameters to include in cache key
                     (e.g., {"size": 128, "dimension": "max", "animated": True})
-        
+
         Returns:
             SHA-256 hash of the combined URL and parameters
         """
