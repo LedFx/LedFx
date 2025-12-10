@@ -153,8 +153,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                             img.seek(frame_idx)
                             frame = img.copy()
                             
-                            # Convert frame to RGB if necessary
-                            if frame.mode not in ("RGB", "RGBA"):
+                            # Convert frame to RGBA for consistency
+                            # This ensures palette/grayscale frames are handled properly
+                            if frame.mode != "RGBA":
                                 frame = frame.convert("RGBA")
                             
                             # Calculate dimensions
