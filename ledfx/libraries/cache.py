@@ -61,25 +61,42 @@ class ImageCache:
         except Exception as e:
             _LOGGER.error(f"Failed to save cache metadata: {e}")
 
-    def _generate_cache_key(self, url: str) -> str:
-        """Generate cache key from URL using SHA-256 hash."""
-        return hashlib.sha256(url.encode("utf-8")).hexdigest()
+    def _generate_cache_key(self, url: str, params: Optional[dict] = None) -> str:
+        """
+        Generate cache key from URL and optional parameters using SHA-256 hash.
+        
+        Args:
+            url: The URL or asset path
+            params: Optional dict of parameters to include in cache key
+                    (e.g., {"size": 128, "dimension": "max", "animated": True})
+        
+        Returns:
+            SHA-256 hash of the combined URL and parameters
+        """
+        if params:
+            # Sort params by key for consistent hashing
+            sorted_params = sorted(params.items())
+            key_str = f"{url}|{sorted_params}"
+        else:
+            key_str = url
+        return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
 
     def _get_cache_path(self, cache_key: str, extension: str = ".jpg") -> str:
         """Get filesystem path for cached image."""
         return os.path.join(self.cache_dir, f"{cache_key}{extension}")
 
-    def get(self, url: str) -> Optional[str]:
+    def get(self, url: str, params: Optional[dict] = None) -> Optional[str]:
         """
         Get cached image if available (no expiration check).
 
         Args:
-            url: The URL to retrieve from cache
+            url: The URL or asset path to retrieve from cache
+            params: Optional dict of parameters (for thumbnails)
 
         Returns:
             Path to cached file or None if not cached
         """
-        cache_key = self._generate_cache_key(url)
+        cache_key = self._generate_cache_key(url, params)
         entry = self.metadata["cache_entries"].get(cache_key)
 
         if entry:
@@ -102,18 +119,20 @@ class ImageCache:
         content_type: str,
         etag: Optional[str] = None,
         last_modified: Optional[str] = None,
+        params: Optional[dict] = None,
     ):
         """
         Store image in cache.
 
         Args:
-            url: The URL of the image
+            url: The URL or asset path of the image
             data: Image data bytes
             content_type: MIME type of the image
             etag: Optional ETag header from server
             last_modified: Optional Last-Modified header from server
+            params: Optional dict of parameters (for thumbnails)
         """
-        cache_key = self._generate_cache_key(url)
+        cache_key = self._generate_cache_key(url, params)
 
         # Determine extension from content type
         extension_map = {
@@ -156,6 +175,7 @@ class ImageCache:
             "last_modified": last_modified,
             "content_type": content_type,
             "extension": extension,
+            "params": params,  # Store params for reference
         }
 
         self.metadata["cache_entries"][cache_key] = entry
@@ -214,23 +234,56 @@ class ImageCache:
             self.metadata["total_count"] -= 1
             del self.metadata["cache_entries"][cache_key]
 
-    def delete(self, url: str) -> bool:
+    def delete(self, url: str, params: Optional[dict] = None) -> bool:
         """
-        Remove specific URL from cache.
+        Remove specific URL (and params) from cache.
 
         Args:
-            url: The URL to remove
+            url: The URL or asset path to remove
+            params: Optional dict of parameters (for thumbnails)
 
         Returns:
             True if entry was deleted, False if not found
         """
-        cache_key = self._generate_cache_key(url)
+        cache_key = self._generate_cache_key(url, params)
         if cache_key in self.metadata["cache_entries"]:
-            _LOGGER.info(f"Deleting cached image: {url}")
+            _LOGGER.info(f"Deleting cached image: {url} (params: {params})")
             self._delete(cache_key)
             self._save_metadata()
             return True
         return False
+
+    def delete_all_for_url(self, url: str) -> int:
+        """
+        Remove all cache entries for a given URL (regardless of params).
+        Useful for clearing all thumbnail variations of an asset.
+
+        Args:
+            url: The URL or asset path to remove
+
+        Returns:
+            Number of entries deleted
+        """
+        deleted_count = 0
+        keys_to_delete = []
+
+        # Find all entries matching the URL
+        for cache_key, entry in self.metadata["cache_entries"].items():
+            if entry["url"] == url:
+                keys_to_delete.append(cache_key)
+
+        # Delete found entries
+        for cache_key in keys_to_delete:
+            self._delete(cache_key)
+            deleted_count += 1
+
+        if deleted_count > 0:
+            self._save_metadata()
+            _LOGGER.info(
+                f"Deleted {deleted_count} cache entries for URL: {url}"
+            )
+
+        return deleted_count
 
     def clear(self) -> dict:
         """
@@ -282,17 +335,20 @@ class ImageCache:
             "entries": entries,
         }
 
-    def get_cache_headers(self, url: str) -> Optional[dict]:
+    def get_cache_headers(
+        self, url: str, params: Optional[dict] = None
+    ) -> Optional[dict]:
         """
         Get stored ETag and Last-Modified headers for conditional requests.
 
         Args:
             url: The URL to get headers for
+            params: Optional dict of parameters (for thumbnails)
 
         Returns:
             Dict with etag and last_modified or None if not cached
         """
-        cache_key = self._generate_cache_key(url)
+        cache_key = self._generate_cache_key(url, params)
         entry = self.metadata["cache_entries"].get(cache_key)
 
         if entry:

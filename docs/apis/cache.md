@@ -87,12 +87,18 @@ Clear specific URL from cache or clear entire cache.
 
 **Query Parameters:**
 - `url` (optional): Specific URL to clear
+- `all_variants` (optional, default: false): If "true" and url provided, clears all cache entries for that URL (including thumbnails with different params)
 
 **Examples:**
 
 Clear specific URL:
 ```
 DELETE /api/cache/images?url=https://example.com/image.gif
+```
+
+Clear all thumbnail variants for an asset:
+```
+DELETE /api/cache/images?url=asset://backgrounds/galaxy.jpg&all_variants=true
 ```
 
 Clear entire cache:
@@ -153,12 +159,14 @@ This endpoint removes the specified URL from the cache. The next time the image 
 **Request Body:**
 ```json
 {
-  "url": "https://example.com/image.gif"
+  "url": "https://example.com/image.gif",
+  "all_variants": false
 }
 ```
 
 **Parameters:**
 - `url` (required): The URL to clear from cache
+- `all_variants` (optional, default: false): If true, clears all cached entries for this URL (useful for clearing all thumbnail size/dimension variations of an asset)
 
 **Success Response (entry was in cache):**
 ```json
@@ -184,6 +192,21 @@ This endpoint removes the specified URL from the cache. The next time the image 
   },
   "data": {
     "url": "https://example.com/image.gif"
+  }
+}
+```
+
+**Success Response (all_variants=true, multiple cleared):**
+```json
+{
+  "status": "success",
+  "payload": {
+    "type": "success",
+    "reason": "Cleared 3 cache entries. Images will be regenerated on next access."
+  },
+  "data": {
+    "url": "asset://backgrounds/galaxy.jpg",
+    "cleared_count": 3
   }
 }
 ```

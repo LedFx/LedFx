@@ -105,8 +105,7 @@ hue = [
 ledfx = "ledfx.__main__:main"
 ledfx-loopback-install = "loopback.__main__:copy_lib"
 [tool.pytest.ini_options]
-addopts = "tests"
-testpaths = "tests"
+testpaths = ["tests"]
 norecursedirs = [
     "dist",
     "build",

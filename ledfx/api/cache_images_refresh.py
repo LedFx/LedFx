@@ -25,9 +25,11 @@ class CacheRefreshEndpoint(RestEndpoint):
 
         Request Body:
             url (required): URL to clear from cache
+            all_variants (optional): If true, clears all cache entries for that URL
+                                    (including thumbnails with different params)
 
         Returns:
-            Success response with URL (type: success if cached, info if not cached),
+            Success response with URL and cleared_count (type: success if cached, info if not cached),
             or error response if request invalid or cache not initialized.
         """
         cache = get_image_cache()
@@ -49,6 +51,26 @@ class CacheRefreshEndpoint(RestEndpoint):
                 message="Missing 'url' in request body",
                 type="error",
             )
+
+        all_variants = data.get("all_variants", False)
+        if not isinstance(all_variants, bool):
+            all_variants = str(all_variants).lower() in ("true", "1", "yes")
+
+        if all_variants:
+            # Clear all variants (useful for asset thumbnails)
+            cleared_count = cache.delete_all_for_url(url)
+            if cleared_count > 0:
+                return await self.request_success(
+                    type="success",
+                    message=f"Cleared {cleared_count} cache entries. Images will be regenerated on next access.",
+                    data={"url": url, "cleared_count": cleared_count},
+                )
+            else:
+                return await self.request_success(
+                    type="info",
+                    message="URL was not in cache (no action needed).",
+                    data={"url": url, "cleared_count": 0},
+                )
 
         # Clear the URL from cache to force refresh on next access
         deleted = cache.delete(url)
