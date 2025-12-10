@@ -1820,12 +1820,12 @@ def _resolve_asset_path(
 
     # Reject empty path
     if not normalized_path:
-        _LOGGER.error(f"{asset_type} path cannot be empty")
+        _LOGGER.warning(f"{asset_type} path cannot be empty")
         return False, None
 
     # Reject absolute paths
     if os.path.isabs(normalized_path):
-        _LOGGER.error(
+        _LOGGER.warning(
             f"Absolute paths not allowed for {asset_type}: {normalized_path}"
         )
         return False, None
@@ -1837,13 +1837,13 @@ def _resolve_asset_path(
     try:
         common = os.path.commonpath([root_dir, resolved_path])
         if not os.path.normpath(common) == os.path.normpath(root_dir):
-            _LOGGER.error(
+            _LOGGER.warning(
                 f"Path traversal attempt blocked for {asset_type}: {normalized_path}"
             )
             return False, None
     except ValueError:
         # Paths on different drives on Windows
-        _LOGGER.error(
+        _LOGGER.warning(
             f"Invalid path for {asset_type} (different drive): {normalized_path}"
         )
         return False, None
@@ -1867,42 +1867,42 @@ def _validate_and_open_image(
     """
     # Check file exists
     if not os.path.exists(resolved_path):
-        _LOGGER.error(f"File not found: {original_path}")
+        _LOGGER.warning(f"File not found: {original_path}")
         return None
 
     if not os.path.isfile(resolved_path):
-        _LOGGER.error(f"Path is not a file: {original_path}")
+        _LOGGER.warning(f"Path is not a file: {original_path}")
         return None
 
     # Validate extension
     if not is_allowed_image_extension(resolved_path):
-        _LOGGER.error(f"Invalid image extension: {original_path}")
+        _LOGGER.warning(f"Invalid image extension: {original_path}")
         return None
 
     # Check file size
     if check_size:
         file_size = os.path.getsize(resolved_path)
         if file_size > MAX_IMAGE_SIZE_BYTES:
-            _LOGGER.error(
+            _LOGGER.warning(
                 f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
             )
             return None
 
     # Validate MIME type
     if not validate_image_mime_type(resolved_path):
-        _LOGGER.error(f"Invalid image MIME type: {original_path}")
+        _LOGGER.warning(f"Invalid image MIME type: {original_path}")
         return None
 
     # Open the image
     try:
         gif = Image.open(resolved_path)
     except Exception as e:
-        _LOGGER.error(f"Failed to open image: {original_path} : {e}")
+        _LOGGER.warning(f"Failed to open image: {original_path} : {e}")
         return None
 
     # Validate PIL format and dimensions
     if not validate_pil_image(gif):
-        _LOGGER.error(f"Invalid PIL format or dimensions: {original_path}")
+        _LOGGER.warning(f"Invalid PIL format or dimensions: {original_path}")
         return None
 
     # Protect against single frame image like png, jpg
@@ -1985,13 +1985,13 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
 
             # Validate extension
             if not is_allowed_image_extension(gif_path):
-                _LOGGER.error(f"URL has invalid image extension: {gif_path}")
+                _LOGGER.warning(f"URL has invalid image extension: {gif_path}")
                 return None
 
             # Validate URL safety (SSRF protection)
             is_safe, error_msg = validate_url_safety(gif_path)
             if not is_safe:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"URL blocked for security: {gif_path} - {error_msg}"
                 )
                 return None
@@ -2007,7 +2007,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                     content_length
                     and int(content_length) > MAX_IMAGE_SIZE_BYTES
                 ):
-                    _LOGGER.error(
+                    _LOGGER.warning(
                         f"Image too large: {content_length} bytes (max {MAX_IMAGE_SIZE_BYTES})"
                     )
                     return None
@@ -2015,7 +2015,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 # Read with limit
                 data = response.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.error("Image exceeded size limit during download")
+                    _LOGGER.warning("Image exceeded size limit during download")
                     return None
 
                 # Get headers for caching
@@ -2031,7 +2031,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
 
                 # Validate PIL format and dimensions
                 if not validate_pil_image(gif):
-                    _LOGGER.error(
+                    _LOGGER.warning(
                         f"Invalid PIL format or dimensions: {gif_path}"
                     )
                     return None
@@ -2054,7 +2054,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
             parsed = urllib.parse.urlparse(gif_path)
             # Allow single-letter schemes (Windows drive letters like C:)
             if parsed.scheme and len(parsed.scheme) > 1:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"Invalid URL scheme '{parsed.scheme}' for local file: {gif_path}"
                 )
                 return None
@@ -2080,7 +2080,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 # Legacy: absolute path or no config_dir - use existing validation
                 is_valid, validated_path = validate_local_path(gif_path)
                 if not is_valid:
-                    _LOGGER.error(
+                    _LOGGER.warning(
                         f"Path traversal blocked or path outside config directory: {gif_path}"
                     )
                     return None
@@ -2141,13 +2141,13 @@ def open_image(image_path, force_refresh=False):
 
             # Validate extension
             if not is_allowed_image_extension(image_path):
-                _LOGGER.error(f"URL has invalid image extension: {image_path}")
+                _LOGGER.warning(f"URL has invalid image extension: {image_path}")
                 return None
 
             # Validate URL safety (SSRF protection)
             is_safe, error_msg = validate_url_safety(image_path)
             if not is_safe:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"URL blocked for security: {image_path} - {error_msg}"
                 )
                 return None
@@ -2163,7 +2163,7 @@ def open_image(image_path, force_refresh=False):
                     content_length
                     and int(content_length) > MAX_IMAGE_SIZE_BYTES
                 ):
-                    _LOGGER.error(
+                    _LOGGER.warning(
                         f"Image too large: {content_length} bytes (max {MAX_IMAGE_SIZE_BYTES})"
                     )
                     return None
@@ -2171,7 +2171,7 @@ def open_image(image_path, force_refresh=False):
                 # Read with limit
                 data = response.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.error("Image exceeded size limit during download")
+                    _LOGGER.warning("Image exceeded size limit during download")
                     return None
 
                 # Get headers for caching
@@ -2187,7 +2187,7 @@ def open_image(image_path, force_refresh=False):
 
                 # Validate PIL format and dimensions
                 if not validate_pil_image(image):
-                    _LOGGER.error(
+                    _LOGGER.warning(
                         f"Invalid PIL format or dimensions: {image_path}"
                     )
                     return None
@@ -2206,7 +2206,7 @@ def open_image(image_path, force_refresh=False):
             parsed = urllib.parse.urlparse(image_path)
             # Allow single-letter schemes (Windows drive letters like C:)
             if parsed.scheme and len(parsed.scheme) > 1:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"Invalid URL scheme '{parsed.scheme}' for local file: {image_path}"
                 )
                 return None
@@ -2214,7 +2214,7 @@ def open_image(image_path, force_refresh=False):
             # Path traversal protection
             is_valid, validated_path = validate_local_path(image_path)
             if not is_valid:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"Path traversal blocked or path outside config directory: {image_path}"
                 )
                 return None
@@ -2222,7 +2222,7 @@ def open_image(image_path, force_refresh=False):
             # Use validated path for all subsequent operations
             # Validate extension
             if not is_allowed_image_extension(validated_path):
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"File has invalid image extension: {image_path}"
                 )
                 return None
@@ -2230,20 +2230,20 @@ def open_image(image_path, force_refresh=False):
             # Check file exists and get size
             # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             if not os.path.exists(validated_path):
-                _LOGGER.error(f"File not found: {image_path}")
+                _LOGGER.warning(f"File not found: {image_path}")
                 return None
 
             # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
             file_size = os.path.getsize(validated_path)
             if file_size > MAX_IMAGE_SIZE_BYTES:
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
                 )
                 return None
 
             # Validate MIME type
             if not validate_image_mime_type(validated_path):
-                _LOGGER.error(f"Invalid image MIME type: {image_path}")
+                _LOGGER.warning(f"Invalid image MIME type: {image_path}")
                 return None
 
             # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
@@ -2251,7 +2251,7 @@ def open_image(image_path, force_refresh=False):
 
             # Validate PIL format and dimensions
             if not validate_pil_image(image):
-                _LOGGER.error(
+                _LOGGER.warning(
                     f"Invalid PIL format or dimensions: {image_path}"
                 )
                 return None
