@@ -124,7 +124,7 @@ When deleting assets, empty parent directories are automatically removed.
 
 Get a list of all user-uploaded assets with metadata from `{config_dir}/assets/`.
 
-**Endpoint:** `GET /api/assets`
+#### **Endpoint:** `GET /api/assets`
 
 **Success Response (bare response - no status wrapper):**
 ```json
@@ -172,7 +172,7 @@ Get a list of all user-uploaded assets with metadata from `{config_dir}/assets/`
 
 Get a list of all built-in assets with metadata from `{ledfx_assets}/gifs/`.
 
-**Endpoint:** `GET /api/assets_fixed`
+#### **Endpoint:** `GET /api/assets_fixed`
 
 **Success Response (bare response - no status wrapper):**
 ```json
@@ -237,7 +237,7 @@ Get a list of all built-in assets with metadata from `{ledfx_assets}/gifs/`.
 
 Upload a new image asset. Requires `multipart/form-data` encoding.
 
-**Endpoint:** `POST /api/assets`
+#### **Endpoint:** `POST /api/assets`
 
 **Request Parameters:**
 - `file` (file) - The image file to upload
@@ -376,7 +376,7 @@ curl -X POST http://localhost:8888/api/assets/download \
 
 Generate a thumbnail for an asset (user or built-in).
 
-**Endpoint:** `POST /api/assets/thumbnail`
+#### **Endpoint:** `POST /api/assets/thumbnail`
 
 **Asset Sources:**
 - **User assets**: No prefix → `{config_dir}/assets/{path}`
@@ -455,7 +455,7 @@ curl -X POST http://localhost:8888/api/assets/thumbnail \
 
 Delete a user asset and clean up empty directories.
 
-**Endpoint:** `DELETE /api/assets`
+#### **Endpoint:** `DELETE /api/assets`
 
 **Query Parameters (recommended):**
 ```
