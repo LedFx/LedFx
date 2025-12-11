@@ -134,7 +134,7 @@ class TestAssetsAPIUpload:
 
     def test_upload_path_traversal_rejected(self, sample_png_bytes):
         """Test that path traversal attempts are rejected.
-        
+
         Tests all path traversal patterns from naughty_paths (big-list-of-naughty-strings).
         Reserved device names without path separators are tested separately in naughty_filenames.
         """
