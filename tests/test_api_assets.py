@@ -135,8 +135,8 @@ class TestAssetsAPIUpload:
     def test_upload_path_traversal_rejected(self, sample_png_bytes):
         """Test that path traversal attempts are rejected.
         
-        Tests all 207 path traversal patterns from the big-list-of-naughty-strings.
-        With the DNS fix (using 127.0.0.1), this completes in ~30s instead of ~15min.
+        Tests all path traversal patterns from naughty_paths (big-list-of-naughty-strings).
+        Reserved device names without path separators are tested separately in naughty_filenames.
         """
         for naughty_path in naughty_paths:
             files = {
