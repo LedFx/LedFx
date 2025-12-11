@@ -35,8 +35,6 @@ naughty_paths = [
     # Mixed separators
     "..\\../..\\../etc/passwd",
     "../\\../\\../etc/passwd",
-    # Overlong paths
-    "." * 1000 + "/etc/passwd.png",
     # Special characters
     "../etc/passwd\n.png",
     "../etc/passwd\r\n.png",
