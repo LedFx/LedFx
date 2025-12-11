@@ -134,7 +134,7 @@ class TestAssetsAPIUpload:
 
     def test_upload_path_traversal_rejected(self, sample_png_bytes):
         """Test that path traversal attempts are rejected.
-        
+
         Tests all 207 path traversal patterns from the big-list-of-naughty-strings.
         With the DNS fix (using 127.0.0.1), this completes in ~30s instead of ~15min.
         """
@@ -1298,4 +1298,3 @@ class TestAssetsThumbnailBuiltinSupport:
         result = resp.json()
         assert result["status"] == "failed"
         assert "not found" in result["payload"]["reason"].lower()
-
