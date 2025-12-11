@@ -10,6 +10,10 @@ import os
 import pytest
 
 from ledfx.libraries.cache import ImageCache
+from tests.test_utilities.naughty_strings import (
+    naughty_filenames,
+    naughty_paths,
+)
 
 
 @pytest.fixture
@@ -270,3 +274,52 @@ class TestThumbnailCaching:
         # Different params should return None
         different_params = {"size": 256, "dimension": "max", "animated": True}
         assert cache.get_cache_headers(url, different_params) is None
+
+    def test_path_traversal_protection(self, cache, sample_thumbnail_data):
+        """Test that malicious path traversal URLs cannot escape the cache dir and produce only safe keys."""
+        params = {"size": 128, "dimension": "max", "animated": True}
+        for url in naughty_paths:
+            # Should not raise
+            cache.put(url, sample_thumbnail_data, "image/png", params=params)
+            # Key should exist in metadata
+            key = cache._generate_cache_key(url, params)
+            entry = cache.metadata["cache_entries"].get(key)
+            if entry:
+                # File must be inside cache.cache_dir
+                cache_path = cache._get_cache_path(key, entry["extension"])
+                assert (
+                    os.path.commonpath([cache.cache_dir, cache_path])
+                    == cache.cache_dir
+                )
+            # get() should not return a path outside cache dir
+            cached_path = cache.get(url, params)
+            if cached_path:
+                assert (
+                    os.path.commonpath([cache.cache_dir, cached_path])
+                    == cache.cache_dir
+                )
+
+    def test_special_filename_handling(self, cache, sample_thumbnail_data):
+        """Test that special/reserved filenames are handled safely and do not escape the cache dir."""
+        # Use shared special filename patterns
+        params = {"size": 128, "dimension": "max", "animated": True}
+        for url in naughty_filenames:
+            # Should not raise
+            try:
+                cache.put(
+                    url, sample_thumbnail_data, "image/png", params=params
+                )
+            except Exception as e:
+                pytest.fail(
+                    f"Exception raised for special filename '{url}': {e}"
+                )
+            # Key should exist in metadata
+            key = cache._generate_cache_key(url, params)
+            entry = cache.metadata["cache_entries"].get(key)
+            if entry:
+                # File must be inside cache.cache_dir
+                cache_path = cache._get_cache_path(key, entry["extension"])
+                assert (
+                    os.path.commonpath([cache.cache_dir, cache_path])
+                    == cache.cache_dir
+                )
