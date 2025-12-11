@@ -1298,4 +1298,3 @@ class TestAssetsThumbnailBuiltinSupport:
         result = resp.json()
         assert result["status"] == "failed"
         assert "not found" in result["payload"]["reason"].lower()
-
