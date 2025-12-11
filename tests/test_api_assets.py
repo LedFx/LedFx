@@ -138,6 +138,8 @@ class TestAssetsAPIUpload:
         Tests all path traversal patterns from naughty_paths (big-list-of-naughty-strings).
         Reserved device names without path separators are tested separately in naughty_filenames.
         """
+        failed_to_reject = []
+        
         for naughty_path in naughty_paths:
             files = {
                 "file": ("evil.png", io.BytesIO(sample_png_bytes), "image/png")
@@ -149,7 +151,24 @@ class TestAssetsAPIUpload:
             )
             assert resp.status_code == 200
             result = resp.json()
-            assert result["status"] == "failed"
+            
+            # Log any path that was accepted when it should have been rejected
+            if result["status"] != "failed":
+                failed_to_reject.append({
+                    "path": naughty_path,
+                    "status": result["status"],
+                    "result": result
+                })
+                print(f"\n❌ ACCEPTED (should reject): {repr(naughty_path)}")
+                print(f"   Status: {result['status']}")
+                print(f"   Result: {result}")
+            
+            assert result["status"] == "failed", (
+                f"Path should be rejected: {repr(naughty_path)}\n"
+                f"Got status: {result['status']}\n"
+                f"Full result: {result}"
+            )
+            
             reason = result["payload"]["reason"].lower()
             assert (
                 "traversal" in reason
@@ -160,12 +179,13 @@ class TestAssetsAPIUpload:
                 or "failed to create" in reason
                 or "cannot find the path" in reason
             ), f"Path traversal attempt should fail: {naughty_path} (got: {reason})"
-
-
-class TestAssetsAPIDownload:
-    """Test POST /api/assets/download - downloading assets."""
-
-    def test_download_existing_asset(self, sample_png_bytes):
+        
+        # Final summary if any paths were incorrectly accepted
+        if failed_to_reject:
+            print(f"\n\n{'='*60}")
+            print(f"SUMMARY: {len(failed_to_reject)} paths incorrectly accepted:")
+            for item in failed_to_reject:
+                print(f"  - {repr(item['path'])}")
         """Test downloading an existing asset."""
         # Upload first
         files = {
