@@ -14,11 +14,12 @@ import requests
 from PIL import Image
 
 from tests.test_utilities.consts import BASE_PORT
+from tests.test_utilities.naughty_strings import naughty_paths
 
-# Test URLs
-ASSETS_API_URL = f"http://localhost:{BASE_PORT}/api/assets"
-ASSETS_DOWNLOAD_API_URL = f"http://localhost:{BASE_PORT}/api/assets/download"
-ASSETS_THUMBNAIL_API_URL = f"http://localhost:{BASE_PORT}/api/assets/thumbnail"
+# Test URLs - Use 127.0.0.1 instead of localhost to avoid Windows DNS resolution delay (~2s per request)
+ASSETS_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets"
+ASSETS_DOWNLOAD_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets/download"
+ASSETS_THUMBNAIL_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets/thumbnail"
 
 
 @pytest.fixture
@@ -132,26 +133,36 @@ class TestAssetsAPIUpload:
         assert "not a valid image" in result["payload"]["reason"].lower()
 
     def test_upload_path_traversal_rejected(self, sample_png_bytes):
-        """Test that path traversal attempts are rejected."""
-        files = {
-            "file": ("evil.png", io.BytesIO(sample_png_bytes), "image/png")
-        }
-        data = {"path": "../../../etc/passwd"}
+        """Test that path traversal attempts are rejected.
 
-        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
-        assert resp.status_code == 200
-        result = resp.json()
-        assert result["status"] == "failed"
-        assert (
-            "traversal" in result["payload"]["reason"].lower()
-            or "outside" in result["payload"]["reason"].lower()
-        )
+        Tests all path traversal patterns from naughty_paths (big-list-of-naughty-strings).
+        Reserved device names without path separators are tested separately in naughty_filenames.
+        """
+        for naughty_path in naughty_paths:
+            files = {
+                "file": ("evil.png", io.BytesIO(sample_png_bytes), "image/png")
+            }
+            data = {"path": naughty_path}
 
+            resp = requests.post(
+                ASSETS_API_URL, files=files, data=data, timeout=5
+            )
+            assert resp.status_code == 200
+            result = resp.json()
+            assert result["status"] == "failed"
 
-class TestAssetsAPIDownload:
-    """Test POST /api/assets/download - downloading assets."""
+            reason = result["payload"]["reason"].lower()
+            assert (
+                "traversal" in reason
+                or "outside" in reason
+                or "not allowed" in reason
+                or "not a valid image" in reason
+                or "invalid" in reason
+                or "failed to create" in reason
+                or "cannot find the path" in reason
+            ), f"Path traversal attempt should fail: {naughty_path} (got: {reason})"
 
-    def test_download_existing_asset(self, sample_png_bytes):
+    def test_download_asset(self, sample_png_bytes):
         """Test downloading an existing asset."""
         # Upload first
         files = {
@@ -194,7 +205,7 @@ class TestAssetsAPIDownload:
         """Test downloading a built-in asset using builtin:// prefix."""
         # Get list of built-in assets
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         builtin_assets = resp.json().get("assets", [])
@@ -272,7 +283,7 @@ class TestAssetsAPIDownload:
         """Test downloading a built-in asset via GET using builtin:// prefix."""
         # Get list of built-in assets
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         builtin_assets = resp.json().get("assets", [])
@@ -1100,7 +1111,7 @@ class TestAssetsFixedAPI:
     def test_assets_fixed_endpoint_exists(self):
         """Test that /api/assets_fixed endpoint is accessible."""
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -1110,7 +1121,7 @@ class TestAssetsFixedAPI:
     def test_assets_fixed_metadata_structure(self):
         """Test that built-in assets have correct metadata structure."""
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -1140,7 +1151,7 @@ class TestAssetsFixedAPI:
     def test_assets_fixed_paths_relative(self):
         """Test that built-in asset paths are relative to gifs directory."""
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -1160,7 +1171,7 @@ class TestAssetsThumbnailBuiltinSupport:
         """Test generating thumbnail for built-in asset using builtin:// prefix."""
         # First, get list of built-in assets
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -1195,7 +1206,7 @@ class TestAssetsThumbnailBuiltinSupport:
         """Test that user and built-in assets are clearly separated with prefix."""
         # Get a built-in asset name
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         data = resp.json()
 
@@ -1245,7 +1256,7 @@ class TestAssetsThumbnailBuiltinSupport:
         """Test generating thumbnail for nested built-in asset path with builtin:// prefix."""
         # Get list of built-in assets to find nested ones
         resp = requests.get(
-            f"http://localhost:{BASE_PORT}/api/assets_fixed", timeout=5
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
         )
         assert resp.status_code == 200
         data = resp.json()

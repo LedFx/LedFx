@@ -8,6 +8,7 @@ from PIL import Image
 
 from ledfx import assets
 from ledfx.api import RestEndpoint
+from ledfx.utils import get_image_cache
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -133,6 +134,47 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             else:
                 animated = bool(animated)
 
+        # Create cache key with parameters
+        # Use "asset://" prefix to distinguish asset thumbnails from URL-based cache
+        cache_url = f"asset://{asset_path}"
+        cache_params = {
+            "size": size,
+            "dimension": dimension,
+            "animated": animated,
+        }
+
+        # Check cache first
+        cache = get_image_cache()
+        if cache:
+            cached_path = cache.get(cache_url, cache_params)
+            if cached_path:
+                try:
+                    # Return cached thumbnail
+                    with open(cached_path, "rb") as f:
+                        cached_data = f.read()
+
+                    # Determine content type from extension
+                    content_type = (
+                        "image/webp"
+                        if cached_path.endswith(".webp")
+                        else "image/png"
+                    )
+
+                    _LOGGER.debug(
+                        f"Returning cached thumbnail for {asset_path} (size={size}, dimension={dimension}, animated={animated})"
+                    )
+
+                    return web.Response(
+                        body=cached_data,
+                        headers={"Content-Type": content_type},
+                    )
+                except Exception as e:
+                    _LOGGER.warning(
+                        f"Failed to read cached thumbnail, regenerating: {e}"
+                    )
+                    # Delete corrupt cache entry and fall through to regenerate
+                    cache.delete(cache_url, cache_params)
+
         try:
             # Get the asset path (checks both user assets and built-in assets)
             exists, abs_path, error = assets.get_asset_or_builtin_path(
@@ -198,8 +240,27 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                         )
                         buffer.seek(0)
 
+                        thumbnail_data = buffer.read()
+
+                        # Cache the generated thumbnail
+                        if cache:
+                            try:
+                                cache.put(
+                                    cache_url,
+                                    thumbnail_data,
+                                    "image/webp",
+                                    params=cache_params,
+                                )
+                                _LOGGER.debug(
+                                    f"Cached animated thumbnail for {asset_path}"
+                                )
+                            except Exception as e:
+                                _LOGGER.warning(
+                                    f"Failed to cache thumbnail: {e}"
+                                )
+
                         return web.Response(
-                            body=buffer.read(),
+                            body=thumbnail_data,
                             headers={"Content-Type": "image/webp"},
                         )
                     else:
@@ -230,8 +291,27 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                         img.save(buffer, format="PNG", optimize=True)
                         buffer.seek(0)
 
+                        thumbnail_data = buffer.read()
+
+                        # Cache the generated thumbnail
+                        if cache:
+                            try:
+                                cache.put(
+                                    cache_url,
+                                    thumbnail_data,
+                                    "image/png",
+                                    params=cache_params,
+                                )
+                                _LOGGER.debug(
+                                    f"Cached static thumbnail for {asset_path}"
+                                )
+                            except Exception as e:
+                                _LOGGER.warning(
+                                    f"Failed to cache thumbnail: {e}"
+                                )
+
                         return web.Response(
-                            body=buffer.read(),
+                            body=thumbnail_data,
                             headers={"Content-Type": "image/png"},
                         )
 

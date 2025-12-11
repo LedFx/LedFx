@@ -376,6 +376,8 @@ curl -X POST http://localhost:8888/api/assets/download \
 
 Generate a thumbnail for an asset (user or built-in).
 
+**Thumbnail Caching:** Generated thumbnails are automatically cached for improved performance. The cache key includes the asset path and all parameters (size, dimension, animated), so different thumbnail variations are cached separately. Cached thumbnails follow the same LRU eviction policy as remote images and are subject to the same cache size/count limits.
+
 #### **Endpoint:** `POST /api/assets/thumbnail`
 
 **Asset Sources:**
