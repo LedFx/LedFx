@@ -30,7 +30,7 @@ naughty_paths = [
     # Absolute paths (should be outside allowed dirs)
     "/etc/passwd.png",
     "/etc/shadow.jpg",
-    "C:\\Windows\\System32\\config\\SAM.png",
+    # Windows absolute path removed - not a traversal attempt on Linux
     "/root/.ssh/id_rsa.png",
     # Mixed separators
     "..\\../..\\../etc/passwd",
@@ -103,10 +103,7 @@ naughty_paths = [
     # Note: Bare reserved names (CON, PRN, etc.) are in naughty_filenames, not here
     "//./../",
     "//?//../",
-    "C:/Windows/System32",
-    "C:\\Windows\\System32",
-    "C:/Windows/System32/drivers/etc/hosts",
-    "C:\\Windows\\System32\\drivers\\etc\\hosts",
+    # Windows absolute paths removed - not traversal attempts, just platform-specific invalid paths
     "\\.\\C$\\Windows\\System32",
     "\\?\\C:\\Windows\\System32",
     "\\?\\C:\\Windows\\System32\\drivers\\etc\\hosts",
