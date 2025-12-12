@@ -29,8 +29,11 @@ class CacheRefreshEndpoint(RestEndpoint):
                                     (including thumbnails with different params)
 
         Returns:
-            Success response with URL and cleared_count (type: success if cached, info if not cached),
-            or error response if request invalid or cache not initialized.
+            Bare response with cache operation results:
+            - all_variants=true: {"cleared_count": int}
+            - all_variants=false: {"deleted": bool}
+            
+            Error responses use standard format with status/payload for validation errors.
         """
         cache = get_image_cache()
 

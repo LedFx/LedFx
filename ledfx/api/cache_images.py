@@ -58,8 +58,12 @@ class CacheImagesEndpoint(RestEndpoint):
                                     for that URL (including thumbnails with different params).
 
         Returns:
-            Success response with cleared_count (and freed_bytes for full clear),
-            or error response if URL not found or cache not initialized.
+            Bare response with cache operation results:
+            - url + all_variants="true": {"cleared_count": int}
+            - url + all_variants="false": {"deleted": bool, "cleared_count": int}
+            - no url (clear all): {"cleared_count": int, "freed_bytes": int}
+            
+            Error responses use standard format with status/payload for validation errors.
         """
         cache = get_image_cache()
 
