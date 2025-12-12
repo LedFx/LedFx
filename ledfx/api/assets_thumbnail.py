@@ -83,6 +83,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             animated (optional): For multi-frame images, preserve animation (default true)
                 - true: Return animated WebP for animated images
                 - false: Return static PNG of first frame
+            force_refresh (optional): Force regeneration bypassing cache (default false)
+                - true: Clear cache and regenerate thumbnail
+                - false: Use cached thumbnail if available
 
         Returns:
             PNG or WebP image data with appropriate Content-Type header.
@@ -134,6 +137,15 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             else:
                 animated = bool(animated)
 
+        # Get and validate force_refresh parameter
+        force_refresh = data.get("force_refresh", False)
+        if not isinstance(force_refresh, bool):
+            # Try to convert string to bool
+            if isinstance(force_refresh, str):
+                force_refresh = force_refresh.lower() in ("true", "1", "yes")
+            else:
+                force_refresh = bool(force_refresh)
+
         # Create cache key with parameters
         # Use "asset://" prefix to distinguish asset thumbnails from URL-based cache
         cache_url = f"asset://{asset_path}"
@@ -143,9 +155,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             "animated": animated,
         }
 
-        # Check cache first
+        # Check cache first (unless force_refresh is requested)
         cache = get_image_cache()
-        if cache:
+        if cache and not force_refresh:
             cached_path = cache.get(cache_url, cache_params)
             if cached_path:
                 try:
@@ -242,6 +254,10 @@ class AssetsThumbnailEndpoint(RestEndpoint):
 
                         thumbnail_data = buffer.read()
 
+                        # Clear existing cache entry if force_refresh was requested
+                        if cache and force_refresh:
+                            cache.delete(cache_url, cache_params)
+
                         # Cache the generated thumbnail
                         if cache:
                             try:
@@ -292,6 +308,10 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                         buffer.seek(0)
 
                         thumbnail_data = buffer.read()
+
+                        # Clear existing cache entry if force_refresh was requested
+                        if cache and force_refresh:
+                            cache.delete(cache_url, cache_params)
 
                         # Cache the generated thumbnail
                         if cache:
