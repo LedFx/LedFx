@@ -62,7 +62,7 @@ class CacheImagesEndpoint(RestEndpoint):
             - url + all_variants="true": {"cleared_count": int}
             - url + all_variants="false": {"deleted": bool, "cleared_count": int}
             - no url (clear all): {"cleared_count": int, "freed_bytes": int}
-            
+
             Error responses use standard format with status/payload for validation errors.
         """
         cache = get_image_cache()

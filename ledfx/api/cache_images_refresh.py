@@ -32,7 +32,7 @@ class CacheRefreshEndpoint(RestEndpoint):
             Bare response with cache operation results:
             - all_variants=true: {"cleared_count": int}
             - all_variants=false: {"deleted": bool}
-            
+
             Error responses use standard format with status/payload for validation errors.
         """
         cache = get_image_cache()

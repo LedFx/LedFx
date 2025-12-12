@@ -1061,9 +1061,7 @@ class TestAssetsAPIThumbnail:
         red_img.save(red_bytes, "PNG")
         red_bytes.seek(0)
 
-        files = {
-            "file": ("refresh_test.png", red_bytes, "image/png")
-        }
+        files = {"file": ("refresh_test.png", red_bytes, "image/png")}
         data = {"path": "test_force_refresh.png"}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
         assert resp.status_code == 200
@@ -1085,9 +1083,7 @@ class TestAssetsAPIThumbnail:
         blue_img.save(blue_bytes, "PNG")
         blue_bytes.seek(0)
 
-        files = {
-            "file": ("refresh_test.png", blue_bytes, "image/png")
-        }
+        files = {"file": ("refresh_test.png", blue_bytes, "image/png")}
         data = {"path": "test_force_refresh.png"}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
         assert resp.status_code == 200
