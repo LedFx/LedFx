@@ -1,7 +1,3 @@
-import os
-
-from ledfx.consts import LEDFX_ASSETS_PATH
-
 ledfx_presets = {
     "number": {
         "clock": {
@@ -772,9 +768,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": False,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "catfixed.gif"
-                ),
+                "image_location": "builtin://catfixed.gif",
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -807,9 +801,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "blade.webp"
-                ),
+                "image_location": "builtin://blade.webp",
                 "mirror": False,
                 "ping_pong": False,
                 "ping_pong_skip": False,
@@ -843,9 +835,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "bruces1.gif"
-                ),
+                "image_location": "builtin://bruces1.gif",
                 "mirror": False,
                 "ping_pong": True,
                 "rotate": 0,
@@ -879,9 +869,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": False,
                 "force_fit": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "bumble.gif"
-                ),
+                "image_location": "builtin://bumble.gif",
                 "mirror": False,
                 "ping_pong": True,
                 "ping_pong_skip": False,
@@ -914,9 +902,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "caddy.gif"
-                ),
+                "image_location": "builtin://caddy.gif",
                 "half_beat": False,
                 "mirror": False,
                 "ping_pong": True,
@@ -949,9 +935,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "dancing.gif"
-                ),
+                "image_location": "builtin://dancing.gif",
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -984,9 +968,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": False,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "pixelart", "dj_bird.gif"
-                ),
+                "image_location": "builtin://pixelart/dj_bird.gif",
                 "half_beat": False,
                 "mirror": False,
                 "ping_pong": False,
@@ -1019,9 +1001,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "moonman.gif"
-                ),
+                "image_location": "builtin://moonman.gif",
                 "mirror": False,
                 "ping_pong": True,
                 "ping_pong_skip": False,
@@ -1054,9 +1034,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": False,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "cat-space.gif"
-                ),
+                "image_location": "builtin://cat-space.gif",
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -1090,9 +1068,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": False,
                 "force_fit": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "phoebe.gif"
-                ),
+                "image_location": "builtin://phoebe.gif",
                 "mirror": False,
                 "ping_pong": True,
                 "ping_pong_skip": False,
@@ -1125,9 +1101,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "force_fit": True,
                 "half_beat": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "saturday.webp"
-                ),
+                "image_location": "builtin://saturday.webp",
                 "keep_aspect_ratio": False,
                 "mirror": False,
                 "ping_pong": True,
@@ -1160,9 +1134,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": False,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "snoopy.gif"
-                ),
+                "image_location": "builtin://snoopy.gif",
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -1196,9 +1168,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "sponge.gif"
-                ),
+                "image_location": "builtin://sponge.gif",
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -1232,9 +1202,7 @@ ledfx_presets = {
                 "flip_vertical": False,
                 "keep_aspect_ratio": True,
                 "force_fit": True,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "zilla1.gif"
-                ),
+                "image_location": "builtin://zilla1.gif",
                 "mirror": False,
                 "ping_pong": False,
                 "rotate": 0,
@@ -2991,9 +2959,7 @@ ledfx_presets = {
                 "pattern": False,
                 "rotate": 0,
                 "test": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "pixelart", "dj_bird.gif"
-                ),
+                "image_location": "builtin://pixelart/dj_bird.gif",
             },
             "name": "DJ Bird",
         },
@@ -3016,9 +2982,7 @@ ledfx_presets = {
                 "pattern": False,
                 "rotate": 0,
                 "test": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "pixelart", "moon_rainbow.gif"
-                ),
+                "image_location": "builtin://pixelart/moon_rainbow.gif",
             },
             "name": "Rainbow Moon",
         },
@@ -3041,9 +3005,7 @@ ledfx_presets = {
                 "pattern": False,
                 "rotate": 0,
                 "test": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "pixelart", "fireworks.gif"
-                ),
+                "image_location": "builtin://pixelart/fireworks.gif",
             },
             "name": "Fireworks",
         },
@@ -3066,9 +3028,7 @@ ledfx_presets = {
                 "pattern": False,
                 "rotate": 0,
                 "test": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "pixelart", "akemi_resized.gif"
-                ),
+                "image_location": "builtin://pixelart/akemi_resized.gif",
             },
             "name": "WLED Akemi",
         },
@@ -3093,9 +3053,7 @@ ledfx_presets = {
                 "pattern": False,
                 "rotate": 0,
                 "test": False,
-                "image_location": os.path.join(
-                    LEDFX_ASSETS_PATH, "gifs", "pixelart", "chicken.gif"
-                ),
+                "image_location": "builtin://pixelart/chicken.gif",
             },
             "name": "Chicken",
         },

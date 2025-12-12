@@ -1600,6 +1600,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
     Supports:
     - URLs: http://, https:// (with caching)
     - Built-in assets: builtin://path (from LEDFX_ASSETS_PATH/gifs/)
+    - Legacy built-in: ./ledfx_assets/gifs/path or ledfx_assets/gifs/path (converted to builtin://)
     - User assets: plain paths like "my_animation.gif" (from config_dir/assets/) - requires config_dir
     - Legacy: absolute/relative local file paths (validated within config directory)
 
@@ -1615,12 +1616,24 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
         "https://example.com/image.gif" -> Downloads and caches
         "builtin://skull.gif" -> Built-in asset from LEDFX_ASSETS_PATH/gifs/
         "builtin://pixelart/dj_bird.gif" -> Nested built-in asset
+        "./ledfx_assets/gifs/skull.gif" -> Legacy format, converted to builtin://skull.gif
         "my_animation.gif" -> User asset from config_dir/assets/my_animation.gif (when config_dir provided)
         "subfolder/animation.gif" -> User asset from config_dir/assets/subfolder/animation.gif
     """
     gif_path = gif_path.strip()
 
     try:
+        # Handle legacy ledfx_assets paths (e.g., "./ledfx_assets/gifs/skull.gif")
+        # Convert to builtin:// format for consistent handling
+        if gif_path.startswith("./ledfx_assets/gifs/"):
+            # Strip "./ledfx_assets/gifs/" prefix, keep filename
+            actual_path = gif_path[20:]  # Remove "./ledfx_assets/gifs/"
+            gif_path = f"builtin://{actual_path}"
+        elif gif_path.startswith("ledfx_assets/gifs/"):
+            # Strip "ledfx_assets/gifs/" prefix, keep filename
+            actual_path = gif_path[18:]  # Remove "ledfx_assets/gifs/"
+            gif_path = f"builtin://{actual_path}"
+
         # Handle builtin:// prefix
         if gif_path.startswith("builtin://"):
             actual_path = gif_path[10:]  # Remove "builtin://" prefix
