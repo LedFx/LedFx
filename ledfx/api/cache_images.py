@@ -70,46 +70,25 @@ class CacheImagesEndpoint(RestEndpoint):
             )
 
         url = request.query.get("url")
-        all_variants = request.query.get("all_variants", "false").lower() in (
-            "true",
-            "1",
-            "yes",
+        # Query params are always strings - accept "true"/"false" (case-insensitive)
+        all_variants = (
+            request.query.get("all_variants", "false").lower() == "true"
         )
 
         if url:
             if all_variants:
                 # Clear all entries for this URL (all thumbnail variants)
                 cleared_count = cache.delete_all_for_url(url)
-                if cleared_count > 0:
-                    return await self.request_success(
-                        type="success",
-                        message=f"Cleared {cleared_count} cache entries for URL: {url}",
-                        data={"cleared_count": cleared_count},
-                    )
-                else:
-                    return await self.invalid_request(
-                        message=f"URL not found in cache: {url}",
-                        type="warning",
-                    )
+                return await self.bare_request_success(
+                    {"cleared_count": cleared_count}
+                )
             else:
                 # Clear specific URL (without params)
                 deleted = cache.delete(url)
-                if deleted:
-                    return await self.request_success(
-                        type="success",
-                        message=f"Cleared cache for URL: {url}",
-                        data={"cleared_count": 1},
-                    )
-                else:
-                    return await self.invalid_request(
-                        message=f"URL not found in cache: {url}",
-                        type="warning",
-                    )
+                return await self.bare_request_success(
+                    {"deleted": deleted, "cleared_count": 1 if deleted else 0}
+                )
         else:
             # Clear entire cache
             result = cache.clear()
-            return await self.request_success(
-                type="success",
-                message="Entire cache cleared",
-                data=result,
-            )
+            return await self.bare_request_success(result)

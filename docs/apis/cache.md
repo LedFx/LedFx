@@ -109,40 +109,23 @@ DELETE /api/cache/images
 **Success Response (specific URL):**
 ```json
 {
-  "status": "success",
-  "payload": {
-    "type": "success",
-    "reason": "Cleared cache for URL: https://example.com/image.gif"
-  },
-  "data": {
-    "cleared_count": 1
-  }
+  "deleted": true,
+  "cleared_count": 1
+}
+```
+
+**Success Response (all variants):**
+```json
+{
+  "cleared_count": 3
 }
 ```
 
 **Success Response (entire cache):**
 ```json
 {
-  "status": "success",
-  "payload": {
-    "type": "success",
-    "reason": "Entire cache cleared"
-  },
-  "data": {
-    "cleared_count": 45,
-    "freed_bytes": 52428800
-  }
-}
-```
-
-**Error Response (URL not found):**
-```json
-{
-  "status": "failed",
-  "payload": {
-    "type": "warning",
-    "reason": "URL not found in cache: https://example.com/notfound.gif"
-  }
+  "cleared_count": 45,
+  "freed_bytes": 52428800
 }
 ```
 
@@ -168,46 +151,17 @@ This endpoint removes the specified URL from the cache. The next time the image 
 - `url` (required): The URL to clear from cache
 - `all_variants` (optional, default: false): If true, clears all cached entries for this URL (useful for clearing all thumbnail size/dimension variations of an asset)
 
-**Success Response (entry was in cache):**
+**Success Response (single entry):**
 ```json
 {
-  "status": "success",
-  "payload": {
-    "type": "success",
-    "reason": "Cache entry cleared. Image will be re-downloaded on next access."
-  },
-  "data": {
-    "url": "https://example.com/image.gif"
-  }
+  "deleted": true
 }
 ```
 
-**Success Response (entry was not in cache):**
+**Success Response (all_variants=true):**
 ```json
 {
-  "status": "success",
-  "payload": {
-    "type": "info",
-    "reason": "URL was not in cache (no action needed)."
-  },
-  "data": {
-    "url": "https://example.com/image.gif"
-  }
-}
-```
-
-**Success Response (all_variants=true, multiple cleared):**
-```json
-{
-  "status": "success",
-  "payload": {
-    "type": "success",
-    "reason": "Cleared 3 cache entries. Images will be regenerated on next access."
-  },
-  "data": {
-    "url": "asset://backgrounds/galaxy.jpg",
-    "cleared_count": 3
-  }
+  "cleared_count": 3
 }
 ```
 

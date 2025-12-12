@@ -131,20 +131,18 @@ class AssetsThumbnailEndpoint(RestEndpoint):
         # Get and validate animated parameter
         animated = data.get("animated", True)
         if not isinstance(animated, bool):
-            # Try to convert string to bool
-            if isinstance(animated, str):
-                animated = animated.lower() in ("true", "1", "yes")
-            else:
-                animated = bool(animated)
+            return await self.invalid_request(
+                message=f"Invalid animated value type: {type(animated).__name__}. Must be boolean (true/false)",
+                type="error",
+            )
 
         # Get and validate force_refresh parameter
         force_refresh = data.get("force_refresh", False)
         if not isinstance(force_refresh, bool):
-            # Try to convert string to bool
-            if isinstance(force_refresh, str):
-                force_refresh = force_refresh.lower() in ("true", "1", "yes")
-            else:
-                force_refresh = bool(force_refresh)
+            return await self.invalid_request(
+                message=f"Invalid force_refresh value type: {type(force_refresh).__name__}. Must be boolean (true/false)",
+                type="error",
+            )
 
         # Create cache key with parameters
         # Use "asset://" prefix to distinguish asset thumbnails from URL-based cache
