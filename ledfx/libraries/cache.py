@@ -312,7 +312,8 @@ class ImageCache:
         Get cache statistics.
 
         Returns:
-            Dict with cache statistics including entries
+            Dict with cache statistics including entries.
+            Excludes thumbnail cache entries (URLs starting with "asset://").
         """
         entries = [
             {
@@ -324,6 +325,7 @@ class ImageCache:
                 "content_type": entry.get("content_type", "unknown"),
             }
             for entry in self.metadata["cache_entries"].values()
+            if not entry["url"].startswith("asset://")
         ]
 
         # Sort by access_count descending

@@ -29,8 +29,11 @@ class CacheRefreshEndpoint(RestEndpoint):
                                     (including thumbnails with different params)
 
         Returns:
-            Success response with URL and cleared_count (type: success if cached, info if not cached),
-            or error response if request invalid or cache not initialized.
+            Bare response with cache operation results:
+            - all_variants=true: {"cleared_count": int}
+            - all_variants=false: {"deleted": bool}
+
+            Error responses use standard format with status/payload for validation errors.
         """
         cache = get_image_cache()
 
@@ -54,36 +57,18 @@ class CacheRefreshEndpoint(RestEndpoint):
 
         all_variants = data.get("all_variants", False)
         if not isinstance(all_variants, bool):
-            all_variants = str(all_variants).lower() in ("true", "1", "yes")
+            return await self.invalid_request(
+                message="Invalid 'all_variants' parameter. Must be a boolean (true or false).",
+                type="error",
+            )
 
         if all_variants:
             # Clear all variants (useful for asset thumbnails)
             cleared_count = cache.delete_all_for_url(url)
-            if cleared_count > 0:
-                return await self.request_success(
-                    type="success",
-                    message=f"Cleared {cleared_count} cache entries. Images will be regenerated on next access.",
-                    data={"url": url, "cleared_count": cleared_count},
-                )
-            else:
-                return await self.request_success(
-                    type="info",
-                    message="URL was not in cache (no action needed).",
-                    data={"url": url, "cleared_count": 0},
-                )
+            return await self.bare_request_success(
+                {"cleared_count": cleared_count}
+            )
 
         # Clear the URL from cache to force refresh on next access
         deleted = cache.delete(url)
-
-        if deleted:
-            return await self.request_success(
-                type="success",
-                message="Cache entry cleared. Image will be re-downloaded on next access.",
-                data={"url": url},
-            )
-        else:
-            return await self.request_success(
-                type="info",
-                message="URL was not in cache (no action needed).",
-                data={"url": url},
-            )
+        return await self.bare_request_success({"deleted": deleted})

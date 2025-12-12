@@ -961,54 +961,57 @@ class TestAssetsAPIThumbnail:
             timeout=5,
         )
 
-    def test_thumbnail_animated_string_parameter(
-        self, sample_animated_gif_bytes
-    ):
-        """Test that animated parameter accepts string values like 'true'/'false'."""
+    def test_thumbnail_animated_validation(self, sample_animated_gif_bytes):
+        """Test that animated parameter only accepts boolean values."""
         # Upload animated GIF asset
         files = {
             "file": (
-                "animated_string.gif",
+                "animated_validate.gif",
                 io.BytesIO(sample_animated_gif_bytes),
                 "image/gif",
             )
         }
-        data = {"path": "test_animated_string.gif"}
+        data = {"path": "test_animated_validate.gif"}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
         assert resp.status_code == 200
 
-        # Test with string "false"
-        resp = requests.post(
-            ASSETS_THUMBNAIL_API_URL,
-            json={
-                "path": "test_animated_string.gif",
-                "size": 64,
-                "animated": "false",
-            },
-            headers={"Content-Type": "application/json"},
-            timeout=5,
-        )
-        assert resp.status_code == 200
-        assert resp.headers["Content-Type"] == "image/png"
+        # Test valid boolean values
+        for valid_value in [True, False]:
+            resp = requests.post(
+                ASSETS_THUMBNAIL_API_URL,
+                json={
+                    "path": "test_animated_validate.gif",
+                    "size": 64,
+                    "animated": valid_value,
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=5,
+            )
+            assert resp.status_code == 200
+            assert "image/" in resp.headers.get("Content-Type", "")
 
-        # Test with string "true"
-        resp = requests.post(
-            ASSETS_THUMBNAIL_API_URL,
-            json={
-                "path": "test_animated_string.gif",
-                "size": 64,
-                "animated": "true",
-            },
-            headers={"Content-Type": "application/json"},
-            timeout=5,
-        )
-        assert resp.status_code == 200
-        assert resp.headers["Content-Type"] == "image/webp"
+        # Test invalid types - strings, integers, etc.
+        for invalid_value in ["true", "false", "1", "0", 1, 0, {}, [], None]:
+            resp = requests.post(
+                ASSETS_THUMBNAIL_API_URL,
+                json={
+                    "path": "test_animated_validate.gif",
+                    "size": 64,
+                    "animated": invalid_value,
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=5,
+            )
+            assert resp.status_code == 200
+            result = resp.json()
+            assert result["status"] == "failed"
+            assert "invalid" in result["payload"]["reason"].lower()
+            assert "boolean" in result["payload"]["reason"].lower()
 
         # Cleanup
         requests.delete(
             ASSETS_API_URL,
-            params={"path": "test_animated_string.gif"},
+            params={"path": "test_animated_validate.gif"},
             timeout=5,
         )
 
@@ -1049,6 +1052,139 @@ class TestAssetsAPIThumbnail:
         img = Image.open(io.BytesIO(resp.content))
         assert img.format == "PNG"
         assert max(img.size) <= 64
+
+    def test_thumbnail_force_refresh(self, sample_png_bytes):
+        """Test force_refresh parameter bypasses cache and regenerates thumbnail."""
+        # Upload initial red asset
+        red_img = Image.new("RGB", (100, 100), color="red")
+        red_bytes = io.BytesIO()
+        red_img.save(red_bytes, "PNG")
+        red_bytes.seek(0)
+
+        files = {"file": ("refresh_test.png", red_bytes, "image/png")}
+        data = {"path": "test_force_refresh.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail first time (will be cached) - should be red
+        resp1 = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_force_refresh.png", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp1.status_code == 200
+        assert resp1.headers["Content-Type"] == "image/png"
+        cached_content = resp1.content
+
+        # Replace asset with blue image
+        blue_img = Image.new("RGB", (100, 100), color="blue")
+        blue_bytes = io.BytesIO()
+        blue_img.save(blue_bytes, "PNG")
+        blue_bytes.seek(0)
+
+        files = {"file": ("refresh_test.png", blue_bytes, "image/png")}
+        data = {"path": "test_force_refresh.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail without force_refresh (should return cached red thumbnail)
+        resp2 = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_force_refresh.png", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp2.status_code == 200
+        assert resp2.content == cached_content  # Still red (from cache)
+
+        # Get thumbnail with force_refresh=true (should regenerate from blue asset)
+        resp3 = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={
+                "path": "test_force_refresh.png",
+                "size": 64,
+                "force_refresh": True,
+            },
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp3.status_code == 200
+        assert resp3.headers["Content-Type"] == "image/png"
+        # Content should be different (blue vs red)
+        assert resp3.content != cached_content
+
+        # Verify the regenerated thumbnail is valid and correctly sized
+        img3 = Image.open(io.BytesIO(resp3.content))
+        assert img3.format == "PNG"
+        assert max(img3.size) <= 64
+
+        # Get thumbnail again without force_refresh (should use newly cached blue version)
+        resp4 = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_force_refresh.png", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp4.status_code == 200
+        assert resp4.content == resp3.content  # Blue from cache
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_force_refresh.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_force_refresh_validation(self, sample_png_bytes):
+        """Test that force_refresh parameter only accepts boolean values."""
+        # Upload asset
+        files = {
+            "file": (
+                "validate_test.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_validate.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Test valid boolean values
+        for valid_value in [True, False]:
+            resp = requests.post(
+                ASSETS_THUMBNAIL_API_URL,
+                json={
+                    "path": "test_validate.png",
+                    "force_refresh": valid_value,
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=5,
+            )
+            assert resp.status_code == 200
+            assert "image/" in resp.headers.get("Content-Type", "")
+
+        # Test invalid types - strings, integers, dict, list, None, etc.
+        for invalid_value in ["true", "false", "1", "0", 1, 0, {}, [], None]:
+            resp = requests.post(
+                ASSETS_THUMBNAIL_API_URL,
+                json={
+                    "path": "test_validate.png",
+                    "force_refresh": invalid_value,
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=5,
+            )
+            assert resp.status_code == 200
+            result = resp.json()
+            assert result["status"] == "failed"
+            assert "invalid" in result["payload"]["reason"].lower()
+            assert "boolean" in result["payload"]["reason"].lower()
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "test_validate.png"}, timeout=5
+        )
 
 
 class TestAssetsAPIAnimationMetadata:

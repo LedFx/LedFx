@@ -390,7 +390,8 @@ Generate a thumbnail for an asset (user or built-in).
   "path": "backgrounds/galaxy.jpg",    // Required: asset path
   "size": 256,                         // Optional: 16-512, default: 128
   "dimension": "width",                // Optional: "max"|"width"|"height", default: "max"
-  "animated": true                     // Optional: preserve animation, default: true
+  "animated": true,                    // Optional: preserve animation, default: true
+  "force_refresh": false               // Optional: force regeneration, default: false
 }
 ```
 
@@ -406,6 +407,9 @@ Generate a thumbnail for an asset (user or built-in).
 - `animated` (boolean, optional) - Preserve animation (default: true)
   - `true` - Return animated WebP for GIF/WebP
   - `false` - Return static PNG of first frame
+- `force_refresh` (boolean, optional) - Force regeneration bypassing cache (default: false)
+  - `true` - Clear cache and regenerate thumbnail
+  - `false` - Use cached thumbnail if available
 
 **Response:**
 - **Success**: Thumbnail image (HTTP 200)
@@ -438,6 +442,12 @@ curl -X POST http://localhost:8888/api/assets/thumbnail \
   -H "Content-Type: application/json" \
   -d '{"path": "builtin://skull.gif", "animated": false}' \
   --output skull-static.png
+
+# Force regenerate thumbnail (bypass cache)
+curl -X POST http://localhost:8888/api/assets/thumbnail \
+  -H "Content-Type: application/json" \
+  -d '{"path": "backgrounds/galaxy.jpg", "force_refresh": true}' \
+  --output fresh-thumb.png
 ```
 
 **Error Response:**

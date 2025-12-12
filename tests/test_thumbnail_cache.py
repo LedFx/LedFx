@@ -323,3 +323,42 @@ class TestThumbnailCaching:
                     os.path.commonpath([cache.cache_dir, cache_path])
                     == cache.cache_dir
                 )
+
+    def test_get_stats_excludes_thumbnails(self, cache, sample_thumbnail_data):
+        """Test that get_stats() excludes thumbnail cache entries (asset:// URLs)."""
+        # Add a regular remote image
+        cache.put(
+            "https://example.com/image.gif",
+            sample_thumbnail_data,
+            "image/gif",
+        )
+
+        # Add thumbnail cache entries (should be excluded)
+        cache.put(
+            "asset://test.png",
+            sample_thumbnail_data,
+            "image/png",
+            params={"size": 128, "dimension": "max", "animated": True},
+        )
+        cache.put(
+            "asset://backgrounds/galaxy.jpg",
+            sample_thumbnail_data,
+            "image/jpeg",
+            params={"size": 64, "dimension": "width", "animated": False},
+        )
+
+        # Get stats
+        stats = cache.get_stats()
+
+        # Should only have 1 entry (the remote image)
+        assert stats["total_count"] == 3  # All 3 are in cache
+        assert (
+            len(stats["entries"]) == 1
+        )  # But only 1 is returned by get_stats
+
+        # Verify the returned entry is the remote image
+        assert stats["entries"][0]["url"] == "https://example.com/image.gif"
+
+        # Verify no asset:// URLs in returned entries
+        for entry in stats["entries"]:
+            assert not entry["url"].startswith("asset://")
