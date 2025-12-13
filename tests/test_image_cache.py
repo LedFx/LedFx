@@ -398,17 +398,21 @@ FALLBACK ON ERROR:
 class TestCacheFallbackOnError:
     """Test cache fallback behavior when cached files are corrupted."""
 
+    @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
     @patch("urllib.request.urlopen")
     def test_corrupt_cache_fallback_open_image(
         self,
         mock_urlopen,
         mock_build_request,
+        mock_validate_url,
         sample_image_data,
         tmp_path,
     ):
         """Test that open_image falls back to download if cached file is corrupted."""
-
+        # Mock URL validation to pass
+        mock_validate_url.return_value = (True, None)
+        
         # Initialize global cache
         init_image_cache(str(tmp_path), max_size_mb=1, max_items=5)
         cache = get_image_cache()
@@ -448,17 +452,21 @@ class TestCacheFallbackOnError:
         # Verify download was attempted (mock was called)
         assert mock_urlopen.called
 
+    @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
     @patch("urllib.request.urlopen")
     def test_corrupt_cache_fallback_open_gif(
         self,
         mock_urlopen,
         mock_build_request,
+        mock_validate_url,
         sample_image_data,
         tmp_path,
     ):
         """Test that open_gif falls back to download if cached file is corrupted."""
-
+        # Mock URL validation to pass
+        mock_validate_url.return_value = (True, None)
+        
         # Initialize global cache
         init_image_cache(str(tmp_path), max_size_mb=1, max_items=5)
         cache = get_image_cache()
