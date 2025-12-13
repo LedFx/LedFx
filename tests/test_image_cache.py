@@ -412,7 +412,7 @@ class TestCacheFallbackOnError:
         """Test that open_image falls back to download if cached file is corrupted."""
         # Mock URL validation to pass
         mock_validate_url.return_value = (True, None)
-        
+
         # Initialize global cache
         init_image_cache(str(tmp_path), max_size_mb=1, max_items=5)
         cache = get_image_cache()
@@ -466,7 +466,7 @@ class TestCacheFallbackOnError:
         """Test that open_gif falls back to download if cached file is corrupted."""
         # Mock URL validation to pass
         mock_validate_url.return_value = (True, None)
-        
+
         # Initialize global cache
         init_image_cache(str(tmp_path), max_size_mb=1, max_items=5)
         cache = get_image_cache()
