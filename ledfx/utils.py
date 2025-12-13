@@ -1988,7 +1988,9 @@ def open_image(image_path, force_refresh=False, config_dir=None):
                 return image if image else None
             else:
                 # Legacy: absolute path or no config_dir - use existing validation
-                is_valid, validated_path = validate_local_image_path(image_path)
+                is_valid, validated_path = validate_local_image_path(
+                    image_path
+                )
                 if not is_valid:
                     _LOGGER.warning(
                         f"Path traversal blocked or path outside config directory: {image_path}"
