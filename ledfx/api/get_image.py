@@ -35,7 +35,7 @@ class GetImageEndpoint(RestEndpoint):
                 'Required attribute "path_url" was not provided'
             )
 
-        image = open_image(path_url)
+        image = open_image(path_url, config_dir=self._ledfx.config_dir)
 
         if not image:
             return await self.invalid_request(

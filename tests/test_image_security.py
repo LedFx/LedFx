@@ -55,10 +55,16 @@ class TestIntegrationOpenImage:
         result = open_image(os.path.join(tmp_path, "nonexistent.png"))
         assert result is None
 
+    @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
     @patch("urllib.request.urlopen")
-    def test_valid_remote_image(self, mock_urlopen, mock_build_request):
+    def test_valid_remote_image(
+        self, mock_urlopen, mock_build_request, mock_validate_url
+    ):
         """Test downloading valid remote image."""
+        # Mock URL validation to pass
+        mock_validate_url.return_value = (True, None)
+
         # Create a small valid PNG in memory
         img = Image.new("RGB", (10, 10), color="red")
         img_bytes = io.BytesIO()
