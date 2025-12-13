@@ -49,7 +49,7 @@ class TestGetGifFramesAPI:
     def test_user_asset_plain_filename(self, sample_animated_gif_bytes):
         """
         Test loading GIF from user assets using plain filename.
-        
+
         This is the most common use case - a user uploads an asset
         and references it by filename only.
         """
@@ -68,7 +68,7 @@ class TestGetGifFramesAPI:
         # Now request frames using plain filename
         payload = {"path_url": "test_anim.gif"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"
@@ -93,7 +93,7 @@ class TestGetGifFramesAPI:
         # Request with subfolder path
         payload = {"path_url": "animations/test_sub.gif"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"
@@ -104,7 +104,7 @@ class TestGetGifFramesAPI:
         # Test with a known built-in asset
         payload = {"path_url": "builtin://catfixed.gif"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"
@@ -115,7 +115,7 @@ class TestGetGifFramesAPI:
         """Test loading GIF from built-in assets subfolder."""
         payload = {"path_url": "builtin://pixelart/dj_bird.gif"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"
@@ -125,7 +125,7 @@ class TestGetGifFramesAPI:
         """Test error handling when path_url is missing."""
         payload = {}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200  # API returns 200 with error payload
         data = resp.json()
         assert data["status"] == "failed"
@@ -135,7 +135,7 @@ class TestGetGifFramesAPI:
         """Test error handling for non-existent file."""
         payload = {"path_url": "nonexistent_file_12345.gif"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200  # API returns 200 with error payload
         data = resp.json()
         assert data["status"] == "failed"
@@ -149,7 +149,7 @@ class TestGetGifFramesAPI:
             headers={"Content-Type": "application/json"},
             timeout=5,
         )
-        
+
         # Invalid JSON returns 400 Bad Request
         assert resp.status_code == 400
 
@@ -158,7 +158,7 @@ class TestGetGifFramesAPI:
         # Try to access file outside assets directory
         payload = {"path_url": "../../../etc/passwd"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "failed"
@@ -169,7 +169,7 @@ class TestGetGifFramesAPI:
         # Absolute paths should be blocked or validated within config dir
         payload = {"path_url": "/etc/passwd"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "failed"
@@ -180,10 +180,14 @@ class TestGetGifFramesAPI:
         img = Image.new("RGB", (50, 50), color="yellow")
         img_bytes = io.BytesIO()
         img.save(img_bytes, "PNG")
-        
+
         # Upload as user asset
         files = {
-            "file": ("single.png", io.BytesIO(img_bytes.getvalue()), "image/png")
+            "file": (
+                "single.png",
+                io.BytesIO(img_bytes.getvalue()),
+                "image/png",
+            )
         }
         data = {"path": "single.png"}
         resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
@@ -192,7 +196,7 @@ class TestGetGifFramesAPI:
         # Request frames
         payload = {"path_url": "single.png"}
         resp = requests.post(GIF_FRAMES_API_URL, json=payload, timeout=5)
-        
+
         assert resp.status_code == 200
         data = resp.json()
         assert data["status"] == "success"
