@@ -1812,20 +1812,56 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
         return None
 
 
-def open_image(image_path, force_refresh=False):
+def open_image(image_path, force_refresh=False, config_dir=None):
     """
     Open an image from a URL or local file path with file type validation.
 
+    Supports:
+    - URLs: http://, https:// (with caching)
+    - Built-in assets: builtin://path (from LEDFX_ASSETS_PATH/test_images/)
+    - User assets: plain paths like "my_image.png" (from config_dir/assets/) - requires config_dir
+    - Legacy: absolute/relative local file paths (validated within config directory)
+
     Args:
-        image_path: URL or local file path to the image
+        image_path: URL, builtin://path, or plain filename/path to the image
         force_refresh: Force download from URL, bypassing cache (default False)
+        config_dir: LedFx config directory (required for user assets and local paths)
 
     Returns:
         PIL Image object or None if failed
+
+    Examples:
+        "https://example.com/image.png" -> Downloads and caches
+        "builtin://pattern.png" -> Built-in asset from LEDFX_ASSETS_PATH/test_images/
+        "my_image.png" -> User asset from config_dir/assets/my_image.png (when config_dir provided)
+        "subfolder/image.png" -> User asset from config_dir/assets/subfolder/image.png
     """
     image_path = image_path.strip()
 
     try:
+        # Handle builtin:// prefix
+        if image_path.startswith("builtin://"):
+            actual_path = image_path[10:]  # Remove "builtin://" prefix
+            images_root = os.path.join(LEDFX_ASSETS_PATH, "test_images")
+
+            # Resolve and validate path
+            is_valid, resolved_path, error = resolve_safe_path_in_directory(
+                images_root,
+                actual_path,
+                create_dirs=False,
+                directory_name="built-in images",
+            )
+            if not is_valid:
+                _LOGGER.warning(
+                    f"Built-in image path validation failed: {error}"
+                )
+                return None
+
+            # Validate and open the image
+            return _validate_and_open_image(
+                resolved_path, image_path, check_size=False
+            )
+
         if image_path.startswith(("http://", "https://")):
             # Check cache first (unless force_refresh)
             if _image_cache and not force_refresh:
@@ -1914,9 +1950,9 @@ def open_image(image_path, force_refresh=False):
 
                 return image
         else:
-            # Local file
+            # Local file or user asset
             # Reject any URL schemes (file://, ftp://, etc.)
-            # Note: http/https are handled in the if branch above
+            # Note: http/https and builtin:// are handled in the if branches above
             parsed = urllib.parse.urlparse(image_path)
             # Allow single-letter schemes (Windows drive letters like C:)
             if parsed.scheme and len(parsed.scheme) > 1:
@@ -1925,52 +1961,45 @@ def open_image(image_path, force_refresh=False):
                 )
                 return None
 
-            # Path traversal protection
-            is_valid, validated_path = validate_local_image_path(image_path)
-            if not is_valid:
-                _LOGGER.warning(
-                    f"Path traversal blocked or path outside config directory: {image_path}"
+            # If config_dir is provided and path is relative, treat as user asset
+            if config_dir and not os.path.isabs(image_path):
+                # User asset - resolve to config_dir/assets/
+                assets_root = os.path.join(config_dir, "assets")
+
+                # Resolve and validate path
+                is_valid, resolved_path, error = (
+                    resolve_safe_path_in_directory(
+                        assets_root,
+                        image_path,
+                        create_dirs=False,
+                        directory_name="user assets",
+                    )
                 )
-                return None
+                if not is_valid:
+                    _LOGGER.warning(
+                        f"User asset path validation failed: {error}"
+                    )
+                    return None
 
-            # Use validated path for all subsequent operations
-            # Validate extension
-            if not is_allowed_image_extension(validated_path):
-                _LOGGER.warning(
-                    f"File has invalid image extension: {image_path}"
+                # Validate and open the image
+                image = _validate_and_open_image(
+                    resolved_path, image_path, check_size=True
                 )
-                return None
+                return image if image else None
+            else:
+                # Legacy: absolute path or no config_dir - use existing validation
+                is_valid, validated_path = validate_local_image_path(image_path)
+                if not is_valid:
+                    _LOGGER.warning(
+                        f"Path traversal blocked or path outside config directory: {image_path}"
+                    )
+                    return None
 
-            # Check file exists and get size
-            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
-            if not os.path.exists(validated_path):
-                _LOGGER.warning(f"File not found: {image_path}")
-                return None
-
-            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
-            file_size = os.path.getsize(validated_path)
-            if file_size > MAX_IMAGE_SIZE_BYTES:
-                _LOGGER.warning(
-                    f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                # Validate and open the image
+                image = _validate_and_open_image(
+                    validated_path, image_path, check_size=True
                 )
-                return None
-
-            # Validate MIME type
-            if not validate_image_mime_type(validated_path):
-                _LOGGER.warning(f"Invalid image MIME type: {image_path}")
-                return None
-
-            # lgtm[py/path-injection] - validated_path is sanitized by validate_local_path
-            image = Image.open(validated_path)
-
-            # Validate PIL format and dimensions
-            if not validate_pil_image(image):
-                _LOGGER.warning(
-                    f"Invalid PIL format or dimensions: {image_path}"
-                )
-                return None
-
-            return image
+                return image if image else None
 
     except urllib.error.HTTPError as e:
         _LOGGER.warning(
