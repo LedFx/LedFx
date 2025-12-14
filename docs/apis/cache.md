@@ -58,7 +58,12 @@ Get current cache statistics including all cached entries.
       "last_accessed": "2024-01-20T14:20:00Z",
       "access_count": 42,
       "file_size": 524288,
-      "content_type": "image/gif"
+      "content_type": "image/gif",
+      "width": 500,
+      "height": 500,
+      "format": "GIF",
+      "n_frames": 24,
+      "is_animated": true
     }
   ]
 }
@@ -74,6 +79,19 @@ Get current cache statistics including all cached entries.
   }
 }
 ```
+
+**Entry Fields:**
+- `url`: Remote URL of cached image
+- `cached_at`: ISO 8601 timestamp when image was first cached
+- `last_accessed`: ISO 8601 timestamp of most recent access
+- `access_count`: Number of times image has been accessed
+- `file_size`: Size of cached file in bytes
+- `content_type`: MIME type (e.g., "image/gif", "image/png")
+- `width`: Image width in pixels
+- `height`: Image height in pixels
+- `format`: Image format string ("PNG", "JPEG", "GIF", "WEBP", etc.)
+- `n_frames`: Number of frames (1 for static images, >1 for animations)
+- `is_animated`: Boolean indicating if image has multiple frames
 
 **Entries sorted by:** `access_count` (descending) - most frequently used first
 
