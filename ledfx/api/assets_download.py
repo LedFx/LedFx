@@ -24,7 +24,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
     Supports both GET and POST methods:
     - GET: /api/assets/download?path=icons/led.png (browser-friendly)
     - POST: JSON body with {"path": "icons/led.png"} (programmatic use)
-    
+
     Remote URLs are validated (SSRF protection, size limits, content validation),
     fetched if not cached, and cached for future requests.
     """
@@ -100,16 +100,18 @@ class AssetsDownloadEndpoint(RestEndpoint):
         # Check if path is a remote URL (fetch and cache with validation)
         if asset_path.startswith(("http://", "https://")):
             from ledfx.utils import open_image
-            
+
             # open_image handles URL validation, download, and caching
             try:
-                image = open_image(asset_path, config_dir=self._ledfx.config_dir)
+                image = open_image(
+                    asset_path, config_dir=self._ledfx.config_dir
+                )
                 if not image:
                     return await self.invalid_request(
                         message=f"Failed to download or validate URL: {asset_path}",
                         type="error",
                     )
-                
+
                 # Get cached path after successful download
                 cache = get_image_cache()
                 if not cache:
@@ -117,7 +119,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
                         message="Image cache not initialized",
                         type="error",
                     )
-                    
+
                 abs_path = cache.get(asset_path)
                 if not abs_path:
                     return await self.invalid_request(

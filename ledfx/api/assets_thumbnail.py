@@ -64,12 +64,12 @@ class AssetsThumbnailEndpoint(RestEndpoint):
     Generates thumbnails with configurable size, maintaining aspect ratio.
     - Static images: PNG format
     - Animated images: WebP format (preserves animation)
-    
+
     Supports user-uploaded assets, built-in assets, and remote URLs:
     - User assets: "icons/led.png" (no prefix)
     - Built-in assets: "builtin://skull.gif" (builtin:// prefix)
     - Remote URLs: "https://example.com/image.gif" (automatically fetched and cached)
-    
+
     Remote URLs are validated (SSRF protection, size limits, content validation),
     fetched if not cached, and cached for future requests.
     """
@@ -156,7 +156,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
 
         # Check if path is a cached remote URL
         is_cached_url = asset_path.startswith(("http://", "https://"))
-        
+
         # Create cache key with parameters
         # Use "asset://" prefix for local assets to distinguish from URL-based cache
         # For cached URLs, use the URL directly as the cache key
@@ -164,7 +164,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             cache_url = asset_path
         else:
             cache_url = f"asset://{asset_path}"
-        
+
         cache_params = {
             "size": size,
             "dimension": dimension,
@@ -207,23 +207,25 @@ class AssetsThumbnailEndpoint(RestEndpoint):
             # For URLs, fetch and cache if needed (with validation)
             if is_cached_url:
                 from ledfx.utils import open_image
-                
+
                 # open_image handles URL validation, download, and caching
                 try:
-                    image = open_image(asset_path, config_dir=self._ledfx.config_dir)
+                    image = open_image(
+                        asset_path, config_dir=self._ledfx.config_dir
+                    )
                     if not image:
                         return await self.invalid_request(
                             message=f"Failed to download or validate URL: {asset_path}",
                             type="error",
                         )
-                    
+
                     # Get cached path after successful download
                     if not cache:
                         return await self.invalid_request(
                             message="Image cache not initialized",
                             type="error",
                         )
-                        
+
                     abs_path = cache.get(asset_path)
                     if not abs_path:
                         return await self.invalid_request(

@@ -43,7 +43,7 @@ def sample_gif_bytes():
 def cached_url(sample_gif_bytes):
     """
     Cache a test image and return its mock URL.
-    
+
     Note: This simulates a cached URL by uploading an asset,
     then treating it as if it were cached from a URL.
     In production, URLs would be cached from actual remote downloads.
@@ -59,7 +59,7 @@ def cached_url(sample_gif_bytes):
     # For testing, we'll use a fake URL that we manually add to cache
     # In real usage, this would be a URL that was downloaded and cached
     test_url = "https://example.com/test_cached.gif"
-    
+
     yield test_url
 
     # Cleanup
@@ -75,7 +75,7 @@ class TestAssetsDownloadCachedURL:
     def test_download_uncached_url_returns_error(self):
         """Test that requesting an invalid/unreachable URL returns appropriate error."""
         test_url = "https://example.com/not_in_cache.gif"
-        
+
         # GET method
         resp = requests.get(
             ASSETS_DOWNLOAD_API_URL,
@@ -124,7 +124,7 @@ class TestAssetsDownloadCachedURL:
         # Note: In real usage, this would be a URL in the cache
         # For testing, we verify the endpoint properly handles URL format
         # The actual cache integration would require mocking or actual cache setup
-        
+
         # Cleanup
         requests.delete(
             ASSETS_API_URL, params={"path": "url_test.gif"}, timeout=5
@@ -138,7 +138,7 @@ class TestAssetsThumbnailCachedURL:
     def test_thumbnail_uncached_url_returns_error(self):
         """Test that requesting thumbnail of invalid/unreachable URL returns error."""
         test_url = "https://example.com/not_in_cache.gif"
-        
+
         resp = requests.post(
             ASSETS_THUMBNAIL_API_URL,
             json={"path": test_url, "size": 64},
@@ -170,7 +170,7 @@ class TestAssetsThumbnailCachedURL:
 
         # Note: In real usage, this would be a URL in the cache
         # For testing, we verify the endpoint properly handles URL format
-        
+
         # Cleanup
         requests.delete(
             ASSETS_API_URL, params={"path": "url_thumb_test.gif"}, timeout=5
@@ -191,7 +191,7 @@ class TestAssetsThumbnailCachedURL:
         assert resp.status_code == 200
 
         # Note: Testing URL format handling
-        
+
         # Cleanup
         requests.delete(
             ASSETS_API_URL, params={"path": "url_static_test.gif"}, timeout=5
