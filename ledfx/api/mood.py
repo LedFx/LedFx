@@ -226,7 +226,7 @@ class MoodEndpoint(RestEndpoint):
             # Update configuration if provided
             if "config" in data:
                 config_updates = data["config"]
-                
+
                 if not isinstance(config_updates, dict):
                     return await self.invalid_request(
                         "Field 'config' must be an object"
@@ -269,7 +269,9 @@ class MoodEndpoint(RestEndpoint):
                         cfg = {}
                         mood_manager_config["config"] = cfg
                     cfg.update(config_copy)
-                    mood_manager_config["active"] = getattr(mood_manager, "_active", True)
+                    mood_manager_config["active"] = getattr(
+                        mood_manager, "_active", True
+                    )
                 else:
                     # Create new integration entry
                     self._ledfx.config["integrations"].append(

@@ -232,7 +232,9 @@ class MoodScenesEndpoint(RestEndpoint):
                 await mood_manager._update_config({"mood_scenes": mood_scenes})
 
             elif mapping_type == "event":
-                event_scenes = await mood_manager._get_config("event_scenes", {})
+                event_scenes = await mood_manager._get_config(
+                    "event_scenes", {}
+                )
                 if not isinstance(event_scenes, dict):
                     event_scenes = {}
                 event_scenes[key] = scene_id
@@ -242,12 +244,16 @@ class MoodScenesEndpoint(RestEndpoint):
 
             elif mapping_type == "structure":
                 # Structure mappings need "structure_" prefix for lookup
-                event_scenes = await mood_manager._get_config("event_scenes", {})
+                event_scenes = await mood_manager._get_config(
+                    "event_scenes", {}
+                )
                 if not isinstance(event_scenes, dict):
                     event_scenes = {}
                 structure_key = f"structure_{key}"
                 event_scenes[structure_key] = scene_id
-                await mood_manager._update_config({"event_scenes": event_scenes})
+                await mood_manager._update_config(
+                    {"event_scenes": event_scenes}
+                )
 
             else:
                 return await self.invalid_request(
@@ -278,7 +284,9 @@ class MoodScenesEndpoint(RestEndpoint):
                     cfg = {}
                     mood_manager_config["config"] = cfg
                 cfg.update(config_copy)
-                mood_manager_config["active"] = getattr(mood_manager, "_active", True)
+                mood_manager_config["active"] = getattr(
+                    mood_manager, "_active", True
+                )
             else:
                 # Create new integration entry
                 self._ledfx.config["integrations"].append(
@@ -353,7 +361,9 @@ class MoodScenesEndpoint(RestEndpoint):
                     removed = True
 
             elif mapping_type == "event":
-                event_scenes = await mood_manager._get_config("event_scenes", {})
+                event_scenes = await mood_manager._get_config(
+                    "event_scenes", {}
+                )
                 if isinstance(event_scenes, dict) and key in event_scenes:
                     del event_scenes[key]
                     await mood_manager._update_config(
@@ -363,11 +373,18 @@ class MoodScenesEndpoint(RestEndpoint):
 
             elif mapping_type == "structure":
                 # Structure mappings use "structure_" prefix
-                event_scenes = await mood_manager._get_config("event_scenes", {})
+                event_scenes = await mood_manager._get_config(
+                    "event_scenes", {}
+                )
                 structure_key = f"structure_{key}"
-                if isinstance(event_scenes, dict) and structure_key in event_scenes:
+                if (
+                    isinstance(event_scenes, dict)
+                    and structure_key in event_scenes
+                ):
                     del event_scenes[structure_key]
-                    await mood_manager._update_config({"event_scenes": event_scenes})
+                    await mood_manager._update_config(
+                        {"event_scenes": event_scenes}
+                    )
                     removed = True
 
             if not removed:
@@ -399,7 +416,9 @@ class MoodScenesEndpoint(RestEndpoint):
                     cfg = {}
                     mood_manager_config["config"] = cfg
                 cfg.update(config_copy)
-                mood_manager_config["active"] = getattr(mood_manager, "_active", True)
+                mood_manager_config["active"] = getattr(
+                    mood_manager, "_active", True
+                )
             else:
                 # Create new integration entry
                 self._ledfx.config["integrations"].append(
