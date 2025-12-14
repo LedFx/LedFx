@@ -173,8 +173,8 @@ class ImageCache:
             self.metadata["total_count"] -= 1
 
         # Extract image metadata (dimensions, frame count, animation status)
-        width, height, img_format, n_frames, is_animated = (
-            get_image_metadata(cache_path)
+        width, height, img_format, n_frames, is_animated = get_image_metadata(
+            cache_path
         )
 
         entry = {
@@ -344,7 +344,7 @@ class ImageCache:
                 - format: Image format (PNG, JPEG, GIF, etc.)
                 - n_frames: Number of frames (1 for static, >1 for animated)
                 - is_animated: Boolean flag for animation
-            
+
             Note: Excludes thumbnail cache entries (URLs starting with "asset://").
         """
         entries = [

@@ -269,7 +269,7 @@ class TestCacheStatistics:
         assert stats["max_size"] == cache.max_size_bytes
         assert stats["max_count"] == cache.max_items
         assert len(stats["entries"]) == 3
-        
+
         # Verify image metadata is included in stats
         for entry in stats["entries"]:
             assert "width" in entry
@@ -536,7 +536,7 @@ class TestCacheImageMetadata:
         for color in [(255, 0, 0), (0, 0, 255)]:  # Red, Blue
             img = Image.new("RGB", (50, 50), color=color)
             frames.append(img)
-        
+
         gif_path = tmp_path / "animated.gif"
         frames[0].save(
             str(gif_path),
@@ -545,15 +545,15 @@ class TestCacheImageMetadata:
             duration=100,
             loop=0,
         )
-        
+
         # Read the GIF data
         with open(str(gif_path), "rb") as f:
             gif_data = f.read()
-        
+
         # Cache it
         url = "https://example.com/animated.gif"
         cache.put(url, gif_data, "image/gif")
-        
+
         # Verify metadata
         entry_key = cache._generate_cache_key(url)
         entry = cache.metadata["cache_entries"][entry_key]
@@ -562,7 +562,7 @@ class TestCacheImageMetadata:
         assert entry["format"] == "GIF"
         assert entry["n_frames"] == 2
         assert entry["is_animated"] is True
-        
+
         # Verify it appears in stats
         stats = cache.get_stats()
         gif_entry = next(e for e in stats["entries"] if e["url"] == url)

@@ -432,14 +432,14 @@ class TestCacheStatsAPI:
                 assert "access_count" in entry
                 assert "file_size" in entry
                 assert "content_type" in entry
-                
+
                 # New image metadata fields
                 assert "width" in entry
                 assert "height" in entry
                 assert "format" in entry
                 assert "n_frames" in entry
                 assert "is_animated" in entry
-                
+
                 # Verify types
                 assert isinstance(entry["width"], int)
                 assert isinstance(entry["height"], int)
