@@ -8,7 +8,7 @@ enabling dynamic effect and color changes based on musical characteristics.
 import logging
 import time
 from collections import deque
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import numpy as np
 import voluptuous as vol

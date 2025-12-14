@@ -9,7 +9,7 @@ import logging
 import math
 import time
 from collections import deque
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import numpy as np
 import voluptuous as vol
