@@ -88,7 +88,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 🎭 Mood Detection System
 ------------------------
 
-LedFx includes an advanced mood detection system that analyzes your music in real-time and automatically adjusts effects, colors, and scenes based on the detected mood and musical structure.
+This fork includes an advanced mood detection system that analyzes your music in real-time and automatically adjusts effects, colors, and scenes based on the detected mood and musical structure.
 
 **What is Mood Detection?**
 
