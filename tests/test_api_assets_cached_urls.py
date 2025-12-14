@@ -202,7 +202,9 @@ class TestAssetsThumbnailCachedURL:
 class TestCachedURLIntegration:
     """Integration tests for cached URL workflow."""
 
-    @pytest.mark.skip(reason="Endpoint now fetches URLs which causes timeouts with example.com")
+    @pytest.mark.skip(
+        reason="Endpoint now fetches URLs which causes timeouts with example.com"
+    )
     def test_url_format_detection(self):
         """Test that HTTP and HTTPS URLs are properly detected."""
         test_cases = [
@@ -227,7 +229,14 @@ class TestCachedURLIntegration:
             error_msg = result["payload"]["reason"].lower()
             assert any(
                 keyword in error_msg
-                for keyword in ["cache", "not found", "not initialized", "download", "fetch", "failed to"]
+                for keyword in [
+                    "cache",
+                    "not found",
+                    "not initialized",
+                    "download",
+                    "fetch",
+                    "failed to",
+                ]
             ), f"Expected URL-related error, got: {result['payload']['reason']}"
 
     def test_non_url_paths_still_work(self):
