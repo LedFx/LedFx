@@ -35,6 +35,46 @@ class MoodScenesEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/mood/scenes"
 
+    def _validate_scene_exists(self, scene_id: str) -> bool:
+        """
+        Validate that a scene exists.
+
+        Args:
+            scene_id: The scene ID to validate
+
+        Returns:
+            True if scene exists, False otherwise
+        """
+        if not scene_id or not isinstance(scene_id, str):
+            return False
+
+        if not hasattr(self._ledfx, "scenes") or self._ledfx.scenes is None:
+            return False
+
+        return self._ledfx.scenes.get(scene_id) is not None
+
+    async def _validate_and_filter_mappings(
+        self, mappings: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Validate scene references in mappings and filter out invalid ones.
+
+        Args:
+            mappings: Dictionary of mappings to validate
+
+        Returns:
+            Filtered dictionary with only valid scene references
+        """
+        filtered = {}
+        for key, scene_id in mappings.items():
+            if self._validate_scene_exists(scene_id):
+                filtered[key] = scene_id
+            else:
+                _LOGGER.warning(
+                    f"Scene '{scene_id}' referenced in mapping '{key}' does not exist, skipping"
+                )
+        return filtered
+
     async def get(self, request: web.Request) -> web.Response:
         """
         Get current mood scene mappings.
@@ -62,9 +102,21 @@ class MoodScenesEndpoint(RestEndpoint):
                     "Mood manager integration not available"
                 )
 
+            # Get mappings using protected config access
+            mood_scenes = await mood_manager._get_config("mood_scenes", {})
+            event_scenes = await mood_manager._get_config("event_scenes", {})
+
+            # Validate and filter mappings to ensure all referenced scenes exist
+            validated_mood_scenes = await self._validate_and_filter_mappings(
+                mood_scenes if isinstance(mood_scenes, dict) else {}
+            )
+            validated_event_scenes = await self._validate_and_filter_mappings(
+                event_scenes if isinstance(event_scenes, dict) else {}
+            )
+
             mappings = {
-                "mood_scenes": mood_manager._config.get("mood_scenes", {}),
-                "event_scenes": mood_manager._config.get("event_scenes", {}),
+                "mood_scenes": validated_mood_scenes,
+                "event_scenes": validated_event_scenes,
             }
 
             return await self.bare_request_success({"mappings": mappings})
@@ -147,39 +199,63 @@ class MoodScenesEndpoint(RestEndpoint):
             key = data["key"]
             scene_id = data["scene_id"]
 
-            # Validate scene exists
-            if hasattr(self._ledfx, "scenes"):
-                if not self._ledfx.scenes.get(scene_id):
-                    return await self.invalid_request(
-                        f"Scene '{scene_id}' does not exist"
-                    )
+            # Validate scene exists using helper method
+            if not self._validate_scene_exists(scene_id):
+                return await self.invalid_request(
+                    f"Scene '{scene_id}' does not exist"
+                )
 
-            # Add mapping
+            # Add mapping using protected config access
             if mapping_type == "mood":
-                if "mood_scenes" not in mood_manager._config:
-                    mood_manager._config["mood_scenes"] = {}
-                mood_manager._config["mood_scenes"][key] = scene_id
+                mood_scenes = await mood_manager._get_config("mood_scenes", {})
+                if not isinstance(mood_scenes, dict):
+                    mood_scenes = {}
+                mood_scenes[key] = scene_id
+                await mood_manager._update_config({"mood_scenes": mood_scenes})
 
             elif mapping_type in ["event", "structure"]:
-                if "event_scenes" not in mood_manager._config:
-                    mood_manager._config["event_scenes"] = {}
-                mood_manager._config["event_scenes"][key] = scene_id
+                event_scenes = await mood_manager._get_config("event_scenes", {})
+                if not isinstance(event_scenes, dict):
+                    event_scenes = {}
+                event_scenes[key] = scene_id
+                await mood_manager._update_config({"event_scenes": event_scenes})
 
             else:
                 return await self.invalid_request(
                     f"Invalid mapping type: {mapping_type}"
                 )
 
-            # Save configuration
-            if not hasattr(self._ledfx.config, "integrations"):
-                self._ledfx.config["integrations"] = {}
+            # Save configuration - get updated config copy
+            config_copy = await mood_manager._get_config_copy()
+            
+            # Update LedFx config structure (integrations is a list, not a dict)
+            if "integrations" not in self._ledfx.config:
+                self._ledfx.config["integrations"] = []
 
-            if "mood_manager" not in self._ledfx.config["integrations"]:
-                self._ledfx.config["integrations"]["mood_manager"] = {}
+            # Find existing mood_manager integration in the list
+            mood_manager_config = None
+            for integration in self._ledfx.config["integrations"]:
+                if (
+                    integration.get("type") == "mood_manager"
+                    or integration.get("id") == "mood_manager"
+                ):
+                    mood_manager_config = integration
+                    break
 
-            self._ledfx.config["integrations"]["mood_manager"].update(
-                mood_manager._config
-            )
+            # Update or create the integration config entry
+            if mood_manager_config:
+                mood_manager_config["config"].update(config_copy)
+                mood_manager_config["active"] = mood_manager._active
+            else:
+                # Create new integration entry
+                self._ledfx.config["integrations"].append(
+                    {
+                        "id": "mood_manager",
+                        "type": "mood_manager",
+                        "active": mood_manager._active,
+                        "config": config_copy,
+                    }
+                )
 
             save_config(
                 config=self._ledfx.config,
@@ -232,16 +308,20 @@ class MoodScenesEndpoint(RestEndpoint):
             mapping_type = data["type"]
             key = data["key"]
 
-            # Remove mapping
+            # Remove mapping using protected config access
             removed = False
             if mapping_type == "mood":
-                if key in mood_manager._config.get("mood_scenes", {}):
-                    del mood_manager._config["mood_scenes"][key]
+                mood_scenes = await mood_manager._get_config("mood_scenes", {})
+                if isinstance(mood_scenes, dict) and key in mood_scenes:
+                    del mood_scenes[key]
+                    await mood_manager._update_config({"mood_scenes": mood_scenes})
                     removed = True
 
             elif mapping_type in ["event", "structure"]:
-                if key in mood_manager._config.get("event_scenes", {}):
-                    del mood_manager._config["event_scenes"][key]
+                event_scenes = await mood_manager._get_config("event_scenes", {})
+                if isinstance(event_scenes, dict) and key in event_scenes:
+                    del event_scenes[key]
+                    await mood_manager._update_config({"event_scenes": event_scenes})
                     removed = True
 
             if not removed:
@@ -249,7 +329,38 @@ class MoodScenesEndpoint(RestEndpoint):
                     f"Mapping not found: {mapping_type}/{key}"
                 )
 
-            # Save configuration
+            # Save configuration - get updated config copy
+            config_copy = await mood_manager._get_config_copy()
+            
+            # Update LedFx config structure
+            if "integrations" not in self._ledfx.config:
+                self._ledfx.config["integrations"] = []
+
+            # Find existing mood_manager integration in the list
+            mood_manager_config = None
+            for integration in self._ledfx.config["integrations"]:
+                if (
+                    integration.get("type") == "mood_manager"
+                    or integration.get("id") == "mood_manager"
+                ):
+                    mood_manager_config = integration
+                    break
+
+            # Update or create the integration config entry
+            if mood_manager_config:
+                mood_manager_config["config"].update(config_copy)
+                mood_manager_config["active"] = mood_manager._active
+            else:
+                # Create new integration entry
+                self._ledfx.config["integrations"].append(
+                    {
+                        "id": "mood_manager",
+                        "type": "mood_manager",
+                        "active": mood_manager._active,
+                        "config": config_copy,
+                    }
+                )
+
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,

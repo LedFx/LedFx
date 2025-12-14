@@ -211,26 +211,73 @@ class LibrosaFeatureExtractor:
                     if self._features_cache
                     else None
                 )
+            # Mark that we're updating (prevent concurrent updates)
+            # Update timestamp before releasing lock to prevent race conditions
+            self._last_update = current_time
+            # Get cached features to return if extraction fails
+            cached_backup = (
+                self._features_cache.copy() if self._features_cache else None
+            )
 
         # Get audio buffer
         audio_data = self.audio_buffer.get_buffer()
         if audio_data is None or len(audio_data) == 0:
             return None
 
+        # Validate audio data before processing
+        try:
+            # Check for valid numpy array
+            if not isinstance(audio_data, np.ndarray):
+                _LOGGER.debug("Audio data is not a numpy array")
+                return None
+
+            # Check for NaN or Inf values
+            if np.any(np.isnan(audio_data)) or np.any(np.isinf(audio_data)):
+                _LOGGER.debug("Audio data contains NaN or Inf values")
+                return None
+
+            # Validate data range (should be reasonable audio values)
+            if np.any(np.abs(audio_data) > 10.0):  # Unusually large values
+                _LOGGER.debug("Audio data contains unusually large values")
+                # Clip to reasonable range instead of failing
+                audio_data = np.clip(audio_data, -1.0, 1.0)
+
+            # Validate sample rate
+            if self.original_sample_rate <= 0 or self.target_sample_rate <= 0:
+                _LOGGER.warning(
+                    f"Invalid sample rates: orig={self.original_sample_rate}, "
+                    f"target={self.target_sample_rate}"
+                )
+                return None
+        except Exception as e:
+            _LOGGER.debug(f"Error validating audio data: {e}")
+            return None
+
         try:
             # Resample to librosa's preferred rate
             # Use 'kaiser_best' for highest quality, but can be slow
             # Consider 'kaiser_fast' for better performance if needed
-            audio_resampled = librosa.resample(
-                audio_data,
-                orig_sr=self.original_sample_rate,
-                target_sr=self.target_sample_rate,
-                res_type="kaiser_best",
-            )
+            try:
+                audio_resampled = librosa.resample(
+                    audio_data,
+                    orig_sr=self.original_sample_rate,
+                    target_sr=self.target_sample_rate,
+                    res_type="kaiser_best",
+                )
+            except Exception as e:
+                _LOGGER.debug(f"Error during resampling: {e}")
+                return None
 
             # Validate resampled audio
-            if len(audio_resampled) == 0:
-                _LOGGER.warning("Resampled audio is empty")
+            if audio_resampled is None or len(audio_resampled) == 0:
+                _LOGGER.debug("Resampled audio is empty or None")
+                return None
+
+            # Check for NaN or Inf in resampled data
+            if np.any(np.isnan(audio_resampled)) or np.any(
+                np.isinf(audio_resampled)
+            ):
+                _LOGGER.debug("Resampled audio contains NaN or Inf values")
                 return None
 
             features = {}
@@ -507,7 +554,7 @@ class LibrosaFeatureExtractor:
             # Update cache atomically
             with self._lock:
                 self._features_cache = features.copy()  # Store a copy
-                self._last_update = current_time
+                # _last_update already set above to prevent concurrent extractions
 
             return features
 
@@ -515,7 +562,11 @@ class LibrosaFeatureExtractor:
             _LOGGER.warning(
                 f"Error in librosa feature extraction: {e}", exc_info=True
             )
-            # Return cached features if available, even if extraction failed
+            # Return cached backup if available, even if extraction failed
+            # Note: cached_backup was captured before extraction attempt
+            if cached_backup:
+                return cached_backup
+            # Fallback: try to get current cache
             with self._lock:
                 if self._features_cache:
                     return self._features_cache.copy()

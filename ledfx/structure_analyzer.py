@@ -255,6 +255,12 @@ class MusicStructureAnalyzer:
                 drop_threshold *= 0.95
                 build_threshold *= 0.95
 
+        # Validate thresholds are in reasonable ranges (prevent invalid values)
+        drop_threshold = max(0.05, min(0.5, drop_threshold))
+        build_threshold = max(0.05, min(0.5, build_threshold))
+        energy_change_threshold = max(0.05, min(0.5, energy_change_threshold))
+        breakdown_threshold = max(0.05, min(0.5, breakdown_threshold))
+
         # Track peak energy for climax detection
         if energy > self._peak_energy:
             self._peak_energy = energy
@@ -323,9 +329,15 @@ class MusicStructureAnalyzer:
                 # Validate it's a sustained trend, not just a spike
                 if len(self._energy_buffer) >= 10:
                     recent_trend = list(self._energy_buffer)[-10:]
-                    trend_consistency = 1.0 - np.std(recent_trend) / (
-                        np.mean(recent_trend) + 0.01
-                    )
+                    trend_mean = np.mean(recent_trend)
+                    trend_std = np.std(recent_trend)
+                    # Add epsilon to prevent division by zero, validate mean is positive
+                    if trend_mean > 0.0:
+                        trend_consistency = 1.0 - np.clip(
+                            trend_std / (trend_mean + 0.01), 0.0, 1.0
+                        )
+                    else:
+                        trend_consistency = 0.5  # Default if mean is zero
                     if trend_consistency > 0.7:  # Consistent upward trend
                         event = StructuralEvent.BUILD_START
                         self._in_build = True
@@ -457,9 +469,17 @@ class MusicStructureAnalyzer:
         current_time = time.time()
         time_in_section = current_time - self._section_start_time
 
-        energy = mood["energy"]
-        intensity = mood["intensity"]
-        beat_strength = mood["beat_strength"]
+        # Validate mood metrics
+        try:
+            energy = float(np.clip(mood.get("energy", 0.5), 0.0, 1.0))
+            intensity = float(np.clip(mood.get("intensity", 0.5), 0.0, 1.0))
+            beat_strength = float(np.clip(mood.get("beat_strength", 0.5), 0.0, 1.0))
+        except (KeyError, TypeError, ValueError) as e:
+            _LOGGER.debug(f"Error extracting mood metrics for section update: {e}")
+            # Use safe defaults
+            energy = 0.5
+            intensity = 0.5
+            beat_strength = 0.5
 
         # Use events to help classify sections
         if event == StructuralEvent.BEAT_DROP:
@@ -510,12 +530,22 @@ class MusicStructureAnalyzer:
         Args:
             new_section: The new section to switch to
         """
+        # Validate section is a valid MusicSection enum
+        if not isinstance(new_section, MusicSection):
+            _LOGGER.warning(f"Invalid section type: {type(new_section)}")
+            return
+
         if new_section != self._current_section:
             _LOGGER.info(
                 f"Section changed: {self._current_section.value} -> {new_section.value}"
             )
             self._current_section = new_section
             self._section_start_time = time.time()
+
+            # Reset event flags when section changes to prevent stale state
+            if new_section in [MusicSection.VERSE, MusicSection.CHORUS, MusicSection.BRIDGE]:
+                self._in_build = False
+                self._in_drop = False
 
     def get_current_section(self) -> MusicSection:
         """Get the current section."""

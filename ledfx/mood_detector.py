@@ -6,6 +6,7 @@ enabling dynamic effect and color changes based on musical characteristics.
 """
 
 import logging
+import threading
 import time
 from collections import deque
 from typing import Any, Optional
@@ -182,6 +183,9 @@ class MoodDetector:
             "complexity": 0.5,  # 0-1: simple to complex
         }
 
+        # Lock for protecting state access (threading.Lock for sync method compatibility)
+        self._state_lock = threading.Lock()
+
         # Cache for expensive calculations
         self._last_feature_extraction = 0.0
         self._feature_extraction_interval = (
@@ -239,20 +243,36 @@ class MoodDetector:
         """
         current_time = time.time()
 
-        # Throttle updates to configured rate
-        if current_time - self._last_update < self._update_interval:
-            return self._current_mood.copy()
-
-        self._last_update = current_time
+        # Throttle updates to configured rate (check without lock for performance)
+        with self._state_lock:
+            if current_time - self._last_update < self._update_interval:
+                return self._current_mood.copy()
+            self._last_update = current_time
 
         # Feed audio to librosa buffer if enabled (do this even if we skip feature extraction)
         if self._use_librosa and self._librosa_extractor:
             try:
                 audio_sample = self.audio.audio_sample(raw=True)
                 if audio_sample is not None and len(audio_sample) > 0:
-                    self._librosa_extractor.audio_buffer.add_sample(
-                        audio_sample
-                    )
+                    # Validate audio data before processing
+                    try:
+                        # Ensure it's a numpy array
+                        if not isinstance(audio_sample, np.ndarray):
+                            audio_sample = np.asarray(audio_sample, dtype=np.float32)
+                        
+                        # Check for NaN or Inf values
+                        if np.any(np.isnan(audio_sample)) or np.any(np.isinf(audio_sample)):
+                            _LOGGER.debug("Audio sample contains NaN or Inf values, skipping")
+                        else:
+                            # Validate data range (clip extreme values)
+                            if np.any(np.abs(audio_sample) > 10.0):
+                                audio_sample = np.clip(audio_sample, -1.0, 1.0)
+                            
+                            self._librosa_extractor.audio_buffer.add_sample(
+                                audio_sample
+                            )
+                    except (ValueError, TypeError) as e:
+                        _LOGGER.debug(f"Error validating audio sample: {e}")
             except (AttributeError, TypeError) as e:
                 _LOGGER.debug(f"Error adding audio to librosa buffer: {e}")
             except Exception as e:
@@ -271,6 +291,7 @@ class MoodDetector:
             spectral_warmth = self._calculate_spectral_warmth()
 
             # Update smoothed values (these filters handle edge cases internally)
+            # Note: Filter updates are thread-safe internally, but we protect state access
             self._energy_filter.update(energy)
             self._valence_filter.update(valence)
 
@@ -326,34 +347,37 @@ class MoodDetector:
                         f"Error extracting additional mood metrics: {e}"
                     )
 
-            # Update current mood atomically
-            self._current_mood.update(
-                {
-                    "energy": float(
-                        np.clip(self._energy_filter.value, 0.0, 1.0)
-                    ),
-                    "valence": float(
-                        np.clip(self._valence_filter.value, 0.0, 1.0)
-                    ),
-                    "intensity": float(np.clip(intensity, 0.0, 1.0)),
-                    "brightness": float(np.clip(brightness, 0.0, 1.0)),
-                    "beat_strength": float(np.clip(beat_strength, 0.0, 1.0)),
-                    "spectral_warmth": float(
-                        np.clip(spectral_warmth, 0.0, 1.0)
-                    ),
-                    "rhythm_regularity": float(
-                        np.clip(rhythm_regularity, 0.0, 1.0)
-                    ),
-                    "harmonic_ratio": float(np.clip(harmonic_ratio, 0.0, 1.0)),
-                    "complexity": float(np.clip(complexity, 0.0, 1.0)),
-                }
-            )
+            # Update current mood atomically with lock protection
+            with self._state_lock:
+                self._current_mood.update(
+                    {
+                        "energy": float(
+                            np.clip(self._energy_filter.value, 0.0, 1.0)
+                        ),
+                        "valence": float(
+                            np.clip(self._valence_filter.value, 0.0, 1.0)
+                        ),
+                        "intensity": float(np.clip(intensity, 0.0, 1.0)),
+                        "brightness": float(np.clip(brightness, 0.0, 1.0)),
+                        "beat_strength": float(np.clip(beat_strength, 0.0, 1.0)),
+                        "spectral_warmth": float(
+                            np.clip(spectral_warmth, 0.0, 1.0)
+                        ),
+                        "rhythm_regularity": float(
+                            np.clip(rhythm_regularity, 0.0, 1.0)
+                        ),
+                        "harmonic_ratio": float(np.clip(harmonic_ratio, 0.0, 1.0)),
+                        "complexity": float(np.clip(complexity, 0.0, 1.0)),
+                    }
+                )
+                # Return a copy while holding the lock to ensure consistency
+                return self._current_mood.copy()
 
         except Exception as e:
             _LOGGER.warning(f"Error updating mood: {e}", exc_info=True)
             # Return current mood even if update failed
-
-        return self._current_mood.copy()
+            with self._state_lock:
+                return self._current_mood.copy()
 
     def _calculate_energy(self) -> float:
         """
@@ -692,7 +716,8 @@ class MoodDetector:
 
             # Consistency: low variance = high consistency
             # Normalize std to 0-1 range (assuming max std ~0.5 for 0-1 range)
-            consistency = 1.0 - np.clip(std_strength / 0.5, 0.0, 1.0)
+            # Add epsilon to prevent division by zero
+            consistency = 1.0 - np.clip(std_strength / (0.5 + 1e-10), 0.0, 1.0)
 
             # Combine average strength (70%) and consistency (30%)
             beat_strength = avg_strength * 0.7 + consistency * 0.3
@@ -746,7 +771,8 @@ class MoodDetector:
             String describing the mood category (e.g., "electronic_energetic_bright_intense",
             "acoustic_calm_dark_gentle", "rock_moderate_neutral")
         """
-        mood = self._current_mood
+        with self._state_lock:
+            mood = self._current_mood.copy()
 
         # Get genre classification if available
         genre_cat = ""
@@ -810,7 +836,8 @@ class MoodDetector:
         Returns:
             Dictionary of mood metrics
         """
-        metrics = self._current_mood.copy()
+        with self._state_lock:
+            metrics = self._current_mood.copy()
 
         # Add librosa features if available
         if self._use_librosa and self._librosa_extractor:

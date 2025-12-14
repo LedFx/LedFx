@@ -74,7 +74,7 @@ class MoodEndpoint(RestEndpoint):
 
             # Get current mood and structure
             current_mood = mood_manager.get_current_mood()
-            current_structure = mood_manager.get_current_structure()
+            current_structure = await mood_manager.get_current_structure()
 
             enabled = mood_manager._config.get("enabled", False)
 
@@ -234,12 +234,13 @@ class MoodEndpoint(RestEndpoint):
                     ]
                 )
 
-                # Validate and update config
-                for key, value in config_updates.items():
-                    if key in mood_manager._config:
-                        mood_manager._config[key] = value
+                # Validate and update config using protected methods
+                await mood_manager._update_config(config_updates)
 
-                # Save configuration - integrations is a list, not a dict
+                # Save configuration - get updated config copy
+                config_copy = await mood_manager._get_config_copy()
+                
+                # Update LedFx config structure - integrations is a list, not a dict
                 if "integrations" not in self._ledfx.config:
                     self._ledfx.config["integrations"] = []
 
@@ -255,7 +256,7 @@ class MoodEndpoint(RestEndpoint):
 
                 # Update or create the integration config entry
                 if mood_manager_config:
-                    mood_manager_config["config"].update(mood_manager._config)
+                    mood_manager_config["config"].update(config_copy)
                     mood_manager_config["active"] = mood_manager._active
                 else:
                     # Create new integration entry
