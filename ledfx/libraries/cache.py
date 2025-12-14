@@ -7,6 +7,8 @@ import os
 from datetime import datetime
 from typing import Optional
 
+from ledfx.assets import get_image_metadata
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -124,7 +126,10 @@ class ImageCache:
         params: Optional[dict] = None,
     ):
         """
-        Store image in cache.
+        Store image in cache with extracted metadata.
+
+        Automatically extracts and stores image metadata including dimensions,
+        format, frame count, and animation status for cached images.
 
         Args:
             url: The URL or asset path of the image
@@ -167,6 +172,11 @@ class ImageCache:
             self.metadata["total_size"] -= old_size
             self.metadata["total_count"] -= 1
 
+        # Extract image metadata (dimensions, frame count, animation status)
+        width, height, img_format, n_frames, is_animated = get_image_metadata(
+            cache_path
+        )
+
         entry = {
             "url": url,
             "cached_at": now,
@@ -178,6 +188,11 @@ class ImageCache:
             "content_type": content_type,
             "extension": extension,
             "params": params,  # Store params for reference
+            "width": width,
+            "height": height,
+            "format": img_format,
+            "n_frames": n_frames,
+            "is_animated": is_animated,
         }
 
         self.metadata["cache_entries"][cache_key] = entry
@@ -309,11 +324,28 @@ class ImageCache:
 
     def get_stats(self) -> dict:
         """
-        Get cache statistics.
+        Get cache statistics with image metadata.
 
         Returns:
-            Dict with cache statistics including entries.
-            Excludes thumbnail cache entries (URLs starting with "asset://").
+            Dict with cache statistics including:
+            - total_size: Total cache size in bytes
+            - total_count: Total number of cached items
+            - max_size: Maximum cache size in bytes
+            - max_count: Maximum number of items
+            - entries: List of cache entries, each containing:
+                - url: Source URL
+                - cached_at: Timestamp when cached
+                - last_accessed: Last access timestamp
+                - access_count: Number of accesses
+                - file_size: File size in bytes
+                - content_type: MIME type
+                - width: Image width in pixels
+                - height: Image height in pixels
+                - format: Image format (PNG, JPEG, GIF, etc.)
+                - n_frames: Number of frames (1 for static, >1 for animated)
+                - is_animated: Boolean flag for animation
+
+            Note: Excludes thumbnail cache entries (entries with params or URLs starting with "asset://").
         """
         entries = [
             {
@@ -323,9 +355,15 @@ class ImageCache:
                 "access_count": entry.get("access_count", 0),
                 "file_size": entry["file_size"],
                 "content_type": entry.get("content_type", "unknown"),
+                "width": entry.get("width", 0),
+                "height": entry.get("height", 0),
+                "format": entry.get("format"),
+                "n_frames": entry.get("n_frames", 1),
+                "is_animated": entry.get("is_animated", False),
             }
             for entry in self.metadata["cache_entries"].values()
             if not entry["url"].startswith("asset://")
+            and entry.get("params") is None
         ]
 
         # Sort by access_count descending

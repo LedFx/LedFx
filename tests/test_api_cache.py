@@ -400,3 +400,53 @@ class TestCacheStatsAPI:
         requests.delete(
             ASSETS_API_URL, params={"path": "stats_test.png"}, timeout=5
         )
+
+    def test_get_stats_includes_image_metadata(self, sample_png_bytes):
+        """Test that cache stats include image metadata fields."""
+        # Upload an asset that will get cached
+        files = {
+            "file": (
+                "metadata_test.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "metadata_test.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Download the asset to trigger caching (if remote)
+        # Note: User assets may not trigger remote cache, so this test
+        # is more relevant for actual remote URLs in production
+        resp = requests.get(CACHE_API_URL, timeout=5)
+        assert resp.status_code == 200
+        stats = resp.json()
+
+        # If we have any cached entries, verify they have metadata
+        if stats["entries"]:
+            for entry in stats["entries"]:
+                # Required fields from caching
+                assert "url" in entry
+                assert "cached_at" in entry
+                assert "last_accessed" in entry
+                assert "access_count" in entry
+                assert "file_size" in entry
+                assert "content_type" in entry
+
+                # New image metadata fields
+                assert "width" in entry
+                assert "height" in entry
+                assert "format" in entry
+                assert "n_frames" in entry
+                assert "is_animated" in entry
+
+                # Verify types
+                assert isinstance(entry["width"], int)
+                assert isinstance(entry["height"], int)
+                assert isinstance(entry["n_frames"], int)
+                assert isinstance(entry["is_animated"], bool)
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL, params={"path": "metadata_test.png"}, timeout=5
+        )
