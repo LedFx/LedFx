@@ -20,11 +20,13 @@ import pytest
 import requests
 from PIL import Image
 
-# API endpoints
-ASSETS_API_URL = "http://localhost:8888/api/assets"
-ASSETS_DOWNLOAD_API_URL = "http://localhost:8888/api/assets/download"
-ASSETS_THUMBNAIL_API_URL = "http://localhost:8888/api/assets/thumbnail"
-CACHE_API_URL = "http://localhost:8888/api/cache/images"
+from tests.test_utilities.consts import BASE_PORT
+
+# API endpoints - Use 127.0.0.1 instead of localhost to avoid Windows DNS resolution delay
+ASSETS_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets"
+ASSETS_DOWNLOAD_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets/download"
+ASSETS_THUMBNAIL_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets/thumbnail"
+CACHE_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/cache/images"
 
 
 @pytest.fixture

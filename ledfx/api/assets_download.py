@@ -7,7 +7,7 @@ from aiohttp import web
 
 from ledfx import assets
 from ledfx.api import RestEndpoint
-from ledfx.utils import get_image_cache
+from ledfx.utils import get_image_cache, open_image
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -99,8 +99,6 @@ class AssetsDownloadEndpoint(RestEndpoint):
         """
         # Check if path is a remote URL (fetch and cache with validation)
         if asset_path.startswith(("http://", "https://")):
-            from ledfx.utils import open_image
-
             # open_image handles URL validation, download, and caching
             try:
                 image = open_image(
