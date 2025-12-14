@@ -18,7 +18,7 @@ import logging
 import threading
 import time
 from collections import deque
-from typing import Any, Dict, Optional, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 

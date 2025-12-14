@@ -21,6 +21,8 @@ from ledfx.events import (
 )
 from ledfx.integrations import Integration
 
+_LOGGER = logging.getLogger(__name__)
+
 # Try relative imports first, then absolute
 try:
     try:
@@ -40,8 +42,6 @@ try:
 except ImportError as e:
     _LOGGER.error(f"Failed to import mood detection modules: {e}")
     raise
-
-_LOGGER = logging.getLogger(__name__)
 
 
 class MoodManager(Integration):

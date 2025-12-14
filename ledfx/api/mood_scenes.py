@@ -14,7 +14,7 @@ Supports three types of mappings:
 
 import logging
 from json import JSONDecodeError
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from aiohttp import web
 
