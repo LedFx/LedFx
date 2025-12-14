@@ -35,18 +35,19 @@ try:
     LIBROSA_MODULE_AVAILABLE = True
 except ImportError:
     LIBROSA_MODULE_AVAILABLE = False
-    
+
     def is_librosa_available():
         return False
-    
+
     def create_librosa_extractor(*args, **kwargs):
         return None
-    
+
     def classify_music_style(*args, **kwargs):
         return {}
-    
+
     def classify_sub_genre(*args, **kwargs):
         return {}
+
 
 _LOGGER = logging.getLogger(__name__)
 
