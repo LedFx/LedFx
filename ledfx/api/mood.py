@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 class MoodEndpoint(RestEndpoint):
     """
     REST API endpoint for mood detection information.
-    
+
     GET /api/mood - Get current mood and structure information
     PUT /api/mood - Configure mood detection settings
     """
@@ -32,7 +32,7 @@ class MoodEndpoint(RestEndpoint):
     async def get(self, request: web.Request) -> web.Response:
         """
         Get current mood and structure information.
-        
+
         Returns:
             {
                 "status": "success",
@@ -62,25 +62,27 @@ class MoodEndpoint(RestEndpoint):
         try:
             # Check if mood manager integration exists
             mood_manager = self._get_mood_manager()
-            
+
             if mood_manager is None:
-                return await self.bare_request_success({
-                    "enabled": False,
-                    "available": False,
-                    "message": "Mood manager not available"
-                })
-            
+                return await self.bare_request_success(
+                    {
+                        "enabled": False,
+                        "available": False,
+                        "message": "Mood manager not available",
+                    }
+                )
+
             # Get current mood and structure
             current_mood = mood_manager.get_current_mood()
             current_structure = mood_manager.get_current_structure()
-            
+
             enabled = mood_manager._config.get("enabled", False)
-            
-            response: Dict[str, Any] = {
+
+            response: dict[str, Any] = {
                 "enabled": enabled,
                 "available": True,
             }
-            
+
             if current_mood:
                 # Create a safe copy for frontend compatibility
                 safe_mood = {}
@@ -93,7 +95,9 @@ class MoodEndpoint(RestEndpoint):
                     elif isinstance(value, dict):
                         # Keep dicts (like music_styles) but ensure they're valid
                         safe_mood[key] = value
-                    elif hasattr(value, '__iter__') and not isinstance(value, (str, bytes)):
+                    elif hasattr(value, "__iter__") and not isinstance(
+                        value, (str, bytes)
+                    ):
                         # Convert arrays/lists to lists
                         try:
                             safe_mood[key] = list(value)
@@ -105,13 +109,19 @@ class MoodEndpoint(RestEndpoint):
                             safe_mood[key] = str(value)
                         except (TypeError, ValueError):
                             continue  # Skip if can't convert
-                
+
                 response["current_mood"] = safe_mood
                 if mood_manager._mood_detector:
                     try:
                         # Get mood category - ensure it's always a string and never None
-                        category = mood_manager._mood_detector.get_mood_category()
-                        if category and isinstance(category, str) and len(category) > 0:
+                        category = (
+                            mood_manager._mood_detector.get_mood_category()
+                        )
+                        if (
+                            category
+                            and isinstance(category, str)
+                            and len(category) > 0
+                        ):
                             response["mood_category"] = category
                         else:
                             response["mood_category"] = "unknown"
@@ -124,44 +134,52 @@ class MoodEndpoint(RestEndpoint):
             else:
                 # Ensure mood_category exists even if no mood data
                 response["mood_category"] = "unknown"
-            
+
             if current_structure:
                 response["structure"] = current_structure
-            
+
             return await self.bare_request_success(response)
-            
+
         except Exception as e:
-            _LOGGER.error(f"Error getting mood information: {e}", exc_info=True)
+            _LOGGER.error(
+                f"Error getting mood information: {e}", exc_info=True
+            )
             return await self.internal_error(str(e))
-    
+
     def _get_mood_manager(self) -> Optional[Any]:
         """
         Helper method to get mood manager integration.
-        
+
         Returns:
             MoodManager instance or None if not found
         """
         if not hasattr(self._ledfx, "integrations"):
             return None
-        
+
         # Try to get by ID first
         mood_manager = self._ledfx.integrations.get("mood_manager")
         if mood_manager is not None:
             return mood_manager
-        
+
         # Find by type
         for integration in self._ledfx.integrations.values():
-            if hasattr(integration, "type") and integration.type == "mood_manager":
+            if (
+                hasattr(integration, "type")
+                and integration.type == "mood_manager"
+            ):
                 return integration
-            if hasattr(integration, "NAME") and integration.NAME == "mood_manager":
+            if (
+                hasattr(integration, "NAME")
+                and integration.NAME == "mood_manager"
+            ):
                 return integration
-        
+
         return None
 
     async def put(self, request: web.Request) -> web.Response:
         """
         Configure mood detection settings.
-        
+
         Request body:
             {
                 "enabled": bool,  # Enable/disable mood detection
@@ -176,7 +194,7 @@ class MoodEndpoint(RestEndpoint):
                     "target_virtuals": list
                 }
             }
-        
+
         Returns:
             {
                 "status": "success",
@@ -187,80 +205,90 @@ class MoodEndpoint(RestEndpoint):
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
-        
+
         try:
             # Check if mood manager exists
             mood_manager = self._get_mood_manager()
-            
+
             if mood_manager is None:
                 return await self.invalid_request(
                     "Mood manager integration not available"
                 )
-            
+
             # Update enabled state if provided
             if "enabled" in data:
                 enabled = bool(data["enabled"])
                 await mood_manager.set_enabled(enabled)
-            
+
             # Update configuration if provided
             if "config" in data:
                 config_updates = data["config"]
-                
+
                 # Check if librosa config changed (requires reconnect)
                 librosa_config_changed = any(
-                    key in config_updates 
-                    for key in ["use_librosa", "librosa_buffer_duration", "librosa_update_interval"]
+                    key in config_updates
+                    for key in [
+                        "use_librosa",
+                        "librosa_buffer_duration",
+                        "librosa_update_interval",
+                    ]
                 )
-                
+
                 # Validate and update config
                 for key, value in config_updates.items():
                     if key in mood_manager._config:
                         mood_manager._config[key] = value
-                
+
                 # Save configuration - integrations is a list, not a dict
                 if "integrations" not in self._ledfx.config:
                     self._ledfx.config["integrations"] = []
-                
+
                 # Find existing mood_manager integration in the list
                 mood_manager_config = None
                 for integration in self._ledfx.config["integrations"]:
-                    if integration.get("type") == "mood_manager" or integration.get("id") == "mood_manager":
+                    if (
+                        integration.get("type") == "mood_manager"
+                        or integration.get("id") == "mood_manager"
+                    ):
                         mood_manager_config = integration
                         break
-                
+
                 # Update or create the integration config entry
                 if mood_manager_config:
                     mood_manager_config["config"].update(mood_manager._config)
                     mood_manager_config["active"] = mood_manager._active
                 else:
                     # Create new integration entry
-                    self._ledfx.config["integrations"].append({
-                        "id": mood_manager.id,
-                        "type": mood_manager.type,
-                        "active": mood_manager._active,
-                        "data": mood_manager._data,
-                        "config": mood_manager._config.copy(),
-                    })
-                
+                    self._ledfx.config["integrations"].append(
+                        {
+                            "id": mood_manager.id,
+                            "type": mood_manager.type,
+                            "active": mood_manager._active,
+                            "data": mood_manager._data,
+                            "config": mood_manager._config.copy(),
+                        }
+                    )
+
                 save_config(
                     config=self._ledfx.config,
                     config_dir=self._ledfx.config_dir,
                 )
-                
+
                 # Reconnect if librosa config changed (to recreate MoodDetector with new config)
-                if librosa_config_changed and mood_manager._mood_detector is not None:
-                    _LOGGER.info("Librosa config changed, reconnecting mood manager...")
+                if (
+                    librosa_config_changed
+                    and mood_manager._mood_detector is not None
+                ):
+                    _LOGGER.info(
+                        "Librosa config changed, reconnecting mood manager..."
+                    )
                     await mood_manager.disconnect()
                     await mood_manager.connect()
-            
+
             return await self.request_success(
-                "success",
-                "Mood detection configured successfully"
+                "success", "Mood detection configured successfully"
             )
-            
+
         except Exception as e:
             _LOGGER.error(f"Error configuring mood detection: {e}")
             return await self.internal_error(str(e))
-
-
-

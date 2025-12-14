@@ -101,7 +101,7 @@ class MoodAnalysisEffect(AudioReactiveEffect):
     def activate(self, channel):
         super().activate(channel)
         # Initialize mood detector now that audio is available
-        if hasattr(self, 'audio') and self.audio is not None:
+        if hasattr(self, "audio") and self.audio is not None:
             try:
                 mood_config = {
                     "mood_smoothing": self._config["mood_smoothing"],
@@ -109,11 +109,16 @@ class MoodAnalysisEffect(AudioReactiveEffect):
                     "history_length": self._config["history_length"],
                     "update_rate": self._config["update_rate"],
                 }
-                self._mood_detector = MoodDetector(self.audio, config=mood_config)
-                _LOGGER.info("Mood detector initialized for Mood Analysis effect")
+                self._mood_detector = MoodDetector(
+                    self.audio, config=mood_config
+                )
+                _LOGGER.info(
+                    "Mood detector initialized for Mood Analysis effect"
+                )
             except Exception as e:
                 _LOGGER.warning(
-                    f"Failed to initialize mood detector in activate: {e}", exc_info=True
+                    f"Failed to initialize mood detector in activate: {e}",
+                    exc_info=True,
                 )
                 self._mood_detector = None
         else:
@@ -142,20 +147,27 @@ class MoodAnalysisEffect(AudioReactiveEffect):
 
         # Initialize mood detector if audio is available
         # audio is set in activate(), so check if it exists and is not None
-        if hasattr(self, 'audio') and self.audio is not None:
+        if hasattr(self, "audio") and self.audio is not None:
             if not self._mood_detector:
                 try:
                     mood_config = {
                         "mood_smoothing": self._config["mood_smoothing"],
-                        "energy_sensitivity": self._config["energy_sensitivity"],
+                        "energy_sensitivity": self._config[
+                            "energy_sensitivity"
+                        ],
                         "history_length": self._config["history_length"],
                         "update_rate": self._config["update_rate"],
                     }
-                    self._mood_detector = MoodDetector(self.audio, config=mood_config)
-                    _LOGGER.info("Mood detector initialized for Mood Analysis effect")
+                    self._mood_detector = MoodDetector(
+                        self.audio, config=mood_config
+                    )
+                    _LOGGER.info(
+                        "Mood detector initialized for Mood Analysis effect"
+                    )
                 except Exception as e:
                     _LOGGER.warning(
-                        f"Failed to initialize mood detector: {e}", exc_info=True
+                        f"Failed to initialize mood detector: {e}",
+                        exc_info=True,
                     )
                     self._mood_detector = None
             else:
@@ -163,19 +175,28 @@ class MoodAnalysisEffect(AudioReactiveEffect):
                 try:
                     mood_config = {
                         "mood_smoothing": self._config["mood_smoothing"],
-                        "energy_sensitivity": self._config["energy_sensitivity"],
+                        "energy_sensitivity": self._config[
+                            "energy_sensitivity"
+                        ],
                         "history_length": self._config["history_length"],
                         "update_rate": self._config["update_rate"],
                     }
-                    self._mood_detector = MoodDetector(self.audio, config=mood_config)
+                    self._mood_detector = MoodDetector(
+                        self.audio, config=mood_config
+                    )
                 except Exception as e:
                     _LOGGER.warning(
-                        f"Failed to reinitialize mood detector: {e}", exc_info=True
+                        f"Failed to reinitialize mood detector: {e}",
+                        exc_info=True,
                     )
 
     def audio_data_updated(self, data):
         # Initialize mood detector on first audio data if not already done
-        if hasattr(self, 'audio') and self.audio is not None and not self._mood_detector:
+        if (
+            hasattr(self, "audio")
+            and self.audio is not None
+            and not self._mood_detector
+        ):
             try:
                 mood_config = {
                     "mood_smoothing": self._config["mood_smoothing"],
@@ -183,7 +204,9 @@ class MoodAnalysisEffect(AudioReactiveEffect):
                     "history_length": self._config["history_length"],
                     "update_rate": self._config["update_rate"],
                 }
-                self._mood_detector = MoodDetector(self.audio, config=mood_config)
+                self._mood_detector = MoodDetector(
+                    self.audio, config=mood_config
+                )
             except Exception as e:
                 _LOGGER.debug(f"Could not initialize mood detector yet: {e}")
 
@@ -235,7 +258,10 @@ class MoodAnalysisEffect(AudioReactiveEffect):
             # Warm colors (red/orange) for low warmth, cool colors (blue/cyan) for high warmth
             warm_color = np.array([1.0, 0.3, 0.0])  # Orange
             cool_color = np.array([0.0, 0.5, 1.0])  # Cyan
-            color = warm_color * (1.0 - spectral_warmth) + cool_color * spectral_warmth
+            color = (
+                warm_color * (1.0 - spectral_warmth)
+                + cool_color * spectral_warmth
+            )
             color = color * (0.4 + 0.6 * brightness)
             self.pixels = np.zeros(np.shape(self.pixels))
             self.pixels[:brightness_pos] = color
@@ -285,7 +311,9 @@ class MoodAnalysisEffect(AudioReactiveEffect):
             # Create gradient from energy to valence
             positions = np.linspace(0, 1, self.pixel_count)
             for i, pos in enumerate(positions):
-                self.pixels[i] = energy_color * (1.0 - pos) + valence_color * pos
+                self.pixels[i] = (
+                    energy_color * (1.0 - pos) + valence_color * pos
+                )
             # Apply brightness and intensity modulation
             brightness_mod = 0.5 + 0.5 * brightness
             intensity_mod = 0.7 + 0.3 * intensity
@@ -300,4 +328,3 @@ class MoodAnalysisEffect(AudioReactiveEffect):
 
         # Ensure values are in valid range
         self.pixels = np.clip(self.pixels, 0.0, 1.0)
-

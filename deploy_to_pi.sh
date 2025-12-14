@@ -2,7 +2,7 @@
 
 ###############################################################################
 # LedFx Mood Detection Deployment Script
-# 
+#
 # This script deploys the LedFx installation with custom mood detection
 # features to a Raspberry Pi, replacing the existing installation while
 # preserving configuration and ensuring mood detection functionality.
@@ -183,7 +183,7 @@ if run_on_pi "cd $TEMP_DIR && python3 -m pip install $INSTALL_FLAGS -e ." 2>&1; 
     print_status "LedFx installed successfully"
 else
     print_warning "Standard installation failed, trying alternative methods..."
-    
+
     # Try with --break-system-packages as fallback (Python 3.11+)
     if [ "$PYTHON_MAJOR" -ge 3 ] && [ "$PYTHON_MINOR" -ge 11 ]; then
             print_warning "Trying with --break-system-packages flag..."
@@ -215,24 +215,24 @@ LEDFX_PYTHON_PATH=$(run_on_pi "python3 -c 'import ledfx; import os; print(os.pat
 if [ -n "$LEDFX_PYTHON_PATH" ] && [ "$LEDFX_PYTHON_PATH" != "None" ]; then
     print_status "Found LedFx installation at: $LEDFX_PYTHON_PATH"
     LEDFX_INSTALL_DIR="$LEDFX_PYTHON_PATH"
-    
+
     # Backup existing ledfx directory
     if run_on_pi "[ -d '$LEDFX_INSTALL_DIR' ]"; then
         run_on_pi "cp -r $LEDFX_INSTALL_DIR $BACKUP_DIR/ledfx_python_package 2>/dev/null || true"
         print_status "Backed up existing LedFx package"
     fi
-    
+
     # Copy new files to the installation directory
     print_status "Replacing LedFx files in Python package directory..."
     run_on_pi "rm -rf $LEDFX_INSTALL_DIR/*"
     run_on_pi "cp -r $TEMP_DIR/ledfx/* $LEDFX_INSTALL_DIR/ 2>/dev/null || cp -r $TEMP_DIR/* $LEDFX_INSTALL_DIR/"
     print_status "LedFx files replaced at: $LEDFX_INSTALL_DIR"
     PI_LEDFX_DIR="$LEDFX_INSTALL_DIR"
-    
+
 elif [[ "$LEDFX_LOCATION" == *"/.local/pipx"* ]] || [[ "$LEDFX_LOCATION" == *"pipx"* ]]; then
     print_warning "LedFx appears to be installed via pipx."
     print_status "Installing as editable package in pipx environment..."
-    
+
     # Try to reinstall in pipx environment
     PIPX_VENV=$(run_on_pi "pipx list --short 2>/dev/null | grep ledfx | awk '{print \$2}' | head -n1" || echo "")
     if [ -n "$PIPX_VENV" ]; then

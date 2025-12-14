@@ -25,10 +25,18 @@ from ledfx.integrations import Integration
 try:
     try:
         from .mood_detector import MoodDetector
-        from .structure_analyzer import MusicSection, MusicStructureAnalyzer, StructuralEvent
+        from .structure_analyzer import (
+            MusicSection,
+            MusicStructureAnalyzer,
+            StructuralEvent,
+        )
     except ImportError:
         from ledfx.mood_detector import MoodDetector
-        from ledfx.structure_analyzer import MusicSection, MusicStructureAnalyzer, StructuralEvent
+        from ledfx.structure_analyzer import (
+            MusicSection,
+            MusicStructureAnalyzer,
+            StructuralEvent,
+        )
 except ImportError as e:
     _LOGGER.error(f"Failed to import mood detection modules: {e}")
     raise
@@ -40,7 +48,7 @@ class MoodManager(Integration):
     """
     Integration that monitors music mood and structure to automatically
     adjust effects and colors.
-    
+
     Features:
     - Automatic effect switching based on mood
     - Color palette adjustments based on energy/valence
@@ -50,7 +58,7 @@ class MoodManager(Integration):
 
     NAME = "mood_manager"
     DESCRIPTION = "Automatically adjust effects and colors based on music mood"
-    
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -152,15 +160,15 @@ class MoodManager(Integration):
     )
 
     def __init__(
-        self, 
-        ledfx: Any, 
-        config: Dict[str, Any], 
-        active: bool = False, 
-        data: Optional[Dict[str, Any]] = None
+        self,
+        ledfx: Any,
+        config: dict[str, Any],
+        active: bool = False,
+        data: Optional[dict[str, Any]] = None,
     ) -> None:
         """
         Initialize the Mood Manager.
-        
+
         Args:
             ledfx: LedFx core instance
             config: Configuration dictionary
@@ -168,50 +176,67 @@ class MoodManager(Integration):
             data: Optional data dictionary
         """
         super().__init__(ledfx, config, active, data or {})
-        
+
         # Core components
         self._task: Optional[asyncio.Task] = None
         self._mood_detector: Optional[MoodDetector] = None
         self._structure_analyzer: Optional[MusicStructureAnalyzer] = None
-        
+
         # State tracking
         self._last_mood_category: Optional[str] = None
         self._last_section: Optional[MusicSection] = None
-        self._last_mood_metrics: Optional[Dict[str, float]] = None
+        self._last_mood_metrics: Optional[dict[str, float]] = None
         self._last_update_time: Optional[float] = None
         self._last_change_time: float = 0.0
-        self._pool_indices: Dict[str, int] = {}
+        self._pool_indices: dict[str, int] = {}
         self._current_scene_id: Optional[str] = None
         self._last_scene_change_time: float = 0.0
-        
+
         # Configuration - use config values with defaults
-        self._change_threshold = float(self._config.get("change_threshold", 0.2))
-        self._min_change_interval = float(self._config.get("min_change_interval", 3.0))
-        self._enable_force_updates = bool(self._config.get("enable_force_updates", False))
-        self._force_update_interval = float(self._config.get("force_update_interval", 60.0))
-        self._use_adaptive_threshold = bool(self._config.get("use_adaptive_threshold", True))
-        
+        self._change_threshold = float(
+            self._config.get("change_threshold", 0.2)
+        )
+        self._min_change_interval = float(
+            self._config.get("min_change_interval", 3.0)
+        )
+        self._enable_force_updates = bool(
+            self._config.get("enable_force_updates", False)
+        )
+        self._force_update_interval = float(
+            self._config.get("force_update_interval", 60.0)
+        )
+        self._use_adaptive_threshold = bool(
+            self._config.get("use_adaptive_threshold", True)
+        )
+
         # Adaptive threshold tracking
-        self._recent_changes: deque = deque(maxlen=20)  # Track recent change magnitudes
+        self._recent_changes: deque = deque(
+            maxlen=20
+        )  # Track recent change magnitudes
         self._adaptive_threshold = self._change_threshold
-        
+
     async def connect(self, msg: Optional[str] = None) -> None:
         """
         Establish connection (initialize mood detection).
-        
+
         Args:
             msg: Optional connection message
         """
         if not hasattr(self._ledfx, "audio") or self._ledfx.audio is None:
-            _LOGGER.error("Cannot activate mood manager: audio system not available")
+            _LOGGER.error(
+                "Cannot activate mood manager: audio system not available"
+            )
             return
-        
+
         try:
             # Initialize mood detector with config including librosa settings
-            update_interval = float(self._config.get("update_interval", 0.5) or 0.5)
+            update_interval = float(
+                self._config.get("update_interval", 0.5) or 0.5
+            )
             if update_interval <= 0:
                 _LOGGER.warning(
-                    "Invalid update_interval %.3f; falling back to 0.5s", update_interval
+                    "Invalid update_interval %.3f; falling back to 0.5s",
+                    update_interval,
                 )
                 update_interval = 0.5
 
@@ -219,59 +244,67 @@ class MoodManager(Integration):
             derived_rate = 1.0 / update_interval
             derived_rate = max(1.0, min(30.0, derived_rate))
 
-            mood_detector_config: Dict[str, Any] = {
+            mood_detector_config: dict[str, Any] = {
                 "update_rate": int(math.ceil(derived_rate)),
             }
-            
+
             # Pass through librosa config if present
-            for key in ["use_librosa", "librosa_buffer_duration", "librosa_update_interval"]:
+            for key in [
+                "use_librosa",
+                "librosa_buffer_duration",
+                "librosa_update_interval",
+            ]:
                 if key in self._config:
                     mood_detector_config[key] = self._config[key]
-            
+
             # Initialize mood detector
             try:
                 self._mood_detector = MoodDetector(
-                    self._ledfx.audio,
-                    config=mood_detector_config
+                    self._ledfx.audio, config=mood_detector_config
                 )
                 _LOGGER.info("Mood detector initialized successfully")
             except Exception as e:
-                _LOGGER.error(f"Failed to initialize mood detector: {e}", exc_info=True)
+                _LOGGER.error(
+                    f"Failed to initialize mood detector: {e}", exc_info=True
+                )
                 raise
-            
+
             # Initialize structure analyzer
             try:
                 self._structure_analyzer = MusicStructureAnalyzer(
-                    self._ledfx.audio,
-                    self._mood_detector,
-                    config={}
+                    self._ledfx.audio, self._mood_detector, config={}
                 )
                 _LOGGER.info("Structure analyzer initialized successfully")
             except Exception as e:
-                _LOGGER.error(f"Failed to initialize structure analyzer: {e}", exc_info=True)
+                _LOGGER.error(
+                    f"Failed to initialize structure analyzer: {e}",
+                    exc_info=True,
+                )
                 # Don't fail completely if structure analyzer fails
                 self._structure_analyzer = None
-            
+
             # Start monitoring task if enabled
             if self._config.get("enabled", False):
                 await self.start_monitoring()
-            
+
             await super().connect("Mood Manager connected")
-                
+
         except Exception as e:
-            _LOGGER.error(f"Failed to connect mood manager: {e}", exc_info=True)
-    
+            _LOGGER.error(
+                f"Failed to connect mood manager: {e}", exc_info=True
+            )
+
     async def disconnect(self, msg=None):
         """Disconnect (stop mood detection)."""
         await self.stop_monitoring()
         await super().disconnect("Mood Manager disconnected")
-    
+
     async def start_monitoring(self):
         """Start the mood monitoring task."""
         if self._task is None:
             self._task = asyncio.create_task(self._monitor_loop())
             _LOGGER.info("Started mood monitoring")
-    
+
     async def stop_monitoring(self):
         """Stop the mood monitoring task."""
         if self._task is not None:
@@ -282,30 +315,32 @@ class MoodManager(Integration):
                 pass
             self._task = None
             _LOGGER.info("Stopped mood monitoring")
-    
+
     async def _monitor_loop(self) -> None:
         """
         Main monitoring loop.
-        
+
         Continuously monitors mood and structure, applying changes as needed.
         Handles errors gracefully to prevent loop termination.
         """
         consecutive_errors = 0
         max_consecutive_errors = 10
-        
+
         try:
             while True:
                 try:
-                    await asyncio.sleep(self._config.get("update_interval", 0.5))
-                    
+                    await asyncio.sleep(
+                        self._config.get("update_interval", 0.5)
+                    )
+
                     if not self._config.get("enabled", False):
                         continue
-                    
+
                     await self._update()
-                    
+
                     # Reset error counter on successful update
                     consecutive_errors = 0
-                    
+
                 except asyncio.CancelledError:
                     raise  # Re-raise cancellation
                 except Exception as e:
@@ -320,17 +355,18 @@ class MoodManager(Integration):
                     else:
                         _LOGGER.warning(
                             f"Error in mood monitoring (attempt {consecutive_errors}/{max_consecutive_errors}): {e}",
-                            exc_info=consecutive_errors >= 5  # Full traceback after 5 errors
+                            exc_info=consecutive_errors
+                            >= 5,  # Full traceback after 5 errors
                         )
-                    
+
         except asyncio.CancelledError:
             _LOGGER.debug("Mood monitoring loop cancelled")
             raise
-    
+
     async def _update(self) -> None:
         """
         Update mood analysis and apply changes.
-        
+
         This method is called periodically by the monitoring loop to:
         1. Update mood and structure analysis
         2. Detect significant changes
@@ -339,17 +375,19 @@ class MoodManager(Integration):
         if self._mood_detector is None:
             _LOGGER.debug("Mood detector not initialized, skipping update")
             return
-        
+
         current_time = time.time()
-        
+
         # Update mood analysis
         try:
             mood_metrics = self._mood_detector.update()
             mood_category = self._mood_detector.get_mood_category()
         except Exception as e:
-            _LOGGER.warning(f"Error updating mood detector: {e}", exc_info=True)
+            _LOGGER.warning(
+                f"Error updating mood detector: {e}", exc_info=True
+            )
             return
-        
+
         # Update structure analysis (optional, may be None)
         section: Optional[MusicSection] = None
         event: Optional[StructuralEvent] = None
@@ -357,70 +395,103 @@ class MoodManager(Integration):
             try:
                 section, event = self._structure_analyzer.update()
             except Exception as e:
-                _LOGGER.debug(f"Error updating structure analyzer: {e}", exc_info=False)
+                _LOGGER.debug(
+                    f"Error updating structure analyzer: {e}", exc_info=False
+                )
                 # Continue without structure analysis if it fails
-        
+
         # Check if we need to force an update (only if enabled)
         force_update = False
         if self._last_update_time is None:
             self._last_update_time = current_time
-        elif self._enable_force_updates and current_time - self._last_update_time > self._force_update_interval:
+        elif (
+            self._enable_force_updates
+            and current_time - self._last_update_time
+            > self._force_update_interval
+        ):
             force_update = True
             self._last_update_time = current_time
-            _LOGGER.debug("Forcing periodic mood update (force updates enabled)")
-        
+            _LOGGER.debug(
+                "Forcing periodic mood update (force updates enabled)"
+            )
+
         # Initialize last metrics on first run
         if self._last_mood_metrics is None:
             self._last_mood_metrics = mood_metrics.copy()
-        
+
         # Check for significant mood metric changes (even within same category)
         significant_change = False
         change_magnitude = 0.0
-        
+
         if self._last_mood_metrics is not None:
             try:
                 # Calculate change magnitude for key metrics
-                energy_change = abs(mood_metrics.get("energy", 0.5) - self._last_mood_metrics.get("energy", 0.5))
-                valence_change = abs(mood_metrics.get("valence", 0.5) - self._last_mood_metrics.get("valence", 0.5))
-                brightness_change = abs(mood_metrics.get("brightness", 0.5) - self._last_mood_metrics.get("brightness", 0.5))
-                intensity_change = abs(mood_metrics.get("intensity", 0.5) - self._last_mood_metrics.get("intensity", 0.5))
-                
+                energy_change = abs(
+                    mood_metrics.get("energy", 0.5)
+                    - self._last_mood_metrics.get("energy", 0.5)
+                )
+                valence_change = abs(
+                    mood_metrics.get("valence", 0.5)
+                    - self._last_mood_metrics.get("valence", 0.5)
+                )
+                brightness_change = abs(
+                    mood_metrics.get("brightness", 0.5)
+                    - self._last_mood_metrics.get("brightness", 0.5)
+                )
+                intensity_change = abs(
+                    mood_metrics.get("intensity", 0.5)
+                    - self._last_mood_metrics.get("intensity", 0.5)
+                )
+
                 # Calculate overall change magnitude (weighted combination)
                 # Energy and valence are most important for mood changes
                 change_magnitude = max(
-                    energy_change * 0.4 + valence_change * 0.3 + brightness_change * 0.2 + intensity_change * 0.1,
+                    energy_change * 0.4
+                    + valence_change * 0.3
+                    + brightness_change * 0.2
+                    + intensity_change * 0.1,
                     energy_change,
-                    valence_change
+                    valence_change,
                 )
-                
+
                 # Update adaptive threshold if enabled
                 if self._use_adaptive_threshold:
                     self._recent_changes.append(change_magnitude)
                     if len(self._recent_changes) >= 10:
                         # Adjust threshold based on recent change patterns
-                        avg_recent_change = float(np.mean(list(self._recent_changes)))
+                        avg_recent_change = float(
+                            np.mean(list(self._recent_changes))
+                        )
                         # If music is very dynamic, lower threshold slightly; if stable, raise it
                         if avg_recent_change > 0.15:
                             # Music is dynamic, be more sensitive
-                            self._adaptive_threshold = max(0.1, self._change_threshold * 0.9)
+                            self._adaptive_threshold = max(
+                                0.1, self._change_threshold * 0.9
+                            )
                         elif avg_recent_change < 0.08:
                             # Music is stable, require larger changes
-                            self._adaptive_threshold = min(0.3, self._change_threshold * 1.2)
+                            self._adaptive_threshold = min(
+                                0.3, self._change_threshold * 1.2
+                            )
                         else:
                             self._adaptive_threshold = self._change_threshold
                     else:
                         self._adaptive_threshold = self._change_threshold
                 else:
                     self._adaptive_threshold = self._change_threshold
-                
+
                 # Use adaptive threshold for change detection
                 threshold = self._adaptive_threshold
-                
+
                 # Significant change if change magnitude exceeds threshold
                 # Also check individual metrics for more nuanced detection
-                if (change_magnitude > threshold or 
-                    energy_change > threshold * 1.2 or  # Energy changes are particularly important
-                    valence_change > threshold * 1.2):  # Valence changes indicate mood shifts
+                if (
+                    change_magnitude > threshold
+                    or energy_change
+                    > threshold
+                    * 1.2  # Energy changes are particularly important
+                    or valence_change > threshold * 1.2
+                ):  # Valence changes indicate mood shifts
                     significant_change = True
                     _LOGGER.debug(
                         f"Significant mood metric change detected (threshold={threshold:.3f}): "
@@ -430,91 +501,116 @@ class MoodManager(Integration):
             except (KeyError, TypeError, ValueError) as e:
                 _LOGGER.debug(f"Error calculating mood changes: {e}")
                 # Assume no significant change if we can't calculate
-        
+
         # Check for mood category changes
         category_changed = mood_category != self._last_mood_category
-        
+
         # Enforce minimum interval between changes (hysteresis)
         time_since_last_change = current_time - self._last_change_time
         within_cooldown = time_since_last_change < self._min_change_interval
-        
+
         # Apply updates if:
         # 1. Category changed (always allow, but still respect cooldown for non-category changes), OR
         # 2. Significant metric change detected AND cooldown period has passed, OR
         # 3. Force update (only if enabled and cooldown passed)
         should_update = (
-            category_changed or 
-            (significant_change and not within_cooldown) or 
-            (force_update and not within_cooldown)
+            category_changed
+            or (significant_change and not within_cooldown)
+            or (force_update and not within_cooldown)
         )
-        
+
         if should_update:
             # Update last change time
             self._last_change_time = current_time
             if category_changed:
                 self._last_mood_category = mood_category
-                self._ledfx.events.fire_event(MoodChangeEvent(mood_category, mood_metrics))
+                self._ledfx.events.fire_event(
+                    MoodChangeEvent(mood_category, mood_metrics)
+                )
                 _LOGGER.info(f"Mood category changed: {mood_category}")
-            
+
             # Update last metrics
             self._last_mood_metrics = mood_metrics.copy()
-            
+
             # Apply mood-based changes
             # Only adjust colors/effects if there's a real change (not just force update)
-            if force_update and not category_changed and not significant_change:
+            if (
+                force_update
+                and not category_changed
+                and not significant_change
+            ):
                 # Force update but no real change - skip adjustments to avoid unnecessary changes
-                _LOGGER.debug("Force update triggered but no significant mood change, skipping adjustments")
+                _LOGGER.debug(
+                    "Force update triggered but no significant mood change, skipping adjustments"
+                )
             else:
                 # Real mood change detected - apply adjustments
                 # Only adjust if we're not switching scenes (or if preserve_scene_settings is False)
-                will_switch_scene = self._config.get("switch_scenes", False) and category_changed
-                preserve_scene = self._config.get("preserve_scene_settings", True)
-                
+                will_switch_scene = (
+                    self._config.get("switch_scenes", False)
+                    and category_changed
+                )
+                preserve_scene = self._config.get(
+                    "preserve_scene_settings", True
+                )
+
                 # Skip effect adjustments if we're about to switch scenes and preserve_scene_settings is True
                 if not (will_switch_scene and preserve_scene):
                     if self._config["adjust_colors"]:
                         await self._adjust_colors(mood_metrics)
-                    
+
                     if self._config["adjust_effects"]:
                         await self._adjust_effects(mood_metrics)
-            
+
             # Scene switching only on category changes (not on metric changes alone)
             if self._config["switch_scenes"] and category_changed:
                 await self._switch_mood_scene(mood_category)
-        
+
         # Check for structure changes (only if structure analyzer is available)
         if self._structure_analyzer is not None:
             if section != self._last_section or event is not None:
                 if section is not None and section != self._last_section:
                     self._last_section = section
                     _LOGGER.info(f"Section changed: {section.value}")
-                
+
                 # Fire structure change event
                 try:
-                    self._ledfx.events.fire_event(StructureChangeEvent(section, event))
+                    self._ledfx.events.fire_event(
+                        StructureChangeEvent(section, event)
+                    )
                 except Exception as e:
                     _LOGGER.debug(f"Error firing structure change event: {e}")
-                
+
                 # React to structural events
-                if event is not None and self._config.get("react_to_events", True):
+                if event is not None and self._config.get(
+                    "react_to_events", True
+                ):
                     try:
                         await self._react_to_event(event, mood_metrics)
                     except Exception as e:
-                        _LOGGER.warning(f"Error reacting to structural event: {e}", exc_info=True)
-                
+                        _LOGGER.warning(
+                            f"Error reacting to structural event: {e}",
+                            exc_info=True,
+                        )
+
                 # Switch scenes based on structure
-                if (self._config.get("switch_scenes", False) and 
-                    section is not None and 
-                    section != self._last_section):
+                if (
+                    self._config.get("switch_scenes", False)
+                    and section is not None
+                    and section != self._last_section
+                ):
                     try:
                         await self._switch_structure_scene(section)
                     except Exception as e:
-                        _LOGGER.warning(f"Error switching structure scene: {e}", exc_info=True)
-    
-    async def _adjust_colors(self, mood: Dict[str, float]):
+                        _LOGGER.warning(
+                            f"Error switching structure scene: {e}",
+                            exc_info=True,
+                        )
+
+    async def _adjust_colors(self, mood: dict[str, float]):
         """
         Adjust colors based on mood.
-        
+
         Maps mood to color gradients:
         - High energy -> warm/bright colors
         - Low energy -> cool/dark colors
@@ -526,7 +622,7 @@ class MoodManager(Integration):
             energy = mood["energy"]
             brightness = mood["brightness"]
             warmth = mood["spectral_warmth"]
-            
+
             # Select appropriate gradient
             if energy > 0.7 and brightness > 0.6:
                 # Energetic and bright
@@ -549,18 +645,18 @@ class MoodManager(Integration):
             else:
                 # Neutral
                 gradient = "Viridis"
-            
+
             # Apply gradient to active effects
             intensity = self._config["intensity"]
             await self._apply_global_config({"gradient": gradient}, intensity)
-            
+
         except Exception as e:
             _LOGGER.warning(f"Error adjusting colors: {e}")
-    
-    async def _adjust_effects(self, mood: Dict[str, float]):
+
+    async def _adjust_effects(self, mood: dict[str, float]):
         """
         Adjust effect parameters based on mood.
-        
+
         Adjusts parameters like:
         - Speed based on energy
         - Blur based on intensity
@@ -569,7 +665,7 @@ class MoodManager(Integration):
         try:
             config_updates = {}
             intensity = self._config["intensity"]
-            
+
             # Map energy to speed (if effect supports it)
             energy = mood["energy"]
             if energy > 0.7:
@@ -578,49 +674,47 @@ class MoodManager(Integration):
                 config_updates["speed"] = 2.5 * intensity
             else:
                 config_updates["speed"] = 1.5 * intensity
-            
+
             # Map intensity to blur/smoothing
             if mood["intensity"] > 0.6:
                 config_updates["blur"] = 0.5 * intensity
             else:
                 config_updates["blur"] = 2.0 * intensity
-            
+
             # Map brightness to brightness parameter
             brightness_value = 0.5 + (mood["brightness"] * 0.5 * intensity)
             config_updates["brightness"] = brightness_value
-            
+
             # Apply updates
             if config_updates:
                 await self._apply_global_config(config_updates, intensity)
-                
+
         except Exception as e:
             _LOGGER.warning(f"Error adjusting effects: {e}")
-    
+
     async def _react_to_event(
-        self, 
-        event: StructuralEvent, 
-        mood: Dict[str, float]
+        self, event: StructuralEvent, mood: dict[str, float]
     ) -> None:
         """
         React to dramatic structural events.
-        
+
         This method applies immediate visual reactions to structural events like
         beat drops, builds, climaxes, etc. It can either activate a mapped scene
         or apply default effect configurations.
-        
+
         Args:
             event: The detected structural event (e.g., StructuralEvent.BEAT_DROP)
             mood: Current mood metrics dictionary
         """
         if event is None or event == StructuralEvent.NONE:
             return
-        
+
         try:
             intensity = float(self._config.get("intensity", 0.7))
             intensity = max(0.0, min(1.0, intensity))  # Clamp to 0-1
-            
+
             # Prefer scene pools for this event if configured
-            event_pools: Dict[str, List[str]] = self._config.get("event_scene_pools", {})  # type: ignore
+            event_pools: dict[str, list[str]] = self._config.get("event_scene_pools", {})  # type: ignore
             scene_id = self._get_next_scene_from_pool(event.value, event_pools)
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
@@ -631,67 +725,85 @@ class MoodManager(Integration):
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
                 return
-            
+
             # Default reactions based on event type
             if event == StructuralEvent.BEAT_DROP:
                 # Sudden brightness increase and intense colors
-                await self._apply_global_config({
-                    "brightness": 1.0,
-                    "gradient": "Plasma",
-                    "speed": 5.0 * intensity,
-                }, intensity)
-                
+                await self._apply_global_config(
+                    {
+                        "brightness": 1.0,
+                        "gradient": "Plasma",
+                        "speed": 5.0 * intensity,
+                    },
+                    intensity,
+                )
+
             elif event == StructuralEvent.BUILD_START:
                 # Increase speed and intensity gradually
-                await self._apply_global_config({
-                    "speed": 3.0 * intensity,
-                    "gradient": "Sunset",
-                }, intensity)
-                
+                await self._apply_global_config(
+                    {
+                        "speed": 3.0 * intensity,
+                        "gradient": "Sunset",
+                    },
+                    intensity,
+                )
+
             elif event == StructuralEvent.CLIMAX:
                 # Maximum energy
-                await self._apply_global_config({
-                    "brightness": 1.0,
-                    "speed": 6.0 * intensity,
-                    "gradient": "Rainbow",
-                }, intensity)
-                
+                await self._apply_global_config(
+                    {
+                        "brightness": 1.0,
+                        "speed": 6.0 * intensity,
+                        "gradient": "Rainbow",
+                    },
+                    intensity,
+                )
+
             elif event == StructuralEvent.BREAKDOWN_START:
                 # Reduce complexity
-                await self._apply_global_config({
-                    "speed": 1.0,
-                    "blur": 3.0 * intensity,
-                    "brightness": 0.6,
-                }, intensity)
-                
+                await self._apply_global_config(
+                    {
+                        "speed": 1.0,
+                        "blur": 3.0 * intensity,
+                        "brightness": 0.6,
+                    },
+                    intensity,
+                )
+
             elif event == StructuralEvent.SILENCE:
                 # Minimal activity
-                await self._apply_global_config({
-                    "speed": 0.5,
-                    "brightness": 0.3,
-                    "gradient": "Ocean",
-                }, intensity)
-                
+                await self._apply_global_config(
+                    {
+                        "speed": 0.5,
+                        "brightness": 0.3,
+                        "gradient": "Ocean",
+                    },
+                    intensity,
+                )
+
         except Exception as e:
-            _LOGGER.warning(f"Error reacting to event {event.value if event else 'unknown'}: {e}", exc_info=True)
-    
+            _LOGGER.warning(
+                f"Error reacting to event {event.value if event else 'unknown'}: {e}",
+                exc_info=True,
+            )
+
     async def _switch_mood_scene(self, mood_category: str) -> None:
         """
         Switch to a scene based on mood category.
-        
+
         Args:
             mood_category: The mood category string (e.g., "energetic_bright_intense")
-        
+
         Note:
             Only switches if a mapping exists for the mood category and the scene exists.
         """
         if not mood_category:
             _LOGGER.debug("Empty mood category, skipping scene switch")
             return
-        
+
         try:
             # Rotate through a configured pool for this mood category if available
-            pools: Dict[str, List[str]] = self._config.get("mood_scene_pools", {})  # type: ignore
+            pools: dict[str, list[str]] = self._config.get("mood_scene_pools", {})  # type: ignore
             scene_id = self._get_next_scene_from_pool(mood_category, pools)
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
@@ -703,25 +815,25 @@ class MoodManager(Integration):
                 await self._activate_scene_if_allowed(scene_id)
         except Exception as e:
             _LOGGER.warning(f"Error switching mood scene: {e}", exc_info=True)
-    
+
     async def _switch_structure_scene(self, section: MusicSection) -> None:
         """
         Switch to a scene based on music structure.
-        
+
         Args:
             section: The current music section (e.g., MusicSection.CHORUS)
-        
+
         Note:
             Only switches if a mapping exists for the structure section and the scene exists.
         """
         if section is None:
             _LOGGER.debug("No section provided, skipping scene switch")
             return
-        
+
         try:
             structure_key = f"structure_{section.value}"
             # First attempt to rotate through a pool for this structure key
-            pools: Dict[str, List[str]] = self._config.get("event_scene_pools", {})  # type: ignore
+            pools: dict[str, list[str]] = self._config.get("event_scene_pools", {})  # type: ignore
             scene_id = self._get_next_scene_from_pool(structure_key, pools)
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
@@ -732,30 +844,30 @@ class MoodManager(Integration):
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
         except Exception as e:
-            _LOGGER.warning(f"Error switching structure scene: {e}", exc_info=True)
-    
+            _LOGGER.warning(
+                f"Error switching structure scene: {e}", exc_info=True
+            )
+
     async def _apply_global_config(
-        self, 
-        config: Dict[str, Any], 
-        intensity: float
+        self, config: dict[str, Any], intensity: float
     ) -> None:
         """
         Apply configuration to effects globally.
-        
+
         This method safely applies configuration updates to effects on target virtuals,
         filtering out unsupported parameters and handling errors gracefully.
-        
+
         Args:
             config: Configuration dictionary to apply (e.g., {"speed": 2.0, "brightness": 0.8})
             intensity: Overall intensity modifier (0-1) to scale effect strength
-        
+
         Note:
             Only applies config keys that are supported by each effect's schema.
             Skips virtuals that don't exist or don't have active effects.
         """
         if not config:
             return
-        
+
         try:
             # Get target virtuals
             target_virtuals = self._config.get("target_virtuals", [])
@@ -764,19 +876,21 @@ class MoodManager(Integration):
                 if not hasattr(self._ledfx, "virtuals"):
                     _LOGGER.debug("No virtuals available")
                     return
-                
+
                 target_virtuals = [
-                    virtual.id for virtual in self._ledfx.virtuals.values()
-                    if hasattr(virtual, "active_effect") and virtual.active_effect
+                    virtual.id
+                    for virtual in self._ledfx.virtuals.values()
+                    if hasattr(virtual, "active_effect")
+                    and virtual.active_effect
                 ]
-            
+
             if not target_virtuals:
                 _LOGGER.warning(
                     "No target virtuals found for mood config application. "
                     "Make sure you have virtuals with active effects running."
                 )
                 return
-            
+
             # Apply to each virtual's active effect
             applied_count = 0
             for virtual_id in target_virtuals:
@@ -785,15 +899,20 @@ class MoodManager(Integration):
                     if not virtual:
                         _LOGGER.debug(f"Virtual '{virtual_id}' not found")
                         continue
-                    
-                    if not hasattr(virtual, "active_effect") or not virtual.active_effect:
-                        _LOGGER.debug(f"Virtual '{virtual_id}' has no active effect")
+
+                    if (
+                        not hasattr(virtual, "active_effect")
+                        or not virtual.active_effect
+                    ):
+                        _LOGGER.debug(
+                            f"Virtual '{virtual_id}' has no active effect"
+                        )
                         continue
-                    
+
                     # Filter config to only supported keys
                     effect = virtual.active_effect
-                    supported_config: Dict[str, Any] = {}
-                    
+                    supported_config: dict[str, Any] = {}
+
                     # Get effect schema to check supported keys
                     effect_schema_keys = set()
                     try:
@@ -802,22 +921,27 @@ class MoodManager(Integration):
                             if hasattr(schema, "schema"):
                                 effect_schema_keys = set(schema.schema.keys())
                     except Exception as e:
-                        _LOGGER.debug(f"Error getting schema for effect on virtual '{virtual_id}': {e}")
+                        _LOGGER.debug(
+                            f"Error getting schema for effect on virtual '{virtual_id}': {e}"
+                        )
                         # Fallback: try to get keys from current config if schema fails
                         if hasattr(effect, "_config"):
                             effect_schema_keys = set(effect._config.keys())
-                    
+
                     # Filter config to only keys supported by the effect schema
                     for key, value in config.items():
                         # Check if effect supports this config key in its schema
                         if key in effect_schema_keys:
                             # Apply intensity scaling if value is numeric
-                            if isinstance(value, (int, float)) and key != "gradient":
+                            if (
+                                isinstance(value, (int, float))
+                                and key != "gradient"
+                            ):
                                 scaled_value = value * intensity
                                 supported_config[key] = scaled_value
                             else:
                                 supported_config[key] = value
-                    
+
                     if supported_config:
                         # Update effect config safely
                         try:
@@ -825,56 +949,70 @@ class MoodManager(Integration):
                                 effect.update_config(supported_config)
                                 applied_count += 1
                             else:
-                                _LOGGER.debug(f"Effect on virtual '{virtual_id}' doesn't support update_config")
+                                _LOGGER.debug(
+                                    f"Effect on virtual '{virtual_id}' doesn't support update_config"
+                                )
                         except Exception as e:
-                            _LOGGER.debug(f"Error updating config for virtual '{virtual_id}': {e}")
-                
+                            _LOGGER.debug(
+                                f"Error updating config for virtual '{virtual_id}': {e}"
+                            )
+
                 except Exception as e:
-                    _LOGGER.debug(f"Error processing virtual '{virtual_id}': {e}")
+                    _LOGGER.debug(
+                        f"Error processing virtual '{virtual_id}': {e}"
+                    )
                     continue
-            
+
             if applied_count > 0:
-                _LOGGER.info(f"Applied mood config to {applied_count} virtual(s) with keys: {list(config.keys())}")
+                _LOGGER.info(
+                    f"Applied mood config to {applied_count} virtual(s) with keys: {list(config.keys())}"
+                )
             else:
-                _LOGGER.debug(f"No config applied - {len(target_virtuals)} target virtuals, {len(config)} config keys provided")
-            
+                _LOGGER.debug(
+                    f"No config applied - {len(target_virtuals)} target virtuals, {len(config)} config keys provided"
+                )
+
         except Exception as e:
-            _LOGGER.warning(f"Error applying global config: {e}", exc_info=True)
-    
-    def get_current_mood(self) -> Optional[Dict[str, float]]:
+            _LOGGER.warning(
+                f"Error applying global config: {e}", exc_info=True
+            )
+
+    def get_current_mood(self) -> Optional[dict[str, float]]:
         """
         Get current mood metrics.
-        
+
         Returns:
             Dictionary of current mood metrics, or None if mood detector not initialized.
             Metrics include: energy, valence, intensity, brightness, beat_strength, etc.
         """
         if self._mood_detector is None:
             return None
-        
+
         try:
             return self._mood_detector.get_mood_metrics()
         except Exception as e:
             _LOGGER.debug(f"Error getting current mood: {e}")
             return None
-    
-    def get_current_structure(self) -> Optional[Dict[str, Any]]:
+
+    def get_current_structure(self) -> Optional[dict[str, Any]]:
         """
         Get current structure information.
-        
+
         Returns:
             Dictionary of current structure information, or None if structure analyzer
             not initialized. Includes section, duration, last_event, energy_trend, etc.
         """
         if self._structure_analyzer is None:
             return None
-        
+
         try:
             current_section = self._structure_analyzer.get_current_section()
             last_event = self._structure_analyzer.get_last_event()
-            
+
             return {
-                "section": current_section.value if current_section else "unknown",
+                "section": (
+                    current_section.value if current_section else "unknown"
+                ),
                 "duration": self._structure_analyzer.get_section_duration(),
                 "last_event": last_event.value if last_event else "none",
                 "energy_trend": self._structure_analyzer.get_energy_trend(),
@@ -883,23 +1021,25 @@ class MoodManager(Integration):
         except Exception as e:
             _LOGGER.debug(f"Error getting current structure: {e}")
             return None
-    
+
     async def set_enabled(self, enabled: bool):
         """Enable or disable mood monitoring."""
         self._config["enabled"] = enabled
-        
+
         if enabled:
             await self.start_monitoring()
         else:
             await self.stop_monitoring()
-        
+
         # Save config
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
 
-    def _get_next_scene_from_pool(self, key: str, pools: Dict[str, List[str]]) -> Optional[str]:
+    def _get_next_scene_from_pool(
+        self, key: str, pools: dict[str, list[str]]
+    ) -> Optional[str]:
         """
         Retrieve the next scene ID from a configured pool for a given key.
         Scene pools are rotated to provide variety when the same key occurs
@@ -924,7 +1064,9 @@ class MoodManager(Integration):
         self._pool_indices[key] = (idx + 1) % len(pool)
         return scene_id
 
-    async def _activate_scene_if_allowed(self, scene_id: Optional[str]) -> None:
+    async def _activate_scene_if_allowed(
+        self, scene_id: Optional[str]
+    ) -> None:
         """
         Activate the given scene ID if allowed by the hysteresis rules. This
         prevents frequent scene changes and ensures repeated activations of the
@@ -936,7 +1078,9 @@ class MoodManager(Integration):
         if not scene_id:
             return
         now = time.time()
-        min_interval = float(self._config.get("min_scene_change_interval", 0.0))
+        min_interval = float(
+            self._config.get("min_scene_change_interval", 0.0)
+        )
         # If the requested scene is already active and hysteresis interval has not passed, skip
         if self._current_scene_id == scene_id:
             if (now - self._last_scene_change_time) < min_interval:
@@ -958,4 +1102,3 @@ class MoodManager(Integration):
                 _LOGGER.info(f"Activated scene '{scene_id}'")
             except Exception as e:
                 _LOGGER.warning(f"Failed to activate scene '{scene_id}': {e}")
-
