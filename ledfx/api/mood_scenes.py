@@ -214,11 +214,15 @@ class MoodScenesEndpoint(RestEndpoint):
                 await mood_manager._update_config({"mood_scenes": mood_scenes})
 
             elif mapping_type in ["event", "structure"]:
-                event_scenes = await mood_manager._get_config("event_scenes", {})
+                event_scenes = await mood_manager._get_config(
+                    "event_scenes", {}
+                )
                 if not isinstance(event_scenes, dict):
                     event_scenes = {}
                 event_scenes[key] = scene_id
-                await mood_manager._update_config({"event_scenes": event_scenes})
+                await mood_manager._update_config(
+                    {"event_scenes": event_scenes}
+                )
 
             else:
                 return await self.invalid_request(
@@ -227,7 +231,7 @@ class MoodScenesEndpoint(RestEndpoint):
 
             # Save configuration - get updated config copy
             config_copy = await mood_manager._get_config_copy()
-            
+
             # Update LedFx config structure (integrations is a list, not a dict)
             if "integrations" not in self._ledfx.config:
                 self._ledfx.config["integrations"] = []
@@ -314,14 +318,20 @@ class MoodScenesEndpoint(RestEndpoint):
                 mood_scenes = await mood_manager._get_config("mood_scenes", {})
                 if isinstance(mood_scenes, dict) and key in mood_scenes:
                     del mood_scenes[key]
-                    await mood_manager._update_config({"mood_scenes": mood_scenes})
+                    await mood_manager._update_config(
+                        {"mood_scenes": mood_scenes}
+                    )
                     removed = True
 
             elif mapping_type in ["event", "structure"]:
-                event_scenes = await mood_manager._get_config("event_scenes", {})
+                event_scenes = await mood_manager._get_config(
+                    "event_scenes", {}
+                )
                 if isinstance(event_scenes, dict) and key in event_scenes:
                     del event_scenes[key]
-                    await mood_manager._update_config({"event_scenes": event_scenes})
+                    await mood_manager._update_config(
+                        {"event_scenes": event_scenes}
+                    )
                     removed = True
 
             if not removed:
@@ -331,7 +341,7 @@ class MoodScenesEndpoint(RestEndpoint):
 
             # Save configuration - get updated config copy
             config_copy = await mood_manager._get_config_copy()
-            
+
             # Update LedFx config structure
             if "integrations" not in self._ledfx.config:
                 self._ledfx.config["integrations"] = []

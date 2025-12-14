@@ -473,9 +473,13 @@ class MusicStructureAnalyzer:
         try:
             energy = float(np.clip(mood.get("energy", 0.5), 0.0, 1.0))
             intensity = float(np.clip(mood.get("intensity", 0.5), 0.0, 1.0))
-            beat_strength = float(np.clip(mood.get("beat_strength", 0.5), 0.0, 1.0))
+            beat_strength = float(
+                np.clip(mood.get("beat_strength", 0.5), 0.0, 1.0)
+            )
         except (KeyError, TypeError, ValueError) as e:
-            _LOGGER.debug(f"Error extracting mood metrics for section update: {e}")
+            _LOGGER.debug(
+                f"Error extracting mood metrics for section update: {e}"
+            )
             # Use safe defaults
             energy = 0.5
             intensity = 0.5
@@ -543,7 +547,11 @@ class MusicStructureAnalyzer:
             self._section_start_time = time.time()
 
             # Reset event flags when section changes to prevent stale state
-            if new_section in [MusicSection.VERSE, MusicSection.CHORUS, MusicSection.BRIDGE]:
+            if new_section in [
+                MusicSection.VERSE,
+                MusicSection.CHORUS,
+                MusicSection.BRIDGE,
+            ]:
                 self._in_build = False
                 self._in_drop = False
 

@@ -370,7 +370,9 @@ class MoodManager(Integration):
         try:
             while True:
                 try:
-                    update_interval = await self._get_config("update_interval", 0.5)
+                    update_interval = await self._get_config(
+                        "update_interval", 0.5
+                    )
                     await asyncio.sleep(update_interval)
 
                     if not await self._get_config("enabled", False):
@@ -463,7 +465,11 @@ class MoodManager(Integration):
             # Check for significant mood metric changes (even within same category)
             significant_change = False
             change_magnitude = 0.0
-            last_mood_metrics_copy = self._last_mood_metrics.copy() if self._last_mood_metrics else None
+            last_mood_metrics_copy = (
+                self._last_mood_metrics.copy()
+                if self._last_mood_metrics
+                else None
+            )
 
         if last_mood_metrics_copy is not None:
             try:
@@ -517,7 +523,9 @@ class MoodManager(Integration):
                                     0.3, self._change_threshold * 1.2
                                 )
                             else:
-                                self._adaptive_threshold = self._change_threshold
+                                self._adaptive_threshold = (
+                                    self._change_threshold
+                                )
                         else:
                             self._adaptive_threshold = self._change_threshold
                     else:
@@ -549,7 +557,9 @@ class MoodManager(Integration):
         async with self._state_lock:
             category_changed = mood_category != self._last_mood_category
             time_since_last_change = current_time - self._last_change_time
-            within_cooldown = time_since_last_change < self._min_change_interval
+            within_cooldown = (
+                time_since_last_change < self._min_change_interval
+            )
 
         # Apply updates if:
         # 1. Category changed (always allow, but still respect cooldown for non-category changes), OR
@@ -606,7 +616,10 @@ class MoodManager(Integration):
                         await self._adjust_effects(mood_metrics)
 
             # Scene switching only on category changes (not on metric changes alone)
-            if await self._get_config("switch_scenes", False) and category_changed:
+            if (
+                await self._get_config("switch_scenes", False)
+                and category_changed
+            ):
                 await self._switch_mood_scene(mood_category)
 
         # Check for structure changes (only if structure analyzer is available)
@@ -768,7 +781,11 @@ class MoodManager(Integration):
                 return
             # Check for single-mapping event scenes as fallback
             event_scenes = await self._get_config("event_scenes", {})
-            scene_id = event_scenes.get(event.value) if isinstance(event_scenes, dict) else None
+            scene_id = (
+                event_scenes.get(event.value)
+                if isinstance(event_scenes, dict)
+                else None
+            )
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
                 return
@@ -857,7 +874,11 @@ class MoodManager(Integration):
                 return
             # Fall back to a direct mapping if no pool
             mood_scenes = await self._get_config("mood_scenes", {})
-            scene_id = mood_scenes.get(mood_category) if isinstance(mood_scenes, dict) else None
+            scene_id = (
+                mood_scenes.get(mood_category)
+                if isinstance(mood_scenes, dict)
+                else None
+            )
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
         except Exception as e:
@@ -887,7 +908,11 @@ class MoodManager(Integration):
                 return
             # Fall back to a single mapping
             event_scenes = await self._get_config("event_scenes", {})
-            scene_id = event_scenes.get(structure_key) if isinstance(event_scenes, dict) else None
+            scene_id = (
+                event_scenes.get(structure_key)
+                if isinstance(event_scenes, dict)
+                else None
+            )
             if scene_id:
                 await self._activate_scene_if_allowed(scene_id)
         except Exception as e:
@@ -1135,11 +1160,15 @@ class MoodManager(Integration):
             return
 
         if not self._ledfx.scenes.get(scene_id):
-            _LOGGER.debug(f"Scene '{scene_id}' does not exist, skipping activation")
+            _LOGGER.debug(
+                f"Scene '{scene_id}' does not exist, skipping activation"
+            )
             return
 
         now = time.time()
-        min_interval_val = await self._get_config("min_scene_change_interval", 0.0)
+        min_interval_val = await self._get_config(
+            "min_scene_change_interval", 0.0
+        )
         min_interval = float(min_interval_val)
 
         # Atomic check and update with scene lock

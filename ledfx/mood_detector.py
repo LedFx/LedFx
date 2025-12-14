@@ -258,16 +258,22 @@ class MoodDetector:
                     try:
                         # Ensure it's a numpy array
                         if not isinstance(audio_sample, np.ndarray):
-                            audio_sample = np.asarray(audio_sample, dtype=np.float32)
-                        
+                            audio_sample = np.asarray(
+                                audio_sample, dtype=np.float32
+                            )
+
                         # Check for NaN or Inf values
-                        if np.any(np.isnan(audio_sample)) or np.any(np.isinf(audio_sample)):
-                            _LOGGER.debug("Audio sample contains NaN or Inf values, skipping")
+                        if np.any(np.isnan(audio_sample)) or np.any(
+                            np.isinf(audio_sample)
+                        ):
+                            _LOGGER.debug(
+                                "Audio sample contains NaN or Inf values, skipping"
+                            )
                         else:
                             # Validate data range (clip extreme values)
                             if np.any(np.abs(audio_sample) > 10.0):
                                 audio_sample = np.clip(audio_sample, -1.0, 1.0)
-                            
+
                             self._librosa_extractor.audio_buffer.add_sample(
                                 audio_sample
                             )
@@ -359,14 +365,18 @@ class MoodDetector:
                         ),
                         "intensity": float(np.clip(intensity, 0.0, 1.0)),
                         "brightness": float(np.clip(brightness, 0.0, 1.0)),
-                        "beat_strength": float(np.clip(beat_strength, 0.0, 1.0)),
+                        "beat_strength": float(
+                            np.clip(beat_strength, 0.0, 1.0)
+                        ),
                         "spectral_warmth": float(
                             np.clip(spectral_warmth, 0.0, 1.0)
                         ),
                         "rhythm_regularity": float(
                             np.clip(rhythm_regularity, 0.0, 1.0)
                         ),
-                        "harmonic_ratio": float(np.clip(harmonic_ratio, 0.0, 1.0)),
+                        "harmonic_ratio": float(
+                            np.clip(harmonic_ratio, 0.0, 1.0)
+                        ),
                         "complexity": float(np.clip(complexity, 0.0, 1.0)),
                     }
                 )

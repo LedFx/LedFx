@@ -239,7 +239,7 @@ class MoodEndpoint(RestEndpoint):
 
                 # Save configuration - get updated config copy
                 config_copy = await mood_manager._get_config_copy()
-                
+
                 # Update LedFx config structure - integrations is a list, not a dict
                 if "integrations" not in self._ledfx.config:
                     self._ledfx.config["integrations"] = []
