@@ -345,7 +345,7 @@ class ImageCache:
                 - n_frames: Number of frames (1 for static, >1 for animated)
                 - is_animated: Boolean flag for animation
 
-            Note: Excludes thumbnail cache entries (URLs starting with "asset://").
+            Note: Excludes thumbnail cache entries (entries with params or URLs starting with "asset://").
         """
         entries = [
             {
@@ -362,7 +362,7 @@ class ImageCache:
                 "is_animated": entry.get("is_animated", False),
             }
             for entry in self.metadata["cache_entries"].values()
-            if not entry["url"].startswith("asset://")
+            if not entry["url"].startswith("asset://") and entry.get("params") is None
         ]
 
         # Sort by access_count descending
