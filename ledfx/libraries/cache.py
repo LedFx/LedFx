@@ -362,7 +362,8 @@ class ImageCache:
                 "is_animated": entry.get("is_animated", False),
             }
             for entry in self.metadata["cache_entries"].values()
-            if not entry["url"].startswith("asset://") and entry.get("params") is None
+            if not entry["url"].startswith("asset://")
+            and entry.get("params") is None
         ]
 
         # Sort by access_count descending
