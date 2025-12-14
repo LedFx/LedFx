@@ -656,7 +656,7 @@ class MoodManager(Integration):
                 if (
                     await self._get_config("switch_scenes", False)
                     and section is not None
-                    and section != self._last_section
+                    and section_changed
                 ):
                     try:
                         await self._switch_structure_scene(section)
