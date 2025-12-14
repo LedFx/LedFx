@@ -108,8 +108,8 @@ The mood detection system analyzes audio features to determine:
 
 #. **Optional: Install Advanced Audio Analysis (librosa)**
       - For enhanced mood detection accuracy, install the optional librosa dependency:
-      - ``pip install "ledfx[mood_advanced]"``
-      - Or manually: ``pip install librosa>=0.10.0``
+      - ``pip install librosa>=0.10.0``
+      - If installing LedFx from source, you can use: ``pip install "ledfx[mood_advanced]"``
       - Then enable ``use_librosa`` in the Mood Manager configuration
 
 #. **Configure Mood-to-Scene Mappings (Optional)**
