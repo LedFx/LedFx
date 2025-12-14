@@ -101,7 +101,7 @@ hue = [
     "python-mbedtls==2.9.2; python_version <= \"3.12\" and ((platform_machine != \"aarch64\" and platform_machine != \"armv7l\") and sys_platform == \"linux\" or sys_platform == \"win32\" or sys_platform == \"darwin\")",
 ]
 mood_advanced = [
-    "librosa>=0.10.0",
+    "librosa>=0.11.0",
 ]
 
 [project.scripts]

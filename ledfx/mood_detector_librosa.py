@@ -282,30 +282,7 @@ class LibrosaFeatureExtractor:
 
             features = {}
 
-            # 1. Key Detection (Major/Minor) - Most important for valence
-            # This is computationally expensive, so we catch all exceptions
-            try:
-                # Extract harmonic component first for better key detection
-                y_harmonic = librosa.effects.harmonic(audio_resampled)
-                key, mode = librosa.harmonic.key(
-                    y=y_harmonic, sr=self.target_sample_rate
-                )
-                features["key"] = str(key) if key is not None else None
-                features["mode"] = (
-                    str(mode) if mode is not None else None
-                )  # 'major' or 'minor'
-                features["mode_numeric"] = (
-                    1.0
-                    if mode == "major"
-                    else (0.0 if mode == "minor" else 0.5)
-                )
-            except Exception as e:
-                _LOGGER.debug(f"Error detecting key: {e}", exc_info=False)
-                features["key"] = None
-                features["mode"] = None
-                features["mode_numeric"] = 0.5
-
-            # 2. Chroma Features (Harmonic content)
+            # 1. Chroma Features (Harmonic content) - Extract first for key detection
             try:
                 chroma = librosa.feature.chroma_stft(
                     y=audio_resampled, sr=self.target_sample_rate, n_chroma=12
@@ -318,6 +295,79 @@ class LibrosaFeatureExtractor:
                 _LOGGER.debug(f"Error extracting chroma: {e}")
                 features["chroma"] = None
                 features["chroma_std"] = None
+
+            # 2. Key Detection (Major/Minor) - Most important for valence
+            # Uses Krumhansl-Schmuckler key profiles with chroma features
+            try:
+                if features.get("chroma") is not None:
+                    chroma_vector = np.asarray(features["chroma"])
+                    if len(chroma_vector) == 12:
+                        # Krumhansl-Schmuckler key profiles
+                        # Base profile for C major (chroma order: C, C#, D, D#, E, F, F#, G, G#, A, A#, B)
+                        major_profile_base = np.array([
+                            6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88
+                        ])
+                        
+                        # Base profile for A minor (relative minor of C)
+                        minor_profile_base = np.array([
+                            6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17
+                        ])
+                        
+                        # Generate profiles for all 12 keys by rotating the base profiles
+                        major_profiles = np.array([
+                            np.roll(major_profile_base, i) for i in range(12)
+                        ])
+                        minor_profiles = np.array([
+                            np.roll(minor_profile_base, i) for i in range(12)
+                        ])
+                        
+                        # Normalize chroma vector
+                        chroma_norm = chroma_vector / (np.sum(chroma_vector) + 1e-10)
+                        
+                        # Compute correlations with all key profiles
+                        major_correlations = np.array([
+                            np.corrcoef(chroma_norm, profile)[0, 1]
+                            for profile in major_profiles
+                        ])
+                        minor_correlations = np.array([
+                            np.corrcoef(chroma_norm, profile)[0, 1]
+                            for profile in minor_profiles
+                        ])
+                        
+                        # Find best matching key
+                        major_max_idx = np.argmax(major_correlations)
+                        minor_max_idx = np.argmax(minor_correlations)
+                        major_max_corr = major_correlations[major_max_idx]
+                        minor_max_corr = minor_correlations[minor_max_idx]
+                        
+                        # Key names
+                        key_names = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+                        
+                        # Select best match (major or minor)
+                        if major_max_corr > minor_max_corr:
+                            detected_key = key_names[major_max_idx]
+                            detected_mode = "major"
+                            features["mode_numeric"] = 1.0
+                        else:
+                            detected_key = key_names[minor_max_idx]
+                            detected_mode = "minor"
+                            features["mode_numeric"] = 0.0
+                        
+                        features["key"] = detected_key
+                        features["mode"] = detected_mode
+                    else:
+                        features["key"] = None
+                        features["mode"] = None
+                        features["mode_numeric"] = 0.5
+                else:
+                    features["key"] = None
+                    features["mode"] = None
+                    features["mode_numeric"] = 0.5
+            except Exception as e:
+                _LOGGER.debug(f"Error detecting key: {e}", exc_info=False)
+                features["key"] = None
+                features["mode"] = None
+                features["mode_numeric"] = 0.5
 
             # 3. Tempo Detection
             try:
@@ -492,7 +542,7 @@ class LibrosaFeatureExtractor:
             # 12. Polyphonic Features (Complexity indicator)
             try:
                 # Harmonic/percussive separation
-                y_harmonic, y_percussive = librosa.effects.hpss(
+                y_harmonic, _y_percussive = librosa.effects.hpss(
                     audio_resampled
                 )
                 # Ratio of harmonic to total energy
@@ -725,12 +775,14 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         ):
             tempo_score = min(1.0, (tempo - 100) / 80)  # 100-180 BPM range
             electronic_score = (
-                tempo_score * 0.25
-                + percussive_ratio * 0.25
-                + rhythm_regularity * 0.20
-                + onset_rate * 0.15
-                + (spectral_centroid * 0.8 + 0.2)
-                * 0.15  # Prefer moderate-high brightness
+                tempo_score * 0.20
+                + percussive_ratio * 0.20
+                + rhythm_regularity * 0.15
+                + onset_rate * 0.12
+                + (spectral_centroid * 0.8 + 0.2) * 0.12  # Prefer moderate-high brightness
+                + tempo_stability * 0.10  # Stable tempo = electronic
+                + mfcc_energy * 0.08  # High energy timbre
+                + (1.0 - mfcc_timbre_mean) * 0.03  # Less acoustic timbre
             )
             style_scores["electronic"] = min(1.0, electronic_score)
 
@@ -740,13 +792,14 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         if 95 < tempo < 165:
             tempo_match = 1.0 - abs(tempo - 130) / 35  # Peak around 130 BPM
             rock_score = (
-                max(0.0, tempo_match) * 0.30
-                + (1.0 - abs(spectral_centroid - 0.5) / 0.5)
-                * 0.25  # Balanced brightness
-                + harmonic_ratio * 0.20
-                + rhythm_regularity * 0.15
-                + (1.0 - abs(percussive_ratio - 0.5) / 0.5)
-                * 0.10  # Balanced percussive/harmonic
+                max(0.0, tempo_match) * 0.25
+                + (1.0 - abs(spectral_centroid - 0.5) / 0.5) * 0.20  # Balanced brightness
+                + harmonic_ratio * 0.15
+                + rhythm_regularity * 0.12
+                + (1.0 - abs(percussive_ratio - 0.5) / 0.5) * 0.08  # Balanced percussive/harmonic
+                + spectral_bandwidth * 0.10  # Wider bandwidth = more complex
+                + mfcc_energy * 0.05  # Moderate energy
+                + mfcc_timbre_mean * 0.05  # Some acoustic timbre
             )
             style_scores["rock"] = min(1.0, rock_score)
 
@@ -755,10 +808,13 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  high percussive ratio, high energy, irregular rhythm sometimes
         if tempo >= 140 and spectral_centroid > 0.55:
             metal_score = (
-                min(1.0, (tempo - 120) / 80) * 0.30
-                + spectral_centroid * 0.30
-                + percussive_ratio * 0.20
-                + onset_rate * 0.20
+                min(1.0, (tempo - 120) / 80) * 0.25
+                + spectral_centroid * 0.25
+                + percussive_ratio * 0.18
+                + onset_rate * 0.15
+                + mfcc_energy * 0.10  # High energy timbre
+                + spectral_bandwidth * 0.05  # Wide bandwidth
+                + (1.0 - mfcc_timbre_mean) * 0.02  # Less acoustic
             )
             style_scores["metal"] = min(1.0, metal_score)
 
@@ -767,11 +823,13 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  moderate spectral centroid, complex harmony
         if harmonic_ratio > 0.55:
             jazz_score = (
-                harmonic_ratio * 0.35
-                + (1.0 - rhythm_regularity * 0.8)
-                * 0.25  # Less regular = more jazz-like
-                + (1.0 - abs(spectral_centroid - 0.45) / 0.45) * 0.20
-                + (1.0 - abs(tempo - 120) / 60) * 0.20  # Wide tempo range
+                harmonic_ratio * 0.30
+                + (1.0 - rhythm_regularity * 0.8) * 0.20  # Less regular = more jazz-like
+                + (1.0 - abs(spectral_centroid - 0.45) / 0.45) * 0.15
+                + (1.0 - abs(tempo - 120) / 60) * 0.15  # Wide tempo range
+                + spectral_bandwidth * 0.10  # Complex harmony = wider bandwidth
+                + (1.0 - tempo_stability) * 0.05  # Variable tempo
+                + mfcc_timbre_mean * 0.05  # Acoustic timbre
             )
             style_scores["jazz"] = min(1.0, jazz_score)
 
@@ -780,10 +838,13 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  low zero crossing rate (smooth), low percussive ratio
         if harmonic_ratio > 0.65 and tempo < 125 and zero_crossing < 0.12:
             classical_score = (
-                harmonic_ratio * 0.35
-                + (1.0 - tempo / 125) * 0.25
-                + (1.0 - zero_crossing * 8) * 0.25
-                + (1.0 - percussive_ratio) * 0.15
+                harmonic_ratio * 0.30
+                + (1.0 - tempo / 125) * 0.20
+                + (1.0 - zero_crossing * 8) * 0.20
+                + (1.0 - percussive_ratio) * 0.12
+                + spectral_bandwidth * 0.10  # Complex orchestral = wide bandwidth
+                + (1.0 - tempo_stability) * 0.05  # Variable tempo
+                + mfcc_timbre_mean * 0.03  # Acoustic timbre
             )
             style_scores["classical"] = min(1.0, classical_score)
 
@@ -792,10 +853,12 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  high onset rate, strong beats, regular rhythm
         if 70 < tempo < 115 and percussive_ratio > 0.45:
             hiphop_score = (
-                percussive_ratio * 0.35
-                + (1.0 - abs(tempo - 90) / 25) * 0.25  # Peak around 90 BPM
-                + onset_rate * 0.20
-                + rhythm_regularity * 0.20
+                percussive_ratio * 0.30
+                + (1.0 - abs(tempo - 90) / 25) * 0.22  # Peak around 90 BPM
+                + onset_rate * 0.18
+                + rhythm_regularity * 0.15
+                + tempo_stability * 0.10  # Stable tempo
+                + mfcc_energy * 0.05  # Moderate energy
             )
             style_scores["hip_hop"] = min(1.0, hiphop_score)
 
@@ -804,9 +867,11 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  moderate tempo, moderate regularity
         if harmonic_ratio > 0.55 and spectral_centroid < 0.55:
             acoustic_score = (
-                harmonic_ratio * 0.40
-                + (1.0 - spectral_centroid) * 0.30  # Warmer = better
-                + (1.0 - abs(tempo - 100) / 60) * 0.30  # Wide tempo range
+                harmonic_ratio * 0.35
+                + (1.0 - spectral_centroid) * 0.25  # Warmer = better
+                + (1.0 - abs(tempo - 100) / 60) * 0.25  # Wide tempo range
+                + mfcc_timbre_mean * 0.10  # Acoustic timbre
+                + spectral_bandwidth * 0.05  # Some complexity
             )
             style_scores["acoustic"] = min(1.0, acoustic_score)
 
@@ -815,12 +880,13 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  moderate-high harmonic ratio, catchy/regular rhythm
         if 95 < tempo < 145:
             pop_score = (
-                (1.0 - abs(tempo - 120) / 25) * 0.30  # Peak around 120 BPM
-                + (1.0 - abs(harmonic_ratio - 0.6) / 0.6)
-                * 0.25  # Balanced harmonic
-                + rhythm_regularity * 0.25
-                + (1.0 - abs(spectral_centroid - 0.5) / 0.5)
-                * 0.20  # Balanced brightness
+                (1.0 - abs(tempo - 120) / 25) * 0.25  # Peak around 120 BPM
+                + (1.0 - abs(harmonic_ratio - 0.6) / 0.6) * 0.20  # Balanced harmonic
+                + rhythm_regularity * 0.20
+                + (1.0 - abs(spectral_centroid - 0.5) / 0.5) * 0.15  # Balanced brightness
+                + tempo_stability * 0.12  # Stable tempo
+                + mfcc_energy * 0.05  # Moderate energy
+                + (1.0 - abs(mfcc_timbre_mean - 0.5) / 0.5) * 0.03  # Balanced timbre
             )
             style_scores["pop"] = min(1.0, pop_score)
 
@@ -829,10 +895,13 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  low percussive ratio, low onset rate, smooth
         if tempo < 95 and harmonic_ratio > 0.7 and percussive_ratio < 0.3:
             ambient_score = (
-                (1.0 - tempo / 95) * 0.30
-                + harmonic_ratio * 0.30
-                + (1.0 - percussive_ratio) * 0.20
-                + (1.0 - onset_rate) * 0.20
+                (1.0 - tempo / 95) * 0.25
+                + harmonic_ratio * 0.25
+                + (1.0 - percussive_ratio) * 0.18
+                + (1.0 - onset_rate) * 0.15
+                + (1.0 - mfcc_energy) * 0.10  # Low energy timbre
+                + spectral_bandwidth * 0.05  # Some complexity
+                + mfcc_timbre_mean * 0.02  # Acoustic timbre
             )
             style_scores["ambient"] = min(1.0, ambient_score)
 
@@ -841,23 +910,27 @@ def classify_music_style(features: FeatureDict) -> dict[str, float]:
         #                  expressive (moderate regularity), moderate spectral centroid
         if 75 < tempo < 125:
             blues_score = (
-                (1.0 - abs(tempo - 100) / 25) * 0.30
-                + (1.0 - abs(harmonic_ratio - 0.55) / 0.55) * 0.25
-                + (1.0 - abs(spectral_centroid - 0.45) / 0.45) * 0.25
-                + (1.0 - abs(rhythm_regularity - 0.5) / 0.5)
-                * 0.20  # Moderate regularity
+                (1.0 - abs(tempo - 100) / 25) * 0.25
+                + (1.0 - abs(harmonic_ratio - 0.55) / 0.55) * 0.20
+                + (1.0 - abs(spectral_centroid - 0.45) / 0.45) * 0.20
+                + (1.0 - abs(rhythm_regularity - 0.5) / 0.5) * 0.15  # Moderate regularity
+                + mfcc_timbre_mean * 0.10  # Acoustic timbre
+                + spectral_bandwidth * 0.05  # Some complexity
+                + (1.0 - tempo_stability) * 0.05  # Some tempo variation
             )
             style_scores["blues"] = min(1.0, blues_score)
 
-        # Apply mode-based adjustments (major = more pop/electronic, minor = more rock/metal)
-        if mode == "major":
-            style_scores["pop"] *= 1.15
-            style_scores["electronic"] *= 1.10
-            style_scores["acoustic"] *= 1.10
-        elif mode == "minor":
-            style_scores["rock"] *= 1.15
-            style_scores["metal"] *= 1.15
-            style_scores["blues"] *= 1.10
+        # Apply mode-based adjustments using mode_numeric for smoother weighting
+        # major (1.0) = more pop/electronic, minor (0.0) = more rock/metal
+        mode_weight_major = mode_numeric
+        mode_weight_minor = 1.0 - mode_numeric
+        
+        style_scores["pop"] *= (1.0 + 0.15 * mode_weight_major)
+        style_scores["electronic"] *= (1.0 + 0.10 * mode_weight_major)
+        style_scores["acoustic"] *= (1.0 + 0.10 * mode_weight_major)
+        style_scores["rock"] *= (1.0 + 0.15 * mode_weight_minor)
+        style_scores["metal"] *= (1.0 + 0.15 * mode_weight_minor)
+        style_scores["blues"] *= (1.0 + 0.10 * mode_weight_minor)
 
         # Normalize scores to create probability distribution
         total = sum(style_scores.values())

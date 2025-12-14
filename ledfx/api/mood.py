@@ -29,7 +29,7 @@ class MoodEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/mood"
 
-    async def get(self, request: web.Request) -> web.Response:
+    async def get(self, _request: web.Request) -> web.Response:
         """
         Get current mood and structure information.
 
@@ -217,12 +217,20 @@ class MoodEndpoint(RestEndpoint):
 
             # Update enabled state if provided
             if "enabled" in data:
-                enabled = bool(data["enabled"])
-                await mood_manager.set_enabled(enabled)
+                if not isinstance(data["enabled"], bool):
+                    return await self.invalid_request(
+                        "Field 'enabled' must be a boolean"
+                    )
+                await mood_manager.set_enabled(data["enabled"])
 
             # Update configuration if provided
             if "config" in data:
                 config_updates = data["config"]
+                
+                if not isinstance(config_updates, dict):
+                    return await self.invalid_request(
+                        "Field 'config' must be an object"
+                    )
 
                 # Check if librosa config changed (requires reconnect)
                 librosa_config_changed = any(
@@ -256,8 +264,12 @@ class MoodEndpoint(RestEndpoint):
 
                 # Update or create the integration config entry
                 if mood_manager_config:
-                    mood_manager_config["config"].update(config_copy)
-                    mood_manager_config["active"] = mood_manager._active
+                    cfg = mood_manager_config.get("config")
+                    if not isinstance(cfg, dict):
+                        cfg = {}
+                        mood_manager_config["config"] = cfg
+                    cfg.update(config_copy)
+                    mood_manager_config["active"] = getattr(mood_manager, "_active", True)
                 else:
                     # Create new integration entry
                     self._ledfx.config["integrations"].append(
@@ -283,13 +295,24 @@ class MoodEndpoint(RestEndpoint):
                     _LOGGER.info(
                         "Librosa config changed, reconnecting mood manager..."
                     )
-                    await mood_manager.disconnect()
-                    await mood_manager.connect()
+                    try:
+                        await mood_manager.disconnect()
+                    except Exception as e:
+                        _LOGGER.warning(
+                            f"Error during mood manager disconnect: {e}"
+                        )
+                    try:
+                        await mood_manager.connect()
+                    except Exception as e:
+                        _LOGGER.error(
+                            f"Failed to reconnect mood manager after config change: {e}. "
+                            "Mood manager may be in a disconnected state."
+                        )
 
             return await self.request_success(
                 "success", "Mood detection configured successfully"
             )
 
         except Exception as e:
-            _LOGGER.error(f"Error configuring mood detection: {e}")
+            _LOGGER.exception(f"Error configuring mood detection: {e}")
             return await self.internal_error(str(e))

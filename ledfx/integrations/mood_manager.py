@@ -1081,10 +1081,6 @@ class MoodManager(Integration):
             current_section = self._structure_analyzer.get_current_section()
             last_event = self._structure_analyzer.get_last_event()
 
-            # Get section info with state lock protection
-            async with self._state_lock:
-                last_section = self._last_section
-
             return {
                 "section": (
                     current_section.value if current_section else "unknown"
@@ -1100,7 +1096,7 @@ class MoodManager(Integration):
 
     async def set_enabled(self, enabled: bool):
         """Enable or disable mood monitoring."""
-        self._config["enabled"] = enabled
+        await self._update_config({"enabled": enabled})
 
         if enabled:
             await self.start_monitoring()
