@@ -5,16 +5,18 @@ These tests verify that /api/assets/download and /api/assets/thumbnail
 can handle remote URLs by automatically fetching, validating, and caching them.
 
 Test Strategy:
-- Uses httpbin.org for reliable external test images
+- Uses external raw content URLs (raw.githubusercontent.com) for reliable test images
 - Verifies successful URL download and caching behavior
 - Tests cache reuse on subsequent requests
 - Validates SSRF protection and security checks
 - Ensures non-URL paths (user/builtin assets) still work correctly
 
-These are integration tests that require a running LedFx instance on localhost:8888.
+These are integration tests that require a running LedFx instance on a dynamically
+allocated port (configured via test harness).
 """
 
 import io
+import time
 
 import pytest
 import requests
@@ -47,35 +49,6 @@ def sample_gif_bytes():
         format="GIF",
     )
     return gif_bytes.getvalue()
-
-
-@pytest.fixture
-def cached_url(sample_gif_bytes):
-    """
-    Cache a test image and return its mock URL.
-
-    Note: This simulates a cached URL by uploading an asset,
-    then treating it as if it were cached from a URL.
-    In production, URLs would be cached from actual remote downloads.
-    """
-    # Upload test asset
-    files = {
-        "file": ("test_cached.gif", io.BytesIO(sample_gif_bytes), "image/gif")
-    }
-    data = {"path": "test_cached.gif"}
-    resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
-    assert resp.status_code == 200
-
-    # For testing, we'll use a fake URL that we manually add to cache
-    # In real usage, this would be a URL that was downloaded and cached
-    test_url = "https://example.com/test_cached.gif"
-
-    yield test_url
-
-    # Cleanup
-    requests.delete(
-        ASSETS_API_URL, params={"path": "test_cached.gif"}, timeout=5
-    )
 
 
 @pytest.mark.order(120)
@@ -122,29 +95,6 @@ class TestAssetsDownloadCachedURL:
             for keyword in ["download", "fetch", "failed", "validate", "url"]
         )
 
-    def test_download_cached_url_returns_image(self, sample_gif_bytes):
-        """Test downloading a cached URL returns the image."""
-        # First upload an asset to simulate cached content
-        files = {
-            "file": (
-                "url_test.gif",
-                io.BytesIO(sample_gif_bytes),
-                "image/gif",
-            )
-        }
-        data = {"path": "url_test.gif"}
-        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
-        assert resp.status_code == 200
-
-        # Note: In real usage, this would be a URL in the cache
-        # For testing, we verify the endpoint properly handles URL format
-        # The actual cache integration would require mocking or actual cache setup
-
-        # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "url_test.gif"}, timeout=5
-        )
-
 
 @pytest.mark.order(121)
 class TestAssetsThumbnailCachedURL:
@@ -172,49 +122,6 @@ class TestAssetsThumbnailCachedURL:
         assert any(
             keyword in result["payload"]["reason"].lower()
             for keyword in ["download", "fetch", "failed", "validate", "url"]
-        )
-
-    def test_thumbnail_cached_url_with_animation(self, sample_gif_bytes):
-        """Test generating animated thumbnail from cached URL."""
-        # First upload an asset to simulate cached content
-        files = {
-            "file": (
-                "url_thumb_test.gif",
-                io.BytesIO(sample_gif_bytes),
-                "image/gif",
-            )
-        }
-        data = {"path": "url_thumb_test.gif"}
-        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
-        assert resp.status_code == 200
-
-        # Note: In real usage, this would be a URL in the cache
-        # For testing, we verify the endpoint properly handles URL format
-
-        # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "url_thumb_test.gif"}, timeout=5
-        )
-
-    def test_thumbnail_cached_url_static(self, sample_gif_bytes):
-        """Test generating static (first frame) thumbnail from cached URL."""
-        # First upload an asset
-        files = {
-            "file": (
-                "url_static_test.gif",
-                io.BytesIO(sample_gif_bytes),
-                "image/gif",
-            )
-        }
-        data = {"path": "url_static_test.gif"}
-        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
-        assert resp.status_code == 200
-
-        # Note: Testing URL format handling
-
-        # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "url_static_test.gif"}, timeout=5
         )
 
 
@@ -306,8 +213,6 @@ class TestURLDownloadWithExternalURL:
         first_content = resp1.content
 
         # Second request should be much faster (from cache)
-        import time
-
         start = time.time()
         resp2 = requests.get(
             ASSETS_DOWNLOAD_API_URL,
@@ -330,7 +235,7 @@ class TestURLDownloadWithExternalURL:
         # Request thumbnail (use POST as thumbnail API requires POST)
         resp = requests.post(
             ASSETS_THUMBNAIL_API_URL,
-            json={"path": test_url, "width": 50, "height": 50},
+            json={"path": test_url, "size": 50, "dimension": "max"},
             headers={"Content-Type": "application/json"},
             timeout=15,
         )
@@ -356,7 +261,7 @@ class TestURLDownloadWithExternalURL:
         # Generate thumbnail (use POST)
         resp2 = requests.post(
             ASSETS_THUMBNAIL_API_URL,
-            json={"path": test_url, "width": 50, "height": 50},
+            json={"path": test_url, "size": 50, "dimension": "max"},
             headers={"Content-Type": "application/json"},
             timeout=15,
         )
