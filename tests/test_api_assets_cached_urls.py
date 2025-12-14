@@ -83,7 +83,7 @@ class TestAssetsDownloadCachedURL:
     def test_download_uncached_url_returns_error(self):
         """
         Test that requesting an invalid/unreachable URL returns appropriate error.
-        
+
         This tests error handling when URLs fail to download. For complete coverage,
         we should add tests with a mock HTTP server to test successful downloads.
         """
@@ -151,7 +151,7 @@ class TestAssetsThumbnailCachedURL:
     def test_thumbnail_uncached_url_returns_error(self):
         """
         Test that requesting thumbnail of invalid/unreachable URL returns error.
-        
+
         This tests error handling. For complete coverage, we should add tests
         with a mock HTTP server to test successful URL thumbnail generation.
         """
@@ -275,15 +275,16 @@ class TestURLDownloadWithExternalURL:
         cache_resp = requests.get(CACHE_API_URL, timeout=5)
         assert cache_resp.status_code == 200
         cache_data = cache_resp.json()
-        
+
         # Find our cached URL in the response
         cached_entries = [
-            entry for entry in cache_data["entries"]
+            entry
+            for entry in cache_data["entries"]
             if entry.get("url") == self.TEST_PNG_URL
         ]
         assert len(cached_entries) > 0, "URL should be in cache"
         cached_entry = cached_entries[0]
-        
+
         # Verify metadata
         assert cached_entry["width"] == img.size[0]
         assert cached_entry["height"] == img.size[1]
@@ -292,7 +293,7 @@ class TestURLDownloadWithExternalURL:
     def test_download_url_uses_cache_on_second_request(self):
         """Test that subsequent requests use cached data."""
         test_url = self.TEST_GIF_URL
-        
+
         # First request
         resp1 = requests.get(
             ASSETS_DOWNLOAD_API_URL,
@@ -304,6 +305,7 @@ class TestURLDownloadWithExternalURL:
 
         # Second request should be much faster (from cache)
         import time
+
         start = time.time()
         resp2 = requests.get(
             ASSETS_DOWNLOAD_API_URL,
@@ -311,11 +313,13 @@ class TestURLDownloadWithExternalURL:
             timeout=15,
         )
         cache_time = time.time() - start
-        
+
         assert resp2.status_code == 200
         assert resp2.content == first_content
         # Cache hit should be reasonably fast (< 3 seconds for local cache read + API overhead)
-        assert cache_time < 3.0, f"Cache hit took {cache_time:.2f}s, expected < 3s"
+        assert (
+            cache_time < 3.0
+        ), f"Cache hit took {cache_time:.2f}s, expected < 3s"
 
     def test_thumbnail_url_successfully(self):
         """Test thumbnail generation from URL."""
@@ -329,7 +333,7 @@ class TestURLDownloadWithExternalURL:
             timeout=15,
         )
         assert resp.status_code == 200
-        
+
         # Verify thumbnail was generated (returns valid image)
         thumb_img = Image.open(io.BytesIO(resp.content))
         assert thumb_img.format in ("PNG", "GIF", "JPEG", "WEBP")
@@ -360,10 +364,11 @@ class TestURLDownloadWithExternalURL:
         cache_resp = requests.get(CACHE_API_URL, timeout=5)
         assert cache_resp.status_code == 200
         cache_data = cache_resp.json()
-        
+
         # Should have at least 2 entries for this URL (original + thumbnail)
         url_entries = [
-            entry for entry in cache_data["entries"]
+            entry
+            for entry in cache_data["entries"]
             if entry.get("url") == test_url and entry.get("params") is None
         ]
         # At least original should be cached (thumbnail may be in separate entry with params)
