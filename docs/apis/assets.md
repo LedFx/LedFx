@@ -280,7 +280,7 @@ curl -X POST http://localhost:8888/api/assets -F "file=@/path/to/image.png" -F "
 
 ### Download Asset
 
-Download a specific asset file (user or built-in).
+Download a specific asset file (user, built-in, or remote URL).
 
 **Methods:** Both GET and POST supported
 - **GET** - Browser-friendly, query parameters
@@ -289,6 +289,7 @@ Download a specific asset file (user or built-in).
 **Asset Sources:**
 - **User assets**: No prefix → `{config_dir}/assets/{path}`
 - **Built-in assets**: `builtin://` prefix → `{ledfx_assets}/gifs/{path}`
+- **Remote URLs**: `http://` or `https://` → Automatically fetched and cached with security validation (SSRF protection, size limits, content validation)
 
 #### GET /api/assets/download
 
@@ -298,6 +299,7 @@ Browser-friendly method using query parameters.
 - `path` (string, required) - Asset path
   - User: `"icons/led.png"`
   - Built-in: `"builtin://skull.gif"`
+  - Cached URL: `"https://example.com/image.gif"`
 
 **Response:**
 - **Success**: Binary image data with `Content-Type` header (HTTP 200)
@@ -310,6 +312,9 @@ curl "http://localhost:8888/api/assets/download?path=icons/led.png" --output led
 
 # Built-in asset
 curl "http://localhost:8888/api/assets/download?path=builtin://skull.gif" --output skull.gif
+
+# Cached URL
+curl "http://localhost:8888/api/assets/download?path=https://example.com/image.gif" --output image.gif
 ```
 
 **Browser Usage:**
@@ -339,6 +344,11 @@ Programmatic method using JSON body.
   "path": "builtin://skull.gif"        // Built-in asset
 }
 ```
+```json
+{
+  "path": "https://example.com/image.gif"  // Cached URL
+}
+```
 
 **Response:**
 - **Success**: Binary image data with `Content-Type` header (HTTP 200)
@@ -357,6 +367,12 @@ curl -X POST http://localhost:8888/api/assets/download \
   -H "Content-Type: application/json" \
   -d '{"path": "builtin://skull.gif"}' \
   --output skull.gif
+
+# Cached URL
+curl -X POST http://localhost:8888/api/assets/download \
+  -H "Content-Type: application/json" \
+  -d '{"path": "https://example.com/image.gif"}' \
+  --output image.gif
 ```
 
 **Error Response:**
@@ -374,7 +390,7 @@ curl -X POST http://localhost:8888/api/assets/download \
 
 ### Get Asset Thumbnail
 
-Generate a thumbnail for an asset (user or built-in).
+Generate a thumbnail for an asset (user, built-in, or remote URL).
 
 **Thumbnail Caching:** Generated thumbnails are automatically cached for improved performance. The cache key includes the asset path and all parameters (size, dimension, animated), so different thumbnail variations are cached separately. Cached thumbnails follow the same LRU eviction policy as remote images and are subject to the same cache size/count limits.
 
@@ -383,6 +399,7 @@ Generate a thumbnail for an asset (user or built-in).
 **Asset Sources:**
 - **User assets**: No prefix → `{config_dir}/assets/{path}`
 - **Built-in assets**: `builtin://` prefix → `{ledfx_assets}/gifs/{path}`
+- **Remote URLs**: `http://` or `https://` → Automatically fetched and cached with security validation
 
 **Request Body:**
 ```json
@@ -399,6 +416,7 @@ Generate a thumbnail for an asset (user or built-in).
 - `path` (string, required) - Asset path
   - User: `"backgrounds/galaxy.jpg"`
   - Built-in: `"builtin://skull.gif"`
+  - Cached URL: `"https://example.com/image.gif"`
 - `size` (integer, optional) - Dimension in pixels (16-512, default: 128)
 - `dimension` (string, optional) - Sizing mode (default: "max")
   - `"max"` - Size to longest axis (maintains aspect ratio)
