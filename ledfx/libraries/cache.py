@@ -7,7 +7,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
-from ledfx.assets import get_image_metadata
+from ledfx.utilities.image_utils import get_image_metadata
 
 _LOGGER = logging.getLogger(__name__)
 

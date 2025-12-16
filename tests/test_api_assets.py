@@ -1053,6 +1053,66 @@ class TestAssetsAPIThumbnail:
         assert img.format == "PNG"
         assert max(img.size) <= 64
 
+    def test_thumbnail_auto_invalidation_on_upload(self, sample_png_bytes):
+        """Test that uploading an asset automatically clears cached thumbnails."""
+        # Upload initial red asset
+        red_img = Image.new("RGB", (100, 100), color="red")
+        red_bytes = io.BytesIO()
+        red_img.save(red_bytes, "PNG")
+        red_bytes.seek(0)
+
+        files = {"file": ("auto_invalidate_test.png", red_bytes, "image/png")}
+        data = {"path": "test_auto_invalidate.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail first time (will be cached) - should be red
+        resp1 = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_auto_invalidate.png", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp1.status_code == 200
+        assert resp1.headers["Content-Type"] == "image/png"
+        red_thumbnail = resp1.content
+
+        # Replace asset with blue image
+        blue_img = Image.new("RGB", (100, 100), color="blue")
+        blue_bytes = io.BytesIO()
+        blue_img.save(blue_bytes, "PNG")
+        blue_bytes.seek(0)
+
+        files = {"file": ("auto_invalidate_test.png", blue_bytes, "image/png")}
+        data = {"path": "test_auto_invalidate.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail without force_refresh - cache should have been automatically cleared
+        # so this should return a NEW blue thumbnail (not the cached red one)
+        resp2 = requests.post(
+            ASSETS_THUMBNAIL_API_URL,
+            json={"path": "test_auto_invalidate.png", "size": 64},
+            headers={"Content-Type": "application/json"},
+            timeout=5,
+        )
+        assert resp2.status_code == 200
+        assert resp2.headers["Content-Type"] == "image/png"
+        # Content should be different (blue vs red) - cache was automatically cleared
+        assert resp2.content != red_thumbnail
+
+        # Verify the new thumbnail is valid and correctly sized
+        img2 = Image.open(io.BytesIO(resp2.content))
+        assert img2.format == "PNG"
+        assert max(img2.size) <= 64
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_auto_invalidate.png"},
+            timeout=5,
+        )
+
     def test_thumbnail_force_refresh(self, sample_png_bytes):
         """Test force_refresh parameter bypasses cache and regenerates thumbnail."""
         # Upload initial red asset
@@ -1077,18 +1137,7 @@ class TestAssetsAPIThumbnail:
         assert resp1.headers["Content-Type"] == "image/png"
         cached_content = resp1.content
 
-        # Replace asset with blue image
-        blue_img = Image.new("RGB", (100, 100), color="blue")
-        blue_bytes = io.BytesIO()
-        blue_img.save(blue_bytes, "PNG")
-        blue_bytes.seek(0)
-
-        files = {"file": ("refresh_test.png", blue_bytes, "image/png")}
-        data = {"path": "test_force_refresh.png"}
-        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
-        assert resp.status_code == 200
-
-        # Get thumbnail without force_refresh (should return cached red thumbnail)
+        # Get thumbnail again without force_refresh (should return cached version)
         resp2 = requests.post(
             ASSETS_THUMBNAIL_API_URL,
             json={"path": "test_force_refresh.png", "size": 64},
@@ -1096,9 +1145,9 @@ class TestAssetsAPIThumbnail:
             timeout=5,
         )
         assert resp2.status_code == 200
-        assert resp2.content == cached_content  # Still red (from cache)
+        assert resp2.content == cached_content  # Same from cache
 
-        # Get thumbnail with force_refresh=true (should regenerate from blue asset)
+        # Get thumbnail with force_refresh=true (should bypass cache and regenerate)
         resp3 = requests.post(
             ASSETS_THUMBNAIL_API_URL,
             json={
@@ -1111,15 +1160,13 @@ class TestAssetsAPIThumbnail:
         )
         assert resp3.status_code == 200
         assert resp3.headers["Content-Type"] == "image/png"
-        # Content should be different (blue vs red)
-        assert resp3.content != cached_content
 
         # Verify the regenerated thumbnail is valid and correctly sized
         img3 = Image.open(io.BytesIO(resp3.content))
         assert img3.format == "PNG"
         assert max(img3.size) <= 64
 
-        # Get thumbnail again without force_refresh (should use newly cached blue version)
+        # Get thumbnail again without force_refresh (should use newly cached version)
         resp4 = requests.post(
             ASSETS_THUMBNAIL_API_URL,
             json={"path": "test_force_refresh.png", "size": 64},
@@ -1127,7 +1174,7 @@ class TestAssetsAPIThumbnail:
             timeout=5,
         )
         assert resp4.status_code == 200
-        assert resp4.content == resp3.content  # Blue from cache
+        assert resp4.content == resp3.content  # From cache
 
         # Cleanup
         requests.delete(
