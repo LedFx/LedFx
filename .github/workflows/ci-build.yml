@@ -58,7 +58,7 @@ jobs:
           uv run pytest -v
 
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}.log
@@ -102,7 +102,7 @@ jobs:
           uv run pytest -v
 
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}.log
@@ -145,7 +145,7 @@ jobs:
           uv run ledfx --ci-smoke-test -vv -c debug_config --offline
 
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}.log
@@ -192,7 +192,7 @@ jobs:
           uv run ledfx --ci-smoke-test -vv -c debug_config --offline
 
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}.log
@@ -247,7 +247,7 @@ jobs:
           docker rm ledfx-run-${{ matrix.ARCH }} || echo "Container ledfx-run already removed"
 
       - name: Attach LedFx test log
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: always()
         with:
           name: ledfx-log-${{ runner.os }}-${{ env.IMAGE_NAME }}-${{ matrix.ARCH }}-docker.log
