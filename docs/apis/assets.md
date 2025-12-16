@@ -271,6 +271,9 @@ Upload a new image asset. Requires `multipart/form-data` encoding.
 - File size must not exceed 10MB
 - Uploading to an existing path will replace the file
 
+**Automatic Cache Invalidation:**
+When an asset is uploaded (new or replacing existing), any cached thumbnails for that asset path are automatically cleared. This ensures that subsequent thumbnail requests will generate fresh thumbnails from the new image data, preventing stale cached thumbnails from being served.
+
 **Example:**
 ```bash
 curl -X POST http://localhost:8888/api/assets -F "file=@/path/to/image.png" -F "path=icons/led.png"

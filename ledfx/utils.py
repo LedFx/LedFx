@@ -49,7 +49,7 @@ from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 from ledfx.libraries.cache import ImageCache
-from ledfx.security_utils import (
+from ledfx.utilities.security_utils import (
     DOWNLOAD_TIMEOUT,
     MAX_IMAGE_SIZE_BYTES,
     build_browser_request,
@@ -80,6 +80,7 @@ except ImportError:
 
 
 _LOGGER = logging.getLogger(__name__)
+
 
 # perf_counter has high resolution on all platforms better than 1 ms
 # however on windows until 3.11 sleep is using monotonic at a low resolution

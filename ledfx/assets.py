@@ -24,12 +24,14 @@ from datetime import datetime, timezone
 import PIL.Image as Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
-from ledfx.security_utils import (
+from ledfx.utilities.security_utils import (
     ALLOWED_IMAGE_EXTENSIONS,
     ALLOWED_MIME_TYPES,
     resolve_safe_path_in_directory,
     validate_pil_image,
 )
+from ledfx.utils import get_image_cache
+from ledfx.utilities.image_utils import get_image_metadata
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,36 +107,6 @@ def resolve_safe_asset_path(
     return resolve_safe_path_in_directory(
         assets_root, relative_path, create_dirs, "assets"
     )
-
-
-def get_image_metadata(
-    abs_path: str,
-) -> tuple[int, int, str | None, int, bool]:
-    """
-    Extract metadata from an image file.
-
-    Args:
-        abs_path: Absolute path to the image file
-
-    Returns:
-        tuple: (width, height, format, n_frames, is_animated)
-            - width: Image width in pixels (0 if cannot read)
-            - height: Image height in pixels (0 if cannot read)
-            - format: Image format string ('PNG', 'JPEG', 'GIF', 'WEBP', etc.) or None
-            - n_frames: Number of frames for animated images (1 for static)
-            - is_animated: True if image has multiple frames
-    """
-    try:
-        with Image.open(abs_path) as img:
-            width, height = img.size
-            img_format = img.format  # 'PNG', 'JPEG', 'GIF', 'WEBP', etc.
-            # Get frame count for animated formats (GIF, WebP)
-            n_frames = getattr(img, "n_frames", 1)
-            is_animated = n_frames > 1
-            return width, height, img_format, n_frames, is_animated
-    except Exception as e:
-        _LOGGER.warning(f"Could not read image metadata for {abs_path}: {e}")
-        return 0, 0, None, 1, False
 
 
 def validate_asset_extension(file_path: str) -> tuple[bool, str | None]:
@@ -283,6 +255,7 @@ def save_asset(
     4. Content validation (MIME type, PIL format, real image data)
     5. Overwrite protection (optional)
     6. Atomic write (temp file + rename)
+    7. Thumbnail cache invalidation (clears stale cached thumbnails)
 
     Args:
         config_dir: LedFx configuration directory path
@@ -296,6 +269,12 @@ def save_asset(
             - success: True if file was saved successfully
             - absolute_path: Full path to saved file (None if failed)
             - error_message: Description of failure (None if successful)
+
+    Note:
+        When an asset is saved (either new or overwriting existing), any cached
+        thumbnails for that asset path are automatically cleared to prevent serving
+        stale thumbnails on subsequent requests. Cache clearing failures do not
+        affect the save operation.
     """
     # Ensure assets directory exists
     try:
@@ -366,6 +345,23 @@ def save_asset(
         temp_path = None  # Mark as moved
 
         _LOGGER.info(f"Saved asset: {relative_path} ({len(data)} bytes)")
+
+        # Clear any cached thumbnails for this asset to prevent stale thumbnails
+        try:
+            cache = get_image_cache()
+            if cache:
+                cache_url = f"asset://{relative_path}"
+                deleted_count = cache.delete_all_for_url(cache_url)
+                if deleted_count > 0:
+                    _LOGGER.info(
+                        f"Cleared {deleted_count} cached thumbnail(s) for {relative_path}"
+                    )
+        except Exception as e:
+            # Log but don't fail the save operation if cache clearing fails
+            _LOGGER.warning(
+                f"Failed to clear cached thumbnails for {relative_path}: {e}"
+            )
+
         return True, absolute_path, None
 
     except Exception as e:
