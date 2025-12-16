@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 import PIL.Image as Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
+from ledfx.utilities.image_utils import get_image_metadata
 from ledfx.utilities.security_utils import (
     ALLOWED_IMAGE_EXTENSIONS,
     ALLOWED_MIME_TYPES,
@@ -31,7 +32,6 @@ from ledfx.utilities.security_utils import (
     validate_pil_image,
 )
 from ledfx.utils import get_image_cache
-from ledfx.utilities.image_utils import get_image_metadata
 
 _LOGGER = logging.getLogger(__name__)
 
