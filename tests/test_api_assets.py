@@ -1831,10 +1831,14 @@ class TestAssetsThumbnailGET:
 
         # Cleanup
         requests.delete(
-            ASSETS_API_URL, params={"path": "test_thumb_get_dim.png"}, timeout=5
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_dim.png"},
+            timeout=5,
         )
 
-    def test_thumbnail_get_animated_case_insensitive(self, sample_animated_gif_bytes):
+    def test_thumbnail_get_animated_case_insensitive(
+        self, sample_animated_gif_bytes
+    ):
         """Test that animated parameter is case-insensitive via GET."""
         # Upload animated GIF
         files = {
@@ -1965,5 +1969,7 @@ class TestAssetsThumbnailGET:
 
         # Cleanup
         requests.delete(
-            ASSETS_API_URL, params={"path": "test_thumb_get_all.gif"}, timeout=5
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_all.gif"},
+            timeout=5,
         )

@@ -142,7 +142,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
         animated = request.query.get("animated", "true").lower() == "true"
 
         # Get and validate force_refresh parameter (query params are strings - accept "true"/"false")
-        force_refresh = request.query.get("force_refresh", "false").lower() == "true"
+        force_refresh = (
+            request.query.get("force_refresh", "false").lower() == "true"
+        )
 
         return await self._generate_thumbnail(
             request, asset_path, size, dimension, animated, force_refresh
