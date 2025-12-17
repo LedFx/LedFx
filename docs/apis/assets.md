@@ -70,6 +70,7 @@ LedFx provides **clear separation** between user assets and built-in assets usin
 | `GET /api/assets_fixed` | ❌ | ✅ List only |
 | `GET /api/assets/download` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
 | `POST /api/assets/download` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
+| `GET /api/assets/thumbnail` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
 | `POST /api/assets/thumbnail` | ✅ (no prefix) | ✅ (`builtin://` prefix) |
 | `POST /api/assets` (upload) | ✅ | ❌ Read-only |
 | `DELETE /api/assets` | ✅ | ❌ Read-only |
@@ -391,18 +392,94 @@ curl -X POST http://localhost:8888/api/assets/download \
 
 ---
 
-### Get Asset Thumbnail
+### Download Asset Thumbnail
 
 Generate a thumbnail for an asset (user, built-in, or remote URL).
 
 **Thumbnail Caching:** Generated thumbnails are automatically cached for improved performance. The cache key includes the asset path and all parameters (size, dimension, animated), so different thumbnail variations are cached separately. Cached thumbnails follow the same LRU eviction policy as remote images and are subject to the same cache size/count limits.
 
-#### **Endpoint:** `POST /api/assets/thumbnail`
+**Methods:**
+- **GET** - Browser-friendly, query parameters
+- **POST** - Programmatic, JSON body
 
 **Asset Sources:**
 - **User assets**: No prefix → `{config_dir}/assets/{path}`
 - **Built-in assets**: `builtin://` prefix → `{ledfx_assets}/gifs/{path}`
 - **Remote URLs**: `http://` or `https://` → Automatically fetched and cached with security validation
+
+#### GET /api/assets/thumbnail
+
+Browser-friendly method using query parameters.
+
+**Query Parameters:**
+- `path` (string, required) - Asset path
+  - User: `"backgrounds/galaxy.jpg"`
+  - Built-in: `"builtin://skull.gif"`
+  - Cached URL: `"https://example.com/image.gif"`
+- `size` (integer, optional) - Dimension in pixels (16-512, default: 128)
+- `dimension` (string, optional) - Sizing mode (default: "max")
+  - `"max"` - Size to longest axis (maintains aspect ratio)
+  - `"width"` - Set width to size, scale height proportionally
+  - `"height"` - Set height to size, scale width proportionally
+- `animated` (boolean, optional) - Preserve animation (default: true)
+  - `"true"` - Return animated WebP for GIF/WebP
+  - `"false"` - Return static PNG of first frame
+- `force_refresh` (boolean, optional) - Force regeneration bypassing cache (default: false)
+  - `"true"` - Clear cache and regenerate thumbnail
+  - `"false"` - Use cached thumbnail if available
+
+**Response:**
+- **Success**: Thumbnail image (HTTP 200)
+  - Static: PNG format (`image/png`)
+  - Animated: WebP format (`image/webp`)
+- **Error**: JSON error message (HTTP 200)
+
+**Examples:**
+```bash
+# Default 128px thumbnail (user asset)
+curl "http://localhost:8888/api/assets/thumbnail?path=backgrounds/galaxy.jpg" --output thumb.png
+
+# 64px animated thumbnail (built-in asset)
+curl "http://localhost:8888/api/assets/thumbnail?path=builtin://skull.gif&size=64" --output skull-thumb.webp
+
+# 256px width-constrained thumbnail
+curl "http://localhost:8888/api/assets/thumbnail?path=image.png&size=256&dimension=width" --output thumb-256w.png
+
+# Static PNG of first frame
+curl "http://localhost:8888/api/assets/thumbnail?path=builtin://skull.gif&animated=false" --output skull-static.png
+
+# Force regenerate thumbnail (bypass cache)
+curl "http://localhost:8888/api/assets/thumbnail?path=backgrounds/galaxy.jpg&force_refresh=true" --output fresh-thumb.png
+
+# Cached URL with custom size
+curl "http://localhost:8888/api/assets/thumbnail?path=https://example.com/image.gif&size=200" --output remote-thumb.webp
+```
+
+**Browser Usage:**
+```html
+<!-- Default 128px thumbnail -->
+<img src="http://localhost:8888/api/assets/thumbnail?path=backgrounds/galaxy.jpg" alt="Galaxy">
+
+<!-- 64px animated thumbnail -->
+<img src="http://localhost:8888/api/assets/thumbnail?path=builtin://skull.gif&size=64" alt="Skull">
+
+<!-- Static first frame -->
+<img src="http://localhost:8888/api/assets/thumbnail?path=animation.gif&animated=false" alt="Static">
+
+<!-- Width-constrained thumbnail -->
+<img src="http://localhost:8888/api/assets/thumbnail?path=icon.png&size=200&dimension=width" alt="Icon">
+
+<!-- Thumbnail grid with different sizes -->
+<div class="grid">
+  <img src="http://localhost:8888/api/assets/thumbnail?path=image1.jpg&size=128" alt="Image 1">
+  <img src="http://localhost:8888/api/assets/thumbnail?path=image2.jpg&size=128" alt="Image 2">
+  <img src="http://localhost:8888/api/assets/thumbnail?path=builtin://catfixed.gif&size=128" alt="Cat">
+</div>
+```
+
+#### POST /api/assets/thumbnail
+
+Programmatic method using JSON body.
 
 **Request Body:**
 ```json

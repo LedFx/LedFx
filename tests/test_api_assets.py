@@ -1478,3 +1478,498 @@ class TestAssetsThumbnailBuiltinSupport:
         result = resp.json()
         assert result["status"] == "failed"
         assert "not found" in result["payload"]["reason"].lower()
+
+
+class TestAssetsThumbnailGET:
+    """Test GET /api/assets/thumbnail - browser-friendly thumbnail generation."""
+
+    def test_thumbnail_get_default_size(self, sample_png_bytes):
+        """Test generating thumbnail with default size (128px) via GET."""
+        # Upload asset first
+        files = {
+            "file": (
+                "thumb_get_default.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_default.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail via GET
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_default.png"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify thumbnail dimensions (should be 128x128 for square image)
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert max(img.size) == 128  # Longest dimension should be 128
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_default.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_custom_size(self, sample_png_bytes):
+        """Test generating thumbnail with custom size via GET."""
+        # Upload asset
+        files = {
+            "file": (
+                "thumb_get_custom.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_custom.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with size=64
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_custom.png", "size": "64"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify thumbnail dimensions
+        img = Image.open(io.BytesIO(resp.content))
+        assert max(img.size) == 64
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_custom.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_dimension_width(self, sample_png_bytes):
+        """Test generating thumbnail with width dimension via GET."""
+        # Upload asset
+        files = {
+            "file": (
+                "thumb_get_width.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_width.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with dimension=width
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={
+                "path": "test_thumb_get_width.png",
+                "size": "100",
+                "dimension": "width",
+            },
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify width is 100
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.width == 100
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_width.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_dimension_height(self, sample_png_bytes):
+        """Test generating thumbnail with height dimension via GET."""
+        # Upload asset
+        files = {
+            "file": (
+                "thumb_get_height.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_height.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with dimension=height
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={
+                "path": "test_thumb_get_height.png",
+                "size": "80",
+                "dimension": "height",
+            },
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify height is 80
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.height == 80
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_height.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_animated_true(self, sample_animated_gif_bytes):
+        """Test generating animated thumbnail via GET (animated=true)."""
+        # Upload animated GIF
+        files = {
+            "file": (
+                "thumb_get_animated.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_thumb_get_animated.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get animated thumbnail
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={
+                "path": "test_thumb_get_animated.gif",
+                "animated": "true",
+            },
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/webp"
+
+        # Verify it's animated WebP
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "WEBP"
+        assert getattr(img, "is_animated", False) is True
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_animated.gif"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_animated_false(self, sample_animated_gif_bytes):
+        """Test generating static thumbnail via GET (animated=false)."""
+        # Upload animated GIF
+        files = {
+            "file": (
+                "thumb_get_static.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_thumb_get_static.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get static thumbnail
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={
+                "path": "test_thumb_get_static.gif",
+                "animated": "false",
+            },
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify it's static PNG
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert not getattr(img, "is_animated", False)
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_static.gif"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_builtin_asset(self):
+        """Test generating thumbnail for built-in asset via GET."""
+        # Get list of built-in assets
+        resp = requests.get(
+            f"http://127.0.0.1:{BASE_PORT}/api/assets_fixed", timeout=5
+        )
+        assert resp.status_code == 200
+        builtin_assets = resp.json().get("assets", [])
+
+        if not builtin_assets:
+            pytest.skip("No built-in assets available for testing")
+
+        # Get thumbnail for first built-in asset
+        builtin_path = f"builtin://{builtin_assets[0]['path']}"
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": builtin_path, "size": "64"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] in ("image/png", "image/webp")
+
+        # Verify thumbnail dimensions
+        img = Image.open(io.BytesIO(resp.content))
+        assert max(img.size) == 64
+
+    def test_thumbnail_get_missing_path(self):
+        """Test that GET without path parameter returns error."""
+        resp = requests.get(ASSETS_THUMBNAIL_API_URL, timeout=5)
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "path" in result["payload"]["reason"].lower()
+
+    def test_thumbnail_get_nonexistent_asset(self):
+        """Test that requesting thumbnail of non-existent asset via GET returns error."""
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "nonexistent_get_thumb.png"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "not found" in result["payload"]["reason"].lower()
+
+    def test_thumbnail_get_invalid_size(self, sample_png_bytes):
+        """Test that invalid size parameter returns error via GET."""
+        # Upload asset
+        files = {
+            "file": (
+                "thumb_get_invalid.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_invalid.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Test size too small
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_invalid.png", "size": "10"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "between" in result["payload"]["reason"].lower()
+
+        # Test size too large
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_invalid.png", "size": "1000"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "between" in result["payload"]["reason"].lower()
+
+        # Test non-numeric size
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_invalid.png", "size": "invalid"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "integer" in result["payload"]["reason"].lower()
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_invalid.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_invalid_dimension(self, sample_png_bytes):
+        """Test that invalid dimension parameter returns error via GET."""
+        # Upload asset
+        files = {
+            "file": (
+                "thumb_get_dim.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_dim.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Test invalid dimension
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_dim.png", "dimension": "invalid"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        result = resp.json()
+        assert result["status"] == "failed"
+        assert "dimension" in result["payload"]["reason"].lower()
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_dim.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_animated_case_insensitive(
+        self, sample_animated_gif_bytes
+    ):
+        """Test that animated parameter is case-insensitive via GET."""
+        # Upload animated GIF
+        files = {
+            "file": (
+                "thumb_get_case.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_thumb_get_case.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Test animated=TRUE (uppercase - should return WebP)
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_case.gif", "animated": "TRUE"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/webp"
+
+        # Test animated=False (mixed case - should return PNG)
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_case.gif", "animated": "False"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Test any non-"true" value is treated as false (should return PNG)
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_case.gif", "animated": "maybe"},
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_case.gif"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_force_refresh(self, sample_png_bytes):
+        """Test force_refresh parameter via GET."""
+        # Upload asset
+        files = {
+            "file": (
+                "thumb_get_refresh.png",
+                io.BytesIO(sample_png_bytes),
+                "image/png",
+            )
+        }
+        data = {"path": "test_thumb_get_refresh.png"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail (will be cached)
+        resp1 = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={"path": "test_thumb_get_refresh.png", "size": "100"},
+            timeout=5,
+        )
+        assert resp1.status_code == 200
+
+        # Get thumbnail with force_refresh=true
+        resp2 = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={
+                "path": "test_thumb_get_refresh.png",
+                "size": "100",
+                "force_refresh": "true",
+            },
+            timeout=5,
+        )
+        assert resp2.status_code == 200
+        assert resp2.headers["Content-Type"] == "image/png"
+
+        # Both should return valid images
+        img1 = Image.open(io.BytesIO(resp1.content))
+        img2 = Image.open(io.BytesIO(resp2.content))
+        assert img1.size == img2.size
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_refresh.png"},
+            timeout=5,
+        )
+
+    def test_thumbnail_get_all_parameters(self, sample_animated_gif_bytes):
+        """Test GET with all parameters combined."""
+        # Upload animated GIF
+        files = {
+            "file": (
+                "thumb_get_all.gif",
+                io.BytesIO(sample_animated_gif_bytes),
+                "image/gif",
+            )
+        }
+        data = {"path": "test_thumb_get_all.gif"}
+        resp = requests.post(ASSETS_API_URL, files=files, data=data, timeout=5)
+        assert resp.status_code == 200
+
+        # Get thumbnail with all parameters
+        resp = requests.get(
+            ASSETS_THUMBNAIL_API_URL,
+            params={
+                "path": "test_thumb_get_all.gif",
+                "size": "200",
+                "dimension": "width",
+                "animated": "false",
+                "force_refresh": "true",
+            },
+            timeout=5,
+        )
+        assert resp.status_code == 200
+        assert resp.headers["Content-Type"] == "image/png"
+
+        # Verify dimensions
+        img = Image.open(io.BytesIO(resp.content))
+        assert img.format == "PNG"
+        assert img.width == 200
+
+        # Cleanup
+        requests.delete(
+            ASSETS_API_URL,
+            params={"path": "test_thumb_get_all.gif"},
+            timeout=5,
+        )

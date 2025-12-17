@@ -70,11 +70,85 @@ class AssetsThumbnailEndpoint(RestEndpoint):
     - Built-in assets: "builtin://skull.gif" (builtin:// prefix)
     - Remote URLs: "https://example.com/image.gif" (automatically fetched and cached)
 
+    Supports both GET and POST methods:
+    - GET: /api/assets/thumbnail?path=icons/led.png&size=128 (browser-friendly)
+    - POST: JSON body with parameters (programmatic use)
+
     Remote URLs are validated (SSRF protection, size limits, content validation),
     fetched if not cached, and cached for future requests.
     """
 
     ENDPOINT_PATH = "/api/assets/thumbnail"
+
+    async def get(self, request: web.Request) -> web.Response:
+        """
+        Generate and return a thumbnail of an asset via GET request.
+
+        Query Parameters:
+            path (required): Asset identifier
+                - User assets: "icons/led.png" (no prefix)
+                - Built-in assets: "builtin://skull.gif" (builtin:// prefix)
+                - Cached URLs: "https://example.com/image.gif" (http:// or https://)
+            size (optional): Dimension size in pixels (default 128, range 16-512)
+            dimension (optional): Which dimension to apply size to (default "max")
+                - "max": Apply to longest axis (default)
+                - "width": Apply to width, scale height proportionally
+                - "height": Apply to height, scale width proportionally
+            animated (optional): For multi-frame images, preserve animation (default true)
+                - "true": Return animated WebP for animated images
+                - "false": Return static PNG of first frame
+            force_refresh (optional): Force regeneration bypassing cache (default false)
+                - "true": Clear cache and regenerate thumbnail
+                - "false": Use cached thumbnail if available
+
+        Returns:
+            PNG or WebP image data with appropriate Content-Type header.
+            - Static images: image/png
+            - Animated images (when animated=true): image/webp
+            - Animated images (when animated=false): image/png (first frame only)
+        """
+        asset_path = request.query.get("path")
+
+        if not asset_path:
+            return await self.invalid_request(
+                message='Required query parameter "path" was not provided',
+                type="error",
+            )
+
+        # Get and validate size parameter
+        size = request.query.get("size", str(DEFAULT_THUMBNAIL_SIZE))
+        try:
+            size = int(size)
+            if size < MIN_THUMBNAIL_SIZE or size > MAX_THUMBNAIL_SIZE:
+                return await self.invalid_request(
+                    message=f"Size must be between {MIN_THUMBNAIL_SIZE} and {MAX_THUMBNAIL_SIZE} pixels",
+                    type="error",
+                )
+        except (ValueError, TypeError):
+            return await self.invalid_request(
+                message="Size must be an integer",
+                type="error",
+            )
+
+        # Get and validate dimension parameter
+        dimension = request.query.get("dimension", "max")
+        if dimension not in ("max", "width", "height"):
+            return await self.invalid_request(
+                message='Dimension must be "max", "width", or "height"',
+                type="error",
+            )
+
+        # Get and validate animated parameter (query params are strings - accept "true"/"false")
+        animated = request.query.get("animated", "true").lower() == "true"
+
+        # Get and validate force_refresh parameter (query params are strings - accept "true"/"false")
+        force_refresh = (
+            request.query.get("force_refresh", "false").lower() == "true"
+        )
+
+        return await self._generate_thumbnail(
+            request, asset_path, size, dimension, animated, force_refresh
+        )
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -154,6 +228,33 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                 type="error",
             )
 
+        return await self._generate_thumbnail(
+            request, asset_path, size, dimension, animated, force_refresh
+        )
+
+    async def _generate_thumbnail(
+        self,
+        request: web.Request,
+        asset_path: str,
+        size: int,
+        dimension: str,
+        animated: bool,
+        force_refresh: bool,
+    ) -> web.Response:
+        """
+        Internal helper to generate a thumbnail for an asset.
+
+        Args:
+            request: The aiohttp request object
+            asset_path: Asset identifier (may include builtin:// prefix or HTTP/HTTPS URL)
+            size: Thumbnail size in pixels (16-512)
+            dimension: Which dimension to apply size to ("max", "width", or "height")
+            animated: Whether to preserve animation for multi-frame images
+            force_refresh: Whether to bypass cache and regenerate
+
+        Returns:
+            Binary image response (PNG or WebP) or JSON error response
+        """
         # Check if path is a cached remote URL
         is_cached_url = asset_path.startswith(("http://", "https://"))
 
