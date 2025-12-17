@@ -68,7 +68,7 @@ class TestAssetsDownloadCachedURL:
         """
         # Simulate URLError (connection timeout/refused)
         mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
-        
+
         test_url = "https://example.com/not_in_cache.gif"
 
         # GET method
@@ -117,7 +117,7 @@ class TestAssetsThumbnailCachedURL:
         """
         # Simulate URLError (connection timeout/refused)
         mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
-        
+
         test_url = "https://example.com/not_in_cache.gif"
 
         resp = requests.post(
@@ -169,7 +169,7 @@ class TestCachedURLIntegration:
 class TestURLDownloadWithExternalURL:
     """
     Integration tests with real external URLs.
-    
+
     These tests make actual network requests to GitHub and may be slow
     if network is unavailable.
     """
