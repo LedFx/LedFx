@@ -67,8 +67,8 @@ class TestCacheRefreshAPI:
         assert resp.status_code == 200
         result = resp.json()
         # Bare response returns data directly (no status/payload wrapping)
-        assert "deleted" in result
-        assert isinstance(result["deleted"], bool)
+        assert "refreshed" in result
+        assert isinstance(result["refreshed"], bool)
 
         # Cleanup
         requests.delete(
@@ -145,8 +145,8 @@ class TestCacheRefreshAPI:
         assert resp.status_code == 200
         result = resp.json()
         # Bare response returns data directly
-        assert "deleted" in result
-        assert result["deleted"] is False  # URL was not cached
+        assert "refreshed" in result
+        assert result["refreshed"] is False  # URL was not cached
 
     def test_refresh_all_variants_boolean_validation(self):
         """Test that all_variants parameter only accepts boolean values."""
@@ -164,7 +164,7 @@ class TestCacheRefreshAPI:
             assert resp.status_code == 200
             # Bare response should return data directly
             result = resp.json()
-            assert "cleared_count" in result or "deleted" in result
+            assert "cleared_count" in result or "refreshed" in result
 
         # Test invalid types - strings, integers, etc.
         for invalid_value in ["true", "false", "1", "0", 1, 0, {}, [], None]:
