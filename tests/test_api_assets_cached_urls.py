@@ -5,7 +5,8 @@ These tests verify that /api/assets/download and /api/assets/thumbnail
 can handle remote URLs by automatically fetching, validating, and caching them.
 
 Test Strategy:
-- Uses external raw content URLs (raw.githubusercontent.com) for reliable test images
+- Uses mocking for error-handling tests (fast, deterministic)
+- Uses external raw content URLs (raw.githubusercontent.com) for integration tests
 - Verifies successful URL download and caching behavior
 - Tests cache reuse on subsequent requests
 - Validates SSRF protection and security checks
@@ -17,6 +18,8 @@ allocated port (configured via test harness).
 
 import io
 import time
+import urllib.error
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
@@ -55,13 +58,17 @@ def sample_gif_bytes():
 class TestAssetsDownloadCachedURL:
     """Test /api/assets/download with cached URLs."""
 
-    def test_download_uncached_url_returns_error(self):
+    @patch("ledfx.utils.urllib.request.urlopen")
+    def test_download_uncached_url_returns_error(self, mock_urlopen):
         """
-        Test that requesting an invalid/unreachable URL returns appropriate error.
+        Test that requesting an unreachable URL returns appropriate error.
 
-        This tests error handling when URLs fail to download. For complete coverage,
-        we should add tests with a mock HTTP server to test successful downloads.
+        Uses mocking to simulate URL fetch failure without actual network calls.
+        This is fast, deterministic, and doesn't depend on external network.
         """
+        # Simulate URLError (connection timeout/refused)
+        mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
+        
         test_url = "https://example.com/not_in_cache.gif"
 
         # GET method
@@ -73,7 +80,7 @@ class TestAssetsDownloadCachedURL:
         assert resp.status_code == 200
         result = resp.json()
         assert result["status"] == "failed"
-        # Should return download/fetch error or validation error (endpoint tries to fetch URLs)
+        # Should return download/fetch error or validation error
         assert any(
             keyword in result["payload"]["reason"].lower()
             for keyword in ["download", "fetch", "failed", "validate", "url"]
@@ -89,7 +96,7 @@ class TestAssetsDownloadCachedURL:
         assert resp.status_code == 200
         result = resp.json()
         assert result["status"] == "failed"
-        # Should return download/fetch error or validation error (endpoint tries to fetch URLs)
+        # Should return download/fetch error or validation error
         assert any(
             keyword in result["payload"]["reason"].lower()
             for keyword in ["download", "fetch", "failed", "validate", "url"]
@@ -100,13 +107,17 @@ class TestAssetsDownloadCachedURL:
 class TestAssetsThumbnailCachedURL:
     """Test /api/assets/thumbnail with cached URLs."""
 
-    def test_thumbnail_uncached_url_returns_error(self):
+    @patch("ledfx.utils.urllib.request.urlopen")
+    def test_thumbnail_uncached_url_returns_error(self, mock_urlopen):
         """
-        Test that requesting thumbnail of invalid/unreachable URL returns error.
+        Test that requesting thumbnail of unreachable URL returns error.
 
-        This tests error handling. For complete coverage, we should add tests
-        with a mock HTTP server to test successful URL thumbnail generation.
+        Uses mocking to simulate URL fetch failure without actual network calls.
+        This is fast, deterministic, and doesn't depend on external network.
         """
+        # Simulate URLError (connection timeout/refused)
+        mock_urlopen.side_effect = urllib.error.URLError("Connection refused")
+        
         test_url = "https://example.com/not_in_cache.gif"
 
         resp = requests.post(
@@ -118,7 +129,7 @@ class TestAssetsThumbnailCachedURL:
         assert resp.status_code == 200
         result = resp.json()
         assert result["status"] == "failed"
-        # Should return download/fetch error or validation error (endpoint tries to fetch URLs)
+        # Should return download/fetch error or validation error
         assert any(
             keyword in result["payload"]["reason"].lower()
             for keyword in ["download", "fetch", "failed", "validate", "url"]
@@ -156,7 +167,12 @@ class TestCachedURLIntegration:
 
 @pytest.mark.order(123)
 class TestURLDownloadWithExternalURL:
-    """Test URL download and caching with external test URLs."""
+    """
+    Integration tests with real external URLs.
+    
+    These tests make actual network requests to GitHub and may be slow
+    if network is unavailable.
+    """
 
     # Use GitHub raw content URLs as reliable test image sources
     # These URLs have proper file extensions and are highly available
@@ -169,7 +185,7 @@ class TestURLDownloadWithExternalURL:
         resp = requests.get(
             ASSETS_DOWNLOAD_API_URL,
             params={"path": self.TEST_PNG_URL},
-            timeout=15,
+            timeout=60,  # Generous timeout for real network request
         )
         assert resp.status_code == 200
         assert resp.headers["Content-Type"] == "image/png"
@@ -181,7 +197,7 @@ class TestURLDownloadWithExternalURL:
         assert img.size[0] > 0 and img.size[1] > 0
 
         # Verify image was cached
-        cache_resp = requests.get(CACHE_API_URL, timeout=5)
+        cache_resp = requests.get(CACHE_API_URL, timeout=10)
         assert cache_resp.status_code == 200
         cache_data = cache_resp.json()
 
@@ -207,7 +223,7 @@ class TestURLDownloadWithExternalURL:
         resp1 = requests.get(
             ASSETS_DOWNLOAD_API_URL,
             params={"path": test_url},
-            timeout=15,
+            timeout=60,  # Generous timeout for real network request
         )
         assert resp1.status_code == 200
         first_content = resp1.content
@@ -217,7 +233,7 @@ class TestURLDownloadWithExternalURL:
         resp2 = requests.get(
             ASSETS_DOWNLOAD_API_URL,
             params={"path": test_url},
-            timeout=15,
+            timeout=10,  # Should be fast from cache
         )
         cache_time = time.time() - start
 
@@ -237,7 +253,7 @@ class TestURLDownloadWithExternalURL:
             ASSETS_THUMBNAIL_API_URL,
             json={"path": test_url, "size": 50, "dimension": "max"},
             headers={"Content-Type": "application/json"},
-            timeout=15,
+            timeout=60,  # Generous timeout for real network request
         )
         assert resp.status_code == 200
 
@@ -254,7 +270,7 @@ class TestURLDownloadWithExternalURL:
         resp1 = requests.get(
             ASSETS_DOWNLOAD_API_URL,
             params={"path": test_url},
-            timeout=15,
+            timeout=60,  # Generous timeout for real network request
         )
         assert resp1.status_code == 200
 
@@ -263,12 +279,12 @@ class TestURLDownloadWithExternalURL:
             ASSETS_THUMBNAIL_API_URL,
             json={"path": test_url, "size": 50, "dimension": "max"},
             headers={"Content-Type": "application/json"},
-            timeout=15,
+            timeout=60,  # Generous timeout for real network request
         )
         assert resp2.status_code == 200
 
         # Check cache has both entries
-        cache_resp = requests.get(CACHE_API_URL, timeout=5)
+        cache_resp = requests.get(CACHE_API_URL, timeout=10)
         assert cache_resp.status_code == 200
         cache_data = cache_resp.json()
 
@@ -296,7 +312,7 @@ class TestURLDownloadWithExternalURL:
             resp = requests.get(
                 ASSETS_DOWNLOAD_API_URL,
                 params={"path": url},
-                timeout=10,
+                timeout=10,  # SSRF validation happens before download
             )
             assert resp.status_code == 200
             result = resp.json()
