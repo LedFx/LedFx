@@ -392,7 +392,7 @@ curl -X POST http://localhost:8888/api/assets/download \
 
 ---
 
-### Get Asset Thumbnail
+### Download Asset Thumbnail
 
 Generate a thumbnail for an asset (user, built-in, or remote URL).
 
