@@ -422,11 +422,11 @@ Browser-friendly method using query parameters.
   - `"width"` - Set width to size, scale height proportionally
   - `"height"` - Set height to size, scale width proportionally
 - `animated` (boolean, optional) - Preserve animation (default: true)
-  - `"true"` or `"1"` - Return animated WebP for GIF/WebP
-  - `"false"` or `"0"` - Return static PNG of first frame
+  - `"true"` - Return animated WebP for GIF/WebP
+  - `"false"` - Return static PNG of first frame
 - `force_refresh` (boolean, optional) - Force regeneration bypassing cache (default: false)
-  - `"true"` or `"1"` - Clear cache and regenerate thumbnail
-  - `"false"` or `"0"` - Use cached thumbnail if available
+  - `"true"` - Clear cache and regenerate thumbnail
+  - `"false"` - Use cached thumbnail if available
 
 **Response:**
 - **Success**: Thumbnail image (HTTP 200)
