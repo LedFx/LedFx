@@ -73,11 +73,13 @@ class CacheRefreshEndpoint(RestEndpoint):
         if url.startswith(("http://", "https://")):
             # Delete from cache
             deleted = cache.delete(url)
-            
+
             # Immediately re-download and cache (force_refresh=True bypasses cache check)
             _LOGGER.info(f"Actively refreshing cached URL: {url}")
-            image = open_image(url, force_refresh=True, config_dir=self._ledfx.config_dir)
-            
+            image = open_image(
+                url, force_refresh=True, config_dir=self._ledfx.config_dir
+            )
+
             if image:
                 # Re-download succeeded, image is now cached
                 return await self.bare_request_success({"refreshed": True})
@@ -85,7 +87,7 @@ class CacheRefreshEndpoint(RestEndpoint):
                 # Re-download failed
                 return await self.invalid_request(
                     message=f"Failed to refresh URL: {url}. Image could not be downloaded.",
-                    type="error"
+                    type="error",
                 )
         else:
             # For local assets (asset:// or builtin://), just clear the cache
