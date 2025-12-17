@@ -6,7 +6,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.utils import get_image_cache
+from ledfx.utils import get_image_cache, open_image
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,20 +18,20 @@ class CacheRefreshEndpoint(RestEndpoint):
 
     async def post(self, request: web.Request) -> web.Response:
         """
-        Clear a cached image to force re-download on next access.
+        Refresh a cached image by re-downloading from the origin server.
 
-        Removes the specified URL from cache. Next request will re-download
-        from origin server and cache the fresh copy.
+        Removes the specified URL from cache, then immediately re-downloads
+        and caches the fresh copy. For local assets, clears cache variants.
 
         Request Body:
-            url (required): URL to clear from cache
+            url (required): URL to refresh (must be http:// or https://)
             all_variants (optional): If true, clears all cache entries for that URL
                                     (including thumbnails with different params)
 
         Returns:
             Bare response with cache operation results:
-            - all_variants=true: {"cleared_count": int}
-            - all_variants=false: {"deleted": bool}
+            - all_variants=true: {"cleared_count": int} (for local assets/thumbnails)
+            - all_variants=false: {"refreshed": bool} (for URLs - true if re-downloaded successfully)
 
             Error responses use standard format with status/payload for validation errors.
         """
@@ -69,6 +69,28 @@ class CacheRefreshEndpoint(RestEndpoint):
                 {"cleared_count": cleared_count}
             )
 
-        # Clear the URL from cache to force refresh on next access
-        deleted = cache.delete(url)
-        return await self.bare_request_success({"deleted": deleted})
+        # Check if URL is a remote image (http/https)
+        if url.startswith(("http://", "https://")):
+            # Delete from cache
+            deleted = cache.delete(url)
+
+            # Immediately re-download and cache (force_refresh=True bypasses cache check)
+            _LOGGER.info(f"Actively refreshing cached URL: {url}")
+            image = open_image(
+                url, force_refresh=True, config_dir=self._ledfx.config_dir
+            )
+
+            if image:
+                # Re-download succeeded, image is now cached
+                return await self.bare_request_success({"refreshed": True})
+            else:
+                # Re-download failed
+                return await self.invalid_request(
+                    message=f"Failed to refresh URL: {url}. Image could not be downloaded.",
+                    type="error",
+                )
+        else:
+            # For local assets (asset:// or builtin://), just clear the cache
+            # Can't "refresh" a local file, only clear cached variants
+            deleted = cache.delete(url)
+            return await self.bare_request_success({"refreshed": deleted})

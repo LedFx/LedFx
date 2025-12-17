@@ -166,13 +166,25 @@ This endpoint removes the specified URL from the cache. The next time the image 
 ```
 
 **Parameters:**
-- `url` (required): The URL to clear from cache
+- `url` (required): The URL to refresh in cache
 - `all_variants` (optional, default: false): If true, clears all cached entries for this URL (useful for clearing all thumbnail size/dimension variations of an asset)
 
-**Success Response (single entry):**
+**Behavior:**
+- For `http://` or `https://` URLs: Actively refreshes by deleting the cached entry and immediately re-downloading from the origin server
+- For `asset://` URLs (local assets): Clears the cache entry only (no re-download)
+- With `all_variants=true`: Clears all cached variants without re-downloading
+
+**Success Response (single entry refreshed):**
 ```json
 {
-  "deleted": true
+  "refreshed": true
+}
+```
+
+**Success Response (single entry not in cache):**
+```json
+{
+  "refreshed": false
 }
 ```
 
@@ -190,6 +202,17 @@ This endpoint removes the specified URL from the cache. The next time the image 
   "payload": {
     "type": "error",
     "reason": "Missing 'url' in request body"
+  }
+}
+```
+
+**Error Response (re-download failed):**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Failed to refresh URL: https://example.com/image.gif..."
   }
 }
 ```
