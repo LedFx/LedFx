@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Use [Assets Workflow](settings/asset_workflow.md) for graphical assets mangement.
+Use [Assets Workflow](settings/asset_workflow.md) for graphical assets management.
 
 LedFx previously allowed some endpoints to load media using either a URL or a local file path. While convenient, accepting arbitrary paths and URLs can lead to well-known security issues such as path traversal (reading files outside the intended directory) and SSRF (forcing the server to fetch unintended network resources).
 
@@ -25,7 +25,7 @@ They will have to be updated manually using the new asset manager workflow, that
 
 Please see the documentation at: [Assets Workflow](settings/asset_workflow.md)
 
-It's a drag and drop experience and offers many advantages for the future, security being the critical need, but we also get ease of use, caching and thumbnail performance.
+It's a drag-and-drop experience and offers many advantages for the future, security being the critical need, but we also get ease of use, caching and thumbnail performance.
 
 Unfortunately it's not possible for LedFx to automatically copy over your historical assets, such an implementation would only persist the security risk, and we must draw a line under that.
 
@@ -89,7 +89,7 @@ Instead of “trying to open whatever you gave me,” the API fails fast with a 
 
 - If you previously called image/GIF helper APIs with an absolute local path (like `/home/user/...` or `C:\...`) and that path is not inside LedFx's allowed directories, it will now be rejected. This is intentional, because the older behavior could be used for arbitrary file access.
 - If you previously used "creative" URLs (non-http schemes, odd encodings, etc.), those may now be rejected as unsafe.
-- The recommended pattern is: put user-provided media into LedFx's managed asset location / use the assets workflow and reference it through the API in the supported way, rather than pointing LedFx at arbitrary places on disk.
+- The recommended pattern is: put user-provided media into LedFx's managed asset location and use the assets workflow and reference it through the API in the supported way, rather than pointing LedFx at arbitrary places on disk.
 
 ## What was I supposed to do now?
 
