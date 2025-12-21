@@ -313,7 +313,7 @@ ESP8266/ESP32 device that works with LedFx.
 >
 >     > -   Compatible Devices:
 >     >     -   ESP8266
->     >     -   `Configuration Settings </configuring>`{.interpreted-text
+>     >     -   `Configuration Settings </settings/configuring>`{.interpreted-text
 >     >         role="doc"}
 >
 > -   [Scott\'s Audio Reactive
@@ -321,7 +321,7 @@ ESP8266/ESP32 device that works with LedFx.
 >
 >     > -   Compatible Devices:
 >     >     -   ESP8266
->     >     -   `Configuration Settings </configuring>`{.interpreted-text
+>     >     -   `Configuration Settings </settings/configuring>`{.interpreted-text
 >     >         role="doc"}
 >
 > -   [WLED](https://github.com/Aircoookie/WLED)
@@ -329,7 +329,7 @@ ESP8266/ESP32 device that works with LedFx.
 >     > -   Compatible Devices:
 >     >     -   ESP8266
 >     >     -   ESP32
->     >     -   `Configuration Settings </configuring>`{.interpreted-text
+>     >     -   `Configuration Settings </settings/configuring>`{.interpreted-text
 >     >         role="doc"}
 
 

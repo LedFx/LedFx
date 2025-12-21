@@ -6,6 +6,7 @@
 
    /installing
    /launch
+   /security
    /developer/developer
    /developer/architecture
    /README
@@ -14,9 +15,10 @@
    :maxdepth: 2
    :caption: Configuration
 
-   /configuring
+   /settings/configuring
+   /settings/asset_workflow
+   /settings/directing_audio
    /settings/index_settings
-   /directing_audio
 
 .. toctree::
    :maxdepth: 1
