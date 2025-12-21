@@ -4,7 +4,7 @@
 
 Use [Assets Workflow](settings/asset_workflow.md) for graphical assets mangement.
 
-LedFx previously allowed some endpoints to load media using either a URL or a local file path. While convenient, accepting arbitrary paths and URLs can lead to well-known security issues such as path traversal (reading files outside the intended directory) and SSRF (forcing the server to fetch unintended network resources).  
+LedFx previously allowed some endpoints to load media using either a URL or a local file path. While convenient, accepting arbitrary paths and URLs can lead to well-known security issues such as path traversal (reading files outside the intended directory) and SSRF (forcing the server to fetch unintended network resources).
 
 We’ve tightened these APIs so LedFx can only access files from approved LedFx-managed directories, only process expected file types, and only fetch from sanitized, validated URLs (typically http/https), following OWASP guidance. The goal is to keep common “LAN app” deployments safe even when LedFx is proxied, integrated into other systems, or accidentally exposed.
 
@@ -33,28 +33,24 @@ Unfortunately it's not possible for LedFx to automatically copy over your histor
 
 ### Why we had to add this security?...
 
-LedFx exposes a local web UI and a set of REST/WebSocket APIs. A few of those APIs historically accepted either a URL or a local file path as input (for example, the image/GIF helper endpoints).  
-The new API docs explicitly describe the modified "URL or local file path" behavior in the  
+LedFx exposes a local web UI and a set of REST/WebSocket APIs. A few of those APIs historically accepted either a URL or a local file path as input (for example, the image/GIF helper endpoints). The new API docs explicitly describe the modified "URL or local file path" behavior in the [Assets API](apis/assets.md) and [Cache API](apis/cache.md).
 
-- [Assets API](apis/assets.md)
-- [Cache API](apis/cache.md)   
-
-The old design is convenient, but it creates two common web-app risk patterns:
+That design is convenient, but it creates two common web-app risk patterns:
 
 ### Path traversal / arbitrary file read
-If an endpoint accepts a user-provided file path, a malicious (or simply curious) client can try absolute paths or ../ tricks to reach files outside the intended folder (configs, keys, system files, source code, etc.). This is the classic Path Traversal issue. 
-[OWASP Foundation Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal?utm_source=chatgpt.com)  
+If an endpoint accepts a user-provided file path, a malicious (or simply curious) client can try absolute paths or ../ tricks to reach files outside the intended folder (configs, keys, system files, source code, etc.). This is the classic Path Traversal issue.
+[OWASP Foundation Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal?utm_source=chatgpt.com)
 
 ### SSRF / dangerous URL schemes
-If an endpoint fetches remote content from a user-provided URL, that can be abused to make LedFx fetch things it should never fetch (internal network services, router admin pages, cloud metadata endpoints, etc.). This is Server-Side Request Forgery (SSRF). OWASP specifically calls out sanitizing/validating client-supplied URLs and enforcing allow-lists. 
-[OWASP Foundation SSRF](https://owasp.org/Top10/2021/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/?utm_source=chatgpt.com)  
+If an endpoint fetches remote content from a user-provided URL, that can be abused to make LedFx fetch things it should never fetch (internal network services, router admin pages, cloud metadata endpoints, etc.). This is Server-Side Request Forgery (SSRF). OWASP specifically calls out sanitizing/validating client-supplied URLs and enforcing allow-lists.
+[OWASP Foundation SSRF](https://owasp.org/Top10/2021/A10_2021-Server-Side_Request_Forgery_%28SSRF%29/?utm_source=chatgpt.com)
 
 Even though LedFx is usually run on a trusted LAN, users may:
 
 - Run LedFx headless,
 - Put Ledfx behind reverse proxies,
 - Integrate LedFx with Home Assistant,
-- Accidentally expose ports.  
+- Accidentally expose ports.
 
 So we’re now treating the API boundary as untrusted by default.
 
