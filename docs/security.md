@@ -13,7 +13,7 @@ We’ve tightened these APIs so LedFx can only access files from approved LedFx-
 If you previously had image assets on your local drive they will no longer be accessible.
 
 - This could be for:
-  - Matrix events:
+  - Matrix effects:
     - keybeat
     - gif player
     - image
