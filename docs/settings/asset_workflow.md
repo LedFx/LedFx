@@ -44,7 +44,7 @@ There are three main tabs with the Asset Manager
 
 - User Assets, image files you have added directly from local drive space
 - Built-in Assets, image files that come with LedFx for presets
-- Cache, image files cached from user provided URL's anywhere in the workflow
+- Cache, image files cached from user-provided URLs anywhere in the workflow
 
 Various meta data related to the image assets can be seen according to the tab.
 Addionally a user can delete images or refresh cache from the asset manager interface.
@@ -91,7 +91,7 @@ The asset will then be available for use in any other asset workflow.
 
 The cache can be refreshed from the Asset Manager interface.
 
-In the demonstration below, the URL is extracted directly from a browser view of the gif, through right-click, , it could just as easily been drag-and-drop'd.
+In the demonstration below, the URL is extracted directly from a browser view of the gif, through right-click, it could just as easily have been drag-and-drop'd.
 
 <video width="640" height="700" controls loop autoplay muted>
    <source src="../_static/settings/assets/urlAndCacheSmall.mp4" type="video/mp4">
