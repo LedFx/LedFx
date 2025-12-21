@@ -2,7 +2,7 @@
 
 As of LedFx 2.1.3 all graphical assets are managed through the LedFx Asset Workflow.
 
-Please see [Security](/security.md) fpr details of the security imperatives.
+Please see [Security](/security.md) for details of the security imperatives.
 
 All user file assets must be stored within the .ledfx/assets directory.
 
@@ -12,9 +12,9 @@ Direct URLs for graphical assets are still supported.
 
 To simplify the workflow, an asset management UX has been added, making adding, assigning and managing assets a drag-drop and click experience.
 
-Additionally extensive caching and thumbnail capabilities have been edded in the backend for a fast and efficient experience across local files and remote URLs.
+Additionally extensive caching and thumbnail capabilities have been added in the backend for a fast and efficient experience across local files and remote URLs.
 
-This makes assigning assets to effects such as keybeat, gif player and image, and to controls such as scenes and playlists far smoother.
+This makes assigning assets to effects such as keybeat, gif player and image, and to controls such as scenes and playlists, far smoother.
 
 ## Adding files to the asset manager
 
