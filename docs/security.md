@@ -36,8 +36,8 @@ Unfortunately it's not possible for LedFx to automatically copy over your histor
 LedFx exposes a local web UI and a set of REST/WebSocket APIs. A few of those APIs historically accepted either a URL or a local file path as input (for example, the image/GIF helper endpoints).  
 The new API docs explicitly describe the modified "URL or local file path" behavior in the  
 
-[Assets API](apis/assets.md)  
-[Cache API](apis/cache.md).  
+- [Assets API](apis/assets.md)
+- [Cache API](apis/cache.md)   
 
 The old design is convenient, but it creates two common web-app risk patterns:
 
