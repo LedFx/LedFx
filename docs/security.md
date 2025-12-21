@@ -33,7 +33,11 @@ Unfortunately it's not possible for LedFx to automatically copy over your histor
 
 ### Why we had to add this security?...
 
-LedFx exposes a local web UI and a set of REST/WebSocket APIs. A few of those APIs historically accepted either a URL or a local file path as input (for example, the image/GIF helper endpoints). The new API docs explicitly describe the modified "URL or local file path" behavior in the [Assets API](apis/assets.md) and [Cache API](apis/cache.md).
+LedFx exposes a local web UI and a set of REST/WebSocket APIs. A few of those APIs historically accepted either a URL or a local file path as input (for example, the image/GIF helper endpoints).  
+The new API docs explicitly describe the modified "URL or local file path" behavior in  
+
+- [Assets API](apis/assets.md)
+- [Cache API](apis/cache.md)
 
 That design is convenient, but it creates two common web-app risk patterns:
 
