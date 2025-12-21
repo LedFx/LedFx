@@ -6,7 +6,7 @@ Please see [Security](/security.md) for details of the security imperatives.
 
 All user file assets must be stored within the .ledfx/assets directory.
 
-LedFx supports GIF, PNG, JPEG, WebP, BMP, TIFF and ICO formats including animation where relavant.
+LedFx supports GIF, PNG, JPEG, WebP, BMP, TIFF and ICO formats including animation where relevant.
 
 Direct URLs for graphical assets are still supported.
 
@@ -40,14 +40,14 @@ To add files to the asset manager from your local machine UI, simply drag and dr
 
 All assets available to Ledfx can be viewed in the Asset Manager interface, found on the settings page.
 
-There are three main tabs with the Asset Manager
+There are three main tabs within the Asset Manager
 
 - User Assets, image files you have added directly from local drive space
 - Built-in Assets, image files that come with LedFx for presets
 - Cache, image files cached from user-provided URLs anywhere in the workflow
 
 Various meta data related to the image assets can be seen according to the tab.
-Addionally a user can delete images or refresh cache from the asset manager interface.
+Additionally a user can delete images or refresh cache from the asset manager interface.
 
 <video width="640" height="440" controls loop autoplay muted>
    <source src="../_static/settings/assets/assetManagerSmall.mp4" type="video/mp4">
@@ -59,7 +59,7 @@ Addionally a user can delete images or refresh cache from the asset manager inte
 
 Where supported by an effect, image assets can be selected with the asset picker from the relevant field.
 
-The example below is from keybeat effect
+The example below is from the keybeat effect
 
 <video width="640" height="700" controls loop autoplay muted>
    <source src="../_static/settings/assets/keybeatSmall.mp4" type="video/mp4">
@@ -101,4 +101,4 @@ In the demonstration below, the URL is extracted directly from a browser view of
 
 ---
 
-Implementation of the Asset Manager has been a necassary step on the LedFx journey, it's really transparent and accessible, enjoy!
+Implementation of the Asset Manager has been a necessary step on the LedFx journey, it's really transparent and accessible, enjoy!
