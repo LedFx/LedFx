@@ -1020,8 +1020,8 @@ Error responses (all return HTTP 200):
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "Effect energy does not exist" | 
-              "Effect energy has no user presets" | 
+    "reason": "Effect energy does not exist" |
+              "Effect energy has no user presets" |
               "Preset my_preset does not exist for effect energy in user presets"
   }
 }
