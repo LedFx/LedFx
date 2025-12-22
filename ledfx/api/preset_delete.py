@@ -38,7 +38,10 @@ class PresetDeleteEndpoint(RestEndpoint):
             )
 
         # Check if preset exists
-        if preset_id not in self._ledfx.config["user_presets"][effect_id].keys():
+        if (
+            preset_id
+            not in self._ledfx.config["user_presets"][effect_id].keys()
+        ):
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in user presets"
             )
@@ -46,7 +49,7 @@ class PresetDeleteEndpoint(RestEndpoint):
         # Delete the preset from configuration
         try:
             del self._ledfx.config["user_presets"][effect_id][preset_id]
-            
+
             # Save the config
             save_config(
                 config=self._ledfx.config,
@@ -56,5 +59,5 @@ class PresetDeleteEndpoint(RestEndpoint):
             error_message = f"Failed to delete preset {preset_id}: {str(e)}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
-        
+
         return await self.request_success()
