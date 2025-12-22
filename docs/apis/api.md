@@ -966,13 +966,67 @@ configs) for each effect with the matching *effect_id* as JSON
 
 Get all presets for an effect
 
-**GET**
+Response includes both `ledfx_presets` (built-in, read-only) and `user_presets` (user-created, editable).
+
+**PUT**
 
 Rename a preset
+
+Request body:
+``` json
+{
+  "preset_id": "my_preset",
+  "category": "user_presets",
+  "name": "My Renamed Preset"
+}
+```
 
 **DELETE**
 
 Delete a preset
+
+Request body:
+``` json
+{
+  "preset_id": "my_preset",
+  "category": "user_presets"
+}
+```
+
+Note: Only `user_presets` can be deleted. Built-in `ledfx_presets` are read-only.
+
+## /api/effects/\<effect_id\>/presets/\<preset_id\>
+
+RESTful endpoint for deleting user presets without requiring a JSON body.
+
+**DELETE**
+
+Delete a user preset using path parameters only.
+
+Example: `DELETE /api/effects/energy/presets/my_custom_preset`
+
+This endpoint only supports deleting from `user_presets`. Built-in `ledfx_presets` cannot be deleted.
+
+Success response:
+``` json
+{
+  "status": "success"
+}
+```
+
+Error responses (all return HTTP 200):
+```
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Effect energy does not exist" | 
+              "Effect energy has no user presets" | 
+              "Preset my_preset does not exist for effect energy in user presets"
+  }
+}
+```
+
 
 ## /api/scenes
 
