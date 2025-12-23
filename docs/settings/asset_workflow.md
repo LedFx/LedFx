@@ -61,7 +61,7 @@ Where supported by an effect, image assets can be selected with the asset picker
 
 The example below is from the keybeat effect
 
-<video width="640" height="700" controls loop autoplay muted>
+<video width="640" height="800" controls loop autoplay muted>
    <source src="../_static/settings/assets/keybeatSmall.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>
@@ -75,7 +75,7 @@ Other interface aspects are likely to be added in the future.
 
 The asset picker example below is from the scenes interface.
 
-<video width="640" height="700" controls loop autoplay muted>
+<video width="640" height="800" controls loop autoplay muted>
    <source src="../_static/settings/assets/scenesSmall.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>
@@ -93,7 +93,7 @@ The cache can be refreshed from the Asset Manager interface.
 
 In the demonstration below, the URL is extracted directly from a browser view of the gif, through right-click, it could just as easily have been drag-and-drop'd.
 
-<video width="640" height="700" controls loop autoplay muted>
+<video width="640" height="800" controls loop autoplay muted>
    <source src="../_static/settings/assets/urlAndCacheSmall.mp4" type="video/mp4">
    Your browser does not support the video tag.
 </video>
