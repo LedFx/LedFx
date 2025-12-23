@@ -18,13 +18,13 @@ Tested on Ubuntu 20.10 64-bit
 -   In the LedFx UI under \"Settings\" -\> \"Audio\", choose
     \"pulse\" as the audio device
 
-![image](./_static/audio/direct_audio_linux_new.png)
+![image](/_static/audio/direct_audio_linux_new.png)
 
 -   In PulseAudio Volume Control under \"Recording\", choose \"ALSA
     plug-in\" and set \"Capture from\" to the audio stream you want to
     capture (e.g. \"Monitor of Built-in Audio Analog Stereo\")
 
-![image](./_static/audio/direct_audio_linux_2.png)
+![image](/_static/audio/direct_audio_linux_2.png)
 
 ## Linux CLI
 
@@ -40,15 +40,15 @@ Tested on Ubuntu 20.10 64-bit, Raspberry Pi OS (32 and 64-Bit)
 -   In the LedFx UI under \"Settings\" -\> \"Audio\", choose
     \"pulse\" as the audio device
 
-![image](./_static/audio/direct_audio_linux_new.png)
+![image](/_static/audio/direct_audio_linux_new.png)
 
 -   In **Pulsemixer** under **"F1 Output",** choose your audio application and move it to output stream you want to listen on (e.g."Built-in Audio Digital Stereo")
 
-![image](./_static/audio/direct_audio_linux_cli_out.png)
+![image](/_static/audio/direct_audio_linux_cli_out.png)
 
 -   In **Pulsemixer** under **"F2 Input"**, choose "python" and move it to the audio stream you want to capture (e.g. "Monitor of Built-in Audio Digital Stereo")
 
-![image](./_static/audio/direct_audio_linux_cli_in.png)
+![image](/_static/audio/direct_audio_linux_cli_in.png)
 
 ## macOS
 
@@ -63,17 +63,17 @@ Tested on macOS Catalina 10.15.7
 -   In Audio MIDI Setup, create a [Multi Output
     Device](https://github.com/ExistentialAudio/BlackHole/wiki/Multi-Output-Device)
 
-![image](./_static/audio/directing_audio_macos_1.png)
+![image](/_static/audio/directing_audio_macos_1.png)
 
 -   In Audio MIDI Setup, choose \"BlackHole 2ch\" and set it as
     \"Input\"
 
-![image](./_static/audio/directing_audio_macos_2.png)
+![image](/_static/audio/directing_audio_macos_2.png)
 
 -   In the LedFx UI under \"Settings\" -\> \"Audio Input\", choose
     \"BlackHole 2ch\" as the current device
 
-![image](./_static/audio/directing_audio_macos_3.png)
+![image](/_static/audio/directing_audio_macos_3.png)
 
 **Alternatives**
 
@@ -94,7 +94,7 @@ input device.
     Mix\" Device is available: <https://thegeekpage.com/stereo-mix/>
 -   The result should be something like:
 
-![image](./_static/audio/directing_audio_win10_1.png)
+![image](/_static/audio/directing_audio_win10_1.png)
 
 -   Once the device is set as \"Default Device\" (right-click, Set as
     Default Device), all generated analog sound from the PC should be
@@ -112,17 +112,17 @@ input device.
 -   Once the tool is installed, set the tool\'s playback device as
     default:
 
-![image](./_static/audio/directing_audio_win10_2.png)
+![image](/_static/audio/directing_audio_win10_2.png)
 
 -   Set the matching \"Recording\" device as default:
 
-![image](./_static/audio/directing_audio_win10_3.png)
+![image](/_static/audio/directing_audio_win10_3.png)
 
 -   And if you want to still listen to the audio on the digital output,
     you can use the set the \"Listen\" device on the \"Recording\" input
     (right-click -\> properties):
 
-![image](./_static/audio/directing_audio_win10_4.png)
+![image](/_static/audio/directing_audio_win10_4.png)
 
 ## Webaudio
 
@@ -148,7 +148,7 @@ This feature is still in alpha.
 -   In settings, under core settings, expand audio and you should see an
     icon that looks like this:
 
-![image](./_static/audio/webaudio_icon.png)
+![image](/_static/audio/webaudio_icon.png)
 
 -   Click on that icon and a small window should appear where you can
     enter the name for your device. Enter the name and click on the
