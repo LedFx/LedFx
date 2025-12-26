@@ -99,17 +99,20 @@ class Number(Texter2d):
 
     def _setup_mood_listener(self):
         """Set up listener for mood change events."""
+
         def on_mood_change(event):
             if isinstance(event, MoodChangedEvent):
                 self.display_value = event.mood
-        
+
         self._mood_listener = on_mood_change
         self._ledfx.events.add_listener(on_mood_change, Event.MOOD_CHANGED)
-    
+
     def _remove_mood_listener(self):
         """Remove mood change event listener."""
         if self._mood_listener:
-            self._ledfx.events.remove_listener(self._mood_listener, Event.MOOD_CHANGED)
+            self._ledfx.events.remove_listener(
+                self._mood_listener, Event.MOOD_CHANGED
+            )
             self._mood_listener = None
 
     def config_updated(self, config):
@@ -126,7 +129,7 @@ class Number(Texter2d):
         self.is_time_hhmm = self._config["value_source"] == "Time (HH:MM)"
         self.is_time_hhmmss = self._config["value_source"] == "Time (HH:MM:SS)"
         self.is_mood = self._config["value_source"] == "Mood"
-        
+
         # Only subscribe to mood events if mood is selected
         if self.is_mood and not self._mood_listener:
             self._setup_mood_listener()
@@ -162,7 +165,7 @@ class Number(Texter2d):
             Teleplot.send(f"BPM_Conf:{self.display_value:.3f}")
         else:
             _LOGGER.error("BPM Confidence: NaN")
-    
+
     def update_mood(self, data=None):
         """Update display value with current mood (updated via event listener)."""
         # Mood is updated via event listener, just keep current value
@@ -182,7 +185,7 @@ class Number(Texter2d):
             return value if isinstance(value, str) else str(value)
         if self.is_mood:
             return value if isinstance(value, str) else str(value)
-        
+
         # Handle numeric values only beyond this point
         negative = value < 0
         if self.negative and negative:

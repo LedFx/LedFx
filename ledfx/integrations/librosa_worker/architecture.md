@@ -647,6 +647,6 @@ dist = np.linalg.norm(diff / norm)
 
 ---
 
-**Last Updated:** December 26, 2025  
-**LedFx Version:** engine1 branch  
+**Last Updated:** December 26, 2025
+**LedFx Version:** engine1 branch
 **Integration Version:** 1.0 (initial mood detection)

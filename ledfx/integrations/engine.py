@@ -5,20 +5,24 @@ import time
 import numpy as np
 import voluptuous as vol
 
-from ledfx.integrations import Integration
 from ledfx.effects.melbank import MIC_RATE
-from ledfx.integrations.librosa_worker.librosaEngineClient import LibrosaEngineClient
 from ledfx.events import MoodChangedEvent
+from ledfx.integrations import Integration
+from ledfx.integrations.librosa_worker.librosaEngineClient import (
+    LibrosaEngineClient,
+)
 from ledfx.utils import Teleplot
 
 try:
     import librosa
+
     LIBROSA_AVAILABLE = True
 except ImportError:
     LIBROSA_AVAILABLE = False
-    
+
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class Engine(Integration):
     """Engine Integration"""
@@ -47,7 +51,9 @@ class Engine(Integration):
                 default=DESCRIPTION,
             ): str,
             vol.Optional(
-                "sample_window", description="Number of seconds to analyze", default=8
+                "sample_window",
+                description="Number of seconds to analyze",
+                default=8,
             ): vol.All(vol.Coerce(int), vol.Range(min=2, max=30)),
             vol.Optional(
                 "ambient_threshold",
@@ -70,16 +76,15 @@ class Engine(Integration):
                 default=-0.3,
             ): vol.All(vol.Coerce(float), vol.Range(min=-0.8, max=0.0)),
             vol.Optional(
-                "diag", 
-                description="Enable basic diagnostic logging to teleplot", 
+                "diag",
+                description="Enable basic diagnostic logging to teleplot",
                 default=False,
             ): bool,
             vol.Optional(
-                "debug", 
-                description="Enable debug logging to teleplot for tuning", 
+                "debug",
+                description="Enable debug logging to teleplot for tuning",
                 default=False,
             ): bool,
-
         }
     )
 
@@ -99,7 +104,7 @@ class Engine(Integration):
 
     async def connect(self, msg=None):
         # TODO: why does editing an integration mark it as disabled?!?
-        
+
         _LOGGER.warning(f"{self.NAME} integration connecting")
         if not LIBROSA_AVAILABLE:
             # Protecting here in case a config has been loaded with integration enabled.
@@ -113,12 +118,14 @@ class Engine(Integration):
 
         # Set up IPC client and queue
         # LibrosaEngineClient will default to analysis_worker.py in its own directory
-        self._librosa_client = LibrosaEngineClient(config = self._config)
+        self._librosa_client = LibrosaEngineClient(config=self._config)
         await self._librosa_client.start()
         self._librosa_client.add_callback(self._on_worker_features)
 
         self._audio_queue = asyncio.Queue()
-        self._audio_sender_task = asyncio.create_task(self._audio_sender_loop())
+        self._audio_sender_task = asyncio.create_task(
+            self._audio_sender_loop()
+        )
 
         # Subscribe to audio input source
         if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
@@ -126,12 +133,12 @@ class Engine(Integration):
             _LOGGER.warning(f"{self.NAME} subscribed to audio input")
 
         self.diag = self._config.get("diag", False)
-        
+
         await super().connect()
 
     async def disconnect(self, msg=None):
         _LOGGER.warning(f"{self.NAME} integration disconnecting")
-        
+
         # Unsubscribe from audio input source
         if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
             self._ledfx.audio.unsubscribe(self.audio_callback)
@@ -164,8 +171,10 @@ class Engine(Integration):
         Called when the integration is being destroyed/deleted.
         Ensures proper cleanup of resources.
         """
-        _LOGGER.warning(f"{self.NAME} integration being deleted, cleaning up resources")
-        
+        _LOGGER.warning(
+            f"{self.NAME} integration being deleted, cleaning up resources"
+        )
+
         # If integration is active, deactivate and disconnect first
         if self._active:
             await self.disconnect()
@@ -198,16 +207,18 @@ class Engine(Integration):
         """
         if msg.get("type") == "feature_update":
             _LOGGER.warning("%s worker features: %r", self.NAME, msg)
-            
+
             # Fire mood change event if mood has changed
             current_mood = msg.get("mood")
-            if current_mood is not None and current_mood != self._previous_mood:
+            if (
+                current_mood is not None
+                and current_mood != self._previous_mood
+            ):
                 self._ledfx.events.fire_event(
                     MoodChangedEvent(current_mood, self._previous_mood)
                 )
                 self._previous_mood = current_mood
 
-            
             if self.diag:
                 lines = []
 
@@ -232,7 +243,7 @@ class Engine(Integration):
                 if lines:
                     # Multiple telemetries must be separated by \n, not spaces
                     Teleplot.send("\n".join(lines))
-    
+
     def audio_callback(self):
         """Process audio data callback from audio input."""
         audio_sample = self._ledfx.audio.audio_sample(raw=True)
@@ -249,5 +260,6 @@ class Engine(Integration):
                     block,
                 )
             except Exception as e:
-                _LOGGER.warning(f"{self.NAME} error enqueueing audio block: {e!r}")
-    
+                _LOGGER.warning(
+                    f"{self.NAME} error enqueueing audio block: {e!r}"
+                )

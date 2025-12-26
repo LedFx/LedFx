@@ -3,18 +3,18 @@ import json
 import logging
 import os
 import sys
-import samplerate
 
 import numpy as np
+import samplerate
 
 from ledfx.integrations.librosa_worker.protocol import (
     HEADER_STRUCT,
+    LEDFX_RATE,
+    LIBROSA_RESAMPLE_RATIO,
+    LIBROSA_SAMPLE_RATE,
     MSG_TYPE_AUDIO,
     MSG_TYPE_CONFIG,
     MSG_TYPE_SHUTDOWN,
-    LEDFX_RATE,
-    LIBROSA_SAMPLE_RATE,
-    LIBROSA_RESAMPLE_RATIO
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,14 +23,14 @@ _LOGGER = logging.getLogger(__name__)
 class LibrosaEngineClient:
     """Binary-IPC client to a separate librosa worker process."""
 
-    def __init__(self, config={},python_executable=None, script_path=None):
+    def __init__(self, config={}, python_executable=None, script_path=None):
         self.python_executable = python_executable or sys.executable
-        
+
         # Default to analysis_worker.py in the same directory as this file
         if script_path is None:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             script_path = os.path.join(script_dir, "analysis_worker.py")
-        
+
         self.script_path = script_path
 
         self.process = None
@@ -48,8 +48,11 @@ class LibrosaEngineClient:
         if self.process is not None:
             return
 
-        _LOGGER.warning("Starting Librosa worker process: %s %s",
-                     self.python_executable, self.script_path)
+        _LOGGER.warning(
+            "Starting Librosa worker process: %s %s",
+            self.python_executable,
+            self.script_path,
+        )
 
         self.process = await asyncio.create_subprocess_exec(
             self.python_executable,
@@ -66,7 +69,7 @@ class LibrosaEngineClient:
         self._listen_task = asyncio.create_task(self._listen_loop())
         # Log worker stderr
         self._stderr_task = asyncio.create_task(self._log_stderr())
-        
+
         # Send initial configuration
         await self.send_config(config=self.config)
 
@@ -142,32 +145,36 @@ class LibrosaEngineClient:
                 line = await self._stderr_reader.readline()
                 if not line:
                     break
-                sys.stderr.write(f"[librosa-worker] {line.decode(errors='ignore')}")
+                sys.stderr.write(
+                    f"[librosa-worker] {line.decode(errors='ignore')}"
+                )
         except asyncio.CancelledError:
             pass
 
-    async def send_config(self, config={}, sample_rate: int = LIBROSA_SAMPLE_RATE):
+    async def send_config(
+        self, config={}, sample_rate: int = LIBROSA_SAMPLE_RATE
+    ):
         """
         Send configuration to worker as JSON.
-        
+
         sample_rate: Audio sample rate in Hz
         **kwargs: Additional config parameters for future expansion
         """
         if self._writer is None or self.process is None:
             return
-        
+
         config["sample_rate"] = sample_rate
-        
+
         payload = json.dumps(config).encode("utf-8")
         header = HEADER_STRUCT.pack(MSG_TYPE_CONFIG, len(payload))
-        
+
         try:
             self._writer.write(header + payload)
             await self._writer.drain()
             _LOGGER.warning("Sent config to worker: %r", config)
         except Exception as e:
             _LOGGER.error("Error sending config to worker: %r", e)
-    
+
     async def send_audio_block(self, block: np.ndarray):
         """
         Send a mono float32 block to worker as raw bytes.
@@ -177,10 +184,8 @@ class LibrosaEngineClient:
         if self._writer is None or self.process is None:
             return
 
-        block = self.resampler.process(
-            block, 
-            LIBROSA_RESAMPLE_RATIO)
-            
+        block = self.resampler.process(block, LIBROSA_RESAMPLE_RATIO)
+
         # Ensure dtype and contiguity
         if block.dtype != np.float32:
             block = block.astype(np.float32, copy=False)
