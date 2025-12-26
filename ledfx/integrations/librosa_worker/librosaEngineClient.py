@@ -9,7 +9,6 @@ import samplerate
 
 from ledfx.integrations.librosa_worker.protocol import (
     HEADER_STRUCT,
-    LEDFX_RATE,
     LIBROSA_RESAMPLE_RATIO,
     LIBROSA_SAMPLE_RATE,
     MSG_TYPE_AUDIO,

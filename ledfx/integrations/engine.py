@@ -1,11 +1,9 @@
 import asyncio
 import logging
-import time
 
 import numpy as np
 import voluptuous as vol
 
-from ledfx.effects.melbank import MIC_RATE
 from ledfx.events import MoodChangedEvent
 from ledfx.integrations import Integration
 from ledfx.integrations.librosa_worker.librosaEngineClient import (

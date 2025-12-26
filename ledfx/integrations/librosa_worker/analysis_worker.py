@@ -29,7 +29,6 @@ import numpy as np
 
 from ledfx.integrations.librosa_worker.protocol import (
     HEADER_STRUCT,
-    LEDFX_RATE,
     MSG_TYPE_AUDIO,
     MSG_TYPE_CONFIG,
     MSG_TYPE_SHUTDOWN,
@@ -116,7 +115,7 @@ class AudioAnalyzer:
 
             if self.diag and not self.first:
                 Teleplot.send(
-                    f"t_tot:{(timeit.default_timer() - start)*1000:.1f}"
+                    f"t_tot:{(timeit.default_timer() - start) * 1000:.1f}"
                 )
 
             # the first run of analysis has a high setup time, so do not measure
