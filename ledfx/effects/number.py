@@ -7,6 +7,7 @@ from PIL import ImageFont
 
 from ledfx.effects.texter2d import Texter2d
 from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
+from ledfx.events import Event, MoodChangedEvent
 from ledfx.utils import Teleplot
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class Number(Texter2d):
         "BPM Confidence": "update_bpm_confidence",
         "Time (HH:MM)": "update_time_hhmm",
         "Time (HH:MM:SS)": "update_time_hhmmss",
+        "Mood": "update_mood",
     }
 
     # Hide parent effect-specific options that don't apply to numeric display
@@ -91,7 +93,24 @@ class Number(Texter2d):
         self.display_value = 0.0
         # Force speed_option_1 to 0 for centered display
         config["speed_option_1"] = 0
+        # Mood event listener (only active when value_source is "Mood")
+        self._mood_listener = None
         super().__init__(ledfx, config)
+
+    def _setup_mood_listener(self):
+        """Set up listener for mood change events."""
+        def on_mood_change(event):
+            if isinstance(event, MoodChangedEvent):
+                self.display_value = event.mood
+        
+        self._mood_listener = on_mood_change
+        self._ledfx.events.add_listener(on_mood_change, Event.MOOD_CHANGED)
+    
+    def _remove_mood_listener(self):
+        """Remove mood change event listener."""
+        if self._mood_listener:
+            self._ledfx.events.remove_listener(self._mood_listener, Event.MOOD_CHANGED)
+            self._mood_listener = None
 
     def config_updated(self, config):
         """Update configuration and regenerate sentence with formatted number."""
@@ -106,6 +125,13 @@ class Number(Texter2d):
         ]
         self.is_time_hhmm = self._config["value_source"] == "Time (HH:MM)"
         self.is_time_hhmmss = self._config["value_source"] == "Time (HH:MM:SS)"
+        self.is_mood = self._config["value_source"] == "Mood"
+        
+        # Only subscribe to mood events if mood is selected
+        if self.is_mood and not self._mood_listener:
+            self._setup_mood_listener()
+        elif not self.is_mood and self._mood_listener:
+            self._remove_mood_listener()
 
     def update_time_hhmm(self, data=None):
         """Update display value with current time as HH:MM string."""
@@ -136,17 +162,28 @@ class Number(Texter2d):
             Teleplot.send(f"BPM_Conf:{self.display_value:.3f}")
         else:
             _LOGGER.error("BPM Confidence: NaN")
+    
+    def update_mood(self, data=None):
+        """Update display value with current mood (updated via event listener)."""
+        # Mood is updated via event listener, just keep current value
+        # If no mood received yet, show placeholder
+        if not isinstance(self.display_value, str) or not self.display_value:
+            self.display_value = "---"
 
     def _format_number(self, value, digits_before, digits_after):
         """
         Format a number or time string for display.
         Handles negative sign and overflow pattern.
         """
+        # Handle string values (time and mood) - return as-is
         if self.is_time_hhmm:
             return value if isinstance(value, str) else str(value)
         if self.is_time_hhmmss:
             return value if isinstance(value, str) else str(value)
-
+        if self.is_mood:
+            return value if isinstance(value, str) else str(value)
+        
+        # Handle numeric values only beyond this point
         negative = value < 0
         if self.negative and negative:
             # Reserve space for sign
@@ -199,6 +236,9 @@ class Number(Texter2d):
             template_text = "88:88"  # Widest possible HH:MM
         elif self.is_time_hhmmss:
             template_text = "88:88:88"  # Widest possible HH:MM:SS
+        elif self.is_mood:
+            # Use longest possible mood name for sizing
+            template_text = "breakdown"  # Longest mood state (9 chars)
         else:
             if self.digits_after > 0:
                 template_value = float(
@@ -262,6 +302,8 @@ class Number(Texter2d):
             self.update_time_hhmm()
         elif self.is_time_hhmmss:
             self.update_time_hhmmss()
+        elif self.is_mood:
+            self.update_mood()
 
         new_text = self._format_number(
             self.display_value, self.digits_before, self.digits_after

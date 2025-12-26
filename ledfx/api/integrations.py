@@ -188,6 +188,9 @@ class IntegrationsEndpoint(RestEndpoint):
                 )
             )
 
+            if hasattr(existing_integration, "on_delete"):
+                await existing_integration.on_delete()
+
             self._ledfx.integrations.destroy(integration_id)
 
         integration = self._ledfx.integrations.create(

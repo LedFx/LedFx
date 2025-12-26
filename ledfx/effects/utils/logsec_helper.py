@@ -98,7 +98,7 @@ class LogSecHelper:
                 cycle = end - self.last
                 sleep = self.current_time - self.last
 
-                _LOGGER.warning(
+                _LOGGER.info(
                     f"{self.effect.name}: FPS {self.fps} Render avg:{r_avg:0.6f} min:{self.r_min:0.6f} max:{self.r_max:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
                 )
                 self.effect._ledfx.events.fire_event(
