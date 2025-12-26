@@ -12,7 +12,7 @@ from ledfx.integrations.librosa_worker.librosaEngineClient import (
 from ledfx.utils import Teleplot
 
 try:
-    import librosa
+    import librosa  # noqa: F401
 
     LIBROSA_AVAILABLE = True
 except ImportError:
