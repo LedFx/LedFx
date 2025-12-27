@@ -22,7 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 class LibrosaEngineClient:
     """Binary-IPC client to a separate librosa worker process."""
 
-    def __init__(self, config={}, python_executable=None, script_path=None):
+    def __init__(self, config, python_executable=None, script_path=None):
         self.python_executable = python_executable or sys.executable
 
         # Default to analysis_worker.py in the same directory as this file
@@ -151,26 +151,28 @@ class LibrosaEngineClient:
             pass
 
     async def send_config(
-        self, config={}, sample_rate: int = LIBROSA_SAMPLE_RATE
+        self, config, sample_rate: int = LIBROSA_SAMPLE_RATE
     ):
         """
         Send configuration to worker as JSON.
 
+        config: dict of configuration parameters
         sample_rate: Audio sample rate in Hz
-        **kwargs: Additional config parameters for future expansion
         """
         if self._writer is None or self.process is None:
             return
 
-        config["sample_rate"] = sample_rate
+        # Create a copy to avoid mutating the caller's dict
+        cfg = dict(config)
+        cfg["sample_rate"] = sample_rate
 
-        payload = json.dumps(config).encode("utf-8")
+        payload = json.dumps(cfg).encode("utf-8")
         header = HEADER_STRUCT.pack(MSG_TYPE_CONFIG, len(payload))
 
         try:
             self._writer.write(header + payload)
             await self._writer.drain()
-            _LOGGER.warning("Sent config to worker: %r", config)
+            _LOGGER.warning("Sent config to worker: %r", cfg)
         except Exception as e:
             _LOGGER.error("Error sending config to worker: %r", e)
 
