@@ -200,38 +200,113 @@ class ScenesEndpoint(RestEndpoint):
         scene_payload = data.get("scene_payload")
         scene_midiactivate = data.get("scene_midiactivate")
         scene_image = data.get("scene_image")
-        if scene_image is None:
-            scene_image = "Wallpaper"
-        if scene_name is None or scene_name == "":
-            error_message = "Required attribute 'name' was not provided"
-            _LOGGER.warning(error_message)
-
-            return await self.invalid_request(error_message)
-
+        scene_snapshot = data.get("snapshot", False)
         scene_id = data.get("id")
 
-        if not scene_id:
-            # this is a create, make sure it is deduped
+        # Determine operation: update if ID provided, create if not
+        if scene_id:
+            # ID provided - must be an update
+            sanitized_id = generate_id(scene_id)
+            if sanitized_id not in self._ledfx.config["scenes"].keys():
+                error_message = f"Scene with id '{scene_id}' does not exist. To create a new scene, omit the 'id' field."
+                _LOGGER.warning(error_message)
+                return await self.invalid_request(error_message)
+            is_update = True
+        else:
+            # No ID - create operation, name is required
+            if scene_name is None or scene_name == "":
+                error_message = "Required attribute 'name' was not provided"
+                _LOGGER.warning(error_message)
+                return await self.invalid_request(error_message)
+            is_update = False
+
+        if is_update:
+            # Update existing scene - sanitize scene_id and preserve existing config
+            scene_id = generate_id(scene_id)
+            scene_config = dict(self._ledfx.config["scenes"][scene_id])
+            
+            # Only update fields that were explicitly provided
+            if scene_name is not None:
+                scene_config["name"] = scene_name
+            if scene_tags is not None:
+                scene_config["scene_tags"] = scene_tags
+            if scene_puturl is not None:
+                scene_config["scene_puturl"] = scene_puturl
+            if scene_payload is not None:
+                scene_config["scene_payload"] = scene_payload
+            if scene_midiactivate is not None:
+                scene_config["scene_midiactivate"] = scene_midiactivate
+            if scene_image is not None:
+                scene_config["scene_image"] = scene_image
+        else:
+            # Create new scene - generate deduped ID and build fresh config
             dupe_id = generate_id(scene_name)
             dupe_index = 1
             scene_id = dupe_id
             while scene_id in self._ledfx.config["scenes"].keys():
                 scene_id = f"{dupe_id}-{dupe_index}"
                 dupe_index = dupe_index + 1
+            
+            if scene_image is None:
+                scene_image = "Wallpaper"
+
+            if data.get("virtuals") is None:
+                scene_snapshot = True
+
+            scene_config = {
+                "name": scene_name,
+                "virtuals": {},
+                "scene_image": scene_image,
+                "scene_puturl": scene_puturl,
+                "scene_tags": scene_tags,
+                "scene_payload": scene_payload,
+                "scene_midiactivate": scene_midiactivate,
+            }
+
+        # handle virtuals
+        # if not a snapshot replace with provided, or keep existing
+        # if a snapshot grab current
+        if not scene_snapshot:
+            if data.get("virtuals") is None:
+                # preserve existing virtuals if none provided
+                pass
+            else:
+                scene_config["virtuals"] = {}
+                virtuals = data.get("virtuals")
+
+                for virtualid in virtuals:
+                    virtual_data = virtuals[virtualid]
+                    if not isinstance(virtual_data, dict):
+                        continue
+
+                    # Preserve the entire virtual config including action field
+                    virtual_config = {}
+
+                    # Copy action field if present
+                    if "action" in virtual_data:
+                        virtual_config["action"] = virtual_data["action"]
+
+                    # Copy type and config if present (for activate action or legacy)
+                    if "type" in virtual_data:
+                        virtual_config["type"] = virtual_data["type"]
+                    if "config" in virtual_data:
+                        virtual_config["config"] = virtual_data["config"]
+
+                    # Copy preset if present (for activate action with preset)
+                    # Only save preset if type is also present (preset requires type)
+                    if "preset" in virtual_data:
+                        if "type" in virtual_data:
+                            virtual_config["preset"] = virtual_data["preset"]
+                        else:
+                            _LOGGER.warning(
+                                f"Virtual '{virtualid}' has 'preset' field but missing required 'type' field. "
+                                "Preset field will not be saved."
+                            )
+
+                    scene_config["virtuals"][virtualid] = virtual_config
         else:
-            # this is an overwrite scenario, just sanitize scene_id
-            scene_id = generate_id(scene_id)
-
-        scene_config = {}
-        scene_config["name"] = scene_name
-        scene_config["virtuals"] = {}
-        scene_config["scene_image"] = scene_image
-        scene_config["scene_puturl"] = scene_puturl
-        scene_config["scene_tags"] = scene_tags
-        scene_config["scene_payload"] = scene_payload
-        scene_config["scene_midiactivate"] = scene_midiactivate
-
-        if "virtuals" not in data.keys():
+            # Force a snapshot of current virtual effects
+            scene_config["virtuals"] = {}
             for virtual in self._ledfx.virtuals.values():
                 effect = {}
                 if virtual.active_effect:
@@ -240,45 +315,11 @@ class ScenesEndpoint(RestEndpoint):
                     if not isinstance(virtual.active_effect, DummyEffect):
                         effect["type"] = virtual.active_effect.type
                         effect["config"] = virtual.active_effect.config
-                        # effect['name'] = virtual.active_effect.name
                     else:
                         _LOGGER.debug(
                             f"Skipping DummyEffect for virtual {virtual.id}"
                         )
                 scene_config["virtuals"][virtual.id] = effect
-        else:
-            virtuals = data.get("virtuals")
-
-            for virtualid in virtuals:
-                virtual_data = virtuals[virtualid]
-                if not isinstance(virtual_data, dict):
-                    continue
-
-                # Preserve the entire virtual config including action field
-                virtual_config = {}
-
-                # Copy action field if present
-                if "action" in virtual_data:
-                    virtual_config["action"] = virtual_data["action"]
-
-                # Copy type and config if present (for activate action or legacy)
-                if "type" in virtual_data:
-                    virtual_config["type"] = virtual_data["type"]
-                if "config" in virtual_data:
-                    virtual_config["config"] = virtual_data["config"]
-
-                # Copy preset if present (for activate action with preset)
-                # Only save preset if type is also present (preset requires type)
-                if "preset" in virtual_data:
-                    if "type" in virtual_data:
-                        virtual_config["preset"] = virtual_data["preset"]
-                    else:
-                        _LOGGER.warning(
-                            f"Virtual '{virtualid}' has 'preset' field but missing required 'type' field. "
-                            "Preset field will not be saved."
-                        )
-
-                scene_config["virtuals"][virtualid] = virtual_config
 
         # Update the scene if it already exists, else create it
         self._ledfx.config["scenes"][scene_id] = scene_config
