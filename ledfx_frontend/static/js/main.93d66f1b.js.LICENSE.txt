@@ -12,7 +12,7 @@
  */
 
 /*!
- * Chart.js v4.4.9
+ * Chart.js v4.5.1
  * https://www.chartjs.org
  * (c) 2025 Chart.js Contributors
  * Released under the MIT License
@@ -630,7 +630,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * react-router v7.8.2
+ * react-router v7.11.0
  *
  * Copyright (c) Remix Software Inc.
  *

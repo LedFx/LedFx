@@ -1,12 +1,12 @@
 {
   "files": {
     "main.css": "/static/css/main.8adf9a1b.css",
-    "main.js": "/static/js/main.cbdb825c.js",
+    "main.js": "/static/js/main.93d66f1b.js",
     "static/js/429.b62d6362.chunk.js": "/static/js/429.b62d6362.chunk.js",
     "static/js/83.efa9ae26.chunk.js": "/static/js/83.efa9ae26.chunk.js",
     "static/js/464.efa9ae26.chunk.js": "/static/js/464.efa9ae26.chunk.js",
     "static/js/956.3a0efdd7.chunk.js": "/static/js/956.3a0efdd7.chunk.js",
-    "static/js/685.5af0972c.chunk.js": "/static/js/685.5af0972c.chunk.js",
+    "static/js/685.ac031951.chunk.js": "/static/js/685.ac031951.chunk.js",
     "static/media/xmas.png": "/static/media/xmas.3e4e83405d14fb81488b.png",
     "static/media/materialdesignicons-webfont.woff": "/static/media/materialdesignicons-webfont.059ea00c378aeafc39fc.woff",
     "static/media/fireworks.jpg": "/static/media/fireworks.b0378f4b56783c9e58d1.jpg",
@@ -44,6 +44,6 @@
   },
   "entrypoints": [
     "static/css/main.8adf9a1b.css",
-    "static/js/main.cbdb825c.js"
+    "static/js/main.93d66f1b.js"
   ]
 }
