@@ -9,7 +9,7 @@ from ledfx.integrations import Integration
 from ledfx.integrations.librosa_worker.librosaEngineClient import (
     LibrosaEngineClient,
 )
-from ledfx.utils import async_fire_and_forget, Teleplot
+from ledfx.utils import Teleplot, async_fire_and_forget
 
 try:
     import librosa  # noqa: F401
