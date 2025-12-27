@@ -9,7 +9,7 @@ from ledfx.integrations import Integration
 from ledfx.integrations.librosa_worker.librosaEngineClient import (
     LibrosaEngineClient,
 )
-from ledfx.utils import Teleplot
+from ledfx.utils import async_fire_and_forget, Teleplot
 
 try:
     import librosa  # noqa: F401
@@ -167,7 +167,8 @@ class Engine(Integration):
 
     def on_shutdown(self):
         _LOGGER.warning(f"{self.NAME} integration shutting down")
-        self.disconnect()
+        # Schedule disconnect coroutine to actually execute
+        async_fire_and_forget(self.disconnect(), self._ledfx.loop)
 
     async def on_delete(self):
         """
