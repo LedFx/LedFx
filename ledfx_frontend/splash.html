@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading LedFx</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .container {
+        text-align: center;
+        padding: 40px;
+      }
+
+      .logo {
+        margin-bottom: 20px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      .logo img {
+        max-width: 300px;
+        height: auto;
+        filter: drop-shadow(0 0 20px rgba(13, 190, 220, 0.4));
+      }
+
+      .status {
+        font-size: 16px;
+        color: #aaaaaa;
+        margin-bottom: 30px;
+        min-height: 24px;
+      }
+
+      .loader {
+        width: 200px;
+        height: 4px;
+        background: #333;
+        border-radius: 2px;
+        margin: 0 auto;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .loader-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #0dbedc, #00d4ff, #0dbedc);
+        border-radius: 2px;
+        animation: loading 1.5s ease-in-out infinite;
+        background-size: 200% 100%;
+      }
+
+      @keyframes loading {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(200%);
+        }
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .spinner {
+        margin: 20px auto;
+        width: 40px;
+        height: 40px;
+        position: relative;
+      }
+
+      .spinner div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        margin: 4px;
+        border: 3px solid #0dbedc;
+        border-radius: 50%;
+        animation: spinner 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: #0dbedc transparent transparent transparent;
+      }
+
+      .spinner div:nth-child(1) {
+        animation-delay: -0.45s;
+      }
+
+      .spinner div:nth-child(2) {
+        animation-delay: -0.3s;
+      }
+
+      .spinner div:nth-child(3) {
+        animation-delay: -0.15s;
+      }
+
+      @keyframes spinner {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .version {
+        position: absolute;
+        bottom: 20px;
+        font-size: 12px;
+        color: #666;
+      }
+
+      .choice-dialog {
+        display: none;
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        border: 1px solid rgba(13, 190, 220, 0.3);
+      }
+
+      .choice-dialog.visible {
+        display: block;
+      }
+
+      .choice-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #0dbedc;
+      }
+
+      .choice-message {
+        font-size: 14px;
+        color: #ccc;
+        margin-bottom: 20px;
+        line-height: 1.4;
+      }
+
+      .choice-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+
+      .choice-button {
+        flex: 1;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .choice-button.primary {
+        background: #0dbedc;
+        color: #000;
+      }
+
+      .choice-button.primary:hover {
+        background: #00d4ff;
+        transform: translateY(-1px);
+      }
+
+      .choice-button.secondary {
+        background: #333;
+        color: #fff;
+      }
+
+      .choice-button.secondary:hover {
+        background: #444;
+        transform: translateY(-1px);
+      }
+
+      .choice-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #aaa;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .choice-checkbox input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+      }
+
+      .close-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: none;
+        color: #666;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+        z-index: 1000;
+      }
+
+      .close-button:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="close-button" id="closeBtn" title="Close">✕</button>
+    <div class="container">
+      <div class="logo">
+        <img src="../src/icons/png/banner.png" alt="LedFx">
+      </div>
+      <div class="spinner">
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <div class="status" id="status">Initializing...</div>
+      <div class="loader">
+        <div class="loader-bar"></div>
+      </div>
+
+      <div class="choice-dialog" id="choiceDialog">
+        <div class="choice-title">LedFx Audio Driver</div>
+        <div class="choice-message">
+          <small>enables audio capture from system output for reactive effects.</small>
+        </div>
+        <div class="choice-buttons">
+          <button class="choice-button primary" id="installBtn">Install Driver (needs sudo)</button>
+          <button class="choice-button secondary" id="skipBtn">Continue Without</button>
+        </div>
+        <label class="choice-checkbox">
+          <input type="checkbox" id="rememberCheckbox">
+          <span>&nbsp;Remember my choice, don't ask again</span>
+        </label>
+      </div>
+    </div>
+    <div class="version">LedFx v2.1.3</div>
+
+    <script>
+      const { ipcRenderer } = require('electron');
+      
+      ipcRenderer.on('splash-status', (event, message) => {
+        document.getElementById('status').textContent = message;
+      });
+
+      ipcRenderer.on('show-driver-choice', () => {
+        document.getElementById('status').style.display = 'none';
+        document.querySelector('.loader').style.display = 'none';
+        document.querySelector('.spinner').style.display = 'none';
+        document.getElementById('choiceDialog').classList.add('visible');
+      });
+
+      ipcRenderer.on('hide-driver-choice', () => {
+        document.getElementById('choiceDialog').classList.remove('visible');
+        document.getElementById('status').style.display = 'block';
+        document.querySelector('.loader').style.display = 'block';
+        document.querySelector('.spinner').style.display = 'block';
+      });
+
+      document.getElementById('installBtn').addEventListener('click', () => {
+        const remember = document.getElementById('rememberCheckbox').checked;
+        ipcRenderer.send('driver-choice-response', { install: true, remember });
+      });
+
+      document.getElementById('skipBtn').addEventListener('click', () => {
+        const remember = document.getElementById('rememberCheckbox').checked;
+        ipcRenderer.send('driver-choice-response', { install: false, remember });
+      });
+
+      document.getElementById('closeBtn').addEventListener('click', () => {
+        ipcRenderer.send('close-splash');
+      });
+    </script>
+  </body>
+</html>
