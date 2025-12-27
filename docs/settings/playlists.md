@@ -1,6 +1,6 @@
 # Playlists
 
-Backend time driven scene playlists are now supported. 
+Backend time driven scene playlists are now supported.
 
 This framework will allow future developement of mood driven scene selection.
 
@@ -44,10 +44,10 @@ We will activate "My first playlist", monitor the playlist playback via the left
 
 ### Edit Playlist Dialog
 
-**Playlist Name** Put your new playlist name here.  
-**Default duration** Any added scenes will inherit the default duration.  
-**Default Mode** play in **Sequence** or **Shuffle** order every full cycle of playlist.  
-**Image** Use the asset manager to quickly select an asset to attach an image to the playlist.  
+**Playlist Name** Put your new playlist name here.
+**Default duration** Any added scenes will inherit the default duration.
+**Default Mode** play in **Sequence** or **Shuffle** order every full cycle of playlist.
+**Image** Use the asset manager to quickly select an asset to attach an image to the playlist.
 
 ![All the things](/_static/settings/playlists/edit_playlist.png)
 
@@ -75,8 +75,8 @@ To commit changes, just hit **CREATE** for a new playlist or **SAVE** if you are
 
 The playlist widget allows direct control of the active playlist.
 
-It can be used to to **pause** or **stop** the playlist.  
-The current scene can be bumped with the **prev** / **next** icons.  
-The icon  on the right can be used to switch the playlist playback between **sequence** or **shuffle** mode. 
+It can be used to to **pause** or **stop** the playlist.
+The current scene can be bumped with the **prev** / **next** icons.
+The icon  on the right can be used to switch the playlist playback between **sequence** or **shuffle** mode.
 
 ![widget](/_static/settings/playlists/widget.png)
