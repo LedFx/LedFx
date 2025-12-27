@@ -54,6 +54,11 @@ class Engine(Integration):
                 default=8,
             ): vol.All(vol.Coerce(int), vol.Range(min=2, max=30)),
             vol.Optional(
+                "silence_threshold",
+                description="Z-score threshold for silence detection (extremely low energy, below ambient). Default: -1.5, Range: -3.0 to -0.8",
+                default=-1.5,
+            ): vol.All(vol.Coerce(float), vol.Range(min=-3.0, max=-0.8)),
+            vol.Optional(
                 "ambient_threshold",
                 description="Z-score threshold for ambient/breakdown mood states (very low energy). Default: -0.8, Range: -1.5 to -0.3",
                 default=-0.8,

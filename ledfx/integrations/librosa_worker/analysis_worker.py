@@ -83,6 +83,7 @@ class AudioAnalyzer:
         self.diag = config.get("diag", False)
         self.debug = config.get("debug", False)
         self.configured = True
+        self.silence_z = config.get("silence_threshold", -1.5)
         self.chill_z = config.get("chill_threshold", -0.3)
         self.build_z = config.get("build_threshold", 0.3)
         self.peak_z = config.get("peak_threshold", 0.7)
@@ -268,7 +269,10 @@ class AudioAnalyzer:
             tempo_slow = tempo_val < 90  # Low BPM
 
             # Multi-dimensional mood classification (prioritize energy states)
-            if z_energy < self.ambient_z and z_density < self.ambient_z:
+            # Silence detection (extremely low energy, below ambient threshold)
+            if z_energy < self.silence_z and z_density < self.silence_z:
+                mood = "silence"  # True silence or near-silence
+            elif z_energy < self.ambient_z and z_density < self.ambient_z:
                 if tempo_slow:
                     mood = (
                         "ambient"  # Very low energy, low density, slow tempo
@@ -307,7 +311,7 @@ class AudioAnalyzer:
             "type": "feature_update",
             "tempo": tempo_val,
             # High-level states
-            "mood": mood,  # "ambient" | "chill" | "groove" | "build" | "peak" | "intense" | "breakdown" | "unknown"
+            "mood": mood,
             "section_change": section_change,  # bool: boundary candidate
         }
 
@@ -316,18 +320,6 @@ class AudioAnalyzer:
 
         # --- Debug telemetry ---
         if self.debug:
-            # # Raw-ish features if you want them in the frontend / LedFx core
-            # "energy_rms": rms,
-            # "brightness_centroid": centroid,
-            # "bandwidth": bandwidth,
-            # "spectral_flatness": flatness,
-            # "onset_mean": onset_mean,
-            # "onset_var": onset_var,
-
-            # # Debug info for tuning (optional, can remove later)
-            # "z_energy": float(z_energy),
-            # "z_density": float(z_density),
-            # "section_distance": float(dist),
 
             # build a single string to send to Teleplot once
 

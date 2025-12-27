@@ -9,7 +9,7 @@ This document captures the design, implementation, and usage of the LedFx Engine
 The Engine integration analyzes audio in real-time to detect musical characteristics like tempo, energy, and mood states. It uses a multi-process architecture to avoid GIL contention and provides event-based notifications when mood states change.
 
 **Key Capabilities:**
-- **7 Mood States**: ambient, breakdown, chill, groove, build, peak, intense
+- **8 Mood States**: silence, ambient, breakdown, chill, groove, build, peak, intense
 - **Tempo Detection**: BPM and beat tracking
 - **Section Detection**: Identify verse/chorus/drop transitions
 - **Event Broadcasting**: `MoodChangedEvent` fires when mood changes
@@ -136,10 +136,11 @@ MoodChangedEvent fired (if changed)
 
 ### Mood States
 
-The system classifies music into 7 distinct mood states based on energy, onset density, tempo, and brightness:
+The system classifies music into 8 distinct mood states based on energy, onset density, tempo, and brightness:
 
 | Mood | Energy | Density | Tempo | Brightness | Musical Context |
-|------|--------|---------|-------|------------|-----------------|
+|------|--------|---------|-------|------------|------------------|
+| **silence** | Near Zero | Near Zero | Any | Any | True silence, pauses between songs |
 | **ambient** | Very Low | Very Low | Slow (<90 BPM) | Any | Atmospheric intros, ambient sections |
 | **breakdown** | Very Low | Very Low | Fast (>130 BPM) | Any | EDM breakdowns, build-up preparation |
 | **chill** | Low | Low | Any | Any | Verses, relaxed sections |
@@ -165,6 +166,7 @@ centroid = librosa.feature.spectral_centroid()  # Brightness
 - `z_brightness = (centroid - 2000) / 1000`
 
 **Configurable Thresholds:**
+- `silence_threshold` (default: -1.5): Extremely low energy/density (below ambient)
 - `ambient_threshold` (default: -0.8): Very low energy/density
 - `chill_threshold` (default: -0.3): Below average energy
 - `build_threshold` (default: 0.3): Rising energy/density
@@ -172,7 +174,10 @@ centroid = librosa.feature.spectral_centroid()  # Brightness
 
 **Classification Logic:**
 ```python
-if z_energy < ambient_z and z_density < ambient_z:
+# Silence detection (extremely low z-scores)
+if z_energy < silence_z and z_density < silence_z:
+    mood = "silence"
+elif z_energy < ambient_z and z_density < ambient_z:
     mood = "ambient" if tempo < 90 else "breakdown"
 elif z_energy > peak_z and z_density > peak_z:
     mood = "peak" if z_brightness > 0.5 else "intense"
