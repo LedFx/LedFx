@@ -1,8 +1,14 @@
 # Playlists
 
-Backend time driven scene playlists are now supported.
+Backend time-driven scene playlists are now supported.
 
-This framework will allow future developement of mood driven scene selection.
+This framework will allow future development of mood-driven scene selection.
+
+<video width="640" height="300" controls loop autoplay muted>
+   <source src="../_static/settings/playlists/playlist_shrunk.mp4" type="video/mp4">
+   Your browser does not support the video tag.
+</video>
+<br><br>
 
 ## Example Config
 
@@ -53,7 +59,7 @@ We will activate "My first playlist", monitor the playlist playback via the left
 
 **If no scenes are selected ALL scenes will be used in the playlist**
 
-To add scenes, select from the drop down.
+To add scenes, select from the dropdown.
 
 ![Just pick one](/_static/settings/playlists/select_scene.png)
 
@@ -75,7 +81,7 @@ To commit changes, just hit **CREATE** for a new playlist or **SAVE** if you are
 
 The playlist widget allows direct control of the active playlist.
 
-It can be used to to **pause** or **stop** the playlist.
+It can be used to **pause** or **stop** the playlist.
 The current scene can be bumped with the **prev** / **next** icons.
 The icon  on the right can be used to switch the playlist playback between **sequence** or **shuffle** mode.
 
