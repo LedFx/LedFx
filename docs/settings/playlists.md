@@ -12,7 +12,7 @@ This framework will allow future development of mood-driven scene selection.
 
 ## Example Config
 
-Examples shown in this overview are avaliable in the example config, please see [Example Config](/howto/example_config.md)
+Examples shown in this overview are available in the example config, please see [Example Config](/howto/example_config.md)
 
 ## Playlist tab
 
@@ -38,7 +38,7 @@ We then open the playlists tab via the bottom bar and can see that there are thr
 
 We will edit "My first playlist" via the 3-dot menu.
 
-We edit the playlist button image, swtich to shuffle mode, rather than sequence, shuffle the order of some of the scenes ( which won't matter as we are in shuffle mode ) and then save the changes.
+We edit the playlist button image, switch to shuffle mode, rather than sequence, shuffle the order of some of the scenes ( which won't matter as we are in shuffle mode ) and then save the changes.
 
 Finally we activate "My first playlist", monitor the playlist playback via the left widget, and watch the devices with the playlists cycling the scenes.
 
@@ -81,8 +81,8 @@ To commit changes, just hit **CREATE** for a new playlist or **SAVE** if you are
 
 The playlist widget allows direct control of the active playlist.
 
-It can be used to **pause** or **stop** the playlist.
-The current scene can be bumped with the **prev** / **next** icons.
-The icon  on the right can be used to switch the playlist playback between **sequence** or **shuffle** mode.
+It can be used to **pause** or **stop** the playlist.  
+The current scene can be bumped with the **prev** / **next** icons.  
+The **sequence** or **shuffle** icon on the right can be used to switch the playlist playback mode.
 
 ![widget](/_static/settings/playlists/widget.png)
