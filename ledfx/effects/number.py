@@ -233,7 +233,7 @@ class Number(Texter2d):
     def do_once(self):
         # override here to keep text centered and avoid config reset preset matching issues
         self.speed_option_1 = 0
-        
+
         """Initialize the sentence object with initial formatted number."""
         # update text before sentence creation
         self._display_text = self._format_number(
