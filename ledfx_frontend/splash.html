@@ -271,7 +271,7 @@
 
     <script>
       const { ipcRenderer } = require('electron');
-      
+
       ipcRenderer.on('splash-status', (event, message) => {
         document.getElementById('status').textContent = message;
       });
