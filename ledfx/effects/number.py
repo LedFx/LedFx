@@ -104,15 +104,15 @@ class Number(Texter2d):
             if isinstance(event, MoodChangedEvent):
                 self.display_value = event.mood
 
-        self._mood_listener = on_mood_change
-        self._ledfx.events.add_listener(on_mood_change, Event.MOOD_CHANGED)
+        # add_listener returns a callable to remove the listener
+        self._mood_listener = self._ledfx.events.add_listener(
+            on_mood_change, Event.MOOD_CHANGED
+        )
 
     def _remove_mood_listener(self):
         """Remove mood change event listener."""
         if self._mood_listener:
-            self._ledfx.events.remove_listener(
-                self._mood_listener, Event.MOOD_CHANGED
-            )
+            self._mood_listener()  # Call the removal function
             self._mood_listener = None
 
     def config_updated(self, config):
