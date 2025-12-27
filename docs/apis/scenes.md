@@ -150,7 +150,7 @@ If any virtual referenced in the scene no longer exists, the scene is not active
 
 | Method | Path                        | Purpose                                    |
 |-------:|-----------------------------|--------------------------------------------|
-|  POST  | `/api/scenes`               | Create or replace (upsert) a scene         |
+|  POST  | `/api/scenes`               | Create a new scene or update existing one  |
 |   PUT  | `/api/scenes`               | Control/mutate an existing scene           |
 | DELETE | `/api/scenes`               | Delete a scene (legacy, requires JSON body)|
 | DELETE | `/api/scenes/{scene_id}`    | Delete a scene (RESTful)                   |
@@ -167,9 +167,14 @@ If any virtual referenced in the scene no longer exists, the scene is not active
 
 ---
 
-## POST `/api/scenes` — Create/Replace (Upsert)
+## POST `/api/scenes` — Create or Update
 
-Creates a new scene or replaces an existing one with the same `id`.
+Creates a new scene or updates an existing one.
+
+**Operation Logic:**
+- **Create**: Omit `id` field. A new scene is created with an auto-generated ID from the `name` (lowercase, hyphenated).
+- **Update**: Provide `id` field with an existing scene ID. The scene will be updated, preserving any fields not explicitly provided in the request.
+- **Error**: Providing a non-existent `id` will return an error. To create a new scene, omit the `id` field entirely.
 
 ### Request Body
 
@@ -177,6 +182,7 @@ Creates a new scene or replaces an existing one with the same `id`.
 ```json
 {
   "name": "Evening Vibe",
+  "snapshot": true,
   "scene_image": "Wallpaper",
   "scene_tags": "ambient,relaxing",
   "scene_puturl": "",
@@ -184,7 +190,7 @@ Creates a new scene or replaces an existing one with the same `id`.
 }
 ```
 
-When `virtuals` is omitted, the scene automatically captures all currently active virtuals in their current configuration.
+With `snapshot: true`, the scene captures all currently active virtuals in their runtime configuration. The `virtuals` field is omitted and auto-captured.
 
 **Specify virtuals explicitly**:
 ```json
@@ -246,10 +252,20 @@ When `virtuals` is omitted, the scene automatically captures all currently activ
 
 ### Field Semantics
 
-- `id` *(string, optional)*: Stable identifier. If omitted on creation, generated from `name` (lowercase, hyphenated). If provided and exists, the scene will be replaced (upsert).
-- `name` *(string, required)*: Human-readable scene name.
+- `id` *(string, optional)*:
+  - **For create**: Omit this field. The ID will be auto-generated from `name` (lowercase, hyphenated).
+  - **For update**: Provide the existing scene ID. If the ID does not exist, the request will fail.
+- `name` *(string)*:
+  - **For create**: Required, non-empty string.
+  - **For update**: Optional. If omitted, the existing name is preserved.
+- `snapshot` *(boolean, optional, default: false)*: Controls how virtuals are captured.
+  - **true**: Captures current runtime configuration of all active virtuals, ignoring any provided `virtuals` field.
+  - **false**: Uses provided `virtuals` field, or preserves existing configuration if omitted.
+  - **Note**: Creates without a `virtuals` field automatically enable snapshot.
 - `virtuals` *(object, optional)*: Map of virtual device IDs to their effect configurations.
-  - If omitted: Auto-captures all currently active virtuals.
+  - **For create**: If omitted (and `snapshot=false`), snapshot is automatically enabled to capture current state.
+  - **For update**: If omitted, existing virtuals configuration is preserved.
+  - **With `snapshot=true`**: This field is ignored; current runtime state is captured instead.
   - Per-virtual `action` field controls behavior:
     - `"ignore"`: Leave virtual unchanged.
     - `"stop"`: Stop any playing effect.
@@ -259,20 +275,19 @@ When `virtuals` is omitted, the scene automatically captures all currently activ
   - `type` *(string)*: Effect type identifier (required for `action: "activate"`).
   - `config` *(object)*: Effect configuration parameters (required for `action: "activate"` when not using `preset`).
   - `preset` *(string)*: Preset name to use instead of explicit `config` (when `action: "activate"`). Must be combined with `type` to identify which effect's preset library to search.
-- `scene_image` *(string, optional)*: UI image/icon identifier (defaults to "Wallpaper").
-- `scene_tags` *(string, optional)*: Comma-separated tags for categorization.
-- `scene_puturl` *(string, optional)*: HTTP endpoint to call when scene activates.
-- `scene_payload` *(string, optional)*: Payload to send to `scene_puturl`.
-- `scene_midiactivate` *(object, optional)*: MIDI activation configuration.
+- `scene_image`, `scene_tags`, `scene_puturl`, `scene_payload`, `scene_midiactivate` *(optional)*:
+  - **For create**: Optional fields with defaults (scene_image defaults to "Wallpaper").
+  - **For update**: Optional. If omitted, existing values are preserved.
 
 ### Validation Rules
 
-- `name`: required, non-empty string
+- **Create**: `name` is required and must be a non-empty string. `id` must not be provided.
+- **Update**: `id` must be provided and must exist. `name` and other fields are optional.
 - `virtuals`: if provided, must be a valid object mapping virtual IDs to effect configs
 
 ### Responses
 
-**200 OK (success)**
+**200 OK (success - create)**
 ```json
 {
   "status": "success",
@@ -291,13 +306,43 @@ When `virtuals` is omitted, the scene automatically captures all currently activ
 }
 ```
 
-**200 OK (error)**
+**200 OK (success - update)**
+```json
+{
+  "status": "success",
+  "scene": {
+    "id": "evening-vibe",
+    "config": {
+      "name": "Evening Vibe",
+      "virtuals": { /* updated configuration */ },
+      "scene_image": "Wallpaper",
+      "scene_tags": "ambient,relaxing,updated",
+      "scene_puturl": "",
+      "scene_payload": "",
+      "scene_midiactivate": null
+    }
+  }
+}
+```
+
+**200 OK (error - validation)**
 ```json
 {
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "Validation failed: name is required"
+    "reason": "Required attribute 'name' was not provided"
+  }
+}
+```
+
+**200 OK (error - non-existent ID)**
+```json
+{
+  "status": "failed",
+  "payload": {
+    "type": "error",
+    "reason": "Scene with id 'non-existent' does not exist. To create a new scene, omit the 'id' field."
   }
 }
 ```
