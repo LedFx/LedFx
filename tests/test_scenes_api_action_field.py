@@ -137,8 +137,8 @@ class TestScenesEndpointPost(AioHTTPTestCase):
     @patch("ledfx.api.scenes.save_config")
     async def test_upsert_scene_with_id(self, mock_save):
         """Test upserting a scene with explicit ID."""
+        # First create a scene without ID
         request_data = {
-            "id": "my-scene",
             "name": "My Scene",
             "virtuals": {
                 "v1": {"action": "stop"},
@@ -154,7 +154,28 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         assert resp.status == 200
         data = await resp.json()
         assert data["status"] == "success"
-        assert data["scene"]["id"] == "my-scene"
+        scene_id = data["scene"]["id"]
+
+        # Now update it using the ID
+        request_data_2 = {
+            "id": scene_id,
+            "name": "Updated Scene",
+            "virtuals": {
+                "v1": {"action": "ignore"},
+            },
+        }
+
+        resp = await self.client.post(
+            "/api/scenes",
+            data=json.dumps(request_data_2),
+            headers={"Content-Type": "application/json"},
+        )
+
+        assert resp.status == 200
+        data = await resp.json()
+        assert data["status"] == "success"
+        assert data["scene"]["id"] == scene_id
+        assert data["scene"]["config"]["name"] == "Updated Scene"
 
 
 class TestScenesEndpointGet(AioHTTPTestCase):
