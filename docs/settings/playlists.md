@@ -81,8 +81,8 @@ To commit changes, just hit **CREATE** for a new playlist or **SAVE** if you are
 
 The playlist widget allows direct control of the active playlist.
 
-It can be used to **pause** or **stop** the playlist.  
-The current scene can be bumped with the **prev** / **next** icons.  
+It can be used to **pause** or **stop** the playlist.
+The current scene can be bumped with the **prev** / **next** icons.
 The **sequence** or **shuffle** icon on the right can be used to switch the playlist playback mode.
 
 ![widget](/_static/settings/playlists/widget.png)
