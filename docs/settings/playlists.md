@@ -36,11 +36,11 @@ This video starts by showing the available scenes in the example config.
 
 We then open the playlists tab via the bottom bar and can see that there are three existing examples.
 
-We will edit "My first playlist" via the 3 dot option on the playlist button.
+We will edit "My first playlist" via the 3-dot menu.
 
-We will change the playlist button image, swtich to shuffle mode, rather than sequence, shuffle the order of some of the scenes ( which won't matter as we are in shuffle mode ) and then save the changes.
+We edit the playlist button image, swtich to shuffle mode, rather than sequence, shuffle the order of some of the scenes ( which won't matter as we are in shuffle mode ) and then save the changes.
 
-We will activate "My first playlist", monitor the playlist playback via the left widget, and finally watch the devices with the playlists cycling through.
+Finally we activate "My first playlist", monitor the playlist playback via the left widget, and watch the devices with the playlists cycling the scenes.
 
 <video width="550" height="700" controls loop>
    <source src="../_static/settings/playlists/playlist_demo1_shrunk.mp4" type="video/mp4">
