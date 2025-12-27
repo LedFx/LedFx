@@ -224,7 +224,7 @@ class ScenesEndpoint(RestEndpoint):
             # Update existing scene - sanitize scene_id and preserve existing config
             scene_id = generate_id(scene_id)
             scene_config = dict(self._ledfx.config["scenes"][scene_id])
-            
+
             # Only update fields that were explicitly provided
             if scene_name is not None:
                 scene_config["name"] = scene_name
@@ -246,7 +246,7 @@ class ScenesEndpoint(RestEndpoint):
             while scene_id in self._ledfx.config["scenes"].keys():
                 scene_id = f"{dupe_id}-{dupe_index}"
                 dupe_index = dupe_index + 1
-            
+
             if scene_image is None:
                 scene_image = "Wallpaper"
 

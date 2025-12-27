@@ -155,7 +155,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         data = await resp.json()
         assert data["status"] == "success"
         scene_id = data["scene"]["id"]
-        
+
         # Now update it using the ID
         request_data_2 = {
             "id": scene_id,

@@ -252,7 +252,7 @@ With `snapshot: true`, the scene captures all currently active virtuals in their
 
 ### Field Semantics
 
-- `id` *(string, optional)*: 
+- `id` *(string, optional)*:
   - **For create**: Omit this field. The ID will be auto-generated from `name` (lowercase, hyphenated).
   - **For update**: Provide the existing scene ID. If the ID does not exist, the request will fail.
 - `name` *(string)*:
@@ -275,7 +275,7 @@ With `snapshot: true`, the scene captures all currently active virtuals in their
   - `type` *(string)*: Effect type identifier (required for `action: "activate"`).
   - `config` *(object)*: Effect configuration parameters (required for `action: "activate"` when not using `preset`).
   - `preset` *(string)*: Preset name to use instead of explicit `config` (when `action: "activate"`). Must be combined with `type` to identify which effect's preset library to search.
-- `scene_image`, `scene_tags`, `scene_puturl`, `scene_payload`, `scene_midiactivate` *(optional)*: 
+- `scene_image`, `scene_tags`, `scene_puturl`, `scene_payload`, `scene_midiactivate` *(optional)*:
   - **For create**: Optional fields with defaults (scene_image defaults to "Wallpaper").
   - **For update**: Optional. If omitted, existing values are preserved.
 

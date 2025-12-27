@@ -300,10 +300,10 @@ async def test_post_scene_with_upsert():
 
         assert data["status"] == "success"
         assert data["scene"]["id"] == scene_id
-        assert data["scene"]["config"]["name"] == "Updated Scene"  # Name preserved from previous update
         assert (
-            data["scene"]["config"]["virtuals"]["v1"]["action"] == "ignore"
-        )
+            data["scene"]["config"]["name"] == "Updated Scene"
+        )  # Name preserved from previous update
+        assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "ignore"
 
 
 @pytest.mark.asyncio
