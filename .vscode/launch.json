@@ -197,5 +197,15 @@
             },
             "postDebugTask": "Cleanup Debug Config Folder"
         },
+        {
+            "name": "Attach to Worker Process",
+            "type": "debugpy",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5679
+            },
+            "justMyCode": false
+        }
     ]
 }

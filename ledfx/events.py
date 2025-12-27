@@ -39,6 +39,7 @@ class Event:
     PLAYLIST_STOPPED = "playlist_stopped"
     PLAYLIST_PAUSED = "playlist_paused"
     PLAYLIST_RESUMED = "playlist_resumed"
+    MOOD_CHANGED = "mood_changed"
 
     def __init__(self, type: str):
         """
@@ -281,6 +282,15 @@ class SceneDeletedEvent(Event):
     def __init__(self, scene_id):
         super().__init__(Event.SCENE_DELETED)
         self.scene_id = scene_id
+
+
+class MoodChangedEvent(Event):
+    """Event emitted when the audio mood state changes"""
+
+    def __init__(self, mood, previous_mood=None):
+        super().__init__(Event.MOOD_CHANGED)
+        self.mood = mood
+        self.previous_mood = previous_mood
 
 
 class PlaylistStartedEvent(Event):
