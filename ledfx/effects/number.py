@@ -83,12 +83,6 @@ class Number(Texter2d):
                 description="Support negative values (include negative sign in sizing)",
                 default=False,
             ): bool,
-            # Force speed_option_1 to 0 for centered display, overrider here so reset preset matching works
-            vol.Optional(
-                "speed_option_1",
-                description="general speed slider for text effects",
-                default=0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3)),
         },
     )
 
@@ -237,6 +231,9 @@ class Number(Texter2d):
         return best_size
 
     def do_once(self):
+        # override here to keep text centered and avoid config reset preset matching issues
+        self.speed_option_1 = 0
+        
         """Initialize the sentence object with initial formatted number."""
         # update text before sentence creation
         self._display_text = self._format_number(
