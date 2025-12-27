@@ -13,13 +13,13 @@ from playwright.sync_api import Page
 def crop_to_720p(image_path: str):
     """
     Crop image to 1280x720 from the top.
-    
+
     Args:
         image_path: Path to the image file
     """
     img = Image.open(image_path)
     width, height = img.size
-    
+
     # If image is taller than 720, crop from top
     if height > 720:
         img_cropped = img.crop((0, 0, 1280, 720))
@@ -30,7 +30,7 @@ def crop_to_720p(image_path: str):
 def wait_with_screenshots(page: Page, seconds: int, prefix: str):
     """
     Wait for specified seconds, taking a screenshot every second.
-    
+
     Args:
         page: Playwright page instance
         seconds: Number of seconds to wait

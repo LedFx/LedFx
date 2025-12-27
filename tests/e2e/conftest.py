@@ -9,7 +9,7 @@ import glob
 import os
 import subprocess
 import time
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from PIL import Image
@@ -27,10 +27,12 @@ from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
 
 
-def convert_webm_to_gif(webm_path: str, gif_path: str, fps: int = 10, max_colors: int = 256):
+def convert_webm_to_gif(
+    webm_path: str, gif_path: str, fps: int = 10, max_colors: int = 256
+):
     """
     Convert WebM video to animated GIF using ffmpeg.
-    
+
     Args:
         webm_path: Path to WebM video file
         gif_path: Output path for GIF file
@@ -40,38 +42,45 @@ def convert_webm_to_gif(webm_path: str, gif_path: str, fps: int = 10, max_colors
     try:
         # Use ffmpeg to convert webm to gif with palette for better quality
         palette_path = webm_path.replace(".webm", "_palette.png")
-        
+
         # Generate color palette
         subprocess.run(
             [
                 "ffmpeg",
-                "-i", webm_path,
-                "-vf", f"fps={fps},scale=1280:-1:flags=lanczos,palettegen=max_colors={max_colors}",
-                "-y", palette_path
+                "-i",
+                webm_path,
+                "-vf",
+                f"fps={fps},scale=1280:-1:flags=lanczos,palettegen=max_colors={max_colors}",
+                "-y",
+                palette_path,
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            check=True
+            check=True,
         )
-        
+
         # Create GIF using palette
         subprocess.run(
             [
                 "ffmpeg",
-                "-i", webm_path,
-                "-i", palette_path,
-                "-filter_complex", f"fps={fps},scale=1280:-1:flags=lanczos[x];[x][1:v]paletteuse",
-                "-y", gif_path
+                "-i",
+                webm_path,
+                "-i",
+                palette_path,
+                "-filter_complex",
+                f"fps={fps},scale=1280:-1:flags=lanczos[x];[x][1:v]paletteuse",
+                "-y",
+                gif_path,
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            check=True
+            check=True,
         )
-        
+
         # Clean up palette file
         if os.path.exists(palette_path):
             os.remove(palette_path)
-            
+
         print(f"  🎞️  Created GIF: {os.path.basename(gif_path)}")
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -125,7 +134,7 @@ def ledfx_server() -> Generator[subprocess.Popen, None, None]:
         process.wait(timeout=5)
     except subprocess.TimeoutExpired:
         process.kill()
-    
+
     # Wait for Windows to release file handles
     time.sleep(1)
 
@@ -180,7 +189,9 @@ def context(
     # Create context with video recording
     context = browser.new_context(
         **browser_context_args,
-        record_video_dir=VIDEO_PATH if PLAYWRIGHT_CONFIG["video"]["mode"] == "on" else None,
+        record_video_dir=(
+            VIDEO_PATH if PLAYWRIGHT_CONFIG["video"]["mode"] == "on" else None
+        ),
     )
 
     # Start tracing
@@ -203,7 +214,7 @@ def context(
 
     # Close context and process videos
     context.close()
-    
+
     # Convert WebM videos to GIF if video recording is enabled
     if PLAYWRIGHT_CONFIG["video"]["mode"] == "on":
         # Get the video file for this context (find the most recent one)
@@ -211,23 +222,25 @@ def context(
         if video_files:
             # Sort by modification time to get the most recent
             latest_video = max(video_files, key=os.path.getmtime)
-            
+
             # Rename to test name
             new_video_name = f"{request.node.name}.webm"
             new_video_path = os.path.join(VIDEO_PATH, new_video_name)
-            
+
             # Rename the video file (os.replace overwrites if exists)
             if latest_video != new_video_path:
                 os.replace(latest_video, new_video_path)
                 print(f"  🎬 Renamed video to: {new_video_name}")
-            
+
             # Create GIF version
             gif_file = new_video_path.replace(".webm", ".gif")
             convert_webm_to_gif(new_video_path, gif_file)
 
 
 @pytest.fixture(scope="function")
-def page(context: BrowserContext, request: pytest.FixtureRequest) -> Generator[Page, None, None]:
+def page(
+    context: BrowserContext, request: pytest.FixtureRequest
+) -> Generator[Page, None, None]:
     """
     Create a new page for each test.
 
@@ -249,7 +262,10 @@ def page(context: BrowserContext, request: pytest.FixtureRequest) -> Generator[P
     yield page
 
     # Screenshot on failure
-    if request.node.rep_call.failed and PLAYWRIGHT_CONFIG["screenshot"]["mode"] == "on":
+    if (
+        request.node.rep_call.failed
+        and PLAYWRIGHT_CONFIG["screenshot"]["mode"] == "on"
+    ):
         screenshot_file = os.path.join(
             SCREENSHOT_PATH,
             f"{request.node.name}.png",

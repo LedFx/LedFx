@@ -25,7 +25,7 @@ def pytest_sessionstart(session):
     selected_items = session.config.option.markexpr
     if selected_items and "e2e" in selected_items:
         return
-    
+
     EnvironmentCleanup.cleanup_test_config_folder()
     # Start LedFx as a subprocess
     global ledfx
@@ -77,7 +77,7 @@ def pytest_sessionfinish(session, exitstatus):
     selected_items = session.config.option.markexpr
     if selected_items and "e2e" in selected_items:
         return
-    
+
     # send LedFx a shutdown signal
     try:
         EnvironmentCleanup.shutdown_ledfx()

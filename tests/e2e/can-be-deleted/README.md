@@ -1,6 +1,6 @@
 # Playwright E2E Testing
 
-> **Note:** This file is in the `can-be-deleted` folder and is optional.  
+> **Note:** This file is in the `can-be-deleted` folder and is optional.
 > See [docs/developer/playwright_testing.md](../docs/developer/playwright_testing.md) for the comprehensive guide.
 
 Quick start guide for running end-to-end tests with Playwright.

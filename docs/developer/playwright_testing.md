@@ -154,10 +154,10 @@ class TestFeature:
         """Test description."""
         # Navigate to page
         page.goto("http://localhost:8888")
-        
+
         # Interact with elements
         page.click("button[aria-label='Add']")
-        
+
         # Assert expectations
         expect(page.locator(".success-message")).to_be_visible()
 ```
@@ -176,11 +176,11 @@ def test_with_helpers(self, page: Page, ledfx_server):
     # Navigate and interact
     page.goto(BASE_URL)
     page.get_by_role("button", name="Skip").click()
-    
+
     # Take and crop screenshot
     page.screenshot(path="tests/e2e/screenshots/example.png", full_page=True)
     crop_to_720p("tests/e2e/screenshots/example.png")
-    
+
     # Wait with screenshots for debugging
     wait_with_screenshots(page, ".settings-page", "settings_loaded")
 ```
@@ -320,17 +320,17 @@ Organize tests by feature/page:
 ```python
 class TestDeviceManagement:
     """Tests for device management features."""
-    
+
     @pytest.mark.e2e
     def test_add_device(self, page, ledfx_server):
         """Test adding a device."""
         pass
-    
+
     @pytest.mark.e2e
     def test_edit_device(self, page, ledfx_server):
         """Test editing a device."""
         pass
-    
+
     @pytest.mark.e2e
     def test_delete_device(self, page, ledfx_server):
         """Test deleting a device."""
@@ -417,10 +417,10 @@ class DevicePageObject:
     def __init__(self, page, base_url):
         self.page = page
         self.base_url = base_url
-    
+
     def navigate(self):
         self.page.goto(f"{self.base_url}/devices")
-    
+
     def add_device(self, name, ip):
         # Encapsulate complex interactions
         pass
@@ -453,9 +453,9 @@ def test_device(page, ledfx_server):
     # Setup
     device_page = DevicePageObject(page, BASE_URL)
     device_page.create_device("Test Device", "192.168.1.100", 100)
-    
+
     yield "Test Device"
-    
+
     # Teardown
     device_page.delete_device("Test Device")
 ```
@@ -534,19 +534,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
-        
+
       - name: Install dependencies
         run: uv sync --group dev
-        
+
       - name: Install Playwright browsers
         run: uv run playwright install chromium --with-deps
-        
+
       - name: Run E2E tests
         run: uv run pytest tests/e2e -m e2e
-        
+
       - name: Upload test artifacts
         if: failure()
         uses: actions/upload-artifact@v4

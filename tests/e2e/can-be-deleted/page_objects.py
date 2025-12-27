@@ -29,8 +29,7 @@ class PageHelpers:
         """
         try:
             with page.expect_response(
-                lambda response: url_pattern in response.url,
-                timeout=timeout
+                lambda response: url_pattern in response.url, timeout=timeout
             ) as response_info:
                 return response_info.value
         except Exception:
@@ -47,8 +46,8 @@ class PageHelpers:
         """
         # Common loading indicator selectors
         loading_selectors = [
-            '.loading',
-            '.spinner',
+            ".loading",
+            ".spinner",
             '[class*="loading"]',
             '[class*="spinner"]',
             '[role="progressbar"]',
@@ -57,9 +56,7 @@ class PageHelpers:
         for selector in loading_selectors:
             try:
                 page.wait_for_selector(
-                    selector,
-                    state="hidden",
-                    timeout=timeout
+                    selector, state="hidden", timeout=timeout
                 )
             except Exception:
                 continue  # Selector might not exist, that's okay
@@ -79,7 +76,9 @@ class PageHelpers:
             element.first.screenshot(path=filename)
 
     @staticmethod
-    def get_console_messages(page: Page, message_type: str = "all") -> List[str]:
+    def get_console_messages(
+        page: Page, message_type: str = "all"
+    ) -> list[str]:
         """
         Collect console messages from the page.
 
@@ -124,7 +123,9 @@ class DevicePageObject:
         add_button = self.page.get_by_role("button", name="Add")
         add_button.click()
 
-    def fill_device_form(self, device_type: str, name: str, ip: str, pixel_count: int):
+    def fill_device_form(
+        self, device_type: str, name: str, ip: str, pixel_count: int
+    ):
         """
         Fill out the device creation form.
 
@@ -144,7 +145,7 @@ class DevicePageObject:
         submit_button = self.page.get_by_role("button", name="Submit")
         submit_button.click()
 
-    def get_device_list(self) -> List[str]:
+    def get_device_list(self) -> list[str]:
         """
         Get list of device names.
 
@@ -306,7 +307,9 @@ class AssertionHelpers:
     """Custom assertions for LedFx testing."""
 
     @staticmethod
-    def assert_no_errors_in_console(page: Page, allowed_errors: Optional[List[str]] = None):
+    def assert_no_errors_in_console(
+        page: Page, allowed_errors: Optional[list[str]] = None
+    ):
         """
         Assert that no unexpected errors appear in the console.
 
@@ -328,13 +331,16 @@ class AssertionHelpers:
         # Filter out allowed errors
         if allowed_errors:
             unexpected_errors = [
-                err for err in console_errors
+                err
+                for err in console_errors
                 if not any(allowed in err for allowed in allowed_errors)
             ]
         else:
             unexpected_errors = console_errors
 
-        assert len(unexpected_errors) == 0, f"Unexpected console errors: {unexpected_errors}"
+        assert (
+            len(unexpected_errors) == 0
+        ), f"Unexpected console errors: {unexpected_errors}"
 
     @staticmethod
     def assert_api_success(response):
@@ -344,15 +350,17 @@ class AssertionHelpers:
         Args:
             response: Playwright Response object
         """
-        assert response.status >= 200 and response.status < 300, \
-            f"API call failed with status {response.status}"
+        assert (
+            response.status >= 200 and response.status < 300
+        ), f"API call failed with status {response.status}"
 
         try:
             body = response.json()
             # LedFx API typically returns {"status": "success"} for successful operations
             if "status" in body:
-                assert body["status"] == "success", \
-                    f"API returned status: {body.get('status')}"
+                assert (
+                    body["status"] == "success"
+                ), f"API returned status: {body.get('status')}"
         except Exception:
             # Some responses might not be JSON or have status field
             pass

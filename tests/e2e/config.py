@@ -29,7 +29,9 @@ VIDEO_ENABLED = os.getenv("VIDEO", "true").lower() == "true"
 VIDEO_PATH = "tests/e2e/videos"
 
 # Trace settings
-TRACE_ENABLED = os.getenv("TRACE", "on")  # 'on', 'off', 'retain-on-failure', 'on-first-retry'
+TRACE_ENABLED = os.getenv(
+    "TRACE", "on"
+)  # 'on', 'off', 'retain-on-failure', 'on-first-retry'
 TRACE_PATH = "tests/e2e/traces"
 
 # Viewport settings
@@ -58,4 +60,6 @@ PLAYWRIGHT_CONFIG = {
 TEST_PATHS = ["tests/e2e"]
 
 # Browsers to test on
-BROWSERS = ["chromium"]  # Can add 'firefox', 'webkit' for cross-browser testing
+BROWSERS = [
+    "chromium"
+]  # Can add 'firefox', 'webkit' for cross-browser testing
