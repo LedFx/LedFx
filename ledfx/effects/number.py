@@ -83,14 +83,18 @@ class Number(Texter2d):
                 description="Support negative values (include negative sign in sizing)",
                 default=False,
             ): bool,
+            # Force speed_option_1 to 0 for centered display, overrider here so reset preset matching works
+            vol.Optional(
+                "speed_option_1",
+                description="general speed slider for text effects",
+                default=0,
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3)),
         },
     )
 
     def __init__(self, ledfx, config):
         # Initialize display value that can be set externally
         self.display_value = 0.0
-        # Force speed_option_1 to 0 for centered display
-        config["speed_option_1"] = 0
         super().__init__(ledfx, config)
 
     def config_updated(self, config):
@@ -234,8 +238,8 @@ class Number(Texter2d):
 
     def do_once(self):
         """Initialize the sentence object with initial formatted number."""
-        # Update text before sentence creation
-        self._config["text"] = self._format_number(
+        # update text before sentence creation
+        self._display_text = self._format_number(
             self.display_value, self.digits_before, self.digits_after
         )
         # Call parent do_once which creates the sentence
@@ -244,7 +248,7 @@ class Number(Texter2d):
         self._font_size = self._calculate_font_size()
         # Recreate the sentence with the optimal font size
         self.sentence = Sentence(
-            self._config["text"],
+            self._display_text,
             self._config["font"],
             self._font_size,
             (self.r_width, self.r_height),
@@ -266,10 +270,10 @@ class Number(Texter2d):
         new_text = self._format_number(
             self.display_value, self.digits_before, self.digits_after
         )
-        if new_text != self._config["text"]:
-            self._config["text"] = new_text
+        if new_text != self._display_text:
+            self._display_text = new_text
             self.sentence = Sentence(
-                self._config["text"],
+                self._display_text,
                 self._config["font"],
                 self._font_size,
                 (self.r_width, self.r_height),
