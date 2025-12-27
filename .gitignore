@@ -77,3 +77,18 @@ __pycache__/*
 !/installer/ledfx.nsi
 !/installer/icons
 !/installer/icons/**
+
+# Playwright E2E Test Artifacts
+tests/e2e/screenshots/01_homepage.png
+tests/e2e/screenshots/03_settings.png
+tests/e2e/screenshots/04_general.png
+tests/e2e/screenshots/05_about.png
+tests/e2e/screenshots/02_after_skip.png
+tests/e2e/traces/test_navigation_and_about\[chromium].zip
+tests/e2e/videos/test_navigation_and_about\[chromium].gif
+tests/e2e/videos/test_navigation_and_about\[chromium].webm
+test-results/
+playwright-report/
+
+# Playwright browsers
+.playwright/
