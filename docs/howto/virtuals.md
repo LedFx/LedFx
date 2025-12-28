@@ -141,7 +141,7 @@ We are ready to add our first segment, press the **Add Segment** button
 
 ![Select Segment](/_static/howto/virtuals/virtuals4.png)
 
-Hit the drop down and a list of all devices will appear, select the
+Hit the dropdown and a list of all devices will appear, select the
 device from which you want to assign your first segment
 
 ![Our first segment setup](/_static/howto/virtuals/virtuals5.png)

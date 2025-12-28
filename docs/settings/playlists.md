@@ -1,6 +1,6 @@
 # Playlists
 
-Backend time-driven scene playlists are now supported.
+Backend time-driven [**Scenes**](/settings/scenes.md) based playlists are now supported.
 
 This framework will allow future development of mood-driven scene selection.
 
@@ -10,9 +10,9 @@ This framework will allow future development of mood-driven scene selection.
 </video>
 <br><br>
 
-## Example Config
+## [Example Config](/howto/example_config.md)
 
-Examples shown in this overview are available in the [Example Config](/howto/example_config.md)
+Examples shown in this overview are available in the [**Example Config**](/howto/example_config.md)
 
 ## Playlist tab
 

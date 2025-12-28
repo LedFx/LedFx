@@ -38,9 +38,9 @@ In this case we are using the windows loopback device that LedFx automagically e
 
 ![all the choices](/_static/howto/config/audio.png)
 
-## Scenes
+## [Scenes](/settings/scenes.md)
 
-Now select scenes from the bottom bar, and you should see the following
+Now select [**Scenes**](/settings/scenes.md) from the bottom bar, and you should see the following
 
 ![ooo pretty](/_static/howto/config/scenes.png)
 
@@ -73,3 +73,18 @@ The other 3 scenes are intentionally color distinct, and are
 ### Redly
 
 ![dont get burnt](/_static/howto/config/redly.png)
+
+## [Playlists](/settings/playlists.md)
+
+See documentation at [**Playlists**](/settings/playlists.md) to understand how to access the playlist features.
+
+There are 3 playlists included in the example config.
+
+![kittens](/_static/howto/config/playlists.png)
+
+**EverythingAllwaysAllOfTheTime:** All currently configured scenes in sequence with a 5 second timing. This example shows that by having no scenes selected, all scenes are used when activated.
+
+**my first playlist:** 4 scenes repeated, shows you can have multiple entries of the same scenes in a playlist. 5s period in sequence.
+
+**my jitter list:** Same as my first playlist, except, mode is set to shuffle = full scene list is played in a random order. Once a cycle completes, the random order is regenerated.<br>Also has **Jitter** enabled, with a 0.5x to 2x range randomly applied to the base frame time of 5 seconds, so scene switching will be 2.5 to 10 seconds.
+

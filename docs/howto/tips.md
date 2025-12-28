@@ -22,7 +22,7 @@ If you are running large matrix then setting to 4096 is advised as a limit. This
 
 For any matrix larger that 4096 pixels ( or any value that Frontend pixels is set to ) LedFx will downscale the visualisation data to control bandwidth and processing overheads for the frontend.
 
-HOWEVER: Ledfx supports 16384 ( 16K ), and even upto the max of 65536 ( 65K ) setting for extreme browser visualisation needs. See Orange options in drop down.
+HOWEVER: Ledfx supports 16384 ( 16K ), and even upto the max of 65536 ( 65K ) setting for extreme browser visualisation needs. See Orange options in dropdown.
 
 Don't do this unless you REALLY need that higher resolution in the browser, such as setting locally hosted monitors to the fullscreen visualisation ( via double click ) of a dummy device matrix. For example, a dummy device set to 339 x 191 pixels.
 
@@ -34,7 +34,7 @@ These large front end visualisation payloads imply a heavy loading on the networ
 
 Only use these extreme visualisation pixel counts on local browser instances running on the same host as LedFx, even then, use caution!
 
-Also note the value edit field has been removed from this in favour of the drop down, unless you have enabled Expert Mode.
+Also note the value edit field has been removed from this in favour of the dropdown, unless you have enabled Expert Mode.
 
 ## WLED and pixel counts
 

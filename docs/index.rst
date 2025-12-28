@@ -17,6 +17,7 @@
 
    /settings/configuring
    /settings/asset_workflow
+   /settings/scenes
    /settings/playlists
    /settings/directing_audio
    /settings/index_settings
