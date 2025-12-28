@@ -8,7 +8,7 @@ Backend managed, collections of device and virtual settings activated via a sing
 </video>
 <br><br>
 
-In this capture we have two browser tabs side by side, so we can see scene activation and effect visualition in one view.
+In this capture we have two browser tabs side by side, so we can see scene activation and effect visualization in one view.
 
 ## [Example Config](/howto/example_config.md)
 
@@ -38,12 +38,12 @@ The initial configuration is captured from the current active devices and virtua
 
 If an effect is using a preset, it will be listed in the preset column.
 
-Effects can be reselected from the drop down on each row.
-Presets can be selected for the current effect from the adjacent drop down.
+Effects can be reselected from the dropdown on each row.
+Presets can be selected for the current effect from the adjacent dropdown.
 
 The final column is for **Action**, how the device / virtual will be treated by the Scene.
 
-In this exmaple we have modified the first 3 devices. Any device / virtual can be set to 
+In this example we have modified the first 3 devices. Any device / virtual can be set to 
 
 **Activate** - Run the effect configuration captured in the scene.<br>
 **Ignore** - No change will be made to the virtual / device on activating the scene.<br>
@@ -75,7 +75,7 @@ New devices added since scene creation will be displayed greyed out, with an **I
 
 The scene configuration will be over written on selecting save.
 
-It is also possible to overwite all device / virtual settings in a scene with the current live configuration by selecting **OVERWRITE**
+It is also possible to overwrite all device / virtual settings in a scene with the current live configuration by selecting **OVERWRITE**
 
 <img src="/_static/settings/scenes/scene_overwrite.png" alt="3 dot">
 
