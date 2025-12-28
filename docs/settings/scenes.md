@@ -43,7 +43,7 @@ Presets can be selected for the current effect from the adjacent dropdown.
 
 The final column is for **Action**, how the device / virtual will be treated by the Scene.
 
-In this example we have modified the first 3 devices. Any device / virtual can be set to 
+In this example we have modified the first 3 devices. Any device / virtual can be set to
 
 **Activate** - Run the effect configuration captured in the scene.<br>
 **Ignore** - No change will be made to the virtual / device on activating the scene.<br>
