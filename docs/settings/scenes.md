@@ -43,7 +43,7 @@ Presets can be selected for the current effect from the adjacent drop down.
 
 The final column is for **Action**, how the device / virtual will be treated by the Scene.
 
-In this exmaple we have modified the first 3 devices. Any device / virtual can be set to 
+In this exmaple we have modified the first 3 devices. Any device / virtual can be set to
 
 **Activate** - Run the effect configuration captured in the scene.<br>
 **Ignore** - No change will be made to the virtual / device on activating the scene.<br>
@@ -62,7 +62,7 @@ A scene can be edited by selecting its 3-dot menu
 
 <img src="/_static/settings/scenes/scene_3dot.png" alt="3 dot">
 
-The same 3-dot menu also allows 
+The same 3-dot menu also allows
 
 Changing the display order of scenes with the < and > controls.<br>
 Deleting a scene<br>
