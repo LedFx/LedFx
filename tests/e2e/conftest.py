@@ -27,61 +27,42 @@ from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
 
 
-def convert_webm_to_gif(
-    webm_path: str, gif_path: str, fps: int = 10, max_colors: int = 256
+def convert_webm_to_webp(
+    webm_path: str, webp_path: str, fps: int = 10, quality: int = 80
 ):
     """
-    Convert WebM video to animated GIF using ffmpeg.
+    Convert WebM video to animated WebP using ffmpeg.
 
     Args:
         webm_path: Path to WebM video file
-        gif_path: Output path for GIF file
-        fps: Frames per second for GIF (default: 10 for smaller file size)
-        max_colors: Maximum colors in GIF palette (default: 256)
+        webp_path: Output path for WebP file
+        fps: Frames per second for WebP (default: 10 for smaller file size)
+        quality: Quality setting 0-100 (default: 80)
     """
     try:
-        # Use ffmpeg to convert webm to gif with palette for better quality
-        palette_path = webm_path.replace(".webm", "_palette.png")
-
-        # Generate color palette
+        # Use ffmpeg to convert webm to webp
         subprocess.run(
             [
                 "ffmpeg",
                 "-i",
                 webm_path,
                 "-vf",
-                f"fps={fps},scale=1280:-1:flags=lanczos,palettegen=max_colors={max_colors}",
+                f"fps={fps},scale=1280:-1:flags=lanczos",
+                "-c:v",
+                "libwebp",
+                "-quality",
+                str(quality),
+                "-loop",
+                "0",
                 "-y",
-                palette_path,
+                webp_path,
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=True,
         )
 
-        # Create GIF using palette
-        subprocess.run(
-            [
-                "ffmpeg",
-                "-i",
-                webm_path,
-                "-i",
-                palette_path,
-                "-filter_complex",
-                f"fps={fps},scale=1280:-1:flags=lanczos[x];[x][1:v]paletteuse",
-                "-y",
-                gif_path,
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=True,
-        )
-
-        # Clean up palette file
-        if os.path.exists(palette_path):
-            os.remove(palette_path)
-
-        print(f"  🎞️  Created GIF: {os.path.basename(gif_path)}")
+        print(f"  🎞️  Created WebP: {os.path.basename(webp_path)}")
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         # ffmpeg not available or conversion failed
@@ -232,9 +213,9 @@ def context(
                 os.replace(latest_video, new_video_path)
                 print(f"  🎬 Renamed video to: {new_video_name}")
 
-            # Create GIF version
-            gif_file = new_video_path.replace(".webm", ".gif")
-            convert_webm_to_gif(new_video_path, gif_file)
+            # Create WebP version
+            webp_file = new_video_path.replace(".webm", ".webp")
+            convert_webm_to_webp(new_video_path, webp_file)
 
 
 @pytest.fixture(scope="function")

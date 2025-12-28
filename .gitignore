@@ -92,3 +92,4 @@ playwright-report/
 
 # Playwright browsers
 .playwright/
+tests/e2e/videos/test_navigation_and_about\[chromium].webp
