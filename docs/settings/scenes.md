@@ -62,7 +62,7 @@ A scene can be edited by selecting its 3-dot menu
 
 <img src="/_static/settings/scenes/scene_3dot.png" alt="3 dot">
 
-The same 3-dot menu also allows 
+The same 3-dot menu also allows
 
 Changing the display order of scenes with the < and > controls.<br>
 Deleting a scene<br>
