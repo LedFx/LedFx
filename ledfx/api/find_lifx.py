@@ -4,6 +4,7 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from lifx import LifxError, discover, discover_mdns, find_by_ip
 
 from ledfx.api import RestEndpoint
 
@@ -11,6 +12,9 @@ _LOGGER = logging.getLogger(__name__)
 
 # Default timeout for network discovery (seconds)
 DISCOVERY_TIMEOUT = 5
+
+# Valid discovery methods
+DISCOVERY_METHODS = ("udp", "mdns", "both")
 
 # Map lifx-async device types to internal category names
 LIFX_CATEGORY_MAP = {
@@ -33,19 +37,171 @@ class FindLifxEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/find_lifx"
 
+    def _find_existing_lifx_by_serial(self, serial):
+        """Check if a LIFX device already exists by serial number."""
+        for existing in self._ledfx.devices.values():
+            if existing.type == "lifx" and existing.config.get("serial") == serial:
+                return existing
+        return None
+
+    async def _process_discovered_device(self, device, auto_add, seen_serials):
+        """
+        Process a discovered LIFX device and optionally add it.
+
+        Args:
+            device: The lifx-async device object
+            auto_add: Whether to automatically add the device
+            seen_serials: Set of already-seen serial numbers (for deduplication)
+
+        Returns:
+            Device info dict, or None if device was already seen
+        """
+        # Skip if we've already seen this device (for "both" method)
+        if device.serial in seen_serials:
+            await device.close()
+            return None
+        seen_serials.add(device.serial)
+
+        lifx_class = type(device).__name__
+        category = LIFX_CATEGORY_MAP.get(lifx_class, "light")
+
+        try:
+            label = await device.get_label()
+        except (LifxError, OSError):
+            label = f"LIFX {device.serial[-6:]}"
+
+        device_info = {
+            "device_type": "lifx",
+            "category": category,
+            "lifx_type": lifx_class,
+            "label": label,
+            "serial": device.serial,
+            "ip": device.ip,
+            "added": False,
+        }
+
+        # Auto-add device if requested
+        if auto_add:
+            existing = self._find_existing_lifx_by_serial(device.serial)
+            if existing:
+                device_info["added"] = False
+                device_info["existing_name"] = existing.name
+                _LOGGER.debug(
+                    "LIFX %s (%s) already exists as %s",
+                    label,
+                    device.serial,
+                    existing.name,
+                )
+            else:
+                try:
+                    device_config = {
+                        "name": label,
+                        "ip_address": device.ip,
+                        "serial": device.serial,
+                    }
+                    await self._ledfx.devices.add_new_device(
+                        "lifx", device_config
+                    )
+                    device_info["added"] = True
+                    _LOGGER.info(
+                        "LIFX added: %s (%s) at %s",
+                        label,
+                        device.serial,
+                        device.ip,
+                    )
+                except (LifxError, OSError, ValueError) as e:
+                    _LOGGER.warning("LIFX add failed for %s: %s", label, e)
+
+        _LOGGER.info(
+            "LIFX discovered: %s (%s) at %s -> %s",
+            label,
+            device.serial,
+            device.ip,
+            category,
+        )
+
+        await device.close()
+        return device_info
+
+    async def _discover_udp(self, timeout, broadcast_address, auto_add, seen_serials):
+        """
+        Discover LIFX devices via UDP broadcast.
+
+        Args:
+            timeout: Discovery timeout in seconds
+            broadcast_address: UDP broadcast address
+            auto_add: Whether to automatically add devices
+            seen_serials: Set of already-seen serial numbers
+
+        Returns:
+            List of discovered device info dicts
+        """
+        devices = []
+        try:
+            async for device in discover(
+                timeout=timeout,
+                broadcast_address=broadcast_address,
+            ):
+                device_info = await self._process_discovered_device(
+                    device, auto_add, seen_serials
+                )
+                if device_info:
+                    device_info["discovery_method"] = "udp"
+                    devices.append(device_info)
+        except asyncio.TimeoutError:
+            _LOGGER.info(
+                "LIFX UDP discovery completed (timeout): found %d devices",
+                len(devices),
+            )
+        except (LifxError, OSError) as e:
+            _LOGGER.warning("LIFX UDP discovery error: %s", e)
+        return devices
+
+    async def _discover_mdns(self, timeout, auto_add, seen_serials):
+        """
+        Discover LIFX devices via mDNS/DNS-SD.
+
+        Args:
+            timeout: Discovery timeout in seconds
+            auto_add: Whether to automatically add devices
+            seen_serials: Set of already-seen serial numbers
+
+        Returns:
+            List of discovered device info dicts
+        """
+        devices = []
+        try:
+            async for device in discover_mdns(timeout=timeout):
+                device_info = await self._process_discovered_device(
+                    device, auto_add, seen_serials
+                )
+                if device_info:
+                    device_info["discovery_method"] = "mdns"
+                    devices.append(device_info)
+        except asyncio.TimeoutError:
+            _LOGGER.info(
+                "LIFX mDNS discovery completed (timeout): found %d devices",
+                len(devices),
+            )
+        except (LifxError, OSError) as e:
+            _LOGGER.warning("LIFX mDNS discovery error: %s", e)
+        return devices
+
     async def get(self, request: web.Request) -> web.Response:
         """
         Discover all LIFX devices on the local network.
 
         Query parameters:
-            discovery_timeout (optional): How long to wait for replies to
-                                          the discovery broadcast
-            broadcast_address (optional): Broadcast address for discovery
+            method (optional): Discovery method - "udp" (default), "mdns", or "both"
+            discovery_timeout (optional): How long to wait for replies (seconds)
+            broadcast_address (optional): UDP broadcast address for discovery
                                           (e.g., "192.168.1.255")
             add (optional): If "true", automatically add discovered devices
 
         Returns:
             {
+                "status": "success",
+                "method": "udp",
                 "devices": [
                     {
                         "device_type": "lifx",
@@ -54,13 +210,18 @@ class FindLifxEndpoint(RestEndpoint):
                         "label": "Living Room",
                         "serial": "d073d5xxxxxx",
                         "ip": "192.168.1.100",
-                        "added": true
+                        "added": true,
+                        "discovery_method": "udp"
                     },
                     ...
                 ]
             }
         """
-        from lifx import LifxError, discover
+        method = request.query.get("method", "udp").lower()
+        if method not in DISCOVERY_METHODS:
+            return await self.invalid_request(
+                f"Invalid discovery method '{method}'. Must be one of: {', '.join(DISCOVERY_METHODS)}"
+            )
 
         try:
             discovery_timeout = float(
@@ -86,74 +247,28 @@ class FindLifxEndpoint(RestEndpoint):
             )
 
         auto_add = request.query.get("add", "").lower() == "true"
+
         devices = []
+        seen_serials = set()
 
-        try:
-            async for device in discover(
-                timeout=discovery_timeout,
-                broadcast_address=broadcast_address,
-            ):
-                lifx_class = type(device).__name__
-                category = LIFX_CATEGORY_MAP.get(lifx_class, "light")
-
-                try:
-                    label = await device.get_label()
-                except (LifxError, OSError):
-                    label = f"LIFX {device.serial[-6:]}"
-
-                device_info = {
-                    "device_type": "lifx",
-                    "category": category,
-                    "lifx_type": lifx_class,
-                    "label": label,
-                    "serial": device.serial,
-                    "ip": device.ip,
-                    "added": False,
-                }
-
-                # Auto-add device if requested
-                if auto_add:
-                    try:
-                        device_config = {
-                            "name": label,
-                            "ip_address": device.ip,
-                            "serial": device.serial,
-                        }
-                        await self._ledfx.devices.add_new_device(
-                            "lifx", device_config
-                        )
-                        device_info["added"] = True
-                        _LOGGER.info(
-                            "LIFX added: %s (%s) at %s",
-                            label,
-                            device.serial,
-                            device.ip,
-                        )
-                    except (LifxError, OSError, ValueError) as e:
-                        # Device might already exist or validation failed
-                        _LOGGER.warning("LIFX add failed for %s: %s", label, e)
-
-                devices.append(device_info)
-
-                _LOGGER.info(
-                    "LIFX discovered: %s (%s) at %s -> %s",
-                    label,
-                    device.serial,
-                    device.ip,
-                    category,
-                )
-
-                await device.close()
-
-        except asyncio.TimeoutError:
-            _LOGGER.info(
-                "LIFX discovery completed (timeout): found %d devices",
-                len(devices),
+        if method in ("udp", "both"):
+            udp_devices = await self._discover_udp(
+                discovery_timeout, broadcast_address, auto_add, seen_serials
             )
-        except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX discovery error: %s", e)
+            devices.extend(udp_devices)
+            _LOGGER.info("LIFX UDP discovery found %d devices", len(udp_devices))
 
-        return await self.bare_request_success({"devices": devices})
+        if method in ("mdns", "both"):
+            mdns_devices = await self._discover_mdns(
+                discovery_timeout, auto_add, seen_serials
+            )
+            devices.extend(mdns_devices)
+            _LOGGER.info("LIFX mDNS discovery found %d devices", len(mdns_devices))
+
+        return await self.bare_request_success({
+            "method": method,
+            "devices": devices,
+        })
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -174,8 +289,6 @@ class FindLifxEndpoint(RestEndpoint):
                 "ip": "192.168.1.100"
             }
         """
-        from lifx import LifxError, find_by_ip
-
         try:
             data = await request.json()
         except JSONDecodeError:
