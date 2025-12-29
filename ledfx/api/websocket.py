@@ -60,7 +60,7 @@ class WebsocketEndpoint(RestEndpoint):
             return await WebsocketConnection(self._ledfx).handle(request)
         except ConnectionResetError:
             _LOGGER.debug("Connection Reset Error on Websocket Connection.")
-            return self.internal_error("Connection Reset Error.")
+            return await self.internal_error("Connection Reset Error.")
 
 
 class WebsocketConnection:
