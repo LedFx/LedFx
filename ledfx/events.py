@@ -239,11 +239,17 @@ class EffectSetEvent(Event):
         effect_name: str,
         effect_id: str,
         virtual_id: str,
+        effect_type: str,
+        active: bool,
+        streaming: bool,
     ):
         super().__init__(Event.EFFECT_SET)
         self.effect_name = effect_name
         self.effect_id = effect_id
         self.virtual_id = virtual_id
+        self.effect_type = effect_type
+        self.active = active
+        self.streaming = streaming
 
 
 class EffectUpdatedEvent(Event):
