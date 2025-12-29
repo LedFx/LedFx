@@ -271,16 +271,22 @@ The `effect_set` event is emitted when a new effect is set on a virtual. This ev
 {
   "event_type": "effect_set",
   "effect_name": "Energy 2",
-  "effect_id": "energy2",
-  "virtual_id": "my_virtual_id"
+  "effect_id": "energy2-1",
+  "virtual_id": "my_virtual_id",
+  "effect_type": "energy2",
+  "active": true,
+  "streaming": false
 }
 ```
 
 **Fields:**
 - `event_type`: Always `"effect_set"`.
 - `effect_name`: Friendly name of the effect.
-- `effect_id`: Identifier of the effect.
+- `effect_id`: Identifier of the effect instance (includes instance suffix if multiple instances exist).
 - `virtual_id`: Identifier of the virtual entity.
+- `effect_type`: Type of the effect without the instance suffix.
+- `active`: Whether the virtual is currently active/playing.
+- `streaming`: Whether the virtual is currently streaming.
 
 ### effect_updated
 The `effect_updated` event is emitted when a virtual's active effect's configuration changes.

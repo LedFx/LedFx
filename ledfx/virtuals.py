@@ -497,6 +497,9 @@ class Virtual:
                     self._active_effect.name,
                     self._active_effect.id,
                     self.id,
+                    self._active_effect.type,
+                    self._active,
+                    self._streaming,
                 )
             )
         try:
