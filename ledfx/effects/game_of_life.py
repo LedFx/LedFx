@@ -153,9 +153,11 @@ class GameOfLifeVisualiser(Twod):
                 f"Board too small at {self.game.board_size} disabling beat injection of entities"
             )
             self.inject = False
-        
+
         # Pre-allocate image array to reuse across frames (avoid creating new arrays each frame)
-        self.img_array = np.zeros((self.r_height, self.r_width, 3), dtype=np.uint8)
+        self.img_array = np.zeros(
+            (self.r_height, self.r_width, 3), dtype=np.uint8
+        )
 
     def deactivate(self):
         """Clean up resources when effect is deactivated"""
@@ -260,11 +262,11 @@ class GameOfLifeVisualiser(Twod):
             self.img_array[dead_mask] = self.dead_colors[duration]
 
         # Clear old PIL Image reference before creating new one to help GC
-        if hasattr(self, 'matrix') and self.matrix is not None:
+        if hasattr(self, "matrix") and self.matrix is not None:
             old_matrix = self.matrix
             self.matrix = None
             del old_matrix
-        
+
         # Convert the reused NumPy array to PIL Image
         self.matrix = Image.fromarray(self.img_array)
 
