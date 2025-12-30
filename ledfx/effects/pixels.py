@@ -1,10 +1,13 @@
 import logging
+import time
 
 import numpy as np
+import psutil
 import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.temporal import TemporalEffect
+from ledfx.utils import Teleplot
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +67,7 @@ class PixelsEffect(TemporalEffect):
         self.last_cycle_time = 20
         self.current_pixel = 0
         self.start_time = self.now
+        self.last_memory_log_time = 0
 
     def on_activate(self, pixel_count):
         self.current_pixel = 0
@@ -98,3 +102,16 @@ class PixelsEffect(TemporalEffect):
                 self.current_pixel = 0
 
         self.last_cycle_time = cycle_time
+
+        # Memory tracking for diagnostic - log every 1 second for runtime analysis
+        if self.logsec.diag:
+            current_time = time.time()
+            if current_time - self.last_memory_log_time >= 1.0:
+                process = psutil.Process()
+                mem_mb = process.memory_info().rss / (1024 * 1024)
+
+                _LOGGER.warning(
+                    f"[MEMORY] {self._virtual.id} render loop: {mem_mb:.1f} MB"
+                )
+                Teleplot.send(f"{self._virtual.id}_MB:{mem_mb}")
+                self.last_memory_log_time = current_time

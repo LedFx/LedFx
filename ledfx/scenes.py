@@ -92,8 +92,15 @@ class Scenes:
         self._scenes[scene_id] = scene_config
         self.save_to_config()
 
-    def activate(self, scene_id):
-        """Activate a scene with support for action field"""
+    def activate(self, scene_id, save_config_after=True):
+        """Activate a scene with support for action field
+
+        Args:
+            scene_id: The ID of the scene to activate
+            save_config_after: If True, saves config to disk after activation.
+                              Set to False for playlist-driven activations to reduce disk I/O.
+                              Defaults to True for backward compatibility.
+        """
         scene = self.get(scene_id)
         if not scene:
             _LOGGER.error(f"No scene found with id: {scene_id}")
@@ -175,13 +182,16 @@ class Scenes:
 
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
 
-        try:
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-        except Exception:
-            _LOGGER.exception("Failed to save config after scene activation")
+        if save_config_after:
+            try:
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to save config after scene activation"
+                )
 
         return True
 

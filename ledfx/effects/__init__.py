@@ -47,7 +47,9 @@ class DummyEffect:
         self.deactivate()
 
     def deactivate(self):
-        pass
+        self.pixels = None  # Free the numpy array
+        self._active = False
+        self.is_active = False
 
 
 def mix_colors(color_1: tuple, color_2: tuple, ratio: float) -> tuple:
@@ -364,6 +366,12 @@ class Effect(BaseRegistry):
     def deactivate(self):
         """Detaches an output channel from the effect"""
         self.pixels = None
+        self._virtual = (
+            None  # Clear circular reference to allow garbage collection
+        )
+        # Clear LogSecHelper reference to this effect
+        if hasattr(self, "logsec") and self.logsec:
+            self.logsec.effect = None
         self._active = False
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
 

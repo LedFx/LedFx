@@ -920,8 +920,13 @@ class AudioReactiveEffect(Effect):
 
     def deactivate(self):
         _LOGGER.info("Deactivating AudioReactiveEffect.")
+
+        self._active = False
+
         if self.audio:
             self.audio.unsubscribe(self._audio_data_updated)
+        self.audio = None
+        self.clear_melbank_freq_props()
         super().deactivate()
 
     def create_filter(self, alpha_decay, alpha_rise):
