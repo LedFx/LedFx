@@ -162,6 +162,7 @@ class GameOfLifeVisualiser(Twod):
         if self.game:
             self.game.board = None
             self.game.board_history = None
+            self.game._history_buffer = None
             self.game = None
         self.img_array = None
         super().deactivate()
@@ -318,11 +319,10 @@ class GameOfLife:
         Performs one step of the game simulation.
         """
         # Update board_history using pre-allocated buffer to avoid np.copy()
-        # Copy data into buffer, then append buffer to history
+        # Copy current board state into buffer, then append a COPY to history
         np.copyto(self._history_buffer, self.board)
-        self.board_history.append(self._history_buffer)
-        # Create new buffer for next frame (deque maxlen handles size automatically)
-        self._history_buffer = np.zeros(self.board_size, dtype=bool)
+        self.board_history.append(self._history_buffer.copy())
+        # Reuse _history_buffer for next frame (no new allocation needed)
 
         neighbors = sum(
             np.roll(np.roll(self.board, i, 0), j, 1)
@@ -381,9 +381,10 @@ class GameOfLife:
         """
         _LOGGER.info("Erasing history of the universe")
         self.board_history.clear()
-        # Pre-populate with zeros for initial state
+        # Reuse template zero array to reduce allocations
+        zero_board = np.zeros(self.board_size, dtype=bool)
         for _ in range(self.depth):
-            self.board_history.append(np.zeros(self.board_size, dtype=bool))
+            self.board_history.append(zero_board.copy())
 
     def add_glider(self):
         """
