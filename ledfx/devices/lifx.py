@@ -5,6 +5,7 @@ import voluptuous as vol
 from lifx import (
     HSBK,
     CeilingLight,
+    Colors,
     HevLight,
     InfraredLight,
     LifxError,
@@ -24,13 +25,13 @@ from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 
-# Black color for padding
-BLACK = HSBK(hue=0, saturation=0, brightness=0, kelvin=3500).to_protocol()
+
+# Black/off color for padding and clearing zones
+BLACK = Colors.OFF.to_protocol()
 
 # Max refresh rates by device type (prevents strobing on single bulbs)
 MAX_FPS_LIGHT = 40  # Single bulbs strobe visibly at higher rates
 MAX_FPS_MULTIZONE = 60  # Strips/matrices handle higher rates better
-
 
 # Map lifx-async device types to internal type identifiers
 LIFX_TYPE_MAP = {
@@ -43,22 +44,15 @@ LIFX_TYPE_MAP = {
     "Device": "light",  # Fallback
 }
 
-# Map class names to lifx-async device classes for direct instantiation
-LIFX_CLASS_MAP = {
-    "MatrixLight": MatrixLight,
-    "CeilingLight": CeilingLight,
-    "MultiZoneLight": MultiZoneLight,
-    "Light": Light,
-    "HevLight": HevLight,
-    "InfraredLight": InfraredLight,
-}
-
 
 class LifxDevice(NetworkedDevice):
     """Unified LIFX device with auto-detection.
 
     Automatically detects device type (bulb, strip, or matrix) on connection
     and configures itself appropriately. Users only need to provide an IP.
+
+    For Ceiling lights, creates sub-virtuals for downlight (matrix) and
+    uplight (single light) zones, similar to WLED segments.
     """
 
     CONFIG_SCHEMA = vol.Schema(
@@ -73,6 +67,11 @@ class LifxDevice(NetworkedDevice):
                 description="Target rate that pixels are sent to the device",
                 default=20,
             ): vol.All(int, vol.Range(min=1, max=40)),
+            vol.Optional(
+                "create_segments",
+                description="Auto-create virtuals for Ceiling uplight/downlight",
+                default=True,
+            ): bool,
         }
     )
 
@@ -88,11 +87,14 @@ class LifxDevice(NetworkedDevice):
         self._has_extended = False
 
         # Matrix-specific
-        self._tiles = []
+        self._tiles = {}
         self._total_pixels = config.get("pixel_count", 1)
         self._matrix_width = 0
         self._matrix_height = 0
         self._perm = None
+
+        # Ceiling-specific
+        self._is_ceiling = False
 
     async def async_initialize(self):
         """Initialize device and auto-detect type during creation."""
@@ -130,12 +132,71 @@ class LifxDevice(NetworkedDevice):
                 )
 
                 # Get device info based on type
-                if isinstance(device, (MatrixLight, CeilingLight)):
+                # Check for CeilingLight first (it's a subclass of MatrixLight)
+                if isinstance(device, CeilingLight):
+                    self._is_ceiling = True
+                    self._uplight_zone = device.uplight_zone
+                    self._downlight_pixel_count = device.downlight_zone_count
+                    self._lifx_type = "matrix"
+                    self._device_type = "LIFX Ceiling"
+
+                    tiles = await device.get_device_chain()
+                    self._total_pixels = 0
+                    self._tiles = []
+
+                    for i, tile in enumerate(tiles):
+                        tile_pixels = tile.width * tile.height
+                        self._tiles.append(
+                            {
+                                "index": i,
+                                "width": tile.width,
+                                "height": tile.height,
+                                "pixels": tile_pixels,
+                                "offset": self._total_pixels,
+                                "user_x": tile.user_x,
+                                "user_y": tile.user_y,
+                            }
+                        )
+                        self._total_pixels += tile_pixels
+
+                    if self._tiles:
+                        self._perm = self._build_permutation(tiles)
+                        # Total pixels includes both downlight and uplight
+                        self._config["pixel_count"] = self._total_pixels
+                        self._config["matrix_width"] = self._matrix_width
+                        self._config["matrix_height"] = self._matrix_height
+                        _LOGGER.info(
+                            "LIFX %s: Ceiling %dx%d (%d downlight + 1 uplight)",
+                            self._config["name"],
+                            self._matrix_width,
+                            self._matrix_height,
+                            self._downlight_pixel_count,
+                        )
+
+                elif isinstance(device, MatrixLight):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
+                    self._total_pixels = 0
+                    self._tiles = []
 
-                    if self._process_tile_chain(tiles):
+                    for i, tile in enumerate(tiles):
+                        tile_pixels = tile.width * tile.height
+                        self._tiles.append(
+                            {
+                                "index": i,
+                                "width": tile.width,
+                                "height": tile.height,
+                                "pixels": tile_pixels,
+                                "offset": self._total_pixels,
+                                "user_x": tile.user_x,
+                                "user_y": tile.user_y,
+                            }
+                        )
+                        self._total_pixels += tile_pixels
+
+                    if self._tiles:
+                        self._perm = self._build_permutation(tiles)
                         self._config["pixel_count"] = self._total_pixels
                         self._config["matrix_width"] = self._matrix_width
                         self._config["matrix_height"] = self._matrix_height
@@ -159,10 +220,6 @@ class LifxDevice(NetworkedDevice):
                     self._config["pixel_count"] = self._zone_count
 
                     if not device.capabilities:
-                        # Use private _ensure_capabilities() to avoid 3-5 network round-trips
-                        # that the async context manager performs. We only need capabilities
-                        # to determine whether this multizone supports extended messages,
-                        # not full device state.
                         await device._ensure_capabilities()
                     if (
                         device.capabilities
@@ -176,20 +233,166 @@ class LifxDevice(NetworkedDevice):
                         self._zone_count,
                     )
 
-                elif isinstance(device, (Light, HevLight, InfraredLight)):
+                elif (
+                    isinstance(device, Light)
+                    or isinstance(device, HevLight)
+                    or isinstance(device, InfraredLight)
+                ):
                     self._lifx_type = "light"
                     self._device_type = "LIFX Light"
                     self._config["pixel_count"] = 1
                     _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
 
+                await device.close()
+
         except (LifxError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Detection failed: %s", self._config["name"], e
-            )
+            _LOGGER.warning("LIFX %s: Detection failed: %s", self._config["name"], e)
+
+    async def add_postamble(self):
+        """Create sub-virtuals for Ceiling lights (like WLED segments)."""
+        if not self._is_ceiling:
+            return
+
+        if not (
+            self._config.get("create_segments", True)
+            or self._ledfx.config.get("create_segments", False)
+        ):
+            return
+
+        _LOGGER.debug("Creating sub-virtuals for LIFX Ceiling %s", self.name)
+
+        # Create downlight virtual (matrix)
+        # Downlight uses pixels 0 to (uplight_zone - 1)
+        downlight_rows = self._matrix_height
+        self.sub_v(
+            "Downlight",
+            None,
+            [[0, self._downlight_pixel_count - 1]],
+            downlight_rows,
+        )
+
+        # Create uplight virtual (single light)
+        # Uplight uses just the uplight zone
+        self.sub_v(
+            "Uplight",
+            None,
+            [[self._uplight_zone, self._uplight_zone]],
+            1,
+        )
+
+        _LOGGER.info(
+            "LIFX %s: Created Downlight (%d pixels) and Uplight (1 pixel) virtuals",
+            self.name,
+            self._downlight_pixel_count,
+        )
+
+    def _get_ceiling_zone_activity(self):
+        """Check which Ceiling sub-virtuals have active effects.
+
+        Returns tuple of (downlight_active, uplight_active).
+        """
+        if not self._is_ceiling:
+            return (False, False)
+
+        downlight_active = False
+        uplight_active = False
+
+        # Check sub-virtuals for active effects
+        # Virtual IDs are generated from name, not id, and lowercased
+        downlight_id = f"{self.id}-downlight"
+        uplight_id = f"{self.id}-uplight"
+        downlight_virtual = self._ledfx.virtuals.get(downlight_id)
+        uplight_virtual = self._ledfx.virtuals.get(uplight_id)
+
+        _LOGGER.debug(
+            "LIFX %s: Zone check - downlight_id=%s (found=%s, effect=%s), "
+            "uplight_id=%s (found=%s, effect=%s)",
+            self.name,
+            downlight_id,
+            downlight_virtual is not None,
+            downlight_virtual.active_effect if downlight_virtual else None,
+            uplight_id,
+            uplight_virtual is not None,
+            uplight_virtual.active_effect if uplight_virtual else None,
+        )
+
+        if downlight_virtual and downlight_virtual.active_effect is not None:
+            downlight_active = True
+        if uplight_virtual and uplight_virtual.active_effect is not None:
+            uplight_active = True
+
+        return (downlight_active, uplight_active)
+
+    async def _clear_ceiling_zone(self, zone: str):
+        """Clear a specific Ceiling zone to black using Set64 packet.
+
+        Args:
+            zone: Either "downlight" or "uplight"
+        """
+        if not self._device or not self._is_ceiling:
+            return
+
+        if not isinstance(self._device, CeilingLight):
+            return
+
+        try:
+            uplight_zone = self._device.uplight_zone
+
+            if zone == "downlight":
+                # Clear zones 0 to uplight_zone-1
+                colors = [BLACK] * uplight_zone
+                rect = TileBufferRect(fb_index=0, x=0, y=0, width=8)
+                packet = packets.Tile.Set64(
+                    tile_index=0,
+                    length=1,
+                    rect=rect,
+                    duration=0,
+                    colors=colors,
+                )
+                await self._device.connection.send_packet(packet)
+                _LOGGER.debug("LIFX %s: Cleared downlight to black", self.name)
+
+            elif zone == "uplight":
+                # Clear just the uplight zone (zone 63)
+                # We need to send a full 64-zone packet, so we read current state
+                # or just set the uplight zone to black
+                # For simplicity, send a SetColor for just that zone
+                colors = [BLACK]
+                rect = TileBufferRect(fb_index=0, x=0, y=uplight_zone, width=1)
+                packet = packets.Tile.Set64(
+                    tile_index=0,
+                    length=1,
+                    rect=rect,
+                    duration=0,
+                    colors=colors,
+                )
+                await self._device.connection.send_packet(packet)
+                _LOGGER.debug("LIFX %s: Cleared uplight to black", self.name)
+
+        except (LifxError, OSError) as e:
+            _LOGGER.debug("LIFX %s: Clear zone error: %s", self.name, e)
+
+    async def _clear_inactive_ceiling_zones(self):
+        """Clear any Ceiling zones that don't have active effects."""
+        if not self._is_ceiling:
+            return
+
+        downlight_active, uplight_active = self._get_ceiling_zone_activity()
+
+        _LOGGER.debug(
+            "LIFX %s: Clearing inactive zones - downlight_active=%s, uplight_active=%s",
+            self.name,
+            downlight_active,
+            uplight_active,
+        )
+
+        if not downlight_active:
+            await self._clear_ceiling_zone("downlight")
+        if not uplight_active:
+            await self._clear_ceiling_zone("uplight")
 
     @property
     def pixel_count(self):
-        """Return total pixel count based on device type."""
         if self._lifx_type == "matrix":
             return self._total_pixels
         elif self._lifx_type == "strip":
@@ -198,17 +401,14 @@ class LifxDevice(NetworkedDevice):
 
     @property
     def is_matrix(self):
-        """Return True if device is a matrix type."""
         return self._lifx_type == "matrix"
 
     @property
     def matrix_width(self):
-        """Return matrix width in pixels, or 0 if not a matrix."""
         return self._matrix_width if self._lifx_type == "matrix" else 0
 
     @property
     def matrix_height(self):
-        """Return matrix height in pixels, or 0 if not a matrix."""
         return self._matrix_height if self._lifx_type == "matrix" else 0
 
     def _build_permutation(self, tiles):
@@ -241,41 +441,6 @@ class LifxDevice(NetworkedDevice):
         raster_idx = rows * self._matrix_width + cols
         return raster_idx.astype(np.int64)
 
-    def _process_tile_chain(self, tiles):
-        """Process tile chain data and build permutation mapping.
-
-        Extracts tile metadata, calculates total pixels, and builds the
-        permutation array for pixel reordering.
-
-        Args:
-            tiles: List of tile objects from device.get_device_chain()
-
-        Returns:
-            True if tiles were processed successfully, False if no tiles
-        """
-        self._tiles = []
-        self._total_pixels = 0
-
-        for i, tile in enumerate(tiles):
-            tile_pixels = tile.width * tile.height
-            self._tiles.append(
-                {
-                    "index": i,
-                    "width": tile.width,
-                    "height": tile.height,
-                    "pixels": tile_pixels,
-                    "offset": self._total_pixels,
-                    "user_x": tile.user_x,
-                    "user_y": tile.user_y,
-                }
-            )
-            self._total_pixels += tile_pixels
-
-        if self._tiles:
-            self._perm = self._build_permutation(tiles)
-            return True
-        return False
-
     async def _async_connect(self):
         """Connect to device using saved serial/type for speed."""
         try:
@@ -286,8 +451,18 @@ class LifxDevice(NetworkedDevice):
             # Use saved info for direct instantiation (faster)
             lifx_class = self._config.get("lifx_class")
             if serial and lifx_type and lifx_class:
-                device_cls = LIFX_CLASS_MAP.get(lifx_class, Light)
-                self._device = device_cls(serial=serial, ip=ip)
+                # Map class name to class
+                class_map = {
+                    "MatrixLight": MatrixLight,
+                    "CeilingLight": CeilingLight,
+                    "MultiZoneLight": MultiZoneLight,
+                    "Light": Light,
+                    "HevLight": Light,
+                    "InfraredLight": Light,
+                }
+                device_cls = class_map.get(lifx_class, Light)
+                device = device_cls(serial=serial, ip=ip)
+                self._device = await device.connect(ip=ip, serial=serial)
                 self._lifx_type = lifx_type
                 _LOGGER.info(
                     "LIFX %s: Direct connect as %s (%s)",
@@ -316,6 +491,9 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type,
                 )
 
+            # Ensure capabilities are populated (needed for Ceiling uplight_zone etc.)
+            await self._device._ensure_capabilities()
+
             # Configure based on type
             if self._lifx_type == "matrix":
                 await self._setup_matrix()
@@ -324,9 +502,7 @@ class LifxDevice(NetworkedDevice):
             else:
                 await self._setup_light()
 
-            # Auto power-on: LIFX devices are turned on when LedFx connects
-            # to ensure LED output is visible. This is standard behavior for
-            # LED controllers - users expect lights to respond immediately.
+            # Turn on device
             await self._device.set_power(True)
             self._connected = True
             self._online = True
@@ -334,6 +510,10 @@ class LifxDevice(NetworkedDevice):
             # Update virtual rows for matrix devices
             if self._lifx_type == "matrix":
                 self._update_virtual_rows()
+
+            # Clear inactive Ceiling zones to black
+            if self._is_ceiling:
+                await self._clear_inactive_ceiling_zones()
 
         except (LifxError, OSError) as e:
             _LOGGER.warning(
@@ -362,9 +542,6 @@ class LifxDevice(NetworkedDevice):
 
         # Check for extended multizone capability
         if not self._device.capabilities:
-            # Use _ensure_capabilities() directly to avoid 3-5 network
-            # round-trips from the async context manager. We only need
-            # capabilities to check for extended multizone support.
             await self._device._ensure_capabilities()
 
         if (
@@ -382,8 +559,15 @@ class LifxDevice(NetworkedDevice):
 
     async def _setup_matrix(self):
         """Configure for matrix device (Tile, Ceiling, etc.)."""
-        if isinstance(self._device, (MatrixLight, CeilingLight)):
+        if isinstance(self._device, MatrixLight) or isinstance(
+            self._device, CeilingLight
+        ):
             self._device_type = "LIFX Matrix"
+
+            # Check if this is a Ceiling
+            if isinstance(self._device, CeilingLight):
+                self._is_ceiling = True
+                self._device_type = "LIFX Ceiling"
 
             # Use saved config if available (from async_initialize)
             if self._tiles and self._perm is not None:
@@ -400,8 +584,26 @@ class LifxDevice(NetworkedDevice):
 
             # Otherwise query the device
             tiles = await self._device.get_device_chain()
+            self._tiles = []
+            self._total_pixels = 0
 
-            if self._process_tile_chain(tiles):
+            for i, tile in enumerate(tiles):
+                tile_pixels = tile.width * tile.height
+                self._tiles.append(
+                    {
+                        "index": i,
+                        "width": tile.width,
+                        "height": tile.height,
+                        "pixels": tile_pixels,
+                        "offset": self._total_pixels,
+                        "user_x": tile.user_x,
+                        "user_y": tile.user_y,
+                    }
+                )
+                self._total_pixels += tile_pixels
+
+            if self._tiles:
+                self._perm = self._build_permutation(tiles)
                 tile_info = ", ".join(
                     f"Tile {t['index']}: {t['width']}x{t['height']} "
                     f"@({t['user_x']},{t['user_y']})"
@@ -442,12 +644,17 @@ class LifxDevice(NetworkedDevice):
             try:
                 await self._device.set_power(False)
             except (LifxError, OSError) as e:
-                _LOGGER.warning("LIFX %s: Disconnect error: %s", self.name, e)
+                _LOGGER.warning("LIFX %s: Power off timed out", self.name)
+            except (LifxError, OSError) as e:
+                _LOGGER.warning("LIFX %s: Power off error: %s", self.name, e)
+            try:
+                await self._device.close()
+            except (LifxError, OSError) as e:
+                _LOGGER.warning("LIFX %s: Close error: %s", self.name, e)
             self._device = None
             self._connected = False
 
     def activate(self):
-        """Activate device and initiate async connection."""
         if self._destination is None:
             super().activate()
             return
@@ -459,7 +666,6 @@ class LifxDevice(NetworkedDevice):
         )
 
     def deactivate(self):
-        """Deactivate device and close connection."""
         if self._device:
             async_fire_and_forget(
                 self._async_disconnect(),
@@ -515,15 +721,13 @@ class LifxDevice(NetworkedDevice):
                 )
                 await self._device.connection.send_packet(packet)
         except (LifxError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Light flush error: %s", self._config["name"], e
-            )
+            _LOGGER.warning("LIFX %s: Light flush error: %s", self._config["name"], e)
 
     async def _flush_strip(self, data):
         """Send zone colors to multizone strip - fire and forget, no ack."""
         if (
             not isinstance(self._device, MultiZoneLight)
-            or self._zone_count == 0
+            or self._device.zone_count is None
         ):
             return
 
@@ -549,11 +753,6 @@ class LifxDevice(NetworkedDevice):
                 )
                 await self._device.connection.send_packet(packet)
             else:
-                # Fallback for older strips without extended multizone.
-                # Sends one message per zone sequentially, which may cause
-                # noticeable latency on strips with many zones (32+).
-                # Note: Very few LIFX multizone devices lack extended message
-                # support, so this fallback rarely affects users in practice.
                 for i, color in enumerate(colors):
                     is_last = i == len(colors) - 1
                     apply = (
@@ -570,14 +769,17 @@ class LifxDevice(NetworkedDevice):
                     )
                     await self._device.connection.send_packet(packet)
         except (LifxError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Strip flush error: %s", self._config["name"], e
-            )
+            _LOGGER.warning("LIFX %s: Strip flush error: %s", self._config["name"], e)
 
     async def _flush_matrix(self, data):
-        """Send pixel data to matrix device - fire and forget, no ack."""
-        if not self._device or not isinstance(
-            self._device, (MatrixLight, CeilingLight)
+        """Send pixel data to matrix device - fire and forget, no ack.
+
+        For Ceiling lights, the downlight is zones 0-62 (8x8 matrix) and
+        the uplight is zone 63 (single pixel).
+        """
+        if not self._device or not (
+            isinstance(self._device, MatrixLight)
+            or isinstance(self._device, CeilingLight)
         ):
             return
 
@@ -599,6 +801,7 @@ class LifxDevice(NetworkedDevice):
                     for r, g, b in tile_pixels
                 ]
 
+                # Send all colors via Set64 packet
                 rect = TileBufferRect(
                     fb_index=0,
                     x=0,
@@ -618,7 +821,6 @@ class LifxDevice(NetworkedDevice):
             _LOGGER.warning("LIFX %s: Matrix flush error: %s", self.name, e)
 
     def flush(self, data):
-        """Queue pixel data to be sent to device asynchronously."""
         if self._device and self._connected:
             async_fire_and_forget(
                 self._async_flush(data),
