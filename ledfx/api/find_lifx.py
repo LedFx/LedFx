@@ -99,9 +99,7 @@ class FindLifxEndpoint(RestEndpoint):
                         "ip_address": device.ip,
                         "serial": device.serial,
                     }
-                    await self._ledfx.devices.add_new_device(
-                        "lifx", device_config
-                    )
+                    await self._ledfx.devices.add_new_device("lifx", device_config)
                     device_info["added"] = True
                     _LOGGER.info(
                         "LIFX added: %s (%s) at %s",
@@ -249,7 +247,7 @@ class FindLifxEndpoint(RestEndpoint):
         auto_add = request.query.get("add", "").lower() == "true"
 
         devices = []
-        seen_serials = set()
+        seen_serials: set[str] = set()
 
         if method in ("udp", "both"):
             udp_devices = await self._discover_udp(
@@ -265,10 +263,12 @@ class FindLifxEndpoint(RestEndpoint):
             devices.extend(mdns_devices)
             _LOGGER.info("LIFX mDNS discovery found %d devices", len(mdns_devices))
 
-        return await self.bare_request_success({
-            "method": method,
-            "devices": devices,
-        })
+        return await self.bare_request_success(
+            {
+                "method": method,
+                "devices": devices,
+            }
+        )
 
     async def post(self, request: web.Request) -> web.Response:
         """

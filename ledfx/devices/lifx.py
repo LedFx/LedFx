@@ -20,7 +20,7 @@ from lifx.protocol.protocol_types import (
     TileBufferRect,
 )
 
-from ledfx.devices import NetworkedDevice
+from ledfx.devices import NetworkedDevice, fps_validator
 from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,8 +65,8 @@ class LifxDevice(NetworkedDevice):
             vol.Optional(
                 "refresh_rate",
                 description="Target rate that pixels are sent to the device",
-                default=20,
-            ): vol.All(int, vol.Range(min=1, max=40)),
+                default=30,
+            ): fps_validator,
             vol.Optional(
                 "create_segments",
                 description="Auto-create virtuals for Ceiling uplight/downlight",
@@ -92,6 +92,8 @@ class LifxDevice(NetworkedDevice):
         self._matrix_width = 0
         self._matrix_height = 0
         self._perm = None
+        self._frame_buffers = 2  # Default, updated from device
+        self._current_fb = 1  # Rotating framebuffer index (1 to _frame_buffers-1)
 
         # Ceiling-specific
         self._is_ceiling = False
@@ -143,9 +145,15 @@ class LifxDevice(NetworkedDevice):
                     tiles = await device.get_device_chain()
                     self._total_pixels = 0
                     self._tiles = []
+                    min_frame_buffers = 50  # Start high, find minimum
 
                     for i, tile in enumerate(tiles):
                         tile_pixels = tile.width * tile.height
+                        # Get framebuffer count from tile
+                        fb_count = getattr(
+                            tile, "supported_frame_buffers", 2
+                        )
+                        min_frame_buffers = min(min_frame_buffers, fb_count)
                         self._tiles.append(
                             {
                                 "index": i,
@@ -155,22 +163,25 @@ class LifxDevice(NetworkedDevice):
                                 "offset": self._total_pixels,
                                 "user_x": tile.user_x,
                                 "user_y": tile.user_y,
+                                "frame_buffers": fb_count,
                             }
                         )
                         self._total_pixels += tile_pixels
 
                     if self._tiles:
+                        self._frame_buffers = min_frame_buffers
                         self._perm = self._build_permutation(tiles)
                         # Total pixels includes both downlight and uplight
                         self._config["pixel_count"] = self._total_pixels
                         self._config["matrix_width"] = self._matrix_width
                         self._config["matrix_height"] = self._matrix_height
                         _LOGGER.info(
-                            "LIFX %s: Ceiling %dx%d (%d downlight + 1 uplight)",
+                            "LIFX %s: Ceiling %dx%d (%d downlight + 1 uplight, %d frame buffers)",
                             self._config["name"],
                             self._matrix_width,
                             self._matrix_height,
                             self._downlight_pixel_count,
+                            self._frame_buffers,
                         )
 
                 elif isinstance(device, MatrixLight):
@@ -179,9 +190,14 @@ class LifxDevice(NetworkedDevice):
                     tiles = await device.get_device_chain()
                     self._total_pixels = 0
                     self._tiles = []
+                    min_frame_buffers = 50
 
                     for i, tile in enumerate(tiles):
                         tile_pixels = tile.width * tile.height
+                        fb_count = getattr(
+                            tile, "supported_frame_buffers", 2
+                        )
+                        min_frame_buffers = min(min_frame_buffers, fb_count)
                         self._tiles.append(
                             {
                                 "index": i,
@@ -191,21 +207,24 @@ class LifxDevice(NetworkedDevice):
                                 "offset": self._total_pixels,
                                 "user_x": tile.user_x,
                                 "user_y": tile.user_y,
+                                "frame_buffers": fb_count,
                             }
                         )
                         self._total_pixels += tile_pixels
 
                     if self._tiles:
+                        self._frame_buffers = min_frame_buffers
                         self._perm = self._build_permutation(tiles)
                         self._config["pixel_count"] = self._total_pixels
                         self._config["matrix_width"] = self._matrix_width
                         self._config["matrix_height"] = self._matrix_height
                         _LOGGER.info(
-                            "LIFX %s: Matrix %dx%d (%d pixels)",
+                            "LIFX %s: Matrix %dx%d (%d pixels, %d frame buffers)",
                             self._config["name"],
                             self._matrix_width,
                             self._matrix_height,
                             self._total_pixels,
+                            self._frame_buffers,
                         )
                     else:
                         _LOGGER.warning(
@@ -324,7 +343,9 @@ class LifxDevice(NetworkedDevice):
         return (downlight_active, uplight_active)
 
     async def _clear_ceiling_zone(self, zone: str):
-        """Clear a specific Ceiling zone to black using Set64 packet.
+        """Clear a specific Ceiling zone to black using Set64 packet(s).
+
+        For larger Ceilings (128 zones), may require multiple packets.
 
         Args:
             zone: Either "downlight" or "uplight"
@@ -337,11 +358,19 @@ class LifxDevice(NetworkedDevice):
 
         try:
             uplight_zone = self._device.uplight_zone
+            # Determine tile dimensions from first tile
+            if not self._tiles:
+                return
+            tile = self._tiles[0]
+            tile_width = tile["width"]
 
             if zone == "downlight":
                 # Clear zones 0 to uplight_zone-1
-                colors = [BLACK] * uplight_zone
-                rect = TileBufferRect(fb_index=0, x=0, y=0, width=8)
+                num_zones = uplight_zone
+                colors = [BLACK] * min(64, num_zones)
+
+                # First packet (zones 0-63)
+                rect = TileBufferRect(fb_index=0, x=0, y=0, width=tile_width)
                 packet = packets.Tile.Set64(
                     tile_index=0,
                     length=1,
@@ -350,15 +379,39 @@ class LifxDevice(NetworkedDevice):
                     colors=colors,
                 )
                 await self._device.connection.send_packet(packet)
-                _LOGGER.debug("LIFX %s: Cleared downlight to black", self.name)
+
+                # Second packet if needed (zones 64-126 for 128-zone Ceiling)
+                if num_zones > 64:
+                    remaining = num_zones - 64
+                    colors2 = [BLACK] * remaining
+                    rows_offset = 64 // tile_width  # 4 rows for 16-wide tile
+                    rect2 = TileBufferRect(
+                        fb_index=0, x=0, y=rows_offset, width=tile_width
+                    )
+                    packet2 = packets.Tile.Set64(
+                        tile_index=0,
+                        length=1,
+                        rect=rect2,
+                        duration=0,
+                        colors=colors2,
+                    )
+                    await self._device.connection.send_packet(packet2)
+
+                _LOGGER.debug(
+                    "LIFX %s: Cleared %d downlight zones to black",
+                    self.name,
+                    num_zones,
+                )
 
             elif zone == "uplight":
-                # Clear just the uplight zone (zone 63)
-                # We need to send a full 64-zone packet, so we read current state
-                # or just set the uplight zone to black
-                # For simplicity, send a SetColor for just that zone
+                # Clear just the uplight zone (zone 63 or 127)
+                # Calculate position in tile
+                uplight_y = uplight_zone // tile_width
+                uplight_x = uplight_zone % tile_width
                 colors = [BLACK]
-                rect = TileBufferRect(fb_index=0, x=0, y=uplight_zone, width=1)
+                rect = TileBufferRect(
+                    fb_index=0, x=uplight_x, y=uplight_y, width=1
+                )
                 packet = packets.Tile.Set64(
                     tile_index=0,
                     length=1,
@@ -574,11 +627,12 @@ class LifxDevice(NetworkedDevice):
                 self._matrix_width = self._config.get("matrix_width", 0)
                 self._matrix_height = self._config.get("matrix_height", 0)
                 _LOGGER.info(
-                    "LIFX %s: Using saved matrix config %dx%d (%d pixels)",
+                    "LIFX %s: Using saved matrix config %dx%d (%d pixels, %d frame buffers)",
                     self._config["name"],
                     self._matrix_width,
                     self._matrix_height,
                     self._total_pixels,
+                    self._frame_buffers,
                 )
                 return
 
@@ -586,9 +640,13 @@ class LifxDevice(NetworkedDevice):
             tiles = await self._device.get_device_chain()
             self._tiles = []
             self._total_pixels = 0
+            min_frame_buffers = 50
 
             for i, tile in enumerate(tiles):
                 tile_pixels = tile.width * tile.height
+                # Get framebuffer count from tile
+                fb_count = getattr(tile, "supported_frame_buffers", 2)
+                min_frame_buffers = min(min_frame_buffers, fb_count)
                 self._tiles.append(
                     {
                         "index": i,
@@ -598,11 +656,13 @@ class LifxDevice(NetworkedDevice):
                         "offset": self._total_pixels,
                         "user_x": tile.user_x,
                         "user_y": tile.user_y,
+                        "frame_buffers": fb_count,
                     }
                 )
                 self._total_pixels += tile_pixels
 
             if self._tiles:
+                self._frame_buffers = min_frame_buffers
                 self._perm = self._build_permutation(tiles)
                 tile_info = ", ".join(
                     f"Tile {t['index']}: {t['width']}x{t['height']} "
@@ -610,11 +670,12 @@ class LifxDevice(NetworkedDevice):
                     for t in self._tiles
                 )
                 _LOGGER.info(
-                    "LIFX %s: Matrix %dx%d (%d pixels) [%s]",
+                    "LIFX %s: Matrix %dx%d (%d pixels, %d frame buffers) [%s]",
                     self._config["name"],
                     self._matrix_width,
                     self._matrix_height,
                     self._total_pixels,
+                    self._frame_buffers,
                     tile_info,
                 )
             else:
@@ -660,6 +721,13 @@ class LifxDevice(NetworkedDevice):
             return
 
         super().activate()
+        _LOGGER.debug(
+            "LIFX %s: Activating with config refresh_rate=%s, "
+            "max_refresh_rate=%s",
+            self.name,
+            self._config.get("refresh_rate"),
+            self.max_refresh_rate,
+        )
         async_fire_and_forget(
             self._async_connect(),
             loop=self._ledfx.loop,
@@ -772,10 +840,15 @@ class LifxDevice(NetworkedDevice):
             _LOGGER.warning("LIFX %s: Strip flush error: %s", self._config["name"], e)
 
     async def _flush_matrix(self, data):
-        """Send pixel data to matrix device - fire and forget, no ack.
+        """Send pixel data to matrix device using rotating framebuffers.
 
-        For Ceiling lights, the downlight is zones 0-62 (8x8 matrix) and
-        the uplight is zone 63 (single pixel).
+        For smooth animation without tearing or buffer conflicts:
+        1. Write all Set64 packets to current off-screen buffer with duration=0
+        2. Use CopyFrameBuffer to copy to visible buffer (fb_index=0) with duration
+        3. Rotate to next off-screen buffer for next frame
+
+        By rotating through available framebuffers (1 to N-1), we avoid
+        overwriting a buffer that's still being copied from.
         """
         if not self._device or not (
             isinstance(self._device, MatrixLight)
@@ -791,31 +864,70 @@ class LifxDevice(NetworkedDevice):
             reordered = pixels[self._perm]
             duration = self.frame_duration_ms
 
+            # Use current rotating framebuffer (1 to _frame_buffers-1)
+            fb_index = self._current_fb
+
             for tile in self._tiles:
                 start = tile["offset"]
                 end = start + tile["pixels"]
                 tile_pixels = reordered[start:end]
+                tile_width = tile["width"]
+                tile_height = tile["height"]
+                total_pixels = tile["pixels"]
 
                 tile_colors = [
                     HSBK.from_rgb(int(r), int(g), int(b)).to_protocol()
                     for r, g, b in tile_pixels
                 ]
 
-                # Send all colors via Set64 packet
-                rect = TileBufferRect(
-                    fb_index=0,
-                    x=0,
-                    y=0,
-                    width=tile["width"],
-                )
-                packet = packets.Tile.Set64(
+                # Write all Set64 packets to off-screen buffer
+                pixels_per_packet = 64
+                colors_sent = 0
+                y_offset = 0
+
+                while colors_sent < total_pixels:
+                    chunk_size = min(pixels_per_packet, total_pixels - colors_sent)
+                    chunk_colors = tile_colors[colors_sent : colors_sent + chunk_size]
+                    rows_in_chunk = chunk_size // tile_width
+
+                    rect = TileBufferRect(
+                        fb_index=fb_index,
+                        x=0,
+                        y=y_offset,
+                        width=tile_width,
+                    )
+                    packet = packets.Tile.Set64(
+                        tile_index=tile["index"],
+                        length=1,
+                        rect=rect,
+                        duration=0,  # Instant write to off-screen buffer
+                        colors=chunk_colors,
+                    )
+                    await self._device.connection.send_packet(packet)
+
+                    colors_sent += chunk_size
+                    y_offset += rows_in_chunk
+
+                # Copy from off-screen to visible (fb_index=0)
+                copy_packet = packets.Tile.CopyFrameBuffer(
                     tile_index=tile["index"],
                     length=1,
-                    rect=rect,
+                    src_fb_index=fb_index,
+                    dst_fb_index=0,
+                    src_x=0,
+                    src_y=0,
+                    dst_x=0,
+                    dst_y=0,
+                    width=tile_width,
+                    height=tile_height,
                     duration=duration,
-                    colors=tile_colors,
                 )
-                await self._device.connection.send_packet(packet)
+                await self._device.connection.send_packet(copy_packet)
+
+            # Rotate to next framebuffer (1 to _frame_buffers-1, avoiding 0)
+            max_fb = self._frame_buffers - 1
+            if max_fb > 0:
+                self._current_fb = (self._current_fb % max_fb) + 1
 
         except (LifxError, OSError) as e:
             _LOGGER.warning("LIFX %s: Matrix flush error: %s", self.name, e)
