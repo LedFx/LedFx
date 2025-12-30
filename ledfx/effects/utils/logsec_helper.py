@@ -94,10 +94,12 @@ class LogSecHelper:
             self.r_min = min(self.r_min, r_time)
             self.r_max = max(self.r_max, r_time)
 
-            if self.log and self.effect._virtual:
-                # Capture virtual reference to avoid race condition
+            if self.log:
+                # Capture virtual reference FIRST to avoid race condition
                 virt = self.effect._virtual
-
+                if not virt:
+                    return
+                    
                 r_avg = (
                     (self.r_total / self.fps * 1000) if self.fps > 0 else 0.0
                 )
