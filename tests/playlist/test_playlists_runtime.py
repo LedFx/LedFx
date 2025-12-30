@@ -9,7 +9,7 @@ class DummyScenes:
     def __init__(self):
         self.activated = []
 
-    def activate(self, scene_id):
+    def activate(self, scene_id, save_config_after=True):
         self.activated.append(scene_id)
 
 
