@@ -14,6 +14,12 @@ No need to spend hours on end to program one song to program your LEDs, as LedFx
 
 LedFx real-time LED strip music visualization effect controller using is a network based devices (ESP8266/ESP32/Raspberry Pi 4) with support for advanced real-time audio effects! LedFx can control multiple devices and works great with cheap ESP8266/ESP32 nodes allowing for cost effective synchronized effects across your entire house!
 
+Ledfx comes with a browser based front end for configuration, control and live visualisation on port 8888 by default.
+
+| http://localhost:8888
+| http://127.0.0.1:8888
+
+
 Demos
 -------
 
@@ -50,6 +56,10 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
      - Example
    * - Computer running LedFx
      - Windows 10, `LedFx.exe`_
+   * - Browser to access the LedFx web interface
+     - Chrome/Edge/Firefox/Safari
+       
+       http://127.0.0.1:8888
    * - Networked device controlling LED Strip
      - ESP8266 NODEMCU v3 running `WLED`_
    * - Addressable LED strip
@@ -76,6 +86,8 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
       - Play some music in the background.
 
 #. **Start LedFx.**
+      - With any desired launch options. See :doc:`Command Line Options </launch>`
+      - Use --open-ui to open the web interface automatically in your default browser, or navigate to http://127.0.0.1:8888 directly.
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
       - If not, on the bottom click Home,  -> ``Scan for WLED devices`` button, or click on the big plus sign and ``Add Device`` to add them manually.
       - If they're still not showing up, make sure they're powered on and properly connected to your WiFi.
