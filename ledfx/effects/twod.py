@@ -210,7 +210,7 @@ class Twod(AudioReactiveEffect):
             self.do_once()
 
         # Close old matrix before creating new one to prevent memory leak
-        if hasattr(self, 'matrix') and self.matrix:
+        if hasattr(self, "matrix") and self.matrix:
             try:
                 self.matrix.close()
             except Exception:

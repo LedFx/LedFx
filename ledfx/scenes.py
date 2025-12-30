@@ -94,7 +94,7 @@ class Scenes:
 
     def activate(self, scene_id, save_config_after=True):
         """Activate a scene with support for action field
-        
+
         Args:
             scene_id: The ID of the scene to activate
             save_config_after: If True, saves config to disk after activation.
@@ -189,7 +189,9 @@ class Scenes:
                     config_dir=self._ledfx.config_dir,
                 )
             except Exception:
-                _LOGGER.exception("Failed to save config after scene activation")
+                _LOGGER.exception(
+                    "Failed to save config after scene activation"
+                )
 
         return True
 

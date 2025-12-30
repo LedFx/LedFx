@@ -383,7 +383,9 @@ class PlaylistManager:
                     # Skip config save during playlist playback to reduce disk I/O
                     try:
                         if hasattr(self._core, "scenes"):
-                            self._core.scenes.activate(scene_id, save_config_after=False)
+                            self._core.scenes.activate(
+                                scene_id, save_config_after=False
+                            )
                     except Exception:
                         # Swallow scene activation errors to keep playlist running
                         pass

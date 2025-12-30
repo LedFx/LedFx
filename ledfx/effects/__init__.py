@@ -366,9 +366,11 @@ class Effect(BaseRegistry):
     def deactivate(self):
         """Detaches an output channel from the effect"""
         self.pixels = None
-        self._virtual = None  # Clear circular reference to allow garbage collection
+        self._virtual = (
+            None  # Clear circular reference to allow garbage collection
+        )
         # Clear LogSecHelper reference to this effect
-        if hasattr(self, 'logsec') and self.logsec:
+        if hasattr(self, "logsec") and self.logsec:
             self.logsec.effect = None
         self._active = False
         _LOGGER.info(f"Effect {self.NAME} deactivated.")

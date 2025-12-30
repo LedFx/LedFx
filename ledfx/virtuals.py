@@ -556,7 +556,7 @@ class Virtual:
     def clear_transition_effect(self):
         if self._transition_effect is not None:
             # Save effect_id before deactivating (in case deactivate clears it)
-            effect_id = getattr(self._transition_effect, 'id', None)
+            effect_id = getattr(self._transition_effect, "id", None)
             self._transition_effect._deactivate()
             # CRITICAL: Remove effect from registry to allow garbage collection
             # Only destroy if it has an ID (DummyEffect doesn't have one)
@@ -567,7 +567,7 @@ class Virtual:
     def clear_active_effect(self):
         if self._active_effect is not None:
             # Save effect_id before deactivating (in case deactivate clears it)
-            effect_id = getattr(self._active_effect, 'id', None)
+            effect_id = getattr(self._active_effect, "id", None)
             self._active_effect._deactivate()
             # CRITICAL: Remove effect from registry to allow garbage collection
             # Only destroy if it has an ID (DummyEffect doesn't have one)

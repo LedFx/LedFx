@@ -126,29 +126,29 @@ class Keybeat2d(Twod, GifBase):
     def deactivate(self):
         """Clean up PIL Images when effect is deactivated"""
         # Close orig_frames
-        if hasattr(self, 'orig_frames') and self.orig_frames:
+        if hasattr(self, "orig_frames") and self.orig_frames:
             for frame in self.orig_frames:
                 try:
                     frame.close()
                 except Exception:
                     pass
-        
+
         # Close post_frames
-        if hasattr(self, 'post_frames') and self.post_frames:
+        if hasattr(self, "post_frames") and self.post_frames:
             for frame in self.post_frames:
                 try:
                     frame.close()
                 except Exception:
                     pass
-        
+
         # Close frames
-        if hasattr(self, 'frames') and self.frames:
+        if hasattr(self, "frames") and self.frames:
             for frame in self.frames:
                 try:
                     frame.close()
                 except Exception:
                     pass
-        
+
         # CRITICAL: Call parent deactivate to unsubscribe from audio callbacks and cleanup parent resources
         super().deactivate()
 
@@ -170,7 +170,7 @@ class Keybeat2d(Twod, GifBase):
         self.half_beat = self._config["half_beat"]
 
         # Explicitly close PIL Images before clearing lists to release C-level memory
-        if hasattr(self, 'frames') and self.frames:
+        if hasattr(self, "frames") and self.frames:
             for frame in self.frames:
                 try:
                     frame.close()
@@ -185,13 +185,13 @@ class Keybeat2d(Twod, GifBase):
         # attempt to load gif, default on error or no url to test pattern
         if self.last_gif != self.image_location:
             # Close old orig_frames before loading new ones
-            if hasattr(self, 'orig_frames') and self.orig_frames:
+            if hasattr(self, "orig_frames") and self.orig_frames:
                 for frame in self.orig_frames:
                     try:
                         frame.close()
                     except Exception:
                         pass
-            
+
             if self.image_location:
                 self.gif = open_gif(
                     self.image_location, config_dir=self._ledfx.config_dir
@@ -236,13 +236,13 @@ class Keybeat2d(Twod, GifBase):
 
         # Close old post_frames before creating new ones
         # Important: post_frames are enhanced copies, different objects from orig_frames
-        if hasattr(self, 'post_frames') and self.post_frames:
+        if hasattr(self, "post_frames") and self.post_frames:
             for frame in self.post_frames:
                 try:
                     frame.close()
                 except Exception:
                     pass
-        
+
         # Create working list from orig_frames (shallow copy - just references)
         self.post_frames = self.orig_frames.copy()
         # remove any frames that are in skip_frames
@@ -251,7 +251,7 @@ class Keybeat2d(Twod, GifBase):
 
         # strip out None frames
         self.post_frames = [img for img in self.post_frames if img is not None]
-        
+
         # Apply brightness enhancement - this creates NEW PIL Image objects
         # The enhance() method returns a new image, leaving originals untouched
         self.post_frames = [
