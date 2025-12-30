@@ -99,7 +99,7 @@ class LogSecHelper:
                 virt = self.effect._virtual
                 if not virt:
                     return
-                    
+
                 r_avg = (
                     (self.r_total / self.fps * 1000) if self.fps > 0 else 0.0
                 )
