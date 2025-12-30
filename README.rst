@@ -58,7 +58,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
      - Windows 10, `LedFx.exe`_
    * - Browser to access the LedFx web interface
      - Chrome/Edge/Firefox/Safari
-       
+
        http://127.0.0.1:8888
    * - Networked device controlling LED Strip
      - ESP8266 NODEMCU v3 running `WLED`_
