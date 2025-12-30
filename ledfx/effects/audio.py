@@ -922,7 +922,7 @@ class AudioReactiveEffect(Effect):
         _LOGGER.info("Deactivating AudioReactiveEffect.")
 
         self._active = False
-        
+
         if self.audio:
             self.audio.unsubscribe(self._audio_data_updated)
         self.audio = None
