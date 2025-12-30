@@ -95,6 +95,9 @@ class LogSecHelper:
             self.r_max = max(self.r_max, r_time)
 
             if self.log and self.effect._virtual:
+                # Capture virtual reference to avoid race condition
+                virt = self.effect._virtual
+
                 r_avg = (
                     (self.r_total / self.fps * 1000) if self.fps > 0 else 0.0
                 )
@@ -106,11 +109,11 @@ class LogSecHelper:
                 _LOGGER.warning(
                     f"{self.effect.name}: FPS {self.fps} Render avg:{r_avg:0.3f} min:{r_min_ms:0.3f} max:{r_max_ms:0.3f} Cycle: {cycle:0.3f} Sleep: {sleep:0.3f} (ms)"
                 )
-                Teleplot.send(f"{self.effect._virtual.id}_avg_ms:{r_avg}")
+                Teleplot.send(f"{virt.id}_avg_ms:{r_avg}")
 
                 self.effect._ledfx.events.fire_event(
                     VirtualDiagEvent(
-                        self.effect._virtual.id,
+                        virt.id,
                         self.fps,
                         r_avg,
                         self.r_min,
