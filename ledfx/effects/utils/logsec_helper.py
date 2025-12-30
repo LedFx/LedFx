@@ -95,7 +95,9 @@ class LogSecHelper:
             self.r_max = max(self.r_max, r_time)
 
             if self.log and self.effect._virtual:
-                r_avg = (self.r_total / self.fps * 1000) if self.fps > 0 else 0.0
+                r_avg = (
+                    (self.r_total / self.fps * 1000) if self.fps > 0 else 0.0
+                )
                 r_min_ms = self.r_min * 1000
                 r_max_ms = self.r_max * 1000
                 cycle = (end - self.last) * 1000

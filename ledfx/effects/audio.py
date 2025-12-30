@@ -920,7 +920,7 @@ class AudioReactiveEffect(Effect):
 
     def deactivate(self):
         _LOGGER.info("Deactivating AudioReactiveEffect.")
-        
+
         # Set inactive FIRST (under lock) to prevent new callbacks
         with self.lock:
             self._active = False
