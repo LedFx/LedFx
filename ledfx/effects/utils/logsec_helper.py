@@ -3,6 +3,7 @@ import timeit
 
 from ledfx.effects.utils.get_info import get_info_async
 from ledfx.events import VirtualDiagEvent
+from ledfx.utils import Teleplot
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -101,6 +102,8 @@ class LogSecHelper:
                 _LOGGER.warning(
                     f"{self.effect.name}: FPS {self.fps} Render avg:{r_avg:0.6f} min:{self.r_min:0.6f} max:{self.r_max:0.6f} Cycle: {cycle:0.6f} Sleep: {sleep:0.6f}"
                 )
+                Teleplot.send(f"{self.effect._virtual.id}_avg:{r_avg}")
+
                 self.effect._ledfx.events.fire_event(
                     VirtualDiagEvent(
                         self.effect._virtual.id,
