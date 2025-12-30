@@ -158,6 +158,10 @@ class GameOfLifeVisualiser(Twod):
         self.img_array = np.zeros(
             (self.r_height, self.r_width, 3), dtype=np.uint8
         )
+        # Pre-allocate history stack array to avoid creating new arrays every frame
+        self.game._history_stack = np.zeros(
+            (self.history, self.r_height, self.r_width), dtype=bool
+        )
 
     def deactivate(self):
         """Clean up resources when effect is deactivated"""
@@ -165,6 +169,7 @@ class GameOfLifeVisualiser(Twod):
             self.game.board = None
             self.game.board_history = None
             self.game._history_buffer = None
+            self.game._history_stack = None
             self.game = None
         self.img_array = None
         super().deactivate()
@@ -237,7 +242,10 @@ class GameOfLifeVisualiser(Twod):
 
         # Use game board and history directly
         current_board = self.game.board
-        history_stack = np.array(self.game.board_history)
+        # Update pre-allocated history stack in-place to avoid creating new arrays
+        for i, board in enumerate(self.game.board_history):
+            np.copyto(self.game._history_stack[i], board)
+        history_stack = self.game._history_stack
 
         # Calculate alive and dead durations using vectorization
         alive_durations = np.sum(history_stack, axis=0)
