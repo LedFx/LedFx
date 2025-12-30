@@ -24,8 +24,11 @@ class BlendVirtual:
             self.rows == fallback_shape[0]
             and self.columns == fallback_shape[1]
         )
-        if hasattr(virtual.active_effect, "matrix"):
-            self.matrix = virtual.active_effect.get_matrix()
+        # Store reference to active_effect to avoid race condition where effect
+        # is deactivated between hasattr check and get_matrix() call
+        active_effect = virtual.active_effect
+        if active_effect and hasattr(active_effect, "matrix"):
+            self.matrix = active_effect.get_matrix()
         else:
             # Reshape the 1D pixel array into (height, width, 3) for RGB
             reshaped_pixels = virtual.assembled_frame.reshape(
