@@ -1,5 +1,6 @@
 import logging
 import random
+from collections import deque
 from enum import Enum
 
 import numpy as np
@@ -153,6 +154,26 @@ class GameOfLifeVisualiser(Twod):
             )
             self.inject = False
 
+        # Pre-allocate image array to reuse across frames (avoid creating new arrays each frame)
+        self.img_array = np.zeros(
+            (self.r_height, self.r_width, 3), dtype=np.uint8
+        )
+        # Pre-allocate history stack array to avoid creating new arrays every frame
+        self.game._history_stack = np.zeros(
+            (self.history, self.r_height, self.r_width), dtype=bool
+        )
+
+    def deactivate(self):
+        """Clean up resources when effect is deactivated"""
+        if self.game:
+            self.game.board = None
+            self.game.board_history = None
+            self.game._history_buffer = None
+            self.game._history_stack = None
+            self.game = None
+        self.img_array = None
+        super().deactivate()
+
     def audio_data_updated(self, data):
         if self.inject and data.volume_beat_now():
             if self.game:
@@ -219,12 +240,12 @@ class GameOfLifeVisualiser(Twod):
         Updates the image with the current game board using vectorization for improved performance.
         """
 
-        # Convert PIL image to NumPy array for processing
-        img_array = np.array(self.matrix)
-
         # Use game board and history directly
         current_board = self.game.board
-        history_stack = np.array(self.game.board_history)
+        # Update pre-allocated history stack in-place to avoid creating new arrays
+        for i, board in enumerate(self.game.board_history):
+            np.copyto(self.game._history_stack[i], board)
+        history_stack = self.game._history_stack
 
         # Calculate alive and dead durations using vectorization
         alive_durations = np.sum(history_stack, axis=0)
@@ -235,7 +256,7 @@ class GameOfLifeVisualiser(Twod):
             alive_mask = np.logical_and(
                 current_board, alive_durations == duration
             )
-            img_array[alive_mask] = self.live_colors[duration]
+            self.img_array[alive_mask] = self.live_colors[duration]
 
         for duration in range(len(self.dead_colors)):
             # where pixel is long dead, don't draw black, allows any image
@@ -246,10 +267,16 @@ class GameOfLifeVisualiser(Twod):
             dead_mask = np.logical_and(
                 ~current_board, dead_durations == duration
             )
-            img_array[dead_mask] = self.dead_colors[duration]
+            self.img_array[dead_mask] = self.dead_colors[duration]
 
-        # Convert the NumPy array back to PIL Image and update self.matrix
-        self.matrix = Image.fromarray(img_array)
+        # Clear old PIL Image reference before creating new one to help GC
+        if hasattr(self, "matrix") and self.matrix is not None:
+            old_matrix = self.matrix
+            self.matrix = None
+            del old_matrix
+
+        # Convert the reused NumPy array to PIL Image
+        self.matrix = Image.fromarray(self.img_array)
 
 
 class GameOfLife:
@@ -280,6 +307,10 @@ class GameOfLife:
         self.depth = depth
         self.board_size = [height, width]
         self.board = self.random_board()
+        # Use deque with maxlen for efficient fixed-size history (no pop(0) needed)
+        self.board_history = deque(maxlen=depth)
+        # Pre-allocate reusable array to avoid np.copy() every frame
+        self._history_buffer = np.zeros(self.board_size, dtype=bool)
         self.empty_board_history()
         _LOGGER.info("Universe invented 🌌")
 
@@ -297,10 +328,11 @@ class GameOfLife:
         """
         Performs one step of the game simulation.
         """
-        # Update board_history
-        self.board_history.append(np.copy(self.board))
-        if len(self.board_history) > self.depth:
-            self.board_history.pop(0)
+        # Update board_history using pre-allocated buffer to avoid np.copy()
+        # Copy current board state into buffer, then append a COPY to history
+        np.copyto(self._history_buffer, self.board)
+        self.board_history.append(self._history_buffer.copy())
+        # Reuse _history_buffer for next frame (no new allocation needed)
 
         neighbors = sum(
             np.roll(np.roll(self.board, i, 0), j, 1)
@@ -341,7 +373,9 @@ class GameOfLife:
         """
         if len(self.board_history) < lookback_generations:
             return False
-        lookback_boards = self.board_history[-lookback_generations:]
+        # Convert deque to list for slicing (deque doesn't support negative slicing)
+        history_list = list(self.board_history)
+        lookback_boards = history_list[-lookback_generations:]
         last_board = lookback_boards[-1]
         for i in range(len(lookback_boards) - 1):  # Exclude the last board
             if np.array_equal(lookback_boards[i], last_board):
@@ -356,9 +390,11 @@ class GameOfLife:
         Clears the board history.
         """
         _LOGGER.info("Erasing history of the universe")
-        self.board_history = [
-            np.zeros(self.board_size, dtype=bool) for _ in range(self.depth)
-        ]
+        self.board_history.clear()
+        # Reuse template zero array to reduce allocations
+        zero_board = np.zeros(self.board_size, dtype=bool)
+        for _ in range(self.depth):
+            self.board_history.append(zero_board.copy())
 
     def add_glider(self):
         """
