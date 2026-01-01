@@ -39,6 +39,8 @@ class Event:
     PLAYLIST_STOPPED = "playlist_stopped"
     PLAYLIST_PAUSED = "playlist_paused"
     PLAYLIST_RESUMED = "playlist_resumed"
+    MOOD_CHANGE = "mood_change"
+    STRUCTURE_CHANGE = "structure_change"
 
     def __init__(self, type: str):
         """
@@ -422,6 +424,38 @@ class LedFxShutdownEvent(Event):
 
     def __init__(self):
         super().__init__(Event.LEDFX_SHUTDOWN)
+
+
+class MoodChangeEvent(Event):
+    """Event emitted when mood category changes"""
+
+    def __init__(self, mood_category: str, mood_metrics: dict):
+        """
+        Initializes a MoodChangeEvent with mood category and metrics.
+
+        Args:
+            mood_category: The detected mood category (e.g., "energetic_bright_intense")
+            mood_metrics: Dictionary of mood metrics (energy, valence, intensity, etc.)
+        """
+        super().__init__(Event.MOOD_CHANGE)
+        self.mood_category = mood_category
+        self.mood_metrics = mood_metrics
+
+
+class StructureChangeEvent(Event):
+    """Event emitted when music structure section changes"""
+
+    def __init__(self, section, event=None):
+        """
+        Initializes a StructureChangeEvent with section and optional structural event.
+
+        Args:
+            section: The current music section (MusicSection enum)
+            event: Optional structural event (StructuralEvent enum)
+        """
+        super().__init__(Event.STRUCTURE_CHANGE)
+        self.section = section
+        self.event = event
 
 
 class EventListener:
