@@ -38,7 +38,7 @@ def wait_with_screenshots(page: Page, seconds: int, prefix: str):
     """
     for i in range(seconds):
         time.sleep(1)
-        screenshot_path = f"tests/e2e/screenshots/{prefix}_{i+1}s.png"
+        screenshot_path = f"tests/e2e/screenshots/{prefix}_{i + 1}s.png"
         page.screenshot(path=screenshot_path, full_page=True)
         crop_to_720p(screenshot_path)
-        print(f"📸 {prefix} at {i+1}s")
+        print(f"📸 {prefix} at {i + 1}s")

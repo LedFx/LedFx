@@ -8,10 +8,10 @@ import re
 import time
 
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
 from tests.e2e.config import BASE_URL
-from tests.e2e.test_helpers import crop_to_720p, wait_with_screenshots
+from tests.e2e.test_helpers import crop_to_720p
 
 
 class TestLedFx:

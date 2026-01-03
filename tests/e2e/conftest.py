@@ -12,12 +12,10 @@ import time
 from collections.abc import Generator
 
 import pytest
-from PIL import Image
-from playwright.sync_api import Browser, BrowserContext, Page, Playwright
+from playwright.sync_api import Browser, BrowserContext, Page
 
 from tests.e2e.config import (
     BASE_URL,
-    BROWSERS,
     PLAYWRIGHT_CONFIG,
     SCREENSHOT_PATH,
     TRACE_PATH,

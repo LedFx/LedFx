@@ -8,6 +8,11 @@ from tests.test_definitions.audio_configs import get_ledfx_audio_configs
 from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
 
+# Initialize globals as empty dicts so they can be imported by test_apis.py at module load time
+# They will be populated in pytest_sessionstart when the LedFx server starts
+all_effects = {}
+audio_configs = {}
+
 
 def pytest_sessionstart(session):
     """
@@ -24,12 +29,17 @@ def pytest_sessionstart(session):
     # Skip this startup logic for E2E tests - they handle their own server startup
     # Two detection methods needed:
     # 1. Marker-based command line: pytest -m e2e (checks markexpr)
-    # 2. Path-based from pytest extension: pytest tests/e2e/ (checks command args)
+    # 2. Path-based: pytest tests/e2e/ (checks if ALL args are e2e paths)
     selected_items = session.config.option.markexpr
     test_args = session.config.args
-    if (selected_items and "e2e" in selected_items) or any(
-        "e2e" in str(arg) for arg in test_args
-    ):
+
+    # Only skip if running e2e marker OR if ALL test paths are e2e tests
+    # This prevents skipping when VS Code passes mixed paths during discovery
+    if selected_items and "e2e" in selected_items:
+        return
+
+    # Check if we're only running e2e tests (not mixed with other tests)
+    if test_args and all("e2e" in str(arg) for arg in test_args):
         return
 
     EnvironmentCleanup.cleanup_test_config_folder()
@@ -80,12 +90,14 @@ def pytest_sessionfinish(session, exitstatus):
         None
     """
     # Skip this cleanup logic for E2E tests - they handle their own server cleanup
-    # Detect e2e tests via marker (pytest -m e2e) or path (pytest tests/e2e/)
+    # Detect e2e tests via marker (pytest -m e2e) or if ALL paths are e2e tests
     selected_items = session.config.option.markexpr
     test_args = session.config.args
-    if (selected_items and "e2e" in selected_items) or any(
-        "e2e" in str(arg) for arg in test_args
-    ):
+
+    if selected_items and "e2e" in selected_items:
+        return
+
+    if test_args and all("e2e" in str(arg) for arg in test_args):
         return
 
     # send LedFx a shutdown signal

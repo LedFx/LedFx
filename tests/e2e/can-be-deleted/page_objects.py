@@ -5,10 +5,9 @@ This module provides reusable helpers for common testing patterns
 in the LedFx web interface.
 """
 
-import time
-from typing import List, Optional
+from typing import Optional
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
 
 class PageHelpers:
