@@ -1,0 +1,43 @@
+"""
+Playwright E2E Testing - Quick Reference
+=========================================
+
+SETUP
+-----
+uv sync --group dev
+uv run playwright install chromium
+
+RUN TESTS
+---------
+# Run all tests
+uv run pytest tests/e2e -m e2e
+
+# Run with visible browser
+$env:HEADLESS="false"; uv run pytest tests/e2e -m e2e
+
+# Debug mode
+$env:PWDEBUG="1"; uv run pytest tests/e2e -m e2e
+
+ARTIFACTS
+---------
+tests/e2e/screenshots/  # Test screenshots
+tests/e2e/videos/       # Videos (if enabled)
+tests/e2e/traces/       # Execution traces
+
+DEBUGGING
+---------
+# View trace
+uv run playwright show-trace tests/e2e/traces/test_name.zip
+
+# Generate selectors
+uv run playwright codegen http://localhost:8888
+
+MORE INFO
+---------
+Full reference: can-be-deleted/FULL_REFERENCE.txt
+Documentation: docs/developer/playwright_testing.md
+Playwright docs: https://playwright.dev/
+
+NOTE: This file is in the can-be-deleted folder and is optional.
+      All essential information is in docs/developer/playwright_testing.md
+"""

@@ -58,6 +58,8 @@ dev = [
     "pytest>=8.0.0,<10.0.0",
     "pytest-asyncio>=1.2.0,<1.4.0",
     "pytest-order<2.0.0,>=1.2.0",
+    "pytest-playwright>=0.6.0,<1.0.0",
+    "playwright>=1.50.0,<2.0.0",
     "ruff>=0.14.0,<0.15.0",
 ]
 build = [
@@ -113,6 +115,10 @@ norecursedirs = [
 ]
 filterwarnings = "ignore::DeprecationWarning"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "e2e: End-to-end tests using Playwright (deselect with '-m \"not e2e\"')",
+    "slow: Slow-running tests",
+]
 
 [tool.uv]
 # We want to use copy here, since symlink mode means we can't use our own portaudio dll
