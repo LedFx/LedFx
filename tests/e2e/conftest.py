@@ -27,50 +27,46 @@ from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
 
 
-def convert_webm_to_webp(
-    webm_path: str, webp_path: str, fps: int = 10, quality: int = 80
-):
+
+def convert_webm_to_mp4(webm_path: str, mp4_path: str):
     """
-    Convert WebM video to animated WebP using ffmpeg.
+    Convert WebM video to MP4 using ffmpeg for VS Code compatibility.
 
     Args:
         webm_path: Path to WebM video file
-        webp_path: Output path for WebP file
-        fps: Frames per second for WebP (default: 10 for smaller file size)
-        quality: Quality setting 0-100 (default: 80)
+        mp4_path: Output path for MP4 file
     """
     try:
-        # Use ffmpeg to convert webm to webp
+        # Use ffmpeg to convert webm to mp4 with H.264 codec
         subprocess.run(
             [
                 "ffmpeg",
                 "-i",
                 webm_path,
-                "-vf",
-                f"fps={fps},scale=1280:-1:flags=lanczos",
                 "-c:v",
-                "libwebp",
-                "-quality",
-                str(quality),
-                "-loop",
-                "0",
-                "-y",
-                webp_path,
+                "libx264",  # H.264 codec for wide compatibility
+                "-preset",
+                "fast",  # Faster encoding
+                "-crf",
+                "23",  # Quality (lower is better, 23 is default)
+                "-pix_fmt",
+                "yuv420p",  # Pixel format for compatibility
+                "-y",  # Overwrite output file if it exists
+                mp4_path,
             ],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             check=True,
         )
-
-        print(f"  🎞️  Created WebP: {os.path.basename(webp_path)}")
+        print(f"  🎥 Created MP4: {os.path.basename(mp4_path)}")
         return True
     except (subprocess.CalledProcessError, FileNotFoundError):
         # ffmpeg not available or conversion failed
         return False
 
 
-@pytest.fixture(scope="session")
-def ledfx_server() -> Generator[subprocess.Popen, None, None]:
+@pytest.fixture(scope="function")
+def ledfx_server(request) -> Generator[subprocess.Popen, None, None]:
     """
     Start LedFx server for E2E tests.
 
@@ -213,9 +209,9 @@ def context(
                 os.replace(latest_video, new_video_path)
                 print(f"  🎬 Renamed video to: {new_video_name}")
 
-            # Create WebP version
-            webp_file = new_video_path.replace(".webm", ".webp")
-            convert_webm_to_webp(new_video_path, webp_file)
+            # Create MP4 version for VS Code compatibility
+            mp4_file = new_video_path.replace(".webm", ".mp4")
+            convert_webm_to_mp4(new_video_path, mp4_file)
 
 
 @pytest.fixture(scope="function")

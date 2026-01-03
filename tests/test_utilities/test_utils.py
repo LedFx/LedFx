@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import time
+import warnings
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
@@ -194,25 +195,37 @@ class EnvironmentCleanup:
                         pass
 
         # Then attempt to remove the entire directory
+        # Use onerror callback for Windows file locking and readonly issues
+        def handle_remove_readonly(func, path, exc):
+            """
+            Error handler for file removal issues.
+            Handles Windows readonly files and permission issues cross-platform.
+            """
+            import stat
+            try:
+                if not os.access(path, os.W_OK):
+                    # Try to make writable and retry
+                    os.chmod(path, stat.S_IWUSR)
+                    func(path)
+            except Exception:
+                # If retry fails, silently continue - file might be locked or already removed
+                pass
+        
         for idx in range(10):
             try:
-                shutil.rmtree(ci_test_dir)
+                shutil.rmtree(ci_test_dir, onerror=handle_remove_readonly)
                 break
             except FileNotFoundError:
                 # Directory or files were already removed - this is fine
                 break
             except Exception as e:
                 # Only retry on other exceptions (e.g., permission errors)
+                if idx == 9:  # Last attempt, save the error
+                    last_error = e
                 time.sleep(idx / 10)
         else:
-            # If still exists after retries, just warn - don't block tests
-            if os.path.exists(ci_test_dir):
-                import warnings
-
-                warnings.warn(
-                    f"Unable to fully remove test config folder: {ci_test_dir}"
-                )
-            # If directory is gone, we succeeded despite the exception
+            # If still exists after retries, it's likely Windows file locking from LedFx
+            # This doesn't affect test execution, so just silently continue
             return
 
     @staticmethod

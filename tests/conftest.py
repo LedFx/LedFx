@@ -22,8 +22,14 @@ def pytest_sessionstart(session):
         None
     """
     # Skip this startup logic for E2E tests - they handle their own server startup
+    # Two detection methods needed:
+    # 1. Marker-based command line: pytest -m e2e (checks markexpr) 
+    # 2. Path-based from pytest extension: pytest tests/e2e/ (checks command args)
     selected_items = session.config.option.markexpr
-    if selected_items and "e2e" in selected_items:
+    test_args = session.config.args
+    if (selected_items and "e2e" in selected_items) or any(
+        "e2e" in str(arg) for arg in test_args
+    ):
         return
 
     EnvironmentCleanup.cleanup_test_config_folder()
@@ -74,8 +80,12 @@ def pytest_sessionfinish(session, exitstatus):
         None
     """
     # Skip this cleanup logic for E2E tests - they handle their own server cleanup
+    # Detect e2e tests via marker (pytest -m e2e) or path (pytest tests/e2e/)
     selected_items = session.config.option.markexpr
-    if selected_items and "e2e" in selected_items:
+    test_args = session.config.args
+    if (selected_items and "e2e" in selected_items) or any(
+        "e2e" in str(arg) for arg in test_args
+    ):
         return
 
     # send LedFx a shutdown signal
