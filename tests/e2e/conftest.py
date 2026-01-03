@@ -27,7 +27,6 @@ from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
 
 
-
 def convert_webm_to_mp4(webm_path: str, mp4_path: str):
     """
     Convert WebM video to MP4 using ffmpeg for VS Code compatibility.

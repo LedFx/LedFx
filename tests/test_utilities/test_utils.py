@@ -202,6 +202,7 @@ class EnvironmentCleanup:
             Handles Windows readonly files and permission issues cross-platform.
             """
             import stat
+
             try:
                 if not os.access(path, os.W_OK):
                     # Try to make writable and retry
@@ -210,7 +211,7 @@ class EnvironmentCleanup:
             except Exception:
                 # If retry fails, silently continue - file might be locked or already removed
                 pass
-        
+
         for idx in range(10):
             try:
                 shutil.rmtree(ci_test_dir, onerror=handle_remove_readonly)

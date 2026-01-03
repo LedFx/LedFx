@@ -23,7 +23,7 @@ def pytest_sessionstart(session):
     """
     # Skip this startup logic for E2E tests - they handle their own server startup
     # Two detection methods needed:
-    # 1. Marker-based command line: pytest -m e2e (checks markexpr) 
+    # 1. Marker-based command line: pytest -m e2e (checks markexpr)
     # 2. Path-based from pytest extension: pytest tests/e2e/ (checks command args)
     selected_items = session.config.option.markexpr
     test_args = session.config.args
