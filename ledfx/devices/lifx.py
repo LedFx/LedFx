@@ -109,26 +109,8 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
-                    self._total_pixels = 0
-                    self._tiles = []
 
-                    for i, tile in enumerate(tiles):
-                        tile_pixels = tile.width * tile.height
-                        self._tiles.append(
-                            {
-                                "index": i,
-                                "width": tile.width,
-                                "height": tile.height,
-                                "pixels": tile_pixels,
-                                "offset": self._total_pixels,
-                                "user_x": tile.user_x,
-                                "user_y": tile.user_y,
-                            }
-                        )
-                        self._total_pixels += tile_pixels
-
-                    if self._tiles:
-                        self._perm = self._build_permutation(tiles)
+                    if self._process_tile_chain(tiles):
                         self._config["pixel_count"] = self._total_pixels
                         self._config["matrix_width"] = self._matrix_width
                         self._config["matrix_height"] = self._matrix_height
@@ -234,6 +216,41 @@ class LifxDevice(NetworkedDevice):
         raster_idx = rows * self._matrix_width + cols
         return raster_idx.astype(np.int64)
 
+    def _process_tile_chain(self, tiles):
+        """Process tile chain data and build permutation mapping.
+
+        Extracts tile metadata, calculates total pixels, and builds the
+        permutation array for pixel reordering.
+
+        Args:
+            tiles: List of tile objects from device.get_device_chain()
+
+        Returns:
+            True if tiles were processed successfully, False if no tiles
+        """
+        self._tiles = []
+        self._total_pixels = 0
+
+        for i, tile in enumerate(tiles):
+            tile_pixels = tile.width * tile.height
+            self._tiles.append(
+                {
+                    "index": i,
+                    "width": tile.width,
+                    "height": tile.height,
+                    "pixels": tile_pixels,
+                    "offset": self._total_pixels,
+                    "user_x": tile.user_x,
+                    "user_y": tile.user_y,
+                }
+            )
+            self._total_pixels += tile_pixels
+
+        if self._tiles:
+            self._perm = self._build_permutation(tiles)
+            return True
+        return False
+
     async def _async_connect(self):
         """Connect to device using saved serial/type for speed."""
         try:
@@ -250,8 +267,8 @@ class LifxDevice(NetworkedDevice):
                     "CeilingLight": CeilingLight,
                     "MultiZoneLight": MultiZoneLight,
                     "Light": Light,
-                    "HevLight": Light,
-                    "InfraredLight": Light,
+                    "HevLight": HevLight,
+                    "InfraredLight": InfraredLight,
                 }
                 device_cls = class_map.get(lifx_class, Light)
                 self._device = device_cls(serial=serial, ip=ip)
@@ -364,26 +381,8 @@ class LifxDevice(NetworkedDevice):
 
             # Otherwise query the device
             tiles = await self._device.get_device_chain()
-            self._tiles = []
-            self._total_pixels = 0
 
-            for i, tile in enumerate(tiles):
-                tile_pixels = tile.width * tile.height
-                self._tiles.append(
-                    {
-                        "index": i,
-                        "width": tile.width,
-                        "height": tile.height,
-                        "pixels": tile_pixels,
-                        "offset": self._total_pixels,
-                        "user_x": tile.user_x,
-                        "user_y": tile.user_y,
-                    }
-                )
-                self._total_pixels += tile_pixels
-
-            if self._tiles:
-                self._perm = self._build_permutation(tiles)
+            if self._process_tile_chain(tiles):
                 tile_info = ", ".join(
                     f"Tile {t['index']}: {t['width']}x{t['height']} "
                     f"@({t['user_x']},{t['user_y']})"
