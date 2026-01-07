@@ -497,6 +497,7 @@ class LifxDevice(NetworkedDevice):
                     HSBK(hue=0, saturation=0, brightness=0, kelvin=3500)
                 )
 
+            # Use duration=0 for instant updates (real-time LED sync)
             if self._has_extended:
                 await self._device.set_extended_color_zones(
                     zone_index=0,
@@ -517,7 +518,7 @@ class LifxDevice(NetworkedDevice):
                         start=i,
                         end=i,
                         color=color,
-                        duration=0.1,
+                        duration=0.0,
                         apply=apply,
                     )
         except (LifxError, OSError) as e:

@@ -219,12 +219,14 @@ device_tests = {
         payload_to_send={"name": "CI LIFX Test"},
     ),
     # find_lifx endpoint validation tests
+    # Send valid JSON without ip_address to test missing field validation
+    # Note: Empty {} is falsy and becomes None in test framework, so use non-empty payload
     "find_lifx_missing_ip": APITestCase(
         execution_order=9,
         method="POST",
         api_endpoint="/api/find_lifx",
-        expected_return_code=400,
-        payload_to_send={},
+        expected_return_code=200,
+        payload_to_send={"timeout": 1},
         expected_response_keys=["status"],
         expected_response_values=[{"status": "failed"}],
     ),
