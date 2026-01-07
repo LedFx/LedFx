@@ -7,6 +7,7 @@ from lifx import (
     CeilingLight,
     HevLight,
     InfraredLight,
+    LifxError,
     Light,
     MatrixLight,
     MultiZoneLight,
@@ -60,7 +61,7 @@ class LifxDevice(NetworkedDevice):
         self._has_extended = False
 
         # Matrix-specific
-        self._tiles = {}
+        self._tiles = []
         self._total_pixels = config.get("pixel_count", 1)
         self._matrix_width = 0
         self._matrix_height = 0
@@ -174,15 +175,14 @@ class LifxDevice(NetworkedDevice):
                     self._config["pixel_count"] = 1
                     _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
 
-                await device.close()
-
-        except Exception as e:
+        except (LifxError, OSError) as e:
             _LOGGER.warning(
                 "LIFX %s: Detection failed: %s", self._config["name"], e
             )
 
     @property
     def pixel_count(self):
+        """Return total pixel count based on device type."""
         if self._lifx_type == "matrix":
             return self._total_pixels
         elif self._lifx_type == "strip":
@@ -191,14 +191,17 @@ class LifxDevice(NetworkedDevice):
 
     @property
     def is_matrix(self):
+        """Return True if device is a matrix type."""
         return self._lifx_type == "matrix"
 
     @property
     def matrix_width(self):
+        """Return matrix width in pixels, or 0 if not a matrix."""
         return self._matrix_width if self._lifx_type == "matrix" else 0
 
     @property
     def matrix_height(self):
+        """Return matrix height in pixels, or 0 if not a matrix."""
         return self._matrix_height if self._lifx_type == "matrix" else 0
 
     def _build_permutation(self, tiles):
@@ -297,7 +300,7 @@ class LifxDevice(NetworkedDevice):
             if self._lifx_type == "matrix":
                 self._update_virtual_rows()
 
-        except Exception as e:
+        except (LifxError, OSError) as e:
             _LOGGER.warning(
                 "LIFX %s: Connection failed: %s",
                 self._config["name"],
@@ -420,12 +423,13 @@ class LifxDevice(NetworkedDevice):
         if self._device:
             try:
                 await self._device.set_power(False)
-            except Exception as e:
+            except (LifxError, OSError) as e:
                 _LOGGER.warning("LIFX %s: Disconnect error: %s", self.name, e)
             self._device = None
             self._connected = False
 
     def activate(self):
+        """Activate device and initiate async connection."""
         if self._destination is None:
             super().activate()
             return
@@ -437,6 +441,7 @@ class LifxDevice(NetworkedDevice):
         )
 
     def deactivate(self):
+        """Deactivate device and close connection."""
         if self._device:
             async_fire_and_forget(
                 self._async_disconnect(),
@@ -467,7 +472,7 @@ class LifxDevice(NetworkedDevice):
                 r, g, b = pixels[0]
                 color = HSBK.from_rgb(int(r), int(g), int(b))
                 await self._device.set_color(color)
-        except Exception as e:
+        except (LifxError, OSError) as e:
             _LOGGER.warning(
                 "LIFX %s: Light flush error: %s", self._config["name"], e
             )
@@ -516,7 +521,7 @@ class LifxDevice(NetworkedDevice):
                         duration=0.1,
                         apply=apply,
                     )
-        except Exception as e:
+        except (LifxError, OSError) as e:
             _LOGGER.warning(
                 "LIFX %s: Strip flush error: %s", self._config["name"], e
             )
@@ -532,6 +537,18 @@ class LifxDevice(NetworkedDevice):
 
             try:
                 pixels = data.astype(np.dtype("B")).reshape(-1, 3)
+
+                # Validate pixel count matches permutation expectations
+                expected_pixels = len(self._perm)
+                if pixels.shape[0] < expected_pixels:
+                    _LOGGER.warning(
+                        "LIFX %s: Pixel count mismatch: got %d, expected %d",
+                        self.name,
+                        pixels.shape[0],
+                        expected_pixels,
+                    )
+                    return
+
                 reordered = pixels[self._perm]
 
                 for tile in self._tiles:
@@ -554,12 +571,13 @@ class LifxDevice(NetworkedDevice):
                         colors=tile_colors,
                     )
 
-            except Exception as e:
+            except (LifxError, OSError) as e:
                 _LOGGER.warning(
                     "LIFX %s: Matrix flush error: %s", self.name, e
                 )
 
     def flush(self, data):
+        """Queue pixel data to be sent to device asynchronously."""
         if self._device and self._connected:
             async_fire_and_forget(
                 self._async_flush(data),

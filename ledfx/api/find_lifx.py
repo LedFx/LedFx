@@ -37,8 +37,8 @@ class FindLifxEndpoint(RestEndpoint):
         Discover all LIFX devices on the local network.
 
         Query parameters:
-            discovery_timeout (optiona): How long to wait for replies to
-                                         the discovery broadcast
+            discovery_timeout (optional): How long to wait for replies to
+                                          the discovery broadcast
             broadcast_address (optional): Broadcast address for discovery
                                           (e.g., "192.168.1.255")
             add (optional): If "true", automatically add discovered devices
@@ -59,7 +59,7 @@ class FindLifxEndpoint(RestEndpoint):
                 ]
             }
         """
-        from lifx import discover
+        from lifx import LifxError, discover
 
         discovery_timeout = float(
             request.query.get("discovery_timeout", DISCOVERY_TIMEOUT)
@@ -80,7 +80,7 @@ class FindLifxEndpoint(RestEndpoint):
 
                 try:
                     label = await device.get_label()
-                except Exception:
+                except (LifxError, OSError):
                     label = f"LIFX {device.serial[-6:]}"
 
                 device_info = {
@@ -111,8 +111,8 @@ class FindLifxEndpoint(RestEndpoint):
                             device.serial,
                             device.ip,
                         )
-                    except Exception as e:
-                        # Device might already exist
+                    except (LifxError, OSError, ValueError) as e:
+                        # Device might already exist or validation failed
                         _LOGGER.warning("LIFX add failed for %s: %s", label, e)
 
                 devices.append(device_info)
@@ -132,7 +132,7 @@ class FindLifxEndpoint(RestEndpoint):
                 "LIFX discovery completed (timeout): found %d devices",
                 len(devices),
             )
-        except Exception as e:
+        except (LifxError, OSError) as e:
             _LOGGER.warning("LIFX discovery error: %s", e)
 
         return await self.bare_request_success({"devices": devices})
@@ -156,7 +156,7 @@ class FindLifxEndpoint(RestEndpoint):
                 "ip": "192.168.1.100"
             }
         """
-        from lifx import find_by_ip
+        from lifx import LifxError, find_by_ip
 
         try:
             data = await request.json()
@@ -184,7 +184,7 @@ class FindLifxEndpoint(RestEndpoint):
 
             try:
                 label = await device.get_label()
-            except Exception:
+            except (LifxError, OSError):
                 label = "Unknown"
 
             serial = device.serial
@@ -212,7 +212,7 @@ class FindLifxEndpoint(RestEndpoint):
 
             return await self.bare_request_success(response)
 
-        except Exception as e:
+        except (LifxError, OSError) as e:
             _LOGGER.warning(
                 "LIFX discovery failed for %s: %s",
                 ip_address,
