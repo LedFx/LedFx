@@ -134,6 +134,10 @@ class LifxDevice(NetworkedDevice):
                     self._config["pixel_count"] = self._zone_count
 
                     if not device.capabilities:
+                        # Use private _ensure_capabilities() to avoid 3-5 network round-trips
+                        # that the async context manager performs. We only need capabilities
+                        # to determine whether this multizone supports extended messages,
+                        # not full device state.
                         await device._ensure_capabilities()
                     if (
                         device.capabilities
