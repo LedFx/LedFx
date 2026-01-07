@@ -61,9 +61,15 @@ class FindLifxEndpoint(RestEndpoint):
         """
         from lifx import LifxError, discover
 
-        discovery_timeout = float(
-            request.query.get("discovery_timeout", DISCOVERY_TIMEOUT)
-        )
+        try:
+            discovery_timeout = float(
+                request.query.get("discovery_timeout", DISCOVERY_TIMEOUT)
+            )
+        except (ValueError, TypeError):
+            return await self.invalid_request(
+                "Invalid discovery_timeout: must be a numeric value"
+            )
+
         broadcast_address = request.query.get(
             "broadcast_address", "255.255.255.255"
         )
