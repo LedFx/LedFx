@@ -4,6 +4,12 @@
 # 3. Delete the device
 # 4. Check that the device no longer exists
 # 5. Recreate the device to allow it to be used in other tests
+#
+# Additional tests for LIFX devices:
+# 6. Create a LIFX device
+# 7. Check the LIFX device exists
+# 8. Delete the LIFX device
+# 9. Test find_lifx endpoint validation (missing ip_address)
 from tests.test_utilities.test_utils import APITestCase, SystemInfo
 
 device_tests = {
@@ -134,5 +140,92 @@ device_tests = {
                 }
             },
         ],
+    ),
+    # LIFX device tests
+    # Note: LIFX devices auto-detect type on connect, but without a real device
+    # at the IP, it will use defaults. Device may show as offline.
+    "create_lifx_device": APITestCase(
+        execution_order=6,
+        method="POST",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        payload_to_send={
+            "type": "lifx",
+            "config": {
+                "icon_name": "mdi:lightbulb",
+                "center_offset": 0,
+                "refresh_rate": SystemInfo.default_fps(),
+                "pixel_count": 1,
+                "name": "CI LIFX Test",
+                "ip_address": "127.0.0.2",
+            },
+        },
+        expected_response_keys=["status", "payload", "device"],
+        expected_response_values=[
+            {"status": "success"},
+            {
+                "device": {
+                    "type": "lifx",
+                    "config": {
+                        "icon_name": "mdi:lightbulb",
+                        "center_offset": 0,
+                        "refresh_rate": SystemInfo.default_fps(),
+                        "pixel_count": 1,
+                        "name": "CI LIFX Test",
+                        "ip_address": "127.0.0.2",
+                    },
+                    "id": "ci-lifx-test",
+                    "virtuals": [],
+                }
+            },
+        ],
+    ),
+    "check_lifx_device": APITestCase(
+        execution_order=7,
+        method="GET",
+        api_endpoint="/api/devices",
+        expected_return_code=200,
+        expected_response_keys=["status", "devices"],
+        expected_response_values=[
+            {
+                "status": "success",
+                "devices": {
+                    "ci-lifx-test": {
+                        "config": {
+                            "icon_name": "mdi:lightbulb",
+                            "center_offset": 0,
+                            "refresh_rate": SystemInfo.default_fps(),
+                            "pixel_count": 1,
+                            "name": "CI LIFX Test",
+                            "ip_address": "127.0.0.2",
+                        },
+                        "id": "ci-lifx-test",
+                        "type": "lifx",
+                        "online": True,
+                        "virtuals": [],
+                        "active_virtuals": [],
+                    },
+                },
+            }
+        ],
+    ),
+    "delete_lifx_device": APITestCase(
+        execution_order=8,
+        method="DELETE",
+        api_endpoint="/api/virtuals/ci-lifx-test",
+        expected_return_code=200,
+        expected_response_keys=["status"],
+        expected_response_values=[{"status": "success"}],
+        payload_to_send={"name": "CI LIFX Test"},
+    ),
+    # find_lifx endpoint validation tests
+    "find_lifx_missing_ip": APITestCase(
+        execution_order=9,
+        method="POST",
+        api_endpoint="/api/find_lifx",
+        expected_return_code=400,
+        payload_to_send={},
+        expected_response_keys=["status"],
+        expected_response_values=[{"status": "failed"}],
     ),
 }
