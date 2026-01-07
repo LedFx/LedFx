@@ -61,8 +61,12 @@ class FindLifxEndpoint(RestEndpoint):
         """
         from lifx import discover
 
-        discovery_timeout = float(request.query.get("discovery_timeout", DISCOVERY_TIMEOUT))
-        broadcast_address = request.query.get("broadcast_address", "255.255.255.255")
+        discovery_timeout = float(
+            request.query.get("discovery_timeout", DISCOVERY_TIMEOUT)
+        )
+        broadcast_address = request.query.get(
+            "broadcast_address", "255.255.255.255"
+        )
         auto_add = request.query.get("add", "").lower() == "true"
         devices = []
 

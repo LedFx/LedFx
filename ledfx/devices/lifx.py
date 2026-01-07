@@ -102,7 +102,9 @@ class LifxDevice(NetworkedDevice):
                 )
 
                 # Get device info based on type
-                if isinstance(device, MatrixLight) or isinstance(device, CeilingLight):
+                if isinstance(device, MatrixLight) or isinstance(
+                    device, CeilingLight
+                ):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
@@ -175,7 +177,9 @@ class LifxDevice(NetworkedDevice):
                 await device.close()
 
         except Exception as e:
-            _LOGGER.warning("LIFX %s: Detection failed: %s", self._config["name"], e)
+            _LOGGER.warning(
+                "LIFX %s: Detection failed: %s", self._config["name"], e
+            )
 
     @property
     def pixel_count(self):
@@ -464,8 +468,9 @@ class LifxDevice(NetworkedDevice):
                 color = HSBK.from_rgb(int(r), int(g), int(b))
                 await self._device.set_color(color)
         except Exception as e:
-            _LOGGER.warning("LIFX %s: Light flush error: %s", self._config["name"], e)
-
+            _LOGGER.warning(
+                "LIFX %s: Light flush error: %s", self._config["name"], e
+            )
 
     async def _flush_strip(self, data):
         """Send zone colors to multizone strip."""
@@ -474,7 +479,6 @@ class LifxDevice(NetworkedDevice):
             or self._device.zone_count is None
         ):
             return
-
 
         try:
             pixels = data.astype(np.dtype("B")).reshape(-1, 3)
@@ -485,7 +489,9 @@ class LifxDevice(NetworkedDevice):
 
             # Pad if needed
             while len(colors) < self._zone_count:
-                colors.append(HSBK(hue=0, saturation=0, brightness=0, kelvin=3500))
+                colors.append(
+                    HSBK(hue=0, saturation=0, brightness=0, kelvin=3500)
+                )
 
             if self._has_extended:
                 await self._device.set_extended_color_zones(
@@ -511,7 +517,9 @@ class LifxDevice(NetworkedDevice):
                         apply=apply,
                     )
         except Exception as e:
-            _LOGGER.warning("LIFX %s: Strip flush error: %s", self._config["name"], e)
+            _LOGGER.warning(
+                "LIFX %s: Strip flush error: %s", self._config["name"], e
+            )
 
     async def _flush_matrix(self, data):
         """Send pixel data to matrix device using frame buffer."""
@@ -532,7 +540,8 @@ class LifxDevice(NetworkedDevice):
                     tile_pixels = reordered[start:end]
 
                     tile_colors = [
-                        HSBK.from_rgb(int(r), int(g), int(b)) for r, g, b in tile_pixels
+                        HSBK.from_rgb(int(r), int(g), int(b))
+                        for r, g, b in tile_pixels
                     ]
 
                     await self._device.set64(
@@ -546,7 +555,9 @@ class LifxDevice(NetworkedDevice):
                     )
 
             except Exception as e:
-                _LOGGER.warning("LIFX %s: Matrix flush error: %s", self.name, e)
+                _LOGGER.warning(
+                    "LIFX %s: Matrix flush error: %s", self.name, e
+                )
 
     def flush(self, data):
         if self._device and self._connected:
