@@ -184,20 +184,13 @@ class FindLifxEndpoint(RestEndpoint):
                     f"No LIFX device found at {ip_address}"
                 )
 
-            # Get device info
-            lifx_type = type(device).__name__
-            category = LIFX_CATEGORY_MAP.get(lifx_type, "light")
-
-            try:
-                label = await device.get_label()
-            except (LifxError, OSError):
-                label = "Unknown"
-
-            serial = device.serial
-            ip = device.ip
-
-            # Close the connection
-            await device.close()
+            # Use context manager to ensure cleanup and auto-populate label
+            async with device:
+                lifx_type = type(device).__name__
+                category = LIFX_CATEGORY_MAP.get(lifx_type, "light")
+                label = device.label or "Unknown"
+                serial = device.serial
+                ip = device.ip
 
             response = {
                 "device_type": "lifx",
