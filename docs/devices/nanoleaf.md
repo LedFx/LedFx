@@ -1,10 +1,10 @@
 # Nanoleaf Device
 
-**Nanoleaf** LED panels are consumer modular systems that can be arranged in creative configurations. 
+**Nanoleaf** LED panels are consumer modular systems that can be arranged in creative configurations.
 
 Nanoleaf lib support has improved, and seen to be mostly stable on UDP at 30 FPS. TCP is the fallback protocol but limited to ~5 FPS.
 
-Nanolead release new hardware and firmware which may be incompatible. If you have an issue with a Nanoleaf device then reach out on discord. 
+Nanolead release new hardware and firmware which may be incompatible. If you have an issue with a Nanoleaf device then reach out on discord.
 
 ## Supported Models
 
@@ -31,7 +31,7 @@ This has now been set as the default. If UDP is not working, try TCP mode, howev
 It is necassary to obtain an authentication token from your Nanoleaf device when first configuring in LedFx
 
 **Press and hold** the power button on your Nanoleaf controller for 5-7 seconds until the LEDs flash
- 
+
 Within 30 seconds, press the GET TOKEN button in the LedFx device config. A token should appear in the text box. This token will be saved with your LedFx config and will only need replacing should you reset your Nanolead device Firmware.
 
 ## Pixel count and layout
