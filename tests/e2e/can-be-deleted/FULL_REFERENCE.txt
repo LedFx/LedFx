@@ -1,0 +1,151 @@
+"""
+Playwright E2E Testing - Quick Reference Card
+==============================================
+
+SETUP
+-----
+uv sync --group dev
+uv run playwright install chromium
+
+BASIC COMMANDS
+--------------
+# All E2E tests
+uv run pytest tests/e2e -m e2e
+
+# Specific file
+uv run pytest tests/e2e/test_homepage.py -m e2e
+
+# Specific test
+uv run pytest tests/e2e/test_homepage.py::TestLedFx::test_navigation_and_about -m e2e
+
+# With visible browser
+$env:HEADLESS="false"; uv run pytest tests/e2e -m e2e
+
+# Slow motion
+$env:SLOW_MO="1000"; uv run pytest tests/e2e -m e2e
+
+# With video
+$env:VIDEO="true"; uv run pytest tests/e2e -m e2e
+
+# Verbose
+uv run pytest tests/e2e -m e2e -v
+
+HELPER SCRIPT (OPTIONAL)
+------------------------
+Note: run_e2e_tests.py is in can-be-deleted/ and is optional.
+      Use pytest commands directly (see BASIC COMMANDS above).
+
+If using the helper script:
+# Setup
+python can-be-deleted/run_e2e_tests.py --setup
+
+# Run all
+python can-be-deleted/run_e2e_tests.py
+
+# Headed mode
+python can-be-deleted/run_e2e_tests.py --headed
+
+# Slow motion
+python can-be-deleted/run_e2e_tests.py --slow-mo 1000
+
+# Debug
+python can-be-deleted/run_e2e_tests.py --debug
+
+# Specific test
+python can-be-deleted/run_e2e_tests.py --test tests/e2e/test_homepage.py
+
+# View trace
+python can-be-deleted/run_e2e_tests.py --trace tests/e2e/traces/test_name.zip
+
+# List artifacts
+python can-be-deleted/run_e2e_tests.py --list-artifacts
+
+DEBUGGING
+---------
+# Debug mode
+$env:PWDEBUG="1"; uv run pytest tests/e2e -m e2e
+
+# View trace
+uv run playwright show-trace tests/e2e/traces/test_name.zip
+
+# Generate selectors
+uv run playwright codegen http://localhost:8888
+
+# Check screenshots
+ls tests/e2e/screenshots/
+
+ENVIRONMENT VARIABLES
+--------------------
+$env:LEDFX_TEST_URL="http://localhost:8888"
+$env:HEADLESS="true|false"
+$env:SLOW_MO="0-10000"  # milliseconds
+$env:VIDEO="true|false"
+$env:TRACE="on|off|retain-on-failure|on-first-retry"
+
+COMMON PATTERNS
+---------------
+# Wait for element
+page.wait_for_selector(".device-list")
+
+# Click
+page.click("button[aria-label='Add']")
+page.get_by_role("button", name="Submit").click()
+
+# Fill input
+page.fill("input[name='device-name']", "My Device")
+
+# Assertions
+expect(page.locator(".success")).to_be_visible()
+expect(page).to_have_url("http://localhost:8888/devices")
+expect(page.locator("h1")).to_have_text("LedFx")
+
+# Wait for API
+with page.expect_response(lambda r: "/api/devices" in r.url):
+    page.click("button.refresh")
+
+# Network mock
+def handle_route(route):
+    if "/api/" in route.request.url:
+        route.fulfill(status=200, body='{}')
+    else:
+        route.continue_()
+page.route("**/api/**", handle_route)
+
+TEST HELPERS
+------------
+from tests.e2e.test_helpers import crop_to_720p, wait_with_screenshots
+
+# Crop screenshot to 720p
+crop_to_720p("tests/e2e/screenshots/example.png")
+
+# Wait with screenshots
+wait_with_screenshots(page, "element-selector", "step_name")
+
+ARTIFACTS
+---------
+tests/e2e/screenshots/  # Test screenshots
+tests/e2e/videos/       # Test execution videos
+tests/e2e/traces/       # Playwright traces
+
+FILES
+-----
+Essential:
+  tests/e2e/config.py             # Main config
+  tests/e2e/conftest.py           # Fixtures
+  tests/e2e/test_helpers.py       # Helper functions
+  tests/e2e/test_*.py             # Test files
+
+Optional (can-be-deleted/):
+  can-be-deleted/page_objects.py  # Page object templates
+  can-be-deleted/run_e2e_tests.py # Helper script
+  can-be-deleted/*.txt            # Reference files
+
+Documentation:
+  docs/developer/playwright_testing.md  # Full docs
+
+RESOURCES
+---------
+Docs: https://playwright.dev/
+pytest-playwright: https://github.com/microsoft/playwright-pytest
+LedFx Docs: docs/developer/playwright_testing.md
+"""
