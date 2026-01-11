@@ -97,6 +97,118 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
       - Your lights should now be reacting realtime to your music! Enjoy the show 🌈
 
 
+🎭 Mood Detection System
+------------------------
+
+This fork includes an advanced mood detection system that analyzes your music in real-time and automatically adjusts effects, colors, and scenes based on the detected mood and musical structure.
+
+**What is Mood Detection?**
+
+The mood detection system analyzes audio features to determine:
+- **Energy Level**: Low, medium, or high energy
+- **Valence**: Emotional tone from sad/dark to happy/bright
+- **Musical Structure**: Detects verses, choruses, bridges, and dramatic events (drops, builds, etc.)
+- **Tempo & Dynamics**: Beat strength, tempo stability, and dynamic range
+
+**Setup Instructions**
+
+#. **Enable Mood Manager Integration**
+      - Open LedFx web interface (usually at ``http://localhost:8888``)
+      - Navigate to **Settings** → **Integrations**
+      - Find **Mood Manager** and click **Enable**
+      - The mood detection system will start analyzing your audio
+
+#. **Optional: Install Advanced Audio Analysis (librosa)**
+      - For enhanced mood detection accuracy, install the optional librosa dependency:
+      - ``pip install librosa>=0.10.0``
+      - If installing LedFx from source, you can use: ``pip install "ledfx[mood_advanced]"``
+      - Then enable ``use_librosa`` in the Mood Manager configuration
+
+#. **Configure Mood-to-Scene Mappings (Optional)**
+      - If you want scenes to automatically switch based on mood:
+      - Enable ``switch_scenes`` in Mood Manager settings
+      - Map mood categories (e.g., "energetic", "calm", "intense") to your scene IDs
+      - Use the API endpoint ``POST /api/mood/scenes`` or configure via the web interface
+
+**Configuration Options**
+
+The Mood Manager has extensive configuration options accessible via the web interface or API (``PUT /api/mood``):
+
+**Basic Settings:**
+- ``enabled`` (default: ``False``): Enable/disable automatic mood-based adjustments
+- ``update_interval`` (default: ``0.5`` seconds): How often to check for mood changes (0.1-5.0 seconds)
+- ``intensity`` (default: ``0.7``): Overall intensity of mood reactions (0.0-1.0). Higher values = more dramatic changes
+
+**Adjustment Controls:**
+- ``adjust_colors`` (default: ``True``): Automatically adjust color palettes based on mood
+- ``adjust_effects`` (default: ``True``): Automatically adjust effect parameters (speed, brightness, blur) based on mood
+- ``switch_scenes`` (default: ``False``): Automatically switch scenes based on music structure and mood
+- ``react_to_events`` (default: ``True``): React to dramatic musical events (drops, builds, transitions)
+
+**Scene Preservation:**
+- ``preserve_scene_settings`` (default: ``True``): When switching scenes, preserve the scene's effect settings instead of applying mood adjustments. Set to ``False`` if you want mood adjustments to override scene settings.
+
+**Change Detection:**
+- ``change_threshold`` (default: ``0.2``): Minimum mood change (0.05-0.5) required to trigger updates. Lower = more sensitive
+- ``min_change_interval`` (default: ``3.0`` seconds): Minimum time between mood-based changes (0.5-30.0 seconds)
+- ``use_adaptive_threshold`` (default: ``True``): Automatically adjust sensitivity based on music dynamics
+- ``enable_force_updates`` (default: ``False``): Enable periodic updates even without significant mood changes
+- ``force_update_interval`` (default: ``60.0`` seconds): How often to force updates if enabled (10-300 seconds)
+
+**Advanced Audio Analysis (librosa):**
+- ``use_librosa`` (default: ``False``): Use librosa library for enhanced audio feature extraction
+- ``librosa_buffer_duration`` (default: ``3.0`` seconds): Audio buffer size for librosa analysis (1.0-10.0 seconds)
+- ``librosa_update_interval`` (default: ``2.0`` seconds): How often librosa features are updated (0.5-10.0 seconds)
+
+**Mood Detector Settings:**
+- ``history_length`` (default: ``10`` seconds): Audio history to analyze (2-60 seconds)
+- ``update_rate`` (default: ``10`` Hz): Mood analysis frequency (1-30 Hz)
+- ``energy_sensitivity`` (default: ``0.5``): Sensitivity to energy changes (0.0-1.0)
+- ``mood_smoothing`` (default: ``0.3``): Smoothing factor for mood transitions (0.0-1.0). Higher = smoother transitions
+
+**Targeting:**
+- ``target_virtuals`` (default: ``[]``): List of virtual IDs to control. Empty list = control all virtuals
+
+**Mood Categories**
+
+The system detects these mood categories:
+- **Calm**: Low energy, positive valence
+- **Energetic**: High energy, positive valence
+- **Intense**: High energy, negative valence
+- **Melancholic**: Low energy, negative valence
+
+**API Endpoints**
+
+- ``GET /api/mood``: Get current mood metrics and structure information
+- ``PUT /api/mood``: Configure mood detection settings
+- ``GET /api/mood/scenes``: Get mood-to-scene mappings
+- ``POST /api/mood/scenes``: Create/update mood-to-scene mapping
+- ``DELETE /api/mood/scenes/{mood_category}``: Delete a mood-to-scene mapping
+
+**Example Configuration**
+
+To enable mood detection with automatic color and effect adjustments:
+
+.. code-block:: json
+
+   {
+     "enabled": true,
+     "adjust_colors": true,
+     "adjust_effects": true,
+     "switch_scenes": false,
+     "intensity": 0.7,
+     "preserve_scene_settings": true
+   }
+
+**Tips for Best Results**
+
+- Start with default settings and adjust ``intensity`` based on your preference
+- Enable ``preserve_scene_settings`` if you want scenes to maintain their specific effect configurations
+- Use ``use_librosa`` for more accurate mood detection, especially for complex music
+- Adjust ``change_threshold`` and ``min_change_interval`` to control how frequently effects change
+- Map your favorite scenes to mood categories for automatic scene switching during different song sections
+
+
 🧑‍💻 Join the LedFx Community
 ------------------------------
 
