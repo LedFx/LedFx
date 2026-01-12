@@ -66,6 +66,10 @@ class FindLifxEndpoint(RestEndpoint):
             discovery_timeout = float(
                 request.query.get("discovery_timeout", DISCOVERY_TIMEOUT)
             )
+            if not (0 < discovery_timeout <= 300):
+                return await self.invalid_request(
+                    "Invalid discovery_timeout: must be greater than 0 and at most 300 seconds"
+                )
         except (ValueError, TypeError):
             return await self.invalid_request(
                 "Invalid discovery_timeout: must be a numeric value"
@@ -185,10 +189,10 @@ class FindLifxEndpoint(RestEndpoint):
             )
 
         try:
-            ipaddress.ip_address(ip_address)
-        except ValueError:
+            ipaddress.IPv4Address(ip_address)
+        except ipaddress.AddressValueError:
             return await self.invalid_request(
-                f"Invalid ip_address format: {ip_address}"
+                "Invalid ip_address: must be a valid IPv4 address"
             )
 
         try:

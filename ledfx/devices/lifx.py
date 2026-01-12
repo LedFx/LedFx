@@ -307,7 +307,9 @@ class LifxDevice(NetworkedDevice):
             else:
                 await self._setup_light()
 
-            # Turn on device
+            # Auto power-on: LIFX devices are turned on when LedFx connects
+            # to ensure LED output is visible. This is standard behavior for
+            # LED controllers - users expect lights to respond immediately.
             await self._device.set_power(True)
             self._connected = True
             self._online = True
@@ -480,7 +482,7 @@ class LifxDevice(NetworkedDevice):
         """Send zone colors to multizone strip."""
         if (
             not isinstance(self._device, MultiZoneLight)
-            or self._device.zone_count is None
+            or self._zone_count == 0
         ):
             return
 
