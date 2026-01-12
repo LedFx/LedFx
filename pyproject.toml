@@ -3,7 +3,7 @@ authors = [
     {name = "LedFx Developers"},
 ]
 license = {text = "GPL-3.0 License"}
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "numpy>=2.0.0,<3.0.0",
     "cffi>=0.16.0",
@@ -29,7 +29,7 @@ dependencies = [
     "zeroconf>=0.131.0",
     "pillow>=10.1.0",
     "flux-led>=1.0.4",
-    "lifx-async>=4.7.1",
+    "lifx-async>=5.0.0",
     "python-osc>=1.8.3",
     "pybase64~=1.4.0",
     "mss~=10.1.0",
