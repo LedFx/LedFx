@@ -31,6 +31,16 @@ LIFX_TYPE_MAP = {
     "Device": "light",  # Fallback
 }
 
+# Map class names to lifx-async device classes for direct instantiation
+LIFX_CLASS_MAP = {
+    "MatrixLight": MatrixLight,
+    "CeilingLight": CeilingLight,
+    "MultiZoneLight": MultiZoneLight,
+    "Light": Light,
+    "HevLight": HevLight,
+    "InfraredLight": InfraredLight,
+}
+
 
 class LifxDevice(NetworkedDevice):
     """Unified LIFX device with auto-detection.
@@ -103,9 +113,7 @@ class LifxDevice(NetworkedDevice):
                 )
 
                 # Get device info based on type
-                if isinstance(device, MatrixLight) or isinstance(
-                    device, CeilingLight
-                ):
+                if isinstance(device, (MatrixLight, CeilingLight)):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
@@ -151,11 +159,7 @@ class LifxDevice(NetworkedDevice):
                         self._zone_count,
                     )
 
-                elif (
-                    isinstance(device, Light)
-                    or isinstance(device, HevLight)
-                    or isinstance(device, InfraredLight)
-                ):
+                elif isinstance(device, (Light, HevLight, InfraredLight)):
                     self._lifx_type = "light"
                     self._device_type = "LIFX Light"
                     self._config["pixel_count"] = 1
@@ -265,16 +269,7 @@ class LifxDevice(NetworkedDevice):
             # Use saved info for direct instantiation (faster)
             lifx_class = self._config.get("lifx_class")
             if serial and lifx_type and lifx_class:
-                # Map class name to class
-                class_map = {
-                    "MatrixLight": MatrixLight,
-                    "CeilingLight": CeilingLight,
-                    "MultiZoneLight": MultiZoneLight,
-                    "Light": Light,
-                    "HevLight": HevLight,
-                    "InfraredLight": InfraredLight,
-                }
-                device_cls = class_map.get(lifx_class, Light)
+                device_cls = LIFX_CLASS_MAP.get(lifx_class, Light)
                 self._device = device_cls(serial=serial, ip=ip)
                 self._lifx_type = lifx_type
                 _LOGGER.info(
@@ -348,6 +343,9 @@ class LifxDevice(NetworkedDevice):
 
         # Check for extended multizone capability
         if not self._device.capabilities:
+            # Use _ensure_capabilities() directly to avoid 3-5 network
+            # round-trips from the async context manager. We only need
+            # capabilities to check for extended multizone support.
             await self._device._ensure_capabilities()
 
         if (
@@ -365,9 +363,7 @@ class LifxDevice(NetworkedDevice):
 
     async def _setup_matrix(self):
         """Configure for matrix device (Tile, Ceiling, etc.)."""
-        if isinstance(self._device, MatrixLight) or isinstance(
-            self._device, CeilingLight
-        ):
+        if isinstance(self._device, (MatrixLight, CeilingLight)):
             self._device_type = "LIFX Matrix"
 
             # Use saved config if available (from async_initialize)
@@ -511,6 +507,11 @@ class LifxDevice(NetworkedDevice):
                     fast=True,
                 )
             else:
+                # Fallback for older strips without extended multizone.
+                # Sends one message per zone sequentially, which may cause
+                # noticeable latency on strips with many zones (32+).
+                # Note: Very few LIFX multizone devices lack extended message
+                # support, so this fallback rarely affects users in practice.
                 for i, color in enumerate(colors):
                     is_last = i == len(colors) - 1
                     apply = (
@@ -532,9 +533,8 @@ class LifxDevice(NetworkedDevice):
 
     async def _flush_matrix(self, data):
         """Send pixel data to matrix device using frame buffer."""
-        if self._device and (
-            isinstance(self._device, MatrixLight)
-            or isinstance(self._device, CeilingLight)
+        if self._device and isinstance(
+            self._device, (MatrixLight, CeilingLight)
         ):
             if not self._tiles or self._perm is None:
                 return

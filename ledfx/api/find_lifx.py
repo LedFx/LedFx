@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 import logging
 from json import JSONDecodeError
 
@@ -73,6 +74,13 @@ class FindLifxEndpoint(RestEndpoint):
         broadcast_address = request.query.get(
             "broadcast_address", "255.255.255.255"
         )
+        try:
+            ipaddress.IPv4Address(broadcast_address)
+        except ipaddress.AddressValueError:
+            return await self.invalid_request(
+                f"Invalid broadcast_address: {broadcast_address}"
+            )
+
         auto_add = request.query.get("add", "").lower() == "true"
         devices = []
 
@@ -174,6 +182,13 @@ class FindLifxEndpoint(RestEndpoint):
         if not ip_address:
             return await self.invalid_request(
                 'Required attribute "ip_address" was not provided'
+            )
+
+        try:
+            ipaddress.ip_address(ip_address)
+        except ValueError:
+            return await self.invalid_request(
+                f"Invalid ip_address format: {ip_address}"
             )
 
         try:
