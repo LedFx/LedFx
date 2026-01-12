@@ -209,21 +209,6 @@ class Device(BaseRegistry):
         return self._config["name"]
 
     @property
-    def is_matrix(self):
-        """True if device supports 2D matrix addressing."""
-        return False
-
-    @property
-    def matrix_width(self):
-        """Width of matrix in zones (for 1D strips, equals pixel_count)."""
-        return self.pixel_count
-
-    @property
-    def matrix_height(self):
-        """Height of matrix in zones (for 1D strips, equals 1)."""
-        return 1
-
-    @property
     def max_refresh_rate(self):
         return self._config["refresh_rate"]
 

@@ -143,7 +143,7 @@ device_tests = {
     ),
     # LIFX device tests
     # Note: LIFX devices auto-detect type on connect, but without a real device
-    # at the IP, it will use defaults. Device may show as offline.
+    # at the IP, it will use defaults. Device shows as online since the IP resolves.
     "create_lifx_device": APITestCase(
         execution_order=6,
         method="POST",
