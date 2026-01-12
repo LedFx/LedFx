@@ -105,7 +105,7 @@ To run these local and / or develop more tests
     $ uv run ledfx-loopback-install
     ```
 
-2) launch the suite of tests with uv which will ensure dependancies are installed
+2) launch the suite of tests with uv which will ensure dependencies are installed
 
 
     ``` console
@@ -260,7 +260,7 @@ Well enough for discussional purposes. This diagram specifically
 illustrates audio reactive effects, temporal are similar but have their
 own thread loop independant of audio framing.
 
-![Do you want to buy a bridge?](/_static/main_loop.png)
+![Do you want to buy a bridge?](/_static/developer/main_loop.png)
 
 ## Useful Tools
 
@@ -294,7 +294,7 @@ Currently only the Build and Open Docs task is exposed. This task will
 install dependancies, build the docs and open in your browser, all with
 a single click!
 
-![Build and Open Docs, do it!](/_static/howto/taskbar.png)
+![Build and Open Docs, do it!](/_static/developer/taskbar.png)
 
 ### Teleplot
 
@@ -318,4 +318,38 @@ from ledfx.utils import Teleplot
 Teleplot.send(f"my_var_name:{my_var_value}")
 ```
 
-![A simple graph from audio volume](/_static/howto/teleplot.png)
+![A simple graph from audio volume](/_static/developer/teleplot.png)
+
+#### Teleplot built-ins
+
+There are two Teleplot use cases built into LedFx
+
+1) Any effect with Advanced / Diag enabled, which generates the Logging and front end diagnostic dialog for frame render performance will also generate a Teleplot graph with a naming convention of <virtual_id>_avg_ms. So it is easy to track render performance through time, with a method that is default off for all users.
+
+![noscene_avg_ms](/_static/developer/noscene_avg_ms.png)
+
+2) The Pixels effect additionally has a unique Teleplot enabled under the same switch to generate a graph of real-time physical RAM usage in total by LedFx in MB.
+
+This is done via a call to process.memory_info().rss
+
+RSS (Resident Set Size) - the portion of the process's memory that is held in physical RAM.
+
+It includes:
+
+Code/text segment - the compiled program code
+Heap - dynamically allocated memory (numpy arrays, effect objects, etc.)
+Stack - function call stacks and local variables
+Shared libraries - loaded into memory (numpy, PIL, etc.)
+
+It can be used to monitor for memory leaks at runtime under aggressive testing.
+
+Here is such a graph running the **2d Hammer** playlist from the test config, hammer_test.json
+
+It is expected that memory use spike on asset load, then will grow but stabilise under such conditions.
+
+It is easy to see even slow leaks by running for large time periods under pressure test, and has been used to resolve all apparent under playlist 1d and 2d exhaustive testing.
+
+The Teleplot naming convention will be <virtual_id>_MB
+
+![Everytime I learn something new I forget something else](/_static/developer/memlog_MB.png)
+
