@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 import numpy as np
@@ -702,7 +703,7 @@ class LifxDevice(NetworkedDevice):
         if self._device:
             try:
                 await self._device.set_power(False)
-            except (LifxError, OSError) as e:
+            except asyncio.TimeoutError:
                 _LOGGER.warning("LIFX %s: Power off timed out", self.name)
             except (LifxError, OSError) as e:
                 _LOGGER.warning("LIFX %s: Power off error: %s", self.name, e)
