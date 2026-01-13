@@ -44,6 +44,16 @@ LIFX_TYPE_MAP = {
     "Device": "light",  # Fallback
 }
 
+# Map class names to lifx-async device classes for direct instantiation
+LIFX_CLASS_MAP = {
+    "MatrixLight": MatrixLight,
+    "CeilingLight": CeilingLight,
+    "MultiZoneLight": MultiZoneLight,
+    "Light": Light,
+    "HevLight": HevLight,
+    "InfraredLight": InfraredLight,
+}
+
 
 class LifxDevice(NetworkedDevice):
     """Unified LIFX device with auto-detection.
@@ -87,7 +97,7 @@ class LifxDevice(NetworkedDevice):
         self._has_extended = False
 
         # Matrix-specific
-        self._tiles = {}
+        self._tiles = []
         self._total_pixels = config.get("pixel_count", 1)
         self._matrix_width = 0
         self._matrix_height = 0
@@ -261,8 +271,6 @@ class LifxDevice(NetworkedDevice):
                     self._device_type = "LIFX Light"
                     self._config["pixel_count"] = 1
                     _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
-
-                await device.close()
 
         except (LifxError, OSError) as e:
             _LOGGER.warning("LIFX %s: Detection failed: %s", self._config["name"], e)
@@ -504,18 +512,8 @@ class LifxDevice(NetworkedDevice):
             # Use saved info for direct instantiation (faster)
             lifx_class = self._config.get("lifx_class")
             if serial and lifx_type and lifx_class:
-                # Map class name to class
-                class_map = {
-                    "MatrixLight": MatrixLight,
-                    "CeilingLight": CeilingLight,
-                    "MultiZoneLight": MultiZoneLight,
-                    "Light": Light,
-                    "HevLight": Light,
-                    "InfraredLight": Light,
-                }
-                device_cls = class_map.get(lifx_class, Light)
-                device = device_cls(serial=serial, ip=ip)
-                self._device = await device.connect(ip=ip, serial=serial)
+                device_cls = LIFX_CLASS_MAP.get(lifx_class, Light)
+                self._device = device_cls(serial=serial, ip=ip)
                 self._lifx_type = lifx_type
                 _LOGGER.info(
                     "LIFX %s: Direct connect as %s (%s)",
@@ -861,6 +859,18 @@ class LifxDevice(NetworkedDevice):
 
         try:
             pixels = data.astype(np.dtype("B")).reshape(-1, 3)
+
+            # Validate pixel count matches permutation expectations
+            expected_pixels = len(self._perm)
+            if pixels.shape[0] < expected_pixels:
+                _LOGGER.warning(
+                    "LIFX %s: Pixel count mismatch: got %d, expected %d",
+                    self.name,
+                    pixels.shape[0],
+                    expected_pixels,
+                )
+                return
+
             reordered = pixels[self._perm]
             duration = self.frame_duration_ms
 
