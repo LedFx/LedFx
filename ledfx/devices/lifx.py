@@ -156,31 +156,12 @@ class LifxDevice(NetworkedDevice):
                     self._device_type = "LIFX Ceiling"
 
                     tiles = await device.get_device_chain()
-                    self._total_pixels = 0
-                    self._tiles = []
-                    min_frame_buffers = 50  # Start high, find minimum
-
-                    for i, tile in enumerate(tiles):
-                        tile_pixels = tile.width * tile.height
-                        # Get framebuffer count from tile
-                        fb_count = getattr(tile, "supported_frame_buffers", 2)
-                        min_frame_buffers = min(min_frame_buffers, fb_count)
-                        self._tiles.append(
-                            {
-                                "index": i,
-                                "width": tile.width,
-                                "height": tile.height,
-                                "pixels": tile_pixels,
-                                "offset": self._total_pixels,
-                                "user_x": tile.user_x,
-                                "user_y": tile.user_y,
-                                "frame_buffers": fb_count,
-                            }
-                        )
-                        self._total_pixels += tile_pixels
+                    self._tiles, self._total_pixels, min_fb = (
+                        self._collect_tile_info(tiles)
+                    )
 
                     if self._tiles:
-                        self._frame_buffers = min_frame_buffers
+                        self._frame_buffers = min_fb
                         self._perm = self._build_permutation(tiles)
                         # Total pixels includes both downlight and uplight
                         self._config["pixel_count"] = self._total_pixels
@@ -199,30 +180,12 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
-                    self._total_pixels = 0
-                    self._tiles = []
-                    min_frame_buffers = 50
-
-                    for i, tile in enumerate(tiles):
-                        tile_pixels = tile.width * tile.height
-                        fb_count = getattr(tile, "supported_frame_buffers", 2)
-                        min_frame_buffers = min(min_frame_buffers, fb_count)
-                        self._tiles.append(
-                            {
-                                "index": i,
-                                "width": tile.width,
-                                "height": tile.height,
-                                "pixels": tile_pixels,
-                                "offset": self._total_pixels,
-                                "user_x": tile.user_x,
-                                "user_y": tile.user_y,
-                                "frame_buffers": fb_count,
-                            }
-                        )
-                        self._total_pixels += tile_pixels
+                    self._tiles, self._total_pixels, min_fb = (
+                        self._collect_tile_info(tiles)
+                    )
 
                     if self._tiles:
-                        self._frame_buffers = min_frame_buffers
+                        self._frame_buffers = min_fb
                         self._perm = self._build_permutation(tiles)
                         self._config["pixel_count"] = self._total_pixels
                         self._config["matrix_width"] = self._matrix_width
@@ -503,6 +466,39 @@ class LifxDevice(NetworkedDevice):
         raster_idx = rows * self._matrix_width + cols
         return raster_idx.astype(np.int64)
 
+    def _collect_tile_info(self, tiles):
+        """Collect tile metadata and compute total pixels.
+
+        Args:
+            tiles: List of tile objects from device.get_device_chain()
+
+        Returns:
+            Tuple of (tile_list, total_pixels, min_frame_buffers)
+        """
+        tile_list = []
+        total_pixels = 0
+        min_frame_buffers = 50  # Start high, find minimum
+
+        for i, tile in enumerate(tiles):
+            tile_pixels = tile.width * tile.height
+            fb_count = getattr(tile, "supported_frame_buffers", 2)
+            min_frame_buffers = min(min_frame_buffers, fb_count)
+            tile_list.append(
+                {
+                    "index": i,
+                    "width": tile.width,
+                    "height": tile.height,
+                    "pixels": tile_pixels,
+                    "offset": total_pixels,
+                    "user_x": tile.user_x,
+                    "user_y": tile.user_y,
+                    "frame_buffers": fb_count,
+                }
+            )
+            total_pixels += tile_pixels
+
+        return tile_list, total_pixels, min_frame_buffers
+
     async def _async_connect(self):
         """Connect to device using saved serial/type for speed."""
         try:
@@ -637,31 +633,12 @@ class LifxDevice(NetworkedDevice):
 
             # Otherwise query the device
             tiles = await self._device.get_device_chain()
-            self._tiles = []
-            self._total_pixels = 0
-            min_frame_buffers = 50
-
-            for i, tile in enumerate(tiles):
-                tile_pixels = tile.width * tile.height
-                # Get framebuffer count from tile
-                fb_count = getattr(tile, "supported_frame_buffers", 2)
-                min_frame_buffers = min(min_frame_buffers, fb_count)
-                self._tiles.append(
-                    {
-                        "index": i,
-                        "width": tile.width,
-                        "height": tile.height,
-                        "pixels": tile_pixels,
-                        "offset": self._total_pixels,
-                        "user_x": tile.user_x,
-                        "user_y": tile.user_y,
-                        "frame_buffers": fb_count,
-                    }
-                )
-                self._total_pixels += tile_pixels
+            self._tiles, self._total_pixels, min_fb = self._collect_tile_info(
+                tiles
+            )
 
             if self._tiles:
-                self._frame_buffers = min_frame_buffers
+                self._frame_buffers = min_fb
                 self._perm = self._build_permutation(tiles)
                 tile_info = ", ".join(
                     f"Tile {t['index']}: {t['width']}x{t['height']} "
@@ -883,8 +860,12 @@ class LifxDevice(NetworkedDevice):
             reordered = pixels[self._perm]
             duration = self.frame_duration_ms
 
-            # Use current rotating framebuffer (1 to _frame_buffers-1)
-            fb_index = self._current_fb
+            # Use framebuffer 0 if only one available, otherwise use rotating buffer
+            # This prevents referencing non-existent framebuffers when _frame_buffers == 1
+            if self._frame_buffers == 1:
+                fb_index = 0
+            else:
+                fb_index = min(self._current_fb, self._frame_buffers - 1)
 
             for tile in self._tiles:
                 start = tile["offset"]
@@ -948,8 +929,9 @@ class LifxDevice(NetworkedDevice):
                 await self._device.connection.send_packet(copy_packet)
 
             # Rotate to next framebuffer (1 to _frame_buffers-1, avoiding 0)
-            max_fb = self._frame_buffers - 1
-            if max_fb > 0:
+            # Only rotate when multiple framebuffers are available
+            if self._frame_buffers > 1:
+                max_fb = self._frame_buffers - 1
                 self._current_fb = (self._current_fb % max_fb) + 1
 
         except (LifxError, OSError) as e:
