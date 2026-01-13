@@ -224,11 +224,7 @@ class LifxDevice(NetworkedDevice):
                         self._zone_count,
                     )
 
-                elif (
-                    isinstance(device, Light)
-                    or isinstance(device, HevLight)
-                    or isinstance(device, InfraredLight)
-                ):
+                elif isinstance(device, (Light, HevLight, InfraredLight)):
                     self._lifx_type = "light"
                     self._device_type = "LIFX Light"
                     self._config["pixel_count"] = 1
@@ -607,9 +603,7 @@ class LifxDevice(NetworkedDevice):
 
     async def _setup_matrix(self):
         """Configure for matrix device (Tile, Ceiling, etc.)."""
-        if isinstance(self._device, MatrixLight) or isinstance(
-            self._device, CeilingLight
-        ):
+        if isinstance(self._device, (MatrixLight, CeilingLight)):
             self._device_type = "LIFX Matrix"
 
             # Check if this is a Ceiling
@@ -834,9 +828,8 @@ class LifxDevice(NetworkedDevice):
         By rotating through available framebuffers (1 to N-1), we avoid
         overwriting a buffer that's still being copied from.
         """
-        if not self._device or not (
-            isinstance(self._device, MatrixLight)
-            or isinstance(self._device, CeilingLight)
+        if not self._device or not isinstance(
+            self._device, (MatrixLight, CeilingLight)
         ):
             return
 
