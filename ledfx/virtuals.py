@@ -805,9 +805,7 @@ class Virtual:
             f"Virtual {self.id}: Activating with segments {self._segments}"
         )
         # Debug FPS: show what refresh_rate is computed and from which devices
-        device_rates = [
-            (d.id, d.max_refresh_rate) for d in self._devices
-        ]
+        device_rates = [(d.id, d.max_refresh_rate) for d in self._devices]
         _LOGGER.debug(
             f"Virtual {self.id}: refresh_rate={self.refresh_rate} "
             f"(from devices: {device_rates}, "

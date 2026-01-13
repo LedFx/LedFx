@@ -103,7 +103,9 @@ class LifxDevice(NetworkedDevice):
         self._matrix_height = 0
         self._perm = None
         self._frame_buffers = 2  # Default, updated from device
-        self._current_fb = 1  # Rotating framebuffer index (1 to _frame_buffers-1)
+        self._current_fb = (
+            1  # Rotating framebuffer index (1 to _frame_buffers-1)
+        )
 
         # Ceiling-specific
         self._is_ceiling = False
@@ -160,9 +162,7 @@ class LifxDevice(NetworkedDevice):
                     for i, tile in enumerate(tiles):
                         tile_pixels = tile.width * tile.height
                         # Get framebuffer count from tile
-                        fb_count = getattr(
-                            tile, "supported_frame_buffers", 2
-                        )
+                        fb_count = getattr(tile, "supported_frame_buffers", 2)
                         min_frame_buffers = min(min_frame_buffers, fb_count)
                         self._tiles.append(
                             {
@@ -204,9 +204,7 @@ class LifxDevice(NetworkedDevice):
 
                     for i, tile in enumerate(tiles):
                         tile_pixels = tile.width * tile.height
-                        fb_count = getattr(
-                            tile, "supported_frame_buffers", 2
-                        )
+                        fb_count = getattr(tile, "supported_frame_buffers", 2)
                         min_frame_buffers = min(min_frame_buffers, fb_count)
                         self._tiles.append(
                             {
@@ -273,7 +271,9 @@ class LifxDevice(NetworkedDevice):
                     _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
 
         except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX %s: Detection failed: %s", self._config["name"], e)
+            _LOGGER.warning(
+                "LIFX %s: Detection failed: %s", self._config["name"], e
+            )
 
     async def add_postamble(self):
         """Create sub-virtuals for Ceiling lights (like WLED segments)."""
@@ -754,7 +754,9 @@ class LifxDevice(NetworkedDevice):
     @property
     def effective_refresh_rate(self):
         """Get refresh rate capped by device type."""
-        max_fps = MAX_FPS_LIGHT if self._lifx_type == "light" else MAX_FPS_MULTIZONE
+        max_fps = (
+            MAX_FPS_LIGHT if self._lifx_type == "light" else MAX_FPS_MULTIZONE
+        )
 
         # Use virtual's rate if available, otherwise device's configured rate
         if self.priority_virtual:
@@ -787,7 +789,9 @@ class LifxDevice(NetworkedDevice):
                 )
                 await self._device.connection.send_packet(packet)
         except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX %s: Light flush error: %s", self._config["name"], e)
+            _LOGGER.warning(
+                "LIFX %s: Light flush error: %s", self._config["name"], e
+            )
 
     async def _flush_strip(self, data):
         """Send zone colors to multizone strip - fire and forget, no ack."""
@@ -802,7 +806,9 @@ class LifxDevice(NetworkedDevice):
             colors = []
 
             for r, g, b in pixels[: self._zone_count]:
-                colors.append(HSBK.from_rgb(int(r), int(g), int(b)).to_protocol())
+                colors.append(
+                    HSBK.from_rgb(int(r), int(g), int(b)).to_protocol()
+                )
 
             # Pad if needed
             while len(colors) < self._zone_count:
@@ -835,7 +841,9 @@ class LifxDevice(NetworkedDevice):
                     )
                     await self._device.connection.send_packet(packet)
         except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX %s: Strip flush error: %s", self._config["name"], e)
+            _LOGGER.warning(
+                "LIFX %s: Strip flush error: %s", self._config["name"], e
+            )
 
     async def _flush_matrix(self, data):
         """Send pixel data to matrix device using rotating framebuffers.
@@ -896,8 +904,12 @@ class LifxDevice(NetworkedDevice):
                 y_offset = 0
 
                 while colors_sent < total_pixels:
-                    chunk_size = min(pixels_per_packet, total_pixels - colors_sent)
-                    chunk_colors = tile_colors[colors_sent : colors_sent + chunk_size]
+                    chunk_size = min(
+                        pixels_per_packet, total_pixels - colors_sent
+                    )
+                    chunk_colors = tile_colors[
+                        colors_sent : colors_sent + chunk_size
+                    ]
                     rows_in_chunk = chunk_size // tile_width
 
                     rect = TileBufferRect(
