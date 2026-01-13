@@ -714,9 +714,9 @@ class Virtual:
             if _frame_count >= 60:
                 total_time = timeit.default_timer() - start_time
                 _LOGGER.debug(
-                    f"Virtual {self.id}: target={target_interval*1000:.1f}ms "
-                    f"work={run_time*1000:.1f}ms "
-                    f"total={total_time*1000:.1f}ms ({1/total_time:.0f}fps)"
+                    f"Virtual {self.id}: target={target_interval * 1000:.1f}ms "
+                    f"work={run_time * 1000:.1f}ms "
+                    f"total={total_time * 1000:.1f}ms ({1 / total_time:.0f}fps)"
                 )
                 _frame_count = 0
 
