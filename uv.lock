@@ -1174,7 +1174,7 @@ requires-dist = [
     { name = "cython", specifier = ">=3.0.7" },
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
-    { name = "lifx-async", specifier = ">=5.0.0" },
+    { name = "lifx-async", specifier = ">=5.0.1" },
     { name = "mss", specifier = "~=10.1.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },
@@ -1239,11 +1239,11 @@ docs = [
 
 [[package]]
 name = "lifx-async"
-version = "5.0.0"
+version = "5.0.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/1a/82649f612f79cc83dc0d2d3f983ecee9d9ed77c0c80f92bd37e2a25d8efc/lifx_async-5.0.0.tar.gz", hash = "sha256:7a73a853da7c3c52e1bf7a72e481cff58a2c734aee4c21a8916309b0dd1f54c3", size = 415557, upload-time = "2026-01-12T06:11:30.408Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/f5/39228097424d9a0e549c2164ddc3da2073cfc55619c68e03d02aa026c5bc/lifx_async-5.0.1.tar.gz", hash = "sha256:93af80f445c37fb5fb430ebf1bac30929f402bc1559a8062f172324d6369f3b1", size = 417592, upload-time = "2026-01-14T09:21:15.283Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/08/99/516397013937646989612a2e5ba984ed99549a5783cc52af8863f41e940d/lifx_async-5.0.0-py3-none-any.whl", hash = "sha256:c9b6cbeb89588a30cde7668bcf4ae0de5d599d45c1f5b89ae057bd3798badce6", size = 165173, upload-time = "2026-01-12T06:11:28.069Z" },
+    { url = "https://files.pythonhosted.org/packages/56/98/a5ea2a3c4eee166f3ae3578152dd96243e49d12736f1a4db138d707b905e/lifx_async-5.0.1-py3-none-any.whl", hash = "sha256:0e21f559e9096336ee5b97ace8d59fc7761ed094cf3228a9eb5f17ae6b885e25", size = 165506, upload-time = "2026-01-14T09:21:13.845Z" },
 ]
 
 [[package]]
@@ -2516,8 +2516,8 @@ name = "python-mbedtls"
 version = "2.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "certifi" },
-    { name = "typing-extensions" },
+    { name = "certifi", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/88/b7/b926727e3433ca2072e61572a36229ac21ebd46b0dca320d1c09f6fcd108/python-mbedtls-2.9.2.tar.gz", hash = "sha256:f541ccd23da2722724fd026c707a652883c497fe67340a8f1adb6ac73c487b31", size = 105334, upload-time = "2024-02-18T10:49:20.438Z" }
 wheels = [
