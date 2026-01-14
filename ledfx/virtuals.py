@@ -31,7 +31,7 @@ from ledfx.events import (
     VirtualUpdateEvent,
 )
 from ledfx.transitions import Transitions
-from ledfx.utils import AVAILABLE_FPS, fps_to_sleep_interval
+from ledfx.utils import fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -662,7 +662,6 @@ class Virtual:
         return self._active_effect
 
     def thread_function(self):
-        _frame_count = 0
         while True:
             if not self._active:
                 break
@@ -697,28 +696,17 @@ class Virtual:
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
             run_time = timeit.default_timer() - start_time
-            target_interval = fps_to_sleep_interval(self.refresh_rate)
-            remaining = target_interval - run_time
+            sleep_time = max(
+                0.001, fps_to_sleep_interval(self.refresh_rate) - run_time
+            )
+            time.sleep(sleep_time)
 
-            # Sleep for most of the time, leaving 3ms buffer for busy-wait
-            # This compensates for OS sleep jitter (especially on macOS)
-            if remaining > 0.004:
-                time.sleep(remaining - 0.003)
-
-            # Busy-wait for precise timing on the final milliseconds
-            while (timeit.default_timer() - start_time) < target_interval:
-                pass
-
-            # Debug timing every ~60 frames
-            _frame_count += 1
-            if _frame_count >= 60:
-                total_time = timeit.default_timer() - start_time
-                _LOGGER.debug(
-                    f"Virtual {self.id}: target={target_interval * 1000:.1f}ms "
-                    f"work={run_time * 1000:.1f}ms "
-                    f"total={total_time * 1000:.1f}ms ({1 / total_time:.0f}fps)"
-                )
-                _frame_count = 0
+            # use an aggressive check for did we sleep against expected min clk
+            # for all high res scenarios this will be passive
+            # for unexpected high res sleep on windows scenarios it will adapt
+            pass_time = timeit.default_timer() - start_time
+            if pass_time < (self._min_time / 2):
+                time.sleep(max(0.001, self._min_time - pass_time))
 
     def assemble_frame(self):
         """
@@ -803,13 +791,6 @@ class Virtual:
 
         _LOGGER.debug(
             f"Virtual {self.id}: Activating with segments {self._segments}"
-        )
-        # Debug FPS: show what refresh_rate is computed and from which devices
-        device_rates = [(d.id, d.max_refresh_rate) for d in self._devices]
-        _LOGGER.debug(
-            f"Virtual {self.id}: refresh_rate={self.refresh_rate} "
-            f"(from devices: {device_rates}, "
-            f"available FPS keys: {list(AVAILABLE_FPS.keys())[:10]}...)"
         )
         if not self._active:
             self._active = True
