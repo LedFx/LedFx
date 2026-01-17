@@ -180,7 +180,7 @@ class Virtual:
         self.fallback_suppress_transition = False
         self._streaming = False
         self.complex_segments = self._config.get("complex_segments", False)
-        
+
         # Precompiled device remap structure for fast pixel mapping
         # Maps virtual indices to device indices per device
         self._device_remap: dict = {}
@@ -216,7 +216,7 @@ class Virtual:
             if device_id not in segments_by_device:
                 segments_by_device[device_id] = []
             segments_by_device[device_id].append((start_pixel, end_pixel))
-        
+
         # Activate devices and add all segments in batch
         for device_id, device_segments in segments_by_device.items():
             device = self._ledfx.devices.get(device_id)
@@ -327,7 +327,7 @@ class Virtual:
                 self._segments = _segments
 
                 self.invalidate_cached_props()
-                
+
                 # Compile device remap structure for fast pixel mapping
                 self._compile_device_remap()
 
@@ -348,7 +348,7 @@ class Virtual:
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
             self._ledfx.virtuals.check_and_deactivate_devices()
-    
+
     def _compile_device_remap(self):
         """
         Precompile device remap structure for fast pixel mapping in flush().
@@ -356,62 +356,74 @@ class Virtual:
         Builds src (virtual indices) and dst (device indices) arrays per device.
         """
         device_remap = {}
-        
+
         if not self.complex_segments:
             # Complex segments disabled - skip compilation
             self._device_remap = {}
             return
-        
+
         if self._config["mapping"] != "span":
             # Only compile for span mode - copy mode needs different handling
             self._device_remap = {}
             return
-        
+
         # Group segments by device and build index arrays
         device_buffers = {}  # {device_id: {"src": list, "dst": list}}
         virtual_offset = 0
-        
+
         for device_id, device_start, device_end, reverse in self._segments:
             segment_width = device_end - device_start + 1
-            
+
             # Skip gap-mapping segments (if any exist)
             if segment_width <= 0:
                 continue
-            
+
             # Build virtual indices for this segment
-            virtual_indices = np.arange(virtual_offset, virtual_offset + segment_width, dtype=np.int32)
-            
+            virtual_indices = np.arange(
+                virtual_offset, virtual_offset + segment_width, dtype=np.int32
+            )
+
             # Build device indices for this segment
-            device_indices = np.arange(device_start, device_end + 1, dtype=np.int32)
-            
+            device_indices = np.arange(
+                device_start, device_end + 1, dtype=np.int32
+            )
+
             # Handle reverse flag by reversing virtual indices
             if reverse:
                 virtual_indices = virtual_indices[::-1]
-            
+
             # Initialize device buffer if needed
             if device_id not in device_buffers:
                 device_buffers[device_id] = {"src": [], "dst": []}
-            
+
             # Append indices to device buffers
             device_buffers[device_id]["src"].append(virtual_indices)
             device_buffers[device_id]["dst"].append(device_indices)
-            
+
             virtual_offset += segment_width
-        
+
         # Convert lists to numpy arrays
         for device_id, buffers in device_buffers.items():
             device_remap[device_id] = {
-                "src": np.concatenate(buffers["src"]) if buffers["src"] else np.array([], dtype=np.int32),
-                "dst": np.concatenate(buffers["dst"]) if buffers["dst"] else np.array([], dtype=np.int32),
+                "src": (
+                    np.concatenate(buffers["src"])
+                    if buffers["src"]
+                    else np.array([], dtype=np.int32)
+                ),
+                "dst": (
+                    np.concatenate(buffers["dst"])
+                    if buffers["dst"]
+                    else np.array([], dtype=np.int32)
+                ),
             }
-        
+
         # Filter out devices that don't exist (like gap-mapping)
         device_remap = {
-            device_id: remap 
+            device_id: remap
             for device_id, remap in device_remap.items()
             if self._ledfx.devices.get(device_id) is not None
         }
-        
+
         self._device_remap = device_remap
 
     def set_preset(self, preset_info):
@@ -945,7 +957,7 @@ class Virtual:
                 self._oneshots.remove(oneshot)
             else:
                 oneshot_index += 1
-        
+
         if self._config["mapping"] == "span":
             # In span mode we can calculate the final pixels once for all segments
             pixels = self._effective_to_physical_pixels(pixels)
@@ -953,7 +965,12 @@ class Virtual:
         color_cycle = itertools.cycle(color_list)
 
         # Choose flush path based on complex_segments configuration
-        if self.complex_segments and self._config["mapping"] == "span" and self._device_remap and not self._calibration:
+        if (
+            self.complex_segments
+            and self._config["mapping"] == "span"
+            and self._device_remap
+            and not self._calibration
+        ):
             # Use optimized complex segment handling
             self._flush_complex_segments(pixels)
         else:
@@ -1014,7 +1031,7 @@ class Virtual:
                                 oneshot.apply(seg, start, stop)
                             data.append((seg, device_start, device_end))
                     device.update_pixels(self.id, data)
-    
+
     def _flush_complex_segments(self, pixels):
         """
         Optimized flush using precompiled device remap for complex virtuals.
@@ -1026,21 +1043,21 @@ class Virtual:
                 # Use precompiled indices for fast pixel mapping
                 src_indices = remap["src"]
                 dst_indices = remap["dst"]
-                
+
                 if len(src_indices) > 0:
                     # Extract pixels using fancy indexing
                     seg = pixels[src_indices]
-                    
+
                     # Apply oneshots to the entire device pixel set
                     # Virtual range spans from min to max of src_indices
                     for oneshot in self._oneshots:
                         virtual_start = int(src_indices.min())
                         virtual_end = int(src_indices.max())
                         oneshot.apply(seg, virtual_start, virtual_end)
-                    
+
                     # Use new scatter mode: send pixels with dst indices
                     data = [(seg, dst_indices)]
-                    
+
                     device.update_pixels(self.id, data)
 
     def render_calibration(
@@ -1253,7 +1270,7 @@ class Virtual:
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
                 reactivate_effect = True
-            
+
             self.complex_segments = _config.get("complex_segments", False)
             if (
                 _config["transition_mode"] != self._config["transition_mode"]

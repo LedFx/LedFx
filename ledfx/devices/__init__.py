@@ -283,7 +283,7 @@ class Device(BaseRegistry):
 
     def add_segments_batch(self, virtual_id, segments, force=False):
         """Add multiple segments efficiently with single overlap check.
-        
+
         Args:
             virtual_id: Virtual ID owning these segments
             segments: List of (start_pixel, end_pixel) tuples
@@ -291,7 +291,7 @@ class Device(BaseRegistry):
         """
         # Streaming mode only applies to device's own virtual vs external virtuals
         # Multiple external virtuals can coexist if they don't overlap (checked later)
-        
+
         # If the device's own virtual is activating, deactivate all external virtuals
         # streaming to this device (exit streaming mode)
         if virtual_id == self.id:
@@ -299,7 +299,7 @@ class Device(BaseRegistry):
             for _virtual_id, _, _ in self._segments:
                 if _virtual_id != self.id:
                     external_virtuals.add(_virtual_id)
-            
+
             if external_virtuals:
                 _LOGGER.info(
                     f"Device {self.id}: Device virtual '{self.id}' activating - deactivating external virtuals: {external_virtuals}"
@@ -308,7 +308,7 @@ class Device(BaseRegistry):
                     external_virtual = self._ledfx.virtuals.get(_virtual_id)
                     if external_virtual and external_virtual.active:
                         external_virtual.deactivate()
-        
+
         # If a non-device virtual is adding segments to this device,
         # deactivate the device's own virtual to enter streaming mode
         # (but allow multiple external virtuals - overlap check below will handle conflicts)
@@ -319,10 +319,10 @@ class Device(BaseRegistry):
                     f"Device {self.id}: Deactivating device virtual '{self.id}' as external virtual '{virtual_id}' is streaming"
                 )
                 device_virtual.deactivate()
-        
+
         # Efficient overlap detection using sorted intervals
         overlapping_virtuals = set()
-        
+
         # Skip overlap checking for gap-mapping device (it's a placeholder, not real hardware)
         if self.id == "gap-mapping":
             overlapping_virtuals = set()
@@ -334,28 +334,35 @@ class Device(BaseRegistry):
                     continue
                 if _virtual_id not in existing_by_virtual:
                     existing_by_virtual[_virtual_id] = []
-                existing_by_virtual[_virtual_id].append((segment_start, segment_end))
-        
+                existing_by_virtual[_virtual_id].append(
+                    (segment_start, segment_end)
+                )
+
             # Sort each virtual's segments for binary search
             for _virtual_id in existing_by_virtual:
                 existing_by_virtual[_virtual_id].sort()
-        
+
             # Check each new segment against sorted existing segments
             for start_pixel, end_pixel in segments:
-                for _virtual_id, sorted_segments in existing_by_virtual.items():
+                for (
+                    _virtual_id,
+                    sorted_segments,
+                ) in existing_by_virtual.items():
                     # Binary search to find first segment that could overlap
                     # A segment at position i overlaps if: segment[i].end >= start_pixel AND segment[i].start <= end_pixel
                     left, right = 0, len(sorted_segments)
                     found_overlap = False
-                    
+
                     # Find first segment where segment_end >= start_pixel
                     while left < right:
                         mid = (left + right) // 2
-                        if sorted_segments[mid][1] < start_pixel:  # segment_end < start_pixel
+                        if (
+                            sorted_segments[mid][1] < start_pixel
+                        ):  # segment_end < start_pixel
                             left = mid + 1
                         else:
                             right = mid
-                    
+
                     # Check segments starting from 'left' until we're past end_pixel
                     for i in range(left, len(sorted_segments)):
                         segment_start, segment_end = sorted_segments[i]
@@ -363,19 +370,23 @@ class Device(BaseRegistry):
                             # All remaining segments are beyond our range
                             break
                         # Check for actual overlap
-                        overlap = min(segment_end, end_pixel) - max(segment_start, start_pixel) + 1
+                        overlap = (
+                            min(segment_end, end_pixel)
+                            - max(segment_start, start_pixel)
+                            + 1
+                        )
                         if overlap > 0:
                             overlapping_virtuals.add(_virtual_id)
                             found_overlap = True
                             break
-                    
+
                     if found_overlap and not force:
                         # Early exit if not forcing - we just need one overlap to fail
                         break
-                
+
                 if overlapping_virtuals and not force:
                     break
-        
+
         if overlapping_virtuals:
             virtual_name = self._ledfx.virtuals.get(virtual_id).name
             if force:
@@ -383,16 +394,21 @@ class Device(BaseRegistry):
                     blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
                     blocking_virtual.deactivate()
             else:
-                blocking_names = [self._ledfx.virtuals.get(v).name for v in overlapping_virtuals]
+                blocking_names = [
+                    self._ledfx.virtuals.get(v).name
+                    for v in overlapping_virtuals
+                ]
                 msg = f"Failed to activate effect! '{virtual_name}' overlaps with active virtual(s): {', '.join(blocking_names)}"
                 _LOGGER.warning(msg)
                 raise ValueError(msg)
-        
+
         # Add all segments
-        needs_cache_invalidation = virtual_id not in (segment[0] for segment in self._segments)
+        needs_cache_invalidation = virtual_id not in (
+            segment[0] for segment in self._segments
+        )
         for start_pixel, end_pixel in segments:
             self._segments.append((virtual_id, start_pixel, end_pixel))
-        
+
         if needs_cache_invalidation:
             self.invalidate_cached_props()
 
