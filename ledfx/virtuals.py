@@ -367,8 +367,10 @@ class Virtual:
             self._device_remap = {}
             return
 
-        _LOGGER.info(f"Virtual {self.id}: compiling device remap for complex segments")
-        
+        _LOGGER.info(
+            f"Virtual {self.id}: compiling device remap for complex segments"
+        )
+
         # Group segments by device and build index arrays
         device_buffers = {}  # {device_id: {"src": list, "dst": list}}
         virtual_offset = 0
@@ -1360,7 +1362,6 @@ class Virtual:
             self._config["frequency_min"], self._config["frequency_max"]
         )
 
-        
         old_complex_segments = self.complex_segments
         self.complex_segments = _config.get("complex_segments", False)
         if old_complex_segments != self.complex_segments:
