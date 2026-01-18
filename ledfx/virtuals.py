@@ -212,7 +212,7 @@ class Virtual:
         # Always use optimized batch mode for segment activation
         # Group segments by device for batch adding
         segments_by_device = {}
-        for device_id, start_pixel, end_pixel, invert in segments:
+        for device_id, start_pixel, end_pixel, _invert in segments:
             if device_id not in segments_by_device:
                 segments_by_device[device_id] = []
             segments_by_device[device_id].append((start_pixel, end_pixel))
@@ -367,6 +367,8 @@ class Virtual:
             self._device_remap = {}
             return
 
+        _LOGGER.info(f"Virtual {self.id}: compiling device remap for complex segments")
+        
         # Group segments by device and build index arrays
         device_buffers = {}  # {device_id: {"src": list, "dst": list}}
         virtual_offset = 0
@@ -1271,7 +1273,6 @@ class Virtual:
                 self.invalidate_cached_props()
                 reactivate_effect = True
 
-            self.complex_segments = _config.get("complex_segments", False)
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
                 or _config["transition_time"]
@@ -1358,6 +1359,12 @@ class Virtual:
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
         )
+
+        
+        old_complex_segments = self.complex_segments
+        self.complex_segments = _config.get("complex_segments", False)
+        if old_complex_segments != self.complex_segments:
+            self._compile_device_remap()
 
         self._ledfx.events.fire_event(
             VirtualConfigUpdateEvent(self.id, self._config)
