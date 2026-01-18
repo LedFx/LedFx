@@ -110,7 +110,7 @@ class LogSecHelper:
                 sleep_ms = sleep_sec * 1000
 
                 _LOGGER.warning(
-                    f"{self.effect.name}: FPS {self.fps} Render avg:{r_avg_ms:0.3f} min:{r_min_ms:0.3f} max:{r_max_ms:0.3f} Cycle: {cycle_ms:0.3f} Sleep: {sleep_ms:0.3f} (ms)"
+                    f"{virt.id}: {self.effect.name}: FPS {self.fps} Render avg:{r_avg_ms:0.3f} min:{r_min_ms:0.3f} max:{r_max_ms:0.3f} Cycle: {cycle_ms:0.3f} Sleep: {sleep_ms:0.3f} (ms)"
                 )
                 Teleplot.send(f"{virt.id}_avg_ms:{r_avg_ms}")
 
