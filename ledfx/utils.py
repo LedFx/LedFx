@@ -1074,7 +1074,7 @@ class RegistryLoader:
                     self.registry = registry
 
                 def on_modified(self, event):
-                    (_, extension) = os.path.splitext(event.src_path)
+                    _, extension = os.path.splitext(event.src_path)
                     if extension == ".py":
                         self.registry.reload()
 
