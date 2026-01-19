@@ -388,11 +388,13 @@ class Device(BaseRegistry):
                     break
 
         if overlapping_virtuals:
-            virtual_name = self._ledfx.virtuals.get(virtual_id).name
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            virtual_name = virtual.name if virtual else virtual_id
             if force:
                 for _virtual_id in overlapping_virtuals:
                     blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
-                    blocking_virtual.deactivate()
+                    if blocking_virtual:
+                        blocking_virtual.deactivate()
             else:
                 blocking_names = [
                     self._ledfx.virtuals.get(v).name
@@ -487,7 +489,7 @@ class Device(BaseRegistry):
                 await device.remove_from_virtuals()
                 self._ledfx.devices.destroy(device_id)
 
-                # Update and save the configuration
+                # Update the configuration
                 self._ledfx.config["devices"] = [
                     _device
                     for _device in self._ledfx.config["devices"]
@@ -505,12 +507,15 @@ class Device(BaseRegistry):
 
             self._ledfx.virtuals.destroy(id)
 
-            # Update and save the configuration
+            # Update the configuration
             self._ledfx.config["virtuals"] = [
                 virtual
                 for virtual in self._ledfx.config["virtuals"]
                 if virtual["id"] != id
             ]
+
+        # Save the configuration once after all deletions
+        if auto_generated_virtuals_to_destroy:
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
