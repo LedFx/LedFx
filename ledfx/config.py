@@ -127,8 +127,8 @@ def validate_ipv4_address(value):
         vol.Invalid: If the value is not a valid IPv4 address.
     """
     try:
-        ipaddress.IPv4Address(value)
-        return value
+        addr = ipaddress.IPv4Address(value)
+        return str(addr)
     except ipaddress.AddressValueError:
         raise vol.Invalid(f"Invalid IPv4 address: {value}")
 
