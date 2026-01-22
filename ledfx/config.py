@@ -1,4 +1,5 @@
 import datetime
+import ipaddress
 import json
 import logging
 import os
@@ -112,6 +113,26 @@ WLED_CONFIG_SCHEMA = vol.Schema(
     dict(map(wled_optional_generator, _default_wled_settings.items()))
 )
 
+
+def validate_ipv4_address(value):
+    """Validate that value is a valid IPv4 address (including broadcast).
+
+    Args:
+        value: The value to validate.
+
+    Returns:
+        str: The validated IPv4 address string.
+
+    Raises:
+        vol.Invalid: If the value is not a valid IPv4 address.
+    """
+    try:
+        ipaddress.IPv4Address(value)
+        return value
+    except ipaddress.AddressValueError:
+        raise vol.Invalid(f"Invalid IPv4 address: {value}")
+
+
 CORE_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("host", default="0.0.0.0"): str,
@@ -159,7 +180,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             vol.Coerce(float), vol.Range(0, 1.0)
         ),
         vol.Optional("startup_scene_id", default=""): str,
-        vol.Optional("lifx_broadcast_address", default="255.255.255.255"): str,
+        vol.Optional(
+            "lifx_broadcast_address", default="255.255.255.255"
+        ): validate_ipv4_address,
         vol.Optional("lifx_discovery_timeout", default=30): vol.All(
             int, vol.Range(min=1, max=120)
         ),
