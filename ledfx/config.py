@@ -46,6 +46,8 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "flush_on_deactivate",
     "ui_brightness_boost",
     "startup_scene_id",
+    "lifx_broadcast_address",
+    "lifx_discovery_timeout",
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
@@ -157,6 +159,10 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             vol.Coerce(float), vol.Range(0, 1.0)
         ),
         vol.Optional("startup_scene_id", default=""): str,
+        vol.Optional("lifx_broadcast_address", default="255.255.255.255"): str,
+        vol.Optional("lifx_discovery_timeout", default=30): vol.All(
+            int, vol.Range(min=1, max=120)
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )

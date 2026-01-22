@@ -112,6 +112,10 @@ class LifxDevice(NetworkedDevice):
         await super().async_initialize()
         await self._detect_device_type()
 
+        # Update virtual rows for matrix devices after detection
+        if self._lifx_type == "matrix" and self._matrix_height > 0:
+            self._update_virtual_rows()
+
     async def _detect_device_type(self):
         """Detect LIFX device type and update config accordingly."""
         try:

@@ -1,17 +1,28 @@
 import asyncio
 import ipaddress
 import logging
+import random
 from json import JSONDecodeError
 
 from aiohttp import web
-from lifx import LifxError, discover, discover_mdns, find_by_ip
+from lifx import LifxError, discover_mdns, find_by_ip
+from lifx.network import UdpTransport, create_message, parse_message
+from lifx.protocol import packets
 
 from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
 
-# Default timeout for network discovery (seconds)
-DISCOVERY_TIMEOUT = 5
+# Fallback defaults (used if config values are missing)
+DEFAULT_DISCOVERY_TIMEOUT = 30
+DEFAULT_BROADCAST_ADDRESS = "255.255.255.255"
+
+# Number of broadcast packets to send (handles packet loss on large networks)
+UDP_BROADCAST_COUNT = 3
+# Delay between broadcast packets (seconds)
+UDP_BROADCAST_DELAY = 0.3
+# LIFX UDP port
+LIFX_UDP_PORT = 56700
 
 # Valid discovery methods
 DISCOVERY_METHODS = ("udp", "mdns", "both")
@@ -132,6 +143,12 @@ class FindLifxEndpoint(RestEndpoint):
         """
         Discover LIFX devices via UDP broadcast.
 
+        Sends multiple broadcast packets upfront to handle packet loss on large
+        networks, then listens for responses for the full timeout duration.
+        LIFX devices have a response cooldown, so subsequent broadcasts to the
+        same device won't yield additional responses - hence we blast packets
+        at the start rather than spacing them out.
+
         Args:
             timeout: Discovery timeout in seconds
             broadcast_address: UDP broadcast address
@@ -142,24 +159,109 @@ class FindLifxEndpoint(RestEndpoint):
             List of discovered device info dicts
         """
         devices = []
+
+        # Generate a random source ID for this discovery session
+        source_id = random.randint(2, 0xFFFFFFFF)
+
+        # Create GetService broadcast packet
+        get_service = packets.Device.GetService()
+        message = create_message(
+            get_service,
+            source=source_id,
+            target=b"\x00\x00\x00\x00\x00\x00\x00\x00",  # Broadcast target
+            res_required=True,
+        )
+
         try:
-            async for device in discover(
-                timeout=timeout,
-                broadcast_address=broadcast_address,
-            ):
-                device_info = await self._process_discovered_device(
-                    device, auto_add, seen_serials
+            async with UdpTransport(broadcast=True) as transport:
+                broadcast_addr = (broadcast_address, LIFX_UDP_PORT)
+
+                # Send multiple broadcast packets to handle packet loss
+                for i in range(UDP_BROADCAST_COUNT):
+                    await transport.send(message, broadcast_addr)
+                    _LOGGER.info(
+                        "LIFX UDP broadcast %d/%d sent to %s:%d",
+                        i + 1,
+                        UDP_BROADCAST_COUNT,
+                        broadcast_address,
+                        LIFX_UDP_PORT,
+                    )
+                    if i < UDP_BROADCAST_COUNT - 1:
+                        await asyncio.sleep(UDP_BROADCAST_DELAY)
+
+                # Listen for responses for the full timeout
+                _LOGGER.info(
+                    "LIFX UDP listening for responses (%.0fs timeout)...",
+                    timeout,
                 )
-                if device_info:
-                    device_info["discovery_method"] = "udp"
-                    devices.append(device_info)
-        except asyncio.TimeoutError:
-            _LOGGER.info(
-                "LIFX UDP discovery completed (timeout): found %d devices",
-                len(devices),
-            )
+
+                start_time = asyncio.get_event_loop().time()
+                response_count = 0
+
+                while True:
+                    elapsed = asyncio.get_event_loop().time() - start_time
+                    remaining = timeout - elapsed
+
+                    if remaining <= 0:
+                        break
+
+                    try:
+                        data, addr = await transport.receive(
+                            timeout=min(remaining, 1.0)
+                        )
+                        response_count += 1
+
+                        # Parse the response
+                        header, payload = parse_message(data)
+
+                        # Extract serial from header target field
+                        serial = header.target.hex()
+
+                        # Skip if already seen
+                        if serial in seen_serials:
+                            continue
+
+                        seen_serials.add(serial)
+                        ip = addr[0]
+
+                        _LOGGER.debug(
+                            "LIFX UDP response from %s (serial=%s)",
+                            ip,
+                            serial,
+                        )
+
+                        # Use find_by_ip to get full device info
+                        try:
+                            device = await find_by_ip(ip=ip)
+                            if device:
+                                device_info = (
+                                    await self._process_discovered_device(
+                                        device, auto_add, seen_serials
+                                    )
+                                )
+                                if device_info:
+                                    device_info["discovery_method"] = "udp"
+                                    devices.append(device_info)
+                        except (LifxError, OSError) as e:
+                            _LOGGER.debug(
+                                "LIFX UDP: couldn't get device info for %s: %s",
+                                ip,
+                                e,
+                            )
+
+                    except LifxError:
+                        # Timeout on receive, continue loop to check overall timeout
+                        pass
+
+                _LOGGER.info(
+                    "LIFX UDP discovery completed: %d responses, %d devices found",
+                    response_count,
+                    len(devices),
+                )
+
         except (LifxError, OSError) as e:
             _LOGGER.warning("LIFX UDP discovery error: %s", e)
+
         return devices
 
     async def _discover_mdns(self, timeout, auto_add, seen_serials):
@@ -228,9 +330,22 @@ class FindLifxEndpoint(RestEndpoint):
                 f"Invalid discovery method '{method}'. Must be one of: {', '.join(DISCOVERY_METHODS)}"
             )
 
+        # Read fresh values from global config (allows frontend to update before discovery)
+        config_timeout = self._ledfx.config.get(
+            "lifx_discovery_timeout", DEFAULT_DISCOVERY_TIMEOUT
+        )
+        config_broadcast = self._ledfx.config.get(
+            "lifx_broadcast_address", DEFAULT_BROADCAST_ADDRESS
+        )
+        _LOGGER.debug(
+            "LIFX config values: timeout=%s, broadcast=%s",
+            config_timeout,
+            config_broadcast,
+        )
+
         try:
             discovery_timeout = float(
-                request.query.get("discovery_timeout", DISCOVERY_TIMEOUT)
+                request.query.get("discovery_timeout", config_timeout)
             )
             if not (0 < discovery_timeout <= 300):
                 return await self.invalid_request(
@@ -242,7 +357,7 @@ class FindLifxEndpoint(RestEndpoint):
             )
 
         broadcast_address = request.query.get(
-            "broadcast_address", "255.255.255.255"
+            "broadcast_address", config_broadcast
         )
         try:
             ipaddress.IPv4Address(broadcast_address)
@@ -253,17 +368,17 @@ class FindLifxEndpoint(RestEndpoint):
 
         auto_add = request.query.get("add", "").lower() == "true"
 
+        _LOGGER.info(
+            "LIFX discovery starting: method=%s, timeout=%.0fs, "
+            "broadcast_address=%s, auto_add=%s",
+            method,
+            discovery_timeout,
+            broadcast_address,
+            auto_add,
+        )
+
         devices = []
         seen_serials: set[str] = set()
-
-        if method in ("udp", "both"):
-            udp_devices = await self._discover_udp(
-                discovery_timeout, broadcast_address, auto_add, seen_serials
-            )
-            devices.extend(udp_devices)
-            _LOGGER.info(
-                "LIFX UDP discovery found %d devices", len(udp_devices)
-            )
 
         if method in ("mdns", "both"):
             mdns_devices = await self._discover_mdns(
@@ -272,6 +387,15 @@ class FindLifxEndpoint(RestEndpoint):
             devices.extend(mdns_devices)
             _LOGGER.info(
                 "LIFX mDNS discovery found %d devices", len(mdns_devices)
+            )
+
+        if method in ("udp", "both"):
+            udp_devices = await self._discover_udp(
+                discovery_timeout, broadcast_address, auto_add, seen_serials
+            )
+            devices.extend(udp_devices)
+            _LOGGER.info(
+                "LIFX UDP discovery found %d devices", len(udp_devices)
             )
 
         return await self.bare_request_success(
