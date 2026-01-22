@@ -119,7 +119,7 @@ LIFX devices have a recommended maximum refresh rate of 20 FPS to prevent visibl
 | Multizone Strips | 20 | Network stability consideration     |
 | Matrix Devices | 20 | Balanced for smooth animation       |
 
-The default refresh rate of 20 FPS works well for most use cases. LedFx automatically caps the rate based on device type. If you have a small number of devices and a sufficiently robust WiFi network, you can experiment with increasing the frame rate on a per device basis.
+The default refresh rate of 20 FPS works well for most use cases. LedFx automatically caps the rate based on device type. If you have a small number of devices and a sufficiently robust WiFi network, you can experiment with increasing the frame rate on a per-device basis.
 
 ### Icon Name
 

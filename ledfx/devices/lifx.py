@@ -757,7 +757,7 @@ class LifxDevice(NetworkedDevice):
         """Send zone colors to multizone strip - fire and forget, no ack."""
         if (
             not isinstance(self._device, MultiZoneLight)
-            or self._device.zone_count is None
+            or self._zone_count is None
         ):
             return
 

@@ -159,7 +159,6 @@ class FindDevicesEndpoint(RestEndpoint):
                         if serial in seen_serials:
                             continue
 
-                        seen_serials.add(serial)
                         ip = addr[0]
 
                         _LOGGER.debug(
@@ -273,8 +272,15 @@ class FindDevicesEndpoint(RestEndpoint):
 
         # Get device types to discover (default to WLED for backward compat)
         device_types = data.get("device_types", ["wled"])
-        if isinstance(device_types, str):
+        if device_types is None:
+            device_types = ["wled"]
+        elif isinstance(device_types, str):
             device_types = [device_types]
+        elif not isinstance(device_types, list):
+            return await self.invalid_request(
+                f"device_types must be a list or string, not {type(device_types).__name__}. "
+                f"Supported types: {SUPPORTED_DEVICE_TYPES}"
+            )
 
         # Validate device types
         invalid_types = [
