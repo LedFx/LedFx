@@ -158,6 +158,12 @@ def convertToJsonSchema(schema):
             "names": Virtuals.get_virtual_names(),
         }
 
+    elif (
+        callable(schema)
+        and getattr(schema, "__name__", None) == "validate_ipv4_address"
+    ):
+        return {"type": "string"}
+
     elif isinstance(schema, vol.All):
         val = {}
         for validator in schema.validators:
