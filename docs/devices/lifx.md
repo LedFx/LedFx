@@ -142,7 +142,7 @@ When a LIFX device is added, LedFx queries the device to determine its type. If 
 | Device Type | Examples                                                       |
 | ----------- |----------------------------------------------------------------|
 | Light      | A19/A21, B22, BR30, E12, E14, E26, E27, GU10, PAR38, Downlight |
- | MultiZoneLight | LIFX Z, Lightstrip, Beam, Neon Flex, String                    |
+| MultiZoneLight | LIFX Z, Lightstrip, Beam, Neon Flex, String                    |
 | MatrixLight | LIFX Tile, Candle, Path, Spot, Luna, Tube                      |
 | CeilingLight | LIFX Ceiling (Round), Ceiling 26" (Capsule)                    |
 
