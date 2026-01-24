@@ -358,10 +358,11 @@ class LifxDevice(NetworkedDevice):
                 self._update_virtual_rows()
 
         except (LifxError, LifxTimeoutError, OSError) as e:
-            _LOGGER.error(
+            _LOGGER.warning(
                 "LIFX %s: Animator creation failed: %s",
                 self.name,
                 e,
+                exc_info=True,
             )
             self._animator = None
             self._connected = False
@@ -640,8 +641,13 @@ class LifxDevice(NetworkedDevice):
                     hsbk_data.append((0, 0, 0, 3500))
 
                 self._animator.send_frame(hsbk_data)
-            except Exception as e:
-                _LOGGER.warning("LIFX %s: Frame send error: %s", self.name, e)
+            except (LifxError, LifxTimeoutError, OSError, ValueError) as e:
+                _LOGGER.warning(
+                    "LIFX %s: Frame send error: %s",
+                    self.name,
+                    e,
+                    exc_info=True,
+                )
 
         elif self._device and self._connected:
             # Fallback for single bulbs or Animator failure
