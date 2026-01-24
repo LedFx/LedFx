@@ -2,6 +2,8 @@
 
 **LIFX** smart lighting products connect directly to your Wi-Fi network without requiring a hub. LedFx provides comprehensive support for all LIFX device types including single bulbs, multizone strips, and 2D matrix devices.
 
+Something to keep in mind about LIFX's matrix products: they are heavily diffused. If you're trying to display text or anything that requires sharpness between pixels, find something else. However, if you want really good plasma or lava-lamp-style effects, this is the hardware for you.
+
 ## Supported Devices
 
 LedFx supports the full range of LIFX products through the [lifx-async](https://github.com/Djelibeybi/lifx-async) library:
@@ -13,18 +15,15 @@ LedFx supports the full range of LIFX products through the [lifx-async](https://
 | **Matrix Devices**   | LIFX Tile, Candle, Path, Spot, Luna | Varies         | Full 2D matrix support |
 | **Ceiling Lights**   | LIFX Ceiling (64 or 128 zones)      | 64-128         | Full 2D matrix support |
 
+```{tip}
+The LIFX Candle, Path, and Spot are matrix devices, but with very few actual pixels. For example, the Path and Spot are 2x3. They create nice smooth mixes, but can't really display things like equalizers or text.
+```
+
 ## Key Features
 
 ### Auto-Detection
 
-LedFx automatically detects your LIFX device type when you add it:
-
-- **Device Type**: Bulb, strip, or matrix - no manual selection needed
-- **Zone Count**: Automatically queried from the device
-- **Matrix Dimensions**: Width and height discovered from device chain data
-- **Capabilities**: Extended multizone, frame buffer requirements, etc.
-
-After initial detection, device information is cached for faster reconnection.
+LedFx automatically detects your LIFX device type when you add it, including number of zones, or the matrix dimensions.
 
 ## Setup
 
@@ -56,7 +55,7 @@ You can scan for LIFX devices at any time from the Dashboard:
 
 #### Using Global Actions
 
-The Global Actions panel also provides LIFX scanning:
+The Global Actions panel on the Detailed Dashboard also provides LIFX scanning:
 
 1. Expand the **Global Actions** section on the Dashboard
 2. Click **Scan for LIFX devices**
@@ -73,10 +72,7 @@ If auto-discovery doesn't find your device (e.g., on a different VLAN), you can 
 
 #### Finding Your LIFX Device IP Address
 
-LIFX devices connect directly to your Wi-Fi network. To find the IP address:
-
-1. **LIFX App**: Open the LIFX app, select your device, go to Settings > Device Info
-2. **Router**: Check your router's DHCP client list for devices with "LIFX" in the name
+LIFX devices connect directly to your Wi-Fi network. To find the IP address, check your router's DHCP client list for devices with "LIFX" in the name.
 
 ```{tip}
 Reserve a static IP address for your LIFX device in your router's DHCP settings. This ensures the device always has the same IP address after power cycles.
@@ -147,49 +143,17 @@ When a LIFX device is added, LedFx queries the device to determine its type. If 
 
 The detected type, serial number, and device class are saved to configuration for faster subsequent connections.
 
-### Multizone Strip Protocol
-
-For LIFX Z Strips, Beams, and Neon:
-
-- **Extended Multizone**: Newer devices support sending all zone colors in a single packet
-- **Legacy Multizone**: Older devices receive one zone at a time with a final "apply" command.
-
-LedFx automatically detects and uses the appropriate protocol, though it is strongly recommended not to attempt to use a LIFX Z or Beam that does not support extended multizone messages as the animations are likely to overwhelm the device.
-
-### Matrix Pixel Mapping
-
-Matrix devices have a 2D arrangement of LEDs but use a permutation-based pixel reordering system:
-
-1. LedFx queries the device chain to get tile positions (`user_x`, `user_y`)
-2. A permutation array maps LedFx's row-major pixel order to the LIFX tile layout
-3. This handles multi-tile configurations (original LIFX Tile) and single-tile matrix devices
-
-The original LIFX Tile is the only Matrix device ever released that supported multiple tiles on its chain. All subsequent Matrix devices only have a single tile and don't support device chains. The LIFX Tile has been discontinued and is no longer available to purchase, but is still supported by LedFx.
-
-The matrix width and height are computed from the tile coordinate data and used to automatically configure the virtual's row count for proper 2D effect rendering.
-
 ### Animation Module
 
-LedFx uses the `lifx-async` animation module for high-performance frame delivery to multizone strips and matrix devices. This provides:
+LedFx uses the `lifx-async` animation module for high-performance frame delivery to multizone strips and matrix devices. This provides optimized packet handling for smooth animations and higher achievable frame rates.
 
-- Optimized packet handling for smooth animations
-- Automatic frame buffer management for large matrix devices
-- Higher achievable frame rates compared to standard packet-based updates
+However, if your WiFi is busy or saturated, performance may degrade. Also note that older LIFX devices have less capable microcontrollers, so their top speed can be limited. You may have to play with FPS values to find a happy medium.
 
-This is handled automatically - no configuration required.
+Older controllers are also very picky when it comes to Wi-Fi antenna orientation. If you're experiencing stuttering playback, try rotating the controller box (particularly on older LIFX Z, Beam and String) to better orient it with the closest Wi-Fi access point.
 
 ### Color Conversion
 
-LedFx effects output RGB values. These are converted to LIFX's HSBK (Hue, Saturation, Brightness, Kelvin) format using the `lifx-async` library's `HSBK.from_rgb()` method.
-
-### Async Fire-and-Forget
-
-To maintain high frame rates, LedFx sends packets to LIFX devices without waiting for acknowledgment. This "fire-and-forget" approach:
-
-- Minimizes latency and frame drops due to network delays
-- Relies on UDP's best-effort delivery as occasional dropped frames are acceptable for real-time visualization
-
-However, if your WiFi is busy or saturated, performance will suffer. Things that can cause network saturation include streaming media and downloading large files.
+LedFx effects output RGB values which are converted to LIFX's HSBK (Hue, Saturation, Brightness, Kelvin) format using NumPy vectors within the LIFX driver for LedFx.
 
 ## Troubleshooting
 
