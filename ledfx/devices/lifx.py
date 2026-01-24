@@ -7,7 +7,6 @@ from lifx import (
     HSBK,
     Animator,
     CeilingLight,
-    Colors,
     HevLight,
     InfraredLight,
     LifxError,
@@ -18,19 +17,12 @@ from lifx import (
 )
 from lifx.exceptions import LifxTimeoutError
 from lifx.protocol import packets
-from lifx.protocol.protocol_types import (
-    MultiZoneApplicationRequest,
-    TileBufferRect,
-)
 
 from ledfx.devices import NetworkedDevice, fps_validator
 from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 
-
-# Black/off color for padding and clearing zones
-BLACK = Colors.OFF.to_protocol()
 
 # Max refresh rate for single bulbs (prevents strobing)
 MAX_FPS_LIGHT = 20
@@ -366,13 +358,14 @@ class LifxDevice(NetworkedDevice):
                 self._update_virtual_rows()
 
         except (LifxError, LifxTimeoutError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Animator failed (%s), using connection fallback",
+            _LOGGER.error(
+                "LIFX %s: Animator creation failed: %s",
                 self.name,
                 e,
             )
             self._animator = None
-            await self._async_connect()
+            self._connected = False
+            self._online = False
 
     async def _async_connect(self):
         """Connect to device using saved serial/type for speed."""
@@ -588,16 +581,10 @@ class LifxDevice(NetworkedDevice):
         super().deactivate()
 
     async def _async_flush(self, data):
-        """Send pixel data to device based on detected type."""
+        """Send pixel data to single bulb device."""
         if not self._device or not self._connected:
             return
-
-        if self._lifx_type == "matrix":
-            await self._flush_matrix(data)
-        elif self._lifx_type == "strip":
-            await self._flush_strip(data)
-        else:
-            await self._flush_light(data)
+        await self._flush_light(data)
 
     @property
     def effective_refresh_rate(self):
@@ -639,162 +626,6 @@ class LifxDevice(NetworkedDevice):
             _LOGGER.warning(
                 "LIFX %s: Light flush error: %s", self._config["name"], e
             )
-
-    async def _flush_strip(self, data):
-        """Send zone colors to multizone strip - fire and forget, no ack."""
-        if (
-            not isinstance(self._device, MultiZoneLight)
-            or self._zone_count is None
-        ):
-            return
-
-        try:
-            pixels = data.astype(np.dtype("B")).reshape(-1, 3)
-            colors = []
-
-            for r, g, b in pixels[: self._zone_count]:
-                colors.append(
-                    HSBK.from_rgb(int(r), int(g), int(b)).to_protocol()
-                )
-
-            # Pad if needed
-            while len(colors) < self._zone_count:
-                colors.append(BLACK)
-
-            duration = self.frame_duration_ms
-            if self._has_extended:
-                packet = packets.MultiZone.SetExtendedColorZones(
-                    duration=duration,
-                    apply=MultiZoneApplicationRequest.APPLY,
-                    index=0,
-                    colors_count=len(colors),
-                    colors=colors,
-                )
-                await self._device.connection.send_packet(packet)
-            else:
-                for i, color in enumerate(colors):
-                    is_last = i == len(colors) - 1
-                    apply = (
-                        MultiZoneApplicationRequest.APPLY
-                        if is_last
-                        else MultiZoneApplicationRequest.NO_APPLY
-                    )
-                    packet = packets.MultiZone.SetColorZones(
-                        start_index=i,
-                        end_index=i,
-                        color=color,
-                        duration=duration,
-                        apply=apply,
-                    )
-                    await self._device.connection.send_packet(packet)
-        except (LifxError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Strip flush error: %s", self._config["name"], e
-            )
-
-    async def _flush_matrix(self, data):
-        """Send pixel data to matrix device.
-
-        For tiles with ≤64 zones: write directly to visible buffer (fb_index=0)
-        For tiles with >64 zones (e.g., Ceiling): write to buffer 1, then
-        CopyFrameBuffer to buffer 0 to avoid tearing.
-        """
-        if not self._device or not isinstance(
-            self._device, (MatrixLight, CeilingLight)
-        ):
-            return
-
-        if not self._tiles or self._perm is None:
-            return
-
-        try:
-            pixels = data.astype(np.dtype("B")).reshape(-1, 3)
-
-            # Validate pixel count matches permutation expectations
-            expected_pixels = len(self._perm)
-            if pixels.shape[0] < expected_pixels:
-                _LOGGER.warning(
-                    "LIFX %s: Pixel count mismatch: got %d, expected %d",
-                    self.name,
-                    pixels.shape[0],
-                    expected_pixels,
-                )
-                return
-
-            reordered = pixels[self._perm]
-
-            # Check if any tile needs frame buffer strategy (>64 zones)
-            needs_frame_buffer = any(
-                tile["pixels"] > 64 for tile in self._tiles
-            )
-
-            # Use buffer 1 for staging if needed, otherwise direct to 0
-            fb_index = 1 if needs_frame_buffer else 0
-
-            # Send Set64 packets for each tile
-            for tile in self._tiles:
-                start = tile["offset"]
-                end = start + tile["pixels"]
-                tile_pixels = reordered[start:end]
-                tile_width = tile["width"]
-                total_pixels = tile["pixels"]
-
-                tile_colors = [
-                    HSBK.from_rgb(int(r), int(g), int(b)).to_protocol()
-                    for r, g, b in tile_pixels
-                ]
-
-                pixels_per_packet = 64
-                colors_sent = 0
-                y_offset = 0
-
-                while colors_sent < total_pixels:
-                    chunk_size = min(
-                        pixels_per_packet, total_pixels - colors_sent
-                    )
-                    chunk_colors = tile_colors[
-                        colors_sent : colors_sent + chunk_size
-                    ]
-                    rows_in_chunk = chunk_size // tile_width
-
-                    rect = TileBufferRect(
-                        fb_index=fb_index,
-                        x=0,
-                        y=y_offset,
-                        width=tile_width,
-                    )
-                    packet = packets.Tile.Set64(
-                        tile_index=tile["index"],
-                        length=1,
-                        rect=rect,
-                        duration=0,
-                        colors=chunk_colors,
-                    )
-                    await self._device.connection.send_packet(packet)
-
-                    colors_sent += chunk_size
-                    y_offset += rows_in_chunk
-
-            # Copy buffer 1 to 0 for large tiles
-            if needs_frame_buffer:
-                first_tile = self._tiles[0]
-                copy_packet = packets.Tile.CopyFrameBuffer(
-                    tile_index=0,
-                    length=len(self._tiles),
-                    src_fb_index=1,
-                    dst_fb_index=0,
-                    src_x=0,
-                    src_y=0,
-                    dst_x=0,
-                    dst_y=0,
-                    width=first_tile["width"],
-                    height=first_tile["height"],
-                    duration=0,
-                )
-                await self._device.connection.send_packet(copy_packet)
-
-        except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX %s: Matrix flush error: %s", self.name, e)
 
     def flush(self, data):
         if self._animator:
