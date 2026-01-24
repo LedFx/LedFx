@@ -4,6 +4,10 @@ import threading
 import time
 
 import pytest
+from lifx_emulator import EmulatedLifxServer
+from lifx_emulator.devices import DeviceManager
+from lifx_emulator.factories import create_device
+from lifx_emulator.repositories import DeviceRepository
 
 from tests.test_definitions.all_effects import get_ledfx_effects
 from tests.test_definitions.audio_configs import get_ledfx_audio_configs
@@ -26,11 +30,6 @@ LIFX_TEST_MATRIX_HEIGHT = 8
 def _run_lifx_emulator():
     """Run LIFX emulator in a background thread with its own event loop."""
     global lifx_emulator_loop, lifx_emulator_server
-
-    from lifx_emulator import EmulatedLifxServer
-    from lifx_emulator.devices import DeviceManager
-    from lifx_emulator.factories import create_device
-    from lifx_emulator.repositories import DeviceRepository
 
     lifx_emulator_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(lifx_emulator_loop)
@@ -79,8 +78,11 @@ def _start_lifx_emulator():
         target=_run_lifx_emulator, daemon=True
     )
     lifx_emulator_thread.start()
-    # Give emulator time to bind to port
-    time.sleep(0.5)
+    # Wait for emulator to bind to port
+    for _ in range(50):  # 5 second timeout
+        if lifx_emulator_server and lifx_emulator_server.transport:
+            break
+        time.sleep(0.1)
 
 
 def _stop_lifx_emulator():
