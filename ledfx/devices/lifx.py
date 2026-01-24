@@ -524,7 +524,7 @@ class LifxDevice(NetworkedDevice):
                         virtual.config.get("rows", 1),
                         self._matrix_height,
                     )
-                    virtual.config = {"rows": self._matrix_height}
+                    virtual.config["rows"] = self._matrix_height
                     virtual.virtual_cfg["config"]["rows"] = self._matrix_height
                 break
 
