@@ -141,9 +141,9 @@ device_tests = {
             },
         ],
     ),
-    # LIFX device tests
-    # Note: LIFX devices auto-detect type on connect, but without a real device
-    # at the IP, it will use defaults. Device shows as online since the IP resolves.
+    # LIFX device tests using lifx-emulator-core
+    # The emulator runs a Ceiling matrix device (8x8 = 64 pixels) at 127.0.0.1:56700
+    # LIFX devices auto-detect type on connect and update config accordingly
     "create_lifx_device": APITestCase(
         execution_order=6,
         method="POST",
@@ -154,10 +154,10 @@ device_tests = {
             "config": {
                 "icon_name": "mdi:lightbulb",
                 "center_offset": 0,
-                "refresh_rate": SystemInfo.default_fps(),
+                "refresh_rate": 30,
                 "pixel_count": 1,
                 "name": "CI LIFX Test",
-                "ip_address": "127.0.0.2",
+                "ip_address": "127.0.0.1",
             },
         },
         expected_response_keys=["status", "payload", "device"],
@@ -169,10 +169,16 @@ device_tests = {
                     "config": {
                         "icon_name": "mdi:lightbulb",
                         "center_offset": 0,
-                        "refresh_rate": SystemInfo.default_fps(),
-                        "pixel_count": 1,
+                        "refresh_rate": 30,
+                        # Auto-detected from emulated matrix device
+                        "pixel_count": 64,
                         "name": "CI LIFX Test",
-                        "ip_address": "127.0.0.2",
+                        "ip_address": "127.0.0.1",
+                        "serial": "d073d9000001",
+                        "lifx_class": "CeilingLight",
+                        "lifx_type": "matrix",
+                        "matrix_width": 8,
+                        "matrix_height": 8,
                     },
                     "id": "ci-lifx-test",
                     "virtuals": [],
@@ -194,10 +200,15 @@ device_tests = {
                         "config": {
                             "icon_name": "mdi:lightbulb",
                             "center_offset": 0,
-                            "refresh_rate": SystemInfo.default_fps(),
-                            "pixel_count": 1,
+                            "refresh_rate": 30,
+                            "pixel_count": 64,
                             "name": "CI LIFX Test",
-                            "ip_address": "127.0.0.2",
+                            "ip_address": "127.0.0.1",
+                            "serial": "d073d9000001",
+                            "lifx_class": "CeilingLight",
+                            "lifx_type": "matrix",
+                            "matrix_width": 8,
+                            "matrix_height": 8,
                         },
                         "id": "ci-lifx-test",
                         "type": "lifx",

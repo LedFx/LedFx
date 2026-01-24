@@ -58,6 +58,7 @@ dev = [
     "pytest-asyncio>=1.2.0,<1.4.0",
     "pytest-order<2.0.0,>=1.2.0",
     "ruff>=0.14.0,<0.15.0",
+    "lifx-emulator-core>=3.1.0",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [

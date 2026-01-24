@@ -1,4 +1,6 @@
+import asyncio
 import subprocess
+import threading
 import time
 
 import pytest
@@ -7,6 +9,88 @@ from tests.test_definitions.all_effects import get_ledfx_effects
 from tests.test_definitions.audio_configs import get_ledfx_audio_configs
 from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
+
+# LIFX emulator globals
+lifx_emulator_thread = None
+lifx_emulator_loop = None
+lifx_emulator_server = None
+
+# Test device configuration (deterministic for test assertions)
+# Serial is 12 hex chars with prefix (d073d9 = matrix)
+# LIFX Ceiling (pid=176, 8x8 = 64 pixels)
+LIFX_TEST_SERIAL = "d073d9000001"
+LIFX_TEST_MATRIX_WIDTH = 8
+LIFX_TEST_MATRIX_HEIGHT = 8
+
+
+def _run_lifx_emulator():
+    """Run LIFX emulator in a background thread with its own event loop."""
+    global lifx_emulator_loop, lifx_emulator_server
+
+    from lifx_emulator import EmulatedLifxServer
+    from lifx_emulator.devices import DeviceManager
+    from lifx_emulator.factories import create_device
+    from lifx_emulator.repositories import DeviceRepository
+
+    lifx_emulator_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(lifx_emulator_loop)
+
+    # Create emulated LIFX Ceiling (8x8 = 64 pixel matrix)
+    devices = [
+        create_device(
+            product_id=176,  # LIFX Ceiling US
+            serial=LIFX_TEST_SERIAL,
+            tile_count=1,
+            tile_width=LIFX_TEST_MATRIX_WIDTH,
+            tile_height=LIFX_TEST_MATRIX_HEIGHT,
+        ),
+    ]
+
+    # Initialize device manager and server
+    repository = DeviceRepository()
+    manager = DeviceManager(repository)
+    lifx_emulator_server = EmulatedLifxServer(
+        devices,
+        manager,
+        bind_address="127.0.0.1",
+        port=56700,
+        track_activity=False,
+    )
+
+    async def run_server():
+        await lifx_emulator_server.start()
+        # Keep running until stopped
+        while True:
+            await asyncio.sleep(1)
+
+    try:
+        lifx_emulator_loop.run_until_complete(run_server())
+    except asyncio.CancelledError:
+        pass
+    finally:
+        lifx_emulator_loop.run_until_complete(lifx_emulator_server.stop())
+        lifx_emulator_loop.close()
+
+
+def _start_lifx_emulator():
+    """Start the LIFX emulator in a background thread."""
+    global lifx_emulator_thread
+    lifx_emulator_thread = threading.Thread(
+        target=_run_lifx_emulator, daemon=True
+    )
+    lifx_emulator_thread.start()
+    # Give emulator time to bind to port
+    time.sleep(0.5)
+
+
+def _stop_lifx_emulator():
+    """Stop the LIFX emulator."""
+    if lifx_emulator_loop and lifx_emulator_loop.is_running():
+        # Cancel all tasks to trigger shutdown
+        for task in asyncio.all_tasks(lifx_emulator_loop):
+            lifx_emulator_loop.call_soon_threadsafe(task.cancel)
+    if lifx_emulator_thread:
+        lifx_emulator_thread.join(timeout=2)
 
 
 def pytest_sessionstart(session):
@@ -22,6 +106,10 @@ def pytest_sessionstart(session):
         None
     """
     EnvironmentCleanup.cleanup_test_config_folder()
+
+    # Start LIFX emulator before LedFx
+    _start_lifx_emulator()
+
     # Start LedFx as a subprocess
     global ledfx
     try:
@@ -76,3 +164,6 @@ def pytest_sessionfinish(session, exitstatus):
     # Wait for LedFx to terminate
     while ledfx.poll() is None:
         time.sleep(0.5)
+
+    # Stop LIFX emulator
+    _stop_lifx_emulator()

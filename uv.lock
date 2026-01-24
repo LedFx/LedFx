@@ -1140,6 +1140,7 @@ dev = [
     { name = "bokeh" },
     { name = "flake8" },
     { name = "isort" },
+    { name = "lifx-emulator-core" },
     { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1215,6 +1216,7 @@ dev = [
     { name = "bokeh", specifier = ">=3.3.3,<4.0.0" },
     { name = "flake8", specifier = ">=7.3.0,<7.3.1" },
     { name = "isort", specifier = ">=7.0.0,<7.0.1" },
+    { name = "lifx-emulator-core", specifier = ">=3.1.0" },
     { name = "pre-commit", specifier = ">=4.2.0,<4.5.2" },
     { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.2.0,<1.4.0" },
@@ -1244,6 +1246,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/91/de/83493fa8835b34141dc1976bce38cb116d17a05e16900e6890e3277e9564/lifx_async-5.1.0.tar.gz", hash = "sha256:ffddb6a666637bdbfd4d67a95e03a1763159333033d0c1dc5075f24b471236fc", size = 452778, upload-time = "2026-01-24T04:06:38.865Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/78/28/26fedc887e8172b9173bc7a82bd3de4b2747ca39233626edd013db209a0f/lifx_async-5.1.0-py3-none-any.whl", hash = "sha256:1f1345e56d1c93e887659e479cf3f7cd3cf8d70ac5ef8a0ebeadb8e38ca1da27", size = 179786, upload-time = "2026-01-24T04:06:37.189Z" },
+]
+
+[[package]]
+name = "lifx-emulator-core"
+version = "3.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pydantic" },
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/8c/b1/74a08ca8b69699198be4d6fca0de5a53bd83fc28ad811c080a8bee4603c0/lifx_emulator_core-3.1.0.tar.gz", hash = "sha256:1d6aced919db17f3b64f259b1099f34c0e5ff257ac83ae8df5a7e8b28b786781", size = 133335, upload-time = "2026-01-11T17:06:02.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/df/86/5df8ab52a8a48fcb27647585a83aac0caedaaa840ba5b1d6344127f783af/lifx_emulator_core-3.1.0-py3-none-any.whl", hash = "sha256:bed74a00177fb319f99f8989406c0b3694f783619fb188362780468989cbab99", size = 102061, upload-time = "2026-01-11T17:06:00.835Z" },
 ]
 
 [[package]]
