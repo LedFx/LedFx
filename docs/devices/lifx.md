@@ -6,12 +6,12 @@
 
 LedFx supports the full range of LIFX products through the [lifx-async](https://github.com/Djelibeybi/lifx-async) library:
 
-| Device Type | Examples                            | Zones | Notes |
-|-------------|-------------------------------------|-------|-------|
-| **Single Bulbs** | LIFX A19, BR30, GU10, Mini          | 1 | Single color output |
-| **Multizone Strips** | LIFX Z Strip, Beam, Neon, String    | 8-82 | Per-zone color control |
-| **Matrix Devices** | LIFX Tile, Candle, Path, Spot, Luna | Varies | Full 2D matrix support |
-| **Ceiling Lights** | LIFX Ceiling (64 or 128 zones)      | 64-128 | Matrix downlight + single uplight |
+| Device Type          | Examples                            | Zones          | Notes                  |
+| -------------------- | ----------------------------------- | -------------- | ---------------------- |
+| **Single Bulbs**     | LIFX A19, BR30, GU10, Mini          | 1              | Single color output    |
+| **Multizone Strips** | LIFX Z Strip, Beam, Neon, String    | Varies (8-120) | Per-zone color control |
+| **Matrix Devices**   | LIFX Tile, Candle, Path, Spot, Luna | Varies         | Full 2D matrix support |
+| **Ceiling Lights**   | LIFX Ceiling (64 or 128 zones)      | 64-128         | Full 2D matrix support |
 
 ## Key Features
 
@@ -91,35 +91,34 @@ Reserve a static IP address for your LIFX device in your router's DHCP settings.
 5. Click **Add Device**
 
 LedFx will automatically:
+
 - Connect to the device
 - Detect the device type (bulb, strip, or matrix)
 - Query the zone/pixel count
 - For matrix devices, discover the grid dimensions
-- For Ceiling lights, create Downlight and Uplight sub-virtuals
 
 ## Device Configuration
 
 ### Parameters
 
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| **Name** | Friendly name for the device | Required |
-| **IP Address** | IPv4 address of the LIFX device | Required |
-| **Pixel Count** | Number of zones/pixels (auto-detected) | 1 |
-| **Refresh Rate** | Target FPS for effect updates | 20 |
-| **Create Segments** | Auto-create sub-virtuals for Ceiling lights | True |
+| Parameter        | Description                            | Default  |
+| ---------------- | -------------------------------------- | -------- |
+| **Name**         | Friendly name for the device           | Required |
+| **IP Address**   | IPv4 address of the LIFX device        | Required |
+| **Pixel Count**  | Number of zones/pixels (auto-detected) | 1        |
+| **Refresh Rate** | Target FPS for effect updates          | 30       |
 
 ### Refresh Rate Recommendations
 
-LIFX devices have a recommended maximum refresh rate of 20 FPS to prevent visible strobing and ensure network stability:
+LedFx uses an optimized animation module for multizone strips and matrix devices, enabling higher frame rates:
 
-| Device Type | Max FPS | Reason                              |
-|-------------|---------|-------------------------------------|
-| Single Bulbs | 20 | Higher rates cause visible strobing |
-| Multizone Strips | 20 | Network stability consideration     |
-| Matrix Devices | 20 | Balanced for smooth animation       |
+| Device Type      | Max FPS  | Notes                                         |
+| ---------------- | -------- | --------------------------------------------- |
+| Single Bulbs     | 20       | Capped to prevent visible strobing            |
+| Multizone Strips | No limit | Push as high as your network or device allows |
+| Matrix Devices   | No limit | Push as high as your network or device allows |
 
-The default refresh rate of 20 FPS works well for most use cases. LedFx automatically caps the rate based on device type. If you have a small number of devices and a sufficiently robust WiFi network, you can experiment with increasing the frame rate on a per-device basis.
+The default refresh rate is 30 FPS. Single bulbs are automatically capped at 20 FPS to prevent strobing. For strips and matrix devices, you can increase the rate as high as your WiFi network or LIFX device can handle.
 
 ### Icon Name
 
@@ -139,12 +138,12 @@ The icon displayed in the LedFx UI. Supports Material Design Icons (MDI) or Mate
 
 When a LIFX device is added, LedFx queries the device to determine its type. If a LIFX device has multiple zones, each zone gets its own color and brightness value.
 
-| Device Type | Examples                                                       |
-| ----------- |----------------------------------------------------------------|
-| Light      | A19/A21, B22, BR30, E12, E14, E26, E27, GU10, PAR38, Downlight |
+| Device Type    | Examples                                                       |
+| -------------- | -------------------------------------------------------------- |
+| Light          | A19/A21, B22, BR30, E12, E14, E26, E27, GU10, PAR38, Downlight |
 | MultiZoneLight | LIFX Z, Lightstrip, Beam, Neon Flex, String                    |
-| MatrixLight | LIFX Tile, Candle, Path, Spot, Luna, Tube                      |
-| CeilingLight | LIFX Ceiling (Round), Ceiling 26" (Capsule)                    |
+| MatrixLight    | LIFX Tile, Candle, Path, Spot, Luna, Tube                      |
+| CeilingLight   | LIFX Ceiling (Round), Ceiling 26" (Capsule)                    |
 
 The detected type, serial number, and device class are saved to configuration for faster subsequent connections.
 
@@ -169,22 +168,13 @@ The original LIFX Tile is the only Matrix device ever released that supported mu
 
 The matrix width and height are computed from the tile coordinate data and used to automatically configure the virtual's row count for proper 2D effect rendering.
 
-### Ceiling Light Sub-Virtuals
+### Animation Module
 
-LIFX Ceiling lights are Matrix lights but they have two distinct light components:
+LedFx uses the `lifx-async` animation module for high-performance frame delivery to multizone strips and matrix devices. This provides:
 
-- **Downlight**: The main matrix array (63 or 127 zones). Due to their shape, certain zones are not implemented as actual visible lights.
-- **Uplight**: A single ambient light zone which is actually the last zone in the overall matrix, i.e. zone 64 or 128.
-
-When `create_segments` is enabled (default), LedFx automatically creates two sub-virtuals for Ceiling lights, similar to WLED segments. This allows you to run different effects on the downlight and uplight independently.
-
-### Frame Buffer Handling
-
-Large matrix devices with more than 64 zones (currently only the LIFX Ceiling 26") use a double-buffering strategy to prevent visual tearing:
-
-1. Pixel data is written to an off-screen buffer
-2. The buffer is copied to the visible display in a single operation
-3. This ensures smooth, tear-free updates
+- Optimized packet handling for smooth animations
+- Automatic frame buffer management for large matrix devices
+- Higher achievable frame rates compared to standard packet-based updates
 
 This is handled automatically - no configuration required.
 
@@ -227,14 +217,6 @@ For matrix devices showing wrong dimensions:
 1. Power cycle the LIFX device
 2. Remove and re-add the device in LedFx
 3. Check the device configuration in the LIFX app
-
-### Ceiling Sub-Virtuals Not Created
-
-If Downlight/Uplight sub-virtuals don't appear:
-
-1. Ensure `create_segments` is enabled in device config
-2. Remove and re-add the device
-3. Check the logs for any detection errors
 
 ## Further Information
 

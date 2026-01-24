@@ -1174,7 +1174,7 @@ requires-dist = [
     { name = "cython", specifier = ">=3.0.7" },
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
-    { name = "lifx-async", specifier = ">=5.0.1" },
+    { name = "lifx-async", specifier = ">=5.1.0" },
     { name = "mss", specifier = "~=10.1.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },
@@ -1239,11 +1239,11 @@ docs = [
 
 [[package]]
 name = "lifx-async"
-version = "5.0.1"
+version = "5.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e1/f5/39228097424d9a0e549c2164ddc3da2073cfc55619c68e03d02aa026c5bc/lifx_async-5.0.1.tar.gz", hash = "sha256:93af80f445c37fb5fb430ebf1bac30929f402bc1559a8062f172324d6369f3b1", size = 417592, upload-time = "2026-01-14T09:21:15.283Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/91/de/83493fa8835b34141dc1976bce38cb116d17a05e16900e6890e3277e9564/lifx_async-5.1.0.tar.gz", hash = "sha256:ffddb6a666637bdbfd4d67a95e03a1763159333033d0c1dc5075f24b471236fc", size = 452778, upload-time = "2026-01-24T04:06:38.865Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/98/a5ea2a3c4eee166f3ae3578152dd96243e49d12736f1a4db138d707b905e/lifx_async-5.0.1-py3-none-any.whl", hash = "sha256:0e21f559e9096336ee5b97ace8d59fc7761ed094cf3228a9eb5f17ae6b885e25", size = 165506, upload-time = "2026-01-14T09:21:13.845Z" },
+    { url = "https://files.pythonhosted.org/packages/78/28/26fedc887e8172b9173bc7a82bd3de4b2747ca39233626edd013db209a0f/lifx_async-5.1.0-py3-none-any.whl", hash = "sha256:1f1345e56d1c93e887659e479cf3f7cd3cf8d70ac5ef8a0ebeadb8e38ca1da27", size = 179786, upload-time = "2026-01-24T04:06:37.189Z" },
 ]
 
 [[package]]
