@@ -77,3 +77,12 @@ __pycache__/*
 !/installer/ledfx.nsi
 !/installer/icons
 !/installer/icons/**
+# Playwright E2E Test Artifacts
+tests/e2e/screenshots/
+tests/e2e/traces/
+tests/e2e/videos/
+test-results/
+playwright-report/
+
+# Playwright browsers
+.playwright/
