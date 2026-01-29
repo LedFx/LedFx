@@ -372,6 +372,7 @@ class Effect(BaseRegistry):
         # Clear LogSecHelper reference to this effect
         if hasattr(self, "logsec") and self.logsec:
             self.logsec.effect = None
+            self.logsec.diag = False
         self._active = False
         _LOGGER.info(f"Effect {self.NAME} deactivated.")
 
