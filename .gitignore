@@ -77,7 +77,3 @@ __pycache__/*
 !/installer/ledfx.nsi
 !/installer/icons
 !/installer/icons/**
-
-# Generated project index files
-PROJECT_INDEX.md
-PROJECT_INDEX.json
