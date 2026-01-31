@@ -373,9 +373,7 @@ class FindLifxEndpoint(RestEndpoint):
         try:
             ipaddress.IPv4Address(broadcast_address)
         except ipaddress.AddressValueError:
-            _LOGGER.warning(
-                "Invalid broadcast_address: %s", broadcast_address
-            )
+            _LOGGER.warning("Invalid broadcast_address: %s", broadcast_address)
             return await self.invalid_request(
                 f"Invalid broadcast_address: {broadcast_address}"
             )
@@ -464,9 +462,7 @@ class FindLifxEndpoint(RestEndpoint):
             device = await find_by_ip(ip=ip_address)
 
             if device is None:
-                _LOGGER.warning(
-                    "No LIFX device found at %s", ip_address
-                )
+                _LOGGER.warning("No LIFX device found at %s", ip_address)
                 return await self.invalid_request(
                     f"No LIFX device found at {ip_address}"
                 )
