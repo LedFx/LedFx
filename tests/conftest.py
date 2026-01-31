@@ -74,15 +74,15 @@ def _run_lifx_emulator():
 def _start_lifx_emulator():
     """Start the LIFX emulator in a background thread."""
     global lifx_emulator_thread
-    lifx_emulator_thread = threading.Thread(
-        target=_run_lifx_emulator, daemon=True
-    )
+    lifx_emulator_thread = threading.Thread(target=_run_lifx_emulator, daemon=True)
     lifx_emulator_thread.start()
     # Wait for emulator to bind to port
     for _ in range(50):  # 5 second timeout
         if lifx_emulator_server and lifx_emulator_server.transport:
             break
         time.sleep(0.1)
+    else:
+        pytest.fail("LIFX emulator failed to bind to UDP port")
 
 
 def _stop_lifx_emulator():
