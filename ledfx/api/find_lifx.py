@@ -329,6 +329,7 @@ class FindLifxEndpoint(RestEndpoint):
         """
         method = request.query.get("method", "udp").lower()
         if method not in DISCOVERY_METHODS:
+            _LOGGER.warning("Invalid discovery method: %s", method)
             return await self.invalid_request(
                 f"Invalid discovery method '{method}'. Must be one of: {', '.join(DISCOVERY_METHODS)}"
             )
@@ -351,10 +352,17 @@ class FindLifxEndpoint(RestEndpoint):
                 request.query.get("discovery_timeout", config_timeout)
             )
             if not (0 < discovery_timeout <= 300):
+                _LOGGER.warning(
+                    "Invalid discovery_timeout value: %s", discovery_timeout
+                )
                 return await self.invalid_request(
                     "Invalid discovery_timeout: must be greater than 0 and at most 300 seconds"
                 )
         except (ValueError, TypeError):
+            _LOGGER.warning(
+                "Invalid discovery_timeout: non-numeric value: %s",
+                request.query.get("discovery_timeout"),
+            )
             return await self.invalid_request(
                 "Invalid discovery_timeout: must be a numeric value"
             )
@@ -365,6 +373,9 @@ class FindLifxEndpoint(RestEndpoint):
         try:
             ipaddress.IPv4Address(broadcast_address)
         except ipaddress.AddressValueError:
+            _LOGGER.warning(
+                "Invalid broadcast_address: %s", broadcast_address
+            )
             return await self.invalid_request(
                 f"Invalid broadcast_address: {broadcast_address}"
             )
@@ -430,11 +441,13 @@ class FindLifxEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
+            _LOGGER.warning("Failed to decode JSON in LIFX POST request")
             return await self.json_decode_error()
 
         ip_address = data.get("ip_address")
 
         if not ip_address:
+            _LOGGER.warning("Missing required ip_address in LIFX POST request")
             return await self.invalid_request(
                 'Required attribute "ip_address" was not provided'
             )
@@ -442,6 +455,7 @@ class FindLifxEndpoint(RestEndpoint):
         try:
             ipaddress.IPv4Address(ip_address)
         except ipaddress.AddressValueError:
+            _LOGGER.warning("Invalid IPv4 address: %s", ip_address)
             return await self.invalid_request(
                 "Invalid ip_address: must be a valid IPv4 address"
             )
@@ -450,6 +464,9 @@ class FindLifxEndpoint(RestEndpoint):
             device = await find_by_ip(ip=ip_address)
 
             if device is None:
+                _LOGGER.warning(
+                    "No LIFX device found at %s", ip_address
+                )
                 return await self.invalid_request(
                     f"No LIFX device found at {ip_address}"
                 )
