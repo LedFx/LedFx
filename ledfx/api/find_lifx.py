@@ -212,7 +212,7 @@ class FindLifxEndpoint(RestEndpoint):
                         response_count += 1
 
                         # Parse the response
-                        header, _payload = parse_message(data)
+                        header, _ = parse_message(data)
 
                         # Extract serial from header target field.
                         # header.target is 8 bytes but LIFX serials are the

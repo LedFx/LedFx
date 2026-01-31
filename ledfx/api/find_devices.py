@@ -153,7 +153,7 @@ class FindDevicesEndpoint(RestEndpoint):
                         )
                         response_count += 1
 
-                        header, payload = parse_message(data)
+                        header, _ = parse_message(data)
                         # header.target is 8 bytes but LIFX serials are the
                         # last 6 bytes (12 hex chars), matching device.serial.
                         serial = header.target[:6].hex()
