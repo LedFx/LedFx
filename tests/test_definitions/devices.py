@@ -12,6 +12,11 @@
 # 9. Test find_lifx endpoint validation (missing ip_address)
 from tests.test_utilities.test_utils import APITestCase, SystemInfo
 
+_available_fps = SystemInfo.calc_available_fps()
+_default_lifx_fps = next(
+    (f for f in _available_fps if f >= 30), list(_available_fps)[-1]
+)
+
 device_tests = {
     "create_test_device": APITestCase(
         execution_order=1,
@@ -154,7 +159,7 @@ device_tests = {
             "config": {
                 "icon_name": "mdi:lightbulb",
                 "center_offset": 0,
-                "refresh_rate": 30,
+                "refresh_rate": _default_lifx_fps,
                 "pixel_count": 1,
                 "name": "CI LIFX Test",
                 "ip_address": "127.0.0.1",
@@ -169,7 +174,7 @@ device_tests = {
                     "config": {
                         "icon_name": "mdi:lightbulb",
                         "center_offset": 0,
-                        "refresh_rate": 30,
+                        "refresh_rate": _default_lifx_fps,
                         # Auto-detected from emulated matrix device
                         "pixel_count": 64,
                         "name": "CI LIFX Test",
@@ -200,7 +205,7 @@ device_tests = {
                         "config": {
                             "icon_name": "mdi:lightbulb",
                             "center_offset": 0,
-                            "refresh_rate": 30,
+                            "refresh_rate": _default_lifx_fps,
                             "pixel_count": 64,
                             "name": "CI LIFX Test",
                             "ip_address": "127.0.0.1",

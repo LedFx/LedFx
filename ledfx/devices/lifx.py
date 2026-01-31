@@ -19,7 +19,7 @@ from lifx.exceptions import LifxTimeoutError
 from lifx.protocol import packets
 
 from ledfx.devices import NetworkedDevice, fps_validator
-from ledfx.utils import async_fire_and_forget
+from ledfx.utils import AVAILABLE_FPS, async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -111,7 +111,10 @@ class LifxDevice(NetworkedDevice):
             vol.Optional(
                 "refresh_rate",
                 description="Target rate that pixels are sent to the device",
-                default=30,
+                default=next(
+                    (f for f in AVAILABLE_FPS if f >= 30),
+                    list(AVAILABLE_FPS)[-1],
+                ),
             ): fps_validator,
         }
     )
