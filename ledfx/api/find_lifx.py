@@ -51,7 +51,10 @@ class FindLifxEndpoint(RestEndpoint):
     def _find_existing_lifx_by_serial(self, serial):
         """Check if a LIFX device already exists by serial number."""
         for existing in self._ledfx.devices.values():
-            if existing.type == "lifx" and existing.config.get("serial") == serial:
+            if (
+                existing.type == "lifx"
+                and existing.config.get("serial") == serial
+            ):
                 return existing
         return None
 
@@ -110,7 +113,9 @@ class FindLifxEndpoint(RestEndpoint):
                         "ip_address": device.ip,
                         "serial": device.serial,
                     }
-                    await self._ledfx.devices.add_new_device("lifx", device_config)
+                    await self._ledfx.devices.add_new_device(
+                        "lifx", device_config
+                    )
                     device_info["added"] = True
                     _LOGGER.info(
                         "LIFX added: %s (%s) at %s",
@@ -132,7 +137,9 @@ class FindLifxEndpoint(RestEndpoint):
         await device.close()
         return device_info
 
-    async def _discover_udp(self, timeout, broadcast_address, auto_add, seen_serials):
+    async def _discover_udp(
+        self, timeout, broadcast_address, auto_add, seen_serials
+    ):
         """
         Discover LIFX devices via UDP broadcast.
 
@@ -226,8 +233,10 @@ class FindLifxEndpoint(RestEndpoint):
                         try:
                             device = await find_by_ip(ip=ip)
                             if device:
-                                device_info = await self._process_discovered_device(
-                                    device, auto_add, seen_serials
+                                device_info = (
+                                    await self._process_discovered_device(
+                                        device, auto_add, seen_serials
+                                    )
                                 )
                                 if device_info:
                                     device_info["discovery_method"] = "udp"
@@ -350,7 +359,9 @@ class FindLifxEndpoint(RestEndpoint):
                 "Invalid discovery_timeout: must be a numeric value"
             )
 
-        broadcast_address = request.query.get("broadcast_address", config_broadcast)
+        broadcast_address = request.query.get(
+            "broadcast_address", config_broadcast
+        )
         try:
             ipaddress.IPv4Address(broadcast_address)
         except ipaddress.AddressValueError:
@@ -377,14 +388,18 @@ class FindLifxEndpoint(RestEndpoint):
                 discovery_timeout, auto_add, seen_serials
             )
             devices.extend(mdns_devices)
-            _LOGGER.info("LIFX mDNS discovery found %d devices", len(mdns_devices))
+            _LOGGER.info(
+                "LIFX mDNS discovery found %d devices", len(mdns_devices)
+            )
 
         if method in ("udp", "both"):
             udp_devices = await self._discover_udp(
                 discovery_timeout, broadcast_address, auto_add, seen_serials
             )
             devices.extend(udp_devices)
-            _LOGGER.info("LIFX UDP discovery found %d devices", len(udp_devices))
+            _LOGGER.info(
+                "LIFX UDP discovery found %d devices", len(udp_devices)
+            )
 
         return await self.bare_request_success(
             {
