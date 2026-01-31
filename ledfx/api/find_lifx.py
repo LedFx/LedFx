@@ -442,6 +442,12 @@ class FindLifxEndpoint(RestEndpoint):
             _LOGGER.warning("Failed to decode JSON in LIFX POST request")
             return await self.json_decode_error()
 
+        if not isinstance(data, dict):
+            _LOGGER.warning("LIFX POST request JSON body is not an object")
+            return await self.invalid_request(
+                "JSON body must be an object"
+            )
+
         ip_address = data.get("ip_address")
 
         if not ip_address:
