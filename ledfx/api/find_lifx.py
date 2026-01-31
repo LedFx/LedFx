@@ -214,7 +214,6 @@ class FindLifxEndpoint(RestEndpoint):
                         if serial in seen_serials:
                             continue
 
-                        seen_serials.add(serial)
                         ip = addr[0]
 
                         _LOGGER.debug(
@@ -233,7 +232,11 @@ class FindLifxEndpoint(RestEndpoint):
                                 if device_info:
                                     device_info["discovery_method"] = "udp"
                                     devices.append(device_info)
+                                    seen_serials.add(serial)
+                            else:
+                                seen_serials.add(serial)
                         except (LifxError, OSError) as e:
+                            seen_serials.add(serial)
                             _LOGGER.debug(
                                 "LIFX UDP: couldn't get device info for %s: %s",
                                 ip,
