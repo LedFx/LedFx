@@ -338,6 +338,11 @@ class FindDevicesEndpoint(RestEndpoint):
             t for t in device_types if t not in SUPPORTED_DEVICE_TYPES
         ]
         if invalid_types:
+            _LOGGER.warning(
+                "Invalid device type(s): %s. Supported types: %s",
+                invalid_types,
+                SUPPORTED_DEVICE_TYPES,
+            )
             return await self.invalid_request(
                 f"Invalid device type(s): {invalid_types}. "
                 f"Supported types: {SUPPORTED_DEVICE_TYPES}"
