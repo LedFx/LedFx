@@ -88,9 +88,12 @@ def _start_lifx_emulator():
 def _stop_lifx_emulator():
     """Stop the LIFX emulator."""
     if lifx_emulator_loop and lifx_emulator_loop.is_running():
-        # Cancel all tasks to trigger shutdown
-        for task in asyncio.all_tasks(lifx_emulator_loop):
-            lifx_emulator_loop.call_soon_threadsafe(task.cancel)
+
+        def _cancel_all_tasks():
+            for task in asyncio.all_tasks(lifx_emulator_loop):
+                task.cancel()
+
+        lifx_emulator_loop.call_soon_threadsafe(_cancel_all_tasks)
     if lifx_emulator_thread:
         lifx_emulator_thread.join(timeout=2)
 
