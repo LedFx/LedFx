@@ -404,6 +404,65 @@ configuration as JSON
 
 Deletes the effect with the matching *effect_id*.
 
+## /api/colors
+
+Query and manage colors and gradients
+
+**GET**
+
+Returns all colors and gradients (both builtin and user-defined)
+
+``` json
+{
+  "colors": {
+    "builtin": {
+      "red": "#ff0000",
+      "green": "#00ff00"
+    },
+    "user": {
+      "my_custom_color": "#ff00ff"
+    }
+  },
+  "gradients": {
+    "builtin": {
+      "rainbow": "linear-gradient(...)"
+    },
+    "user": {
+      "my_gradient": "linear-gradient(...)"
+    }
+  }
+}
+```
+
+**POST**
+
+Creates or updates user-defined colors or gradients
+
+``` json
+{
+  "my_red_color": "#ff0000",
+  "my_gradient": "linear-gradient(90deg, #ff0000, #0000ff)"
+}
+```
+
+**DELETE**
+
+Deletes user-defined colors or gradients (legacy endpoint, requires JSON body)
+
+``` json
+["my_red_color", "my_gradient"]
+```
+
+## /api/colors/\<color_id\>
+
+Delete a specific color or gradient by ID
+
+**DELETE**
+
+Deletes a user-defined color or gradient with the matching *color_id*
+
+Returns success if the color/gradient was deleted, or an error if not found
+
 ## /api/virtuals
 
 Query and manage virtuals connected to LedFx

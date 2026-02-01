@@ -39,6 +39,7 @@ class Event:
     PLAYLIST_STOPPED = "playlist_stopped"
     PLAYLIST_PAUSED = "playlist_paused"
     PLAYLIST_RESUMED = "playlist_resumed"
+    COLORS_UPDATED = "colors_updated"
 
     def __init__(self, type: str):
         """
@@ -415,6 +416,15 @@ class BaseConfigUpdateEvent(Event):
     def __init__(self, config):
         super().__init__(Event.BASE_CONFIG_UPDATE)
         self.config = config
+
+
+class ColorsUpdatedEvent(Event):
+    """
+    Event emitted when user-defined colors or gradients are added, modified, or deleted.
+    """
+
+    def __init__(self):
+        super().__init__(Event.COLORS_UPDATED)
 
 
 class LedFxShutdownEvent(Event):

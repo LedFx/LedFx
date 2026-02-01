@@ -42,8 +42,10 @@ class ColorEndpoint(RestEndpoint):
         - web.Response: The HTTP response object
         """
 
-        data = await request.json()
-
+        try:
+            data = await request.json()
+        except JSONDecodeError:
+            return await self.json_decode_error()
         for key in data:
             del self._ledfx.colors[key]
             del self._ledfx.gradients[key]
