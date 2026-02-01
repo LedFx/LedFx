@@ -46,13 +46,13 @@ class ColorEndpoint(RestEndpoint):
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
-        
+
         for key in data:
             if key in self._ledfx.colors:
                 del self._ledfx.colors[key]
             if key in self._ledfx.gradients:
                 del self._ledfx.gradients[key]
-        
+
         keys_str = ", ".join(data)
         return await self.request_success("success", f"Deleted {keys_str}")
 
