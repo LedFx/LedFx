@@ -46,10 +46,15 @@ class ColorEndpoint(RestEndpoint):
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
+
         for key in data:
-            del self._ledfx.colors[key]
-            del self._ledfx.gradients[key]
-        return await self.request_success("success", "Deleted {key}")
+            if key in self._ledfx.colors:
+                del self._ledfx.colors[key]
+            if key in self._ledfx.gradients:
+                del self._ledfx.gradients[key]
+
+        keys_str = ", ".join(data)
+        return await self.request_success("success", f"Deleted {keys_str}")
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -83,6 +88,7 @@ class ColorEndpoint(RestEndpoint):
             )
 
         # TODO: Handle instances where neither color nor gradient is provided
+        saved_keys = []
         for key, val in data.items():
             try:
                 is_color = validate_color(val)
@@ -92,5 +98,7 @@ class ColorEndpoint(RestEndpoint):
                 self._ledfx.colors[key] = val
             else:
                 self._ledfx.gradients[key] = val
+            saved_keys.append(key)
 
-        return await self.request_success("success", "Saved {key}")
+        keys_str = ", ".join(saved_keys)
+        return await self.request_success("success", f"Saved {keys_str}")
