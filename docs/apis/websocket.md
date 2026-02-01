@@ -200,6 +200,22 @@ The `audio_input_device_changed` event is emitted when the an audio reactive eff
 - `event_type`: Always `"audio_input_device_changed"`.
 - `audio_input_device_name`: The friendly name of the selected audio device.
 
+### colors_updated
+The `colors_updated` event is emitted when user-defined colors or gradients are added, modified, or deleted via the `/api/colors` endpoint.
+
+**Payload Example:**
+```json
+{
+  "event_type": "colors_updated"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"colors_updated"`.
+
+**Usage:**
+Subscribe to this event to be notified when the colors or gradients collection changes so the frontend can refetch the updated list via `GET /api/colors`. This ensures the UI color pickers and gradient selectors stay synchronized with the backend.
+
 ## Virtuals Events
 
 Virtuals events allow a client to be notified of changes to a virtual's active state or configuration.
