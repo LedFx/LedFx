@@ -56,6 +56,11 @@ class HttpServer:
             path=ledfx_frontend.where() + "/static",
             name="static",
         )
+        self.app.router.add_static(
+            "/modules",
+            path=ledfx_frontend.where() + "/modules",
+            name="modules",
+        )
 
     async def index(self, response):
         return web.FileResponse(
