@@ -43,7 +43,7 @@ dependencies = [
     "samplerate-ledfx>=0.2.3",
 ]
 name = "LedFx"
-version = "2.1.2"
+version = "2.1.3"
 description = "A network based light effect controller"
 readme = "README.rst"
 
