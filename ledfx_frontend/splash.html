@@ -289,7 +289,7 @@
 
     <script>
       const { ipcRenderer } = require('electron');
-      
+
       let sslAutoSkipTimer = null;
       let sslCountdownInterval = null;
       let sslSecondsRemaining = 7;
@@ -317,7 +317,7 @@
         document.querySelector('.loader').style.display = 'none';
         document.querySelector('.spinner').style.display = 'none';
         document.getElementById('sslDialog').classList.add('visible');
-        
+
         // Only show countdown and auto-skip for non-macOS platforms
         const platform = data?.platform || 'unknown';
         if (platform !== 'darwin') {
@@ -326,18 +326,18 @@
           const countdownSpan = document.getElementById('skipSslCountdown');
           countdownSpan.style.display = 'inline';
           countdownSpan.textContent = ` (${sslSecondsRemaining})`;
-          
+
           // Update countdown every second
           sslCountdownInterval = setInterval(() => {
             sslSecondsRemaining--;
             countdownSpan.textContent = ` (${sslSecondsRemaining})`;
-            
+
             if (sslSecondsRemaining <= 0) {
               clearInterval(sslCountdownInterval);
               sslCountdownInterval = null;
             }
           }, 1000);
-          
+
           // Auto-click "Use HTTP" after 7 seconds
           sslAutoSkipTimer = setTimeout(() => {
             document.getElementById('skipSslBtn').click();
@@ -350,19 +350,19 @@
         document.getElementById('status').style.display = 'block';
         document.querySelector('.loader').style.display = 'block';
         document.querySelector('.spinner').style.display = 'block';
-        
+
         // Clear auto-skip timer if dialog is hidden
         if (sslAutoSkipTimer) {
           clearTimeout(sslAutoSkipTimer);
           sslAutoSkipTimer = null;
         }
-        
+
         // Clear countdown interval
         if (sslCountdownInterval) {
           clearInterval(sslCountdownInterval);
           sslCountdownInterval = null;
         }
-        
+
         // Hide countdown
         document.getElementById('skipSslCountdown').style.display = 'none';
       });
