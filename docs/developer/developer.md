@@ -115,7 +115,7 @@ To run these local and / or develop more tests
 ## Frontend Development
 
 Building the LedFx frontend is different from how the core backend is
-built. The frontend is based on React.js and thus uses pnpm as the core
+built. The frontend is based on React.js and thus uses yarn as the core
 package management.
 
 :::: note
@@ -140,28 +140,28 @@ work. To enable development mode, open the `config.json` file in the
 
 ### Windows
 
-**1.** Install Node.js and pnpm:
+**1.** Install Node.js and yarn:
 
 First, you need to install Node.js. You can download it from [Node.js
 official website](https://nodejs.org/en/download/). After installing
-Node.js, you can install pnpm via npm (which is installed with Node.js).
+Node.js, you can install yarn via npm (which is installed with Node.js).
 
 ``` console
-$ npm install -g pnpm
+$ npm install -g yarn
 ```
 
 **2.** Navigate to the frontend directory and install the dependencies:
 
 ``` console
 $ cd frontend
-$ pnpm install
+$ yarn install
 ```
 
-**3.** Start LedFx in developer mode and start the pnpm watcher:
+**3.** Start LedFx in developer mode and start the yarn watcher:
 
 ``` console
 $ uv run ledfx
-$ pnpm start
+$ yarn start
 ```
 
 At this point, any changes you make to the frontend will be recompiled,
@@ -172,14 +172,14 @@ the appropriate distribution files prior to submitting any changes.
 **4.** When you are finished with your changes, build the frontend:
 
 ``` console
-$ pnpm build
+$ yarn build
 ```
 
 ### Linux
 
 **1.** Install Node.js:
 
-Node.js is a prerequisite for pnpm. You can install it using your
+Node.js is a prerequisite for yarn. You can install it using your
 distribution\'s package manager. For Ubuntu, you can use the following
 commands:
 
@@ -188,17 +188,17 @@ $ sudo apt-get update
 $ sudo apt-get install nodejs
 ```
 
-**2.** Install pnpm:
+**2.** Install yarn:
 
 ``` console
-$ curl -fsSL https://get.pnpm.io/install.sh | sh -
+$ npm install -g yarn
 ```
 
 **3.** Navigate to the frontend directory and install the dependencies:
 
 ``` console
 $ cd frontend
-$ pnpm install
+$ yarn install
 ```
 
 The easiest way to test and validate your changes is to run a watcher
@@ -209,7 +209,7 @@ running in a separate command window.
 
 ``` console
 $ uv run ledfx
-$ pnpm start
+$ yarn start
 ```
 
 At that point any change you make to the frontend will be recompiled and
@@ -220,32 +220,32 @@ the appropriate distribution files prior to submitting any changes.
 **5.** When you are finished with your changes, build the frontend:
 
 ``` console
-$ pnpm build
+$ yarn build
 ```
 
 ### macOS {#macos-frontend}
 
-**1.** Install nodejs and NPM requirements using
+**1.** Install nodejs and yarn requirements using
 [homebrew](https://docs.brew.sh/Installation):
 
 ``` console
 $ brew install nodejs
-$ brew install pnpm
+$ brew install yarn
 $ cd ~/frontend
-$ pnpm install
+$ yarn install
 ```
 
-**2.** Start LedFx in developer mode and start the NPM watcher:
+**2.** Start LedFx in developer mode and start the yarn watcher:
 
 ``` console
 $ uv run ledfx
-$ pnpm start
+$ yarn start
 ```
 
 **3.** When you are finished with your changes, build the frontend:
 
 ``` console
-$ pnpm build
+$ yarn build
 ```
 
 ------------------------------------------------------------------------
