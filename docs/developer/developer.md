@@ -114,6 +114,8 @@ To run these local and / or develop more tests
 
 ## Frontend Development
 
+The LedFx frontend is now maintained in a separate repository: [LedFx-Frontend-v2](https://github.com/YeonV/LedFx-Frontend-v2).
+
 Building the LedFx frontend is different from how the core backend is
 built. The frontend is based on React.js and thus uses yarn as the core
 package management.
@@ -137,6 +139,37 @@ LedFx will need to be running in development mode for everything to
 work. To enable development mode, open the `config.json` file in the
 `.ledfx` folder and set `dev_mode: true`
 ::::
+
+### Frontend Development Options
+
+You have two options for frontend development:
+
+**Option 1: Separate Clone (Recommended for frontend-only development)**
+
+Clone the frontend repository independently and run it against your local backend:
+
+``` console
+$ git clone https://github.com/YeonV/LedFx-Frontend-v2.git
+$ cd LedFx-Frontend-v2
+$ yarn install
+$ yarn start
+```
+
+The frontend dev server will proxy API requests to your local LedFx backend at runtime.
+
+**Option 2: Submodule (For integrated development)**
+
+If you need to work on both frontend and backend together, initialize the git submodule:
+
+``` console
+$ git submodule update --init --recursive
+```
+
+Or if you already have the repository cloned, pull the submodule:
+
+``` console
+$ git pull --recurse-submodules
+```
 
 ### Windows
 
