@@ -48,4 +48,9 @@ hiddenimports = [
     "netifaces",
     "aiohttp_cors",
     "dotenv",
+    "lifx",
+    "lifx.exceptions",
+    "lifx.network",
+    "lifx.protocol",
+    "lifx.protocol.packets",
 ]
