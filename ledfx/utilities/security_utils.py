@@ -324,11 +324,15 @@ def is_allowed_image_extension(path: str) -> bool:
     """
     Check if file extension is in allowlist.
 
+    For remote URLs (http/https), allows URLs without extensions since content
+    will be validated after download via Content-Type header and PIL validation.
+    For local files, extension must be in the allowlist.
+
     Args:
         path: File path or URL to check
 
     Returns:
-        bool: True if extension is allowed
+        bool: True if extension is allowed or if remote URL without extension
     """
     # Parse URL to remove query strings and fragments
     parsed = urllib.parse.urlparse(path)
@@ -341,6 +345,13 @@ def is_allowed_image_extension(path: str) -> bool:
         path_to_check = path
 
     ext = os.path.splitext(path_to_check.lower())[1]
+
+    # For remote URLs, allow no extension (e.g., CDN URLs like https://cdn.example.com/image/abc123)
+    # Content will be validated after download via Content-Type header and PIL validation
+    if parsed.scheme in ("http", "https"):
+        return ext in ALLOWED_IMAGE_EXTENSIONS or not ext
+
+    # For local files, extension must be in allowlist
     return ext in ALLOWED_IMAGE_EXTENSIONS
 
 
