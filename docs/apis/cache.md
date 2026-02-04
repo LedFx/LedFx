@@ -230,7 +230,7 @@ transmission.
 
 **Security Features:**
 - ✅ File type validation (triple-layer: extension + MIME + PIL format)
-  - Remote URLs may omit extensions (e.g., `https://i.scdn.co/image/abc123`)
+  - Remote URLs may omit extensions (e.g., `https://cdn.example.com/image/abc123`)
   - Local files must have valid image extensions
 - ✅ Size limits (10MB max file size, 4096×4096 pixels max)
 - ✅ Path traversal protection (local files restricted to config dir and assets dir)
@@ -360,7 +360,7 @@ returned in JPEG format for efficient data transmission.
 
 **Security Features:**
 - ✅ File type validation (triple-layer: extension + MIME + PIL format)
-  - Remote URLs may omit extensions (e.g., `https://i.scdn.co/image/abc123`)
+  - Remote URLs may omit extensions (e.g., `https://cdn.example.com/image/abc123`)
   - Local files must have valid image extensions
 - ✅ Size limits (10MB max file size, 4096×4096 pixels max)
 - ✅ Path traversal protection (local files restricted to config dir and assets dir)

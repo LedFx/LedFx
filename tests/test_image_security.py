@@ -105,7 +105,7 @@ class TestIntegrationOpenImage:
     def test_extensionless_remote_url_success(
         self, mock_urlopen, mock_build_request, mock_validate_url
     ):
-        """Test that remote URLs without extensions work (e.g., Spotify CDN)."""
+        """Test that remote URLs without extensions work (relies on Content-Type header)."""
         # Mock URL validation to pass
         mock_validate_url.return_value = (True, None)
 
@@ -133,8 +133,8 @@ class TestIntegrationOpenImage:
         mock_response.__exit__.return_value = False
         mock_urlopen.return_value = mock_response
 
-        # Test with Spotify CDN-like URL (no extension)
-        result = open_image("https://i.scdn.co/image/abc123def456")
+        # Test with CDN-style URL without extension (validated via Content-Type header)
+        result = open_image("https://cdn.example.com/image/abc123def456")
         assert result is not None
         assert isinstance(result, Image.Image)
 
@@ -463,7 +463,7 @@ class TestURLParsing:
 
 
 class TestExtensionlessRemoteURLs:
-    """Test that remote URLs without file extensions are allowed (e.g., Spotify CDN)."""
+    """Test that remote URLs without file extensions are allowed (validated via Content-Type header)."""
 
     def test_http_url_no_extension_allowed(self):
         """Test that HTTP URLs without extension are allowed."""
@@ -473,17 +473,17 @@ class TestExtensionlessRemoteURLs:
     def test_https_url_no_extension_allowed(self):
         """Test that HTTPS URLs without extension are allowed."""
         assert is_allowed_image_extension("https://example.com/image")
-        assert is_allowed_image_extension("https://i.scdn.co/image/abc123")
+        assert is_allowed_image_extension("https://cdn.example.com/image/abc123")
 
-    def test_spotify_cdn_urls_allowed(self):
-        """Test that Spotify CDN URLs (no extension) are allowed."""
-        # Real-world Spotify CDN pattern
+    def test_cdn_urls_without_extension_allowed(self):
+        """Test that CDN URLs without extensions are allowed (content validated via HTTP headers)."""
+        # CDN-style hash-based URLs without extensions
         assert is_allowed_image_extension(
-            "https://i.scdn.co/image/ab67616d0000b273a1b2c3d4e5f6a7b8c9d0e1f2"
+            "https://cdn.example.com/image/ab67616d0000b273a1b2c3d4e5f6a7b8c9d0e1f2"
         )
         # With query parameters
         assert is_allowed_image_extension(
-            "https://i.scdn.co/image/ab67616d0000b273?size=large"
+            "https://images.example/content/ab67616d0000b273?size=large"
         )
 
     def test_remote_url_with_path_no_extension(self):
@@ -537,7 +537,7 @@ GOOD SCENARIOS (Should Pass):
 5. Files with correct MIME types matching their content
 6. URLs pointing to public IP addresses
 7. URLs with query strings and fragments
-8. Remote URLs (http/https) without file extensions (e.g., Spotify CDN)
+8. Remote URLs (http/https) without file extensions (validated via Content-Type header)
 
 BAD SCENARIOS (Should Fail):
 1. Files with disallowed extensions (.txt, .pdf, .exe, etc.)

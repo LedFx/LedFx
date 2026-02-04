@@ -75,7 +75,7 @@ Endpoints that return or process files now only allow a small set of expected ex
 
 **Extension Validation:**
 - **Local files**: Must have a valid image extension (`.png`, `.jpg`, `.gif`, `.webp`, etc.)
-- **Remote URLs (http/https)**: May omit file extensions (e.g., Spotify CDN URLs like `https://i.scdn.co/image/abc123`)
+- **Remote URLs (http/https)**: May omit file extensions (e.g., CDN URLs like `https://cdn.example.com/image/abc123`)
   - Content is validated after download via Content-Type header and PIL format detection
   - URLs with explicit invalid extensions (`.txt`, `.pdf`, etc.) are still rejected
   - This allows API endpoints and CDN URLs that serve images without file extensions in the path
