@@ -73,6 +73,13 @@ When an API needs to read a local file (images, gifs, assets, etc.), LedFx now r
 
 Endpoints that return or process files now only allow a small set of expected extensions/MIME types (e.g., image formats for image endpoints). Unknown/unexpected types are rejected rather than “best-effort” handled.
 
+**Extension Validation:**
+- **Local files**: Must have a valid image extension (`.png`, `.jpg`, `.gif`, `.webp`, etc.)
+- **Remote URLs (http/https)**: May omit file extensions (e.g., Spotify CDN URLs like `https://i.scdn.co/image/abc123`)
+  - Content is validated after download via Content-Type header and PIL format detection
+  - URLs with explicit invalid extensions (`.txt`, `.pdf`, etc.) are still rejected
+  - This allows API endpoints and CDN URLs that serve images without file extensions in the path
+
 #### 3) URLs are Sanitized and Validated ("Safe URLs Only")
 
 For endpoints that accept a URL:
