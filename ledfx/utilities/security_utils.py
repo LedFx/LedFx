@@ -345,12 +345,12 @@ def is_allowed_image_extension(path: str) -> bool:
         path_to_check = path
 
     ext = os.path.splitext(path_to_check.lower())[1]
-    
+
     # For remote URLs, allow no extension (e.g., Spotify CDN URLs like https://i.scdn.co/image/)
     # Content will be validated after download via Content-Type header and PIL validation
     if parsed.scheme in ("http", "https"):
         return ext in ALLOWED_IMAGE_EXTENSIONS or not ext
-    
+
     # For local files, extension must be in allowlist
     return ext in ALLOWED_IMAGE_EXTENSIONS
 
