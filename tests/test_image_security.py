@@ -473,7 +473,9 @@ class TestExtensionlessRemoteURLs:
     def test_https_url_no_extension_allowed(self):
         """Test that HTTPS URLs without extension are allowed."""
         assert is_allowed_image_extension("https://example.com/image")
-        assert is_allowed_image_extension("https://cdn.example.com/image/abc123")
+        assert is_allowed_image_extension(
+            "https://cdn.example.com/image/abc123"
+        )
 
     def test_cdn_urls_without_extension_allowed(self):
         """Test that CDN URLs without extensions are allowed (content validated via HTTP headers)."""
