@@ -346,7 +346,7 @@ def is_allowed_image_extension(path: str) -> bool:
 
     ext = os.path.splitext(path_to_check.lower())[1]
 
-    # For remote URLs, allow no extension (e.g., Spotify CDN URLs like https://i.scdn.co/image/)
+    # For remote URLs, allow no extension (e.g., Spotify CDN URLs like https://i.scdn.co/image/abc123)
     # Content will be validated after download via Content-Type header and PIL validation
     if parsed.scheme in ("http", "https"):
         return ext in ALLOWED_IMAGE_EXTENSIONS or not ext
