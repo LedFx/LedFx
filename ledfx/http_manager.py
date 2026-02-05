@@ -21,7 +21,7 @@ class HttpServer:
     def __init__(self, ledfx, host, port, port_s):
         """Initialize the HTTP server"""
 
-        self.app = web.Application()
+        self.app = web.Application(client_max_size=5 * 1024 * 1024)  # 5 MB
         self.api = RestApi(ledfx)
 
         self.register_routes()

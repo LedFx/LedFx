@@ -31,7 +31,7 @@ from ledfx.events import (
     VirtualUpdateEvent,
 )
 from ledfx.transitions import Transitions
-from ledfx.utils import fps_to_sleep_interval
+from ledfx.utils import Teleplot, fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -184,6 +184,11 @@ class Virtual:
         # Precompiled device remap structure for fast pixel mapping
         # Maps virtual indices to device indices per device
         self._device_remap: dict = {}
+
+        self._debug_flush_total = 0.0
+        self._debug_last_report = time.perf_counter()
+        self._debug_flush_frames = 0
+        self._debug_flush_mode = "unknonn"
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -968,6 +973,11 @@ class Virtual:
 
         color_cycle = itertools.cycle(color_list)
 
+        debug_track = self._active_effect and self._active_effect.logsec and self._active_effect.logsec.diag
+
+        if debug_track:
+            flush_start = time.perf_counter()
+
         # Choose flush path based on complex_segments configuration
         if (
             self.complex_segments
@@ -975,11 +985,26 @@ class Virtual:
             and self._device_remap
             and not self._calibration
         ):
-            # Use optimized complex segment handling
+            if debug_track:
+                self._debug_flush_mode = "complex"
             self._flush_complex_segments(pixels)
         else:
-            # Use simple segment-by-segment handling
+            if debug_track:
+                self._debug_flush_mode = "simple"
             self._flush_simple_segments(pixels, color_cycle)
+
+        if debug_track:
+            flush_time = time.perf_counter() - flush_start
+            self._debug_flush_total += flush_time
+            self._debug_flush_frames += 1
+            
+            current_time = time.perf_counter()
+            if current_time - self._debug_last_report >= 1.0:
+                avg_flush_ms = self._debug_flush_total / self._debug_flush_frames * 1000.0
+                Teleplot.send(f"flush_{self.id}_{self._debug_flush_mode}:{avg_flush_ms}")
+                self._debug_last_report = current_time
+                self._debug_flush_total = 0.0
+                self._debug_flush_frames = 0
 
     def _flush_simple_segments(self, pixels, color_cycle):
         """

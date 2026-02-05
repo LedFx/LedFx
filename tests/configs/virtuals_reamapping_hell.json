@@ -1,414 +1,12 @@
 {
-    "audio": {
-        "audio_device": 10,
-        "delay_ms": 0,
-        "fft_size": 4096,
-        "mic_rate": 44100,
-        "min_volume": 0.2,
-        "onset_method": "hfc",
-        "pitch_method": "yinfft",
-        "pitch_tolerance": 0.8,
-        "sample_rate": 60,
-        "tempo_method": "default"
-    },
-    "configuration_version": "2.3.6",
-    "create_segments": true,
-    "dev_mode": false,
-    "devices": [
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy1",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy1",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy2",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy2",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy3",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy3",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy4",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy4",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "vumeter",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "vumeter",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "radial source",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "radial-source",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "strip3",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "strip3",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "strip4",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "strip4",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "noScene",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "noscene",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "Memlog",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "memlog",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:eye-off",
-                "name": "gap-mapping",
-                "pixel_count": 4096,
-                "refresh_rate": 66
-            },
-            "id": "gap-mapping",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "dmx_start_address": 1,
-                "even_packet_size": true,
-                "icon_name": "mdi:led-strip",
-                "ip_address": "1.2.3.4",
-                "name": "arty",
-                "packet_size": 510,
-                "pixel_count": 10,
-                "pixels_per_device": 0,
-                "port": 6454,
-                "post_amble": "",
-                "pre_amble": "",
-                "refresh_rate": 62,
-                "rgb_order": "RGB",
-                "universe": 0,
-                "white_mode": "Zero"
-            },
-            "id": "arty",
-            "type": "artnet"
-        }
-    ],
-    "flush_on_deactivate": false,
-    "global_brightness": 1.0,
-    "global_transitions": true,
-    "host": "0.0.0.0",
-    "hosts": [
-        "192.168.1.194",
-        "192.168.1.195"
-    ],
-    "integrations": [
-        {
-            "active": true,
-            "config": {
-                "debug": true,
-                "description": "Librosa based audio engine to drive scene changes",
-                "diag": true,
-                "name": "Engine",
-                "sample_rate": 22050,
-                "sample_window": 8
-            },
-            "data": {},
-            "id": "engine",
-            "type": "engine"
-        }
-    ],
-    "melbank_collection": [
-        {
-            "config": {
-                "max_frequency": 350,
-                "min_frequency": 20,
-                "name": "Melbank 0"
-            },
-            "id": "melbank-0"
-        },
-        {
-            "config": {
-                "max_frequency": 2000,
-                "min_frequency": 20,
-                "name": "Melbank 1"
-            },
-            "id": "melbank-1"
-        },
-        {
-            "config": {
-                "max_frequency": 15000,
-                "min_frequency": 20,
-                "name": "Melbank 2"
-            },
-            "id": "melbank-2"
-        }
-    ],
-    "melbanks": {
-        "coeffs_type": "matt_mel",
-        "max_frequencies": [
-            350,
-            2000,
-            15000
-        ],
-        "min_frequency": 20,
-        "peak_isolation": 0.4,
-        "samples": 24
-    },
-    "playlists": {
-        "1d-hammer": {
-            "default_duration_ms": 5000,
-            "id": "1d-hammer",
-            "image": "image:https://i.imgur.com/a97hmYc.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block1"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block2"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block3"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block4"
-                }
-            ],
-            "mode": "sequence",
-            "name": "1d hammer",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1.2,
-                    "factor_min": 0.8
-                }
-            }
-        },
-        "everythingallwaysallofthetime": {
-            "default_duration_ms": 5000,
-            "id": "everythingallwaysallofthetime",
-            "image": "image:https://i.imgur.com/sKOC2MZ.png",
-            "items": [],
-            "mode": "sequence",
-            "name": "EverythingAllwaysAllOfTheTime",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1,
-                    "factor_min": 1
-                }
-            }
-        },
-        "justkeybeat": {
-            "default_duration_ms": 5000,
-            "id": "justkeybeat",
-            "image": "image:https://i.imgur.com/OO0TomP.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-group-1"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-block2"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-block3"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-block4"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-radial"
-                }
-            ],
-            "mode": "sequence",
-            "name": "2d hammer",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1.2,
-                    "factor_min": 0.8
-                }
-            }
-        },
-        "my-first-playlist": {
-            "default_duration_ms": 5000,
-            "id": "my-first-playlist",
-            "image": "image:https://i.imgur.com/RirV7N5.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                }
-            ],
-            "mode": "shuffle",
-            "name": "my first playlist",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1,
-                    "factor_min": 1
-                }
-            }
-        },
-        "my-jitter-list": {
-            "default_duration_ms": 5000,
-            "id": "my-jitter-list",
-            "image": "image:https://i.imgur.com/fDKeUdS.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                }
-            ],
-            "mode": "shuffle",
-            "name": "my jitter list",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": true,
-                    "factor_max": 2,
-                    "factor_min": 0.5
-                }
-            }
-        }
-    },
-    "port": 8888,
     "port_s": 8443,
-    "scan_on_startup": false,
+    "host": "0.0.0.0",
+    "user_presets": {},
+    "transmission_mode": "compressed",
+    "global_transitions": true,
+    "ui_brightness_boost": 0,
+    "startup_scene_id": "",
+    "visualisation_fps": 30,
     "scenes": {
         "2d-block2": {
             "name": "2d Block2",
@@ -3257,15 +2855,373 @@
             }
         }
     },
-    "startup_scene_id": "",
-    "transmission_mode": "compressed",
-    "ui_brightness_boost": 0.0,
-    "user_colors": {},
-    "user_gradients": {
-        "cat": "linear-gradient(90deg, #ff0000 0.00%,#000000 25.00%,#1aff00 48.00%,#000000 75.00%,#0004fb 99.00%)",
-        "pig": "linear-gradient(90deg, #cd3535 0.00%,#d56ae5 23.00%,#00ffdb 51.00%,#c3b0c6 76.00%,#0000ff 100.00%)"
+    "port": 8888,
+    "playlists": {
+        "1d-hammer": {
+            "default_duration_ms": 5000,
+            "id": "1d-hammer",
+            "image": "image:https://i.imgur.com/a97hmYc.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block1"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block2"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block3"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block4"
+                }
+            ],
+            "mode": "sequence",
+            "name": "1d hammer",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1.2,
+                    "factor_min": 0.8
+                }
+            }
+        },
+        "everythingallwaysallofthetime": {
+            "default_duration_ms": 5000,
+            "id": "everythingallwaysallofthetime",
+            "image": "image:https://i.imgur.com/sKOC2MZ.png",
+            "items": [],
+            "mode": "sequence",
+            "name": "EverythingAllwaysAllOfTheTime",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1,
+                    "factor_min": 1
+                }
+            }
+        },
+        "justkeybeat": {
+            "default_duration_ms": 5000,
+            "id": "justkeybeat",
+            "image": "image:https://i.imgur.com/OO0TomP.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-group-1"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-block2"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-block3"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-block4"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-radial"
+                }
+            ],
+            "mode": "sequence",
+            "name": "2d hammer",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1.2,
+                    "factor_min": 0.8
+                }
+            }
+        },
+        "my-first-playlist": {
+            "default_duration_ms": 5000,
+            "id": "my-first-playlist",
+            "image": "image:https://i.imgur.com/RirV7N5.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                }
+            ],
+            "mode": "shuffle",
+            "name": "my first playlist",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1,
+                    "factor_min": 1
+                }
+            }
+        },
+        "my-jitter-list": {
+            "default_duration_ms": 5000,
+            "id": "my-jitter-list",
+            "image": "image:https://i.imgur.com/fDKeUdS.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                }
+            ],
+            "mode": "shuffle",
+            "name": "my jitter list",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": true,
+                    "factor_max": 2,
+                    "factor_min": 0.5
+                }
+            }
+        }
     },
-    "user_presets": {},
+    "hosts": [
+        "192.168.1.142",
+        "172.21.64.1"
+    ],
+    "melbanks": {
+        "coeffs_type": "matt_mel",
+        "max_frequencies": [
+            350,
+            2000,
+            15000
+        ],
+        "min_frequency": 20,
+        "peak_isolation": 0.4,
+        "samples": 24
+    },
+    "devices": [
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy1",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy1",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy2",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy2",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy3",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy3",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy4",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy4",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "vumeter",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "vumeter",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "radial source",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "radial-source",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "strip3",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "strip3",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "strip4",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "strip4",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "noScene",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "noscene",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "Memlog",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "memlog",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:eye-off",
+                "name": "gap-mapping",
+                "pixel_count": 4096,
+                "refresh_rate": 66
+            },
+            "id": "gap-mapping",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "dmx_start_address": 1,
+                "even_packet_size": true,
+                "icon_name": "mdi:led-strip",
+                "ip_address": "1.2.3.4",
+                "name": "arty",
+                "packet_size": 510,
+                "pixel_count": 10,
+                "pixels_per_device": 0,
+                "port": 6454,
+                "post_amble": "",
+                "pre_amble": "",
+                "refresh_rate": 62,
+                "rgb_order": "RGB",
+                "universe": 0,
+                "white_mode": "Zero"
+            },
+            "id": "arty",
+            "type": "artnet"
+        }
+    ],
+    "integrations": [
+        {
+            "active": true,
+            "config": {
+                "debug": true,
+                "description": "Librosa based audio engine to drive scene changes",
+                "diag": true,
+                "name": "Engine",
+                "sample_rate": 22050,
+                "sample_window": 8
+            },
+            "data": {},
+            "id": "engine",
+            "type": "engine"
+        }
+    ],
+    "scan_on_startup": false,
+    "dev_mode": false,
+    "configuration_version": "2.3.6",
+    "user_colors": {},
     "virtuals": [
         {
             "active": true,
@@ -3286,11 +3242,11 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "dump": false,
                     "edges": 0,
@@ -3301,12 +3257,12 @@
                     "mirror": false,
                     "polygon": true,
                     "rotate": 0,
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "source_virtual": "radial-source",
-                    "spin": 0.0,
-                    "star": 0.0,
+                    "spin": 0,
+                    "star": 0,
                     "test": false,
-                    "twist": 0.0,
+                    "twist": 0,
                     "x_offset": 0.5,
                     "y_offset": 0.5
                 },
@@ -3380,12 +3336,12 @@
                 },
                 "digitalrain2d": {
                     "config": {
-                        "add_speed": 30.0,
-                        "background_brightness": 1.0,
+                        "add_speed": 30,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "count": 1.9,
                         "diag": false,
                         "dump": false,
@@ -3393,12 +3349,12 @@
                         "flip_horizontal": false,
                         "flip_vertical": false,
                         "gradient": "linear-gradient(90deg, rgb(0, 199, 140) 0%, rgb(0, 255, 50) 100%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "impulse_decay": 0.01,
                         "mirror": false,
-                        "multiplier": 10.0,
+                        "multiplier": 10,
                         "rotate": 0,
-                        "run_seconds": 2.0,
+                        "run_seconds": 2,
                         "tail": 67,
                         "tail_segments": 10,
                         "test": false,
@@ -3510,12 +3466,12 @@
                 },
                 "imagespin": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
                         "bilinear": false,
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "clip": false,
                         "diag": false,
                         "dump": false,
@@ -3589,27 +3545,27 @@
                 "noise2d": {
                     "config": {
                         "advanced": false,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
                         "flip_horizontal": false,
                         "flip_vertical": false,
                         "gradient": "linear-gradient(90deg, #000000 20.00%,#0016ff 31.00%,#000000 43.00%,#f60202 55.00%,#000000 66.00%,#1afc01 77.00%,#000000 87.00%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "impulse_decay": 0.06,
                         "intensity": 128,
                         "mirror": false,
-                        "multiplier": 2.0,
+                        "multiplier": 2,
                         "rotate": 0,
-                        "speed": 1.0,
+                        "speed": 1,
                         "stretch": 1.5,
                         "test": false,
-                        "zoom": 2.0
+                        "zoom": 2
                     },
                     "type": "noise2d"
                 },
@@ -3655,11 +3611,11 @@
                 },
                 "radial": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "edges": 0,
@@ -3670,12 +3626,12 @@
                         "mirror": false,
                         "polygon": true,
                         "rotate": 0,
-                        "rotation": 0.0,
+                        "rotation": 0,
                         "source_virtual": "radial-source",
-                        "spin": 0.0,
-                        "star": 0.0,
+                        "spin": 0,
+                        "star": 0,
                         "test": false,
-                        "twist": 0.0,
+                        "twist": 0,
                         "x_offset": 0.5,
                         "y_offset": 0.5
                     },
@@ -3730,22 +3686,22 @@
                 },
                 "waterfall2d": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
                         "bands": 16,
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center": false,
                         "diag": false,
-                        "drop_secs": 3.0,
+                        "drop_secs": 3,
                         "dump": false,
-                        "fade_out": 0.0,
+                        "fade_out": 0,
                         "flip": false,
                         "flip_horizontal": false,
                         "flip_vertical": false,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "max_vs_mean": false,
                         "mirror": false,
                         "rotate": 0,
@@ -3785,11 +3741,11 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "dump": false,
                     "edges": 1,
@@ -3800,12 +3756,12 @@
                     "mirror": false,
                     "polygon": true,
                     "rotate": 0,
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "source_virtual": "radial-source",
                     "spin": -0.35,
-                    "star": 0.0,
+                    "star": 0,
                     "test": false,
-                    "twist": 0.0,
+                    "twist": 0,
                     "x_offset": 0.5,
                     "y_offset": 0.5
                 },
@@ -3815,11 +3771,11 @@
                 "clone": {
                     "config": {
                         "across": 838,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "down": 684,
                         "dump": false,
@@ -3885,12 +3841,12 @@
                 },
                 "equalizer2d": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
                         "bands": 16,
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center": false,
                         "diag": false,
                         "dump": false,
@@ -3899,7 +3855,7 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "max_vs_mean": false,
                         "mirror": false,
                         "peak_color": "#ffffff",
@@ -3910,19 +3866,19 @@
                         "rotate": 0,
                         "spin": false,
                         "spin_decay": 0.1,
-                        "spin_multiplier": 1.0,
+                        "spin_multiplier": 1,
                         "test": false
                     },
                     "type": "equalizer2d"
                 },
                 "flame2d": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
+                        "blur": 0,
                         "blur_amount": 2,
-                        "brightness": 1.0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
@@ -4060,11 +4016,11 @@
                 },
                 "plasma2d": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "density": 0.5,
                         "density_vertical": 0.1,
                         "diag": false,
@@ -4074,7 +4030,7 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "lower": 0.01,
                         "mirror": false,
                         "radius": 0.2,
@@ -4086,11 +4042,11 @@
                 },
                 "radial": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "edges": 1,
@@ -4101,12 +4057,12 @@
                         "mirror": false,
                         "polygon": true,
                         "rotate": 0,
-                        "rotation": 0.0,
+                        "rotation": 0,
                         "source_virtual": "radial-source",
                         "spin": -0.35,
-                        "star": 0.0,
+                        "star": 0,
                         "test": false,
-                        "twist": 0.0,
+                        "twist": 0,
                         "x_offset": 0.5,
                         "y_offset": 0.5
                     },
@@ -4190,11 +4146,11 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "dump": false,
                     "edges": 5,
@@ -4205,12 +4161,12 @@
                     "mirror": false,
                     "polygon": true,
                     "rotate": 0,
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "source_virtual": "strip3",
-                    "spin": 0.0,
+                    "spin": 0,
                     "star": -0.11,
                     "test": false,
-                    "twist": 0.0,
+                    "twist": 0,
                     "x_offset": 0.3,
                     "y_offset": 0.3
                 },
@@ -4265,11 +4221,11 @@
                 },
                 "concentric": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center_smoothing": 0.5,
                         "diag": false,
                         "dump": false,
@@ -4278,14 +4234,14 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
-                        "gradient_scale": 1.0,
-                        "idle_speed": 1.0,
+                        "gradient_roll": 0,
+                        "gradient_scale": 1,
+                        "idle_speed": 1,
                         "invert": false,
                         "mirror": false,
                         "power_multiplier": 0.5,
                         "rotate": 0,
-                        "stretch_height": 1.0,
+                        "stretch_height": 1,
                         "test": false
                     },
                     "type": "concentric"
@@ -4369,13 +4325,13 @@
                 },
                 "game_of_life": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
                         "base_game_speed": 30,
                         "beat_inject": true,
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
@@ -4448,11 +4404,11 @@
                 "plasmawled": {
                     "config": {
                         "advanced": false,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
@@ -4460,7 +4416,7 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, #000000 1.00%,#ffffff 100.00%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "h_stretch": 28,
                         "mirror": false,
                         "multiplier": 0.83,
@@ -4469,7 +4425,7 @@
                         "size x": 0.7,
                         "size_multiplication": 0.4,
                         "speed": 28,
-                        "speed x": 0.0,
+                        "speed x": 0,
                         "speed_multiplication": 0.4,
                         "stretch_horizontal": 128,
                         "stretch_vertical": 128,
@@ -4480,11 +4436,11 @@
                 },
                 "radial": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "edges": 5,
@@ -4495,12 +4451,12 @@
                         "mirror": false,
                         "polygon": true,
                         "rotate": 0,
-                        "rotation": 0.0,
+                        "rotation": 0,
                         "source_virtual": "strip3",
-                        "spin": 0.0,
+                        "spin": 0,
                         "star": -0.11,
                         "test": false,
-                        "twist": 0.0,
+                        "twist": 0,
                         "x_offset": 0.3,
                         "y_offset": 0.3
                     },
@@ -4535,11 +4491,11 @@
                 "texter2d": {
                     "config": {
                         "alpha": false,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "deep_diag": false,
                         "diag": false,
                         "dump": false,
@@ -4548,16 +4504,16 @@
                         "flip_vertical": false,
                         "font": "Press Start 2P",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "height_percent": 100,
                         "impulse_decay": 0.1,
                         "mirror": false,
-                        "multiplier": 1.0,
+                        "multiplier": 1,
                         "option_1": false,
                         "option_2": false,
                         "resize_method": "Fast",
                         "rotate": 0,
-                        "speed_option_1": 1.0,
+                        "speed_option_1": 1,
                         "test": false,
                         "text": "Your text here",
                         "text_color": "#ffffff",
@@ -4600,11 +4556,11 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "dump": false,
                     "edges": 3,
@@ -4615,12 +4571,12 @@
                     "mirror": false,
                     "polygon": false,
                     "rotate": 0,
-                    "rotation": 0.0,
+                    "rotation": 0,
                     "source_virtual": "strip4",
                     "spin": 0.22,
-                    "star": 0.0,
+                    "star": 0,
                     "test": false,
-                    "twist": 0.0,
+                    "twist": 0,
                     "x_offset": 0.5,
                     "y_offset": 0.5
                 },
@@ -4629,11 +4585,11 @@
             "effects": {
                 "bleep": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "draw": "Fill",
                         "dump": false,
@@ -4643,12 +4599,12 @@
                         "frequency_range": "Lows (beat+bass)",
                         "grad_power": true,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "mirror": false,
                         "mirror_effect": true,
                         "points": 64,
                         "rotate": 0,
-                        "scroll_time": 1.0,
+                        "scroll_time": 1,
                         "size": 1,
                         "test": false
                     },
@@ -4766,12 +4722,12 @@
                 },
                 "gifplayer": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
+                        "blur": 0,
                         "bounce": false,
-                        "brightness": 1.0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
@@ -4789,12 +4745,12 @@
                 "keybeat2d": {
                     "config": {
                         "advanced": false,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
                         "beat_frames": "4 0",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center_horizontal": 0,
                         "center_vertical": 0,
                         "deep_diag": false,
@@ -4806,7 +4762,7 @@
                         "flip_vertical": false,
                         "force_fit": false,
                         "half_beat": false,
-                        "image_brightness": 1.0,
+                        "image_brightness": 1,
                         "image_location": "builtin://dancing.gif",
                         "keep_aspect_ratio": true,
                         "mirror": false,
@@ -4850,11 +4806,11 @@
                 },
                 "radial": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "edges": 3,
@@ -4865,12 +4821,12 @@
                         "mirror": false,
                         "polygon": false,
                         "rotate": 0,
-                        "rotation": 0.0,
+                        "rotation": 0,
                         "source_virtual": "strip4",
                         "spin": 0.22,
-                        "star": 0.0,
+                        "star": 0,
                         "test": false,
-                        "twist": 0.0,
+                        "twist": 0,
                         "x_offset": 0.5,
                         "y_offset": 0.5
                     },
@@ -4905,11 +4861,11 @@
                 },
                 "soap2d": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "density": 0.5,
                         "diag": false,
                         "dump": false,
@@ -4918,8 +4874,8 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
-                        "intensity": 1.0,
+                        "gradient_roll": 0,
+                        "intensity": 1,
                         "mirror": false,
                         "rotate": 0,
                         "speed": 0.5,
@@ -4959,10 +4915,10 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
-                    "blur": 3.0,
-                    "brightness": 1.0,
+                    "blur": 3,
+                    "brightness": 1,
                     "color_high": "#0000ff",
                     "color_lows": "#ff0000",
                     "color_mids": "#00ff00",
@@ -4971,7 +4927,7 @@
                     "flip": false,
                     "mirror": true,
                     "speed": 3,
-                    "threshold": 0.0
+                    "threshold": 0
                 },
                 "type": "scroll"
             },
@@ -5041,10 +4997,10 @@
                 },
                 "scroll": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 3.0,
-                        "brightness": 1.0,
+                        "blur": 3,
+                        "brightness": 1,
                         "color_high": "#0000ff",
                         "color_lows": "#ff0000",
                         "color_mids": "#00ff00",
@@ -5053,7 +5009,7 @@
                         "flip": false,
                         "mirror": true,
                         "speed": 3,
-                        "threshold": 0.0
+                        "threshold": 0
                     },
                     "type": "scroll"
                 },
@@ -5108,19 +5064,19 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "contrast": 0.6,
                     "diag": false,
                     "fix_hues": true,
                     "flip": false,
                     "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0.0,
+                    "gradient_roll": 0,
                     "mirror": false,
                     "reactivity": 0.3,
-                    "speed": 7.0
+                    "speed": 7
                 },
                 "type": "lava_lamp"
             },
@@ -5164,19 +5120,19 @@
                 },
                 "lava_lamp": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "contrast": 0.6,
                         "diag": false,
                         "fix_hues": true,
                         "flip": false,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "mirror": false,
                         "reactivity": 0.3,
-                        "speed": 7.0
+                        "speed": 7
                     },
                     "type": "lava_lamp"
                 },
@@ -5259,25 +5215,25 @@
                 },
                 "scan_and_flare": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 3.0,
+                        "blur": 3,
                         "bounce": true,
-                        "brightness": 1.0,
+                        "brightness": 1,
                         "color_intensity": true,
                         "color_scan": "#ff0000",
                         "diag": false,
                         "flip": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "mirror": false,
-                        "multiplier": 3.0,
+                        "multiplier": 3,
                         "scan_width": 30,
                         "sparkles_max": 10,
                         "sparkles_size": 0.1,
                         "sparkles_threshold": 0.6,
-                        "sparkles_time": 1.0,
+                        "sparkles_time": 1,
                         "speed": 50,
                         "use_grad": false
                     },
@@ -5361,10 +5317,10 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "flip": false,
                     "mirror": false,
@@ -5524,10 +5480,10 @@
                 },
                 "spectrum": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "flip": false,
                         "mirror": false,
@@ -5567,19 +5523,19 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "contrast": 0.6,
                     "diag": false,
                     "fix_hues": true,
                     "flip": false,
                     "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0.0,
+                    "gradient_roll": 0,
                     "mirror": false,
                     "reactivity": 0.3,
-                    "speed": 7.0
+                    "speed": 7
                 },
                 "type": "lava_lamp"
             },
@@ -5624,19 +5580,19 @@
                 },
                 "lava_lamp": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "contrast": 0.6,
                         "diag": false,
                         "fix_hues": true,
                         "flip": false,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "mirror": false,
                         "reactivity": 0.3,
-                        "speed": 7.0
+                        "speed": 7
                     },
                     "type": "lava_lamp"
                 },
@@ -5771,27 +5727,27 @@
             "effect": {
                 "config": {
                     "advanced": true,
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "dump": false,
                     "flip": false,
                     "flip_horizontal": false,
                     "flip_vertical": false,
                     "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0.0,
+                    "gradient_roll": 0,
                     "impulse_decay": 0.06,
                     "intensity": 128,
                     "mirror": false,
-                    "multiplier": 2.0,
+                    "multiplier": 2,
                     "rotate": 0,
-                    "speed": 1.0,
+                    "speed": 1,
                     "stretch": 1.5,
                     "test": false,
-                    "zoom": 2.0
+                    "zoom": 2
                 },
                 "type": "noise2d"
             },
@@ -5799,27 +5755,27 @@
                 "noise2d": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
                         "flip_horizontal": false,
                         "flip_vertical": false,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "impulse_decay": 0.06,
                         "intensity": 128,
                         "mirror": false,
-                        "multiplier": 2.0,
+                        "multiplier": 2,
                         "rotate": 0,
-                        "speed": 1.0,
+                        "speed": 1,
                         "stretch": 1.5,
                         "test": false,
-                        "zoom": 2.0
+                        "zoom": 2
                     },
                     "type": "noise2d"
                 }
@@ -5897,7 +5853,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip-variant",
                 "mapping": "span",
-                "max_brightness": 1.0,
+                "max_brightness": 1,
                 "name": "Mapping",
                 "preview_only": false,
                 "rotate": 0,
@@ -5908,11 +5864,11 @@
             "effect": {
                 "config": {
                     "advanced": true,
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "center_smoothing": 0.5,
                     "diag": false,
                     "dump": false,
@@ -5921,14 +5877,14 @@
                     "flip_vertical": false,
                     "frequency_range": "Lows (beat+bass)",
                     "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0.0,
-                    "gradient_scale": 1.0,
-                    "idle_speed": 1.0,
+                    "gradient_roll": 0,
+                    "gradient_scale": 1,
+                    "idle_speed": 1,
                     "invert": false,
                     "mirror": false,
                     "power_multiplier": 0.5,
                     "rotate": 0,
-                    "stretch_height": 1.0,
+                    "stretch_height": 1,
                     "test": false
                 },
                 "type": "concentric"
@@ -5937,11 +5893,11 @@
                 "concentric": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center_smoothing": 0.5,
                         "diag": false,
                         "dump": false,
@@ -5950,14 +5906,14 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
-                        "gradient_scale": 1.0,
-                        "idle_speed": 1.0,
+                        "gradient_roll": 0,
+                        "gradient_scale": 1,
+                        "idle_speed": 1,
                         "invert": false,
                         "mirror": false,
                         "power_multiplier": 0.5,
                         "rotate": 0,
-                        "stretch_height": 1.0,
+                        "stretch_height": 1,
                         "test": false
                     },
                     "type": "concentric"
@@ -30648,7 +30604,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip-variant",
                 "mapping": "span",
-                "max_brightness": 1.0,
+                "max_brightness": 1,
                 "name": "Stripey",
                 "preview_only": false,
                 "rotate": 0,
@@ -30659,15 +30615,15 @@
             "effect": {
                 "config": {
                     "advanced": true,
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
-                    "blur": 0.0,
-                    "brightness": 1.0,
-                    "diag": true,
+                    "blur": 0,
+                    "brightness": 1,
+                    "diag": false,
                     "flip": false,
-                    "frequency": 1.0,
+                    "frequency": 1,
                     "mirror": false,
-                    "speed": 1.0
+                    "speed": 1
                 },
                 "type": "rainbow"
             },
@@ -30675,11 +30631,11 @@
                 "concentric": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center_smoothing": 0.5,
                         "diag": true,
                         "dump": false,
@@ -30688,29 +30644,29 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
-                        "gradient_scale": 1.0,
-                        "idle_speed": 1.0,
+                        "gradient_roll": 0,
+                        "gradient_scale": 1,
+                        "idle_speed": 1,
                         "invert": false,
                         "mirror": false,
                         "power_multiplier": 0.5,
                         "rotate": 0,
-                        "stretch_height": 1.0,
+                        "stretch_height": 1,
                         "test": false
                     },
                     "type": "concentric"
                 },
                 "marching": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "fix_hues": true,
                         "flip": false,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "mirror": false,
                         "reactivity": 0.2,
                         "speed": 0.1
@@ -30719,10 +30675,10 @@
                 },
                 "pixels": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "build_up": false,
                         "color_blend": false,
                         "diag": false,
@@ -30730,7 +30686,7 @@
                         "mirror": false,
                         "pixel_color": "#ffffff",
                         "pixels": 8,
-                        "speed": 20.0,
+                        "speed": 20,
                         "step_period": 0.01
                     },
                     "type": "pixels"
@@ -30738,15 +30694,15 @@
                 "rainbow": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
-                        "diag": true,
+                        "blur": 0,
+                        "brightness": 1,
+                        "diag": false,
                         "flip": false,
-                        "frequency": 1.0,
+                        "frequency": 1,
                         "mirror": false,
-                        "speed": 1.0
+                        "speed": 1
                     },
                     "type": "rainbow"
                 }
@@ -30796,7 +30752,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip",
                 "mapping": "span",
-                "max_brightness": 1.0,
+                "max_brightness": 1,
                 "name": "arty",
                 "preview_only": false,
                 "rotate": 0,
@@ -30807,24 +30763,24 @@
             "effects": {
                 "rainbow": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "flip": false,
-                        "frequency": 1.0,
+                        "frequency": 1,
                         "mirror": false,
-                        "speed": 1.0
+                        "speed": 1
                     },
                     "type": "rainbow"
                 },
                 "singleColor": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "color": "#ff0000",
                         "diag": false,
                         "flip": false,
@@ -30832,7 +30788,7 @@
                         "modulate": false,
                         "modulation_effect": "sine",
                         "modulation_speed": 0.5,
-                        "speed": 1.0
+                        "speed": 1
                     },
                     "type": "singleColor"
                 }
@@ -30860,7 +30816,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip-variant",
                 "mapping": "span",
-                "max_brightness": 1.0,
+                "max_brightness": 1,
                 "name": "Simple",
                 "preview_only": false,
                 "rotate": 0,
@@ -30871,15 +30827,15 @@
             "effect": {
                 "config": {
                     "advanced": true,
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "flip": false,
-                    "frequency": 1.0,
+                    "frequency": 1,
                     "mirror": false,
-                    "speed": 1.0
+                    "speed": 1
                 },
                 "type": "rainbow"
             },
@@ -30887,15 +30843,15 @@
                 "rainbow": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "flip": false,
-                        "frequency": 1.0,
+                        "frequency": 1,
                         "mirror": false,
-                        "speed": 1.0
+                        "speed": 1
                     },
                     "type": "rainbow"
                 }
@@ -30923,7 +30879,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip-variant",
                 "mapping": "span",
-                "max_brightness": 1.0,
+                "max_brightness": 1,
                 "name": "Mapping2",
                 "preview_only": false,
                 "rotate": 0,
@@ -30933,27 +30889,27 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1.0,
+                    "background_brightness": 1,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0.0,
-                    "brightness": 1.0,
+                    "blur": 0,
+                    "brightness": 1,
                     "diag": false,
                     "dump": false,
                     "flip": false,
                     "flip_horizontal": false,
                     "flip_vertical": false,
                     "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0.0,
+                    "gradient_roll": 0,
                     "impulse_decay": 0.06,
                     "intensity": 128,
                     "mirror": false,
-                    "multiplier": 2.0,
+                    "multiplier": 2,
                     "rotate": 0,
-                    "speed": 1.0,
+                    "speed": 1,
                     "stretch": 1.5,
                     "test": false,
-                    "zoom": 2.0
+                    "zoom": 2
                 },
                 "type": "noise2d"
             },
@@ -30961,11 +30917,11 @@
                 "concentric": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "center_smoothing": 0.5,
                         "diag": false,
                         "dump": false,
@@ -30974,41 +30930,41 @@
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
-                        "gradient_scale": 1.0,
-                        "idle_speed": 1.0,
+                        "gradient_roll": 0,
+                        "gradient_scale": 1,
+                        "idle_speed": 1,
                         "invert": false,
                         "mirror": false,
                         "power_multiplier": 0.5,
                         "rotate": 0,
-                        "stretch_height": 1.0,
+                        "stretch_height": 1,
                         "test": false
                     },
                     "type": "concentric"
                 },
                 "noise2d": {
                     "config": {
-                        "background_brightness": 1.0,
+                        "background_brightness": 1,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0.0,
-                        "brightness": 1.0,
+                        "blur": 0,
+                        "brightness": 1,
                         "diag": false,
                         "dump": false,
                         "flip": false,
                         "flip_horizontal": false,
                         "flip_vertical": false,
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0.0,
+                        "gradient_roll": 0,
                         "impulse_decay": 0.06,
                         "intensity": 128,
                         "mirror": false,
-                        "multiplier": 2.0,
+                        "multiplier": 2,
                         "rotate": 0,
-                        "speed": 1.0,
+                        "speed": 1,
                         "stretch": 1.5,
                         "test": false,
-                        "zoom": 2.0
+                        "zoom": 2
                     },
                     "type": "noise2d"
                 }
@@ -55596,8 +55552,37 @@
             ]
         }
     ],
-    "visualisation_fps": 30,
-    "visualisation_maxlen": 4096,
+    "global_brightness": 1,
+    "melbank_collection": [
+        {
+            "id": "melbank-0",
+            "config": {
+                "max_frequency": 350,
+                "min_frequency": 20,
+                "name": "Melbank 0"
+            }
+        },
+        {
+            "id": "melbank-1",
+            "config": {
+                "max_frequency": 2000,
+                "min_frequency": 20,
+                "name": "Melbank 1"
+            }
+        },
+        {
+            "id": "melbank-2",
+            "config": {
+                "max_frequency": 15000,
+                "min_frequency": 20,
+                "name": "Melbank 2"
+            }
+        }
+    ],
+    "user_gradients": {
+        "cat": "linear-gradient(90deg, #ff0000 0.00%,#000000 25.00%,#1aff00 48.00%,#000000 75.00%,#0004fb 99.00%)",
+        "pig": "linear-gradient(90deg, #cd3535 0.00%,#d56ae5 23.00%,#00ffdb 51.00%,#c3b0c6 76.00%,#0000ff 100.00%)"
+    },
     "wled_preferences": {
         "dmx_address_start": {
             "setting": 1,
@@ -55627,5 +55612,20 @@
             "setting": "UDP",
             "user_enabled": false
         }
-    }
+    },
+    "visualisation_maxlen": 4096,
+    "audio": {
+        "audio_device": 10,
+        "delay_ms": 0,
+        "fft_size": 4096,
+        "mic_rate": 44100,
+        "min_volume": 0.2,
+        "onset_method": "hfc",
+        "pitch_method": "yinfft",
+        "pitch_tolerance": 0.8,
+        "sample_rate": 60,
+        "tempo_method": "default"
+    },
+    "create_segments": true,
+    "flush_on_deactivate": false
 }
