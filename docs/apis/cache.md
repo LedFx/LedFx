@@ -230,6 +230,8 @@ transmission.
 
 **Security Features:**
 - ✅ File type validation (triple-layer: extension + MIME + PIL format)
+  - Remote URLs may omit extensions (e.g., `https://cdn.example.com/image/abc123`)
+  - Local files must have valid image extensions
 - ✅ Size limits (10MB max file size, 4096×4096 pixels max)
 - ✅ Path traversal protection (local files restricted to config dir and assets dir)
 - ✅ SSRF protection (blocks private networks, loopback, link-local, cloud metadata endpoints)
@@ -358,6 +360,8 @@ returned in JPEG format for efficient data transmission.
 
 **Security Features:**
 - ✅ File type validation (triple-layer: extension + MIME + PIL format)
+  - Remote URLs may omit extensions (e.g., `https://cdn.example.com/image/abc123`)
+  - Local files must have valid image extensions
 - ✅ Size limits (10MB max file size, 4096×4096 pixels max)
 - ✅ Path traversal protection (local files restricted to config dir and assets dir)
 - ✅ SSRF protection (blocks private networks, loopback, link-local, cloud metadata endpoints)
@@ -490,7 +494,7 @@ A successful response with two extracted frames:
 ### First Access
 1. User requests image via `POST /api/get_image` with JSON body `{"path_url": "https://example.com/image.gif"}`
 2. Image not in cache → download from URL
-3. Validate file type (extension, MIME, PIL format)
+3. Validate file type (extension optional for remote URLs, MIME, PIL format)
 4. Validate size (max 10MB, max 4096×4096 pixels)
 5. Store in cache with metadata
 6. Return image to user

@@ -105,7 +105,7 @@ To run these local and / or develop more tests
     $ uv run ledfx-loopback-install
     ```
 
-2) launch the suite of tests with uv which will ensure dependancies are installed
+2) launch the suite of tests with uv which will ensure dependencies are installed
 
 
     ``` console
@@ -114,8 +114,10 @@ To run these local and / or develop more tests
 
 ## Frontend Development
 
+The LedFx frontend is now maintained in a separate repository: [LedFx-Frontend-v2](https://github.com/YeonV/LedFx-Frontend-v2).
+
 Building the LedFx frontend is different from how the core backend is
-built. The frontend is based on React.js and thus uses pnpm as the core
+built. The frontend is based on React.js and thus uses yarn as the core
 package management.
 
 :::: note
@@ -138,30 +140,61 @@ work. To enable development mode, open the `config.json` file in the
 `.ledfx` folder and set `dev_mode: true`
 ::::
 
+### Frontend Development Options
+
+You have two options for frontend development:
+
+**Option 1: Separate Clone (Recommended for frontend-only development)**
+
+Clone the frontend repository independently and run it against your local backend:
+
+``` console
+$ git clone https://github.com/YeonV/LedFx-Frontend-v2.git
+$ cd LedFx-Frontend-v2
+$ yarn install
+$ yarn start
+```
+
+The frontend dev server will proxy API requests to your local LedFx backend at runtime.
+
+**Option 2: Submodule (For integrated development)**
+
+If you need to work on both frontend and backend together, initialize the git submodule:
+
+``` console
+$ git submodule update --init --recursive
+```
+
+Or if you already have the repository cloned, pull the submodule:
+
+``` console
+$ git pull --recurse-submodules
+```
+
 ### Windows
 
-**1.** Install Node.js and pnpm:
+**1.** Install Node.js and yarn:
 
 First, you need to install Node.js. You can download it from [Node.js
 official website](https://nodejs.org/en/download/). After installing
-Node.js, you can install pnpm via npm (which is installed with Node.js).
+Node.js, you can install yarn via npm (which is installed with Node.js).
 
 ``` console
-$ npm install -g pnpm
+$ npm install -g yarn
 ```
 
 **2.** Navigate to the frontend directory and install the dependencies:
 
 ``` console
 $ cd frontend
-$ pnpm install
+$ yarn install
 ```
 
-**3.** Start LedFx in developer mode and start the pnpm watcher:
+**3.** Start LedFx in developer mode and start the yarn watcher:
 
 ``` console
 $ uv run ledfx
-$ pnpm start
+$ yarn start
 ```
 
 At this point, any changes you make to the frontend will be recompiled,
@@ -172,14 +205,14 @@ the appropriate distribution files prior to submitting any changes.
 **4.** When you are finished with your changes, build the frontend:
 
 ``` console
-$ pnpm build
+$ yarn build
 ```
 
 ### Linux
 
 **1.** Install Node.js:
 
-Node.js is a prerequisite for pnpm. You can install it using your
+Node.js is a prerequisite for yarn. You can install it using your
 distribution\'s package manager. For Ubuntu, you can use the following
 commands:
 
@@ -188,17 +221,17 @@ $ sudo apt-get update
 $ sudo apt-get install nodejs
 ```
 
-**2.** Install pnpm:
+**2.** Install yarn:
 
 ``` console
-$ curl -fsSL https://get.pnpm.io/install.sh | sh -
+$ npm install -g yarn
 ```
 
 **3.** Navigate to the frontend directory and install the dependencies:
 
 ``` console
 $ cd frontend
-$ pnpm install
+$ yarn install
 ```
 
 The easiest way to test and validate your changes is to run a watcher
@@ -209,7 +242,7 @@ running in a separate command window.
 
 ``` console
 $ uv run ledfx
-$ pnpm start
+$ yarn start
 ```
 
 At that point any change you make to the frontend will be recompiled and
@@ -220,32 +253,32 @@ the appropriate distribution files prior to submitting any changes.
 **5.** When you are finished with your changes, build the frontend:
 
 ``` console
-$ pnpm build
+$ yarn build
 ```
 
 ### macOS {#macos-frontend}
 
-**1.** Install nodejs and NPM requirements using
+**1.** Install nodejs and yarn requirements using
 [homebrew](https://docs.brew.sh/Installation):
 
 ``` console
 $ brew install nodejs
-$ brew install pnpm
+$ brew install yarn
 $ cd ~/frontend
-$ pnpm install
+$ yarn install
 ```
 
-**2.** Start LedFx in developer mode and start the NPM watcher:
+**2.** Start LedFx in developer mode and start the yarn watcher:
 
 ``` console
 $ uv run ledfx
-$ pnpm start
+$ yarn start
 ```
 
 **3.** When you are finished with your changes, build the frontend:
 
 ``` console
-$ pnpm build
+$ yarn build
 ```
 
 ------------------------------------------------------------------------
@@ -260,7 +293,7 @@ Well enough for discussional purposes. This diagram specifically
 illustrates audio reactive effects, temporal are similar but have their
 own thread loop independant of audio framing.
 
-![Do you want to buy a bridge?](/_static/main_loop.png)
+![Do you want to buy a bridge?](/_static/developer/main_loop.png)
 
 ## Useful Tools
 
@@ -294,7 +327,7 @@ Currently only the Build and Open Docs task is exposed. This task will
 install dependancies, build the docs and open in your browser, all with
 a single click!
 
-![Build and Open Docs, do it!](/_static/howto/taskbar.png)
+![Build and Open Docs, do it!](/_static/developer/taskbar.png)
 
 ### Teleplot
 
@@ -318,4 +351,38 @@ from ledfx.utils import Teleplot
 Teleplot.send(f"my_var_name:{my_var_value}")
 ```
 
-![A simple graph from audio volume](/_static/howto/teleplot.png)
+![A simple graph from audio volume](/_static/developer/teleplot.png)
+
+#### Teleplot built-ins
+
+There are two Teleplot use cases built into LedFx
+
+1) Any effect with Advanced / Diag enabled, which generates the Logging and front end diagnostic dialog for frame render performance will also generate a Teleplot graph with a naming convention of <virtual_id>_avg_ms. So it is easy to track render performance through time, with a method that is default off for all users.
+
+![noscene_avg_ms](/_static/developer/noscene_avg_ms.png)
+
+2) The Pixels effect additionally has a unique Teleplot enabled under the same switch to generate a graph of real-time physical RAM usage in total by LedFx in MB.
+
+This is done via a call to process.memory_info().rss
+
+RSS (Resident Set Size) - the portion of the process's memory that is held in physical RAM.
+
+It includes:
+
+Code/text segment - the compiled program code
+Heap - dynamically allocated memory (numpy arrays, effect objects, etc.)
+Stack - function call stacks and local variables
+Shared libraries - loaded into memory (numpy, PIL, etc.)
+
+It can be used to monitor for memory leaks at runtime under aggressive testing.
+
+Here is such a graph running the **2d Hammer** playlist from the test config, hammer_test.json
+
+It is expected that memory use spike on asset load, then will grow but stabilise under such conditions.
+
+It is easy to see even slow leaks by running for large time periods under pressure test, and has been used to resolve all apparent under playlist 1d and 2d exhaustive testing.
+
+The Teleplot naming convention will be <virtual_id>_MB
+
+![Everytime I learn something new I forget something else](/_static/developer/memlog_MB.png)
+

@@ -1,5 +1,13 @@
 # Configuration
 
+## Audio analysis options - pitch method and onset method
+
+Caution: The defaults are default for a reason!
+
+(Developer) documentation describing the available onset and pitch methods is available here:
+- [Onset method](https://aubio.org/doc/latest/specdesc_8h.html)
+- [Pitch method](https://aubio.org/doc/latest/pitch_8h.html)
+
 ## Firmware Specific
 
 Once you have LedFx installed, it's time to add some devices! Make sure

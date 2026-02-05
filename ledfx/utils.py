@@ -48,6 +48,7 @@ from dotenv import load_dotenv
 from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
+from ledfx.events import ColorsUpdatedEvent
 from ledfx.libraries.cache import ImageCache
 from ledfx.utilities.security_utils import (
     DOWNLOAD_TIMEOUT,
@@ -885,6 +886,9 @@ class UserDefaultCollection(MutableMapping):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
+        # Fire event if colors or gradients were deleted
+        if self._collection_name in ("Colors", "Gradients"):
+            self._ledfx.events.fire_event(ColorsUpdatedEvent())
 
     def __setitem__(self, key, value):
         if key in self._default_vals:
@@ -900,6 +904,9 @@ class UserDefaultCollection(MutableMapping):
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
+        # Fire event if colors or gradients were updated
+        if self._collection_name in ("Colors", "Gradients"):
+            self._ledfx.events.fire_event(ColorsUpdatedEvent())
 
     def __iter__(self):
         return chain(self._default_vals, self._user_vals)
@@ -1074,7 +1081,7 @@ class RegistryLoader:
                     self.registry = registry
 
                 def on_modified(self, event):
-                    (_, extension) = os.path.splitext(event.src_path)
+                    _, extension = os.path.splitext(event.src_path)
                     if extension == ".py":
                         self.registry.reload()
 

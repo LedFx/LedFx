@@ -99,6 +99,45 @@ class TestIntegrationOpenImage:
         result = open_image("https://example.com/file.txt")
         assert result is None
 
+    @patch("ledfx.utils.validate_url_safety")
+    @patch("ledfx.utils.build_browser_request")
+    @patch("urllib.request.urlopen")
+    def test_extensionless_remote_url_success(
+        self, mock_urlopen, mock_build_request, mock_validate_url
+    ):
+        """Test that remote URLs without extensions work (relies on Content-Type header)."""
+        # Mock URL validation to pass
+        mock_validate_url.return_value = (True, None)
+
+        # Create a small valid PNG in memory
+        img = Image.new("RGB", (10, 10), color="blue")
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, "PNG")
+        img_data = img_bytes.getvalue()
+
+        # Mock the browser request builder
+        mock_build_request.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        headers_dict = {
+            "Content-Length": str(len(img_data)),
+            "ETag": "xyz789",
+            "Last-Modified": "Tue, 02 Jan 2024 00:00:00 GMT",
+            "Content-Type": "image/png",
+        }
+        mock_response.headers.get = lambda key, default=None: headers_dict.get(
+            key, default
+        )
+        mock_response.read.return_value = img_data
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+        mock_urlopen.return_value = mock_response
+
+        # Test with CDN-style URL without extension (validated via Content-Type header)
+        result = open_image("https://cdn.example.com/image/abc123def456")
+        assert result is not None
+        assert isinstance(result, Image.Image)
+
 
 class TestIntegrationOpenGif:
     """Integration tests for open_gif function."""
@@ -128,6 +167,47 @@ class TestIntegrationOpenGif:
 
         result = open_gif(str(png_path))
         assert result is not None
+        assert hasattr(result, "n_frames")
+        assert result.n_frames == 1
+
+    @patch("ledfx.utils.validate_url_safety")
+    @patch("ledfx.utils.build_browser_request")
+    @patch("urllib.request.urlopen")
+    def test_extensionless_remote_gif_url_success(
+        self, mock_urlopen, mock_build_request, mock_validate_url
+    ):
+        """Test that remote GIF URLs without extensions work."""
+        # Mock URL validation to pass
+        mock_validate_url.return_value = (True, None)
+
+        # Create a small valid GIF in memory
+        img = Image.new("RGB", (10, 10), color="green")
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, "GIF")
+        img_data = img_bytes.getvalue()
+
+        # Mock the browser request builder
+        mock_build_request.return_value = MagicMock()
+
+        mock_response = MagicMock()
+        headers_dict = {
+            "Content-Length": str(len(img_data)),
+            "ETag": "gif123",
+            "Last-Modified": "Wed, 03 Jan 2024 00:00:00 GMT",
+            "Content-Type": "image/gif",
+        }
+        mock_response.headers.get = lambda key, default=None: headers_dict.get(
+            key, default
+        )
+        mock_response.read.return_value = img_data
+        mock_response.__enter__.return_value = mock_response
+        mock_response.__exit__.return_value = False
+        mock_urlopen.return_value = mock_response
+
+        # Test with extension-less URL
+        result = open_gif("https://example.com/api/animation")
+        assert result is not None
+        assert isinstance(result, Image.Image)
         assert hasattr(result, "n_frames")
         assert result.n_frames == 1
 
@@ -382,6 +462,73 @@ class TestURLParsing:
         )
 
 
+class TestExtensionlessRemoteURLs:
+    """Test that remote URLs without file extensions are allowed (validated via Content-Type header)."""
+
+    def test_http_url_no_extension_allowed(self):
+        """Test that HTTP URLs without extension are allowed."""
+        assert is_allowed_image_extension("http://example.com/image")
+        assert is_allowed_image_extension("http://cdn.example.com/abc123")
+
+    def test_https_url_no_extension_allowed(self):
+        """Test that HTTPS URLs without extension are allowed."""
+        assert is_allowed_image_extension("https://example.com/image")
+        assert is_allowed_image_extension(
+            "https://cdn.example.com/image/abc123"
+        )
+
+    def test_cdn_urls_without_extension_allowed(self):
+        """Test that CDN URLs without extensions are allowed (content validated via HTTP headers)."""
+        # CDN-style hash-based URLs without extensions
+        assert is_allowed_image_extension(
+            "https://cdn.example.com/image/ab67616d0000b273a1b2c3d4e5f6a7b8c9d0e1f2"
+        )
+        # With query parameters
+        assert is_allowed_image_extension(
+            "https://images.example/content/ab67616d0000b273?size=large"
+        )
+
+    def test_remote_url_with_path_no_extension(self):
+        """Test remote URLs with paths but no extension."""
+        assert is_allowed_image_extension("https://example.com/api/v1/image")
+        assert is_allowed_image_extension(
+            "https://example.com/user/123/profile"
+        )
+
+    def test_remote_url_no_extension_with_query(self):
+        """Test remote URL without extension but with query string."""
+        assert is_allowed_image_extension(
+            "https://example.com/image?id=123&size=large"
+        )
+
+    def test_remote_url_no_extension_with_fragment(self):
+        """Test remote URL without extension but with fragment."""
+        assert is_allowed_image_extension("https://example.com/image#preview")
+
+    def test_local_file_no_extension_rejected(self):
+        """Test that local files without extension are still rejected."""
+        assert not is_allowed_image_extension("/path/to/file")
+        assert not is_allowed_image_extension("./relative/file")
+        assert not is_allowed_image_extension("filename")
+
+    def test_local_file_invalid_extension_rejected(self):
+        """Test that local files with invalid extensions are rejected."""
+        assert not is_allowed_image_extension("/path/to/file.txt")
+        assert not is_allowed_image_extension("./relative/file.pdf")
+
+    def test_remote_url_with_valid_extension_still_works(self):
+        """Test that remote URLs with valid extensions still work."""
+        assert is_allowed_image_extension("https://example.com/image.png")
+        assert is_allowed_image_extension("https://example.com/photo.jpg")
+        assert is_allowed_image_extension("https://example.com/anim.gif")
+
+    def test_remote_url_with_invalid_extension_rejected(self):
+        """Test that remote URLs with explicitly invalid extensions are rejected."""
+        assert not is_allowed_image_extension("https://example.com/file.txt")
+        assert not is_allowed_image_extension("https://example.com/doc.pdf")
+        assert not is_allowed_image_extension("https://example.com/script.py")
+
+
 # Test Scenarios Documentation
 """
 GOOD SCENARIOS (Should Pass):
@@ -392,6 +539,7 @@ GOOD SCENARIOS (Should Pass):
 5. Files with correct MIME types matching their content
 6. URLs pointing to public IP addresses
 7. URLs with query strings and fragments
+8. Remote URLs (http/https) without file extensions (validated via Content-Type header)
 
 BAD SCENARIOS (Should Fail):
 1. Files with disallowed extensions (.txt, .pdf, .exe, etc.)
@@ -402,14 +550,15 @@ BAD SCENARIOS (Should Fail):
 6. Files with incorrect MIME types
 7. Images with unsupported PIL formats
 8. Nonexistent files
-9. URLs with invalid extensions
-10. URLs pointing to loopback addresses (127.0.0.0/8, ::1)
-11. URLs pointing to private networks (10/8, 172.16/12, 192.168/16, fc00::/7)
-12. URLs pointing to link-local addresses (169.254/16, fe80::/10)
-13. URLs pointing to cloud metadata endpoints (169.254.169.254)
-14. URLs using non-HTTP/HTTPS protocols in remote requests (validated by validate_url_safety)
-15. Hostnames that resolve to blocked IP addresses
-16. Non-HTTP/HTTPS URL schemes in local file path handling (file://, ftp://, data:, javascript:, etc.)
+9. Remote URLs with explicitly invalid extensions (.txt, .pdf, etc.)
+10. Local files without extensions or with invalid extensions
+11. URLs pointing to loopback addresses (127.0.0.0/8, ::1)
+12. URLs pointing to private networks (10/8, 172.16/12, 192.168/16, fc00::/7)
+13. URLs pointing to link-local addresses (169.254/16, fe80::/10)
+14. URLs pointing to cloud metadata endpoints (169.254.169.254)
+15. URLs using non-HTTP/HTTPS protocols in remote requests (validated by validate_url_safety)
+16. Hostnames that resolve to blocked IP addresses
+17. Non-HTTP/HTTPS URL schemes in local file path handling (file://, ftp://, data:, javascript:, etc.)
 """
 
 

@@ -93,7 +93,7 @@ send type to be '3 addresses' and the pixel count to 30.
 The server whichs handles the fixture is listening at
 `localhost:9000`:
 
-![image](/_static/osc_sample_setup.png)
+![image](/_static/devices/osc_sample_setup.png)
 
 ## What it does
 

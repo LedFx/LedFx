@@ -86,7 +86,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
       - Play some music in the background.
 
 #. **Start LedFx.**
-      - With any desired launch options. See :doc:`Command Line Options </launch>`
+      - With any desired launch options. See `Command Line Options <https://ledfx.readthedocs.io/en/latest/launch.html>`_.
       - Use --open-ui to open the web interface automatically in your default browser, or navigate to http://127.0.0.1:8888 directly.
       - Your WLED devices should appear in LedFx, automagically configured and ready to go! 🎆🔥
       - If not, on the bottom click Home,  -> ``Scan for WLED devices`` button, or click on the big plus sign and ``Add Device`` to add them manually.

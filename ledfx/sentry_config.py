@@ -34,7 +34,7 @@ def setup_sentry():
                 from subprocess import PIPE, Popen
 
                 process = Popen(["git", "rev-parse", "HEAD"], stdout=PIPE)
-                (commit_hash, err) = process.communicate()
+                commit_hash, err = process.communicate()
                 commit_hash = commit_hash[:7].decode("utf-8")
                 process.wait()
             # TODO: trap explicit exceptions if it becomes clear what they are
