@@ -1394,9 +1394,8 @@ class Virtual:
         self.complex_segments = _config.get("complex_segments", False)
 
         # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
-        if (
-            old_complex_segments != self.complex_segments
-            or (self.complex_segments and mapping_changed)
+        if old_complex_segments != self.complex_segments or (
+            self.complex_segments and mapping_changed
         ):
             self._compile_device_remap()
 
