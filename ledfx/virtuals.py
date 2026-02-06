@@ -188,7 +188,6 @@ class Virtual:
         self._debug_flush_total = 0.0
         self._debug_last_report = time.perf_counter()
         self._debug_flush_frames = 0
-        self._debug_flush_mode = "unknonn"
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -1393,7 +1392,10 @@ class Virtual:
 
         old_complex_segments = self.complex_segments
         self.complex_segments = _config.get("complex_segments", False)
-        if old_complex_segments != self.complex_segments:
+        old_mapping = self._config.get("mapping") if hasattr(self, "_config") else None
+        new_mapping = _config.get("mapping")
+        
+        if old_complex_segments != self.complex_segments or old_mapping != new_mapping:
             self._compile_device_remap()
 
         self._ledfx.events.fire_event(
