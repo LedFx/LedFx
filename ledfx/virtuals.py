@@ -989,12 +989,8 @@ class Virtual:
             and self._device_remap
             and not self._calibration
         ):
-            if debug_track:
-                self._debug_flush_mode = "complex"
             self._flush_complex_segments(pixels)
         else:
-            if debug_track:
-                self._debug_flush_mode = "simple"
             self._flush_simple_segments(pixels, color_cycle)
 
         if debug_track:
@@ -1008,7 +1004,7 @@ class Virtual:
                     self._debug_flush_total / self._debug_flush_frames * 1000.0
                 )
                 Teleplot.send(
-                    f"flush_{self.id}_{self._debug_flush_mode}:{avg_flush_ms}"
+                    f"flush_{self.id}:{avg_flush_ms}"
                 )
                 self._debug_last_report = current_time
                 self._debug_flush_total = 0.0
