@@ -154,7 +154,14 @@ class Device(BaseRegistry):
                 # New scatter mode: (pixels, dst_indices)
                 pixels, dst_indices = item
                 if pixels.shape[0] != 0:
-                    self._pixels[dst_indices] = pixels
+                    try:
+                        self._pixels[dst_indices] = pixels
+                    except (IndexError, ValueError, TypeError) as e:
+                        _LOGGER.warning(
+                            f"Device {self.name}: scatter assignment failed - "
+                            f"dst_indices shape: {np.shape(dst_indices)}, "
+                            f"pixels shape: {pixels.shape}, error: {e}"
+                        )
             else:
                 # Legacy range mode: (pixels, start, end)
                 pixels, start, end = item

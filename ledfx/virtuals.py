@@ -1295,11 +1295,13 @@ class Virtual:
 
         _config = self.CONFIG_SCHEMA(_config)
         reactivate_effect = False
+        mapping_changed = False
 
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
                 reactivate_effect = True
+                mapping_changed = True
 
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
@@ -1390,10 +1392,9 @@ class Virtual:
 
         old_complex_segments = self.complex_segments
         self.complex_segments = _config.get("complex_segments", False)
-        old_mapping = self._config.get("mapping") if hasattr(self, "_config") else None
-        new_mapping = _config.get("mapping")
         
-        if old_complex_segments != self.complex_segments or old_mapping != new_mapping:
+        if (old_complex_segments != self.complex_segments
+            or mapping_changed):
             self._compile_device_remap()
 
         self._ledfx.events.fire_event(
