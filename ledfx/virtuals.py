@@ -1002,9 +1002,7 @@ class Virtual:
                 avg_flush_ms = (
                     self._debug_flush_total / self._debug_flush_frames * 1000.0
                 )
-                Teleplot.send(
-                    f"flush_{self.id}:{avg_flush_ms}"
-                )
+                Teleplot.send(f"flush_{self.id}:{avg_flush_ms}")
                 self._debug_last_report = current_time
                 self._debug_flush_total = 0.0
                 self._debug_flush_frames = 0
