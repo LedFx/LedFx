@@ -82,7 +82,7 @@ class Plasma2d(Twod, GradientEffect):
         # Protect against invalid dimensions
         if width <= 0 or height <= 0:
             return np.zeros((max(1, height), max(1, width)))
-        
+
         # Calculate the scale
         scale = self.lower + (power * self.density)
 
