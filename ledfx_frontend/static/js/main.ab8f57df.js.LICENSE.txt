@@ -12,17 +12,10 @@
  */
 
 /*!
- * Chart.js v4.4.7
+ * Chart.js v4.5.1
  * https://www.chartjs.org
- * (c) 2024 Chart.js Contributors
+ * (c) 2025 Chart.js Contributors
  * Released under the MIT License
- */
-
-/*!
- * cookie
- * Copyright(c) 2012-2014 Roman Shtylman
- * Copyright(c) 2015 Douglas Christopher Wilson
- * MIT Licensed
  */
 
 /*! *****************************************************************************
@@ -257,6 +250,26 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
+ * react-is.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * react-jsx-runtime.development.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
  * react-jsx-runtime.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -287,7 +300,7 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * use-sync-external-store-with-selector.production.js
+ * use-sync-external-store-shim.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
  *
@@ -296,9 +309,21 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * @mui/styled-engine v6.3.0
+ * @license React
+ * use-sync-external-store-shim/with-selector.production.js
  *
- * @license MIT
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+/**
+ * @license React
+ * use-sync-external-store-with-selector.production.js
+ *
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
@@ -605,7 +630,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * react-router v7.1.1
+ * react-router v7.11.0
  *
  * Copyright (c) Remix Software Inc.
  *
