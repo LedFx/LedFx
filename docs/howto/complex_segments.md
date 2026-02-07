@@ -20,8 +20,8 @@ This approach trades a small amount of memory for significant CPU time savings d
 
 Complex Segments mode is beneficial when:
 
-- **Multiple segments per device** - You have several segments from the same virtual mapping to different parts of a single device. 
-- **Many segments** - Your virtual has numerous segments (e.g., 10+ segments across multiple devices) 
+- **Multiple segments per device** - You have several segments from the same virtual mapping to different parts of a single device.
+- **Many segments** - Your virtual has numerous segments (e.g., 10+ segments across multiple devices)
 - **Complex layouts** - You have intricate LED installations with reversed segments, gaps, or non-contiguous mappings
 - **Span mapping** - You're using span mode to spread an effect across multiple segments
 
