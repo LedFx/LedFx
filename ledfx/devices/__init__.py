@@ -406,6 +406,7 @@ class Device(BaseRegistry):
                 blocking_names = [
                     self._ledfx.virtuals.get(v).name
                     for v in overlapping_virtuals
+                    if self._ledfx.virtuals.get(v) is not None
                 ]
                 msg = f"Failed to activate effect! '{virtual_name}' overlaps with active virtual(s): {', '.join(blocking_names)}"
                 _LOGGER.warning(msg)
