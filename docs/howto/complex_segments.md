@@ -30,7 +30,7 @@ Complex segments has been developed against and tested against virtuals with sev
 
 Complex Segments may not provide benefits or could be inappropriate when:
 
-- **Simple configurations** - Simple virtuals with a handfull of segments. Simple virtuals will run slightly slower if set as complex_segments.
+- **Simple configurations** - Simple virtuals with a handful of segments. Simple virtuals will run slightly slower if set as complex_segments.
 
 ## How It Works
 
@@ -75,9 +75,9 @@ This eliminates the overhead of iterating through segments and performing indivi
 
 If an effect is set to advanced / diag True, then LedFx will emit diagnostic to Teleplot.
 
-This now includes a 1 second average of time to flush a virtual.
+This now includes a 1-second average of time to flush a virtual.
 
-This can be used to monitor the performance of the complex_segments implementation and compare againt the not complex_segments behaviour.
+This can be used to monitor the performance of the complex_segments implementation and compare against the not complex_segments behaviour.
 
 For example using virtuals from test config virtuals_remapping_hell.json
 
