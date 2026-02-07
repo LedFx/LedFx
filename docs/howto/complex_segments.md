@@ -20,7 +20,6 @@ This approach trades a small amount of memory for significant CPU time savings d
 
 Complex Segments mode is beneficial when:
 
-- **Multiple segments per device** - You have several segments from the same virtual mapping to different parts of a single device.
 - **Many segments** - Your virtual has numerous segments (e.g., 10+ segments across multiple devices)
 - **Complex layouts** - You have intricate LED installations with reversed segments, gaps, or non-contiguous mappings
 - **Span mapping** - You're using span mode to spread an effect across multiple segments
@@ -31,9 +30,7 @@ Complex segments has been developed against and tested against virtuals with sev
 
 Complex Segments may not provide benefits or could be inappropriate when:
 
-- **Simple configurations** - Simple virtuals with a few dozen segments. Simple virtuals will run slightly slower if set as complex_segments.
-
-## Requirements and Limitations
+- **Simple configurations** - Simple virtuals with a handfull of segments. Simple virtuals will run slightly slower if set as complex_segments.
 
 ## How It Works
 
@@ -73,3 +70,28 @@ During each frame render, the optimized flush path:
 4. **Device updates** - The device uses fancy indexing to scatter pixels to the correct locations: `self._pixels[dst_indices] = pixels`
 
 This eliminates the overhead of iterating through segments and performing individual range assignments.
+
+### Diagnostic
+
+If an effect is set to advanced / diag True, then LedFx will emit diagnostic to Teleplot.
+
+This now includes a 1 second average of time to flush a virtual.
+
+This can be used to monitor the performance of the complex_segments implementation and compare againt the not complex_segments behaviour.
+
+For example using virtuals from test config virtuals_remapping_hell.json
+
+For the truly extreme complex virtual of 4096 segments into 2 target devices in a chess board pattern called **mapping** ( or **mapping2** ) the following performance graph shows the difference between running initially in complex which is fast, followed by the legacy simple segments mode.
+
+In this arbitrary capture, shows a complex performance of 0.4 ms vs 4 ms for the legacy implementation.
+
+![This is actually very impressive](/_static/howto/segments/4096_segments.png)
+
+Conversely using complex_segments with relatively simple segment configurations such as the example **stripey** in the same example config file, that only has 5 segments across 2 devices.
+
+![Not so bad in the end](/_static/howto/segments/5_segments.png)
+
+It can be seen that complex segments in this case is running at approx 0.6 vs 0.3 ms. So complex segments in this simple case is not an advantage, though not terrible...
+
+
+
