@@ -31,7 +31,7 @@ from ledfx.events import (
     VirtualUpdateEvent,
 )
 from ledfx.transitions import Transitions
-from ledfx.utils import fps_to_sleep_interval
+from ledfx.utils import Teleplot, fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +49,11 @@ class Virtual:
                 description="Span: Effect spans all segments. Copy: Effect copied on each segment",
                 default="span",
             ): vol.In(["span", "copy"]),
+            vol.Optional(
+                "complex_segments",
+                description="Use complex segment mapping mode for performance",
+                default=False,
+            ): bool,
             vol.Required(
                 "grouping",
                 description="Number of physical pixels to combine into larger virtual pixel groups",
@@ -174,6 +179,15 @@ class Virtual:
         self.fallback_timer = None
         self.fallback_suppress_transition = False
         self._streaming = False
+        self.complex_segments = self._config.get("complex_segments", False)
+
+        # Precompiled device remap structure for fast pixel mapping
+        # Maps virtual indices to device indices per device
+        self._device_remap: dict = {}
+
+        self._debug_flush_total = 0.0
+        self._debug_last_report = time.perf_counter()
+        self._debug_flush_frames = 0
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -199,11 +213,20 @@ class Virtual:
             raise ValueError(msg)
 
     def activate_segments(self, segments):
-        for device_id, start_pixel, end_pixel, invert in segments:
+        # Always use optimized batch mode for segment activation
+        # Group segments by device for batch adding
+        segments_by_device = {}
+        for device_id, start_pixel, end_pixel, _invert in segments:
+            if device_id not in segments_by_device:
+                segments_by_device[device_id] = []
+            segments_by_device[device_id].append((start_pixel, end_pixel))
+
+        # Activate devices and add all segments in batch
+        for device_id, device_segments in segments_by_device.items():
             device = self._ledfx.devices.get(device_id)
             if not device.is_active():
                 device.activate()
-            device.add_segment(self.id, start_pixel, end_pixel, force=True)
+            device.add_segments_batch(self.id, device_segments, force=True)
 
     def deactivate_segments(self):
         for device in self._devices:
@@ -309,6 +332,9 @@ class Virtual:
 
                 self.invalidate_cached_props()
 
+                # Compile device remap structure for fast pixel mapping
+                self._compile_device_remap()
+
                 # Restart active effect if total pixel count has changed
                 # eg. devices might be reordered, but total pixel count is same
                 # so no need to restart the effect
@@ -326,6 +352,87 @@ class Virtual:
                 f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
             )
             self._ledfx.virtuals.check_and_deactivate_devices()
+
+    def _compile_device_remap(self):
+        """
+        Precompile device remap structure for fast pixel mapping in flush().
+        Only active when complex_segments is enabled.
+        Builds src (virtual indices) and dst (device indices) arrays per device.
+        """
+        device_remap = {}
+
+        if not self.complex_segments:
+            # Complex segments disabled - skip compilation
+            self._device_remap = {}
+            return
+
+        if self._config["mapping"] != "span":
+            # Only compile for span mode - copy mode needs different handling
+            self._device_remap = {}
+            return
+
+        _LOGGER.info(
+            f"Virtual {self.id}: compiling device remap for complex segments"
+        )
+
+        # Group segments by device and build index arrays
+        device_buffers = {}  # {device_id: {"src": list, "dst": list}}
+        virtual_offset = 0
+
+        for device_id, device_start, device_end, reverse in self._segments:
+            segment_width = device_end - device_start + 1
+
+            # Skip gap-mapping segments (if any exist)
+            if segment_width <= 0:
+                continue
+
+            # Build virtual indices for this segment
+            virtual_indices = np.arange(
+                virtual_offset, virtual_offset + segment_width, dtype=np.int32
+            )
+
+            # Build device indices for this segment
+            device_indices = np.arange(
+                device_start, device_end + 1, dtype=np.int32
+            )
+
+            # Handle reverse flag by reversing virtual indices
+            if reverse:
+                virtual_indices = virtual_indices[::-1]
+
+            # Initialize device buffer if needed
+            if device_id not in device_buffers:
+                device_buffers[device_id] = {"src": [], "dst": []}
+
+            # Append indices to device buffers
+            device_buffers[device_id]["src"].append(virtual_indices)
+            device_buffers[device_id]["dst"].append(device_indices)
+
+            virtual_offset += segment_width
+
+        # Convert lists to numpy arrays
+        for device_id, buffers in device_buffers.items():
+            device_remap[device_id] = {
+                "src": (
+                    np.concatenate(buffers["src"])
+                    if buffers["src"]
+                    else np.array([], dtype=np.int32)
+                ),
+                "dst": (
+                    np.concatenate(buffers["dst"])
+                    if buffers["dst"]
+                    else np.array([], dtype=np.int32)
+                ),
+            }
+
+        # Filter out devices that don't exist (like gap-mapping)
+        device_remap = {
+            device_id: remap
+            for device_id, remap in device_remap.items()
+            if self._ledfx.devices.get(device_id) is not None
+        }
+
+        self._device_remap = device_remap
 
     def set_preset(self, preset_info):
         """
@@ -789,9 +896,6 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
 
-        _LOGGER.debug(
-            f"Virtual {self.id}: Activating with segments {self._segments}"
-        )
         if not self._active:
             self._active = True
             try:
@@ -849,7 +953,6 @@ class Virtual:
         """
         Flushes the provided data to the devices.
         """
-
         if pixels is None:
             pixels = self.assembled_frame
 
@@ -869,6 +972,46 @@ class Virtual:
 
         color_cycle = itertools.cycle(color_list)
 
+        debug_track = (
+            self._active_effect
+            and self._active_effect.logsec
+            and self._active_effect.logsec.diag
+        )
+
+        if debug_track:
+            flush_start = time.perf_counter()
+
+        # Choose flush path based on complex_segments configuration
+        if (
+            self.complex_segments
+            and self._config["mapping"] == "span"
+            and self._device_remap
+            and not self._calibration
+        ):
+            self._flush_complex_segments(pixels)
+        else:
+            self._flush_simple_segments(pixels, color_cycle)
+
+        if debug_track:
+            flush_time = time.perf_counter() - flush_start
+            self._debug_flush_total += flush_time
+            self._debug_flush_frames += 1
+
+            current_time = time.perf_counter()
+            if current_time - self._debug_last_report >= 1.0:
+                avg_flush_ms = (
+                    self._debug_flush_total / self._debug_flush_frames * 1000.0
+                )
+                Teleplot.send(f"flush_{self.id}:{avg_flush_ms}")
+                self._debug_last_report = current_time
+                self._debug_flush_total = 0.0
+                self._debug_flush_frames = 0
+
+    def _flush_simple_segments(self, pixels, color_cycle):
+        """
+        Simple flush using segment-by-segment processing.
+        Handles calibration, span mode, and copy mode.
+        """
         for device_id, segments in self._segments_by_device.items():
             data = []
             device = self._ledfx.devices.get(device_id)
@@ -917,6 +1060,34 @@ class Virtual:
                             for oneshot in self._oneshots:
                                 oneshot.apply(seg, start, stop)
                             data.append((seg, device_start, device_end))
+                    device.update_pixels(self.id, data)
+
+    def _flush_complex_segments(self, pixels):
+        """
+        Optimized flush using precompiled device remap for complex virtuals.
+        Uses scatter-mode with numpy fancy indexing for 13x performance gain.
+        """
+        for device_id, remap in self._device_remap.items():
+            device = self._ledfx.devices.get(device_id)
+            if device is not None and device.is_active():
+                # Use precompiled indices for fast pixel mapping
+                src_indices = remap["src"]
+                dst_indices = remap["dst"]
+
+                if len(src_indices) > 0:
+                    # Extract pixels using fancy indexing
+                    seg = pixels[src_indices]
+
+                    # Apply oneshots to the entire device pixel set
+                    # Virtual range spans from min to max of src_indices
+                    for oneshot in self._oneshots:
+                        virtual_start = int(src_indices.min())
+                        virtual_end = int(src_indices.max())
+                        oneshot.apply(seg, virtual_start, virtual_end)
+
+                    # Use new scatter mode: send pixels with dst indices
+                    data = [(seg, dst_indices)]
+
                     device.update_pixels(self.id, data)
 
     def render_calibration(
@@ -1124,11 +1295,14 @@ class Virtual:
 
         _config = self.CONFIG_SCHEMA(_config)
         reactivate_effect = False
+        mapping_changed = False
 
         if hasattr(self, "_config"):
             if _config["mapping"] != self._config["mapping"]:
                 self.invalidate_cached_props()
                 reactivate_effect = True
+                mapping_changed = True
+
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
                 or _config["transition_time"]
@@ -1215,6 +1389,15 @@ class Virtual:
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
         )
+
+        old_complex_segments = self.complex_segments
+        self.complex_segments = _config.get("complex_segments", False)
+
+        # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
+        if old_complex_segments != self.complex_segments or (
+            self.complex_segments and mapping_changed
+        ):
+            self._compile_device_remap()
 
         self._ledfx.events.fire_event(
             VirtualConfigUpdateEvent(self.id, self._config)

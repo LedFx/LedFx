@@ -149,19 +149,36 @@ class Device(BaseRegistry):
             )
             return
 
-        for pixels, start, end in data:
-            # protect against an empty race condition
-            if pixels.shape[0] != 0:
-                if np.shape(pixels) == (3,) or np.shape(
-                    self._pixels[start : end + 1]
-                ) == np.shape(pixels):
-                    self._pixels[start : end + 1] = pixels
+        for item in data:
+            if len(item) == 2:
+                # New scatter mode: (pixels, dst_indices)
+                pixels, dst_indices = item
+                if pixels.shape[0] != 0:
+                    try:
+                        self._pixels[dst_indices] = pixels
+                    except (IndexError, ValueError, TypeError) as e:
+                        _LOGGER.warning(
+                            f"Device {self.name}: scatter assignment failed - "
+                            f"dst_indices shape: {np.shape(dst_indices)}, "
+                            f"pixels shape: {pixels.shape}, error: {e}"
+                        )
+            else:
+                # Legacy range mode: (pixels, start, end)
+                pixels, start, end = item
+                # protect against an empty race condition
+                if pixels.shape[0] != 0:
+                    if np.shape(pixels) == (3,) or np.shape(
+                        self._pixels[start : end + 1]
+                    ) == np.shape(pixels):
+                        self._pixels[start : end + 1] = pixels
 
+        # Only the priority virtual should flush to prevent multiple virtuals
+        # from fighting over the device buffer
         if self.priority_virtual:
             if virtual_id == self.priority_virtual.id:
+                # Priority virtual flushes after all virtuals have updated their pixels
                 frame = self.assemble_frame()
                 self.flush(frame)
-                # _LOGGER.debug(f"Device {self.id} flushed by Virtual {virtual_id}")
 
                 self._ledfx.events.fire_event(
                     DeviceUpdateEvent(self.id, frame)
@@ -271,35 +288,139 @@ class Device(BaseRegistry):
     def virtuals(self):
         return list(segment[0] for segment in self._segments)
 
-    def add_segment(self, virtual_id, start_pixel, end_pixel, force=False):
-        # make sure this segment doesn't overlap with any others
-        for _virtual_id, segment_start, segment_end in self._segments:
-            if virtual_id == _virtual_id:
-                continue
-            overlap = (
-                min(segment_end, end_pixel)
-                - max(segment_start, start_pixel)
-                + 1
-            )
-            if overlap > 0:
-                virtual_name = self._ledfx.virtuals.get(virtual_id).name
-                blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
-                if force:
-                    blocking_virtual.deactivate()
-                else:
-                    msg = f"Failed to activate effect! '{virtual_name}' overlaps with active virtual '{blocking_virtual.name}'"
-                    _LOGGER.warning(msg)
-                    raise ValueError(msg)
+    def add_segments_batch(self, virtual_id, segments, force=False):
+        """Add multiple segments efficiently with single overlap check.
 
-        # if the segment is from a new device, we need to recheck our priority virtual
-        if virtual_id not in (segment[0] for segment in self._segments):
-            self.invalidate_cached_props()
-        self._segments.append((virtual_id, start_pixel, end_pixel))
-        _LOGGER.debug(
-            f"Device {self.id}: Added segment {virtual_id, start_pixel, end_pixel}"
+        Args:
+            virtual_id: Virtual ID owning these segments
+            segments: List of (start_pixel, end_pixel) tuples
+            force: If True, deactivate overlapping virtuals
+        """
+        # Streaming mode only applies to device's own virtual vs external virtuals
+        # Multiple external virtuals can coexist if they don't overlap (checked later)
+
+        # If the device's own virtual is activating, deactivate all external virtuals
+        # streaming to this device (exit streaming mode)
+        if virtual_id == self.id:
+            external_virtuals = set()
+            for _virtual_id, _, _ in self._segments:
+                if _virtual_id != self.id:
+                    external_virtuals.add(_virtual_id)
+
+            if external_virtuals:
+                _LOGGER.info(
+                    f"Device {self.id}: Device virtual '{self.id}' activating - deactivating external virtuals: {external_virtuals}"
+                )
+                for _virtual_id in external_virtuals:
+                    external_virtual = self._ledfx.virtuals.get(_virtual_id)
+                    if external_virtual and external_virtual.active:
+                        external_virtual.deactivate()
+
+        # If a non-device virtual is adding segments to this device,
+        # deactivate the device's own virtual to enter streaming mode
+        # (but allow multiple external virtuals - overlap check below will handle conflicts)
+        elif virtual_id != self.id:
+            device_virtual = self._ledfx.virtuals.get(self.id)
+            if device_virtual and device_virtual.active:
+                _LOGGER.info(
+                    f"Device {self.id}: Deactivating device virtual '{self.id}' as external virtual '{virtual_id}' is streaming"
+                )
+                device_virtual.deactivate()
+
+        # Efficient overlap detection using sorted intervals
+        overlapping_virtuals = set()
+
+        # Skip overlap checking for gap-mapping device (it's a placeholder, not real hardware)
+        if self.id == "gap-mapping":
+            overlapping_virtuals = set()
+        else:
+            # Group existing segments by virtual_id and sort by start position
+            existing_by_virtual = {}
+            for _virtual_id, segment_start, segment_end in self._segments:
+                if _virtual_id == virtual_id:
+                    continue
+                if _virtual_id not in existing_by_virtual:
+                    existing_by_virtual[_virtual_id] = []
+                existing_by_virtual[_virtual_id].append(
+                    (segment_start, segment_end)
+                )
+
+            # Sort each virtual's segments for binary search
+            for _virtual_id in existing_by_virtual:
+                existing_by_virtual[_virtual_id].sort()
+
+            # Check each new segment against sorted existing segments
+            for start_pixel, end_pixel in segments:
+                for (
+                    _virtual_id,
+                    sorted_segments,
+                ) in existing_by_virtual.items():
+                    # Binary search to find first segment that could overlap
+                    # A segment at position i overlaps if: segment[i].end >= start_pixel AND segment[i].start <= end_pixel
+                    left, right = 0, len(sorted_segments)
+                    found_overlap = False
+
+                    # Find first segment where segment_end >= start_pixel
+                    while left < right:
+                        mid = (left + right) // 2
+                        if (
+                            sorted_segments[mid][1] < start_pixel
+                        ):  # segment_end < start_pixel
+                            left = mid + 1
+                        else:
+                            right = mid
+
+                    # Check segments starting from 'left' until we're past end_pixel
+                    for i in range(left, len(sorted_segments)):
+                        segment_start, segment_end = sorted_segments[i]
+                        if segment_start > end_pixel:
+                            # All remaining segments are beyond our range
+                            break
+                        # Check for actual overlap
+                        overlap = (
+                            min(segment_end, end_pixel)
+                            - max(segment_start, start_pixel)
+                            + 1
+                        )
+                        if overlap > 0:
+                            overlapping_virtuals.add(_virtual_id)
+                            found_overlap = True
+                            break
+
+                    if found_overlap and not force:
+                        # Early exit if not forcing - we just need one overlap to fail
+                        break
+
+                if overlapping_virtuals and not force:
+                    break
+
+        if overlapping_virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            virtual_name = virtual.name if virtual else virtual_id
+            if force:
+                for _virtual_id in overlapping_virtuals:
+                    blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
+                    if blocking_virtual:
+                        blocking_virtual.deactivate()
+            else:
+                blocking_names = [
+                    self._ledfx.virtuals.get(v).name
+                    for v in overlapping_virtuals
+                    if self._ledfx.virtuals.get(v) is not None
+                ]
+                msg = f"Failed to activate effect! '{virtual_name}' overlaps with active virtual(s): {', '.join(blocking_names)}"
+                _LOGGER.warning(msg)
+                raise ValueError(msg)
+
+        # Add all segments
+        needs_cache_invalidation = virtual_id not in (
+            segment[0] for segment in self._segments
         )
-        # We have added a segment, therefore the priority virtual may of changed
-        self.invalidate_cached_props()
+        for start_pixel, end_pixel in segments:
+            self._segments.append((virtual_id, start_pixel, end_pixel))
+
+        if needs_cache_invalidation:
+            self.invalidate_cached_props()
 
     def clear_virtual_segments(self, virtual_id):
         new_segments = []
@@ -376,7 +497,7 @@ class Device(BaseRegistry):
                 await device.remove_from_virtuals()
                 self._ledfx.devices.destroy(device_id)
 
-                # Update and save the configuration
+                # Update the configuration
                 self._ledfx.config["devices"] = [
                     _device
                     for _device in self._ledfx.config["devices"]
@@ -394,12 +515,15 @@ class Device(BaseRegistry):
 
             self._ledfx.virtuals.destroy(id)
 
-            # Update and save the configuration
+            # Update the configuration
             self._ledfx.config["virtuals"] = [
                 virtual
                 for virtual in self._ledfx.config["virtuals"]
                 if virtual["id"] != id
             ]
+
+        # Save the configuration once after all deletions
+        if auto_generated_virtuals_to_destroy:
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,

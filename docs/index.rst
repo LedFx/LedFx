@@ -44,6 +44,7 @@
    /howto/example_config
    /howto/keybeat
    /howto/virtuals
+   /howto/complex_segments
    /howto/reorder
    /howto/alpha
 

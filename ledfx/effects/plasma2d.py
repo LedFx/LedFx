@@ -79,6 +79,10 @@ class Plasma2d(Twod, GradientEffect):
         self.bar = getattr(data, self.power_func)()
 
     def generate_plasma(self, width, height, time, power):
+        # Protect against invalid dimensions
+        if width <= 0 or height <= 0:
+            return np.zeros((max(1, height), max(1, width)))
+
         # Calculate the scale
         scale = self.lower + (power * self.density)
 
@@ -96,9 +100,11 @@ class Plasma2d(Twod, GradientEffect):
         ) * 128 + 128
 
         # Normalize the plasma values to the range [0, 1]
-        plasma_normalized = (plasma - np.min(plasma)) / (
-            np.max(plasma) - np.min(plasma)
-        )
+        plasma_range = np.max(plasma) - np.min(plasma)
+        if plasma_range > 0:
+            plasma_normalized = (plasma - np.min(plasma)) / plasma_range
+        else:
+            plasma_normalized = np.zeros_like(plasma)
         return plasma_normalized
 
     def draw(self):
