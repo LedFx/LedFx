@@ -22,7 +22,7 @@ Complex Segments mode is beneficial when:
 - **Complex layouts** - You have intricate LED installations with reversed segments, gaps, or non-contiguous mappings
 - **Span mapping** - You're using span mode to spread an effect across multiple segments
 
-Complex segments has been developed and tested against virtuals with ~10 thousand segments, to support some of the more extreme physical setups out in the community.
+Complex Segments have been developed and tested against virtuals with ~10 thousand segments, to support some of the more extreme physical setups out in the community.
 
 ## When NOT to Use Complex Segments
 
