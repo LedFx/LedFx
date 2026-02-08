@@ -16,19 +16,17 @@ This approach trades a small amount of memory for significant CPU time savings d
 
 ## When to Use Complex Segments
 
-### Ideal Use Cases
-
 Complex Segments mode is beneficial when:
 
 - **Many segments** - Your virtual has numerous segments (e.g., 10+ segments across multiple devices)
 - **Complex layouts** - You have intricate LED installations with reversed segments, gaps, or non-contiguous mappings
 - **Span mapping** - You're using span mode to spread an effect across multiple segments
 
-Complex segments has been developed against and tested against virtuals with several thousand segments, to support some of the more extreme physical setups out in the community.
+Complex segments has been developed and tested against virtuals with ~10 thousand segments, to support some of the more extreme physical setups out in the community.
 
-### When NOT to Use Complex Segments
+## When NOT to Use Complex Segments
 
-Complex Segments may not provide benefits or could be inappropriate when:
+Complex Segments may not provide benefits when:
 
 - **Simple configurations** - Simple virtuals with a handful of segments. Simple virtuals will run slightly slower if set as complex_segments.
 
@@ -92,6 +90,3 @@ Conversely using complex_segments with relatively simple segment configurations 
 ![Not so bad in the end](/_static/howto/segments/5_segments.png)
 
 It can be seen that complex segments in this case is running at approx 0.6 vs 0.3 ms. So complex segments in this simple case is not an advantage, though not terrible...
-
-
-
