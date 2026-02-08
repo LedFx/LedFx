@@ -1109,20 +1109,22 @@ class Virtual:
         for start, stop, step, device_start, device_end in segments:
             # add data forced to color sequence of RGBCMY
             color = np.array(parse_color(next(color_cycle)), dtype=float)
-            
+
             # For complex_segments, use simple solid color fill for better performance
             # Otherwise use animated pattern
             if self.complex_segments:
                 segment_length = device_end - device_start + 1
                 pattern = np.tile(color, (segment_length, 1))
             else:
-                pattern = make_pattern(color, device_end - device_start + 1, step)
-            
+                pattern = make_pattern(
+                    color, device_end - device_start + 1, step
+                )
+
             data.append((pattern, device_start, device_end))
         # render the highlight
         if self._hl_state and device_id == self._hl_device:
             color = np.array(parse_color("white"), dtype=float)
-            
+
             # For complex_segments, use simple solid color fill for better performance
             # Otherwise use animated pattern
             if self.complex_segments:
@@ -1134,7 +1136,7 @@ class Virtual:
                     self._hl_end - self._hl_start + 1,
                     self._hl_step,
                 )
-            
+
             data.append((pattern, self._hl_start, self._hl_end))
 
     def add_oneshot(self, oneshot: Oneshot):
