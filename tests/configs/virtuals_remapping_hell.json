@@ -1,12 +1,380 @@
 {
-    "port_s": 8443,
-    "host": "0.0.0.0",
-    "user_presets": {},
-    "transmission_mode": "compressed",
+    "audio": {
+        "audio_device": 0,
+        "delay_ms": 0,
+        "fft_size": 4096,
+        "mic_rate": 44100,
+        "min_volume": 0.2,
+        "onset_method": "hfc",
+        "pitch_method": "yinfft",
+        "pitch_tolerance": 0.8,
+        "sample_rate": 60,
+        "tempo_method": "default"
+    },
+    "configuration_version": "2.3.6",
+    "create_segments": true,
+    "dev_mode": false,
+    "devices": [
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy1",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy1",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy2",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy2",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy3",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy3",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "dummy4",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "dummy4",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "vumeter",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "vumeter",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "radial source",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "radial-source",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "strip3",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "strip3",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "strip4",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "strip4",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "noScene",
+                "pixel_count": 4096,
+                "refresh_rate": 62
+            },
+            "id": "noscene",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:led-strip",
+                "name": "Memlog",
+                "pixel_count": 128,
+                "refresh_rate": 62
+            },
+            "id": "memlog",
+            "type": "dummy"
+        },
+        {
+            "config": {
+                "center_offset": 0,
+                "icon_name": "mdi:eye-off",
+                "name": "gap-mapping",
+                "pixel_count": 4096,
+                "refresh_rate": 66
+            },
+            "id": "gap-mapping",
+            "type": "dummy"
+        }
+    ],
+    "flush_on_deactivate": false,
+    "global_brightness": 1.0,
     "global_transitions": true,
-    "ui_brightness_boost": 0,
-    "startup_scene_id": "",
-    "visualisation_fps": 30,
+    "host": "0.0.0.0",
+    "hosts": [
+        "192.168.1.174",
+        "172.21.64.1",
+        "192.168.1.175"
+    ],
+    "integrations": [],
+    "lifx_broadcast_address": "255.255.255.255",
+    "lifx_discovery_timeout": 30,
+    "melbank_collection": [
+        {
+            "config": {
+                "max_frequency": 350,
+                "min_frequency": 20,
+                "name": "Melbank 0"
+            },
+            "id": "melbank-0"
+        },
+        {
+            "config": {
+                "max_frequency": 2000,
+                "min_frequency": 20,
+                "name": "Melbank 1"
+            },
+            "id": "melbank-1"
+        },
+        {
+            "config": {
+                "max_frequency": 15000,
+                "min_frequency": 20,
+                "name": "Melbank 2"
+            },
+            "id": "melbank-2"
+        }
+    ],
+    "melbanks": {
+        "coeffs_type": "matt_mel",
+        "max_frequencies": [
+            350,
+            2000,
+            15000
+        ],
+        "min_frequency": 20,
+        "peak_isolation": 0.4,
+        "samples": 24
+    },
+    "playlists": {
+        "1d-hammer": {
+            "default_duration_ms": 5000,
+            "id": "1d-hammer",
+            "image": "image:https://i.imgur.com/a97hmYc.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block1"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block2"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block3"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "block4"
+                }
+            ],
+            "mode": "sequence",
+            "name": "1d hammer",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1.2,
+                    "factor_min": 0.8
+                }
+            }
+        },
+        "everythingallwaysallofthetime": {
+            "default_duration_ms": 5000,
+            "id": "everythingallwaysallofthetime",
+            "image": "image:https://i.imgur.com/sKOC2MZ.png",
+            "items": [],
+            "mode": "sequence",
+            "name": "EverythingAllwaysAllOfTheTime",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1,
+                    "factor_min": 1
+                }
+            }
+        },
+        "justkeybeat": {
+            "default_duration_ms": 5000,
+            "id": "justkeybeat",
+            "image": "image:https://i.imgur.com/OO0TomP.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-group-1"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-block2"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-block3"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-block4"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "2d-radial"
+                }
+            ],
+            "mode": "sequence",
+            "name": "2d hammer",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1.2,
+                    "factor_min": 0.8
+                }
+            }
+        },
+        "my-first-playlist": {
+            "default_duration_ms": 5000,
+            "id": "my-first-playlist",
+            "image": "image:https://i.imgur.com/RirV7N5.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                }
+            ],
+            "mode": "shuffle",
+            "name": "my first playlist",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": false,
+                    "factor_max": 1,
+                    "factor_min": 1
+                }
+            }
+        },
+        "my-jitter-list": {
+            "default_duration_ms": 5000,
+            "id": "my-jitter-list",
+            "image": "image:https://i.imgur.com/fDKeUdS.png",
+            "items": [
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "blue-cat"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "green-tree"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "mixer"
+                },
+                {
+                    "duration_ms": 5000,
+                    "scene_id": "redly"
+                }
+            ],
+            "mode": "shuffle",
+            "name": "my jitter list",
+            "tags": [],
+            "timing": {
+                "jitter": {
+                    "enabled": true,
+                    "factor_max": 2,
+                    "factor_min": 0.5
+                }
+            }
+        }
+    },
+    "port": 8888,
+    "port_s": 8443,
+    "scan_on_startup": false,
     "scenes": {
         "2d-block2": {
             "name": "2d Block2",
@@ -2855,373 +3223,15 @@
             }
         }
     },
-    "port": 8888,
-    "playlists": {
-        "1d-hammer": {
-            "default_duration_ms": 5000,
-            "id": "1d-hammer",
-            "image": "image:https://i.imgur.com/a97hmYc.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block1"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block2"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block3"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "block4"
-                }
-            ],
-            "mode": "sequence",
-            "name": "1d hammer",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1.2,
-                    "factor_min": 0.8
-                }
-            }
-        },
-        "everythingallwaysallofthetime": {
-            "default_duration_ms": 5000,
-            "id": "everythingallwaysallofthetime",
-            "image": "image:https://i.imgur.com/sKOC2MZ.png",
-            "items": [],
-            "mode": "sequence",
-            "name": "EverythingAllwaysAllOfTheTime",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1,
-                    "factor_min": 1
-                }
-            }
-        },
-        "justkeybeat": {
-            "default_duration_ms": 5000,
-            "id": "justkeybeat",
-            "image": "image:https://i.imgur.com/OO0TomP.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-group-1"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-block2"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-block3"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-block4"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "2d-radial"
-                }
-            ],
-            "mode": "sequence",
-            "name": "2d hammer",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1.2,
-                    "factor_min": 0.8
-                }
-            }
-        },
-        "my-first-playlist": {
-            "default_duration_ms": 5000,
-            "id": "my-first-playlist",
-            "image": "image:https://i.imgur.com/RirV7N5.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                }
-            ],
-            "mode": "shuffle",
-            "name": "my first playlist",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": false,
-                    "factor_max": 1,
-                    "factor_min": 1
-                }
-            }
-        },
-        "my-jitter-list": {
-            "default_duration_ms": 5000,
-            "id": "my-jitter-list",
-            "image": "image:https://i.imgur.com/fDKeUdS.png",
-            "items": [
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "blue-cat"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "green-tree"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "mixer"
-                },
-                {
-                    "duration_ms": 5000,
-                    "scene_id": "redly"
-                }
-            ],
-            "mode": "shuffle",
-            "name": "my jitter list",
-            "tags": [],
-            "timing": {
-                "jitter": {
-                    "enabled": true,
-                    "factor_max": 2,
-                    "factor_min": 0.5
-                }
-            }
-        }
-    },
-    "hosts": [
-        "192.168.1.142",
-        "172.21.64.1"
-    ],
-    "melbanks": {
-        "coeffs_type": "matt_mel",
-        "max_frequencies": [
-            350,
-            2000,
-            15000
-        ],
-        "min_frequency": 20,
-        "peak_isolation": 0.4,
-        "samples": 24
-    },
-    "devices": [
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy1",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy1",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy2",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy2",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy3",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy3",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "dummy4",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "dummy4",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "vumeter",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "vumeter",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "radial source",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "radial-source",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "strip3",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "strip3",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "strip4",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "strip4",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "noScene",
-                "pixel_count": 4096,
-                "refresh_rate": 62
-            },
-            "id": "noscene",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:led-strip",
-                "name": "Memlog",
-                "pixel_count": 128,
-                "refresh_rate": 62
-            },
-            "id": "memlog",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "icon_name": "mdi:eye-off",
-                "name": "gap-mapping",
-                "pixel_count": 4096,
-                "refresh_rate": 66
-            },
-            "id": "gap-mapping",
-            "type": "dummy"
-        },
-        {
-            "config": {
-                "center_offset": 0,
-                "dmx_start_address": 1,
-                "even_packet_size": true,
-                "icon_name": "mdi:led-strip",
-                "ip_address": "1.2.3.4",
-                "name": "arty",
-                "packet_size": 510,
-                "pixel_count": 10,
-                "pixels_per_device": 0,
-                "port": 6454,
-                "post_amble": "",
-                "pre_amble": "",
-                "refresh_rate": 62,
-                "rgb_order": "RGB",
-                "universe": 0,
-                "white_mode": "Zero"
-            },
-            "id": "arty",
-            "type": "artnet"
-        }
-    ],
-    "integrations": [
-        {
-            "active": true,
-            "config": {
-                "debug": true,
-                "description": "Librosa based audio engine to drive scene changes",
-                "diag": true,
-                "name": "Engine",
-                "sample_rate": 22050,
-                "sample_window": 8
-            },
-            "data": {},
-            "id": "engine",
-            "type": "engine"
-        }
-    ],
-    "scan_on_startup": false,
-    "dev_mode": false,
-    "configuration_version": "2.3.6",
+    "startup_scene_id": "",
+    "transmission_mode": "compressed",
+    "ui_brightness_boost": 0.0,
     "user_colors": {},
+    "user_gradients": {
+        "cat": "linear-gradient(90deg, #ff0000 0.00%,#000000 25.00%,#1aff00 48.00%,#000000 75.00%,#0004fb 99.00%)",
+        "pig": "linear-gradient(90deg, #cd3535 0.00%,#d56ae5 23.00%,#00ffdb 51.00%,#c3b0c6 76.00%,#0000ff 100.00%)"
+    },
+    "user_presets": {},
     "virtuals": [
         {
             "active": true,
@@ -5317,16 +5327,29 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1,
+                    "background_brightness": 1.0,
                     "background_color": "#000000",
-                    "blur": 0,
-                    "brightness": 1,
+                    "background_mode": "additive",
+                    "blur": 0.0,
+                    "brightness": 1.0,
+                    "density": 0.5,
+                    "density_vertical": 0.1,
                     "diag": false,
+                    "dump": false,
                     "flip": false,
+                    "flip_horizontal": false,
+                    "flip_vertical": false,
+                    "frequency_range": "Lows (beat+bass)",
+                    "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                    "gradient_roll": 0.0,
+                    "lower": 0.01,
                     "mirror": false,
-                    "rgb_mix": 0
+                    "radius": 0.2,
+                    "rotate": 0,
+                    "test": false,
+                    "twist": 0.07
                 },
-                "type": "spectrum"
+                "type": "plasma2d"
             },
             "effects": {
                 "lava_lamp": {
@@ -5403,6 +5426,32 @@
                         "responsiveness": 0.15
                     },
                     "type": "pitchSpectrum"
+                },
+                "plasma2d": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "density": 0.5,
+                        "density_vertical": 0.1,
+                        "diag": false,
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "lower": 0.01,
+                        "mirror": false,
+                        "radius": 0.2,
+                        "rotate": 0,
+                        "test": false,
+                        "twist": 0.07
+                    },
+                    "type": "plasma2d"
                 },
                 "power": {
                     "config": {
@@ -5494,7 +5543,7 @@
             },
             "id": "strip3",
             "is_device": "strip3",
-            "last_effect": "spectrum",
+            "last_effect": "plasma2d",
             "segments": [
                 [
                     "strip3",
@@ -5853,7 +5902,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip-variant",
                 "mapping": "span",
-                "max_brightness": 1,
+                "max_brightness": 1.0,
                 "name": "Mapping",
                 "preview_only": false,
                 "rotate": 0,
@@ -5864,56 +5913,55 @@
             "effect": {
                 "config": {
                     "advanced": true,
-                    "background_brightness": 1,
+                    "background_brightness": 1.0,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0,
-                    "brightness": 1,
-                    "center_smoothing": 0.5,
-                    "diag": false,
+                    "blur": 0.0,
+                    "brightness": 1.0,
+                    "density": 0.5,
+                    "density_vertical": 0.1,
+                    "diag": true,
                     "dump": false,
                     "flip": false,
                     "flip_horizontal": false,
                     "flip_vertical": false,
                     "frequency_range": "Lows (beat+bass)",
                     "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0,
-                    "gradient_scale": 1,
-                    "idle_speed": 1,
-                    "invert": false,
+                    "gradient_roll": 0.0,
+                    "lower": 0.01,
                     "mirror": false,
-                    "power_multiplier": 0.5,
+                    "radius": 0.2,
                     "rotate": 0,
-                    "stretch_height": 1,
-                    "test": false
+                    "test": false,
+                    "twist": 0.07
                 },
-                "type": "concentric"
+                "type": "plasma2d"
             },
             "effects": {
                 "concentric": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1,
+                        "background_brightness": 1.0,
                         "background_color": "#000000",
                         "background_mode": "additive",
-                        "blur": 0,
-                        "brightness": 1,
+                        "blur": 0.0,
+                        "brightness": 1.0,
                         "center_smoothing": 0.5,
-                        "diag": false,
+                        "diag": true,
                         "dump": false,
                         "flip": false,
                         "flip_horizontal": false,
                         "flip_vertical": false,
                         "frequency_range": "Lows (beat+bass)",
                         "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                        "gradient_roll": 0,
-                        "gradient_scale": 1,
-                        "idle_speed": 1,
+                        "gradient_roll": 0.0,
+                        "gradient_scale": 1.0,
+                        "idle_speed": 1.0,
                         "invert": false,
                         "mirror": false,
                         "power_multiplier": 0.5,
                         "rotate": 0,
-                        "stretch_height": 1,
+                        "stretch_height": 1.0,
                         "test": false
                     },
                     "type": "concentric"
@@ -5975,11 +6023,38 @@
                         "zoom": 2
                     },
                     "type": "noise2d"
+                },
+                "plasma2d": {
+                    "config": {
+                        "advanced": true,
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "density": 0.5,
+                        "density_vertical": 0.1,
+                        "diag": true,
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "lower": 0.01,
+                        "mirror": false,
+                        "radius": 0.2,
+                        "rotate": 0,
+                        "test": false,
+                        "twist": 0.07
+                    },
+                    "type": "plasma2d"
                 }
             },
             "id": "mapping",
             "is_device": false,
-            "last_effect": "concentric",
+            "last_effect": "plasma2d",
             "segments": [
                 [
                     "dummy1",
@@ -30604,7 +30679,7 @@
                 "grouping": 1,
                 "icon_name": "mdi:led-strip-variant",
                 "mapping": "span",
-                "max_brightness": 1,
+                "max_brightness": 1.0,
                 "name": "Stripey",
                 "preview_only": false,
                 "rotate": 0,
@@ -30615,15 +30690,15 @@
             "effect": {
                 "config": {
                     "advanced": true,
-                    "background_brightness": 1,
+                    "background_brightness": 1.0,
                     "background_color": "#000000",
-                    "blur": 0,
-                    "brightness": 1,
-                    "diag": false,
+                    "blur": 0.0,
+                    "brightness": 1.0,
+                    "diag": true,
                     "flip": false,
-                    "frequency": 1,
+                    "frequency": 1.0,
                     "mirror": false,
-                    "speed": 1
+                    "speed": 1.0
                 },
                 "type": "rainbow"
             },
@@ -30694,15 +30769,15 @@
                 "rainbow": {
                     "config": {
                         "advanced": true,
-                        "background_brightness": 1,
+                        "background_brightness": 1.0,
                         "background_color": "#000000",
-                        "blur": 0,
-                        "brightness": 1,
-                        "diag": false,
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "diag": true,
                         "flip": false,
-                        "frequency": 1,
+                        "frequency": 1.0,
                         "mirror": false,
-                        "speed": 1
+                        "speed": 1.0
                     },
                     "type": "rainbow"
                 }
@@ -30719,151 +30794,26 @@
                 ],
                 [
                     "dummy1",
-                    512,
-                    1023,
+                    768,
+                    1471,
                     true
                 ],
                 [
                     "dummy1",
-                    1024,
-                    2047,
+                    2048,
+                    3263,
                     false
                 ],
                 [
                     "dummy2",
                     0,
-                    1023,
+                    767,
                     true
                 ],
                 [
                     "dummy2",
                     1024,
                     2047,
-                    false
-                ]
-            ]
-        },
-        {
-            "auto_generated": false,
-            "config": {
-                "center_offset": 0,
-                "frequency_max": 15000,
-                "frequency_min": 20,
-                "grouping": 1,
-                "icon_name": "mdi:led-strip",
-                "mapping": "span",
-                "max_brightness": 1,
-                "name": "arty",
-                "preview_only": false,
-                "rotate": 0,
-                "rows": 1,
-                "transition_mode": "Add",
-                "transition_time": 0.4
-            },
-            "effects": {
-                "rainbow": {
-                    "config": {
-                        "background_brightness": 1,
-                        "background_color": "#000000",
-                        "blur": 0,
-                        "brightness": 1,
-                        "diag": false,
-                        "flip": false,
-                        "frequency": 1,
-                        "mirror": false,
-                        "speed": 1
-                    },
-                    "type": "rainbow"
-                },
-                "singleColor": {
-                    "config": {
-                        "background_brightness": 1,
-                        "background_color": "#000000",
-                        "blur": 0,
-                        "brightness": 1,
-                        "color": "#ff0000",
-                        "diag": false,
-                        "flip": false,
-                        "mirror": false,
-                        "modulate": false,
-                        "modulation_effect": "sine",
-                        "modulation_speed": 0.5,
-                        "speed": 1
-                    },
-                    "type": "singleColor"
-                }
-            },
-            "id": "arty",
-            "is_device": "arty",
-            "last_effect": "singleColor",
-            "segments": [
-                [
-                    "arty",
-                    0,
-                    9,
-                    false
-                ]
-            ]
-        },
-        {
-            "active": true,
-            "auto_generated": false,
-            "config": {
-                "center_offset": 0,
-                "complex_segments": false,
-                "frequency_max": 15000,
-                "frequency_min": 20,
-                "grouping": 1,
-                "icon_name": "mdi:led-strip-variant",
-                "mapping": "span",
-                "max_brightness": 1,
-                "name": "Simple",
-                "preview_only": false,
-                "rotate": 0,
-                "rows": 1,
-                "transition_mode": "Add",
-                "transition_time": 0.4
-            },
-            "effect": {
-                "config": {
-                    "advanced": true,
-                    "background_brightness": 1,
-                    "background_color": "#000000",
-                    "blur": 0,
-                    "brightness": 1,
-                    "diag": false,
-                    "flip": false,
-                    "frequency": 1,
-                    "mirror": false,
-                    "speed": 1
-                },
-                "type": "rainbow"
-            },
-            "effects": {
-                "rainbow": {
-                    "config": {
-                        "advanced": true,
-                        "background_brightness": 1,
-                        "background_color": "#000000",
-                        "blur": 0,
-                        "brightness": 1,
-                        "diag": false,
-                        "flip": false,
-                        "frequency": 1,
-                        "mirror": false,
-                        "speed": 1
-                    },
-                    "type": "rainbow"
-                }
-            },
-            "id": "simple",
-            "is_device": false,
-            "last_effect": "rainbow",
-            "segments": [
-                [
-                    "dummy1",
-                    0,
-                    4095,
                     false
                 ]
             ]
@@ -30889,29 +30839,31 @@
             },
             "effect": {
                 "config": {
-                    "background_brightness": 1,
+                    "background_brightness": 1.0,
                     "background_color": "#000000",
                     "background_mode": "additive",
-                    "blur": 0,
-                    "brightness": 1,
+                    "blur": 0.0,
+                    "brightness": 1.0,
                     "diag": false,
                     "dump": false,
+                    "edges": 3,
                     "flip": false,
                     "flip_horizontal": false,
                     "flip_vertical": false,
-                    "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-                    "gradient_roll": 0,
-                    "impulse_decay": 0.06,
-                    "intensity": 128,
+                    "frequency_range": "Lows (beat+bass)",
                     "mirror": false,
-                    "multiplier": 2,
+                    "polygon": false,
                     "rotate": 0,
-                    "speed": 1,
-                    "stretch": 1.5,
+                    "rotation": 0.0,
+                    "source_virtual": "radial-source",
+                    "spin": 0.0,
+                    "star": 0.0,
                     "test": false,
-                    "zoom": 2
+                    "twist": 0.0,
+                    "x_offset": 0.5,
+                    "y_offset": 0.5
                 },
-                "type": "noise2d"
+                "type": "radial"
             },
             "effects": {
                 "concentric": {
@@ -30967,11 +30919,39 @@
                         "zoom": 2
                     },
                     "type": "noise2d"
+                },
+                "radial": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "diag": false,
+                        "dump": false,
+                        "edges": 3,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "mirror": false,
+                        "polygon": false,
+                        "rotate": 0,
+                        "rotation": 0.0,
+                        "source_virtual": "radial-source",
+                        "spin": 0.0,
+                        "star": 0.0,
+                        "test": false,
+                        "twist": 0.0,
+                        "x_offset": 0.5,
+                        "y_offset": 0.5
+                    },
+                    "type": "radial"
                 }
             },
             "id": "mapping2",
             "is_device": false,
-            "last_effect": "noise2d",
+            "last_effect": "radial",
             "segments": [
                 [
                     "dummy1",
@@ -55550,39 +55530,1073 @@
                     false
                 ]
             ]
-        }
-    ],
-    "global_brightness": 1,
-    "melbank_collection": [
-        {
-            "id": "melbank-0",
-            "config": {
-                "max_frequency": 350,
-                "min_frequency": 20,
-                "name": "Melbank 0"
-            }
         },
         {
-            "id": "melbank-1",
+            "active": true,
+            "auto_generated": false,
             "config": {
-                "max_frequency": 2000,
-                "min_frequency": 20,
-                "name": "Melbank 1"
-            }
+                "center_offset": 0,
+                "complex_segments": true,
+                "frequency_max": 15000,
+                "frequency_min": 20,
+                "grouping": 1,
+                "icon_name": "mdi:led-strip-variant",
+                "mapping": "span",
+                "max_brightness": 1.0,
+                "name": "Mapping 3",
+                "preview_only": false,
+                "rotate": 0,
+                "rows": 32,
+                "transition_mode": "Add",
+                "transition_time": 0.4
+            },
+            "effect": {
+                "config": {
+                    "background_brightness": 1.0,
+                    "background_color": "#000000",
+                    "background_mode": "additive",
+                    "blur": 0.0,
+                    "brightness": 1.0,
+                    "center_smoothing": 0.5,
+                    "diag": false,
+                    "dump": false,
+                    "flip": false,
+                    "flip_horizontal": false,
+                    "flip_vertical": false,
+                    "frequency_range": "Lows (beat+bass)",
+                    "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                    "gradient_roll": 0.0,
+                    "gradient_scale": 1.0,
+                    "idle_speed": 1.0,
+                    "invert": false,
+                    "mirror": false,
+                    "power_multiplier": 0.5,
+                    "rotate": 0,
+                    "stretch_height": 1.0,
+                    "test": false
+                },
+                "type": "concentric"
+            },
+            "effects": {
+                "concentric": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "center_smoothing": 0.5,
+                        "diag": false,
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "gradient_scale": 1.0,
+                        "idle_speed": 1.0,
+                        "invert": false,
+                        "mirror": false,
+                        "power_multiplier": 0.5,
+                        "rotate": 0,
+                        "stretch_height": 1.0,
+                        "test": false
+                    },
+                    "type": "concentric"
+                },
+                "radial": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "diag": false,
+                        "dump": false,
+                        "edges": 5,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "mirror": false,
+                        "polygon": true,
+                        "rotate": 0,
+                        "rotation": 0.0,
+                        "source_virtual": "strip3",
+                        "spin": 0.0,
+                        "star": -0.11,
+                        "test": false,
+                        "twist": 0.0,
+                        "x_offset": 0.3,
+                        "y_offset": 0.3
+                    },
+                    "type": "radial"
+                }
+            },
+            "id": "mapping-3",
+            "is_device": false,
+            "last_effect": "concentric",
+            "segments": [
+                [
+                    "dummy3",
+                    0,
+                    31,
+                    false
+                ],
+                [
+                    "dummy4",
+                    0,
+                    31,
+                    false
+                ],
+                [
+                    "dummy3",
+                    64,
+                    95,
+                    false
+                ],
+                [
+                    "dummy4",
+                    64,
+                    95,
+                    false
+                ],
+                [
+                    "dummy3",
+                    128,
+                    159,
+                    false
+                ],
+                [
+                    "dummy4",
+                    128,
+                    159,
+                    false
+                ],
+                [
+                    "dummy3",
+                    192,
+                    223,
+                    false
+                ],
+                [
+                    "dummy4",
+                    192,
+                    223,
+                    false
+                ],
+                [
+                    "dummy3",
+                    256,
+                    287,
+                    false
+                ],
+                [
+                    "dummy4",
+                    256,
+                    287,
+                    false
+                ],
+                [
+                    "dummy3",
+                    320,
+                    351,
+                    false
+                ],
+                [
+                    "dummy4",
+                    320,
+                    351,
+                    false
+                ],
+                [
+                    "dummy3",
+                    384,
+                    415,
+                    false
+                ],
+                [
+                    "dummy4",
+                    384,
+                    415,
+                    false
+                ],
+                [
+                    "dummy3",
+                    448,
+                    479,
+                    false
+                ],
+                [
+                    "dummy4",
+                    448,
+                    479,
+                    false
+                ],
+                [
+                    "dummy3",
+                    512,
+                    543,
+                    false
+                ],
+                [
+                    "dummy4",
+                    512,
+                    543,
+                    false
+                ],
+                [
+                    "dummy3",
+                    576,
+                    607,
+                    false
+                ],
+                [
+                    "dummy4",
+                    576,
+                    607,
+                    false
+                ],
+                [
+                    "dummy3",
+                    640,
+                    671,
+                    false
+                ],
+                [
+                    "dummy4",
+                    640,
+                    671,
+                    false
+                ],
+                [
+                    "dummy3",
+                    704,
+                    735,
+                    false
+                ],
+                [
+                    "dummy4",
+                    704,
+                    735,
+                    false
+                ],
+                [
+                    "dummy3",
+                    768,
+                    799,
+                    false
+                ],
+                [
+                    "dummy4",
+                    768,
+                    799,
+                    false
+                ],
+                [
+                    "dummy3",
+                    832,
+                    863,
+                    false
+                ],
+                [
+                    "dummy4",
+                    832,
+                    863,
+                    false
+                ],
+                [
+                    "dummy3",
+                    896,
+                    927,
+                    false
+                ],
+                [
+                    "dummy4",
+                    896,
+                    927,
+                    false
+                ],
+                [
+                    "dummy3",
+                    960,
+                    991,
+                    false
+                ],
+                [
+                    "dummy4",
+                    960,
+                    991,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1024,
+                    1055,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1024,
+                    1055,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1088,
+                    1119,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1088,
+                    1119,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1152,
+                    1183,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1152,
+                    1183,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1216,
+                    1247,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1216,
+                    1247,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1280,
+                    1311,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1280,
+                    1311,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1344,
+                    1375,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1344,
+                    1375,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1408,
+                    1439,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1408,
+                    1439,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1472,
+                    1503,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1472,
+                    1503,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1536,
+                    1567,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1536,
+                    1567,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1600,
+                    1631,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1600,
+                    1631,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1664,
+                    1695,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1664,
+                    1695,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1728,
+                    1759,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1728,
+                    1759,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1792,
+                    1823,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1792,
+                    1823,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1856,
+                    1887,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1856,
+                    1887,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1920,
+                    1951,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1920,
+                    1951,
+                    false
+                ],
+                [
+                    "dummy3",
+                    1984,
+                    2015,
+                    false
+                ],
+                [
+                    "dummy4",
+                    1984,
+                    2015,
+                    false
+                ]
+            ]
         },
         {
-            "id": "melbank-2",
+            "active": true,
+            "auto_generated": false,
             "config": {
-                "max_frequency": 15000,
-                "min_frequency": 20,
-                "name": "Melbank 2"
-            }
+                "center_offset": 0,
+                "complex_segments": true,
+                "frequency_max": 15000,
+                "frequency_min": 20,
+                "grouping": 1,
+                "icon_name": "mdi:led-strip-variant",
+                "mapping": "span",
+                "max_brightness": 1.0,
+                "name": "Mapping 4",
+                "preview_only": false,
+                "rotate": 0,
+                "rows": 32,
+                "transition_mode": "Add",
+                "transition_time": 0.4
+            },
+            "effect": {
+                "config": {
+                    "advanced": false,
+                    "background_brightness": 1.0,
+                    "background_color": "#000000",
+                    "background_mode": "additive",
+                    "blur": 0.0,
+                    "brightness": 1.0,
+                    "diag": false,
+                    "dump": false,
+                    "flip": false,
+                    "flip_horizontal": false,
+                    "flip_vertical": false,
+                    "gradient": "linear-gradient(90deg, #000000 20.00%,#0016ff 31.00%,#000000 43.00%,#f60202 55.00%,#000000 66.00%,#1afc01 77.00%,#000000 87.00%)",
+                    "gradient_roll": 0.0,
+                    "impulse_decay": 0.06,
+                    "intensity": 128,
+                    "mirror": false,
+                    "multiplier": 2.0,
+                    "rotate": 0,
+                    "speed": 1.0,
+                    "stretch": 1.5,
+                    "test": false,
+                    "zoom": 2.0
+                },
+                "type": "noise2d"
+            },
+            "effects": {
+                "bleep": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "diag": false,
+                        "draw": "Lines",
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "grad_power": false,
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "mirror": false,
+                        "mirror_effect": false,
+                        "points": 64,
+                        "rotate": 0,
+                        "scroll_time": 1.0,
+                        "size": 1,
+                        "test": false
+                    },
+                    "type": "bleep"
+                },
+                "concentric": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "center_smoothing": 0.5,
+                        "diag": false,
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "gradient_scale": 1.0,
+                        "idle_speed": 1.0,
+                        "invert": false,
+                        "mirror": false,
+                        "power_multiplier": 0.5,
+                        "rotate": 0,
+                        "stretch_height": 1.0,
+                        "test": false
+                    },
+                    "type": "concentric"
+                },
+                "noise2d": {
+                    "config": {
+                        "advanced": false,
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "diag": false,
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "gradient": "linear-gradient(90deg, #000000 20.00%,#0016ff 31.00%,#000000 43.00%,#f60202 55.00%,#000000 66.00%,#1afc01 77.00%,#000000 87.00%)",
+                        "gradient_roll": 0.0,
+                        "impulse_decay": 0.06,
+                        "intensity": 128,
+                        "mirror": false,
+                        "multiplier": 2.0,
+                        "rotate": 0,
+                        "speed": 1.0,
+                        "stretch": 1.5,
+                        "test": false,
+                        "zoom": 2.0
+                    },
+                    "type": "noise2d"
+                },
+                "plasmawled": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "diag": false,
+                        "dump": false,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "frequency_range": "Lows (beat+bass)",
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "mirror": false,
+                        "rotate": 0,
+                        "size_multiplication": 0.4,
+                        "speed": 128,
+                        "speed_multiplication": 0.4,
+                        "stretch_horizontal": 128,
+                        "stretch_vertical": 128,
+                        "test": false
+                    },
+                    "type": "plasmawled"
+                },
+                "waterfall2d": {
+                    "config": {
+                        "background_brightness": 1.0,
+                        "background_color": "#000000",
+                        "background_mode": "additive",
+                        "bands": 16,
+                        "blur": 0.0,
+                        "brightness": 1.0,
+                        "center": false,
+                        "diag": false,
+                        "drop_secs": 3.0,
+                        "dump": false,
+                        "fade_out": 0.0,
+                        "flip": false,
+                        "flip_horizontal": false,
+                        "flip_vertical": false,
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+                        "gradient_roll": 0.0,
+                        "max_vs_mean": false,
+                        "mirror": false,
+                        "rotate": 0,
+                        "test": false
+                    },
+                    "type": "waterfall2d"
+                }
+            },
+            "id": "mapping-4",
+            "is_device": false,
+            "last_effect": "noise2d",
+            "segments": [
+                [
+                    "dummy3",
+                    2080,
+                    2111,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2080,
+                    2111,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2144,
+                    2175,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2144,
+                    2175,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2208,
+                    2239,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2208,
+                    2239,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2272,
+                    2303,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2272,
+                    2303,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2336,
+                    2367,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2336,
+                    2367,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2400,
+                    2431,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2400,
+                    2431,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2464,
+                    2495,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2464,
+                    2495,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2528,
+                    2559,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2528,
+                    2559,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2592,
+                    2623,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2592,
+                    2623,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2656,
+                    2687,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2656,
+                    2687,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2720,
+                    2751,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2720,
+                    2751,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2784,
+                    2815,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2784,
+                    2815,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2848,
+                    2879,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2848,
+                    2879,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2912,
+                    2943,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2912,
+                    2943,
+                    false
+                ],
+                [
+                    "dummy3",
+                    2976,
+                    3007,
+                    false
+                ],
+                [
+                    "dummy4",
+                    2976,
+                    3007,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3040,
+                    3071,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3040,
+                    3071,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3104,
+                    3135,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3104,
+                    3135,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3168,
+                    3199,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3168,
+                    3199,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3232,
+                    3263,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3232,
+                    3263,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3296,
+                    3327,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3296,
+                    3327,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3360,
+                    3391,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3360,
+                    3391,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3424,
+                    3455,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3424,
+                    3455,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3488,
+                    3519,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3488,
+                    3519,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3552,
+                    3583,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3552,
+                    3583,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3616,
+                    3647,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3616,
+                    3647,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3680,
+                    3711,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3680,
+                    3711,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3744,
+                    3775,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3744,
+                    3775,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3808,
+                    3839,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3808,
+                    3839,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3872,
+                    3903,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3872,
+                    3903,
+                    false
+                ],
+                [
+                    "dummy3",
+                    3936,
+                    3967,
+                    false
+                ],
+                [
+                    "dummy4",
+                    3936,
+                    3967,
+                    false
+                ],
+                [
+                    "dummy3",
+                    4000,
+                    4031,
+                    false
+                ],
+                [
+                    "dummy4",
+                    4000,
+                    4031,
+                    false
+                ],
+                [
+                    "dummy3",
+                    4064,
+                    4095,
+                    false
+                ],
+                [
+                    "dummy4",
+                    4064,
+                    4095,
+                    false
+                ]
+            ]
         }
     ],
-    "user_gradients": {
-        "cat": "linear-gradient(90deg, #ff0000 0.00%,#000000 25.00%,#1aff00 48.00%,#000000 75.00%,#0004fb 99.00%)",
-        "pig": "linear-gradient(90deg, #cd3535 0.00%,#d56ae5 23.00%,#00ffdb 51.00%,#c3b0c6 76.00%,#0000ff 100.00%)"
-    },
+    "visualisation_fps": 30,
+    "visualisation_maxlen": 4096,
     "wled_preferences": {
         "dmx_address_start": {
             "setting": 1,
@@ -55612,20 +56626,5 @@
             "setting": "UDP",
             "user_enabled": false
         }
-    },
-    "visualisation_maxlen": 4096,
-    "audio": {
-        "audio_device": 10,
-        "delay_ms": 0,
-        "fft_size": 4096,
-        "mic_rate": 44100,
-        "min_volume": 0.2,
-        "onset_method": "hfc",
-        "pitch_method": "yinfft",
-        "pitch_tolerance": 0.8,
-        "sample_rate": 60,
-        "tempo_method": "default"
-    },
-    "create_segments": true,
-    "flush_on_deactivate": false
+    }
 }
