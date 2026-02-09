@@ -142,7 +142,6 @@ class Virtual:
     _output_thread = None
     _active_effect = None
     _transition_effect = None
-    _calibration_cache = None
 
     if (
         sys.version_info[0] == 3 and sys.version_info[1] >= 11
@@ -185,9 +184,8 @@ class Virtual:
         self._debug_last_report = time.perf_counter()
         self._debug_flush_frames = 0
 
-        # Initialize calibration cache on first Virtual creation
-        if Virtual._calibration_cache is None:
-            Virtual._calibration_cache = CalibratorPatternCache()
+        # Initialize calibration cache per instance to avoid concurrent access issues
+        self._calibration_cache = CalibratorPatternCache()
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -1018,7 +1016,7 @@ class Virtual:
                 if device.is_active():
                     if self._calibration:
                         # Reset color sequence for each device to maintain consistency
-                        Virtual._calibration_cache.reset_color_sequence()
+                        self._calibration_cache.reset_color_sequence()
                         self.render_calibration(
                             data, device, segments, device_id
                         )
@@ -1099,15 +1097,15 @@ class Virtual:
         # set data to black for full length of led strip allow other segments to overwrite
         data.append(
             (
-                Virtual._calibration_cache.black_color,
+                self._calibration_cache.black_color,
                 0,
                 device.pixel_count - 1,
             )
         )
 
-        for start, stop, step, device_start, device_end in segments:
+        for _, _, step, device_start, device_end in segments:
             # Get next color in sequence (pre-parsed, no overhead)
-            color = Virtual._calibration_cache.get_next_color()
+            color = self._calibration_cache.get_next_color()
             segment_length = device_end - device_start + 1
 
             # For complex_segments, use simple solid color fill for better performance
@@ -1115,14 +1113,14 @@ class Virtual:
             if self.complex_segments:
                 pattern = np.tile(color, (segment_length, 1))
             else:
-                pattern = Virtual._calibration_cache.get_pattern(
+                pattern = self._calibration_cache.get_pattern(
                     color, segment_length, step
                 )
 
             data.append((pattern, device_start, device_end))
         # render the highlight
         if self._hl_state and device_id == self._hl_device:
-            color = Virtual._calibration_cache.white_color
+            color = self._calibration_cache.white_color
             hl_length = self._hl_end - self._hl_start + 1
 
             # For complex_segments, use simple solid color fill for better performance
@@ -1130,7 +1128,7 @@ class Virtual:
             if self.complex_segments:
                 pattern = np.tile(color, (hl_length, 1))
             else:
-                pattern = Virtual._calibration_cache.get_pattern(
+                pattern = self._calibration_cache.get_pattern(
                     color,
                     hl_length,
                     self._hl_step,
