@@ -1103,21 +1103,33 @@ class Virtual:
             )
         )
 
-        for _, _, step, device_start, device_end in segments:
-            # Get next color in sequence (pre-parsed, no overhead)
-            color = self._calibration_cache.get_next_color()
-            segment_length = device_end - device_start + 1
-
-            # For complex_segments, use simple solid color fill for better performance
-            # Otherwise use optimized cached pattern generation
-            if self.complex_segments:
+        # For complex_segments, use simple solid color fill for better performance
+        # Otherwise use optimized batch pattern generation (shared timer call)
+        if self.complex_segments:
+            for _, _, step, device_start, device_end in segments:
+                color = self._calibration_cache.get_next_color()
+                segment_length = device_end - device_start + 1
                 pattern = np.tile(color, (segment_length, 1))
-            else:
-                pattern = self._calibration_cache.get_pattern(
-                    color, segment_length, step
-                )
+                data.append((pattern, device_start, device_end))
+        else:
+            # Collect all segment data for batch processing
+            batch_data = []
+            device_positions = []
+            for _, _, step, device_start, device_end in segments:
+                color = self._calibration_cache.get_next_color()
+                segment_length = device_end - device_start + 1
+                batch_data.append((color, segment_length, step))
+                device_positions.append((device_start, device_end))
 
-            data.append((pattern, device_start, device_end))
+            # Generate all patterns with one shared timer call
+            patterns = self._calibration_cache.get_pattern_batch(batch_data)
+
+            # Append patterns to data
+            for pattern, (device_start, device_end) in zip(
+                patterns, device_positions
+            ):
+                data.append((pattern, device_start, device_end))
+
         # render the highlight
         if self._hl_state and device_id == self._hl_device:
             color = self._calibration_cache.white_color
