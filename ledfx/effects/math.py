@@ -177,22 +177,22 @@ class ExpFilter:
 class CalibratorPatternCache:
     """
     Manages cached calibration patterns for efficient rendering.
-    
+
     The pattern consists of 4 phases:
     1. Full brightness
     2. Fade to dim (20%)
-    3. Dim brightness  
+    3. Dim brightness
     4. Fade to full
-    
+
     Patterns are pre-computed and cached, then animated by rolling.
     Pre-parses calibration colors to avoid repeated parsing overhead.
     """
-    
+
     # Pre-parsed calibration colors (RGBCMY) as numpy arrays
     _CALIBRATION_COLORS = None
     _BLACK_COLOR = None
     _WHITE_COLOR = None
-    
+
     def __init__(self, animation_period=3.0, dim_factor=0.2):
         """
         Args:
@@ -203,142 +203,165 @@ class CalibratorPatternCache:
         self.dim_factor = dim_factor
         self._time_offset = time.perf_counter()  # For animation timing
         self._color_index = 0  # For cycling through colors
-        
+
         # Initialize pre-parsed colors on first instantiation
         if CalibratorPatternCache._CALIBRATION_COLORS is None:
             from ledfx.color import parse_color
-            color_names = ["red", "green", "blue", "cyan", "magenta", "#ffff00"]
-            CalibratorPatternCache._CALIBRATION_COLORS = [
-                np.array(parse_color(name), dtype=float) for name in color_names
+
+            color_names = [
+                "red",
+                "green",
+                "blue",
+                "cyan",
+                "magenta",
+                "#ffff00",
             ]
-            CalibratorPatternCache._BLACK_COLOR = np.array([0.0, 0.0, 0.0], dtype=float)
-            CalibratorPatternCache._WHITE_COLOR = np.array(parse_color("white"), dtype=float)
-    
+            CalibratorPatternCache._CALIBRATION_COLORS = [
+                np.array(parse_color(name), dtype=float)
+                for name in color_names
+            ]
+            CalibratorPatternCache._BLACK_COLOR = np.array(
+                [0.0, 0.0, 0.0], dtype=float
+            )
+            CalibratorPatternCache._WHITE_COLOR = np.array(
+                parse_color("white"), dtype=float
+            )
+
     def get_next_color(self):
         """
         Get the next color in the calibration sequence (RGBCMY).
-        
+
         Returns:
             np.ndarray: RGB color array
         """
         color = self._CALIBRATION_COLORS[self._color_index]
-        self._color_index = (self._color_index + 1) % len(self._CALIBRATION_COLORS)
+        self._color_index = (self._color_index + 1) % len(
+            self._CALIBRATION_COLORS
+        )
         return color
-    
+
     def reset_color_sequence(self):
         """Reset color sequence to start from red."""
         self._color_index = 0
-    
+
     @property
     def black_color(self):
         """Get cached black color array."""
         return self._BLACK_COLOR
-    
+
     @property
     def white_color(self):
         """Get cached white color array."""
         return self._WHITE_COLOR
-    
+
     @staticmethod
     @lru_cache(maxsize=32)
     def _create_base_pattern(length, dim_factor):
         """
         Creates a base calibration pattern for a given length.
-        
+
         This is cached based on length and dim_factor.
         Uses efficient numpy operations to create the entire pattern at once.
-        
+
         Args:
             length: Number of pixels in the pattern
             dim_factor: Brightness multiplier for dim phase
-            
+
         Returns:
             np.ndarray: Shape (length, 1) with brightness values 0.0-1.0
         """
         # Create brightness envelope for entire pattern using vectorized operations
         # This is much faster than creating 4 separate interpolations and vstacking
         indices = np.arange(length)
-        
+
         # Determine which phase each pixel is in
         phase = (indices / length) * 4.0  # 0-4 range
-        
+
         # Calculate brightness for each pixel based on phase
         brightness = np.ones(length)
-        
+
         # Phase 0: [0.0, 1.0) - Full brightness (1.0)
         # Phase 1: [1.0, 2.0) - Fade from 1.0 to dim_factor
         # Phase 2: [2.0, 3.0) - Dim brightness (dim_factor)
         # Phase 3: [3.0, 4.0) - Fade from dim_factor to 1.0
-        
+
         # Vectorized brightness calculation
         mask_phase1 = (phase >= 1.0) & (phase < 2.0)
         mask_phase2 = (phase >= 2.0) & (phase < 3.0)
         mask_phase3 = (phase >= 3.0) & (phase < 4.0)
-        
-        brightness[mask_phase1] = 1.0 - (phase[mask_phase1] - 1.0) * (1.0 - dim_factor)
+
+        brightness[mask_phase1] = 1.0 - (phase[mask_phase1] - 1.0) * (
+            1.0 - dim_factor
+        )
         brightness[mask_phase2] = dim_factor
-        brightness[mask_phase3] = dim_factor + (phase[mask_phase3] - 3.0) * (1.0 - dim_factor)
-        
+        brightness[mask_phase3] = dim_factor + (phase[mask_phase3] - 3.0) * (
+            1.0 - dim_factor
+        )
+
         # Return as (length, 1) array for broadcasting with color
         return brightness[:, np.newaxis]
-    
+
     def get_pattern(self, color, length, step):
         """
         Get an animated calibration pattern for the current time.
-        
+
         This is the optimized replacement for make_pattern() in calibration mode.
-        
+
         Args:
             color: RGB color as numpy array [R, G, B] with values 0.0-255.0
             length: Number of pixels in the pattern
             step: Direction multiplier (+1 or -1 for forward/reverse)
-            
+
         Returns:
             np.ndarray: Shape (length, 3) with RGB values
         """
         # Get or create cached base pattern
         base_pattern = self._create_base_pattern(length, self.dim_factor)
-        
+
         # Apply color (broadcasting: (length, 1) * (3,) -> (length, 3))
         pattern = base_pattern * color
-        
+
         # Calculate roll amount based on current time
-        time_fraction = ((time.perf_counter() - self._time_offset) % self.animation_period) / self.animation_period
+        time_fraction = (
+            (time.perf_counter() - self._time_offset) % self.animation_period
+        ) / self.animation_period
         shift_amount = int(length * time_fraction * step)
-        
+
         # Roll the pattern
         if shift_amount != 0:
             pattern = np.roll(pattern, shift_amount, axis=0)
-        
+
         return pattern
-    
+
     def get_pattern_batch(self, segments_data, current_time=None):
         """
         Generate patterns for multiple segments efficiently.
-        
+
         This allows sharing the time calculation across all segments.
-        
+
         Args:
             segments_data: List of (color, length, step) tuples
             current_time: Optional pre-calculated time (avoids timer call)
-            
+
         Returns:
             List of pattern arrays
         """
         if current_time is None:
             current_time = time.perf_counter()
-        
-        time_fraction = ((current_time - self._time_offset) % self.animation_period) / self.animation_period
-        
+
+        time_fraction = (
+            (current_time - self._time_offset) % self.animation_period
+        ) / self.animation_period
+
         patterns = []
         for color, length, step in segments_data:
             base_pattern = self._create_base_pattern(length, self.dim_factor)
             pattern = base_pattern * color
-            
+
             shift_amount = int(length * time_fraction * step)
             if shift_amount != 0:
                 pattern = np.roll(pattern, shift_amount, axis=0)
-            
+
             patterns.append(pattern)
-        
+
         return patterns

@@ -1092,9 +1092,7 @@ class Virtual:
 
                     device.update_pixels(self.id, data)
 
-    def render_calibration(
-        self, data, device, segments, device_id
-    ):
+    def render_calibration(self, data, device, segments, device_id):
         """
         Renders the calibration data to the virtual output
         """
