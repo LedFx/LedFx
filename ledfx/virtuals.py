@@ -1,9 +1,7 @@
-import itertools
 import logging
 import sys
 import threading
 import time
-import timeit
 from functools import cached_property
 from typing import Optional
 
@@ -13,7 +11,7 @@ import voluptuous as vol
 from ledfx.color import parse_color
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
-from ledfx.effects.math import interpolate_pixels, make_pattern
+from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
     MAX_FREQ,
     MIN_FREQ,
@@ -34,8 +32,6 @@ from ledfx.transitions import Transitions
 from ledfx.utils import Teleplot, fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
-
-color_list = ["red", "green", "blue", "cyan", "magenta", "#ffff00"]
 
 
 class Virtual:
@@ -147,6 +143,7 @@ class Virtual:
     _output_thread = None
     _active_effect = None
     _transition_effect = None
+    _calibration_cache = None
 
     if (
         sys.version_info[0] == 3 and sys.version_info[1] >= 11
@@ -188,6 +185,10 @@ class Virtual:
         self._debug_flush_total = 0.0
         self._debug_last_report = time.perf_counter()
         self._debug_flush_frames = 0
+
+        # Initialize calibration cache on first Virtual creation
+        if Virtual._calibration_cache is None:
+            Virtual._calibration_cache = CalibratorPatternCache()
 
         self.frequency_range = FrequencyRange(
             self._config["frequency_min"], self._config["frequency_max"]
@@ -772,7 +773,7 @@ class Virtual:
         while True:
             if not self._active:
                 break
-            start_time = timeit.default_timer()
+            start_time = time.perf_counter()
 
             if self.fallback_fire:
                 self.set_fallback()
@@ -802,7 +803,7 @@ class Virtual:
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
-            run_time = timeit.default_timer() - start_time
+            run_time = time.perf_counter() - start_time
             sleep_time = max(
                 0.001, fps_to_sleep_interval(self.refresh_rate) - run_time
             )
@@ -811,7 +812,7 @@ class Virtual:
             # use an aggressive check for did we sleep against expected min clk
             # for all high res scenarios this will be passive
             # for unexpected high res sleep on windows scenarios it will adapt
-            pass_time = timeit.default_timer() - start_time
+            pass_time = time.perf_counter() - start_time
             if pass_time < (self._min_time / 2):
                 time.sleep(max(0.001, self._min_time - pass_time))
 
@@ -970,8 +971,6 @@ class Virtual:
             # In span mode we can calculate the final pixels once for all segments
             pixels = self._effective_to_physical_pixels(pixels)
 
-        color_cycle = itertools.cycle(color_list)
-
         debug_track = (
             self._active_effect
             and self._active_effect.logsec
@@ -982,6 +981,7 @@ class Virtual:
             flush_start = time.perf_counter()
 
         # Choose flush path based on complex_segments configuration
+
         if (
             self.complex_segments
             and self._config["mapping"] == "span"
@@ -990,7 +990,7 @@ class Virtual:
         ):
             self._flush_complex_segments(pixels)
         else:
-            self._flush_simple_segments(pixels, color_cycle)
+            self._flush_simple_segments(pixels)
 
         if debug_track:
             flush_time = time.perf_counter() - flush_start
@@ -1007,7 +1007,7 @@ class Virtual:
                 self._debug_flush_total = 0.0
                 self._debug_flush_frames = 0
 
-    def _flush_simple_segments(self, pixels, color_cycle):
+    def _flush_simple_segments(self, pixels):
         """
         Simple flush using segment-by-segment processing.
         Handles calibration, span mode, and copy mode.
@@ -1018,8 +1018,10 @@ class Virtual:
             if device is not None:
                 if device.is_active():
                     if self._calibration:
+                        # Reset color sequence for each device to maintain consistency
+                        Virtual._calibration_cache.reset_color_sequence()
                         self.render_calibration(
-                            data, device, segments, device_id, color_cycle
+                            data, device, segments, device_id
                         )
                     elif self._config["mapping"] == "span":
                         for (
@@ -1091,7 +1093,7 @@ class Virtual:
                     device.update_pixels(self.id, data)
 
     def render_calibration(
-        self, data, device, segments, device_id, color_cycle
+        self, data, device, segments, device_id
     ):
         """
         Renders the calibration data to the virtual output
@@ -1100,40 +1102,40 @@ class Virtual:
         # set data to black for full length of led strip allow other segments to overwrite
         data.append(
             (
-                np.array([0.0, 0.0, 0.0], dtype=float),
+                Virtual._calibration_cache.black_color,
                 0,
                 device.pixel_count - 1,
             )
         )
 
         for start, stop, step, device_start, device_end in segments:
-            # add data forced to color sequence of RGBCMY
-            color = np.array(parse_color(next(color_cycle)), dtype=float)
+            # Get next color in sequence (pre-parsed, no overhead)
+            color = Virtual._calibration_cache.get_next_color()
+            segment_length = device_end - device_start + 1
 
             # For complex_segments, use simple solid color fill for better performance
-            # Otherwise use animated pattern
+            # Otherwise use optimized cached pattern generation
             if self.complex_segments:
-                segment_length = device_end - device_start + 1
                 pattern = np.tile(color, (segment_length, 1))
             else:
-                pattern = make_pattern(
-                    color, device_end - device_start + 1, step
+                pattern = Virtual._calibration_cache.get_pattern(
+                    color, segment_length, step
                 )
 
             data.append((pattern, device_start, device_end))
         # render the highlight
         if self._hl_state and device_id == self._hl_device:
-            color = np.array(parse_color("white"), dtype=float)
+            color = Virtual._calibration_cache.white_color
+            hl_length = self._hl_end - self._hl_start + 1
 
             # For complex_segments, use simple solid color fill for better performance
-            # Otherwise use animated pattern
+            # Otherwise use optimized cached pattern generation
             if self.complex_segments:
-                hl_length = self._hl_end - self._hl_start + 1
                 pattern = np.tile(color, (hl_length, 1))
             else:
-                pattern = make_pattern(
+                pattern = Virtual._calibration_cache.get_pattern(
                     color,
-                    self._hl_end - self._hl_start + 1,
+                    hl_length,
                     self._hl_step,
                 )
 
