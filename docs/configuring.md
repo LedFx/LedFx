@@ -39,7 +39,7 @@ device using the following configuration based on your firmware:
 
   - **Manual Configuration:**
 
-    - **Add WLED as DDP Device: Preffered Method**
+    - **Add WLED as DDP Device: Preferred Method**
 
       - If your WLED version is prior to 0.13:
 
