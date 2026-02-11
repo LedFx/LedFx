@@ -15,7 +15,7 @@
    :maxdepth: 2
    :caption: Configuration
 
-   /settings/configuring
+   /configuring
    /settings/asset_workflow
    /settings/scenes
    /settings/playlists
