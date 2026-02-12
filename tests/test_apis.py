@@ -87,28 +87,54 @@ def test_api(group_name, test_name, case, http_session):
         for expected_dict in case.expected_response_values:
             for key, value in expected_dict.items():
                 # Special handling for id prefix match
-                if key == "virtual" and isinstance(value, dict) and "id" in value and isinstance(value["id"], str) and value["id"].startswith("__prefix__:"):
+                if (
+                    key == "virtual"
+                    and isinstance(value, dict)
+                    and "id" in value
+                    and isinstance(value["id"], str)
+                    and value["id"].startswith("__prefix__:")
+                ):
                     prefix = value["id"].replace("__prefix__:", "")
                     actual_id = response_dict[key].get("id", "")
-                    assert actual_id.startswith(prefix), f"Expected id to start with '{prefix}', got '{actual_id}'"
+                    assert actual_id.startswith(
+                        prefix
+                    ), f"Expected id to start with '{prefix}', got '{actual_id}'"
                     # Remove id from value so the rest can be checked as subset
                     value_no_id = value.copy()
                     value_no_id.pop("id")
                     try:
-                        assert value_no_id.items() <= {k: v for k, v in response_dict[key].items() if k != "id"}.items()
+                        assert (
+                            value_no_id.items()
+                            <= {
+                                k: v
+                                for k, v in response_dict[key].items()
+                                if k != "id"
+                            }.items()
+                        )
                     except AssertionError as exc:
-                        error_detail = find_first_error(value_no_id, {k: v for k, v in response_dict[key].items() if k != "id"})
+                        error_detail = find_first_error(
+                            value_no_id,
+                            {
+                                k: v
+                                for k, v in response_dict[key].items()
+                                if k != "id"
+                            },
+                        )
                         msg = (
                             f"Expected {key} to contain (prefix id)\n{value_no_id}, "
                             f"\n but got \n{response_dict.get(key)}. "
                             f"\n\nDetail: {error_detail}"
                         )
                         raise AssertionError(msg) from exc
-                elif key in response_dict and isinstance(response_dict[key], dict):
+                elif key in response_dict and isinstance(
+                    response_dict[key], dict
+                ):
                     try:
                         assert value.items() <= response_dict[key].items()
                     except AssertionError as exc:
-                        error_detail = find_first_error(value, response_dict[key])
+                        error_detail = find_first_error(
+                            value, response_dict[key]
+                        )
                         msg = (
                             f"Expected {key} to contain \n{value}, "
                             f"\n but got \n{response_dict.get(key)}. "
@@ -122,7 +148,9 @@ def test_api(group_name, test_name, case, http_session):
                             and response_dict[key] == value
                         )
                     except AssertionError as exc:
-                        error_detail = find_first_error(value, response_dict.get(key))
+                        error_detail = find_first_error(
+                            value, response_dict.get(key)
+                        )
                         msg = (
                             f"Expected {key} to be \n{value}, "
                             f"\n but got \n{response_dict.get(key)}. "
