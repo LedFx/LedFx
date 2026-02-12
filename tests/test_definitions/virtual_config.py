@@ -184,7 +184,7 @@ virtual_config_tests = {
                         "rotate": 0,
                         "complex_segments": False,
                     },
-                    "id": "first-virt",
+                    "id": "__prefix__:first-virt",
                     "is_device": False,
                     "auto_generated": False,
                 }
