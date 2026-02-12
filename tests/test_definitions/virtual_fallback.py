@@ -104,7 +104,7 @@ virtual_fallback_tests = {
         sleep_after_test=1.4,
     ),
     # Get effect after fallback
-    "get_effect_from_virtual_after_fallack": APITestCase(
+    "get_effect_from_virtual_after_fallback": APITestCase(
         execution_order=(test_count := test_count + 1),
         method="GET",
         api_endpoint="/api/virtuals/test-dummy-2/effects",
