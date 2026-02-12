@@ -79,11 +79,15 @@ def test_api(group_name, test_name, case, http_session):
         response_dict = response.json()
         for expected_dict in case.expected_response_values:
             for key, value in expected_dict.items():
-                if key in response_dict and isinstance(response_dict[key], dict):
+                if key in response_dict and isinstance(
+                    response_dict[key], dict
+                ):
                     try:
                         assert value.items() <= response_dict[key].items()
                     except AssertionError as exc:
-                        error_detail = find_first_error(value, response_dict[key])
+                        error_detail = find_first_error(
+                            value, response_dict[key]
+                        )
                         msg = (
                             f"Expected {key} to contain \n{value}, "
                             f"\n but got \n{response_dict.get(key)}. "
@@ -97,7 +101,9 @@ def test_api(group_name, test_name, case, http_session):
                             and response_dict[key] == value
                         )
                     except AssertionError as exc:
-                        error_detail = find_first_error(value, response_dict.get(key))
+                        error_detail = find_first_error(
+                            value, response_dict.get(key)
+                        )
                         msg = (
                             f"Expected {key} to be \n{value}, "
                             f"\n but got \n{response_dict.get(key)}. "
