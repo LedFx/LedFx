@@ -36,8 +36,14 @@ test_groups = [
     ("all_effects", all_effects),
     ("audio_configs", audio_configs),
     # Repeat virtual_config and virtual_fallback tests 50 times for CI stability
-    *[(f"virtual_config_tests_run{i+1}", virtual_config_tests) for i in range(50)],
-    *[(f"virtual_fallback_tests_run{i+1}", virtual_fallback_tests) for i in range(50)],
+    *[
+        (f"virtual_config_tests_run{i+1}", virtual_config_tests)
+        for i in range(50)
+    ],
+    *[
+        (f"virtual_fallback_tests_run{i+1}", virtual_fallback_tests)
+        for i in range(50)
+    ],
     ("coexistance_tests", coexistance_tests),
     ("log_api_tests", log_api_tests),
     ("preset_delete_tests", preset_delete_tests),
