@@ -1,5 +1,5 @@
-
 import time
+
 import requests
 
 # This test script generates fallback triggers and clears for LedFx virtuals.
@@ -41,12 +41,12 @@ def main():
     # | Timing (s) | Number of Events |
     # where timing is used for both key down and key up period
     timings = (
-        [0.03] * 50 +
-        [0.1] * 50 +
-        [0.2] * 20 +
-        [0.5] * 20 +
-        [1.0] * 10 +
-        [0.03] * 20
+        [0.03] * 50
+        + [0.1] * 50
+        + [0.2] * 20
+        + [0.5] * 20
+        + [1.0] * 10
+        + [0.03] * 20
     )
     for t in timings:
         on_space_press()
