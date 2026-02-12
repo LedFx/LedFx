@@ -12,7 +12,8 @@ except ImportError as e:
 # On release of the space bar it will cancel the effect and fallback to the previous effect
 # exit by pressing X. the terminal does not need to be in focus for this to work
 
-my_virtual = "wled19-32x32"
+my_virtual = "dummy1"
+my_virtual_2 = "dummy2"
 my_effect = "noise2d"
 was_pressed = False
 
@@ -26,7 +27,13 @@ def on_space_press():
             f"http://127.0.0.1:8888/api/virtuals/{my_virtual}/effects",
             json=payload,
         )
-        print(f"Response: {response.status_code} - {response.text}")
+        print(f"Response1: {response.status_code} - {response.text}")
+        response = requests.post(
+            f"http://127.0.0.1:8888/api/virtuals/{my_virtual_2}/effects",
+            json=payload,
+        )
+        print(f"Response2: {response.status_code} - {response.text}")
+
         was_pressed = True
 
 
@@ -36,7 +43,11 @@ def on_space_release():
     response = requests.get(
         f"http://127.0.0.1:8888/api/virtuals/{my_virtual}/fallback"
     )
-    print(f"Response: {response.status_code} - {response.text}")
+    print(f"Response1: {response.status_code} - {response.text}")
+    response = requests.get(
+        f"http://127.0.0.1:8888/api/virtuals/{my_virtual_2}/fallback"
+    )
+    print(f"Response2: {response.status_code} - {response.text}")
 
     was_pressed = False
 
