@@ -32,8 +32,6 @@ from ledfx.utils import Teleplot, fps_to_sleep_interval
 
 _LOGGER = logging.getLogger(__name__)
 
-# force test case runs 2
-
 
 class Virtual:
     CONFIG_SCHEMA = vol.Schema(
