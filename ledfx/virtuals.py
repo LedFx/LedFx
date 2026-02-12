@@ -34,6 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 
 # force test case runs
 
+
 class Virtual:
     CONFIG_SCHEMA = vol.Schema(
         {
