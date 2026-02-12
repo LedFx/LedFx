@@ -2,9 +2,7 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
-from ledfx.events import Event, EventListener, Events
+from ledfx.events import EventListener, Events
 
 
 class TestEventListener:
