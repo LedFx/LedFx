@@ -4,6 +4,7 @@
    :maxdepth: 2
    :caption: Installation & Development
 
+   /contributing
    /installing
    /launch
    /security
