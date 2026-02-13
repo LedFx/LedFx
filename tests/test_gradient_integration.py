@@ -1,6 +1,6 @@
 """Integration tests for gradient extraction in ImageCache and assets."""
 
-import os
+import io
 import tempfile
 
 import pytest
@@ -92,7 +92,7 @@ class TestImageCacheGradientIntegration:
         # Get cache entry metadata
         cache_key = cache._generate_cache_key(url, None)
         entry = cache.metadata["cache_entries"][cache_key]
-        
+
         # Gradient might be None or present
         assert "gradients" in entry
 
@@ -125,7 +125,7 @@ class TestImageCacheGradientIntegration:
 
         cache_path = cache.get(url)
         assert cache_path is not None
-        
+
         # Get cache entry metadata
         cache_key = cache._generate_cache_key(url, None)
         entry = cache.metadata["cache_entries"][cache_key]
@@ -280,7 +280,3 @@ class TestAssetGradientIntegration:
             assert "raw" in asset["gradients"]
             assert "led_safe" in asset["gradients"]
             assert "led_punchy" in asset["gradients"]
-
-
-# Import io for BytesIO
-import io
