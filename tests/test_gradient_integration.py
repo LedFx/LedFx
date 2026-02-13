@@ -64,8 +64,7 @@ class TestImageCacheGradientIntegration:
         # Verify raw variant structure
         raw = gradients["raw"]
         assert "gradient" in raw
-        assert "stops" in raw
-        assert "dominant_colors" in raw
+        assert "background_color" in gradients["metadata"]
         assert raw["gradient"].startswith("linear-gradient")
 
     def test_cache_put_handles_gradient_extraction_failure(self, cache):
@@ -142,8 +141,41 @@ class TestImageCacheGradientIntegration:
         for variant_name in ["raw", "led_safe", "led_punchy"]:
             variant = gradients[variant_name]
             assert "gradient" in variant
-            assert "stops" in variant
-            assert len(variant["stops"]) > 0
+            # background_color is in metadata, not per-variant
+
+        # Verify metadata has background info
+        assert "background_color" in gradients["metadata"]
+        assert "background_frequency" in gradients["metadata"]
+
+    def test_cache_thumbnails_skip_gradient_extraction(self, cache):
+        """Thumbnails (with params) should not trigger gradient extraction."""
+        # Create test image
+        img = Image.new("RGB", (100, 100), color=(255, 0, 0))
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format="PNG")
+        image_data = img_bytes.getvalue()
+
+        # Cache as thumbnail with params (simulates thumbnail cache)
+        url = "https://example.com/thumb.png"
+        thumbnail_params = {"size": 200, "animated": False}
+        cache.put(
+            url=url,
+            data=image_data,
+            content_type="image/png",
+            etag=None,
+            last_modified=None,
+            params=thumbnail_params,
+        )
+
+        cache_path = cache.get(url, params=thumbnail_params)
+        assert cache_path is not None
+
+        # Get cache entry metadata
+        cache_key = cache._generate_cache_key(url, thumbnail_params)
+        entry = cache.metadata["cache_entries"][cache_key]
+
+        # Thumbnails should NOT have gradients extracted
+        assert entry["gradients"] is None
 
 
 class TestAssetGradientIntegration:
@@ -249,7 +281,7 @@ class TestAssetGradientIntegration:
         assert metadata["pattern"] == "interleaved"
 
         # Background color should be set
-        assert gradients["raw"]["background_color"] is not None
+        assert gradients["metadata"]["background_color"] is not None
 
     def test_multiple_assets_all_have_gradients(self, temp_assets_dir):
         """All assets in directory should have gradient metadata."""

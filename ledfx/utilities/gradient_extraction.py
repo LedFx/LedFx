@@ -33,6 +33,11 @@ LED_PUNCHY_CONFIG = {
     "white_replacement": "#FFFFFF",  # Pure white for punchy variant
 }
 
+# Color deduplication parameters
+COLOR_DISTANCE_THRESHOLD = 0.20  # HSV distance threshold (0.0-1.0)
+# Hue is weighted more heavily as it's most perceptually significant
+# Saturation and Value differences are less critical for LED gradients
+
 
 def extract_dominant_colors(
     pil_image: Image.Image, n_colors: int = 9
@@ -95,7 +100,10 @@ def extract_dominant_colors(
         # Sort by frequency (most dominant first)
         color_frequencies.sort(key=lambda x: x["frequency"], reverse=True)
 
-        return color_frequencies
+        # Deduplicate similar colors to prevent gradient dominated by close variants
+        deduplicated = _deduplicate_colors(color_frequencies)
+
+        return deduplicated
 
     except Exception as e:
         _LOGGER.error(f"Failed to extract dominant colors: {e}")
@@ -108,6 +116,93 @@ def extract_dominant_colors(
         return [
             {"rgb": list(avg_color[:3]), "hsv": [h, s, v], "frequency": 1.0}
         ]
+
+
+def _deduplicate_colors(colors: list[dict]) -> list[dict]:
+    """
+    Merge similar colors to prevent gradients dominated by close color variants.
+
+    Uses HSV color space with weighted distance calculation:
+    - Hue has highest weight (most perceptually significant)
+    - Saturation and Value have lower weights
+    - Colors within threshold distance are merged (frequencies combined)
+
+    Args:
+        colors: List of color dicts sorted by frequency (descending)
+
+    Returns:
+        Deduplicated list of colors with merged frequencies
+    """
+    if len(colors) <= 1:
+        return colors
+
+    deduplicated = []
+
+    for color in colors:
+        merged = False
+
+        # Check if this color is similar to any already kept
+        for existing in deduplicated:
+            if _colors_similar(color["hsv"], existing["hsv"]):
+                # Merge: add frequency to existing color
+                existing["frequency"] += color["frequency"]
+                merged = True
+                break
+
+        if not merged:
+            # Keep as new distinct color
+            deduplicated.append(color.copy())
+
+    # Re-sort by frequency after merging
+    deduplicated.sort(key=lambda x: x["frequency"], reverse=True)
+
+    return deduplicated
+
+
+def _colors_similar(hsv1: list[float], hsv2: list[float]) -> bool:
+    """
+    Check if two colors are perceptually similar using weighted HSV distance.
+
+    Args:
+        hsv1: First color [h, s, v] where h,s,v are in [0.0, 1.0]
+        hsv2: Second color [h, s, v]
+
+    Returns:
+        True if colors are within similarity threshold
+    """
+    h1, s1, v1 = hsv1
+    h2, s2, v2 = hsv2
+
+    # Hue distance (circular, 0-1 wraps around)
+    # Hue difference can be at most 0.5 (opposite sides of color wheel)
+    hue_diff = abs(h1 - h2)
+    if hue_diff > 0.5:
+        hue_diff = 1.0 - hue_diff
+
+    # Saturation and Value are linear [0, 1]
+    sat_diff = abs(s1 - s2)
+    val_diff = abs(v1 - v2)
+
+    # Weighted distance: Hue is most important for distinctness
+    # For very low saturation (grays), rely more on Value difference
+    avg_saturation = (s1 + s2) / 2
+
+    if avg_saturation < 0.15:
+        # Low saturation (grays/near-grays): Use Value primarily
+        hue_weight = 0.1
+        sat_weight = 0.2
+        val_weight = 0.7
+    else:
+        # Saturated colors: Hue is most important
+        hue_weight = 0.65
+        sat_weight = 0.20
+        val_weight = 0.15
+
+    weighted_distance = (
+        hue_weight * hue_diff + sat_weight * sat_diff + val_weight * val_diff
+    )
+
+    return weighted_distance < COLOR_DISTANCE_THRESHOLD
 
 
 def detect_dominant_background(
@@ -365,10 +460,17 @@ def extract_gradient_metadata(image_source) -> dict:
     Returns:
         dict: Complete gradient metadata with all variants
         {
-            "raw": {"gradient": "...", "stops": [...], "dominant_colors": [...], ...},
-            "led_safe": {...},
-            "led_punchy": {...},
-            "metadata": {"image_size": [...], "processing_time_ms": ..., ...}
+            "raw": {"gradient": "..."},
+            "led_safe": {"gradient": "..."},
+            "led_punchy": {"gradient": "..."},
+            "metadata": {
+                "image_size": [...],
+                "processing_time_ms": ...,
+                "background_color": "#...",
+                "background_frequency": 0.5,
+                "has_dominant_background": true,
+                ...
+            }
         }
     """
     start_time = time.time()
@@ -423,20 +525,15 @@ def _extract_gradient_metadata_from_image(
         # Build gradient string
         raw_gradient = build_gradient_string(raw_stops)
 
-        # Extract background color as hex
-        background_color_hex = None
-        background_frequency = None
-        if background:
-            background_color_hex = f"#{background['rgb'][0]:02x}{background['rgb'][1]:02x}{background['rgb'][2]:02x}"
-            background_frequency = round(background["frequency"], 3)
+        # Always extract the most frequent color as background_color
+        # (even if it doesn't cross 50% threshold)
+        most_frequent = colors[0]
+        background_color_hex = f"#{most_frequent['rgb'][0]:02x}{most_frequent['rgb'][1]:02x}{most_frequent['rgb'][2]:02x}"
+        background_frequency = round(most_frequent["frequency"], 3)
 
-        # Build raw variant
+        # Build raw variant (gradient only, background info in metadata)
         raw_variant = {
             "gradient": raw_gradient,
-            "stops": raw_stops,
-            "dominant_colors": colors,
-            "background_color": background_color_hex,
-            "background_frequency": background_frequency,
         }
 
         # Build LED-safe variant (apply correction to all colors)
@@ -460,16 +557,9 @@ def _extract_gradient_metadata_from_image(
             safe_colors, safe_background, max_stops=8
         )
         safe_gradient = build_gradient_string(safe_stops)
-        safe_bg_hex = None
-        if safe_background:
-            safe_bg_hex = f"#{safe_background['rgb'][0]:02x}{safe_background['rgb'][1]:02x}{safe_background['rgb'][2]:02x}"
 
         led_safe_variant = {
             "gradient": safe_gradient,
-            "stops": safe_stops,
-            "dominant_colors": safe_colors,
-            "background_color": safe_bg_hex,
-            "background_frequency": background_frequency,
         }
 
         # Build LED-punchy variant
@@ -493,16 +583,9 @@ def _extract_gradient_metadata_from_image(
             punchy_colors, punchy_background, max_stops=8
         )
         punchy_gradient = build_gradient_string(punchy_stops)
-        punchy_bg_hex = None
-        if punchy_background:
-            punchy_bg_hex = f"#{punchy_background['rgb'][0]:02x}{punchy_background['rgb'][1]:02x}{punchy_background['rgb'][2]:02x}"
 
         led_punchy_variant = {
             "gradient": punchy_gradient,
-            "stops": punchy_stops,
-            "dominant_colors": punchy_colors,
-            "background_color": punchy_bg_hex,
-            "background_frequency": background_frequency,
         }
 
         # Calculate processing time
@@ -530,6 +613,8 @@ def _extract_gradient_metadata_from_image(
                 "has_dominant_background": background is not None,
                 "gradient_stop_count": len(raw_stops),
                 "pattern": pattern,
+                "background_color": background_color_hex,
+                "background_frequency": background_frequency,
                 "extraction_version": "1.0",
                 "extracted_at": datetime.now(timezone.utc).isoformat(),
             },
@@ -563,33 +648,12 @@ def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
     return {
         "raw": {
             "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
-            "stops": [
-                {"color": "#808080", "position": 0.0, "type": "color"},
-                {"color": "#808080", "position": 1.0, "type": "color"},
-            ],
-            "dominant_colors": [],
-            "background_color": None,
-            "background_frequency": None,
         },
         "led_safe": {
             "gradient": "linear-gradient(90deg, rgb(109,109,109) 0%, rgb(109,109,109) 100%)",
-            "stops": [
-                {"color": "#6D6D6D", "position": 0.0, "type": "color"},
-                {"color": "#6D6D6D", "position": 1.0, "type": "color"},
-            ],
-            "dominant_colors": [],
-            "background_color": None,
-            "background_frequency": None,
         },
         "led_punchy": {
             "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
-            "stops": [
-                {"color": "#808080", "position": 0.0, "type": "color"},
-                {"color": "#808080", "position": 1.0, "type": "color"},
-            ],
-            "dominant_colors": [],
-            "background_color": None,
-            "background_frequency": None,
         },
         "metadata": {
             "image_size": list(pil_image.size) if pil_image else [0, 0],
@@ -598,6 +662,8 @@ def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
             "has_dominant_background": False,
             "gradient_stop_count": 2,
             "pattern": "fallback",
+            "background_color": None,
+            "background_frequency": None,
             "extraction_version": "1.0",
             "extracted_at": datetime.now(timezone.utc).isoformat(),
             "error": str(error),

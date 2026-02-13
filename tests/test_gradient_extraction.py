@@ -256,10 +256,9 @@ class TestExtractGradientMetadata:
 
         raw = metadata["raw"]
         assert "gradient" in raw
-        assert "stops" in raw
-        assert "dominant_colors" in raw
-        assert "background_color" in raw
-        assert "background_frequency" in raw
+        # background_color and frequency are in metadata, not per-variant
+        assert "background_color" in metadata["metadata"]
+        assert "background_frequency" in metadata["metadata"]
 
     def test_metadata_fields(self):
         """Metadata includes required fields."""
@@ -293,17 +292,34 @@ class TestExtractGradientMetadata:
 
         assert metadata["metadata"]["has_dominant_background"] is True
         assert metadata["metadata"]["pattern"] == "interleaved"
-        assert metadata["raw"]["background_color"] is not None
+        assert metadata["metadata"]["background_color"] is not None
 
     def test_no_background_pattern(self):
         """Report weighted pattern when no background."""
-        # Create gradient image (no dominant color)
-        img = Image.new("RGB", (100, 100))
+        # Create image with many distinct colors, no dominant background
+        # Use wider color separation to prevent deduplication merging
+        img = Image.new("RGB", (90, 90))
         pixels = img.load()
-        for y in range(100):
-            for x in range(100):
-                # Gradient from red to blue
-                pixels[x, y] = (255 - int(y * 2.55), 0, int(y * 2.55))
+
+        # Create 9 distinct color blocks (10x10 each) - 11.1% each
+        colors = [
+            (255, 0, 0),  # Red
+            (255, 128, 0),  # Orange
+            (255, 255, 0),  # Yellow
+            (0, 255, 0),  # Green
+            (0, 255, 255),  # Cyan
+            (0, 0, 255),  # Blue
+            (128, 0, 255),  # Purple
+            (255, 0, 255),  # Magenta
+            (128, 128, 128),  # Gray
+        ]
+
+        for i, color in enumerate(colors):
+            y_start = (i // 3) * 30
+            x_start = (i % 3) * 30
+            for y in range(y_start, y_start + 30):
+                for x in range(x_start, x_start + 30):
+                    pixels[x, y] = color
 
         metadata = extract_gradient_metadata(img)
 
@@ -330,4 +346,7 @@ class TestExtractGradientMetadata:
 
         # Gradients should match (ignoring timestamps)
         assert metadata1["raw"]["gradient"] == metadata2["raw"]["gradient"]
-        assert len(metadata1["raw"]["stops"]) == len(metadata2["raw"]["stops"])
+        assert (
+            metadata1["metadata"]["background_color"]
+            == metadata2["metadata"]["background_color"]
+        )

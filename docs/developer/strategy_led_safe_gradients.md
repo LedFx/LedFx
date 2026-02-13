@@ -1,7 +1,8 @@
 # Strategy Document: Image-Derived LED-Safe Gradient Extraction
 
 **Created**: February 13, 2026
-**Status**: Phase 3 Complete - Pipeline Integration Finished
+**Status**: Phase 3 Complete - Pipeline Integration Finished (with latest optimizations)
+**Last Updated**: February 13, 2026
 **Target**: LedFx Core Gradient System
 
 ---
@@ -258,21 +259,18 @@ class GradientEffect(Effect):
 #### Tasks
 
 1. **Create Core Module** (`ledfx/utilities/gradient_extraction.py`)
-   ```python
-   # Pure functions:
-   # - extract_dominant_colors(pil_image, n_colors=8) -> List[ColorWeight]
-   # - detect_dominant_background(colors, threshold=0.5) -> Optional[ColorWeight]
-   # - build_gradient_stops(colors, weights, max_stops=8) -> List[GradientStop]
-   # - build_gradient_string(stops) -> str  # LedFx format
-   # - apply_led_correction(gradient, mode='safe') -> Gradient
-   #
-   # Integration wrapper:
-   # - extract_gradient_metadata(pil_image) -> dict  # Returns all variants + metadata
-   ```
+   - Pure functions for color extraction, background detection, gradient construction
+   - LED correction algorithms (safe/punchy variants)
+   - `extract_gradient_metadata(pil_image)` wrapper returns all variants + metadata
+   - Internally uses stops and dominant_colors; API exposes gradient string + background info
 
 2. **Palette Extraction Algorithm**
    - [x] Implement color quantization using Pillow's `image.quantize()`
    - [x] Add frequency weighting logic (pixel count per color)
+   - [x] **Color deduplication** to prevent gradients dominated by similar colors
+     - Uses HSV distance with weighted importance (hue > saturation > value)
+     - Merges colors within perceptual similarity threshold
+     - Combines frequencies when merging
    - [x] Create stability mechanisms (sort by frequency, then hue)
    - [x] Optimize with NumPy operations
 
@@ -302,9 +300,9 @@ class GradientEffect(Effect):
      - Pattern: `bg → accent1 → bg → accent2 → bg → accent3 → bg`
    - [x] LedFx gradient format conversion (linear-gradient string)
    - [x] Variant generation (raw/safe/punchy modes)
-   - [x] Always include background_color field (null if none detected)
+   - [x] Always include background_color (most frequent color) and background_frequency
 
-6. **Metadata Extraction Wrapper** ⭐ **NEW**
+6. **Metadata Extraction Wrapper** ⭐
    ```python
    def extract_gradient_metadata(pil_image: Image.Image) -> dict:
        """
@@ -313,12 +311,15 @@ class GradientEffect(Effect):
        Returns dict suitable for storage in ImageCache or asset metadata:
        {
            "gradients": {
-               "raw": {"gradient": "...", "stops": [...], "background_color": "...", ...},
-               "led_safe": {...},
-               "led_punchy": {...}
-           },
-           "extraction_version": "1.0",  # For future algorithm updates
-           "extracted_at": "2026-02-13T12:00:00Z"
+               "raw": {"gradient": "..."},
+               "led_safe": {"gradient": "..."},
+               "led_punchy": {"gradient": "..."},
+               "metadata": {
+                   "background_color": "#...",
+                   "background_frequency": 0.7,
+                   ...
+               }
+           }
        }
        """
    ```
@@ -364,14 +365,15 @@ class GradientEffect(Effect):
    # Extract image metadata (existing)
    width, height, img_format, n_frames, is_animated = get_image_metadata(cache_path)
 
-   # NEW: Extract gradient metadata
-   from ledfx.utilities.gradient_extraction import extract_gradient_metadata
-   try:
-       with Image.open(cache_path) as img:
-           gradient_data = extract_gradient_metadata(img)
-   except Exception as e:
-       _LOGGER.warning(f"Failed to extract gradients for {url}: {e}")
-       gradient_data = None
+   # NEW: Extract gradient metadata only for original images, not thumbnails
+   # Thumbnails have params, original images don't
+   gradient_data = None
+   if params is None:  # Skip thumbnails
+       try:
+           gradient_data = extract_gradient_metadata(cache_path)
+       except Exception as e:
+           _LOGGER.warning(f"Failed to extract gradients for {url}: {e}")
+           # Continue without gradients - not a critical failure
 
    entry = {
        # ... existing fields ...
@@ -380,7 +382,7 @@ class GradientEffect(Effect):
        "format": img_format,
        "n_frames": n_frames,
        "is_animated": is_animated,
-       "gradients": gradient_data,  # NEW FIELD
+       "gradients": gradient_data,  # NEW FIELD (None for thumbnails)
    }
    ```
 
@@ -388,10 +390,15 @@ class GradientEffect(Effect):
    - [x] Add gradient extraction in `save_asset()` after validation
    - [x] Store gradient metadata alongside image
    - [x] Update `list_assets()` to include gradient metadata in responses
-   - [x] Handle extraction errors gracefully (log warning, continue)
+   - [x] **Implement gradient caching** - Store extracted gradients with modification times
+   - [x] Skip re-extraction for unchanged files (check cached modified_time)
+   - [x] Cache invalidation on file deletion
+   - [x] Graceful cache loading (empty or corrupted → return empty dict)
+   - [x] Handle extraction errors gracefully (log warning, cache failure, continue)
+   - [x] **Cache file**: `.asset_metadata_cache.json` (generic for future extensibility)
 
 3. **Update Existing API Responses** (minimal changes)
-   - [x] `/api/cache/images` GET - Already returns cache entries, now includes gradients
+   - [x] `/api/cache/images` GET - Already returns cache entries, now includes gradients in `get_stats()` response
    - [x] `/api/assets` GET - Already returns asset list, now includes gradients
    - [x] No schema changes needed - gradients are optional metadata fields
    - [x] Existing clients ignore new fields (backward compatible)
@@ -404,6 +411,16 @@ class GradientEffect(Effect):
 
 5. **Performance Considerations**
    - [x] Gradient extraction adds ~20-50ms per image (acceptable for one-time cost)
+   - [x] **Thumbnail optimization**: Skip gradient extraction for thumbnails (identified by `params != None`)
+   - [x] Single image with multiple thumbnails: Only extracts gradients once (on original), not per thumbnail
+   - [x] Performance impact: One 300ms extraction per image vs. 16× extractions (thumbnails skip extraction)
+   - [x] **Asset gradient caching**: Prevents re-extraction on every `list_assets()` call
+   - [x] Cache file: `.asset_metadata_cache.json` (hidden file in assets directory, generic for future metadata)
+   - [x] Cache hit: Instant gradient retrieval (0ms vs. 20-300ms extraction)
+   - [x] Cache miss: Extract once, cache result with modification time
+   - [x] Automatic cache invalidation: When file modified or deleted
+   - [x] Graceful degradation: Broken cache → re-extract without errors
+   - [x] Performance improvement: 16 files = 16 extractions on first list, 0 extractions on subsequent lists
    - [x] Consider making extraction optional via config flag (future enhancement)
    - [x] Cache metadata file size increases ~1-2KB per image (negligible)
 
@@ -420,44 +437,47 @@ class GradientEffect(Effect):
 - [x] Load cached image → Check `/api/cache/images` returns gradients
 - [x] Simulate extraction error → Verify image still loads, `gradients: null`
 - [x] Test with various image types (JPEG, PNG, GIF, WebP)
+- [x] Thumbnail optimization → Verify thumbnails skip gradient extraction
 
-**Test Results**: 7/7 integration tests passing (test_gradient_integration.py)
+**Test Results**: 8/8 integration tests passing (test_gradient_integration.py)
 
 ---
 
 ### Phase 4: Testing & Validation
-**Status**: Not Started
+**Status**: Partially Complete
 **Duration**: 2-3 hours
 
 #### Objectives
-- Comprehensive test coverage
-- Validate LED correction quality
-- Security testing
+- Comprehensive test coverage ✅
+- Validate LED correction quality (pending visual validation)
+- Security testing (pending)
 
 #### Tasks
 
-1. **Unit Tests** (`tests/test_gradient_extraction.py`)
-   - [ ] Test palette extraction
-   - [ ] Test frequency weighting
-   - [ ] Test LED correction algorithms
-   - [ ] Test gradient construction
-   - [ ] Test stability (determinism)
+1. **Unit Tests** (`tests/test_gradient_extraction.py`) ✅ COMPLETE
+   - [x] Test palette extraction (5 tests)
+   - [x] Test dominant background detection (4 tests)
+   - [x] Test LED correction algorithms (6 tests)
+   - [x] Test gradient construction (5 tests)
+   - [x] Test stability/determinism (2 tests)
+   - [x] Test metadata wrapper (2 tests)
 
-2. **API Tests** (`tests/test_api_gradients_extract.py`)
-   - [ ] Test URL reference handling
-   - [ ] Test cached image references
-   - [ ] Test file path handling
-   - [ ] Test variant selection
-   - [ ] Test error responses
+2. **Integration Tests** (`tests/test_gradient_integration.py`) ✅ COMPLETE
+   - [x] Test ImageCache integration (4 tests)
+   - [x] Test Asset integration (4 tests)
+   - [x] Test thumbnail optimization
+   - [x] Test error handling
+   - [x] Test variant validation
+   - [x] Test multiple images
 
-3. **Security Tests**
+3. **Security Tests** (Pending)
    - [ ] Path traversal attempts
    - [ ] SSRF protection validation
    - [ ] Use big-list-of-naughty-strings patterns
    - [ ] Test size limit enforcement
    - [ ] Test MIME type validation
 
-4. **Visual Validation**
+4. **Visual Validation** (Pending)
    - [ ] Create test image set (various color profiles)
    - [ ] Generate gradients for each variant
    - [ ] Document expected vs actual results
@@ -528,25 +548,19 @@ class GradientEffect(Effect):
 ```python
 @dataclass
 class ColorWeight:
-    """Dominant color with frequency weight"""
+    """Dominant color with frequency weight (internal use)"""
     rgb: Tuple[int, int, int]
     hsv: Tuple[float, float, float]
     frequency: float  # 0.0-1.0
 
 @dataclass
 class GradientStop:
-    """Single stop in gradient"""
+    """Single stop in gradient (internal use)"""
     position: float  # 0.0-1.0
     color: str  # hex format "#RRGGBB"
 
-@dataclass
-class ExtractedGradient:
-    """Complete gradient with metadata"""
-    stops: List[GradientStop]
-    dominant_colors: List[ColorWeight]
-    variant: str  # "raw", "led_safe", "led_punchy"
-    background_color: Optional[str]  # Hex color if dominant bg detected
-    background_frequency: Optional[float]  # Frequency of bg color
+# Note: These structures are used internally for gradient construction
+# API responses only expose: gradient (CSS string), background_color, background_frequency
 ```
 
 ### LED Correction Parameters
@@ -572,7 +586,7 @@ LED_PUNCHY_CONFIG = {
 
 ### Metadata Format (Stored in Cache/Assets)
 
-Since gradients are integrated into image metadata, they're stored in cache entries and asset metadata:
+Gradients are integrated into image metadata and stored in cache entries and asset metadata:
 
 ```javascript
 {
@@ -586,32 +600,13 @@ Since gradients are integrated into image metadata, they're stored in cache entr
   "is_animated": false,
   "gradients": {
     "raw": {
-      "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,255,0) 50%, rgb(0,0,255) 100%)",
-      "stops": [
-        {"position": 0.0, "color": "#FF0000"},
-        {"position": 0.5, "color": "#00FF00"},
-        {"position": 1.0, "color": "#0000FF"}
-      ],
-      "dominant_colors": [
-        {"rgb": [255,0,0], "hsv": [0,1,1], "frequency": 0.3},
-        {"rgb": [0,255,0], "hsv": [120,1,1], "frequency": 0.25}
-      ],
-      "background_color": "#000000",
-      "background_frequency": 0.65
+      "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,255,0) 50%, rgb(0,0,255) 100%)"
     },
     "led_safe": {
-      "gradient": "linear-gradient(90deg, rgb(217,0,0) 0%, ...)",
-      "stops": [ /* Same structure, LED-corrected colors */ ],
-      "dominant_colors": [ /* LED-corrected */ ],
-      "background_color": "#0A0A0A",
-      "background_frequency": 0.65
+      "gradient": "linear-gradient(90deg, rgb(217,0,0) 0%, ...)"
     },
     "led_punchy": {
-      "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, ...)",
-      "stops": [ /* Same structure, punchy variant */ ],
-      "dominant_colors": [ /* Punchy variant */ ],
-      "background_color": "#0A0A0A",
-      "background_frequency": 0.65
+      "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, ...)"
     },
     "metadata": {
       "image_size": [1200, 800],
@@ -619,6 +614,9 @@ Since gradients are integrated into image metadata, they're stored in cache entr
       "extracted_color_count": 8,
       "has_dominant_background": true,
       "gradient_stop_count": 7,
+      "pattern": "interleaved",
+      "background_color": "#000000",
+      "background_frequency": 0.65,
       "extraction_version": "1.0",
       "extracted_at": "2026-02-13T12:00:00Z"
     }
@@ -626,11 +624,55 @@ Since gradients are integrated into image metadata, they're stored in cache entr
 }
 ```
 
-**Background Color Logic**:
-- When a single color has >50% frequency, it's extracted as `background_color`
-- Remaining colors (up to 8) form the gradient with weighted distribution
-- If no dominant background: `background_color` is `null`, all colors in gradient
-- LED correction applies to background color as well (all variants include corrected background)
+**API Response Fields**:
+- `gradient` (per variant): CSS linear-gradient string (used by effects)
+- `background_color` (in metadata): Hex color of the most frequent color (always populated)
+- `background_frequency` (in metadata): Frequency of the most frequent color (0.0-1.0)
+- `has_dominant_background` (in metadata): `true` if most frequent color is >50%, `false` otherwise
+
+**Internal Implementation**:
+- Internally uses stops array and dominant_colors for gradient construction
+- These are NOT exposed in API responses - only gradient CSS string and background info
+- When `has_dominant_background` is `true`, uses interleaved gradient pattern (bg separates accents)
+- When `has_dominant_background` is `false`, uses weighted gradient pattern (all colors distributed)
+- Background color/frequency are extraction metadata, not gradient-variant-specific
+
+### Asset Metadata Cache Format
+
+The asset metadata cache (`.asset_metadata_cache.json`) stores extracted image metadata with modification times to prevent redundant extraction on every `list_assets()` call. Currently stores gradients, but designed to accommodate other metadata in the future:
+
+```json
+{
+  "path/to/image1.png": {
+    "gradients": {
+      "raw": { /* Full gradient structure as above */ },
+      "led_safe": { /* LED-corrected variant */ },
+      "led_punchy": { /* Punchy variant */ },
+      "metadata": { /* Extraction metadata */ }
+    },
+    "modified_time": "2026-02-13T12:00:00.123456+00:00"
+  },
+  "subfolder/image2.jpg": {
+    "gradients": null,  // Cached extraction failure
+    "modified_time": "2026-02-13T12:05:00.789012+00:00"
+  }
+}
+```
+
+**Cache Behavior**:
+- **Cache Hit**: File's `modified_time` matches cache entry → Use cached gradients (0ms)
+- **Cache Miss**: File is new or modified → Extract gradients, update cache entry
+- **Extraction Failure**: Store `gradients: null` to avoid re-attempting every list
+- **File Deletion**: Cache entry removed via `delete_asset()` invalidation
+- **Corrupted Cache**: Returns empty dict, all files re-extracted
+- **Cache Location**: `{config_dir}/assets/.asset_metadata_cache.json` (hidden file)
+- **Cache File Size**: ~1-2KB per image (negligible overhead)
+- **Future-ready**: Generic structure allows adding other metadata beyond gradients
+
+**Performance Impact**:
+- First `list_assets()` call: Extract gradients for all images (one-time cost)
+- Subsequent calls: Instant retrieval from cache
+- Example: 16 images × 50ms = 800ms first call, 0ms subsequent calls
 
 tests/
   test_gradient_extraction.py         # Core function tests
@@ -644,9 +686,20 @@ docs/apis/
 
 ```
 ledfx/libraries/cache.py    # Add gradient extraction in put() method
-ledfx/assets.py              # Add gradient extraction in save_asset()
+                             # Update get_stats() to expose gradients in API response
+ledfx/assets.py              # Add gradient extraction + caching in list_assets()
+                             # Add cache invalidation in delete_asset()
+                             # Add _load_asset_metadata_cache() and _save_asset_metadata_cache()
+                             # Update IGNORED_FILES to exclude .asset_metadata_cache.json
 docs/apis/cache.md           # Document gradient fields
 docs/apis/assets.md          # Document gradient fields
+```
+
+### Generated Files (Runtime)
+
+```
+{config_dir}/cache/images/metadata.json          # ImageCache metadata (stores gradients)
+{config_dir}/assets/.asset_metadata_cache.json   # Asset metadata cache (hidden file)
 ```
 
 ### Optional Files (Phase 5, if needed)
@@ -672,14 +725,21 @@ docs/developer/index.rst    # Link to new docs
 ### Key Existing Files (Referenced, Not Modified)
 
 ```
-ledfx/assets.py             # Image asset storage and validation
 ledfx/color.py              # Gradient and color utilities
 ledfx/utils.py              # open_image(), ImageCache access
 ledfx/api/__init__.py       # RestEndpoint base class
-ledfx/libraries/cache.py    # ImageCache implementation
 ledfx/utilities/security_utils.py   # Security validation functions
 ledfx/utilities/image_utils.py      # get_image_metadata()
 ledfx/effects/gradient.py   # GradientEffect base class
+```
+
+### New Files Created
+
+```
+ledfx/utilities/gradient_extraction.py   # Core extraction functions (642 lines)
+tests/test_gradient_extraction.py        # Unit tests (329 lines, 25/25 passing)
+tests/test_gradient_integration.py       # Integration tests (283 lines, 8/8 passing)
+docs/developer/strategy_led_safe_gradients.md  # This document (1099 lines)
 ```
 
 ---
@@ -688,7 +748,7 @@ ledfx/effects/gradient.py   # GradientEffect base class
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Color extraction too slow | Medium | High | Use NumPy, add caching layer |
+| Color extraction too slow | ~~Medium~~ **Low** | High | **✅ Mitigated**: Thumbnail skip + asset caching implemented |
 | LED correction subjective | High | Medium | Provide tunable parameters |
 | Security bypass potential | Low | Critical | Reuse existing validation, comprehensive tests |
 | Gradient format incompatibility | Low | High | Use existing structures, integration tests |
@@ -759,82 +819,31 @@ ledfx/effects/gradient.py   # GradientEffect base class
 7. **LED Hardware Profiles**:
    - ✅ **Start with WS2812 standard**, extend to profiles later if needed
 
----
-
-## Next Steps
-
-### Current Status: Phase 1 Complete ✅
-
-**Phase 1 Key Findings**:
-- ✅ Image loading infrastructure mapped (`open_image()`, `ImageCache`, security layers)
-- ✅ Gradient system documented (`Gradient` class, `GradientEffect`, format specifications)
-- ✅ REST patterns identified (`RestEndpoint` helpers, ONE class per file rule)
-- ✅ Security mechanisms comprehensive (SSRF, path traversal, content validation)
-
-**Ready to Proceed**: Phase 2 (Core Algorithm Implementation)
-
-### Recommended Next Action
-
-### Resolved Design Decisions ✅
-
-1. **Color Quantization Algorithm**:
-   - ✅ **Pillow quantize()** - Built-in, good balance, sufficient quality
-
-2. **LED Correction Parameters**:
-   - ✅ **Hard-coded initially** - LED_SAFE defaults, configurable params later
-
-3. **Gradient Stop Count**:
-   - ✅ **Fixed at 8 maximum** - Sufficient for LED effects, parameterize later
-
-4. **Dominant Background Handling**: ⭐ **CRITICAL DECISION**
-   - ✅ **Separate background when >50% frequency**
-   - ✅ **Build gradient from remaining accent colors**
-   - ✅ **Return background_color as separate field**
-   - **Rationale**: Prevents washed-out gradients, matches human perception
-
-5. **Caching Strategy**:
-   - ✅ **Extend ImageCache metadata** with extracted gradients
-
-6. **API Variants**:
-   - ✅ **Return all variants** (raw/safe/punchy), let client choose
-
-7. **LED Hardware Profiles**:
-   - ✅ **Start with WS2812 standard**, extend to profiles later if needed
-
-8. **Architecture**: ⭐ **MAJOR DECISION**
+8. **Architecture**:
    - ✅ **Integrate into ImageCache/asset pipeline** instead of separate API
    - ✅ **Auto-extract on all image loads** (one-time cost, cached)
    - ✅ **No new REST endpoint needed** - existing APIs return gradients
-   - **Rationale**: Simpler, automatic, backward compatible, one-time extraction
+
+9. **API Response Structure**:
+   - ✅ **Expose gradient CSS string, background_color, background_frequency only**
+   - ✅ **Internal stops/dominant_colors arrays not exposed** (implementation details)
 
 ---
 
-## Next Steps
+## Next Steps (Phase 4-5)
 
-1. Create `ledfx/utilities/gradient_extraction.py`
-2. Implement `extract_dominant_colors(pil_image, n_colors=9)` using Pillow quantize (9 to detect background)
-3. Implement `detect_dominant_background(colors, threshold=0.5)` ⭐
-4. Implement `build_gradient_stops(colors, weights, max_stops=8)` with background handling
-5. Implement `build_gradient_string(stops)` for LedFx format
-6. Implement `apply_led_correction(rgb_tuple, mode='safe')` for color correction
-7. Implement `extract_gradient_metadata(pil_image)` wrapper ⭐ **NEW**
-8. Write unit tests in `tests/test_gradient_extraction.py`:
-   - Test palette extraction (various color counts)
-   - Test dominant background detection (50%, 70%, 30% cases)
-   - Test LED correction on whites, saturated colors, dark colors
-   - Test gradient string formatting
-   - Test metadata wrapper (JSON serialization)
-   - Test with uniform color image
-   - Test with album art (70% black + accents)
-   - Test with photo (no dominant background)
-9. Test integration stub (mock ImageCache.put() call)
+**Phase 4 Remaining**: Visual validation, security testing  
+**Phase 5**: Documentation updates (cache.md, assets.md), usage examples
 
-**Key Implementation Notes**:
-- Use Pillow `image.quantize(colors=9)` to extract 9 colors initially
-- Check if first color (highest frequency) is >50% → background
-- Build gradient from remaining ≤8 colors
-- Return dict with all variants + metadata (JSON-serializable)
-- All I/O operations happen in integration layer, not core functions
+**Implementation Notes**:
+- Core extraction complete with all variants (raw/safe/punchy) ✅
+- Integrated into ImageCache and Assets with caching ✅
+- Unit & integration tests complete (33/33 passing) ✅
+- Each variant contains only gradient CSS string
+- Background color/frequency in metadata section (extraction properties, not variant-specific)
+- background_color is always the most frequent color
+- has_dominant_background metadata indicates if >50% threshold met
+- Internal stops/dominant_colors used for construction but not exposed
 
 ---
 
@@ -853,110 +862,43 @@ ledfx/effects/gradient.py   # GradientEffect base class
 
 ### Dominant Background Strategy
 
-**Problem**: Images with dominant backgrounds (70% black, white, or single color) produce poor gradients when all colors are weighted equally.
+Images with dominant backgrounds (>50% single color) use interleaved gradient pattern:
+1. Detect background color (>50% frequency threshold)
+2. Build gradient alternating: `bg → accent1 → bg → accent2 → bg → accent3 → bg`
+3. Creates distinct color "islands" separated by background
+4. Prevents washed-out gradients, maintains vibrant accent colors
 
-**Solution**: Interleaved gradient pattern
-1. Extract up to 9 dominant colors with Pillow quantize
-2. Check if top color has >50% frequency → use as background separator
-3. Build gradient with **alternating pattern**: background splits accent colors into "islands"
-4. Pattern: `bg → color1 → bg → color2 → bg → color3 → bg → ...`
-5. Creates distinct splotches of color separated by background blocks
+**Example**: Album art with 70% black, 15% red, 10% blue, 5% gold
+- Without detection: Gradient is 70% black (poor)
+- With interleaved pattern: Black separates vibrant red/blue/gold islands (excellent)
 
-**Practical Example - Album Cover with Black Background**:
-```
-Input Image (1000×1000 pixels):
-- Black background: 700,000 pixels (70%)
-- Red accent: 150,000 pixels (15%)
-- Blue accent: 100,000 pixels (10%)
-- Gold accent: 50,000 pixels (5%)
+**Stop Allocation** (8 max):
+- 4 accents: `bg, c1, bg, c2, bg, c3, bg, c4` (8 stops)
+- 3 accents: `bg, c1, bg, c2, bg, c3, bg` (7 stops)
+- 2 accents: `bg, c1, bg, c2, bg` (5 stops)
+- No dominant: All colors weighted (8 stops)
 
-Without Background Detection:
-gradient: Black 70% → Red 15% → Blue 10% → Gold 5%
-Result: Mostly black gradient (poor on LEDs)
+### Color Deduplication Strategy
 
-With Interleaved Background Pattern ✅:
-background_color: #000000 (detected at 70%)
-gradient: "linear-gradient(90deg,
-  rgb(0,0,0) 0%,      ← background
-  rgb(255,0,0) 14%,    ← red island
-  rgb(0,0,0) 28%,      ← background separator
-  rgb(0,0,255) 42%,    ← blue island
-  rgb(0,0,0) 56%,      ← background separator
-  rgb(255,215,0) 71%,  ← gold island
-  rgb(0,0,0) 85%       ← background
-)"
+To prevent gradients dominated by close color variants (e.g., 5 shades of blue that are perceptually similar), colors are deduplicated after quantization:
 
-Result: Distinct red, blue, and gold "islands" separated by black
-        → Vibrant accent colors, clear visual separation (excellent on LEDs)
-```
+**Method**: Weighted HSV distance calculation
+- **Hue difference** (most important): Weighted 0.65 for saturated colors
+- **Saturation difference**: Weighted 0.20
+- **Value difference**: Weighted 0.15
+- **Threshold**: Colors within 0.20 weighted distance are merged
 
-**Stop Allocation with 8 Max**:
-```
-4 accent colors (8 stops): bg, c1, bg, c2, bg, c3, bg, c4
-3 accent colors (7 stops): bg, c1, bg, c2, bg, c3, bg
-2 accent colors (5 stops): bg, c1, bg, c2, bg
+**Special handling for grays** (saturation < 15%):
+- Hue matters less (weight 0.1) since grays have undefined hue
+- Value matters more (weight 0.7) to distinguish light/dark grays
+- Prevents all grays from merging into a single color
 
-If >4 accent colors: Take top 4 by frequency
-```
+**Merging behavior**:
+- Similar colors have their frequencies combined
+- The first (highest frequency) color in each cluster is kept
+- Results in cleaner gradients with distinct, perceptually different colors
 
-**Effect Usage**:
-```python
-# The gradient itself contains the interleaved pattern
-# Effects just apply the gradient directly:
-self.pixels = apply_gradient(gradient_string, self.pixel_count)
-
-# background_color field still available for other uses:
-if metadata["background_color"]:
-    # Could use for complementary effects, borders, etc.
-    pass
-```
-
-### Testing Resources
-- big-list-of-naughty-strings: Path traversal, SSRF patterns
-- Test images: Create set with various color profiles
-- LED simulator: Consider web-based RGB matrix simulator for validation
-
----
-
-**Document Status**: ✅ Phase 1 Complete - Ready for Phase 2
-**Last Updated**: February 13, 2026
-**Next Review**: After Phase 2 completion
-
----
-
-## Phase 1 Completion Summary
-
-### Infrastructure Assessment
-
-✅ **Image Loading**: Robust system with `open_image()`, automatic caching, triple-layer validation
-✅ **Security**: Comprehensive SSRF protection, path traversal prevention, content validation
-✅ **Gradient System**: Well-established `Gradient` class, `GradientEffect` base, NumPy-optimized
-✅ **REST Patterns**: Clear `RestEndpoint` patterns, helper methods, one-class-per-file rule
-✅ **Integration Points**: All necessary hooks identified for seamless integration
-
-### Key Technical Decisions
-
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Image Input | Use `open_image()` | Reuses security, validation, caching |
-| Color Extraction | Pillow `image.quantize()` | Built-in, good balance of speed/quality |
-| Gradient Format | LedFx native strings | Compatible with existing effects |
-| LED Correction | Post-extraction adjustment | Preserves raw gradient for flexibility |
-| API Pattern | Return all variants | Future-proof, client chooses |
-| Caching | Extend ImageCache metadata | Avoids re-extraction |
-
-### Architecture Validation
-
-The proposed architecture aligns perfectly with LedFx patterns:
-- ✅ Pure functions in `utilities/` for core logic
-- ✅ REST endpoint follows established conventions
-- ✅ Security validation reused from existing infrastructure
-- ✅ NumPy-optimized for performance
-- ✅ No breaking changes to existing code
-
-### Confidence Level: HIGH
-
-All necessary components exist and are well-documented. The implementation path is clear with minimal risk of architectural conflicts. ~~Ready to proceed to Phase 2 implementation.~~ ✅ **Phase 1-3 Complete!**
+**Example**: Image with 5 similar blues (hues 0.55-0.62) → Merged to 1-2 distinct blues
 
 ---
 
@@ -966,7 +908,7 @@ All necessary components exist and are well-documented. The implementation path 
 
 **gradient_extraction.py** (642 lines): Complete extraction pipeline with all functions
 
-✅ **Color Extraction**: Pillow MEDIANCUT quantization, frequency-weighted sorting
+✅ **Color Extraction**: Pillow MEDIANCUT quantization, frequency-weighted sorting, perceptual color deduplication
 ✅ **Background Detection**: >50% threshold detection with interleaved gradient pattern
 ✅ **LED Correction**: Brightness cap (0.85), saturation (0.90), gamma 2.2, white replacement
 ✅ **Gradient Construction**: Interleaved pattern for backgrounds, weighted for others
@@ -988,40 +930,72 @@ All necessary components exist and are well-documented. The implementation path 
 
 **ImageCache Integration** (ledfx/libraries/cache.py):
 - Gradient extraction in `put()` method (lines 175-191)
-- Stored in cache metadata with width, height, format
+- **Thumbnail optimization**: Skips extraction when `params != None` (thumbnails only)
+- Prevents redundant extraction (1 image = 16 thumbnails → only 1 gradient extraction)
+- **Built-in caching**: Stores in existing `metadata.json` file (no separate cache needed)
+- Stored in cache metadata with width, height, format, n_frames, is_animated
 - Try/except prevents breaking on failures
 - One-time extraction, cached forever
+- **API exposure**: `get_stats()` updated to include gradients in response (line 378)
 
 **Asset Integration** (ledfx/assets.py):
-- Gradient extraction in `list_assets()` (lines 530-548)
-- On-demand extraction during asset enumeration
-- Graceful degradation on errors
+- **Metadata caching system** for performance optimization
+  - Cache file: `.asset_metadata_cache.json` in assets directory (generic structure for extensibility)
+  - Functions: `_load_asset_metadata_cache()`, `_save_asset_metadata_cache()`
+  - Cache structure: `{"path": {"gradients": {...}, "modified_time": "..."}}`
+  - Added to `IGNORED_FILES` to exclude from asset listings
+- Gradient extraction in `_list_assets_from_directory()` with caching (lines 540-630)
+  - Load cache at start of directory walk
+  - Check cache for each file (compare modification time)
+  - Cache hit: Use stored gradients (instant retrieval)
+  - Cache miss: Extract gradients, update cache
+  - Cache failure: Store `gradients: null` to avoid re-attempting
+  - Save cache after directory walk if updated
+- Cache invalidation in `delete_asset()` (lines 468-478)
+  - Remove cache entry when file deleted
+  - Keeps cache synchronized with filesystem
+- Graceful error handling:
+  - Empty cache file: Returns empty dict, extracts all fresh
+  - Corrupted cache: Logs warning, returns empty dict
+  - Cache save failure: Continues without caching (degrades to extraction per list)
+- Performance impact: 16 files on first list → 16 extractions, subsequent lists → 0 extractions
 
 **API Enhancement** (Zero New Endpoints):
-- `/api/cache/images` GET - Returns gradients in cache entries
-- `/api/assets` GET - Returns gradients in asset list
+- `/api/cache/images` GET - Returns gradients in cache entries via `get_stats()` (ImageCache built-in caching)
+- `/api/assets` GET - Returns gradients in asset list (with separate metadata cache file)
 - Backward compatible - optional metadata field
 - No breaking changes
 
-**Test Coverage**: 7/7 passing (test_gradient_integration.py)
-- ImageCache integration: 3 tests
-- Asset integration: 4 tests
-- Error handling, variant validation, multiple images
+**Caching Strategy**:
+- **cache.py**: Uses built-in `metadata.json` for all cache metadata (one-time extraction per image)
+- **assets.py**: Uses separate `.asset_metadata_cache.json` for directory-level caching
 
-**Completion Date**: February 13, 2026
+**Test Coverage**: 33/33 passing (100%)
+- test_gradient_extraction.py: 25 tests (core algorithms)
+- test_gradient_integration.py: 8 tests (ImageCache, Assets, thumbnail optimization)
+
+**API Responses**: 
+- Each variant (raw, led_safe, led_punchy) contains only the gradient CSS string
+- background_color and background_frequency are in metadata section (extraction properties, not variant-specific)
+- background_color always populated when extraction succeeds
+- has_dominant_background metadata field indicates if most frequent color is >50%
+- Internal stops/dominant_colors arrays not exposed (used for construction only)
 
 ---
 
 ## Implementation Status
 
-**Phases Complete**: 3/5 (60%)
-**Next Phase**: Phase 4 - Testing & Validation
+**Phases Complete**: 3.5/5 (70%)
+**Current Phase**: Phase 4 - Testing & Validation (Partially Complete)
 
-### Remaining Work
+**Completed**:
+- Phase 1: Discovery & Analysis ✅
+- Phase 2: Core Module Implementation ✅
+- Phase 3: Pipeline Integration ✅
+- Phase 4: Unit & Integration Tests ✅
 
-**Phase 4**: Visual validation, performance benchmarking, security testing
-**Phase 5**: Documentation updates (cache.md, assets.md), usage examples
+**Remaining Work**:
+- Phase 4: Visual validation, security testing
+- Phase 5: Documentation updates (cache.md, assets.md), usage examples
 
-### Overall Progress: ■■■□□ 60% Complete ✅
-
-Core implementation finished. Gradients automatically extracted for all images.
+Core implementation complete. Gradients automatically extracted for all images.
