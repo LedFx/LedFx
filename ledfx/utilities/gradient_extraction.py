@@ -72,7 +72,9 @@ SATURATED_SAT_WEIGHT = 0.20  # Saturation difference is secondary
 SATURATED_VAL_WEIGHT = 0.15  # Brightness difference is tertiary
 
 # Similarity thresholds for color deduplication
-SATURATED_COLOR_THRESHOLD = 0.12  # Tighter threshold for distinct saturated colors
+SATURATED_COLOR_THRESHOLD = (
+    0.12  # Tighter threshold for distinct saturated colors
+)
 # COLOR_DISTANCE_THRESHOLD (0.20) defined above is used for grays/near-grays
 
 # === LED correction parameters ==============================================
@@ -84,6 +86,7 @@ GAMMA_BLEND = 0.00  # Currently disabled for accuracy; tune 0.0-0.10 if needed
 # Blend fraction for "island" gradient stops: controls smoothness of color transitions
 # Higher values create more blending between color bands, lower values create harder edges
 BLEND_FRAC = 0.10  # Typical range: 0.05-0.15
+
 
 def extract_dominant_colors(
     pil_image: Image.Image, n_colors: int = 9, use_accent_mask: bool = False
@@ -229,15 +232,15 @@ def _build_accent_sample_image(
 def _deduplicate_colors(colors: list[dict]) -> list[dict]:
     """
     Merge similar colors to prevent gradients dominated by close color variants.
-    
+
     Uses weighted HSV distance to determine similarity. If normal merging reduces
     the palette below DEDUP_MIN_COLORS, performs greedy farthest-point sampling
     to recover a minimum palette size from the most distinct colors.
-    
+
     Args:
         colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys,
                 sorted by frequency (most dominant first)
-    
+
     Returns:
         Deduplicated list of color dicts, sorted by frequency
     """
@@ -282,9 +285,17 @@ def _deduplicate_colors(colors: list[dict]) -> list[dict]:
 
         avg_s = (s1 + s2) / 2.0
         if avg_s < 0.15:
-            hue_w, sat_w, val_w = GRAY_HUE_WEIGHT, GRAY_SAT_WEIGHT, GRAY_VAL_WEIGHT
+            hue_w, sat_w, val_w = (
+                GRAY_HUE_WEIGHT,
+                GRAY_SAT_WEIGHT,
+                GRAY_VAL_WEIGHT,
+            )
         else:
-            hue_w, sat_w, val_w = SATURATED_HUE_WEIGHT, SATURATED_SAT_WEIGHT, SATURATED_VAL_WEIGHT
+            hue_w, sat_w, val_w = (
+                SATURATED_HUE_WEIGHT,
+                SATURATED_SAT_WEIGHT,
+                SATURATED_VAL_WEIGHT,
+            )
 
         return hue_w * hue_diff + sat_w * sat_diff + val_w * val_diff
 
@@ -386,11 +397,11 @@ def detect_dominant_background(
     Treats "background" as a CLUSTER of background-like colors (dark and/or low-sat dark)
     rather than a single color. Sums frequencies of all background-ish colors and returns
     the most frequent one if the cluster sum exceeds the threshold.
-    
+
     Args:
         colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
         threshold: Minimum frequency for background cluster detection (default 0.5)
-    
+
     Returns:
         Background color dict with cluster frequency, or None if no dominant background
       and compare the SUM of those frequencies to the threshold.
@@ -492,14 +503,14 @@ def build_gradient_stops(
     Creates two types of gradients:
     - Interleaved: If background detected, alternates bg → accent → bg for emphasis
     - Island: Creates weighted color bands with soft blending at boundaries
-    
+
     Args:
         colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
         background_color: Optional background color dict for interleaved pattern
         max_stops: Maximum number of gradient stops to generate
-    
+
     Returns:
-        List of gradient stop dicts with 'color' (hex), 'position' (0-1), 
+        List of gradient stop dicts with 'color' (hex), 'position' (0-1),
         'type' ('color'/'accent'/'background'), and 'weight' (frequency)
 
     Args:
@@ -793,17 +804,17 @@ def _extract_gradient_metadata_from_image(
 ) -> dict:
     """
     Internal function to extract gradient metadata from an already-opened PIL Image.
-    
+
     Performs two-pass extraction:
     1. Full-image palette (12 colors) for robust background cluster detection
     2. Accent-masked palette (9 colors) to emphasize foreground colors
-    
+
     Falls back to full-image accents if masking over-filters.
-    
+
     Args:
         pil_image: Already-opened PIL Image object
         start_time: Start time for performance tracking
-    
+
     Returns:
         Complete gradient metadata dict with all variants and metadata
     """
