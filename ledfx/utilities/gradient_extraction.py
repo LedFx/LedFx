@@ -35,12 +35,30 @@ LED_PUNCHY_CONFIG = {
 
 # Color deduplication parameters
 COLOR_DISTANCE_THRESHOLD = 0.20  # HSV distance threshold (0.0-1.0)
+DEDUP_MIN_COLORS = 3  # Minimum colors to keep after deduplication
+WHITE_REPLACE_MIN_V = (
+    0.95  # was effectively 0.85 in the condition; raises the bar a lot
+)
 # Hue is weighted more heavily as it's most perceptually significant
 # Saturation and Value differences are less critical for LED gradients
 
+# === Background cluster detection (minimal additions) =========================
+# Treat background as a cluster: dark and/or low-sat dark colors summed together
+BACKGROUND_CLUSTER_THRESHOLD = 0.50  # matches strategy doc (>50%)
+BG_DARK_V = 0.16
+BG_LOW_S = 0.18
+BG_LOW_S_V = 0.28
+
+# === Accent masking (minimal additions) =======================================
+# When a background cluster exists, remove “background-ish” pixels before quantize
+MASK_DARK_V = 0.12
+MASK_LOW_S = 0.10
+MASK_LOW_S_V = 0.22
+MIN_MASKED_PIXELS_FRACTION = 0.02  # require at least 2% pixels remain
+
 
 def extract_dominant_colors(
-    pil_image: Image.Image, n_colors: int = 9
+    pil_image: Image.Image, n_colors: int = 9, use_accent_mask: bool = False
 ) -> list[dict]:
     """
     Extract dominant colors from image using color quantization.
@@ -48,6 +66,7 @@ def extract_dominant_colors(
     Args:
         pil_image: PIL Image object
         n_colors: Number of dominant colors to extract (default 9)
+        use_accent_mask: If True, attempt to remove background-ish pixels before quantization
 
     Returns:
         List of color dicts with 'rgb', 'hsv', 'frequency' keys, sorted by frequency
@@ -62,12 +81,18 @@ def extract_dominant_colors(
         if pil_image.mode != "RGB":
             pil_image = pil_image.convert("RGB")
 
+        # Optional: build an "accent-only" sample image to prevent background dominance
+        src_img = pil_image
+        if use_accent_mask:
+            masked_img = _build_accent_sample_image(pil_image)
+            if masked_img is not None:
+                src_img = masked_img
+
         # Quantize to extract dominant colors
         # Using MEDIANCUT for better color distribution
-        quantized = pil_image.quantize(
+        quantized = src_img.quantize(
             colors=n_colors, method=Image.Quantize.MEDIANCUT
         )
-        palette_img = quantized.convert("RGB")
 
         # Get palette colors
         palette = quantized.getpalette()[: n_colors * 3]  # RGB triplets
@@ -76,14 +101,24 @@ def extract_dominant_colors(
         ]
 
         # Count pixels per color to get frequency
-        pixel_array = np.array(quantized)
+        pixel_array = np.array(quantized, dtype=np.uint8)
         total_pixels = pixel_array.size
         color_frequencies = []
 
+        # Vectorized counts per palette index
+        counts = np.bincount(
+            pixel_array.ravel(), minlength=len(palette_colors)
+        )
+        freqs = (
+            counts / float(total_pixels)
+            if total_pixels
+            else np.zeros_like(counts)
+        )
+
         for idx, rgb in enumerate(palette_colors):
-            # Count pixels matching this palette index
-            count = np.sum(pixel_array == idx)
-            frequency = count / total_pixels
+            frequency = float(freqs[idx])
+            if frequency <= 0.0:
+                continue
 
             # Convert to HSV
             r, g, b = (c / 255.0 for c in rgb)
@@ -106,7 +141,7 @@ def extract_dominant_colors(
         return deduplicated
 
     except Exception as e:
-        _LOGGER.error(f"Failed to extract dominant colors: {e}")
+        _LOGGER.error(f"Failed to extract dominant colors: {e}", exc_info=True)
         # Return single average color as fallback
         avg_color = pil_image.resize((1, 1)).getpixel((0, 0))
         if isinstance(avg_color, int):  # Grayscale
@@ -118,45 +153,138 @@ def extract_dominant_colors(
         ]
 
 
+def _build_accent_sample_image(
+    pil_image: Image.Image,
+) -> Optional[Image.Image]:
+    """
+    Build a 1xN RGB image containing only “accent-like” pixels, excluding
+    background-ish pixels (very dark, or low-sat dark).
+
+    Returns None if masking removes too many pixels.
+    """
+    try:
+        arr = np.asarray(pil_image, dtype=np.uint8)
+        if arr.ndim != 3 or arr.shape[2] != 3:
+            return None
+
+        rgbf = arr.astype(np.float32) / 255.0
+        r = rgbf[..., 0]
+        g = rgbf[..., 1]
+        b = rgbf[..., 2]
+        maxc = np.maximum(np.maximum(r, g), b)
+        minc = np.minimum(np.minimum(r, g), b)
+        v = maxc
+        delt = maxc - minc
+        s = np.where(maxc > 1e-6, delt / (maxc + 1e-6), 0.0)
+
+        # Background-ish pixels to exclude
+        bg = (v < MASK_DARK_V) | ((s < MASK_LOW_S) & (v < MASK_LOW_S_V))
+        keep = ~bg
+
+        kept = arr[keep]
+        total = int(arr.shape[0] * arr.shape[1])
+        if total <= 0:
+            return None
+
+        if (
+            kept.size == 0
+            or (kept.shape[0] / float(total)) < MIN_MASKED_PIXELS_FRACTION
+        ):
+            return None
+
+        sample = kept.reshape((1, kept.shape[0], 3))
+        return Image.fromarray(sample, mode="RGB")
+    except Exception:
+        return None
+
+
 def _deduplicate_colors(colors: list[dict]) -> list[dict]:
     """
     Merge similar colors to prevent gradients dominated by close color variants.
-
-    Uses HSV color space with weighted distance calculation:
-    - Hue has highest weight (most perceptually significant)
-    - Saturation and Value have lower weights
-    - Colors within threshold distance are merged (frequencies combined)
-
-    Args:
-        colors: List of color dicts sorted by frequency (descending)
-
-    Returns:
-        Deduplicated list of colors with merged frequencies
+    If merging collapses too far, recover a minimum palette size by selecting
+    the most distinct colors from the original list.
     """
     if len(colors) <= 1:
         return colors
 
-    deduplicated = []
-
+    # 1) Normal merge pass (existing behavior)
+    merged: list[dict] = []
     for color in colors:
-        merged = False
-
-        # Check if this color is similar to any already kept
-        for existing in deduplicated:
+        merged_into = None
+        for existing in merged:
             if _colors_similar(color["hsv"], existing["hsv"]):
-                # Merge: add frequency to existing color
-                existing["frequency"] += color["frequency"]
-                merged = True
+                merged_into = existing
                 break
 
-        if not merged:
-            # Keep as new distinct color
-            deduplicated.append(color.copy())
+        if merged_into is not None:
+            merged_into["frequency"] += color["frequency"]
+        else:
+            merged.append(color.copy())
 
-    # Re-sort by frequency after merging
-    deduplicated.sort(key=lambda x: x["frequency"], reverse=True)
+    merged.sort(key=lambda x: x["frequency"], reverse=True)
 
-    return deduplicated
+    # 2) Floor recovery: if we collapsed too far, pick distinct colors
+    if len(merged) >= DEDUP_MIN_COLORS or len(colors) <= DEDUP_MIN_COLORS:
+        return merged
+
+    # Build a "most distinct" selection from the original (pre-merge) list.
+    # Always keep the most frequent first, then greedily add colors that are farthest
+    # (by the same weighted HSV distance idea) from what we've already picked.
+    picked: list[dict] = [colors[0].copy()]
+
+    def _weighted_hsv_distance(hsv1, hsv2) -> float:
+        h1, s1, v1 = hsv1
+        h2, s2, v2 = hsv2
+
+        hue_diff = abs(h1 - h2)
+        if hue_diff > 0.5:
+            hue_diff = 1.0 - hue_diff
+
+        sat_diff = abs(s1 - s2)
+        val_diff = abs(v1 - v2)
+
+        avg_s = (s1 + s2) / 2.0
+        if avg_s < 0.15:
+            hue_w, sat_w, val_w = 0.1, 0.2, 0.7
+        else:
+            hue_w, sat_w, val_w = 0.65, 0.20, 0.15
+
+        return hue_w * hue_diff + sat_w * sat_diff + val_w * val_diff
+
+    # Greedy farthest-point sampling
+    while len(picked) < DEDUP_MIN_COLORS and len(picked) < len(colors):
+        best = None
+        best_score = -1.0
+
+        for cand in colors:
+            # skip if already picked (by exact rgb match)
+            if any(cand["rgb"] == p["rgb"] for p in picked):
+                continue
+
+            # distance to the closest picked color
+            d_min = min(
+                _weighted_hsv_distance(cand["hsv"], p["hsv"]) for p in picked
+            )
+
+            # Prefer higher frequency as a tiebreaker
+            score = d_min + 0.05 * float(cand["frequency"])
+
+            if score > best_score:
+                best_score = score
+                best = cand
+
+        if best is None:
+            break
+
+        picked.append(best.copy())
+
+    # Recompute frequencies normalized across picked (so downstream weighting behaves)
+    total = sum(float(c["frequency"]) for c in picked) or 1.0
+    for c in picked:
+        c["frequency"] = float(c["frequency"]) / total
+
+    picked.sort(key=lambda x: x["frequency"], reverse=True)
+    return picked
 
 
 def _colors_similar(hsv1: list[float], hsv2: list[float]) -> bool:
@@ -202,7 +330,14 @@ def _colors_similar(hsv1: list[float], hsv2: list[float]) -> bool:
         hue_weight * hue_diff + sat_weight * sat_diff + val_weight * val_diff
     )
 
-    return weighted_distance < COLOR_DISTANCE_THRESHOLD
+    # Tighten threshold for saturated colors so distinct hues (e.g. red vs yellow)
+    # don't get merged. Keep the looser threshold for grays/near-grays.
+    if avg_saturation >= 0.25:
+        threshold = 0.12
+    else:
+        threshold = COLOR_DISTANCE_THRESHOLD
+
+    return weighted_distance < threshold
 
 
 def detect_dominant_background(
@@ -210,6 +345,12 @@ def detect_dominant_background(
 ) -> Optional[dict]:
     """
     Detect if image has a dominant background color.
+
+    NOTE (minimal behavioral change):
+    - We now treat "background" as a CLUSTER of background-like colors (dark and/or low-sat dark)
+      and compare the SUM of those frequencies to the threshold.
+    - If cluster is dominant, we return a representative background color dict:
+      the most frequent background-like color, but with frequency set to the cluster sum.
 
     Args:
         colors: List of color dicts from extract_dominant_colors()
@@ -221,9 +362,21 @@ def detect_dominant_background(
     if not colors:
         return None
 
-    # Check if first (most frequent) color exceeds threshold
-    if colors[0]["frequency"] >= threshold:
-        return colors[0]
+    bg_candidates = [
+        c
+        for c in colors
+        if (c["hsv"][2] < BG_DARK_V)
+        or ((c["hsv"][1] < BG_LOW_S) and (c["hsv"][2] < BG_LOW_S_V))
+    ]
+    if not bg_candidates:
+        return None
+
+    bg_freq = sum(float(c["frequency"]) for c in bg_candidates)
+    if bg_freq >= threshold:
+        bg_candidates.sort(key=lambda x: x["frequency"], reverse=True)
+        bg = bg_candidates[0].copy()
+        bg["frequency"] = bg_freq  # cluster frequency
+        return bg
 
     return None
 
@@ -249,7 +402,7 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     h, s, v = colorsys.rgb_to_hsv(r, g, b)
 
     # Detect and replace near-white colors FIRST
-    if s < config["white_threshold"] and v > 0.85:
+    if s < config["white_threshold"] and v > WHITE_REPLACE_MIN_V:
         # Replace with defined white
         white_hex = config["white_replacement"]
         white_rgb = tuple(int(white_hex[i : i + 2], 16) for i in (1, 3, 5))
@@ -270,11 +423,12 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     g_gamma = pow(g_adjusted, 1.0 / gamma)
     b_gamma = pow(b_adjusted, 1.0 / gamma)
 
-    # Blend gamma correction (30% gamma, 70% HSV adjustments)
-    # This keeps LED-friendly HSV adjustments as primary
-    r_final = r_adjusted * 0.7 + r_gamma * 0.3
-    g_final = g_adjusted * 0.7 + g_gamma * 0.3
-    b_final = b_adjusted * 0.7 + b_gamma * 0.3
+    GAMMA_BLEND = 0.00  # try 0.0–0.10 first (was effectively 0.30)
+
+    # ...
+    r_final = r_adjusted * (1.0 - GAMMA_BLEND) + r_gamma * GAMMA_BLEND
+    g_final = g_adjusted * (1.0 - GAMMA_BLEND) + g_gamma * GAMMA_BLEND
+    b_final = b_adjusted * (1.0 - GAMMA_BLEND) + b_gamma * GAMMA_BLEND
 
     # Clamp to valid range and convert to 0-255
     rgb_corrected = [
@@ -302,11 +456,6 @@ def build_gradient_stops(
 
     Returns:
         List of gradient stops with 'color' (hex), 'position' (0.0-1.0), 'type'
-        Example: [
-            {'color': '#000000', 'position': 0.0, 'type': 'background'},
-            {'color': '#FF0000', 'position': 0.14, 'type': 'accent', 'weight': 0.5},
-            ...
-        ]
     """
     if not colors:
         return []
@@ -315,13 +464,20 @@ def build_gradient_stops(
 
     if background_color:
         # Interleaved pattern: bg → accent → bg → accent
-        # Remove background from accent colors
-        accent_colors = [c for c in colors if c != background_color]
+        # Remove background-like colors from accent colors.
+        # Do NOT rely on dict equality (background is a cluster representative).
+        accent_colors = [
+            c
+            for c in colors
+            if not (
+                (c["hsv"][2] < BG_DARK_V)
+                or ((c["hsv"][1] < BG_LOW_S) and (c["hsv"][2] < BG_LOW_S_V))
+            )
+        ]
 
-        # Limit accent colors based on max_stops
-        # With 8 stops: bg, c1, bg, c2, bg, c3, bg, c4 = 8 stops → 4 accents
-        # With 7 stops: bg, c1, bg, c2, bg, c3, bg = 7 stops → 3 accents
-        max_accents = max_stops // 2
+        # In interleaved mode, max_stops should represent accent capacity (not total stops),
+        # because background consumes half the slots otherwise.
+        max_accents = max_stops
         accent_colors = accent_colors[:max_accents]
 
         if not accent_colors:
@@ -335,12 +491,6 @@ def build_gradient_stops(
         # Build interleaved stops
         bg_hex = f"#{background_color['rgb'][0]:02x}{background_color['rgb'][1]:02x}{background_color['rgb'][2]:02x}"
 
-        # Calculate positions with even spacing
-        num_accents = len(accent_colors)
-        total_stops = (
-            num_accents * 2 + 1
-        )  # bg slots between and around accents
-
         # Normalize accent frequencies (exclude background)
         total_accent_freq = sum(c["frequency"] for c in accent_colors)
         if total_accent_freq > 0:
@@ -350,11 +500,13 @@ def build_gradient_stops(
             for c in accent_colors:
                 c["normalized_weight"] = 1.0 / len(accent_colors)
 
-        # Build pattern: bg, accent1, bg, accent2, bg, accent3, bg, ...
+        # Build pattern: bg, accent1, bg, accent2, bg, ...
+        num_accents = len(accent_colors)
+        total_stops = num_accents * 2 + 1
         position = 0.0
         step = 1.0 / (total_stops - 1) if total_stops > 1 else 1.0
 
-        for i, accent in enumerate(accent_colors):
+        for accent in accent_colors:
             # Background before accent
             stops.append(
                 {
@@ -372,48 +524,151 @@ def build_gradient_stops(
                     "color": accent_hex,
                     "position": round(position, 3),
                     "type": "accent",
-                    "weight": round(accent["normalized_weight"], 3),
+                    "weight": round(
+                        accent.get("normalized_weight", accent["frequency"]), 3
+                    ),
                 }
             )
             position += step
 
         # Final background
-        stops.append(
-            {
-                "color": bg_hex,
-                "position": 1.0,
-                "type": "background",
-            }
-        )
+        stops.append({"color": bg_hex, "position": 1.0, "type": "background"})
 
     else:
         # Normal weighted gradient (no dominant background)
         gradient_colors = colors[:max_stops]
 
-        # Calculate cumulative positions based on frequency
-        total_freq = sum(c["frequency"] for c in gradient_colors)
-        cumulative = 0.0
+        if not gradient_colors:
+            return []
 
-        for i, color in enumerate(gradient_colors):
-            # Calculate position
-            if i == 0:
-                position = 0.0
-            elif i == len(gradient_colors) - 1:
-                position = 1.0
-            else:
-                # Weighted position
-                cumulative += color["frequency"] / total_freq
-                position = cumulative
-
-            color_hex = f"#{color['rgb'][0]:02x}{color['rgb'][1]:02x}{color['rgb'][2]:02x}"
+        # Single-color edge case: emit a valid 2-stop gradient
+        if len(gradient_colors) == 1:
+            c = gradient_colors[0]
+            c_hex = f"#{c['rgb'][0]:02x}{c['rgb'][1]:02x}{c['rgb'][2]:02x}"
             stops.append(
                 {
-                    "color": color_hex,
-                    "position": round(position, 3),
+                    "color": c_hex,
+                    "position": 0.0,
                     "type": "color",
-                    "weight": round(color["frequency"], 3),
+                    "weight": round(c["frequency"], 3),
                 }
             )
+            stops.append(
+                {
+                    "color": c_hex,
+                    "position": 1.0,
+                    "type": "color",
+                    "weight": round(c["frequency"], 3),
+                }
+            )
+            return stops
+
+        # Normalize weights to band widths over [0,1]
+        total_freq = sum(float(c["frequency"]) for c in gradient_colors) or 1.0
+        widths = [float(c["frequency"]) / total_freq for c in gradient_colors]
+
+        # Helper: BLEND_FRAC is "fraction of current band width"
+        def _blend_for_boundary(
+            w_i: float, w_next: float, blend_frac: float
+        ) -> float:
+            b = blend_frac * w_i
+            # safety cap so blend can't consume either band
+            return min(b, 0.45 * min(w_i, w_next))
+
+        # Build cumulative band boundaries
+        starts = [0.0]
+        for w in widths[:-1]:
+            starts.append(starts[-1] + w)
+        ends = [s + w for s, w in zip(starts, widths)]
+        ends[-1] = 1.0  # force exact end
+
+        # Emit "islands" with soft boundaries:
+        # For each boundary at ends[i], keep color_i flat until (end-b),
+        # then allow interpolation across (end-b .. end+b) by switching to next at (end+b).
+        BLEND_FRAC = 0.10  # tune: 0.05–0.15 typical
+
+        # First stop at 0
+        c0 = gradient_colors[0]
+        c0_hex = f"#{c0['rgb'][0]:02x}{c0['rgb'][1]:02x}{c0['rgb'][2]:02x}"
+        stops.append(
+            {
+                "color": c0_hex,
+                "position": 0.0,
+                "type": "color",
+                "weight": round(c0["frequency"], 3),
+            }
+        )
+
+        last_pos = 0.0
+
+        for i in range(len(gradient_colors) - 1):
+            c_i = gradient_colors[i]
+            c_n = gradient_colors[i + 1]
+
+            c_i_hex = (
+                f"#{c_i['rgb'][0]:02x}{c_i['rgb'][1]:02x}{c_i['rgb'][2]:02x}"
+            )
+            c_n_hex = (
+                f"#{c_n['rgb'][0]:02x}{c_n['rgb'][1]:02x}{c_n['rgb'][2]:02x}"
+            )
+
+            start_i = starts[i]
+            end_i = ends[i]
+            start_n = starts[i + 1]
+
+            w_i = widths[i]
+            w_n = widths[i + 1]
+
+            b = _blend_for_boundary(w_i, w_n, BLEND_FRAC)
+
+            left_flat_end = end_i - b
+            right_flat_start = end_i + b
+
+            # Clamp into legal ranges to avoid overlaps / inversions
+            left_flat_end = max(left_flat_end, start_i)
+            right_flat_start = min(right_flat_start, ends[i + 1])
+
+            if right_flat_start < left_flat_end:
+                mid = 0.5 * (end_i + start_n)
+                left_flat_end = mid
+                right_flat_start = mid
+
+            # Enforce monotonic positions (rounding can otherwise regress)
+            left_flat_end = max(left_flat_end, last_pos)
+            last_pos = left_flat_end
+
+            stops.append(
+                {
+                    "color": c_i_hex,
+                    "position": round(left_flat_end, 3),
+                    "type": "color",
+                    "weight": round(c_i["frequency"], 3),
+                }
+            )
+
+            right_flat_start = max(right_flat_start, last_pos)
+            last_pos = right_flat_start
+
+            stops.append(
+                {
+                    "color": c_n_hex,
+                    "position": round(right_flat_start, 3),
+                    "type": "color",
+                    "weight": round(c_n["frequency"], 3),
+                }
+            )
+
+        # Final stop at 1.0 to close
+        c_last = gradient_colors[-1]
+        c_last_hex = f"#{c_last['rgb'][0]:02x}{c_last['rgb'][1]:02x}{c_last['rgb'][2]:02x}"
+        stops.append(
+            {
+                "color": c_last_hex,
+                "position": 1.0,
+                "type": "color",
+                "weight": round(c_last["frequency"], 3),
+            }
+        )
 
     return stops
 
@@ -427,15 +682,12 @@ def build_gradient_string(stops: list[dict]) -> str:
 
     Returns:
         LedFx gradient string
-        Example: "linear-gradient(90deg, rgb(0,0,0) 0%, rgb(255,0,0) 14%, ...)"
     """
     if not stops:
         return "linear-gradient(90deg, rgb(0,0,0) 0%, rgb(0,0,0) 100%)"
 
-    # Build color stop strings
     stop_strings = []
     for stop in stops:
-        # Convert hex to rgb
         hex_color = stop["color"]
         rgb = tuple(int(hex_color[i : i + 2], 16) for i in (1, 3, 5))
         position_pct = int(stop["position"] * 100)
@@ -454,24 +706,9 @@ def extract_gradient_metadata(image_source) -> dict:
 
     Args:
         image_source: Either a file path (str) or PIL Image object.
-                     If path is provided, image will be opened and closed automatically.
-                     If PIL Image is provided, it will be used directly (useful for tests).
 
     Returns:
         dict: Complete gradient metadata with all variants
-        {
-            "raw": {"gradient": "..."},
-            "led_safe": {"gradient": "..."},
-            "led_punchy": {"gradient": "..."},
-            "metadata": {
-                "image_size": [...],
-                "processing_time_ms": ...,
-                "background_color": "#...",
-                "background_frequency": 0.5,
-                "has_dominant_background": true,
-                ...
-            }
-        }
     """
     start_time = time.time()
 
@@ -504,43 +741,56 @@ def _extract_gradient_metadata_from_image(
 ) -> dict:
     """
     Internal function to extract gradient metadata from an already-opened PIL Image.
-
-    Args:
-        pil_image: PIL Image object
-        start_time: Time when extraction started (for performance tracking)
-
-    Returns:
-        dict: Complete gradient metadata
     """
     try:
-        # Extract dominant colors
-        colors = extract_dominant_colors(pil_image, n_colors=9)
+        # First pass: full-image palette for robust background-cluster detection
+        full_colors = extract_dominant_colors(
+            pil_image, n_colors=12, use_accent_mask=False
+        )
 
-        # Detect dominant background
-        background = detect_dominant_background(colors, threshold=0.5)
+        # Detect dominant background *cluster*
+        background = detect_dominant_background(
+            full_colors, threshold=BACKGROUND_CLUSTER_THRESHOLD
+        )
+
+        # Second pass: extract accents with masking iff background cluster exists
+        colors = extract_dominant_colors(
+            pil_image, n_colors=9, use_accent_mask=(background is not None)
+        )
+
+        # Fail-open: if accent masking collapses the palette, reuse the full-image palette.
+        # This prevents losing small but important low-saturation warm tones (e.g., yellows).
+        if background is not None and len(colors) < 5:
+            _LOGGER.debug(
+                "Accent pass produced too few colors (%d). Falling back to full-image accents (background removed).",
+                len(colors),
+            )
+            colors = [c for c in full_colors if c["rgb"] != background["rgb"]]
 
         # Build gradient stops (raw, no correction)
         raw_stops = build_gradient_stops(colors, background, max_stops=8)
-
-        # Build gradient string
         raw_gradient = build_gradient_string(raw_stops)
 
-        # Always extract the most frequent color as background_color
-        # (even if it doesn't cross 50% threshold)
-        most_frequent = colors[0]
-        background_color_hex = f"#{most_frequent['rgb'][0]:02x}{most_frequent['rgb'][1]:02x}{most_frequent['rgb'][2]:02x}"
-        background_frequency = round(most_frequent["frequency"], 3)
+        # Always extract the most frequent color as background_color (bin-based)
+        most_frequent = (
+            full_colors[0] if full_colors else (colors[0] if colors else None)
+        )
+        background_color_hex = (
+            f"#{most_frequent['rgb'][0]:02x}{most_frequent['rgb'][1]:02x}{most_frequent['rgb'][2]:02x}"
+            if most_frequent
+            else None
+        )
+        background_frequency = (
+            round(most_frequent["frequency"], 3) if most_frequent else None
+        )
 
-        # Build raw variant (gradient only, background info in metadata)
-        raw_variant = {
-            "gradient": raw_gradient,
-        }
+        raw_variant = {"gradient": raw_gradient}
 
-        # Build LED-safe variant (apply correction to all colors)
+        # LED-safe variant
         safe_colors = [
             {
                 "rgb": apply_led_correction(c["rgb"], mode="safe"),
-                "hsv": c["hsv"],  # Will be recalculated if needed
+                "hsv": c["hsv"],
                 "frequency": c["frequency"],
             }
             for c in colors
@@ -557,12 +807,9 @@ def _extract_gradient_metadata_from_image(
             safe_colors, safe_background, max_stops=8
         )
         safe_gradient = build_gradient_string(safe_stops)
+        led_safe_variant = {"gradient": safe_gradient}
 
-        led_safe_variant = {
-            "gradient": safe_gradient,
-        }
-
-        # Build LED-punchy variant
+        # LED-punchy variant
         punchy_colors = [
             {
                 "rgb": apply_led_correction(c["rgb"], mode="punchy"),
@@ -583,26 +830,19 @@ def _extract_gradient_metadata_from_image(
             punchy_colors, punchy_background, max_stops=8
         )
         punchy_gradient = build_gradient_string(punchy_stops)
+        led_punchy_variant = {"gradient": punchy_gradient}
 
-        led_punchy_variant = {
-            "gradient": punchy_gradient,
-        }
-
-        # Calculate processing time
         processing_time_ms = int((time.time() - start_time) * 1000)
 
-        # Log extraction time for performance monitoring
-        _LOGGER.error(
+        _LOGGER.debug(
             f"Gradient extraction completed in {processing_time_ms}ms "
             f"(size: {pil_image.size[0]}x{pil_image.size[1]}, "
             f"colors: {len(colors)}, pattern: {'interleaved' if background else 'weighted'})"
         )
 
-        # Determine pattern type
         pattern = "interleaved" if background else "weighted"
 
-        # Build complete metadata
-        result = {
+        return {
             "raw": raw_variant,
             "led_safe": led_safe_variant,
             "led_punchy": led_punchy_variant,
@@ -615,12 +855,10 @@ def _extract_gradient_metadata_from_image(
                 "pattern": pattern,
                 "background_color": background_color_hex,
                 "background_frequency": background_frequency,
-                "extraction_version": "1.0",
+                "extraction_version": "1.1",
                 "extracted_at": datetime.now(timezone.utc).isoformat(),
             },
         }
-
-        return result
 
     except Exception as e:
         _LOGGER.error(
@@ -635,11 +873,11 @@ def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
 
     Args:
         pil_image: PIL Image object (may be None)
-        error: Exception that caused the failure
+        error: Exception that caused the failure (logged but not exposed)
         start_time: Time when extraction started
 
     Returns:
-        dict: Fallback gradient metadata with error information
+        dict: Fallback gradient metadata with neutral gray gradient
     """
     processing_time_ms = (
         int((time.time() - start_time) * 1000) if start_time else 0
@@ -664,8 +902,8 @@ def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
             "pattern": "fallback",
             "background_color": None,
             "background_frequency": None,
-            "extraction_version": "1.0",
+            "extraction_version": "1.1",
             "extracted_at": datetime.now(timezone.utc).isoformat(),
-            "error": str(error),
         },
     }
+
