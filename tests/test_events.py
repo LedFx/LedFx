@@ -84,7 +84,9 @@ class TestEventsAddListener:
         def test_callback(event):
             pass
 
-        events.add_listener(test_callback, "test_event", event_filter=test_filter)
+        events.add_listener(
+            test_callback, "test_event", event_filter=test_filter
+        )
 
         listeners = events._listeners.get("test_event", [])
         assert len(listeners) == 1
