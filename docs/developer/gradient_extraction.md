@@ -1,7 +1,7 @@
 # Gradient Extraction Overview
 
-**Feature**: Automatic LED-Optimized Gradient Extraction from Images  
-**Created**: February 13, 2026  
+**Feature**: Automatic LED-Optimized Gradient Extraction from Images
+**Created**: February 13, 2026
 **Last Updated**: February 13, 2026
 
 ---
@@ -174,7 +174,7 @@ palette = quantized.getpalette()[:n_colors * 3]  # RGB triplets
 
 **For grays** (S < 0.15):
 - Hue weight: 0.1 (hue meaningless for grays)
-- Saturation weight: 0.2  
+- Saturation weight: 0.2
 - Value weight: 0.7 (brightness is key)
 - Threshold: 0.20 (looser for gray shades)
 
@@ -415,7 +415,7 @@ class MyEffect(GradientEffect):
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional("gradient", default="Rainbow"): validate_gradient,
     })
-    
+
     def config_updated(self, config):
         # Gradient string can come from:
         # 1. Predefined gradients ("Rainbow", "Sunset", etc.)
@@ -450,10 +450,10 @@ await fetch(`/api/virtuals/${virtualId}/effects/${effectId}`, {
 def extract_gradient_metadata(image_source) -> dict:
     """
     Extract all gradient variants and metadata from an image.
-    
+
     Args:
         image_source: Either a file path (str) or PIL Image object
-        
+
     Returns:
         dict: Complete gradient metadata with all variants
     """
@@ -576,7 +576,7 @@ except Exception as e:
    ]
    custom_stops = build_gradient_stops(custom_colors, custom_background)
    custom_gradient = build_gradient_string(custom_stops)
-   
+
    return {
        # ... existing variants ...
        "led_custom": {"gradient": custom_gradient}
