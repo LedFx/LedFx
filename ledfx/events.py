@@ -435,9 +435,9 @@ class LedFxShutdownEvent(Event):
 
 
 class EventListener:
-    def __init__(self, callback: Callable, event_filter: dict = {}):
+    def __init__(self, callback: Callable, event_filter: dict | None = None):
         self.callback = callback
-        self.filter = event_filter
+        self.filter = event_filter if event_filter is not None else {}
 
     def filter_event(self, event):
         event_dict = event.to_dict()
@@ -466,7 +466,7 @@ class Events:
         self,
         callback: Callable,
         event_type: str,
-        event_filter: dict = {},
+        event_filter: dict | None = None,
     ) -> None:
         listener = EventListener(callback, event_filter)
         if event_type in self._listeners:
