@@ -68,12 +68,6 @@ To maximize the chance that your contribution is reviewed promptly and merged as
 
 Maintainers across the open-source ecosystem have documented the increasing impact of low-effort and reputation-farming pull requests:
 
-- Hacker News discussion on reputation-driven PR spam:  
-  https://news.ycombinator.com/item?id=46938548
-
-- “Navigating Spammy and Low-Quality PRs: A Guide for Maintainers” (OpenSauced):  
-  https://dev.to/opensauced/navigating-spammy-and-low-quality-prs-a-guide-for-maintainers-39p3
-
 These issues are not unique to LedFx, but addressing them explicitly helps keep the project welcoming, sustainable, and focused on real value.
 
 ---
