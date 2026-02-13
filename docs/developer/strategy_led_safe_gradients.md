@@ -832,7 +832,7 @@ docs/developer/strategy_led_safe_gradients.md  # This document (1099 lines)
 
 ## Next Steps (Phase 4-5)
 
-**Phase 4 Remaining**: Visual validation, security testing  
+**Phase 4 Remaining**: Visual validation, security testing
 **Phase 5**: Documentation updates (cache.md, assets.md), usage examples
 
 **Implementation Notes**:
@@ -974,7 +974,7 @@ To prevent gradients dominated by close color variants (e.g., 5 shades of blue t
 - test_gradient_extraction.py: 25 tests (core algorithms)
 - test_gradient_integration.py: 8 tests (ImageCache, Assets, thumbnail optimization)
 
-**API Responses**: 
+**API Responses**:
 - Each variant (raw, led_safe, led_punchy) contains only the gradient CSS string
 - background_color and background_frequency are in metadata section (extraction properties, not variant-specific)
 - background_color always populated when extraction succeeds
