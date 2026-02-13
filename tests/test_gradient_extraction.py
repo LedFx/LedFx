@@ -157,7 +157,9 @@ class TestBuildGradientStops:
             {"rgb": [0, 0, 255], "hsv": [0.67, 1, 1], "frequency": 0.2},
         ]
 
-        stops = build_gradient_stops(colors, background_color=None, max_stops=8)
+        stops = build_gradient_stops(
+            colors, background_color=None, max_stops=8
+        )
 
         assert len(stops) == 3
         assert stops[0]["position"] == 0.0
@@ -173,7 +175,9 @@ class TestBuildGradientStops:
         ]
         background = colors[0]
 
-        stops = build_gradient_stops(colors, background_color=background, max_stops=8)
+        stops = build_gradient_stops(
+            colors, background_color=background, max_stops=8
+        )
 
         # Should have alternating pattern: bg, accent, bg, accent, bg
         assert len(stops) == 5  # 2 accents → 5 stops
@@ -195,7 +199,9 @@ class TestBuildGradientStops:
         ]
         background = colors[0]
 
-        stops = build_gradient_stops(colors, background_color=background, max_stops=8)
+        stops = build_gradient_stops(
+            colors, background_color=background, max_stops=8
+        )
 
         # With 8 stops max: bg, c1, bg, c2, bg, c3, bg, c4 = 8 stops → 4 accents
         assert len(stops) <= 9  # 4 accents * 2 + 1 bg = 9 stops max

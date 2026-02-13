@@ -59,11 +59,13 @@ def extract_dominant_colors(
 
         # Quantize to extract dominant colors
         # Using MEDIANCUT for better color distribution
-        quantized = pil_image.quantize(colors=n_colors, method=Image.Quantize.MEDIANCUT)
+        quantized = pil_image.quantize(
+            colors=n_colors, method=Image.Quantize.MEDIANCUT
+        )
         palette_img = quantized.convert("RGB")
 
         # Get palette colors
-        palette = quantized.getpalette()[:n_colors * 3]  # RGB triplets
+        palette = quantized.getpalette()[: n_colors * 3]  # RGB triplets
         palette_colors = [
             palette[i : i + 3] for i in range(0, len(palette), 3)
         ]
@@ -79,7 +81,7 @@ def extract_dominant_colors(
             frequency = count / total_pixels
 
             # Convert to HSV
-            r, g, b = [c / 255.0 for c in rgb]
+            r, g, b = (c / 255.0 for c in rgb)
             h, s, v = colorsys.rgb_to_hsv(r, g, b)
 
             color_frequencies.append(
@@ -101,9 +103,11 @@ def extract_dominant_colors(
         avg_color = pil_image.resize((1, 1)).getpixel((0, 0))
         if isinstance(avg_color, int):  # Grayscale
             avg_color = (avg_color, avg_color, avg_color)
-        r, g, b = [c / 255.0 for c in avg_color[:3]]
+        r, g, b = (c / 255.0 for c in avg_color[:3])
         h, s, v = colorsys.rgb_to_hsv(r, g, b)
-        return [{"rgb": list(avg_color[:3]), "hsv": [h, s, v], "frequency": 1.0}]
+        return [
+            {"rgb": list(avg_color[:3]), "hsv": [h, s, v], "frequency": 1.0}
+        ]
 
 
 def detect_dominant_background(
@@ -146,7 +150,7 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     config = LED_SAFE_CONFIG if mode == "safe" else LED_PUNCHY_CONFIG
 
     # Convert to HSV for easier manipulation
-    r, g, b = [c / 255.0 for c in rgb]
+    r, g, b = (c / 255.0 for c in rgb)
     h, s, v = colorsys.rgb_to_hsv(r, g, b)
 
     # Detect and replace near-white colors FIRST
@@ -238,7 +242,9 @@ def build_gradient_stops(
 
         # Calculate positions with even spacing
         num_accents = len(accent_colors)
-        total_stops = num_accents * 2 + 1  # bg slots between and around accents
+        total_stops = (
+            num_accents * 2 + 1
+        )  # bg slots between and around accents
 
         # Normalize accent frequencies (exclude background)
         total_accent_freq = sum(c["frequency"] for c in accent_colors)
@@ -372,9 +378,13 @@ def extract_gradient_metadata(image_source) -> dict:
         # Path provided - open and manage the image
         try:
             with Image.open(image_source) as pil_image:
-                return _extract_gradient_metadata_from_image(pil_image, start_time)
+                return _extract_gradient_metadata_from_image(
+                    pil_image, start_time
+                )
         except Exception as e:
-            _LOGGER.error(f"Failed to open image at {image_source}: {e}", exc_info=True)
+            _LOGGER.error(
+                f"Failed to open image at {image_source}: {e}", exc_info=True
+            )
             return _gradient_fallback_metadata(None, e, start_time)
     elif isinstance(image_source, Image.Image):
         # PIL Image provided - use directly
@@ -382,10 +392,14 @@ def extract_gradient_metadata(image_source) -> dict:
     else:
         error_msg = f"Invalid image_source type: {type(image_source)}. Expected str (path) or PIL Image."
         _LOGGER.error(error_msg)
-        return _gradient_fallback_metadata(None, ValueError(error_msg), start_time)
+        return _gradient_fallback_metadata(
+            None, ValueError(error_msg), start_time
+        )
 
 
-def _extract_gradient_metadata_from_image(pil_image: Image.Image, start_time: float) -> dict:
+def _extract_gradient_metadata_from_image(
+    pil_image: Image.Image, start_time: float
+) -> dict:
     """
     Internal function to extract gradient metadata from an already-opened PIL Image.
 
@@ -442,7 +456,9 @@ def _extract_gradient_metadata_from_image(pil_image: Image.Image, start_time: fl
                 "frequency": background["frequency"],
             }
 
-        safe_stops = build_gradient_stops(safe_colors, safe_background, max_stops=8)
+        safe_stops = build_gradient_stops(
+            safe_colors, safe_background, max_stops=8
+        )
         safe_gradient = build_gradient_string(safe_stops)
         safe_bg_hex = None
         if safe_background:
@@ -515,7 +531,9 @@ def _extract_gradient_metadata_from_image(pil_image: Image.Image, start_time: fl
         return result
 
     except Exception as e:
-        _LOGGER.error(f"Failed to extract gradient metadata: {e}", exc_info=True)
+        _LOGGER.error(
+            f"Failed to extract gradient metadata: {e}", exc_info=True
+        )
         return _gradient_fallback_metadata(pil_image, e, start_time)
 
 
@@ -531,7 +549,9 @@ def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
     Returns:
         dict: Fallback gradient metadata with error information
     """
-    processing_time_ms = int((time.time() - start_time) * 1000) if start_time else 0
+    processing_time_ms = (
+        int((time.time() - start_time) * 1000) if start_time else 0
+    )
 
     return {
         "raw": {

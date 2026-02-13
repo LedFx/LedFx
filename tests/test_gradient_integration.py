@@ -92,7 +92,7 @@ class TestImageCacheGradientIntegration:
         # Get cache entry metadata
         cache_key = cache._generate_cache_key(url, None)
         entry = cache.metadata["cache_entries"][cache_key]
-        
+
         # Gradient might be None or present
         assert "gradients" in entry
 
@@ -125,7 +125,7 @@ class TestImageCacheGradientIntegration:
 
         cache_path = cache.get(url)
         assert cache_path is not None
-        
+
         # Get cache entry metadata
         cache_key = cache._generate_cache_key(url, None)
         entry = cache.metadata["cache_entries"][cache_key]
