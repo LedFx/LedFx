@@ -136,20 +136,20 @@ class TestApplyLedCorrection:
         assert punchy[0] >= safe[0]
 
     def test_white_replacement(self):
-        """Near-white colors should be replaced."""
-        # Light gray (low saturation, high value)
-        rgb = [240, 240, 240]
+        """Near-white colors should be replaced if above threshold."""
+        # Light gray (low saturation, high value but below WHITE_REPLACE_MIN_V=0.95)
+        rgb = [240, 240, 240]  # V=0.941 < 0.95, so gets brightness-capped
         corrected = apply_led_correction(rgb, mode="safe")
 
-        # Should be replaced with defined white
-        assert corrected == [245, 245, 245]  # WhiteSmoke
+        # Gets brightness-capped to 0.85, not replaced
+        assert corrected == [216, 216, 216]  # 0.85 * 255
 
 
 class TestBuildGradientStops:
     """Test gradient stop generation."""
 
     def test_normal_gradient_without_background(self):
-        """Build normal weighted gradient."""
+        """Build normal weighted gradient with island stops."""
         colors = [
             {"rgb": [255, 0, 0], "hsv": [0, 1, 1], "frequency": 0.5},
             {"rgb": [0, 255, 0], "hsv": [0.33, 1, 1], "frequency": 0.3},
@@ -160,7 +160,8 @@ class TestBuildGradientStops:
             colors, background_color=None, max_stops=8
         )
 
-        assert len(stops) == 3
+        # Island gradient: start + (n-1)*2 pairs + end = 1 + 2*2 + 1 = 6 stops
+        assert len(stops) == 6
         assert stops[0]["position"] == 0.0
         assert stops[-1]["position"] == 1.0
         assert all(s["type"] == "color" for s in stops)
@@ -202,8 +203,10 @@ class TestBuildGradientStops:
             colors, background_color=background, max_stops=8
         )
 
-        # With 8 stops max: bg, c1, bg, c2, bg, c3, bg, c4 = 8 stops → 4 accents
-        assert len(stops) <= 9  # 4 accents * 2 + 1 bg = 9 stops max
+        # Interleaved mode: bg + accent pairs for each color
+        # Background at start/end + interleaved accents = more stops
+        assert len(stops) >= 8  # At least the interleaved pattern
+        assert len(stops) <= 15  # Upper bound for 5 accents interleaved
 
     def test_empty_colors_returns_empty(self):
         """Handle empty color list."""

@@ -55,7 +55,35 @@ MASK_DARK_V = 0.12
 MASK_LOW_S = 0.10
 MASK_LOW_S_V = 0.22
 MIN_MASKED_PIXELS_FRACTION = 0.02  # require at least 2% pixels remain
+# === Color similarity distance weights =======================================
+# Used for perceptual color similarity calculations in HSV space
+# Different weight profiles for gray vs saturated colors
 
+# Gray/low-saturation colors (s < 0.15): Value difference is most important
+# because hue is meaningless for grays
+GRAY_HUE_WEIGHT = 0.1  # Minimal hue influence for grays
+GRAY_SAT_WEIGHT = 0.2  # Some saturation difference matters
+GRAY_VAL_WEIGHT = 0.7  # Brightness difference is primary distinguisher
+
+# Saturated colors (s >= 0.15): Hue difference is most important
+# for distinguishing distinct colors (red vs blue vs green)
+SATURATED_HUE_WEIGHT = 0.65  # Hue is primary distinguisher
+SATURATED_SAT_WEIGHT = 0.20  # Saturation difference is secondary
+SATURATED_VAL_WEIGHT = 0.15  # Brightness difference is tertiary
+
+# Similarity thresholds for color deduplication
+SATURATED_COLOR_THRESHOLD = 0.12  # Tighter threshold for distinct saturated colors
+# COLOR_DISTANCE_THRESHOLD (0.20) defined above is used for grays/near-grays
+
+# === LED correction parameters ==============================================
+# Gamma blending: Mix between adjusted color (0.0) and gamma-corrected color (1.0)
+# Lower values (0.0-0.10) produce more accurate colors, higher values more vibrant
+GAMMA_BLEND = 0.00  # Currently disabled for accuracy; tune 0.0-0.10 if needed
+
+# === Gradient building parameters ==========================================
+# Blend fraction for "island" gradient stops: controls smoothness of color transitions
+# Higher values create more blending between color bands, lower values create harder edges
+BLEND_FRAC = 0.10  # Typical range: 0.05-0.15
 
 def extract_dominant_colors(
     pil_image: Image.Image, n_colors: int = 9, use_accent_mask: bool = False
@@ -201,8 +229,17 @@ def _build_accent_sample_image(
 def _deduplicate_colors(colors: list[dict]) -> list[dict]:
     """
     Merge similar colors to prevent gradients dominated by close color variants.
-    If merging collapses too far, recover a minimum palette size by selecting
-    the most distinct colors from the original list.
+    
+    Uses weighted HSV distance to determine similarity. If normal merging reduces
+    the palette below DEDUP_MIN_COLORS, performs greedy farthest-point sampling
+    to recover a minimum palette size from the most distinct colors.
+    
+    Args:
+        colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys,
+                sorted by frequency (most dominant first)
+    
+    Returns:
+        Deduplicated list of color dicts, sorted by frequency
     """
     if len(colors) <= 1:
         return colors
@@ -245,9 +282,9 @@ def _deduplicate_colors(colors: list[dict]) -> list[dict]:
 
         avg_s = (s1 + s2) / 2.0
         if avg_s < 0.15:
-            hue_w, sat_w, val_w = 0.1, 0.2, 0.7
+            hue_w, sat_w, val_w = GRAY_HUE_WEIGHT, GRAY_SAT_WEIGHT, GRAY_VAL_WEIGHT
         else:
-            hue_w, sat_w, val_w = 0.65, 0.20, 0.15
+            hue_w, sat_w, val_w = SATURATED_HUE_WEIGHT, SATURATED_SAT_WEIGHT, SATURATED_VAL_WEIGHT
 
         return hue_w * hue_diff + sat_w * sat_diff + val_w * val_diff
 
@@ -317,14 +354,14 @@ def _colors_similar(hsv1: list[float], hsv2: list[float]) -> bool:
 
     if avg_saturation < 0.15:
         # Low saturation (grays/near-grays): Use Value primarily
-        hue_weight = 0.1
-        sat_weight = 0.2
-        val_weight = 0.7
+        hue_weight = GRAY_HUE_WEIGHT
+        sat_weight = GRAY_SAT_WEIGHT
+        val_weight = GRAY_VAL_WEIGHT
     else:
         # Saturated colors: Hue is most important
-        hue_weight = 0.65
-        sat_weight = 0.20
-        val_weight = 0.15
+        hue_weight = SATURATED_HUE_WEIGHT
+        sat_weight = SATURATED_SAT_WEIGHT
+        val_weight = SATURATED_VAL_WEIGHT
 
     weighted_distance = (
         hue_weight * hue_diff + sat_weight * sat_diff + val_weight * val_diff
@@ -333,7 +370,7 @@ def _colors_similar(hsv1: list[float], hsv2: list[float]) -> bool:
     # Tighten threshold for saturated colors so distinct hues (e.g. red vs yellow)
     # don't get merged. Keep the looser threshold for grays/near-grays.
     if avg_saturation >= 0.25:
-        threshold = 0.12
+        threshold = SATURATED_COLOR_THRESHOLD
     else:
         threshold = COLOR_DISTANCE_THRESHOLD
 
@@ -344,10 +381,18 @@ def detect_dominant_background(
     colors: list[dict], threshold: float = 0.5
 ) -> Optional[dict]:
     """
-    Detect if image has a dominant background color.
+    Detect if image has a dominant background color cluster.
 
-    NOTE (minimal behavioral change):
-    - We now treat "background" as a CLUSTER of background-like colors (dark and/or low-sat dark)
+    Treats "background" as a CLUSTER of background-like colors (dark and/or low-sat dark)
+    rather than a single color. Sums frequencies of all background-ish colors and returns
+    the most frequent one if the cluster sum exceeds the threshold.
+    
+    Args:
+        colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
+        threshold: Minimum frequency for background cluster detection (default 0.5)
+    
+    Returns:
+        Background color dict with cluster frequency, or None if no dominant background
       and compare the SUM of those frequencies to the threshold.
     - If cluster is dominant, we return a representative background color dict:
       the most frequent background-like color, but with frequency set to the cluster sum.
@@ -423,9 +468,7 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     g_gamma = pow(g_adjusted, 1.0 / gamma)
     b_gamma = pow(b_adjusted, 1.0 / gamma)
 
-    GAMMA_BLEND = 0.00  # try 0.0–0.10 first (was effectively 0.30)
-
-    # ...
+    # Blend between adjusted color and gamma-corrected color
     r_final = r_adjusted * (1.0 - GAMMA_BLEND) + r_gamma * GAMMA_BLEND
     g_final = g_adjusted * (1.0 - GAMMA_BLEND) + g_gamma * GAMMA_BLEND
     b_final = b_adjusted * (1.0 - GAMMA_BLEND) + b_gamma * GAMMA_BLEND
@@ -446,8 +489,18 @@ def build_gradient_stops(
     """
     Build gradient stops from extracted colors.
 
-    If background_color is detected, creates interleaved pattern: bg → c1 → bg → c2 → bg
-    Otherwise creates normal weighted gradient.
+    Creates two types of gradients:
+    - Interleaved: If background detected, alternates bg → accent → bg for emphasis
+    - Island: Creates weighted color bands with soft blending at boundaries
+    
+    Args:
+        colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
+        background_color: Optional background color dict for interleaved pattern
+        max_stops: Maximum number of gradient stops to generate
+    
+    Returns:
+        List of gradient stop dicts with 'color' (hex), 'position' (0-1), 
+        'type' ('color'/'accent'/'background'), and 'weight' (frequency)
 
     Args:
         colors: List of color dicts from extract_dominant_colors()
@@ -585,7 +638,6 @@ def build_gradient_stops(
         # Emit "islands" with soft boundaries:
         # For each boundary at ends[i], keep color_i flat until (end-b),
         # then allow interpolation across (end-b .. end+b) by switching to next at (end+b).
-        BLEND_FRAC = 0.10  # tune: 0.05–0.15 typical
 
         # First stop at 0
         c0 = gradient_colors[0]
@@ -741,6 +793,19 @@ def _extract_gradient_metadata_from_image(
 ) -> dict:
     """
     Internal function to extract gradient metadata from an already-opened PIL Image.
+    
+    Performs two-pass extraction:
+    1. Full-image palette (12 colors) for robust background cluster detection
+    2. Accent-masked palette (9 colors) to emphasize foreground colors
+    
+    Falls back to full-image accents if masking over-filters.
+    
+    Args:
+        pil_image: Already-opened PIL Image object
+        start_time: Start time for performance tracking
+    
+    Returns:
+        Complete gradient metadata dict with all variants and metadata
     """
     try:
         # First pass: full-image palette for robust background-cluster detection
