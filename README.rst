@@ -111,7 +111,10 @@ To join, click on the Discord button below:
 Contributing
 --------------
 Pull requests are welcome. Once tested, contact LedFx developer community on Discord to discuss the next step.
-We expect and require all contributors to read, understand and follow our code of conduct.
+
+Please read our `Contributing Guidelines <https://ledfx.readthedocs.io/en/latest/contributing.html>`_ for detailed information on contribution expectations, code quality requirements, and community standards.
+
+We expect and require all contributors to read, understand and follow our `Code of Conduct <https://github.com/LedFx/LedFx/blob/main/CODE_OF_CONDUCT.md>`_.
 
 Credits: `Contributors-&-About`_
 
