@@ -414,7 +414,7 @@ class WebsocketConnection:
     def song_info_handler(self, message):
         """
         Handle incoming song/media info and broadcast to all subscribed clients.
-        
+
         Expected message format:
         {
             "id": int,
@@ -432,7 +432,7 @@ class WebsocketConnection:
         _LOGGER.info(
             f"Received song info: {message.get('artist')} - {message.get('title')}"
         )
-        
+
         # Fire the event which will be broadcast to all subscribed clients
         self._ledfx.events.fire_event(
             SongDetectedEvent(
