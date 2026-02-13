@@ -1,93 +1,113 @@
-"""Tests for event system, particularly mutable default arguments fix."""
+"""Tests for ledfx/events.py - Event system"""
+
+from unittest.mock import MagicMock
 
 from ledfx.events import EventListener, Events
 
 
 class TestEventListener:
-    """Test EventListener class for mutable default argument issues."""
+    """Test EventListener class"""
 
-    def test_event_filter_independence(self):
-        """Test that event_filter dictionaries are independent between instances."""
-        # Create two listeners without providing event_filter
-        listener1 = EventListener(lambda e: None)
-        listener2 = EventListener(lambda e: None)
+    def test_filter_independence_without_args(self):
+        """
+        Test that EventListener instances using default filters don't share state.
 
-        # Modify listener1's filter
-        listener1.filter["test_key"] = "test_value"
+        This tests the fix for the mutable default argument bug where all
+        EventListener instances using the default event_filter={} would
+        share the same dict object, causing filter pollution.
+        """
+        callback1 = MagicMock()
+        callback2 = MagicMock()
 
-        # Verify listener2's filter is not affected
-        assert "test_key" not in listener2.filter
-        assert listener1.filter != listener2.filter
+        # Create first listener with default filter
+        listener1 = EventListener(callback1)
+        assert listener1.filter == {}
 
-    def test_event_filter_with_provided_dict(self):
-        """Test that provided event_filter works correctly."""
-        test_filter = {"event_type": "test"}
-        listener = EventListener(lambda e: None, event_filter=test_filter)
+        # Mutate listener1's filter (simulates runtime filter modification)
+        listener1.filter["type"] = "device"
+        listener1.filter["status"] = "active"
 
-        assert listener.filter == test_filter
-        assert listener.filter is test_filter  # Should be the same object
+        # Create second listener with default filter
+        listener2 = EventListener(callback2)
 
-    def test_event_filter_with_none(self):
-        """Test that None event_filter creates empty dict."""
-        listener = EventListener(lambda e: None, event_filter=None)
+        # Assert that listener2 has an independent empty filter
+        assert listener2.filter == {}, (
+            f"Expected empty filter for listener2, got {listener2.filter}. "
+            "This indicates mutable default argument bug."
+        )
 
-        assert listener.filter == {}
-        assert isinstance(listener.filter, dict)
+        # Verify listener1 still has its filter
+        assert listener1.filter == {"type": "device", "status": "active"}
+
+    def test_explicit_filter_works(self):
+        """Test that passing an explicit filter works correctly"""
+        callback = MagicMock()
+        custom_filter = {"event_type": "virtual_update"}
+
+        listener = EventListener(callback, custom_filter)
+
+        assert listener.filter is custom_filter
+        assert listener.filter == {"event_type": "virtual_update"}
+
+    def test_empty_dict_passed_explicitly(self):
+        """Test that passing an explicit empty dict works"""
+        callback = MagicMock()
+        explicit_empty = {}
+
+        listener = EventListener(callback, explicit_empty)
+
+        # Should use the passed dict, not create a new one
+        assert listener.filter is explicit_empty
 
 
 class TestEventsAddListener:
-    """Test Events.add_listener method for mutable default argument issues."""
+    """Test Events.add_listener method"""
 
-    def test_add_listener_filter_independence(self, mocker):
-        """Test that event_filter in add_listener is independent between calls."""
-        # Create a mock ledfx instance with an event loop
-        mock_ledfx = mocker.Mock()
-        mock_ledfx.loop = mocker.Mock()
+    def test_add_listener_filter_independence(self):
+        """
+        Test that add_listener with default filters creates independent filters.
 
-        events = Events(mock_ledfx)
+        This tests the fix for the mutable default argument in Events.add_listener.
+        """
+        ledfx_mock = MagicMock()
+        ledfx_mock.loop = MagicMock()
+        events = Events(ledfx_mock)
 
-        # Create listener storage to capture the listeners
-        captured_listeners = []
+        callback1 = MagicMock()
+        callback2 = MagicMock()
 
-        def capture_listener(event):
-            pass
+        # Add first listener with default filter
+        events.add_listener(callback1, "device_update")
 
-        # Add two listeners without event_filter
-        events.add_listener(capture_listener, "test_event_1")
-        events.add_listener(capture_listener, "test_event_2")
+        # Access the listener and mutate its filter
+        listener1 = events._listeners["device_update"][0]
+        listener1.filter["source"] = "api"
 
-        # Get the listeners that were created
-        listeners_1 = events._listeners.get("test_event_1", [])
-        listeners_2 = events._listeners.get("test_event_2", [])
+        # Add second listener with default filter
+        events.add_listener(callback2, "virtual_update")
 
-        assert len(listeners_1) == 1
-        assert len(listeners_2) == 1
+        # Access the second listener
+        listener2 = events._listeners["virtual_update"][0]
 
-        # Modify first listener's filter
-        listeners_1[0].filter["modified"] = True
-
-        # Verify second listener's filter is not affected
-        assert "modified" not in listeners_2[0].filter
-        assert listeners_1[0].filter != listeners_2[0].filter
-
-    def test_add_listener_with_filter(self, mocker):
-        """Test that provided event_filter works correctly in add_listener."""
-        mock_ledfx = mocker.Mock()
-        mock_ledfx.loop = mocker.Mock()
-
-        events = Events(mock_ledfx)
-
-        test_filter = {"event_type": "specific_type"}
-
-        def test_callback(event):
-            pass
-
-        events.add_listener(
-            test_callback, "test_event", event_filter=test_filter
+        # Assert that listener2 has an independent empty filter
+        assert listener2.filter == {}, (
+            f"Expected empty filter for listener2, got {listener2.filter}. "
+            "Filter pollution from listener1 detected."
         )
 
-        listeners = events._listeners.get("test_event", [])
-        assert len(listeners) == 1
-        # The listener should have the filter we provided
-        assert "event_type" in listeners[0].filter
-        assert listeners[0].filter["event_type"] == "specific_type"
+        # Verify listener1 still has its mutated filter
+        assert listener1.filter == {"source": "api"}
+
+    def test_add_listener_with_explicit_filter(self):
+        """Test add_listener with an explicit filter"""
+        ledfx_mock = MagicMock()
+        ledfx_mock.loop = MagicMock()
+        events = Events(ledfx_mock)
+
+        callback = MagicMock()
+        custom_filter = {"device_id": "123"}
+
+        events.add_listener(callback, "device_update", custom_filter)
+
+        listener = events._listeners["device_update"][0]
+        assert listener.filter == {"device_id": "123"}
