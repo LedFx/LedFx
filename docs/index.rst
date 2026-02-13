@@ -10,6 +10,7 @@
    /security
    /developer/developer
    /developer/architecture
+   /developer/strategy_led_safe_gradients
    /README
 
 .. toctree::
