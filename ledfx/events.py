@@ -40,6 +40,7 @@ class Event:
     PLAYLIST_PAUSED = "playlist_paused"
     PLAYLIST_RESUMED = "playlist_resumed"
     COLORS_UPDATED = "colors_updated"
+    SONG_DETECTED = "song_detected"
 
     def __init__(self, type: str):
         """
@@ -55,6 +56,44 @@ class Event:
         Returns a dictionary representation of the event's attributes.
         """
         return self.__dict__
+
+
+class SongDetectedEvent(Event):
+    """Event emitted when media/song info is detected"""
+
+    def __init__(
+        self,
+        title: str,
+        artist: str,
+        album: str = "",
+        thumbnail: str = None,
+        position: float = None,
+        duration: float = None,
+        playing: bool = False,
+        timestamp: float = None,
+    ):
+        """
+        Initializes a SongDetectedEvent with media information.
+
+        Args:
+            title: The title of the song/track.
+            artist: The artist name.
+            album: The album name (optional).
+            thumbnail: Path or URL to album artwork (optional).
+            position: Current playback position in seconds (optional).
+            duration: Total duration in seconds (optional).
+            playing: Whether the media is currently playing.
+            timestamp: Unix timestamp of when the info was captured.
+        """
+        super().__init__(Event.SONG_DETECTED)
+        self.title = title
+        self.artist = artist
+        self.album = album
+        self.thumbnail = thumbnail
+        self.position = position
+        self.duration = duration
+        self.playing = playing
+        self.timestamp = timestamp
 
 
 class GeneralDiagEvent(Event):
