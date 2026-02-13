@@ -906,4 +906,3 @@ def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
             "extracted_at": datetime.now(timezone.utc).isoformat(),
         },
     }
-
