@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
+from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
 
 _LOGGER = logging.getLogger(__name__)
@@ -177,6 +178,17 @@ class ImageCache:
             cache_path
         )
 
+        # Extract gradient metadata (pass path, function handles opening)
+        gradient_data = None
+        try:
+            gradient_data = extract_gradient_metadata(cache_path)
+        except Exception as e:
+            _LOGGER.warning(
+                f"Failed to extract gradients for {url}: {e}",
+                exc_info=False,
+            )
+            # Continue without gradients - not a critical failure
+
         entry = {
             "url": url,
             "cached_at": now,
@@ -193,6 +205,7 @@ class ImageCache:
             "format": img_format,
             "n_frames": n_frames,
             "is_animated": is_animated,
+            "gradients": gradient_data,  # Gradient metadata (all variants)
         }
 
         self.metadata["cache_entries"][cache_key] = entry

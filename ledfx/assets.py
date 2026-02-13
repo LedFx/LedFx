@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 import PIL.Image as Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
+from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
 from ledfx.utilities.security_utils import (
     ALLOWED_IMAGE_EXTENSIONS,
@@ -535,6 +536,17 @@ def _list_assets_from_directory(
                         get_image_metadata(abs_path)
                     )
 
+                    # Extract gradient metadata (pass path, function handles opening)
+                    gradient_data = None
+                    try:
+                        gradient_data = extract_gradient_metadata(abs_path)
+                    except Exception as e:
+                        _LOGGER.warning(
+                            f"Failed to extract gradients for {log_prefix} {rel_path}: {e}",
+                            exc_info=False,
+                        )
+                        # Continue without gradients - not a critical failure
+
                     assets.append(
                         {
                             "path": rel_path,
@@ -545,6 +557,7 @@ def _list_assets_from_directory(
                             "format": img_format,
                             "n_frames": n_frames,
                             "is_animated": is_animated,
+                            "gradients": gradient_data,  # Gradient metadata (all variants)
                         }
                     )
 
