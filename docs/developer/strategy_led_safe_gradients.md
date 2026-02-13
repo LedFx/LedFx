@@ -1,41 +1,53 @@
-# Strategy Document: Image-Derived LED-Safe Gradient Extraction
+# Gradient Extraction Overview
 
+**Feature**: Automatic LED-Optimized Gradient Extraction from Images
 **Created**: February 13, 2026
-**Status**: Phase 3 Complete - Pipeline Integration Finished (with latest optimizations)
 **Last Updated**: February 13, 2026
-**Target**: LedFx Core Gradient System
 
 ---
 
-## Executive Summary
+## Introduction
 
-Implement a backend service for extracting LED-optimized color gradients from images (album art, user uploads, cached images). The system will produce multiple gradient variants:
-- **Raw**: True to source image, ideal for screen previews
-- **LED-safe**: Optimized for WS2812/HUB75 RGB matrices
-- **LED-punchy** (optional): Enhanced saturation variant
+LedFx automatically extracts LED-optimized color gradients from all loaded images (album art, user uploads, cached images). Every image that enters the system receives gradient extraction, producing three variants optimized for different use cases:
 
-This addresses current issues where screen-optimized color extraction produces poor results on physical LED hardware due to gamma, brightness limits, and lack of true white.
+- **Raw**: True to source image colors, ideal for screen previews
+- **LED-safe**: Optimized for physical LED hardware (WS2812/HUB75 matrices)
+- **LED-punchy**: Enhanced saturation variant for vibrant displays
 
----
-
-## Problem Statement
-
-### Current Issues
-1. **Saturation blowout**: Colors too intense on LED matrices
-2. **Washed-out whites**: Near-white colors render poorly without true white LEDs
-3. **Accent color dominance**: Minor colors take excessive gradient space
-4. **Gradient instability**: Small image changes cause large gradient shifts
-
-### Root Cause
-Existing extraction optimized for screens, not LED physics (gamma, brightness, RGB-only color space).
+Gradients are extracted once during image loading and cached permanently, making them instantly available to effects and the frontend with zero runtime cost.
 
 ---
 
-## Architecture Overview
+## Problem & Solution
 
-**⭐ CRITICAL ARCHITECTURAL DECISION: Integrated Pipeline (Not a Separate API)**
+### The Problem
 
-Instead of creating a new REST endpoint, gradient extraction is **integrated directly into the image loading pipeline**. Every image automatically gets gradient metadata extracted and stored alongside other image properties (width, height, format).
+Screen-optimized color extraction produces poor results on physical LED hardware:
+
+1. **Saturation blowout**: Colors appear too intense on RGB LED matrices
+2. **Washed-out whites**: Near-white colors render poorly (no dedicated white LEDs)
+3. **Background dominance**: Large background areas wash out accent colors in gradients
+4. **Incorrect gamma**: Screen gamma (sRGB) differs from LED gamma requirements
+5. **Brightness limitations**: LEDs can't safely display full brightness colors
+
+### The Solution
+
+Automatic extraction pipeline with LED-specific corrections:
+
+- **Brightness capping**: Max 85% brightness for safe operation
+- **Saturation reduction**: 90% max saturation prevents oversaturation
+- **White replacement**: Near-white colors mapped to defined white points
+- **Background detection**: Dominant backgrounds (>50%) separated from accent colors
+- **Interleaved gradients**: Background-separated accent "islands" for vibrant displays
+- **LED gamma correction**: 2.2 gamma appropriate for LED physics
+
+---
+
+## Architecture
+
+### Integrated Pipeline Design
+
+Gradient extraction is **integrated into the image loading pipeline**, not a separate API. Every image automatically receives gradient extraction during initial load/save, with results cached permanently alongside other metadata (width, height, format).
 
 ```{mermaid}
 graph TD
@@ -54,70 +66,67 @@ graph TD
     M[Asset Manager] --> B
 ```
 
-### Key Integration Points
+### Integration Points
 
-1. **ImageCache.put()** (`ledfx/libraries/cache.py`)
-   - Already extracts: width, height, format, n_frames, is_animated
-   - **Add**: Extract gradients (raw, led_safe, led_punchy variants)
-   - Store in cache entry metadata
-   - One-time extraction, cached forever
+**1. ImageCache** (`ledfx/libraries/cache.py`)
+- Extracts gradients in `put()` method alongside width, height, format
+- **Thumbnail optimization**: Skips extraction for thumbnails (identified by `params != None`)
+- Stores in built-in `metadata.json` with cache entries
+- One-time extraction, cached permanently
+- ~20-50ms per original image, 0ms for thumbnails
 
-2. **save_asset()** (`ledfx/assets.py`)
-   - Already validates and stores images
-   - **Add**: Extract gradients during save
-   - Include in asset list responses
+**2. Asset Storage** (`ledfx/assets.py`)
+- Extracts gradients during `list_assets()` directory walk
+- **Metadata caching**: Separate `.asset_metadata_cache.json` file
+- Cache hit: Instant retrieval (0ms vs 20-300ms extraction)
+- Cache invalidation: Automatic on file modification or deletion
+- Graceful degradation: Broken cache → re-extract without errors
 
-3. **Existing APIs Automatically Enhanced**:
-   - `/api/cache/images` - GET returns cache entries with gradients
-   - `/api/assets` - GET returns asset list with gradients
-   - `/api/assets/download` - Could include gradient metadata in response
-   - **No new API endpoint needed!** ✅
+**3. Existing APIs Enhanced**
+- `/api/cache/images` - Returns gradients in cache entry metadata
+- `/api/assets` - Returns gradients in asset list
+- **No new endpoints** - gradients are optional metadata fields
+- Backward compatible - old clients ignore gradient fields
 
-### Advantages of Integrated Approach
+### Architecture Benefits
 
-✅ **Automatic extraction** - Every image gets gradients without explicit request
-✅ **One-time cost** - Extract once during cache/save, use forever
-✅ **No API changes** - Existing endpoints just return more metadata
-✅ **Consistent everywhere** - All images have gradients (URLs, uploads, cached)
-✅ **Frontend simplicity** - Load image, get gradients automatically
-✅ **Memory efficient** - Gradients are JSON strings (< 1KB per variant)
-✅ **Backward compatible** - Old clients ignore new metadata fields
+- **Automatic**: Every image gets gradients without explicit requests
+- **One-time cost**: Extract once, use forever (cached)
+- **Zero API changes**: Existing endpoints return more metadata
+- **Consistent**: All image sources get gradients (URLs, uploads, assets)
+- **Performant**: ~20-50ms one-time cost, then instant retrieval
+- **Memory efficient**: Gradients are JSON strings (< 1KB per variant)
+- **Backward compatible**: Optional metadata fields, old clients unaffected
 
-### Automatic Re-extraction via Existing Cache Refresh
+### Cache Refresh & Re-extraction
 
-For cases where re-extraction is needed (algorithm updates, different parameters):
-
-**Use existing cache refresh endpoint** - No new endpoint needed! 🎉
-
-The existing `/api/cache/images/refresh` endpoint will automatically re-extract gradients:
+For re-extraction (algorithm updates, debugging), use the existing cache refresh:
 
 ```
 POST /api/cache/images/refresh
-{
-  "url": "https://example.com/art.jpg"
-}
+{"url": "https://example.com/art.jpg"}
 ```
 
-**How it works**:
-1. Cache entry is deleted (`cache.delete(url)`)
-2. Image is re-downloaded and cached (`open_image` → `ImageCache.put()`)
-3. **Gradients are automatically re-extracted** during `put()`
-4. Response includes fresh gradients in metadata
+**Process**:
+1. Cache entry deleted
+2. Image re-downloaded and cached
+3. Gradients automatically re-extracted
+4. Response includes fresh gradients
 
-**Use cases**:
-- Algorithm improvements (refresh cache → auto re-extract)
-- Parameter tuning (modify extraction code → refresh cache)
-- Debugging (force fresh extraction with existing tools)
-
-**No new API needed** - gradient extraction piggybacks on existing cache infrastructure!
+**Use cases**: Algorithm improvements, parameter tuning, debugging
 
 ---
 
-## Implementation Phases
+## Color Extraction Pipeline
 
-### Phase 1: Discovery & Analysis
-**Status**: ✅ Completed
-**Duration**: 1-2 hours
+### Overview
+
+The extraction pipeline processes images through four stages:
+
+1. **Color Quantization**: Extract dominant colors using MEDIANCUT
+2. **Background Detection**: Identify dominant background clusters (>50%)
+3. **Color Deduplication**: Merge perceptually similar colors
+4. **Gradient Construction**: Build interleaved or weighted gradient stops
 
 #### Objectives
 - Map existing image handling infrastructure
@@ -246,103 +255,100 @@ class GradientEffect(Effect):
 
 ---
 
-### Phase 2: Core Algorithm Implementation
-**Status**: ✅ COMPLETE
-**Duration**: 3-4 hours (Completed: February 13, 2026)
+## LED Correction
 
-#### Objectives
-- Implement pure extraction functions
-- Create LED correction algorithms
-- Ensure deterministic, testable behavior
-- **NEW**: Create metadata extraction wrapper for integration
+### The Need for Correction
 
-#### Tasks
+LED matrices differ from screens:
+- **No true white**: RGB-only (no dedicated white LEDs)
+- **Gamma mismatch**: LEDs require 2.2 gamma (not sRGB 2.4)
+- **Safety limits**: Full brightness can overdraw power or damage LEDs
+- **Perceptual differences**: Colors appear more saturated on LEDs
 
-1. **Create Core Module** (`ledfx/utilities/gradient_extraction.py`)
-   - Pure functions for color extraction, background detection, gradient construction
-   - LED correction algorithms (safe/punchy variants)
-   - `extract_gradient_metadata(pil_image)` wrapper returns all variants + metadata
-   - Internally uses stops and dominant_colors; API exposes gradient string + background info
+### Correction Parameters
 
-2. **Palette Extraction Algorithm**
-   - [x] Implement color quantization using Pillow's `image.quantize()`
-   - [x] Add frequency weighting logic (pixel count per color)
-   - [x] **Color deduplication** to prevent gradients dominated by similar colors
-     - Uses HSV distance with weighted importance (hue > saturation > value)
-     - Merges colors within perceptual similarity threshold
-     - Combines frequencies when merging
-   - [x] Create stability mechanisms (sort by frequency, then hue)
-   - [x] Optimize with NumPy operations
+**LED-Safe Config** (conservative):
+```python
+LED_SAFE_CONFIG = {
+    "max_value": 0.85,          # Cap brightness at 85%
+    "max_saturation": 0.90,     # Reduce saturation to 90%
+    "gamma": 2.2,               # LED-appropriate gamma
+    "white_threshold": 0.15,    # Detect near-white (S < 15%)
+    "white_replacement": "#F5F5F5",  # WhiteSmoke for whites
+}
+```
 
-3. **Dominant Background Detection** ⭐ **NEW**
-   - [x] Detect if one color is significantly dominant (>50% frequency)
-   - [x] When detected: build INTERLEAVED gradient pattern
-   - [x] Pattern: `bg → c1 → bg → c2 → bg → c3 → bg → ...`
-   - [x] Creates distinct "islands" of accent colors separated by background
-   - [x] Stop allocation: With 8 stops max, supports up to 4 accent colors
-     - 3 accent colors: `bg, c1, bg, c2, bg, c3, bg` (7 stops)
-     - 4 accent colors: `bg, c1, bg, c2, bg, c3, bg, c4` (8 stops)
-   - [x] If no dominant background: build normal gradient from all colors (max 8 stops)
+**LED-Punchy Config** (vibrant):
+```python
+LED_PUNCHY_CONFIG = {
+    "max_value": 0.95,          # Higher brightness
+    "max_saturation": 1.0,      # Full saturation
+    "gamma": 2.2,
+    "white_threshold": 0.15,
+    "white_replacement": "#FFFFFF",  # Pure white
+}
+```
 
-4. **LED Correction Algorithms**
-   - [x] Implement brightness capping (max_value = 0.85)
-   - [x] Add saturation reduction (max_saturation = 0.90)
-   - [x] Create white detection and replacement (low saturation + high value)
-   - [x] Apply LED gamma correction (2.2)
-   - [x] Add RGB channel clamping
+### Correction Pipeline
 
-5. **Gradient Construction**
-   - [x] **Normal mode** (no dominant background): Weighted stop placement based on frequency
-   - [x] **Interleaved mode** (dominant background detected):
-     - Alternate between background and accent colors
-     - Even spacing: 0%, 12.5%, 25%, 37.5%, 50%, 62.5%, 75%, 87.5%, 100%
-     - Creates visual "splotches" of color separated by background
-     - Pattern: `bg → accent1 → bg → accent2 → bg → accent3 → bg`
-   - [x] LedFx gradient format conversion (linear-gradient string)
-   - [x] Variant generation (raw/safe/punchy modes)
-   - [x] Always include background_color (most frequent color) and background_frequency
+For each color in extracted palette:
 
-6. **Metadata Extraction Wrapper** ⭐
+1. **White detection** (S < 0.15 AND V > 0.95):
    ```python
-   def extract_gradient_metadata(pil_image: Image.Image) -> dict:
-       """
-       Extract all gradient variants and metadata from PIL image.
-
-       Returns dict suitable for storage in ImageCache or asset metadata:
-       {
-           "gradients": {
-               "raw": {"gradient": "..."},
-               "led_safe": {"gradient": "..."},
-               "led_punchy": {"gradient": "..."},
-               "metadata": {
-                   "background_color": "#...",
-                   "background_frequency": 0.7,
-                   ...
-               }
-           }
-       }
-       """
+   if saturation < 0.15 and value > 0.95:
+       return white_replacement  # Replace with defined white
    ```
 
-#### Acceptance Criteria
-- Functions accept PIL Image input
-- No I/O operations in core functions
-- NumPy-optimized (no pixel loops)
-- Deterministic output for same input
-- Unit testable
-- **Metadata wrapper returns dict ready for JSON storage** ⭐
+2. **Brightness cap**:
+   ```python
+   value = min(value, max_value)  # Cap at 85% (safe) or 95% (punchy)
+   ```
 
-#### Test Scenarios
-- Extract from solid color image → Should detect as 100% background, derive simple gradient
-- Extract from multi-color gradient image → Should distribute colors evenly
-- Handle near-white colors → Should apply LED white correction
-- Process small vs large images → Should maintain consistency
-- Validate stability (similar images → similar gradients)
-- **Album art with 70% black background** → Should separate background, vibrant accent gradient ⭐
-- **Album art with 80% white background** → Should separate, apply white correction ⭐
-- **Photo with no dominant color (<50%)** → Should use all colors in gradient ⭐
-- **Two-color image (60% bg + 40% accent)** → Should detect bg, single-color gradient ⭐
-- **Metadata serialization** → Dict is JSON-serializable, no PIL objects ⭐
+3. **Saturation cap**:
+   ```python
+   saturation = min(saturation, max_saturation)  # 90% (safe) or 100% (punchy)
+   ```
+
+4. **Gamma correction** (currently disabled):
+   ```python
+   # Apply gamma to each RGB channel, blend with original
+   gamma_corrected = pow(color, 1.0 / gamma)
+   final = color * (1 - blend) + gamma_corrected * blend
+   # blend = 0.00 (disabled for accuracy)
+   ```
+
+5. **Clamp to valid range**:
+   ```python
+   rgb = [int(max(0, min(255, c * 255))) for c in rgb_float]
+   ```
+
+### Correction Constants (Module-Level)
+
+All tuning parameters defined at module top for easy adjustment:
+
+```python
+# Color similarity weights
+GRAY_HUE_WEIGHT = 0.1
+GRAY_SAT_WEIGHT = 0.2
+GRAY_VAL_WEIGHT = 0.7
+SATURATED_HUE_WEIGHT = 0.65
+SATURATED_SAT_WEIGHT = 0.20
+SATURATED_VAL_WEIGHT = 0.15
+
+# Deduplication thresholds
+COLOR_DISTANCE_THRESHOLD = 0.20  # For grays
+SATURATED_COLOR_THRESHOLD = 0.12  # For saturated colors
+
+# Background detection
+BACKGROUND_CLUSTER_THRESHOLD = 0.50
+BG_DARK_V = 0.16
+BG_LOW_S = 0.18
+BG_LOW_S_V = 0.28
+
+# Gradient building
+BLEND_FRAC = 0.10  # Island gradient blend fraction
+GAMMA_BLEND = 0.00  # Disabled for accuracy
+```
 
 ---
 
