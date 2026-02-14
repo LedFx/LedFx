@@ -1,6 +1,6 @@
+import json
 import logging
 import time
-import json
 from json import JSONDecodeError
 
 import voluptuous as vol
