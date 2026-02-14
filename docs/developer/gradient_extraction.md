@@ -364,10 +364,12 @@ Gradients are stored in image metadata and exposed through API responses:
 Gradients are automatically included in existing API responses:
 
 **From Image Cache**:
-```http
+```text
 GET /api/cache/images
+```
 
 Response:
+```
 {
   "entries": [
     {
@@ -386,10 +388,12 @@ Response:
 ```
 
 **From Assets**:
-```http
+```text
 GET /api/assets
+```
 
 Response:
+```
 {
   "assets": [
     {
