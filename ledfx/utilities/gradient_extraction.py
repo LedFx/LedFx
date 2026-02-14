@@ -396,7 +396,9 @@ def detect_dominant_background(
 
     Treats "background" as a CLUSTER of background-like colors (dark and/or low-sat dark)
     rather than a single color. Sums frequencies of all background-ish colors and returns
-    the most frequent one if the cluster sum exceeds the threshold.
+    the most frequent one if the cluster sum exceeds the threshold. If cluster is dominant,
+    returns a representative background color dict: the most frequent background-like color,
+    but with frequency set to the cluster sum.
 
     Args:
         colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
@@ -404,16 +406,6 @@ def detect_dominant_background(
 
     Returns:
         Background color dict with cluster frequency, or None if no dominant background
-      and compare the SUM of those frequencies to the threshold.
-    - If cluster is dominant, we return a representative background color dict:
-      the most frequent background-like color, but with frequency set to the cluster sum.
-
-    Args:
-        colors: List of color dicts from extract_dominant_colors()
-        threshold: Frequency threshold for background detection (default 0.5 = 50%)
-
-    Returns:
-        Background color dict if detected, None otherwise
     """
     if not colors:
         return None
@@ -512,14 +504,6 @@ def build_gradient_stops(
     Returns:
         List of gradient stop dicts with 'color' (hex), 'position' (0-1),
         'type' ('color'/'accent'/'background'), and 'weight' (frequency)
-
-    Args:
-        colors: List of color dicts from extract_dominant_colors()
-        background_color: Dominant background color dict if detected
-        max_stops: Maximum gradient stops (default 8)
-
-    Returns:
-        List of gradient stops with 'color' (hex), 'position' (0.0-1.0), 'type'
     """
     if not colors:
         return []
@@ -857,19 +841,24 @@ def _extract_gradient_metadata_from_image(
         raw_variant = {"gradient": raw_gradient}
 
         # LED-safe variant
-        safe_colors = [
-            {
-                "rgb": apply_led_correction(c["rgb"], mode="safe"),
-                "hsv": c["hsv"],
+        safe_colors = []
+        for c in colors:
+            corrected_rgb = apply_led_correction(c["rgb"], mode="safe")
+            r, g, b = (val / 255.0 for val in corrected_rgb)
+            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
+            safe_colors.append({
+                "rgb": corrected_rgb,
+                "hsv": corrected_hsv,
                 "frequency": c["frequency"],
-            }
-            for c in colors
-        ]
+            })
         safe_background = None
         if background:
+            corrected_rgb = apply_led_correction(background["rgb"], mode="safe")
+            r, g, b = (val / 255.0 for val in corrected_rgb)
+            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
             safe_background = {
-                "rgb": apply_led_correction(background["rgb"], mode="safe"),
-                "hsv": background["hsv"],
+                "rgb": corrected_rgb,
+                "hsv": corrected_hsv,
                 "frequency": background["frequency"],
             }
 
@@ -880,19 +869,24 @@ def _extract_gradient_metadata_from_image(
         led_safe_variant = {"gradient": safe_gradient}
 
         # LED-punchy variant
-        punchy_colors = [
-            {
-                "rgb": apply_led_correction(c["rgb"], mode="punchy"),
-                "hsv": c["hsv"],
+        punchy_colors = []
+        for c in colors:
+            corrected_rgb = apply_led_correction(c["rgb"], mode="punchy")
+            r, g, b = (val / 255.0 for val in corrected_rgb)
+            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
+            punchy_colors.append({
+                "rgb": corrected_rgb,
+                "hsv": corrected_hsv,
                 "frequency": c["frequency"],
-            }
-            for c in colors
-        ]
+            })
         punchy_background = None
         if background:
+            corrected_rgb = apply_led_correction(background["rgb"], mode="punchy")
+            r, g, b = (val / 255.0 for val in corrected_rgb)
+            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
             punchy_background = {
-                "rgb": apply_led_correction(background["rgb"], mode="punchy"),
-                "hsv": background["hsv"],
+                "rgb": corrected_rgb,
+                "hsv": corrected_hsv,
                 "frequency": background["frequency"],
             }
 
