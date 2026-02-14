@@ -558,7 +558,9 @@ def build_gradient_stops(
         # Normalize accent frequencies (exclude background)
         total_accent_freq = sum(c["frequency"] for c in accent_colors)
         if total_accent_freq > 0:
-            accent_weights = [c["frequency"] / total_accent_freq for c in accent_colors]
+            accent_weights = [
+                c["frequency"] / total_accent_freq for c in accent_colors
+            ]
         else:
             accent_weights = [1.0 / len(accent_colors)] * len(accent_colors)
 
