@@ -1,5 +1,6 @@
 import logging
 import time
+import json
 from json import JSONDecodeError
 
 import voluptuous as vol
@@ -88,7 +89,6 @@ class ClientEndpoint(RestEndpoint):
             )
 
         # Check payload size
-        import json
 
         payload_size = len(json.dumps(validated["payload"]))
         if payload_size > MAX_PAYLOAD_SIZE:
@@ -108,13 +108,16 @@ class ClientEndpoint(RestEndpoint):
             return await self.invalid_request("No targets matched filters")
 
         # Fire broadcast event
+        # Inject target_uuids into the payload for client-side filtering
+        payload_with_targets = dict(validated["payload"])
+        payload_with_targets["target_uuids"] = target_uuids
         self._ledfx.events.fire_event(
             ClientBroadcastEvent(
                 broadcast_type=validated["broadcast_type"],
                 sender_id=sender_id,
                 sender_name=sender_name,
                 target_uuids=target_uuids,
-                payload=validated["payload"],
+                payload=payload_with_targets,
             )
         )
 
