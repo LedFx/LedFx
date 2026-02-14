@@ -1,9 +1,9 @@
 import asyncio
 import binascii
 import json
-import time
 import logging
 import struct
+import time
 import uuid
 from concurrent import futures
 
@@ -16,8 +16,8 @@ from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import (
     ClientConnectedEvent,
-    ClientsUpdatedEvent,
     ClientDisconnectedEvent,
+    ClientsUpdatedEvent,
     Event,
     SongDetectedEvent,
 )
@@ -501,10 +501,10 @@ class WebsocketConnection:
         self.device_id = device_id
         self.client_name = name
         self.client_type = client_type
-  
-        task = asyncio.create_task(self._update_metadata())  
-        self._background_tasks.add(task)  
-        task.add_done_callback(self._background_tasks.discard) 
+
+        task = asyncio.create_task(self._update_metadata())
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
         # Confirm to client
         self.send(
@@ -544,10 +544,10 @@ class WebsocketConnection:
         ]
         if new_type and new_type in valid_types:
             self.client_type = new_type
- 
-        task = asyncio.create_task(self._update_metadata())  
-        self._background_tasks.add(task)  
-        task.add_done_callback(self._background_tasks.discard) 
+
+        task = asyncio.create_task(self._update_metadata())
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
         self.send(
             {
