@@ -502,9 +502,7 @@ class WebsocketConnection:
         self.client_name = name
         self.client_type = client_type
 
-        task = asyncio.create_task(self._update_metadata())
-        self._background_tasks.add(task)
-        task.add_done_callback(self._background_tasks.discard)
+        asyncio.create_task(self._update_metadata())
 
         # Confirm to client
         self.send(
@@ -545,9 +543,7 @@ class WebsocketConnection:
         if new_type and new_type in valid_types:
             self.client_type = new_type
 
-        task = asyncio.create_task(self._update_metadata())
-        self._background_tasks.add(task)
-        task.add_done_callback(self._background_tasks.discard)
+        asyncio.create_task(self._update_metadata())
 
         self.send(
             {
