@@ -87,7 +87,7 @@ def ensure_assets_directory(config_dir: str) -> None:
             os.makedirs(assets_dir, exist_ok=True)
             _LOGGER.info(f"Created assets directory: {assets_dir}")
         except OSError as e:
-            _LOGGER.error(f"Failed to create assets directory: {e}")
+            _LOGGER.warning(f"Failed to create assets directory: {e}")
             raise
 
 
@@ -417,7 +417,7 @@ def save_asset(
         return True, absolute_path, None
 
     except Exception as e:
-        _LOGGER.error(f"Failed to save asset {relative_path}: {e}")
+        _LOGGER.warning(f"Failed to save asset {relative_path}: {e}")
         return False, None, f"Write failed: {e}"
 
     finally:
@@ -490,7 +490,7 @@ def delete_asset(
         return True, None
 
     except Exception as e:
-        _LOGGER.error(f"Failed to delete asset {relative_path}: {e}")
+        _LOGGER.warning(f"Failed to delete asset {relative_path}: {e}")
         return False, f"Delete failed: {e}"
 
 
@@ -668,7 +668,7 @@ def _list_assets_from_directory(
             _save_asset_metadata_cache(root_dir, metadata_cache)
 
     except Exception as e:
-        _LOGGER.error(f"Error listing {log_prefix}: {e}")
+        _LOGGER.warning(f"Error listing {log_prefix}: {e}")
 
     return assets
 
