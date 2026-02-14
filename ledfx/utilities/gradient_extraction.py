@@ -45,16 +45,24 @@ WHITE_REPLACE_MIN_V = (
 # === Background cluster detection (minimal additions) =========================
 # Treat background as a cluster: dark and/or low-sat dark colors summed together
 # above this threshold switch to background-accent pattern
-BACKGROUND_CLUSTER_THRESHOLD = 0.50  
-BG_DARK_V = 0.16 # Value below which colors are considered "dark" enough to be background
-BG_LOW_S = 0.18 # Saturation below which colors are "background-ish" if also dark
-BG_LOW_S_V = 0.28 # Value below which low-saturation colors are also "background-ish"
+BACKGROUND_CLUSTER_THRESHOLD = 0.50
+BG_DARK_V = 0.16  # Value below which colors are considered "dark" enough to be background
+BG_LOW_S = (
+    0.18  # Saturation below which colors are "background-ish" if also dark
+)
+BG_LOW_S_V = (
+    0.28  # Value below which low-saturation colors are also "background-ish"
+)
 
 # === Accent masking (minimal additions) =======================================
 # When a background cluster exists, remove “background-ish” pixels before quantize
-MASK_DARK_V = 0.12 # Value below which colors are considered "dark" enough to be masked
-MASK_LOW_S = 0.10 # Saturation below which colors are considered "background-ish" if also dark
-MASK_LOW_S_V = 0.22 # Value below which low-saturation colors are also "background-ish"
+MASK_DARK_V = (
+    0.12  # Value below which colors are considered "dark" enough to be masked
+)
+MASK_LOW_S = 0.10  # Saturation below which colors are considered "background-ish" if also dark
+MASK_LOW_S_V = (
+    0.22  # Value below which low-saturation colors are also "background-ish"
+)
 MIN_MASKED_PIXELS_FRACTION = 0.02  # require at least 2% pixels remain
 # === Color similarity distance weights =======================================
 # Used for perceptual color similarity calculations in HSV space
@@ -73,7 +81,9 @@ SATURATED_SAT_WEIGHT = 0.20  # Saturation difference is secondary
 SATURATED_VAL_WEIGHT = 0.15  # Brightness difference is tertiary
 
 # Similarity thresholds for color deduplication
-SATURATED_COLOR_THRESHOLD = 0.12  # Tighter threshold for distinct saturated colors
+SATURATED_COLOR_THRESHOLD = (
+    0.12  # Tighter threshold for distinct saturated colors
+)
 # COLOR_DISTANCE_THRESHOLD (0.20) defined above is used for grays/near-grays
 
 # === LED correction parameters ==============================================
