@@ -647,7 +647,7 @@ def _list_assets_from_directory(
                             "format": img_format,
                             "n_frames": n_frames,
                             "is_animated": is_animated,
-                            "gradients": gradient_data,  # Gradient metadata (all variants)
+                            "gradients": gradient_data,
                         }
                     )
 
