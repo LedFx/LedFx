@@ -13,7 +13,12 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
-from ledfx.events import ClientConnectedEvent, ClientDisconnectedEvent, Event
+from ledfx.events import (
+    ClientConnectedEvent,
+    ClientDisconnectedEvent,
+    Event,
+    SongDetectedEvent,
+)
 from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
@@ -404,6 +409,43 @@ class WebsocketConnection:
                 dtype=np.float32,
             )
             ACTIVE_AUDIO_STREAM.data = data
+
+    @websocket_handler("song_info")
+    def song_info_handler(self, message):
+        """
+        Handle incoming song/media info and broadcast to all subscribed clients.
+
+        Expected message format:
+        {
+            "id": int,
+            "type": "song_info",
+            "title": str,
+            "artist": str,
+            "album": str (optional),
+            "thumbnail": str (optional),
+            "position": float (optional),
+            "duration": float (optional),
+            "playing": bool (optional),
+            "timestamp": float (optional)
+        }
+        """
+        _LOGGER.info(
+            f"Received song info: {message.get('artist')} - {message.get('title')}"
+        )
+
+        # Fire the event which will be broadcast to all subscribed clients
+        self._ledfx.events.fire_event(
+            SongDetectedEvent(
+                title=message.get("title", "Unknown"),
+                artist=message.get("artist", "Unknown"),
+                album=message.get("album", ""),
+                thumbnail=message.get("thumbnail"),
+                position=message.get("position"),
+                duration=message.get("duration"),
+                playing=message.get("playing", False),
+                timestamp=message.get("timestamp"),
+            )
+        )
 
 
 class WebAudioStream:
