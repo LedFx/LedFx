@@ -1,6 +1,7 @@
 import asyncio
 import binascii
 import json
+import time
 import logging
 import struct
 import uuid
@@ -15,6 +16,7 @@ from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import (
     ClientConnectedEvent,
+    ClientsUpdatedEvent,
     ClientDisconnectedEvent,
     Event,
     SongDetectedEvent,
@@ -245,8 +247,6 @@ class WebsocketConnection:
             {"event_type": "client_id", "client_id": self.uid}
         )
 
-        import time
-
         self.connected_at = time.time()
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
@@ -471,7 +471,6 @@ class WebsocketConnection:
     @websocket_handler("set_client_info")
     def set_client_info_handler(self, message):
         """Initial client information setup"""
-        import time
 
         device_id = message.get("device_id")
         name = message.get("name", f"Client-{self.uid[:8]}")
@@ -502,8 +501,10 @@ class WebsocketConnection:
         self.device_id = device_id
         self.client_name = name
         self.client_type = client_type
-
-        asyncio.create_task(self._update_metadata())
+  
+        task = asyncio.create_task(self._update_metadata())  
+        self._background_tasks.add(task)  
+        task.add_done_callback(self._background_tasks.discard) 
 
         # Confirm to client
         self.send(
@@ -517,7 +518,6 @@ class WebsocketConnection:
         )
 
         # Broadcast update
-        from ledfx.events import ClientsUpdatedEvent
 
         self._ledfx.events.fire_event(ClientsUpdatedEvent())
 
@@ -544,8 +544,10 @@ class WebsocketConnection:
         ]
         if new_type and new_type in valid_types:
             self.client_type = new_type
-
-        asyncio.create_task(self._update_metadata())
+ 
+        task = asyncio.create_task(self._update_metadata())  
+        self._background_tasks.add(task)  
+        task.add_done_callback(self._background_tasks.discard) 
 
         self.send(
             {
@@ -557,13 +559,10 @@ class WebsocketConnection:
             }
         )
 
-        from ledfx.events import ClientsUpdatedEvent
-
         self._ledfx.events.fire_event(ClientsUpdatedEvent())
 
     async def _update_metadata(self):
         """Update class-level metadata storage"""
-        import time
 
         async with WebsocketConnection.metadata_lock:
             WebsocketConnection.client_metadata[self.uid] = {

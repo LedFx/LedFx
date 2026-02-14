@@ -10,7 +10,6 @@ from ledfx.api import RestEndpoint
 from ledfx.api.websocket import WebsocketConnection
 from ledfx.events import (
     ClientBroadcastEvent,
-    ClientsUpdatedEvent,
     ClientSyncEvent,
 )
 
@@ -151,6 +150,9 @@ class ClientEndpoint(RestEndpoint):
             ]
 
         if mode == "uuids":
-            return target_config.get("uuids", [])
++            known = set(clients.keys())
++            return [
++                u for u in target_config.get("uuids", []) if u in known
++            ]
 
         return []
