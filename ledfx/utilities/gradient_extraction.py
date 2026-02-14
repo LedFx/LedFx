@@ -848,14 +848,18 @@ def _extract_gradient_metadata_from_image(
             corrected_rgb = apply_led_correction(c["rgb"], mode="safe")
             r, g, b = (val / 255.0 for val in corrected_rgb)
             corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
-            safe_colors.append({
-                "rgb": corrected_rgb,
-                "hsv": corrected_hsv,
-                "frequency": c["frequency"],
-            })
+            safe_colors.append(
+                {
+                    "rgb": corrected_rgb,
+                    "hsv": corrected_hsv,
+                    "frequency": c["frequency"],
+                }
+            )
         safe_background = None
         if background:
-            corrected_rgb = apply_led_correction(background["rgb"], mode="safe")
+            corrected_rgb = apply_led_correction(
+                background["rgb"], mode="safe"
+            )
             r, g, b = (val / 255.0 for val in corrected_rgb)
             corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
             safe_background = {
@@ -876,14 +880,18 @@ def _extract_gradient_metadata_from_image(
             corrected_rgb = apply_led_correction(c["rgb"], mode="punchy")
             r, g, b = (val / 255.0 for val in corrected_rgb)
             corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
-            punchy_colors.append({
-                "rgb": corrected_rgb,
-                "hsv": corrected_hsv,
-                "frequency": c["frequency"],
-            })
+            punchy_colors.append(
+                {
+                    "rgb": corrected_rgb,
+                    "hsv": corrected_hsv,
+                    "frequency": c["frequency"],
+                }
+            )
         punchy_background = None
         if background:
-            corrected_rgb = apply_led_correction(background["rgb"], mode="punchy")
+            corrected_rgb = apply_led_correction(
+                background["rgb"], mode="punchy"
+            )
             r, g, b = (val / 255.0 for val in corrected_rgb)
             corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
             punchy_background = {
