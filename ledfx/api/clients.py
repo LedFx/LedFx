@@ -1,6 +1,6 @@
-import json
 import logging
 import time
+import json
 from json import JSONDecodeError
 
 import voluptuous as vol
@@ -150,9 +150,9 @@ class ClientEndpoint(RestEndpoint):
             ]
 
         if mode == "uuids":
-+            known = set(clients.keys())
-+            return [
-+                u for u in target_config.get("uuids", []) if u in known
-+            ]
+            known = set(clients.keys())
+            return [
+                u for u in target_config.get("uuids", []) if u in known
+            ]
 
         return []
