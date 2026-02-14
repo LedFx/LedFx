@@ -71,6 +71,8 @@ class WebsocketEndpoint(RestEndpoint):
 class WebsocketConnection:
     ip_uid_map = {}
     map_lock = asyncio.Lock()
+    client_metadata = {}
+    metadata_lock = asyncio.Lock()
 
     def __init__(self, ledfx):
         self._ledfx = ledfx
@@ -81,6 +83,10 @@ class WebsocketConnection:
         self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
         self.client_ip = None
         self.uid = None
+        self.device_id = None
+        self.client_name = None
+        self.client_type = "unknown"
+        self.connected_at = None
 
     def close(self):
         """
@@ -104,6 +110,12 @@ class WebsocketConnection:
     async def get_all_clients(cls):
         async with cls.map_lock:
             return cls.ip_uid_map.copy()
+
+    @classmethod
+    async def get_all_clients_metadata(cls):
+        """Get full metadata for all clients"""
+        async with cls.metadata_lock:
+            return cls.client_metadata.copy()
 
     def send(self, message):
         """Sends a message to the websocket connection
@@ -233,6 +245,10 @@ class WebsocketConnection:
             {"event_type": "client_id", "client_id": self.uid}
         )
 
+        import time
+
+        self.connected_at = time.time()
+
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
 
@@ -285,6 +301,11 @@ class WebsocketConnection:
             async with WebsocketConnection.map_lock:
                 if self.uid in WebsocketConnection.ip_uid_map:
                     del WebsocketConnection.ip_uid_map[self.uid]
+
+            async with WebsocketConnection.metadata_lock:
+                if self.uid in WebsocketConnection.client_metadata:
+                    del WebsocketConnection.client_metadata[self.uid]
+
             remove_listeners()
             self.clear_subscriptions()
 
@@ -446,6 +467,120 @@ class WebsocketConnection:
                 timestamp=message.get("timestamp"),
             )
         )
+
+    @websocket_handler("set_client_info")
+    def set_client_info_handler(self, message):
+        """Initial client information setup"""
+        import time
+
+        device_id = message.get("device_id")
+        name = message.get("name", f"Client-{self.uid[:8]}")
+        client_type = message.get("client_type", "unknown")
+
+        # Validate type
+        valid_types = [
+            "controller",
+            "visualiser",
+            "mobile",
+            "display",
+            "api",
+            "unknown",
+        ]
+        if client_type not in valid_types:
+            client_type = "unknown"
+
+        # Check name uniqueness
+        name_conflict = False
+        original_name = name
+        counter = 1
+        while self._name_exists(name, exclude_uuid=self.uid):
+            name = f"{original_name} ({counter})"
+            counter += 1
+            name_conflict = True
+
+        # Store metadata
+        self.device_id = device_id
+        self.client_name = name
+        self.client_type = client_type
+
+        asyncio.create_task(self._update_metadata())
+
+        # Confirm to client
+        self.send(
+            {
+                "event_type": "client_info_updated",
+                "client_id": self.uid,
+                "name": name,
+                "type": client_type,
+                "name_conflict": name_conflict,
+            }
+        )
+
+        # Broadcast update
+        from ledfx.events import ClientsUpdatedEvent
+
+        self._ledfx.events.fire_event(ClientsUpdatedEvent())
+
+    @websocket_handler("update_client_info")
+    def update_client_info_handler(self, message):
+        """Update client name/type while connected"""
+        new_name = message.get("name")
+        new_type = message.get("client_type")
+
+        if new_name:
+            if not self._name_exists(new_name, exclude_uuid=self.uid):
+                self.client_name = new_name
+            else:
+                self.send_error(message["id"], "Name already in use")
+                return
+
+        valid_types = [
+            "controller",
+            "visualiser",
+            "mobile",
+            "display",
+            "api",
+            "unknown",
+        ]
+        if new_type and new_type in valid_types:
+            self.client_type = new_type
+
+        asyncio.create_task(self._update_metadata())
+
+        self.send(
+            {
+                "event_type": "client_info_updated",
+                "client_id": self.uid,
+                "name": self.client_name,
+                "type": self.client_type,
+                "name_conflict": False,
+            }
+        )
+
+        from ledfx.events import ClientsUpdatedEvent
+
+        self._ledfx.events.fire_event(ClientsUpdatedEvent())
+
+    async def _update_metadata(self):
+        """Update class-level metadata storage"""
+        import time
+
+        async with WebsocketConnection.metadata_lock:
+            WebsocketConnection.client_metadata[self.uid] = {
+                "ip": self.client_ip,
+                "device_id": self.device_id,
+                "name": self.client_name,
+                "type": self.client_type,
+                "connected_at": self.connected_at or time.time(),
+                "last_active": time.time(),
+            }
+
+    def _name_exists(self, name, exclude_uuid=None):
+        """Check if name is already taken"""
+        for uuid, meta in WebsocketConnection.client_metadata.items():
+            if uuid != exclude_uuid and meta.get("name") == name:
+                return True
+        return False
 
 
 class WebAudioStream:
