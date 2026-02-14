@@ -207,7 +207,7 @@ class ImageCache:
             "format": img_format,
             "n_frames": n_frames,
             "is_animated": is_animated,
-            "gradients": gradient_data,  # Gradient metadata (all variants)
+            "gradients": gradient_data,
         }
 
         self.metadata["cache_entries"][cache_key] = entry
@@ -378,7 +378,7 @@ class ImageCache:
                 "is_animated": entry.get("is_animated", False),
                 "gradients": entry.get(
                     "gradients"
-                ),  # Include gradient metadata
+                ),
             }
             for entry in self.metadata["cache_entries"].values()
             if not entry["url"].startswith("asset://")
