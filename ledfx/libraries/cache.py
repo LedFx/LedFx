@@ -376,9 +376,7 @@ class ImageCache:
                 "format": entry.get("format"),
                 "n_frames": entry.get("n_frames", 1),
                 "is_animated": entry.get("is_animated", False),
-                "gradients": entry.get(
-                    "gradients"
-                ),
+                "gradients": entry.get("gradients"),
             }
             for entry in self.metadata["cache_entries"].values()
             if not entry["url"].startswith("asset://")
