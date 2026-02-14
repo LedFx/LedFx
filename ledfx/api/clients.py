@@ -83,9 +83,7 @@ class ClientEndpoint(RestEndpoint):
         try:
             validated = BROADCAST_SCHEMA(data)
         except vol.Invalid as e:
-            return await self.invalid_request(
-                f"Invalid broadcast schema: {e}"
-            )
+            return await self.invalid_request(f"Invalid broadcast schema: {e}")
 
         # Check payload size
         import json
