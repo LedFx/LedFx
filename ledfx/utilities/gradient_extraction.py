@@ -172,7 +172,7 @@ def extract_dominant_colors(
         return deduplicated
 
     except Exception as e:
-        _LOGGER.error(f"Failed to extract dominant colors: {e}", exc_info=True)
+        _LOGGER.warning("Failed to extract dominant colors", exc_info=True)
         # Return single average color as fallback
         avg_color = pil_image.resize((1, 1)).getpixel((0, 0))
         if isinstance(avg_color, int):  # Grayscale
@@ -558,11 +558,9 @@ def build_gradient_stops(
         # Normalize accent frequencies (exclude background)
         total_accent_freq = sum(c["frequency"] for c in accent_colors)
         if total_accent_freq > 0:
-            for c in accent_colors:
-                c["normalized_weight"] = c["frequency"] / total_accent_freq
+            accent_weights = [c["frequency"] / total_accent_freq for c in accent_colors]
         else:
-            for c in accent_colors:
-                c["normalized_weight"] = 1.0 / len(accent_colors)
+            accent_weights = [1.0 / len(accent_colors)] * len(accent_colors)
 
         # Build pattern: bg, accent1, bg, accent2, bg, ...
         num_accents = len(accent_colors)
@@ -570,7 +568,7 @@ def build_gradient_stops(
         position = 0.0
         step = 1.0 / (total_stops - 1) if total_stops > 1 else 1.0
 
-        for accent in accent_colors:
+        for i, accent in enumerate(accent_colors):
             # Background before accent
             stops.append(
                 {
@@ -588,9 +586,7 @@ def build_gradient_stops(
                     "color": accent_hex,
                     "position": round(position, 3),
                     "type": "accent",
-                    "weight": round(
-                        accent.get("normalized_weight", accent["frequency"]), 3
-                    ),
+                    "weight": round(accent_weights[i], 3),
                 }
             )
             position += step
@@ -784,16 +780,14 @@ def extract_gradient_metadata(image_source) -> dict:
                     pil_image, start_time
                 )
         except Exception as e:
-            _LOGGER.error(
-                f"Failed to open image at {image_source}: {e}", exc_info=True
-            )
+            _LOGGER.warning("Failed to open image", exc_info=True)
             return _gradient_fallback_metadata(None, e, start_time)
     elif isinstance(image_source, Image.Image):
         # PIL Image provided - use directly
         return _extract_gradient_metadata_from_image(image_source, start_time)
     else:
         error_msg = f"Invalid image_source type: {type(image_source)}. Expected str (path) or PIL Image."
-        _LOGGER.error(error_msg)
+        _LOGGER.warning(error_msg)
         return _gradient_fallback_metadata(
             None, ValueError(error_msg), start_time
         )
@@ -937,9 +931,7 @@ def _extract_gradient_metadata_from_image(
         }
 
     except Exception as e:
-        _LOGGER.error(
-            f"Failed to extract gradient metadata: {e}", exc_info=True
-        )
+        _LOGGER.warning("Failed to extract gradient metadata", exc_info=True)
         return _gradient_fallback_metadata(pil_image, e, start_time)
 
 
