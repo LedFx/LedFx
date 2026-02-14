@@ -66,11 +66,11 @@ class SongDetectedEvent(Event):
         title: str,
         artist: str,
         album: str = "",
-        thumbnail: str = None,
-        position: float = None,
-        duration: float = None,
+        thumbnail: str | None = None,
+        position: float | None = None,
+        duration: float | None = None,
         playing: bool = False,
-        timestamp: float = None,
+        timestamp: float | None = None,
     ):
         """
         Initializes a SongDetectedEvent with media information.
