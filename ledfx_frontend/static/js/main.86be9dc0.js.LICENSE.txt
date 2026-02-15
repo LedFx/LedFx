@@ -260,16 +260,6 @@ PERFORMANCE OF THIS SOFTWARE.
 
 /**
  * @license React
- * react-jsx-runtime.development.js
- *
- * Copyright (c) Meta Platforms, Inc. and affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
-/**
- * @license React
  * react-jsx-runtime.production.js
  *
  * Copyright (c) Meta Platforms, Inc. and affiliates.
@@ -630,7 +620,7 @@ PERFORMANCE OF THIS SOFTWARE.
  */
 
 /**
- * react-router v7.11.0
+ * react-router v7.13.0
  *
  * Copyright (c) Remix Software Inc.
  *
