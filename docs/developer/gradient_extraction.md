@@ -28,7 +28,7 @@ Screen-optimized color extraction produces poor results on physical LED hardware
 2. **Washed-out whites**: Near-white colors render poorly (no dedicated white LEDs)
 3. **Background dominance**: Large background areas wash out accent colors in gradients
 4. **Incorrect gamma**: Screen gamma (sRGB) differs from LED gamma requirements
-5. **Brightness limitations**: LEDs can't safely display full brightness colors
+5. **Brightness limitations**: LEDs can't safely display full-brightness colors
 
 ### The Solution
 

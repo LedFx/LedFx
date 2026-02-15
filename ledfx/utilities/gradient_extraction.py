@@ -9,7 +9,7 @@ import colorsys
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import PIL.Image as Image
@@ -180,7 +180,7 @@ def extract_dominant_colors(
 
         return deduplicated
 
-    except Exception as e:
+    except Exception:
         _LOGGER.warning("Failed to extract dominant colors", exc_info=True)
         # Return single average color as fallback
         avg_color = pil_image.resize((1, 1)).getpixel((0, 0))
@@ -751,7 +751,7 @@ def build_gradient_string(stops: list[dict]) -> str:
     return gradient_str
 
 
-def extract_gradient_metadata(image_source) -> dict:
+def extract_gradient_metadata(image_source: Union[str, Image.Image]) -> dict:
     """
     Extract all gradient variants and metadata from an image.
 
@@ -774,18 +774,16 @@ def extract_gradient_metadata(image_source) -> dict:
                 return _extract_gradient_metadata_from_image(
                     pil_image, start_time
                 )
-        except Exception as e:
+        except Exception:
             _LOGGER.warning("Failed to open image", exc_info=True)
-            return _gradient_fallback_metadata(None, e, start_time)
+            return _gradient_fallback_metadata(None, start_time)
     elif isinstance(image_source, Image.Image):
         # PIL Image provided - use directly
         return _extract_gradient_metadata_from_image(image_source, start_time)
     else:
         error_msg = f"Invalid image_source type: {type(image_source)}. Expected str (path) or PIL Image."
         _LOGGER.warning(error_msg)
-        return _gradient_fallback_metadata(
-            None, ValueError(error_msg), start_time
-        )
+        return _gradient_fallback_metadata(None, start_time)
 
 
 def _extract_gradient_metadata_from_image(
@@ -943,18 +941,17 @@ def _extract_gradient_metadata_from_image(
             },
         }
 
-    except Exception as e:
+    except Exception:
         _LOGGER.warning("Failed to extract gradient metadata", exc_info=True)
-        return _gradient_fallback_metadata(pil_image, e, start_time)
+        return _gradient_fallback_metadata(pil_image, start_time)
 
 
-def _gradient_fallback_metadata(pil_image, error, start_time: float) -> dict:
+def _gradient_fallback_metadata(pil_image, start_time: float) -> dict:
     """
     Generate fallback gradient metadata when extraction fails.
 
     Args:
         pil_image: PIL Image object (may be None)
-        error: Exception that caused the failure (logged but not exposed)
         start_time: Time when extraction started
 
     Returns:
