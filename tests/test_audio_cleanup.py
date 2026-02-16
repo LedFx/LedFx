@@ -105,14 +105,17 @@ class TestAudioInputSourceCleanup:
         audio_source._invalidate_caches = Mock()
         audio_source._invoke_callbacks = Mock()
         audio_source.delay_queue = None
-        
+
         # Mock threading to prevent actual deactivation thread from running
         # This allows us to check the error count before it gets reset
         deactivate_called = []
+
         def mock_deactivate_and_schedule():
             deactivate_called.append(True)
-        
-        audio_source._deactivate_and_schedule_recovery = mock_deactivate_and_schedule
+
+        audio_source._deactivate_and_schedule_recovery = (
+            mock_deactivate_and_schedule
+        )
 
         # Create mock audio data
         in_data = np.zeros(733, dtype=np.float32).tobytes()
