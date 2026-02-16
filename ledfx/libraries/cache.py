@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 from typing import Optional
 
+from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
 
 _LOGGER = logging.getLogger(__name__)
@@ -177,6 +178,19 @@ class ImageCache:
             cache_path
         )
 
+        # Extract gradient metadata only for original images, not thumbnails
+        # Thumbnails have params, original images don't
+        gradient_data = None
+        if params is None:
+            try:
+                gradient_data = extract_gradient_metadata(cache_path)
+            except Exception as e:
+                _LOGGER.warning(
+                    f"Failed to extract gradients for {url}: {e}",
+                    exc_info=False,
+                )
+                # Continue without gradients - not a critical failure
+
         entry = {
             "url": url,
             "cached_at": now,
@@ -193,6 +207,7 @@ class ImageCache:
             "format": img_format,
             "n_frames": n_frames,
             "is_animated": is_animated,
+            "gradients": gradient_data,
         }
 
         self.metadata["cache_entries"][cache_key] = entry
@@ -344,6 +359,7 @@ class ImageCache:
                 - format: Image format (PNG, JPEG, GIF, etc.)
                 - n_frames: Number of frames (1 for static, >1 for animated)
                 - is_animated: Boolean flag for animation
+                - gradients: Extracted gradient metadata (all variants) or None
 
             Note: Excludes thumbnail cache entries (entries with params or URLs starting with "asset://").
         """
@@ -360,6 +376,7 @@ class ImageCache:
                 "format": entry.get("format"),
                 "n_frames": entry.get("n_frames", 1),
                 "is_animated": entry.get("is_animated", False),
+                "gradients": entry.get("gradients"),
             }
             for entry in self.metadata["cache_entries"].values()
             if not entry["url"].startswith("asset://")

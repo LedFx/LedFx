@@ -10,6 +10,7 @@
    /security
    /developer/developer
    /developer/architecture
+   /developer/gradient_extraction
    /README
 
 .. toctree::

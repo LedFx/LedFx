@@ -15,6 +15,7 @@ Supported image formats: png, jpg, jpeg, webp, gif, bmp, tiff, tif, ico
 """
 
 import io
+import json
 import logging
 import mimetypes
 import os
@@ -24,6 +25,7 @@ from datetime import datetime, timezone
 import PIL.Image as Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
+from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
 from ledfx.utilities.security_utils import (
     ALLOWED_IMAGE_EXTENSIONS,
@@ -42,8 +44,17 @@ ASSETS_DIRECTORY = "assets"  # Directory name under .ledfx/
 # Accounts for animated GIFs and WebP which can be larger
 DEFAULT_MAX_ASSET_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 
+# Asset metadata cache filename (hidden file in assets directory)
+# Stores extracted image metadata (gradients, etc.) to avoid re-processing
+ASSET_METADATA_CACHE_FILE = ".asset_metadata_cache.json"
+
 # Files to ignore when listing assets
-IGNORED_FILES = {".DS_Store", "Thumbs.db", "desktop.ini"}
+IGNORED_FILES = {
+    ".DS_Store",
+    "Thumbs.db",
+    "desktop.ini",
+    ASSET_METADATA_CACHE_FILE,
+}
 
 
 def get_assets_directory(config_dir: str) -> str:
@@ -76,8 +87,49 @@ def ensure_assets_directory(config_dir: str) -> None:
             os.makedirs(assets_dir, exist_ok=True)
             _LOGGER.info(f"Created assets directory: {assets_dir}")
         except OSError as e:
-            _LOGGER.error(f"Failed to create assets directory: {e}")
+            _LOGGER.warning(f"Failed to create assets directory: {e}")
             raise
+
+
+def _load_asset_metadata_cache(assets_dir: str) -> dict:
+    """
+    Load asset metadata cache from disk.
+
+    Args:
+        assets_dir: Path to assets directory
+
+    Returns:
+        Dictionary mapping relative paths to cached metadata
+        (e.g., {gradients, modified_time, ...})
+    """
+    cache_path = os.path.join(assets_dir, ASSET_METADATA_CACHE_FILE)
+
+    if not os.path.exists(cache_path):
+        return {}
+
+    try:
+        with open(cache_path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        _LOGGER.warning(f"Failed to load asset metadata cache: {e}")
+        return {}
+
+
+def _save_asset_metadata_cache(assets_dir: str, cache: dict) -> None:
+    """
+    Save asset metadata cache to disk.
+
+    Args:
+        assets_dir: Path to assets directory
+        cache: Dictionary mapping relative paths to cached metadata
+    """
+    cache_path = os.path.join(assets_dir, ASSET_METADATA_CACHE_FILE)
+
+    try:
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump(cache, f, indent=2)
+    except Exception as e:
+        _LOGGER.warning(f"Failed to save asset metadata cache: {e}")
 
 
 def resolve_safe_asset_path(
@@ -365,7 +417,7 @@ def save_asset(
         return True, absolute_path, None
 
     except Exception as e:
-        _LOGGER.error(f"Failed to save asset {relative_path}: {e}")
+        _LOGGER.warning(f"Failed to save asset {relative_path}: {e}")
         return False, None, f"Write failed: {e}"
 
     finally:
@@ -423,13 +475,22 @@ def delete_asset(
         os.remove(absolute_path)
         _LOGGER.info(f"Deleted asset: {relative_path}")
 
+        # Invalidate metadata cache entry
+        assets_dir = get_assets_directory(config_dir)
+        metadata_cache = _load_asset_metadata_cache(assets_dir)
+        # Normalize path for cache lookup
+        cache_key = relative_path.replace("\\", "/")
+        if cache_key in metadata_cache:
+            del metadata_cache[cache_key]
+            _save_asset_metadata_cache(assets_dir, metadata_cache)
+
         # Optionally clean up empty parent directories (but not assets root)
         _cleanup_empty_directories(config_dir, os.path.dirname(absolute_path))
 
         return True, None
 
     except Exception as e:
-        _LOGGER.error(f"Failed to delete asset {relative_path}: {e}")
+        _LOGGER.warning(f"Failed to delete asset {relative_path}: {e}")
         return False, f"Delete failed: {e}"
 
 
@@ -493,6 +554,10 @@ def _list_assets_from_directory(
 
     assets = []
 
+    # Load asset metadata cache for performance
+    metadata_cache = _load_asset_metadata_cache(root_dir)
+    cache_updated = False
+
     try:
         # Walk the directory recursively
         for root, _dirs, files in os.walk(root_dir):
@@ -535,6 +600,43 @@ def _list_assets_from_directory(
                         get_image_metadata(abs_path)
                     )
 
+                    # Extract gradient metadata with caching for performance
+                    # Check if we have cached metadata and if file hasn't been modified
+                    gradient_data = None
+                    cached_entry = metadata_cache.get(rel_path)
+
+                    if (
+                        cached_entry
+                        and cached_entry.get("modified_time") == modified_time
+                    ):
+                        # Use cached metadata if file hasn't changed
+                        gradient_data = cached_entry.get("gradients")
+                        _LOGGER.debug(
+                            f"Using cached metadata for {log_prefix} {rel_path}"
+                        )
+                    else:
+                        # Extract gradients for new or modified files
+                        try:
+                            gradient_data = extract_gradient_metadata(abs_path)
+                            # Update cache
+                            metadata_cache[rel_path] = {
+                                "gradients": gradient_data,
+                                "modified_time": modified_time,
+                            }
+                            cache_updated = True
+                        except Exception as e:
+                            _LOGGER.warning(
+                                f"Failed to extract gradients for {log_prefix} {rel_path}: {e}",
+                                exc_info=False,
+                            )
+                            # Cache the failure to avoid re-attempting on every list
+                            metadata_cache[rel_path] = {
+                                "gradients": None,
+                                "modified_time": modified_time,
+                            }
+                            cache_updated = True
+                        # Continue without gradients - not a critical failure
+
                     assets.append(
                         {
                             "path": rel_path,
@@ -545,6 +647,7 @@ def _list_assets_from_directory(
                             "format": img_format,
                             "n_frames": n_frames,
                             "is_animated": is_animated,
+                            "gradients": gradient_data,
                         }
                     )
 
@@ -560,8 +663,12 @@ def _list_assets_from_directory(
 
         _LOGGER.debug(f"Listed {len(assets)} {log_prefix} with metadata")
 
+        # Save metadata cache if it was updated
+        if cache_updated:
+            _save_asset_metadata_cache(root_dir, metadata_cache)
+
     except Exception as e:
-        _LOGGER.error(f"Error listing {log_prefix}: {e}")
+        _LOGGER.warning(f"Error listing {log_prefix}: {e}")
 
     return assets
 
