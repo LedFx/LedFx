@@ -183,14 +183,21 @@ def extract_dominant_colors(
     except Exception:
         _LOGGER.warning("Failed to extract dominant colors", exc_info=True)
         # Return single average color as fallback
-        avg_color = pil_image.resize((1, 1)).getpixel((0, 0))
-        if isinstance(avg_color, int):  # Grayscale
-            avg_color = (avg_color, avg_color, avg_color)
-        r, g, b = (c / 255.0 for c in avg_color[:3])
-        h, s, v = colorsys.rgb_to_hsv(r, g, b)
-        return [
-            {"rgb": list(avg_color[:3]), "hsv": [h, s, v], "frequency": 1.0}
-        ]
+        try:
+            avg_color = pil_image.resize((1, 1)).getpixel((0, 0))
+            if isinstance(avg_color, int):  # Grayscale
+                avg_color = (avg_color, avg_color, avg_color)
+            r, g, b = (c / 255.0 for c in avg_color[:3])
+            h, s, v = colorsys.rgb_to_hsv(r, g, b)
+            return [
+                {"rgb": list(avg_color[:3]), "hsv": [h, s, v], "frequency": 1.0}
+            ]
+        except Exception:
+            _LOGGER.warning("Failed to extract average color fallback", exc_info=True)
+            # Return safe default (black) if even fallback fails
+            return [
+                {"rgb": [0, 0, 0], "hsv": [0.0, 0.0, 0.0], "frequency": 1.0}
+            ]
 
 
 def _build_accent_sample_image(
