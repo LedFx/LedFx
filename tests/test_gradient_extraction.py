@@ -99,7 +99,11 @@ class TestDetectDominantBackground:
     def test_detects_bright_background(self):
         """Detect bright/white backgrounds (not just dark ones)."""
         colors = [
-            {"rgb": [255, 255, 255], "hsv": [0, 0, 1.0], "frequency": 0.8},  # White
+            {
+                "rgb": [255, 255, 255],
+                "hsv": [0, 0, 1.0],
+                "frequency": 0.8,
+            },  # White
             {"rgb": [255, 0, 0], "hsv": [0, 1, 1], "frequency": 0.1},
             {"rgb": [0, 255, 0], "hsv": [0.33, 1, 1], "frequency": 0.1},
         ]
@@ -112,7 +116,11 @@ class TestDetectDominantBackground:
     def test_detects_bright_colored_background(self):
         """Detect bright colored backgrounds (blue, red, etc)."""
         colors = [
-            {"rgb": [0, 0, 255], "hsv": [0.67, 1, 1], "frequency": 0.6},  # Bright blue
+            {
+                "rgb": [0, 0, 255],
+                "hsv": [0.67, 1, 1],
+                "frequency": 0.6,
+            },  # Bright blue
             {"rgb": [255, 255, 0], "hsv": [0.17, 1, 1], "frequency": 0.2},
             {"rgb": [255, 0, 255], "hsv": [0.83, 1, 1], "frequency": 0.2},
         ]
@@ -375,7 +383,10 @@ class TestExtractGradientMetadata:
         metadata2 = extract_gradient_metadata(img)
 
         # Gradients should match (ignoring timestamps)
-        assert metadata1["led_safe"]["gradient"] == metadata2["led_safe"]["gradient"]
+        assert (
+            metadata1["led_safe"]["gradient"]
+            == metadata2["led_safe"]["gradient"]
+        )
         assert (
             metadata1["metadata"]["background_color"]
             == metadata2["metadata"]["background_color"]

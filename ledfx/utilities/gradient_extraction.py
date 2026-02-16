@@ -433,7 +433,7 @@ def detect_dominant_background(
     # Simply check if the most frequent color exceeds threshold
     # Colors are already sorted by frequency (most frequent first)
     most_frequent = colors[0]
-    
+
     if most_frequent["frequency"] >= threshold:
         return most_frequent.copy()
 
@@ -540,12 +540,8 @@ def build_gradient_stops(
     if background_color:
         # Interleaved pattern: bg → accent → bg → accent
         # Remove the background color itself from accent colors
-        bg_rgb = tuple(background_color['rgb'])
-        accent_colors = [
-            c
-            for c in colors
-            if tuple(c['rgb']) != bg_rgb
-        ]
+        bg_rgb = tuple(background_color["rgb"])
+        accent_colors = [c for c in colors if tuple(c["rgb"]) != bg_rgb]
 
         # In interleaved mode, max_stops should represent accent capacity (not total stops),
         # because background consumes half the slots otherwise.
