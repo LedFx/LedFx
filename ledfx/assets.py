@@ -126,6 +126,8 @@ def _save_asset_metadata_cache(assets_dir: str, cache: dict) -> None:
     cache_path = os.path.join(assets_dir, ASSET_METADATA_CACHE_FILE)
 
     try:
+        # Ensure directory exists before writing cache file
+        os.makedirs(assets_dir, exist_ok=True)
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(cache, f, indent=2)
     except Exception as e:
@@ -523,7 +525,7 @@ def _cleanup_empty_directories(config_dir: str, dir_path: str) -> None:
 
 
 def _list_assets_from_directory(
-    root_dir: str, log_prefix: str = "assets"
+    root_dir: str, log_prefix: str = "assets", cache_dir: str | None = None
 ) -> list[dict]:
     """
     List all image assets in a directory recursively with metadata.
@@ -534,6 +536,8 @@ def _list_assets_from_directory(
     Args:
         root_dir: Root directory to scan for assets
         log_prefix: Prefix for log messages (e.g., "assets", "built-in assets")
+        cache_dir: Optional directory for metadata cache. If None, uses root_dir.
+                   Use this to store cache in config directory instead of assets directory.
 
     Returns:
         List of asset metadata dicts, each containing:
@@ -554,8 +558,11 @@ def _list_assets_from_directory(
 
     assets = []
 
+    # Determine cache location (use cache_dir if provided, otherwise root_dir)
+    cache_location = cache_dir if cache_dir is not None else root_dir
+
     # Load asset metadata cache for performance
-    metadata_cache = _load_asset_metadata_cache(root_dir)
+    metadata_cache = _load_asset_metadata_cache(cache_location)
     cache_updated = False
 
     try:
@@ -665,7 +672,7 @@ def _list_assets_from_directory(
 
         # Save metadata cache if it was updated
         if cache_updated:
-            _save_asset_metadata_cache(root_dir, metadata_cache)
+            _save_asset_metadata_cache(cache_location, metadata_cache)
 
     except Exception as e:
         _LOGGER.warning(f"Error listing {log_prefix}: {e}")

@@ -36,7 +36,11 @@ class AssetsFixedEndpoint(RestEndpoint):
         """
         try:
             gifs_root = os.path.join(LEDFX_ASSETS_PATH, "gifs")
-            assets = _list_assets_from_directory(gifs_root, "built-in assets")
+            # Store cache in config directory to avoid polluting installation directory
+            cache_dir = os.path.join(self._ledfx.config_dir, "cache")
+            assets = _list_assets_from_directory(
+                gifs_root, "built-in assets", cache_dir=cache_dir
+            )
             return await self.bare_request_success({"assets": assets})
 
         except Exception as e:
