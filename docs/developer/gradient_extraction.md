@@ -10,9 +10,9 @@
 
 LedFx automatically extracts LED-optimized color gradients from all loaded images (album art, user uploads, cached images). Every image that enters the system receives gradient extraction, producing three variants optimized for different use cases:
 
-- **Raw**: True to source image colors, ideal for screen previews
-- **LED-safe**: Optimized for physical LED hardware (WS2812/HUB75 matrices)
-- **LED-punchy**: Enhanced saturation variant for vibrant displays
+- **Raw**: True to source image colors, no correction
+- **LED-punchy**: Moderate saturation boost (20%) for vibrant physical LEDs
+- **LED-max**: Aggressive saturation boost (65%) + brightness boost (15%) + gamma blend (30%) for maximum vibrancy
 
 Gradients are extracted once during image loading and cached permanently, making them instantly available to effects and the frontend with zero runtime cost.
 
@@ -34,12 +34,13 @@ Screen-optimized color extraction produces poor results on physical LED hardware
 
 Automatic extraction pipeline with LED-specific corrections:
 
-- **Brightness capping**: Max 85% brightness for safe operation
-- **Saturation reduction**: 90% max saturation prevents oversaturation
-- **White replacement**: Near-white colors mapped to defined white points
+- **Saturation boost**: Pull colors towards primaries (20% punchy, 65% max)
+- **Brightness boost**: Brighten darker accent colors (max mode only, 15%)
+- **Brightness capping**: Max 95% (punchy) or 100% (max)
+- **White replacement**: Near-white colors mapped to pure white
 - **Background detection**: Dominant backgrounds (>50%) separated from accent colors
-- **Interleaved gradients**: Background-separated accent "islands" for vibrant displays
-- **LED gamma correction**: 2.2 gamma appropriate for LED physics
+- **Background protection**: Brightness boost excludes dark background colors
+- **Gamma blend**: Per-variant (0% punchy for accuracy, 30% max for vibrancy)
 
 ---
 
@@ -217,80 +218,46 @@ LED matrices differ from screens:
 
 ### Correction Parameters
 
-**LED-Safe Config** (conservative):
-```python
-LED_SAFE_CONFIG = {
-    "max_value": 0.85,          # Cap brightness at 85%
-    "max_saturation": 0.90,     # Reduce saturation to 90%
-    "gamma": 2.2,               # LED-appropriate gamma
-    "white_threshold": 0.15,    # Detect near-white (S < 15%)
-    "white_replacement": "#F5F5F5",  # WhiteSmoke for whites
-}
-```
+Two correction profiles are defined at the top of `gradient_extraction.py`:
 
-**LED-Punchy Config** (vibrant):
-```python
-LED_PUNCHY_CONFIG = {
-    "max_value": 0.95,          # Higher brightness
-    "max_saturation": 1.0,      # Full saturation
-    "gamma": 2.2,
-    "white_threshold": 0.15,
-    "white_replacement": "#FFFFFF",  # Pure white
-}
-```
+**LED-Punchy** (moderate enhancement):
+- 95% brightness cap for power safety
+- 20% saturation boost toward primary colors
+- No gamma blending (preserves accuracy)
+- White detection at S<0.15 threshold
+
+**LED-Max** (extreme vibrancy):
+- No brightness cap
+- 65% saturation boost toward primary colors
+- 15% brightness boost for darker non-background colors
+- 30% gamma blending for enhanced vibrancy
+- White detection at S<0.15 threshold
+
+See `LED_PUNCHY_CONFIG` and `LED_MAX_CONFIG` in [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py) for exact parameter values.
 
 ### Correction Pipeline
 
-For each color in extracted palette:
+The `apply_led_correction()` function processes each color through these steps:
 
-1. **White detection** (S < 0.15 AND V > 0.95):
-   ```python
-   if saturation < 0.15 and value > 0.95:
-       return white_replacement  # Replace with defined white
-   ```
+1. **White detection**: Returns pure white for near-white colors (low saturation, high value)
+2. **Brightness cap**: Limits maximum brightness (config-dependent)
+3. **Brightness boost**: Enhances darker accent colors (max mode only, excludes backgrounds)
+4. **Saturation boost**: Pushes colors toward primaries using `s + (1 - s) * boost` formula
+5. **Saturation cap**: Ensures saturation stays within limits
+6. **Gamma correction**: Blends linear and gamma-corrected values for LED characteristics
+7. **RGB conversion and clamping**: Converts HSV back to RGB and clamps to 0-255 range
 
-2. **Brightness cap**:
-   ```python
-   value = min(value, max_value)  # Cap at 85% (safe) or 95% (punchy)
-   ```
-
-3. **Saturation cap**:
-   ```python
-   saturation = min(saturation, max_saturation)  # 90% (safe) or 100% (punchy)
-   ```
-
-4. **Gamma correction** (currently disabled):
-   ```python
-   # Apply gamma to each RGB channel, blend with original
-   gamma_corrected = pow(color, 1.0 / gamma)
-   final = color * (1 - blend) + gamma_corrected * blend
-   # blend = 0.00 (disabled for accuracy)
-   ```
-
-5. **Clamp to valid range**:
-   ```python
-   rgb = [int(max(0, min(255, c * 255))) for c in rgb_float]
-   ```
+See `apply_led_correction()` in [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py) for implementation details.
 
 ### Tuning Constants
 
-All correction parameters defined at module top (`gradient_extraction.py`) for easy tuning:
+All correction parameters and thresholds are defined as module-level constants for easy tuning:
 
-```python
-# Color similarity weights
-GRAY_HUE_WEIGHT = 0.1
-GRAY_SAT_WEIGHT = 0.2
-GRAY_VAL_WEIGHT = 0.7
-SATURATED_HUE_WEIGHT = 0.65
-SATURATED_SAT_WEIGHT = 0.20
-SATURATED_VAL_WEIGHT = 0.15
+- **Color similarity weights**: Separate weights for gray vs saturated color comparisons (hue, saturation, value)
+- **Deduplication thresholds**: Distance thresholds for color deduplication (different for grays vs saturated)
+- **Background detection**: Cluster threshold (50%) and HSV criteria for dark/background colors
 
-# Deduplication thresholds
-COLOR_DISTANCE_THRESHOLD = 0.20  # For grays
-SATURATED_COLOR_THRESHOLD = 0.12  # For saturated colors
-
-# Background detection
-BACKGROUND_CLUSTER_THRESHOLD = 0.50
+See constant definitions at top of [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py).
 BG_DARK_V = 0.16
 BG_LOW_S = 0.18
 BG_LOW_S_V = 0.28
@@ -318,10 +285,10 @@ Gradients are stored in image metadata and exposed through API responses:
     "raw": {
       "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,255,0) 50%, rgb(0,0,255) 100%)"
     },
-    "led_safe": {
-      "gradient": "linear-gradient(90deg, rgb(217,0,0) 0%, ...)"
-    },
     "led_punchy": {
+      "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, ...)"
+    },
+    "led_max": {
       "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, ...)"
     },
     "metadata": {
@@ -342,7 +309,7 @@ Gradients are stored in image metadata and exposed through API responses:
 
 ### Metadata Fields
 
-**Per-variant fields** (`raw`, `led_safe`, `led_punchy`):
+**Per-variant fields** (`raw`, `led_punchy`, `led_max`):
 - `gradient`: CSS linear-gradient string for use in effects
 
 **Extraction metadata** (`metadata` section):
@@ -378,8 +345,8 @@ Response:
       "height": 800,
       "gradients": {
         "raw": {"gradient": "linear-gradient(...)"},
-        "led_safe": {"gradient": "linear-gradient(...)"},
         "led_punchy": {"gradient": "linear-gradient(...)"},
+        "led_max": {"gradient": "linear-gradient(...)"},
         "metadata": {...}
       }
     }
@@ -401,8 +368,8 @@ Response:
       "size": 102400,
       "gradients": {
         "raw": {"gradient": "linear-gradient(...)"},
-        "led_safe": {"gradient": "linear-gradient(...)"},
         "led_punchy": {"gradient": "linear-gradient(...)"},
+        "led_max": {"gradient": "linear-gradient(...)"},
         "metadata": {...}
       }
     }
@@ -424,7 +391,7 @@ class MyEffect(GradientEffect):
         # Gradient string can come from:
         # 1. Predefined gradients ("Rainbow", "Sunset", etc.)
         # 2. Custom gradient strings
-        # 3. Image-extracted gradients (raw/led_safe/led_punchy)
+        # 3. Image-extracted gradients (raw/led_punchy/led_max)
         super().config_updated(config)
 ```
 
@@ -432,7 +399,7 @@ class MyEffect(GradientEffect):
 ```javascript
 // User selects image, frontend reads gradient from metadata
 const imageMeta = await fetch('/api/assets').then(r => r.json());
-const gradient = imageMeta.assets[0].gradients.led_safe.gradient;
+const gradient = imageMeta.assets[0].gradients.led_punchy.gradient;
 
 // Apply to effect
 await fetch(`/api/virtuals/${virtualId}/effects/${effectId}`, {
@@ -447,64 +414,17 @@ await fetch(`/api/virtuals/${virtualId}/effects/${effectId}`, {
 
 ### Core Module Location
 
-**File**: `ledfx/utilities/gradient_extraction.py` (974 lines)
+**File**: `ledfx/utilities/gradient_extraction.py` (~1000 lines)
 
-**Main entry point**:
-```python
-def extract_gradient_metadata(image_source) -> dict:
-    """
-    Extract all gradient variants and metadata from an image.
+**Key functions**:
+- `extract_gradient_metadata()`: Main entry point, returns all variants and metadata
+- `extract_dominant_colors()`: Color extraction using MEDIANCUT quantization
+- `detect_dominant_background()`: Background cluster detection
+- `apply_led_correction()`: LED-specific color correction with configurable parameters
+- `build_gradient_stops()`: Gradient stop construction from colors
+- `build_gradient_string()`: LedFx gradient string formatting
 
-    Args:
-        image_source: Either a file path (str) or PIL Image object
-
-    Returns:
-        dict: Complete gradient metadata with all variants
-    """
-```
-
-### Key Functions
-
-**Color Extraction**:
-```python
-def extract_dominant_colors(
-    pil_image: Image.Image,
-    n_colors: int = 9,
-    use_accent_mask: bool = False
-) -> list[dict]:
-    """Extract dominant colors using MEDIANCUT quantization."""
-```
-
-**Background Detection**:
-```python
-def detect_dominant_background(
-    colors: list[dict],
-    threshold: float = 0.5
-) -> Optional[dict]:
-    """Detect if image has dominant background cluster."""
-```
-
-**LED Correction**:
-```python
-def apply_led_correction(
-    rgb: list[int],
-    mode: str = "safe"
-) -> list[int]:
-    """Apply LED-specific color correction to RGB values."""
-```
-
-**Gradient Construction**:
-```python
-def build_gradient_stops(
-    colors: list[dict],
-    background_color: Optional[dict] = None,
-    max_stops: int = 8
-) -> list[dict]:
-    """Build gradient stops from extracted colors."""
-
-def build_gradient_string(stops: list[dict]) -> str:
-    """Build LedFx gradient string from stops."""
-```
+See function signatures and docstrings in [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py).
 
 ### Testing
 

@@ -99,6 +99,7 @@ def setup_logging(loglevel, config_dir):
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("zeroconf").setLevel(logging.WARNING)
     logging.getLogger("lifx").setLevel(logging.WARNING)
+    logging.getLogger("PIL").setLevel(logging.WARNING)
 
     global _LOGGER
     _LOGGER = logging.getLogger(__name__)

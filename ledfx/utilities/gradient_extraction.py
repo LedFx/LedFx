@@ -17,20 +17,25 @@ import PIL.Image as Image
 _LOGGER = logging.getLogger(__name__)
 
 # LED correction parameters
-LED_SAFE_CONFIG = {
-    "max_value": 0.85,  # Cap brightness at 85%
-    "max_saturation": 0.90,  # Reduce saturation to 90%
+LED_PUNCHY_CONFIG = {
+    "max_value": 0.95,  # Higher brightness cap
+    "max_saturation": 1.0,  # Full saturation
+    "saturation_boost": 0.20,  # Boost saturation by 20% towards primaries
     "gamma": 2.2,  # LED-appropriate gamma
+    "gamma_blend": 0.00,  # No gamma correction for accuracy
     "white_threshold": 0.15,  # Detect near-white (low saturation)
-    "white_replacement": "#F5F5F5",  # WhiteSmoke for near-white colors
+    "white_replacement": "#FFFFFF",  # Pure white
 }
 
-LED_PUNCHY_CONFIG = {
-    "max_value": 0.95,  # Higher brightness
+LED_MAX_CONFIG = {
+    "max_value": 1.0,  # No brightness cap
     "max_saturation": 1.0,  # Full saturation
+    "saturation_boost": 0.65,  # Extreme 65% boost towards primaries
+    "brightness_boost": 0.15,  # Boost darker colors by 15%
     "gamma": 2.2,  # Same gamma
+    "gamma_blend": 0.30,  # 30% gamma blend for maximum vibrancy
     "white_threshold": 0.15,
-    "white_replacement": "#FFFFFF",  # Pure white for punchy variant
+    "white_replacement": "#FFFFFF",  # Pure white
 }
 
 # Color deduplication parameters
@@ -85,11 +90,6 @@ SATURATED_COLOR_THRESHOLD = (
     0.12  # Tighter threshold for distinct saturated colors
 )
 # COLOR_DISTANCE_THRESHOLD (0.20) defined above is used for grays/near-grays
-
-# === LED correction parameters ==============================================
-# Gamma blending: Mix between adjusted color (0.0) and gamma-corrected color (1.0)
-# Lower values (0.0-0.10) produce more accurate colors, higher values more vibrant
-GAMMA_BLEND = 0.00  # Currently disabled for accuracy; tune 0.0-0.10 if needed
 
 # === Gradient building parameters ==========================================
 # Blend fraction for "island" gradient stops: controls smoothness of color transitions
@@ -445,13 +445,13 @@ def detect_dominant_background(
     return None
 
 
-def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
+def apply_led_correction(rgb: list[int], mode: str = "punchy") -> list[int]:
     """
     Apply LED-specific color correction to RGB values.
 
     Args:
         rgb: RGB color as [R, G, B] where values are 0-255
-        mode: "safe" for conservative correction, "punchy" for vibrant, "raw" for none
+        mode: "raw" for no correction, "punchy" for vibrant, "max" for maximum saturation
 
     Returns:
         Corrected RGB color as [R, G, B]
@@ -459,7 +459,10 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     if mode == "raw":
         return rgb
 
-    config = LED_SAFE_CONFIG if mode == "safe" else LED_PUNCHY_CONFIG
+    if mode == "max":
+        config = LED_MAX_CONFIG
+    else:  # punchy
+        config = LED_PUNCHY_CONFIG
 
     # Convert to HSV for easier manipulation
     r, g, b = (c / 255.0 for c in rgb)
@@ -475,6 +478,18 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     # Apply brightness cap
     v = min(v, config["max_value"])
 
+    # Apply brightness boost for darker colors (max mode only)
+    # Exclude background-like colors (very dark or low-sat dark)
+    is_background = (v < 0.16) or (s < 0.18 and v < 0.28)
+    if "brightness_boost" in config and v < 0.8 and not is_background:
+        boost = config["brightness_boost"]
+        v = v + (1.0 - v) * boost
+
+    # Apply saturation boost (pull towards primary colors)
+    if s > 0.1:  # Only boost non-gray colors
+        boost = config["saturation_boost"]
+        s = s + (1.0 - s) * boost
+    
     # Apply saturation cap
     s = min(s, config["max_saturation"])
 
@@ -488,9 +503,10 @@ def apply_led_correction(rgb: list[int], mode: str = "safe") -> list[int]:
     b_gamma = pow(b_adjusted, 1.0 / gamma)
 
     # Blend between adjusted color and gamma-corrected color
-    r_final = r_adjusted * (1.0 - GAMMA_BLEND) + r_gamma * GAMMA_BLEND
-    g_final = g_adjusted * (1.0 - GAMMA_BLEND) + g_gamma * GAMMA_BLEND
-    b_final = b_adjusted * (1.0 - GAMMA_BLEND) + b_gamma * GAMMA_BLEND
+    gamma_blend = config["gamma_blend"]
+    r_final = r_adjusted * (1.0 - gamma_blend) + r_gamma * gamma_blend
+    g_final = g_adjusted * (1.0 - gamma_blend) + g_gamma * gamma_blend
+    b_final = b_adjusted * (1.0 - gamma_blend) + b_gamma * gamma_blend
 
     # Clamp to valid range and convert to 0-255
     rgb_corrected = [
@@ -856,38 +872,6 @@ def _extract_gradient_metadata_from_image(
 
         raw_variant = {"gradient": raw_gradient}
 
-        # LED-safe variant
-        safe_colors = []
-        for c in colors:
-            corrected_rgb = apply_led_correction(c["rgb"], mode="safe")
-            r, g, b = (val / 255.0 for val in corrected_rgb)
-            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
-            safe_colors.append(
-                {
-                    "rgb": corrected_rgb,
-                    "hsv": corrected_hsv,
-                    "frequency": c["frequency"],
-                }
-            )
-        safe_background = None
-        if background:
-            corrected_rgb = apply_led_correction(
-                background["rgb"], mode="safe"
-            )
-            r, g, b = (val / 255.0 for val in corrected_rgb)
-            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
-            safe_background = {
-                "rgb": corrected_rgb,
-                "hsv": corrected_hsv,
-                "frequency": background["frequency"],
-            }
-
-        safe_stops = build_gradient_stops(
-            safe_colors, safe_background, max_stops=8
-        )
-        safe_gradient = build_gradient_string(safe_stops)
-        led_safe_variant = {"gradient": safe_gradient}
-
         # LED-punchy variant
         punchy_colors = []
         for c in colors:
@@ -920,6 +904,38 @@ def _extract_gradient_metadata_from_image(
         punchy_gradient = build_gradient_string(punchy_stops)
         led_punchy_variant = {"gradient": punchy_gradient}
 
+        # LED-max variant (maximum saturation boost)
+        max_colors = []
+        for c in colors:
+            corrected_rgb = apply_led_correction(c["rgb"], mode="max")
+            r, g, b = (val / 255.0 for val in corrected_rgb)
+            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
+            max_colors.append(
+                {
+                    "rgb": corrected_rgb,
+                    "hsv": corrected_hsv,
+                    "frequency": c["frequency"],
+                }
+            )
+        max_background = None
+        if background:
+            corrected_rgb = apply_led_correction(
+                background["rgb"], mode="max"
+            )
+            r, g, b = (val / 255.0 for val in corrected_rgb)
+            corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
+            max_background = {
+                "rgb": corrected_rgb,
+                "hsv": corrected_hsv,
+                "frequency": background["frequency"],
+            }
+
+        max_stops = build_gradient_stops(
+            max_colors, max_background, max_stops=8
+        )
+        max_gradient = build_gradient_string(max_stops)
+        led_max_variant = {"gradient": max_gradient}
+
         processing_time_ms = int((time.time() - start_time) * 1000)
 
         _LOGGER.debug(
@@ -932,8 +948,8 @@ def _extract_gradient_metadata_from_image(
 
         return {
             "raw": raw_variant,
-            "led_safe": led_safe_variant,
             "led_punchy": led_punchy_variant,
+            "led_max": led_max_variant,
             "metadata": {
                 "image_size": list(pil_image.size),
                 "processing_time_ms": processing_time_ms,
@@ -972,10 +988,10 @@ def _gradient_fallback_metadata(pil_image, start_time: float) -> dict:
         "raw": {
             "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
         },
-        "led_safe": {
-            "gradient": "linear-gradient(90deg, rgb(109,109,109) 0%, rgb(109,109,109) 100%)",
-        },
         "led_punchy": {
+            "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
+        },
+        "led_max": {
             "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
         },
         "metadata": {

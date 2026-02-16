@@ -22,6 +22,7 @@ class DummyEffect:
     _active = True
     is_active = _active
     NAME = name = ""
+    logsec = None
 
     def __init__(self, pixel_count):
         self.pixels = np.zeros((pixel_count, 3))
@@ -370,7 +371,7 @@ class Effect(BaseRegistry):
             None  # Clear circular reference to allow garbage collection
         )
         # Clear LogSecHelper reference to this effect
-        if hasattr(self, "logsec") and self.logsec:
+        if self.logsec:
             self.logsec.effect = None
             self.logsec.diag = False
         self._active = False
