@@ -484,7 +484,7 @@ def apply_led_correction(rgb: list[int], mode: str = "punchy") -> list[int]:
     if s > 0.1:  # Only boost non-gray colors
         boost = config["saturation_boost"]
         s = s + (1.0 - s) * boost
-    
+
     # Apply saturation cap
     s = min(s, config["max_saturation"])
 
@@ -912,9 +912,7 @@ def _extract_gradient_metadata_from_image(
             )
         max_background = None
         if background:
-            corrected_rgb = apply_led_correction(
-                background["rgb"], mode="max"
-            )
+            corrected_rgb = apply_led_correction(background["rgb"], mode="max")
             r, g, b = (val / 255.0 for val in corrected_rgb)
             corrected_hsv = list(colorsys.rgb_to_hsv(r, g, b))
             max_background = {
