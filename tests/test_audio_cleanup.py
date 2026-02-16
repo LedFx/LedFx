@@ -6,8 +6,6 @@ caused rapid memory consumption due to improper stream error handling
 and resource cleanup.
 """
 
-import threading
-import time
 from unittest.mock import MagicMock, Mock, patch
 
 import numpy as np
