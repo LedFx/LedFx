@@ -287,7 +287,7 @@ Gradients are stored in image metadata and exposed through API responses:
   "n_frames": 1,
   "is_animated": false,
   "gradients": {
-    "raw": {
+    "led_safe": {
       "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,255,0) 50%, rgb(0,0,255) 100%)"
     },
     "led_punchy": {
@@ -314,7 +314,7 @@ Gradients are stored in image metadata and exposed through API responses:
 
 ### Metadata Fields
 
-**Per-variant fields** (`raw`, `led_punchy`, `led_max`):
+**Per-variant fields** (`led_safe`, `led_punchy`, `led_max`):
 - `gradient`: CSS linear-gradient string for use in effects
 
 **Extraction metadata** (`metadata` section):
@@ -349,7 +349,7 @@ Response:
       "width": 1200,
       "height": 800,
       "gradients": {
-        "raw": {"gradient": "linear-gradient(...)"},
+        "led_safe": {"gradient": "linear-gradient(...)"},
         "led_punchy": {"gradient": "linear-gradient(...)"},
         "led_max": {"gradient": "linear-gradient(...)"},
         "metadata": {...}

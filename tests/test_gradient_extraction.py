@@ -140,12 +140,6 @@ class TestApplyLedCorrection:
         corrected = apply_led_correction(rgb, mode="safe")
         assert corrected == rgb
 
-    def test_safe_mode_no_correction(self):
-        """Safe mode should not modify colors (raw colors for compatibility)."""
-        rgb = [255, 128, 64]
-        corrected = apply_led_correction(rgb, mode="safe")
-        assert corrected == rgb
-
     def test_punchy_mode_boosts_saturation(self):
         """Punchy mode should boost saturation."""
         # Bright saturated color that won't trigger white replacement

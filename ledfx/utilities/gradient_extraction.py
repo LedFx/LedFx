@@ -579,7 +579,6 @@ def build_gradient_stops(
 
         for i, accent in enumerate(accent_colors):
             section_start = i * section_width
-            section_end = (i + 1) * section_width
 
             # Calculate color flat region centered in section
             color_flat_width = section_width * color_width_fraction
@@ -973,6 +972,24 @@ def _extract_gradient_metadata_from_image(
         return _gradient_fallback_metadata(pil_image, start_time)
 
 
+def _safe_image_size(pil_image) -> list[int]:
+    """
+    Safely extract image dimensions from PIL image.
+
+    Args:
+        pil_image: PIL Image object (may be None or corrupt)
+
+    Returns:
+        list[int]: [width, height] or [0, 0] if extraction fails
+    """
+    if pil_image is None:
+        return [0, 0]
+    try:
+        return list(pil_image.size)
+    except Exception:
+        return [0, 0]
+
+
 def _gradient_fallback_metadata(pil_image, start_time: float) -> dict:
     """
     Generate fallback gradient metadata when extraction fails.
@@ -999,7 +1016,7 @@ def _gradient_fallback_metadata(pil_image, start_time: float) -> dict:
             "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
         },
         "metadata": {
-            "image_size": list(pil_image.size) if pil_image else [0, 0],
+            "image_size": _safe_image_size(pil_image),
             "processing_time_ms": processing_time_ms,
             "extracted_color_count": 0,
             "has_dominant_background": False,
