@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from ledfx.effects.audio import AudioInputSource
+from ledfx.effects.melbank import MIC_RATE
 
 
 class TestAudioInputSourceCleanup:
@@ -268,8 +269,6 @@ class TestAudioInputSourceCleanup:
 
     def test_successful_processing_decrements_error_count(self, audio_source):
         """Test that successful processing decrements error counter"""
-        from ledfx.effects.melbank import MIC_RATE
-
         audio_source._audio_stream_active = True
         audio_source._stream_error_count = 5
         audio_source.resampler = Mock()
