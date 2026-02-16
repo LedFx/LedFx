@@ -433,7 +433,7 @@ def detect_dominant_background(
     # Simply check if the most frequent color exceeds threshold
     # Colors are already sorted by frequency (most frequent first)
     most_frequent = colors[0]
-    
+
     if most_frequent["frequency"] >= threshold:
         return most_frequent.copy()
 
