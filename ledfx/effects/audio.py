@@ -167,7 +167,7 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.lock = threading.Lock()
-        
+
         # Initialize all instance variables to ensure proper per-instance state
         self._audio_stream_active = False
         self._audio = None
@@ -186,7 +186,7 @@ class AudioInputSource:
         self._max_recovery_attempts = 5
         self.resampler = None
         self.delay_queue = None
-        
+
         self.update_config(config)
 
         def shutdown_event(e):
@@ -404,32 +404,39 @@ class AudioInputSource:
     def _deactivate_and_schedule_recovery(self):
         """Deactivate stream and schedule recovery attempt if callbacks are still registered"""
         self.deactivate()
-        
+
         # If effects are still subscribed, schedule a recovery attempt
         if len(self._callbacks) > self._subscriber_threshold:
             with self.lock:
                 if self._recovery_timer is not None:
                     self._recovery_timer.cancel()
                 # Wait 10 seconds before attempting recovery
-                self._recovery_timer = threading.Timer(10.0, self._attempt_recovery)
+                self._recovery_timer = threading.Timer(
+                    10.0, self._attempt_recovery
+                )
                 self._recovery_timer.start()
-                _LOGGER.info("Audio stream recovery will be attempted in 10 seconds...")
-    
+                _LOGGER.info(
+                    "Audio stream recovery will be attempted in 10 seconds..."
+                )
+
     def _attempt_recovery(self):
         """Attempt to reactivate the audio stream after device loss"""
         with self.lock:
             self._recovery_timer = None
             self._recovery_attempts += 1
-        
+
         if self._recovery_attempts >= self._max_recovery_attempts:
             _LOGGER.error(
                 f"Audio stream recovery failed after {self._max_recovery_attempts} attempts. "
                 "Please check audio device and manually restart."
             )
             return
-        
+
         # Only attempt recovery if effects are still subscribed
-        if len(self._callbacks) > self._subscriber_threshold and not self._audio_stream_active:
+        if (
+            len(self._callbacks) > self._subscriber_threshold
+            and not self._audio_stream_active
+        ):
             _LOGGER.info(
                 f"Attempting audio stream recovery (attempt {self._recovery_attempts}/{self._max_recovery_attempts})..."
             )
@@ -445,7 +452,9 @@ class AudioInputSource:
                     with self.lock:
                         if self._recovery_timer is not None:
                             self._recovery_timer.cancel()
-                        self._recovery_timer = threading.Timer(10.0, self._attempt_recovery)
+                        self._recovery_timer = threading.Timer(
+                            10.0, self._attempt_recovery
+                        )
                         self._recovery_timer.start()
             except Exception as e:
                 _LOGGER.warning(f"Audio stream recovery attempt failed: {e}")
@@ -453,7 +462,9 @@ class AudioInputSource:
                 with self.lock:
                     if self._recovery_timer is not None:
                         self._recovery_timer.cancel()
-                    self._recovery_timer = threading.Timer(10.0, self._attempt_recovery)
+                    self._recovery_timer = threading.Timer(
+                        10.0, self._attempt_recovery
+                    )
                     self._recovery_timer.start()
 
     def deactivate(self):
@@ -464,19 +475,19 @@ class AudioInputSource:
         resampler_to_clear = None
         delay_queue_to_clear = None
         recovery_timer_to_cancel = None
-        
+
         with self.lock:
             if self._stream:
                 stream_to_close = self._stream
                 self._stream = None
             self._audio_stream_active = False
             self._stream_error_count = 0
-            
+
             # Cancel any pending recovery timer on manual deactivation
             if self._recovery_timer is not None:
                 recovery_timer_to_cancel = self._recovery_timer
                 self._recovery_timer = None
-            
+
             # Clear resampler and delay queue references
             if self.resampler:
                 resampler_to_clear = self.resampler
@@ -484,7 +495,7 @@ class AudioInputSource:
             if self.delay_queue:
                 delay_queue_to_clear = self.delay_queue
                 self.delay_queue = None
-        
+
         # Cancel recovery timer outside lock
         if recovery_timer_to_cancel:
             recovery_timer_to_cancel.cancel()
@@ -500,7 +511,7 @@ class AudioInputSource:
             except Exception as e:
                 _LOGGER.warning(f"Error closing audio stream: {e}")
             _LOGGER.info("Audio source closed.")
-        
+
         # Clear delay queue outside lock to avoid blocking
         if delay_queue_to_clear:
             try:
@@ -566,7 +577,10 @@ class AudioInputSource:
                             f"Deactivating to prevent memory leak. Status: {status_str}"
                         )
                         # Schedule deactivation and recovery attempt outside callback to avoid deadlock
-                        threading.Thread(target=self._deactivate_and_schedule_recovery, daemon=True).start()
+                        threading.Thread(
+                            target=self._deactivate_and_schedule_recovery,
+                            daemon=True,
+                        ).start()
                         return
             # Log overflow/underflow only in debug mode to reduce overhead
             elif _LOGGER.isEnabledFor(logging.DEBUG):
@@ -574,11 +588,11 @@ class AudioInputSource:
                     _LOGGER.debug("Audio input overflow detected")
                 if "output underflow" in status_str.lower():
                     _LOGGER.debug("Audio output underflow detected")
-        
+
         # Check if stream is still active before processing (fast check, no try needed)
         if not self._audio_stream_active:
             return
-        
+
         # Fast path: convert buffer (minimal try-except for malformed data edge case)
         try:
             raw_sample = np.frombuffer(in_data, dtype=np.float32)
@@ -588,7 +602,7 @@ class AudioInputSource:
 
         in_sample_len = len(raw_sample)
         out_sample_len = MIC_RATE // self._config["sample_rate"]
-        
+
         # Validate input data (fast integer checks)
         if in_sample_len == 0 or out_sample_len == 0:
             return
@@ -606,7 +620,9 @@ class AudioInputSource:
             except Exception:
                 # Increment error counter on resampler failure (device disconnect)
                 with self.lock:
-                    self._stream_error_count = min(self._stream_error_count + 1, self._max_stream_errors)
+                    self._stream_error_count = min(
+                        self._stream_error_count + 1, self._max_stream_errors
+                    )
                 return
         else:
             processed_audio_sample = raw_sample
@@ -614,7 +630,7 @@ class AudioInputSource:
         # Validate output length
         if len(processed_audio_sample) != out_sample_len:
             return
-        
+
         # Reset error counter on successful processing (only if it was elevated)
         if self._stream_error_count > 0:
             with self.lock:
@@ -622,7 +638,7 @@ class AudioInputSource:
 
         # Handle delaying the audio with the queue
         self._raw_audio_sample = processed_audio_sample
-        
+
         if self.delay_queue:
             try:
                 self.delay_queue.put_nowait(processed_audio_sample)
@@ -634,7 +650,7 @@ class AudioInputSource:
                 except queue.Empty:
                     # Queue became empty between full check and get - rare race condition
                     pass
-        
+
         # Core processing (moved outside try for performance)
         self.pre_process_audio()
         self._invalidate_caches()
@@ -666,7 +682,7 @@ class AudioInputSource:
         # Fast validation (no try needed for simple None check)
         if self._raw_audio_sample is None or len(self._raw_audio_sample) == 0:
             return
-        
+
         # Clean up nans that have been mysteriously appearing..
         # Use in-place operation for performance
         np.nan_to_num(self._raw_audio_sample, copy=False, nan=0.0)
@@ -695,6 +711,7 @@ class AudioInputSource:
                 )
         else:
             self._frequency_domain = self._frequency_domain_null
+
     def audio_sample(self, raw=False):
         """Returns the raw audio sample"""
 
