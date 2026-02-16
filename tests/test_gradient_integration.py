@@ -56,16 +56,16 @@ class TestImageCacheGradientIntegration:
 
         # Verify gradient structure
         gradients = entry["gradients"]
-        assert "raw" in gradients
         assert "led_safe" in gradients
         assert "led_punchy" in gradients
+        assert "led_max" in gradients
         assert "metadata" in gradients
 
-        # Verify raw variant structure
-        raw = gradients["raw"]
-        assert "gradient" in raw
+        # Verify led_safe variant structure
+        led_safe = gradients["led_safe"]
+        assert "gradient" in led_safe
         assert "background_color" in gradients["metadata"]
-        assert raw["gradient"].startswith("linear-gradient")
+        assert led_safe["gradient"].startswith("linear-gradient")
 
     def test_cache_put_handles_gradient_extraction_failure(self, cache):
         """Cache should continue even if gradient extraction fails."""
@@ -133,12 +133,12 @@ class TestImageCacheGradientIntegration:
         assert gradients is not None
 
         # Check all variants exist
-        assert "raw" in gradients
         assert "led_safe" in gradients
         assert "led_punchy" in gradients
+        assert "led_max" in gradients
 
         # Verify each has required fields
-        for variant_name in ["raw", "led_safe", "led_punchy"]:
+        for variant_name in ["led_safe", "led_punchy", "led_max"]:
             variant = gradients[variant_name]
             assert "gradient" in variant
             # background_color is in metadata, not per-variant
@@ -218,9 +218,9 @@ class TestAssetGradientIntegration:
 
         # Verify gradient structure
         gradients = asset["gradients"]
-        assert "raw" in gradients
         assert "led_safe" in gradients
         assert "led_punchy" in gradients
+        assert "led_max" in gradients
 
     def test_list_assets_handles_gradient_extraction_failure(
         self, temp_assets_dir
@@ -309,6 +309,6 @@ class TestAssetGradientIntegration:
         for asset in assets:
             assert "gradients" in asset
             assert asset["gradients"] is not None
-            assert "raw" in asset["gradients"]
             assert "led_safe" in asset["gradients"]
             assert "led_punchy" in asset["gradients"]
+            assert "led_max" in asset["gradients"]

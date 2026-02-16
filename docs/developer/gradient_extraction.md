@@ -10,7 +10,7 @@
 
 LedFx automatically extracts LED-optimized color gradients from all loaded images (album art, user uploads, cached images). Every image that enters the system receives gradient extraction, producing three variants optimized for different use cases:
 
-- **Raw**: True to source image colors, no correction
+- **LED-safe**: Raw colors from source image with no correction (for color accuracy)
 - **LED-punchy**: Moderate saturation boost (20%) for vibrant physical LEDs
 - **LED-max**: Aggressive saturation boost (65%) + brightness boost (15%) + gamma blend (30%) for maximum vibrancy
 
@@ -38,8 +38,8 @@ Automatic extraction pipeline with LED-specific corrections:
 - **Brightness boost**: Brighten darker accent colors (max mode only, 15%)
 - **Brightness capping**: Max 95% (punchy) or 100% (max)
 - **White replacement**: Near-white colors mapped to pure white
-- **Background detection**: Dominant backgrounds (>50%) separated from accent colors
-- **Background protection**: Brightness boost excludes dark background colors
+- **Background detection**: Any dominant color (>50% frequency) triggers interleaved banding
+- **Background protection**: Brightness boost excludes dark background colors (V<0.16)
 - **Gamma blend**: Per-variant (0% punchy for accuracy, 30% max for vibrancy)
 
 ---
@@ -123,7 +123,7 @@ POST /api/cache/images/refresh
 The extraction pipeline processes images through four stages:
 
 1. **Color Quantization**: Extract dominant colors using MEDIANCUT
-2. **Background Detection**: Identify dominant background clusters (>50%)
+2. **Background Detection**: Identify any dominant background color (>50%)
 3. **Color Deduplication**: Merge perceptually similar colors
 4. **Gradient Construction**: Build interleaved or weighted gradient stops
 
@@ -150,16 +150,17 @@ palette = quantized.getpalette()[:n_colors * 3]  # RGB triplets
 
 **Threshold**: >50% frequency indicates dominant background
 
-**Background cluster detection**:
-- Treats "background" as a cluster of background-like colors
-- Dark colors (V < 0.16) OR low-saturation dark (S < 0.18, V < 0.28)
-- Sums frequencies of all background-ish colors
-- Returns most frequent color if cluster exceeds threshold
+**Detection method**:
+- Simply checks if the most frequent color exceeds 50% threshold
+- Works for ANY dominant color (white, black, bright colors, etc.)
+- Not limited to dark backgrounds - applies to all solid backgrounds
+- Triggers interleaved banding pattern to prevent background wash-out
 
-**Example**: Album art with 70% black background
-- Black pixels + dark grays counted together
-- Total frequency: 70% → background detected
-- Gradient uses remaining 30% accent colors
+**Examples**:
+- **White album art**: 80% white → white detected as background → banding used
+- **Black album art**: 70% black → black detected as background → banding used
+- **Blue background**: 60% bright blue → blue detected as background → banding used
+- **Multi-color**: No single color >50% → weighted gradient (no banding)
 
 ### 3. Color Deduplication
 
@@ -187,13 +188,15 @@ palette = quantized.getpalette()[:n_colors * 3]  # RGB triplets
 
 **Two modes** based on background detection:
 
-**A. Interleaved Pattern** (background detected):
+**A. Interleaved Pattern** (dominant background >50%):
 ```
 bg → accent1 → bg → accent2 → bg → accent3 → bg
 ```
-- Alternates background with accent colors
-- Creates distinct "islands" of vibrant color
-- Prevents background wash-out
+- Triggered when ANY color exceeds 50% frequency
+- Alternates background with accent colors in equal spacing
+- Creates distinct "bands" of accent colors separated by background
+- Prevents gradient being overwhelmed by dominant background color
+- Works for white, black, gray, and bright colored backgrounds
 - Stop allocation (8 max stops):
   - 4 accents: `bg, c1, bg, c2, bg, c3, bg, c4` (8 stops)
   - 3 accents: `bg, c1, bg, c2, bg, c3, bg` (7 stops)
@@ -233,7 +236,7 @@ Two correction profiles are defined at the top of `gradient_extraction.py`:
 - 30% gamma blending for enhanced vibrancy
 - White detection at S<0.15 threshold
 
-See `LED_PUNCHY_CONFIG` and `LED_MAX_CONFIG` in [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py) for exact parameter values.
+See `LED_PUNCHY_CONFIG` and `LED_MAX_CONFIG` in [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py) for exact parameter values. LED-safe uses raw colors with no configuration.
 
 ### Correction Pipeline
 
@@ -255,11 +258,10 @@ All correction parameters and thresholds are defined as module-level constants f
 
 - **Color similarity weights**: Separate weights for gray vs saturated color comparisons (hue, saturation, value)
 - **Deduplication thresholds**: Distance thresholds for color deduplication (different for grays vs saturated)
-- **Background detection**: Cluster threshold (50%) and HSV criteria for dark/background colors
+- **Background detection**: Frequency threshold (50%) for detecting dominant backgrounds
+- **Accent masking**: HSV thresholds for filtering dark pixels in accent pass (legacy, dark backgrounds only)
 
 See constant definitions at top of [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py).
-BG_DARK_V = 0.16
-BG_LOW_S = 0.18
 BG_LOW_S_V = 0.28
 
 # Gradient building
@@ -367,7 +369,7 @@ Response:
       "path": "album_art.png",
       "size": 102400,
       "gradients": {
-        "raw": {"gradient": "linear-gradient(...)"},
+        "led_safe": {"gradient": "linear-gradient(...)"},
         "led_punchy": {"gradient": "linear-gradient(...)"},
         "led_max": {"gradient": "linear-gradient(...)"},
         "metadata": {...}
@@ -391,7 +393,7 @@ class MyEffect(GradientEffect):
         # Gradient string can come from:
         # 1. Predefined gradients ("Rainbow", "Sunset", etc.)
         # 2. Custom gradient strings
-        # 3. Image-extracted gradients (raw/led_punchy/led_max)
+        # 3. Image-extracted gradients (led_safe/led_punchy/led_max)
         super().config_updated(config)
 ```
 
@@ -399,7 +401,7 @@ class MyEffect(GradientEffect):
 ```javascript
 // User selects image, frontend reads gradient from metadata
 const imageMeta = await fetch('/api/assets').then(r => r.json());
-const gradient = imageMeta.assets[0].gradients.led_punchy.gradient;
+const gradient = imageMeta.assets[0].gradients.led_safe.gradient;
 
 // Apply to effect
 await fetch(`/api/virtuals/${virtualId}/effects/${effectId}`, {
@@ -419,7 +421,7 @@ await fetch(`/api/virtuals/${virtualId}/effects/${effectId}`, {
 **Key functions**:
 - `extract_gradient_metadata()`: Main entry point, returns all variants and metadata
 - `extract_dominant_colors()`: Color extraction using MEDIANCUT quantization
-- `detect_dominant_background()`: Background cluster detection
+- `detect_dominant_background()`: Detects any dominant color exceeding 50% frequency
 - `apply_led_correction()`: LED-specific color correction with configurable parameters
 - `build_gradient_stops()`: Gradient stop construction from colors
 - `build_gradient_string()`: LedFx gradient string formatting

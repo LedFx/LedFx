@@ -48,9 +48,9 @@ WHITE_REPLACE_MIN_V = (
 # Saturation and Value differences are less critical for LED gradients
 
 # === Background cluster detection (minimal additions) =========================
-# Treat background as a cluster: dark and/or low-sat dark colors summed together
-# above this threshold switch to background-accent pattern
+# Detect any dominant background color (>50% frequency) to trigger interleaved banding
 BACKGROUND_CLUSTER_THRESHOLD = 0.50
+# Legacy thresholds kept for accent masking (only works for dark backgrounds)
 BG_DARK_V = 0.16  # Value below which colors are considered "dark" enough to be background
 BG_LOW_S = (
     0.18  # Saturation below which colors are "background-ish" if also dark
@@ -414,39 +414,28 @@ def detect_dominant_background(
     colors: list[dict], threshold: float = 0.5
 ) -> Optional[dict]:
     """
-    Detect if image has a dominant background color cluster.
+    Detect if image has a dominant background color.
 
-    Treats "background" as a CLUSTER of background-like colors (dark and/or low-sat dark)
-    rather than a single color. Sums frequencies of all background-ish colors and returns
-    the most frequent one if the cluster sum exceeds the threshold. If cluster is dominant,
-    returns a representative background color dict: the most frequent background-like color,
-    but with frequency set to the cluster sum.
+    Returns the most frequent color if it exceeds the threshold, indicating
+    a dominant background that should use interleaved banding pattern.
+    This works for ANY dominant color (white, black, bright colors, etc.)
 
     Args:
         colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
-        threshold: Minimum frequency for background cluster detection (default 0.5)
+        threshold: Minimum frequency for background detection (default 0.5)
 
     Returns:
-        Background color dict with cluster frequency, or None if no dominant background
+        Background color dict if dominant, or None
     """
     if not colors:
         return None
 
-    bg_candidates = [
-        c
-        for c in colors
-        if (c["hsv"][2] < BG_DARK_V)
-        or ((c["hsv"][1] < BG_LOW_S) and (c["hsv"][2] < BG_LOW_S_V))
-    ]
-    if not bg_candidates:
-        return None
-
-    bg_freq = sum(float(c["frequency"]) for c in bg_candidates)
-    if bg_freq >= threshold:
-        bg_candidates.sort(key=lambda x: x["frequency"], reverse=True)
-        bg = bg_candidates[0].copy()
-        bg["frequency"] = bg_freq  # cluster frequency
-        return bg
+    # Simply check if the most frequent color exceeds threshold
+    # Colors are already sorted by frequency (most frequent first)
+    most_frequent = colors[0]
+    
+    if most_frequent["frequency"] >= threshold:
+        return most_frequent.copy()
 
     return None
 
@@ -457,15 +446,15 @@ def apply_led_correction(rgb: list[int], mode: str = "punchy") -> list[int]:
 
     Args:
         rgb: RGB color as [R, G, B] where values are 0-255
-        mode: "raw" for no correction, "punchy" for vibrant, "max" for maximum saturation
+        mode: "safe" for no correction (raw), "punchy" for vibrant, "max" for maximum saturation
 
     Returns:
         Corrected RGB color as [R, G, B]
     """
-    if mode == "raw":
+    if mode == "safe":
+        # LED-safe is raw colors with no correction (for compatibility)
         return rgb
-
-    if mode == "max":
+    elif mode == "max":
         config = LED_MAX_CONFIG
     else:  # punchy
         config = LED_PUNCHY_CONFIG
@@ -550,15 +539,12 @@ def build_gradient_stops(
 
     if background_color:
         # Interleaved pattern: bg → accent → bg → accent
-        # Remove background-like colors from accent colors.
-        # Do NOT rely on dict equality (background is a cluster representative).
+        # Remove the background color itself from accent colors
+        bg_rgb = tuple(background_color['rgb'])
         accent_colors = [
             c
             for c in colors
-            if not (
-                (c["hsv"][2] < BG_DARK_V)
-                or ((c["hsv"][1] < BG_LOW_S) and (c["hsv"][2] < BG_LOW_S_V))
-            )
+            if tuple(c['rgb']) != bg_rgb
         ]
 
         # In interleaved mode, max_stops should represent accent capacity (not total stops),
@@ -857,11 +843,12 @@ def _extract_gradient_metadata_from_image(
                 "Accent pass produced too few colors (%d). Falling back to full-image accents (background removed).",
                 len(colors),
             )
-            colors = [c for c in full_colors if c["rgb"] != background["rgb"]]
+            bg_rgb = tuple(background["rgb"])
+            colors = [c for c in full_colors if tuple(c["rgb"]) != bg_rgb]
 
-        # Build gradient stops (raw, no correction)
-        raw_stops = build_gradient_stops(colors, background, max_stops=8)
-        raw_gradient = build_gradient_string(raw_stops)
+        # Build gradient stops (led_safe variant - raw colors, no correction)
+        safe_stops = build_gradient_stops(colors, background, max_stops=8)
+        safe_gradient = build_gradient_string(safe_stops)
 
         # Always extract the most frequent color as background_color (bin-based)
         most_frequent = (
@@ -876,7 +863,7 @@ def _extract_gradient_metadata_from_image(
             round(most_frequent["frequency"], 3) if most_frequent else None
         )
 
-        raw_variant = {"gradient": raw_gradient}
+        led_safe_variant = {"gradient": safe_gradient}
 
         # LED-punchy variant
         punchy_colors = []
@@ -953,7 +940,7 @@ def _extract_gradient_metadata_from_image(
         pattern = "interleaved" if background else "weighted"
 
         return {
-            "raw": raw_variant,
+            "led_safe": led_safe_variant,
             "led_punchy": led_punchy_variant,
             "led_max": led_max_variant,
             "metadata": {
@@ -961,7 +948,7 @@ def _extract_gradient_metadata_from_image(
                 "processing_time_ms": processing_time_ms,
                 "extracted_color_count": len(colors),
                 "has_dominant_background": background is not None,
-                "gradient_stop_count": len(raw_stops),
+                "gradient_stop_count": len(safe_stops),
                 "pattern": pattern,
                 "background_color": background_color_hex,
                 "background_frequency": background_frequency,
@@ -991,7 +978,7 @@ def _gradient_fallback_metadata(pil_image, start_time: float) -> dict:
     )
 
     return {
-        "raw": {
+        "led_safe": {
             "gradient": "linear-gradient(90deg, rgb(128,128,128) 0%, rgb(128,128,128) 100%)",
         },
         "led_punchy": {

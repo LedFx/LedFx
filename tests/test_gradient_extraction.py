@@ -96,53 +96,80 @@ class TestDetectDominantBackground:
         bg = detect_dominant_background([], threshold=0.5)
         assert bg is None
 
+    def test_detects_bright_background(self):
+        """Detect bright/white backgrounds (not just dark ones)."""
+        colors = [
+            {"rgb": [255, 255, 255], "hsv": [0, 0, 1.0], "frequency": 0.8},  # White
+            {"rgb": [255, 0, 0], "hsv": [0, 1, 1], "frequency": 0.1},
+            {"rgb": [0, 255, 0], "hsv": [0.33, 1, 1], "frequency": 0.1},
+        ]
+
+        bg = detect_dominant_background(colors, threshold=0.5)
+        assert bg is not None
+        assert bg["frequency"] == 0.8
+        assert bg["rgb"] == [255, 255, 255]
+
+    def test_detects_bright_colored_background(self):
+        """Detect bright colored backgrounds (blue, red, etc)."""
+        colors = [
+            {"rgb": [0, 0, 255], "hsv": [0.67, 1, 1], "frequency": 0.6},  # Bright blue
+            {"rgb": [255, 255, 0], "hsv": [0.17, 1, 1], "frequency": 0.2},
+            {"rgb": [255, 0, 255], "hsv": [0.83, 1, 1], "frequency": 0.2},
+        ]
+
+        bg = detect_dominant_background(colors, threshold=0.5)
+        assert bg is not None
+        assert bg["frequency"] == 0.6
+        assert bg["rgb"] == [0, 0, 255]
+
 
 class TestApplyLedCorrection:
     """Test LED color correction."""
 
-    def test_raw_mode_no_correction(self):
-        """Raw mode should not modify colors."""
+    def test_safe_mode_no_correction(self):
+        """Safe mode should not modify colors (raw colors for compatibility)."""
         rgb = [255, 128, 64]
-        corrected = apply_led_correction(rgb, mode="raw")
+        corrected = apply_led_correction(rgb, mode="safe")
         assert corrected == rgb
 
-    def test_safe_mode_caps_brightness(self):
-        """Safe mode should cap brightness."""
+    def test_safe_mode_no_correction(self):
+        """Safe mode should not modify colors (raw colors for compatibility)."""
+        rgb = [255, 128, 64]
+        corrected = apply_led_correction(rgb, mode="safe")
+        assert corrected == rgb
+
+    def test_punchy_mode_boosts_saturation(self):
+        """Punchy mode should boost saturation."""
         # Bright saturated color that won't trigger white replacement
         rgb = [255, 0, 0]  # Pure red
-        corrected = apply_led_correction(rgb, mode="safe")
+        corrected = apply_led_correction(rgb, mode="punchy")
 
-        # Should be reduced from 255
-        # With 85% cap and gamma blending, expect ~195-220 range
-        assert corrected[0] < 255
-        assert corrected[0] > 180  # Still reasonably bright
+        # Should be capped at 95% brightness
+        assert corrected[0] <= 242  # 0.95 * 255
 
-    def test_safe_mode_reduces_saturation(self):
-        """Safe mode should reduce saturation."""
-        # Pure red
-        rgb = [255, 0, 0]
-        corrected = apply_led_correction(rgb, mode="safe")
-
-        # Red should be reduced
-        assert corrected[0] < 255
-
-    def test_punchy_mode_more_vibrant(self):
+    def test_punchy_mode_more_vibrant_than_safe(self):
         """Punchy mode should be more vibrant than safe."""
-        rgb = [255, 0, 0]
+        rgb = [200, 100, 50]
         safe = apply_led_correction(rgb, mode="safe")
         punchy = apply_led_correction(rgb, mode="punchy")
 
-        # Punchy should have higher values
-        assert punchy[0] >= safe[0]
+        # Safe is raw (unchanged), punchy applies corrections
+        assert safe == rgb
+        # Punchy should boost saturation (increase difference between channels)
+        r_s, g_s, b_s = safe
+        r_p, g_p, b_p = punchy
+        safe_range = max(r_s, g_s, b_s) - min(r_s, g_s, b_s)
+        punchy_range = max(r_p, g_p, b_p) - min(r_p, g_p, b_p)
+        assert punchy_range >= safe_range
 
     def test_white_replacement(self):
         """Near-white colors should be replaced if above threshold."""
-        # Light gray (low saturation, high value but below WHITE_REPLACE_MIN_V=0.95)
-        rgb = [240, 240, 240]  # V=0.941 < 0.95, so gets brightness-capped
-        corrected = apply_led_correction(rgb, mode="safe")
+        # Very light color (low saturation, high value above WHITE_REPLACE_MIN_V=0.95)
+        rgb = [250, 250, 250]  # V=0.98 > 0.95
+        corrected = apply_led_correction(rgb, mode="punchy")
 
-        # Gets brightness-capped to 0.85, not replaced
-        assert corrected == [216, 216, 216]  # 0.85 * 255
+        # Should be replaced with pure white
+        assert corrected == [255, 255, 255]
 
 
 class TestBuildGradientStops:
@@ -247,18 +274,18 @@ class TestExtractGradientMetadata:
         img = Image.new("RGB", (100, 100), color=(255, 0, 0))
         metadata = extract_gradient_metadata(img)
 
-        assert "raw" in metadata
         assert "led_safe" in metadata
         assert "led_punchy" in metadata
+        assert "led_max" in metadata
         assert "metadata" in metadata
 
-    def test_raw_variant_structure(self):
-        """Raw variant has correct structure."""
+    def test_led_safe_variant_structure(self):
+        """LED-safe variant has correct structure."""
         img = Image.new("RGB", (100, 100), color=(255, 0, 0))
         metadata = extract_gradient_metadata(img)
 
-        raw = metadata["raw"]
-        assert "gradient" in raw
+        led_safe = metadata["led_safe"]
+        assert "gradient" in led_safe
         # background_color and frequency are in metadata, not per-variant
         assert "background_color" in metadata["metadata"]
         assert "background_frequency" in metadata["metadata"]
@@ -337,7 +364,7 @@ class TestExtractGradientMetadata:
         metadata = extract_gradient_metadata(img)
 
         # Should still return valid structure
-        assert "raw" in metadata
+        assert "led_safe" in metadata
         assert "metadata" in metadata
 
     def test_gradient_deterministic(self):
@@ -348,7 +375,7 @@ class TestExtractGradientMetadata:
         metadata2 = extract_gradient_metadata(img)
 
         # Gradients should match (ignoring timestamps)
-        assert metadata1["raw"]["gradient"] == metadata2["raw"]["gradient"]
+        assert metadata1["led_safe"]["gradient"] == metadata2["led_safe"]["gradient"]
         assert (
             metadata1["metadata"]["background_color"]
             == metadata2["metadata"]["background_color"]
