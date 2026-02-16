@@ -190,16 +190,19 @@ palette = quantized.getpalette()[:n_colors * 3]  # RGB triplets
 
 **A. Interleaved Pattern** (dominant background >50%):
 ```
-bg → accent1 → bg → accent2 → bg → accent3 → bg
+bg → accent1_start → accent1_end → bg → accent2_start → accent2_end → bg
 ```
 - Triggered when ANY color exceeds 50% frequency
-- Alternates background with accent colors in equal spacing
-- Creates distinct "bands" of accent colors separated by background
+- Each accent color gets TWO stops (start and end) creating a flat color region
+- Flat regions are 40% of each section width, providing defined color presence
+- Background fills the remaining 60% space with smooth blends
 - Prevents gradient being overwhelmed by dominant background color
-- Works for white, black, gray, and bright colored backgrounds
-- Stop allocation (8 max stops):
-  - 4 accents: `bg, c1, bg, c2, bg, c3, bg, c4` (8 stops)
-  - 3 accents: `bg, c1, bg, c2, bg, c3, bg` (7 stops)
+- Stop allocation formula: **3N + 1** (where N = number of accents)
+  - 2 accents: `bg, c1_start, c1_end, bg, c2_start, c2_end, bg` (7 stops)
+  - 3 accents: `bg, c1_start, c1_end, bg, c2_start, c2_end, bg, c3_start, c3_end, bg` (10 stops)
+  - 8 accents (typical max from extraction): 25 stops total (3*8 + 1)
+- Each accent is centered in its section with 40% flat width for color prominence
+- Uses all accent colors from extraction (up to 9 total colors minus background)
 
 **B. Island Gradient** (no background):
 - Weighted color "bands" based on frequency

@@ -514,7 +514,6 @@ def apply_led_correction(rgb: list[int], mode: str = "punchy") -> list[int]:
 def build_gradient_stops(
     colors: list[dict],
     background_color: Optional[dict] = None,
-    max_stops: int = 8,
 ) -> list[dict]:
     """
     Build gradient stops from extracted colors.
@@ -523,10 +522,13 @@ def build_gradient_stops(
     - Interleaved: If background detected, alternates bg → accent → bg for emphasis
     - Island: Creates weighted color bands with soft blending at boundaries
 
+    The number of gradient stops is determined by the pattern:
+    - Interleaved: 3N + 1 stops (where N = number of accent colors from extraction)
+    - Island: Uses all colors from extraction (no additional limits)
+
     Args:
         colors: List of color dicts with 'rgb', 'hsv', 'frequency' keys
         background_color: Optional background color dict for interleaved pattern
-        max_stops: Maximum number of gradient stops to generate
 
     Returns:
         List of gradient stop dicts with 'color' (hex), 'position' (0-1),
@@ -546,11 +548,9 @@ def build_gradient_stops(
             for c in colors
             if tuple(c['rgb']) != bg_rgb
         ]
-
-        # In interleaved mode, max_stops should represent accent capacity (not total stops),
-        # because background consumes half the slots otherwise.
-        max_accents = max_stops
-        accent_colors = accent_colors[:max_accents]
+        # Use all extracted accent colors - extraction already limits to 9 total colors
+        # Each accent needs 3 stops (bg, accent_start, accent_end) + 1 final bg
+        # Total stops = 3N + 1 (e.g., 8 accents = 25 stops)
 
         if not accent_colors:
             # Edge case: only background color, create simple gradient
@@ -572,41 +572,62 @@ def build_gradient_stops(
         else:
             accent_weights = [1.0 / len(accent_colors)] * len(accent_colors)
 
-        # Build pattern: bg, accent1, bg, accent2, bg, ...
+        # Build pattern: bg, accent_start, accent_end, bg, accent_start, accent_end, bg, ...
+        # Each accent gets two stops to create a flat region with defined width
         num_accents = len(accent_colors)
-        total_stops = num_accents * 2 + 1
-        position = 0.0
-        step = 1.0 / (total_stops - 1) if total_stops > 1 else 1.0
-
+        num_sections = num_accents
+        section_width = 1.0 / num_sections
+        
+        # Define flat color width as percentage of section (e.g., 40% color, 60% background blend)
+        color_width_fraction = 0.4  # 40% of section is flat color
+        
         for i, accent in enumerate(accent_colors):
-            # Background before accent
+            section_start = i * section_width
+            section_end = (i + 1) * section_width
+            
+            # Calculate color flat region centered in section
+            color_flat_width = section_width * color_width_fraction
+            color_center = section_start + section_width / 2
+            color_start = color_center - color_flat_width / 2
+            color_end = color_center + color_flat_width / 2
+            
+            # Background at section start
             stops.append(
                 {
                     "color": bg_hex,
-                    "position": round(position, 3),
+                    "position": round(section_start, 3),
                     "type": "background",
                 }
             )
-            position += step
-
-            # Accent color
+            
+            # Accent color start (flat region begins)
             accent_hex = f"#{accent['rgb'][0]:02x}{accent['rgb'][1]:02x}{accent['rgb'][2]:02x}"
             stops.append(
                 {
                     "color": accent_hex,
-                    "position": round(position, 3),
+                    "position": round(color_start, 3),
                     "type": "accent",
                     "weight": round(accent_weights[i], 3),
                 }
             )
-            position += step
+            
+            # Accent color end (flat region ends)
+            stops.append(
+                {
+                    "color": accent_hex,
+                    "position": round(color_end, 3),
+                    "type": "accent",
+                    "weight": round(accent_weights[i], 3),
+                }
+            )
 
         # Final background
         stops.append({"color": bg_hex, "position": 1.0, "type": "background"})
 
     else:
         # Normal weighted gradient (no dominant background)
-        gradient_colors = colors[:max_stops]
+        # Use all extracted colors - extraction already limits to 9 colors
+        gradient_colors = colors
 
         if not gradient_colors:
             return []
@@ -847,7 +868,7 @@ def _extract_gradient_metadata_from_image(
             colors = [c for c in full_colors if tuple(c["rgb"]) != bg_rgb]
 
         # Build gradient stops (led_safe variant - raw colors, no correction)
-        safe_stops = build_gradient_stops(colors, background, max_stops=8)
+        safe_stops = build_gradient_stops(colors, background)
         safe_gradient = build_gradient_string(safe_stops)
 
         # Always extract the most frequent color as background_color (bin-based)
@@ -892,7 +913,7 @@ def _extract_gradient_metadata_from_image(
             }
 
         punchy_stops = build_gradient_stops(
-            punchy_colors, punchy_background, max_stops=8
+            punchy_colors, punchy_background
         )
         punchy_gradient = build_gradient_string(punchy_stops)
         led_punchy_variant = {"gradient": punchy_gradient}
@@ -922,7 +943,7 @@ def _extract_gradient_metadata_from_image(
             }
 
         max_stops = build_gradient_stops(
-            max_colors, max_background, max_stops=8
+            max_colors, max_background
         )
         max_gradient = build_gradient_string(max_stops)
         led_max_variant = {"gradient": max_gradient}

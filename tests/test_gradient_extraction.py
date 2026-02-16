@@ -184,7 +184,7 @@ class TestBuildGradientStops:
         ]
 
         stops = build_gradient_stops(
-            colors, background_color=None, max_stops=8
+            colors, background_color=None
         )
 
         # Island gradient: start + (n-1)*2 pairs + end = 1 + 2*2 + 1 = 6 stops
@@ -203,19 +203,22 @@ class TestBuildGradientStops:
         background = colors[0]
 
         stops = build_gradient_stops(
-            colors, background_color=background, max_stops=8
+            colors, background_color=background
         )
 
-        # Should have alternating pattern: bg, accent, bg, accent, bg
-        assert len(stops) == 5  # 2 accents → 5 stops
+        # New pattern: bg, accent_start, accent_end, bg, accent_start, accent_end, bg
+        # 2 accents → 7 stops (bg + accent_start + accent_end + bg + accent_start + accent_end + bg)
+        assert len(stops) == 7
         assert stops[0]["type"] == "background"
         assert stops[1]["type"] == "accent"
-        assert stops[2]["type"] == "background"
-        assert stops[3]["type"] == "accent"
-        assert stops[4]["type"] == "background"
+        assert stops[2]["type"] == "accent"
+        assert stops[3]["type"] == "background"
+        assert stops[4]["type"] == "accent"
+        assert stops[5]["type"] == "accent"
+        assert stops[6]["type"] == "background"
 
-    def test_respects_max_stops_interleaved(self):
-        """Respect max_stops limit in interleaved mode."""
+    def test_uses_all_extracted_accents_interleaved(self):
+        """Use all extracted accent colors in interleaved mode."""
         colors = [
             {"rgb": [0, 0, 0], "hsv": [0, 0, 0], "frequency": 0.5},
             {"rgb": [255, 0, 0], "hsv": [0, 1, 1], "frequency": 0.1},
@@ -227,17 +230,16 @@ class TestBuildGradientStops:
         background = colors[0]
 
         stops = build_gradient_stops(
-            colors, background_color=background, max_stops=8
+            colors, background_color=background
         )
 
-        # Interleaved mode: bg + accent pairs for each color
-        # Background at start/end + interleaved accents = more stops
-        assert len(stops) >= 8  # At least the interleaved pattern
-        assert len(stops) <= 15  # Upper bound for 5 accents interleaved
+        # 5 accent colors (6 total - 1 background) with flat color regions
+        # Each accent needs 3 stops (bg, start, end), so 5 accents = 16 stops total (3*5 + 1)
+        assert len(stops) == 16  # Exact match: uses all accents from extraction
 
     def test_empty_colors_returns_empty(self):
         """Handle empty color list."""
-        stops = build_gradient_stops([], background_color=None, max_stops=8)
+        stops = build_gradient_stops([], background_color=None)
         assert len(stops) == 0
 
 
