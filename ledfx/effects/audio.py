@@ -472,7 +472,6 @@ class AudioInputSource:
         # The audio callback thread may be waiting to complete, and if it needs
         # any locks, holding self.lock while calling stop() creates a circular wait
         stream_to_close = None
-        resampler_to_clear = None
         delay_queue_to_clear = None
         recovery_timer_to_cancel = None
 
@@ -489,8 +488,8 @@ class AudioInputSource:
                 self._recovery_timer = None
 
             # Clear resampler and delay queue references
+            # Resampler has no cleanup method, just null it for garbage collection
             if self.resampler:
-                resampler_to_clear = self.resampler
                 self.resampler = None
             if self.delay_queue:
                 delay_queue_to_clear = self.delay_queue
@@ -566,9 +565,20 @@ class AudioInputSource:
         # Check for stream errors via status flags
         # status is a sounddevice.CallbackFlags object with input/output overflow/underflow indicators
         if status:
+            # Check for critical errors that indicate device loss or stream failure
+            # These warrant incrementing the error counter
+            has_critical_error = False
             status_str = str(status)
-            # On PrimeReady or any critical error, increment error counter
-            if "primeoutput" in status_str.lower() or len(status_str) > 50:
+            
+            # Check actual CallbackFlags attributes for critical errors
+            # Priming output errors indicate device initialization/connection issues
+            if hasattr(status, 'priming_output') and status.priming_output:
+                has_critical_error = True
+            # Also check for "prime" substring in status string for broader compatibility
+            elif "prime" in status_str.lower():
+                has_critical_error = True
+            
+            if has_critical_error:
                 with self.lock:
                     self._stream_error_count += 1
                     if self._stream_error_count >= self._max_stream_errors:
@@ -582,11 +592,12 @@ class AudioInputSource:
                             daemon=True,
                         ).start()
                         return
-            # Log overflow/underflow only in debug mode to reduce overhead
+            # Log overflow/underflow only in debug mode (non-critical, transient issues)
             elif _LOGGER.isEnabledFor(logging.DEBUG):
-                if "input overflow" in status_str.lower():
+                # Check actual attributes if available
+                if hasattr(status, 'input_overflow') and status.input_overflow:
                     _LOGGER.debug("Audio input overflow detected")
-                if "output underflow" in status_str.lower():
+                if hasattr(status, 'output_underflow') and status.output_underflow:
                     _LOGGER.debug("Audio output underflow detected")
 
         # Check if stream is still active before processing (fast check, no try needed)

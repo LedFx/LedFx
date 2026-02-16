@@ -124,10 +124,11 @@ class TestAudioInputSourceCleanup:
         for i in range(12):
             # Create a mock status with error
             status = Mock()
-            # Use a long string to trigger the len > 50 check as well
+            # Set priming_output attribute to simulate critical error
+            status.priming_output = True
+            # Also set the string representation for compatibility
             status.__str__ = Mock(
                 return_value="PrimeOutputBuffersPartialInvalidBlockSize"
-                + "X" * 40
             )
 
             audio_source._audio_sample_callback(in_data, 733, None, status)
