@@ -191,9 +191,7 @@ class TestBuildGradientStops:
             {"rgb": [0, 0, 255], "hsv": [0.67, 1, 1], "frequency": 0.2},
         ]
 
-        stops = build_gradient_stops(
-            colors, background_color=None
-        )
+        stops = build_gradient_stops(colors, background_color=None)
 
         # Island gradient: start + (n-1)*2 pairs + end = 1 + 2*2 + 1 = 6 stops
         assert len(stops) == 6
@@ -210,9 +208,7 @@ class TestBuildGradientStops:
         ]
         background = colors[0]
 
-        stops = build_gradient_stops(
-            colors, background_color=background
-        )
+        stops = build_gradient_stops(colors, background_color=background)
 
         # New pattern: bg, accent_start, accent_end, bg, accent_start, accent_end, bg
         # 2 accents → 7 stops (bg + accent_start + accent_end + bg + accent_start + accent_end + bg)
@@ -237,13 +233,13 @@ class TestBuildGradientStops:
         ]
         background = colors[0]
 
-        stops = build_gradient_stops(
-            colors, background_color=background
-        )
+        stops = build_gradient_stops(colors, background_color=background)
 
         # 5 accent colors (6 total - 1 background) with flat color regions
         # Each accent needs 3 stops (bg, start, end), so 5 accents = 16 stops total (3*5 + 1)
-        assert len(stops) == 16  # Exact match: uses all accents from extraction
+        assert (
+            len(stops) == 16
+        )  # Exact match: uses all accents from extraction
 
     def test_empty_colors_returns_empty(self):
         """Handle empty color list."""

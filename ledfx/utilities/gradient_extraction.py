@@ -542,12 +542,8 @@ def build_gradient_stops(
     if background_color:
         # Interleaved pattern: bg → accent → bg → accent
         # Remove the background color itself from accent colors
-        bg_rgb = tuple(background_color['rgb'])
-        accent_colors = [
-            c
-            for c in colors
-            if tuple(c['rgb']) != bg_rgb
-        ]
+        bg_rgb = tuple(background_color["rgb"])
+        accent_colors = [c for c in colors if tuple(c["rgb"]) != bg_rgb]
         # Use all extracted accent colors - extraction already limits to 9 total colors
         # Each accent needs 3 stops (bg, accent_start, accent_end) + 1 final bg
         # Total stops = 3N + 1 (e.g., 8 accents = 25 stops)
@@ -577,20 +573,20 @@ def build_gradient_stops(
         num_accents = len(accent_colors)
         num_sections = num_accents
         section_width = 1.0 / num_sections
-        
+
         # Define flat color width as percentage of section (e.g., 40% color, 60% background blend)
         color_width_fraction = 0.4  # 40% of section is flat color
-        
+
         for i, accent in enumerate(accent_colors):
             section_start = i * section_width
             section_end = (i + 1) * section_width
-            
+
             # Calculate color flat region centered in section
             color_flat_width = section_width * color_width_fraction
             color_center = section_start + section_width / 2
             color_start = color_center - color_flat_width / 2
             color_end = color_center + color_flat_width / 2
-            
+
             # Background at section start
             stops.append(
                 {
@@ -599,7 +595,7 @@ def build_gradient_stops(
                     "type": "background",
                 }
             )
-            
+
             # Accent color start (flat region begins)
             accent_hex = f"#{accent['rgb'][0]:02x}{accent['rgb'][1]:02x}{accent['rgb'][2]:02x}"
             stops.append(
@@ -610,7 +606,7 @@ def build_gradient_stops(
                     "weight": round(accent_weights[i], 3),
                 }
             )
-            
+
             # Accent color end (flat region ends)
             stops.append(
                 {
@@ -912,9 +908,7 @@ def _extract_gradient_metadata_from_image(
                 "frequency": background["frequency"],
             }
 
-        punchy_stops = build_gradient_stops(
-            punchy_colors, punchy_background
-        )
+        punchy_stops = build_gradient_stops(punchy_colors, punchy_background)
         punchy_gradient = build_gradient_string(punchy_stops)
         led_punchy_variant = {"gradient": punchy_gradient}
 
@@ -942,9 +936,7 @@ def _extract_gradient_metadata_from_image(
                 "frequency": background["frequency"],
             }
 
-        max_stops = build_gradient_stops(
-            max_colors, max_background
-        )
+        max_stops = build_gradient_stops(max_colors, max_background)
         max_gradient = build_gradient_string(max_stops)
         led_max_variant = {"gradient": max_gradient}
 
