@@ -105,14 +105,20 @@ class TestAudioInputSourceCleanup:
         audio_source._invalidate_caches = Mock()
         audio_source._invoke_callbacks = Mock()
         audio_source.delay_queue = None
+        
+        # Mock threading to prevent actual deactivation thread from running
+        # This allows us to check the error count before it gets reset
+        deactivate_called = []
+        def mock_deactivate_and_schedule():
+            deactivate_called.append(True)
+        
+        audio_source._deactivate_and_schedule_recovery = mock_deactivate_and_schedule
 
         # Create mock audio data
         in_data = np.zeros(733, dtype=np.float32).tobytes()
 
         # Simulate multiple errors to trigger cleanup
-        # Each error increments counter, but successful processing decrements it
-        # So we need enough errors to overcome decrement
-        for i in range(20):
+        for i in range(12):
             # Create a mock status with error
             status = Mock()
             # Use a long string to trigger the len > 50 check as well
@@ -123,8 +129,9 @@ class TestAudioInputSourceCleanup:
 
             audio_source._audio_sample_callback(in_data, 733, None, status)
 
-        # After max errors, stream should be marked for deactivation
-        # We check that the error count increased to trigger threshold
+        # Verify that deactivation was triggered at least once
+        assert len(deactivate_called) > 0
+        # Error count should have reached or exceeded threshold before deactivation
         assert audio_source._stream_error_count >= 10
 
     def test_malformed_data_handling(self, audio_source):
