@@ -99,7 +99,7 @@ class TestAudioInputSourceCleanup:
             "sample_rate": 60,
             "min_volume": 0.2,
         }
-        
+
         # Mock methods to prevent full callback execution after error detection
         audio_source.pre_process_audio = Mock()
         audio_source._invalidate_caches = Mock()
@@ -117,7 +117,8 @@ class TestAudioInputSourceCleanup:
             status = Mock()
             # Use a long string to trigger the len > 50 check as well
             status.__str__ = Mock(
-                return_value="PrimeOutputBuffersPartialInvalidBlockSize" + "X" * 40
+                return_value="PrimeOutputBuffersPartialInvalidBlockSize"
+                + "X" * 40
             )
 
             audio_source._audio_sample_callback(in_data, 733, None, status)
@@ -257,14 +258,14 @@ class TestAudioInputSourceCleanup:
     def test_successful_processing_decrements_error_count(self, audio_source):
         """Test that successful processing decrements error counter"""
         from ledfx.effects.melbank import MIC_RATE
-        
+
         audio_source._audio_stream_active = True
         audio_source._stream_error_count = 5
         audio_source.resampler = Mock()
-        
+
         # Calculate expected output sample length
         out_sample_len = MIC_RATE // 60  # 30000 // 60 = 500
-        
+
         # Return correct size to ensure successful processing
         audio_source.resampler.process = Mock(
             return_value=np.zeros(out_sample_len, dtype=np.float32)
@@ -274,7 +275,9 @@ class TestAudioInputSourceCleanup:
             "min_volume": 0.2,
         }
         audio_source.delay_queue = None
-        audio_source._raw_audio_sample = np.zeros(out_sample_len, dtype=np.float32)
+        audio_source._raw_audio_sample = np.zeros(
+            out_sample_len, dtype=np.float32
+        )
 
         # Mock required methods
         audio_source.pre_process_audio = Mock()
@@ -282,7 +285,9 @@ class TestAudioInputSourceCleanup:
         audio_source._invoke_callbacks = Mock()
 
         # Create audio data with different size to trigger resampling
-        in_sample_len = 735  # Different from out_sample_len to force resampling
+        in_sample_len = (
+            735  # Different from out_sample_len to force resampling
+        )
         in_data = np.zeros(in_sample_len, dtype=np.float32).tobytes()
 
         # Call callback successfully - should trigger resampling then success
