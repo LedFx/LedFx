@@ -50,6 +50,15 @@ Tested on Ubuntu 20.10 64-bit, Raspberry Pi OS (32 and 64-Bit)
 
 ![image](/_static/audio/direct_audio_linux_cli_in.png)
 
+**Automatic Recovery**
+
+LedFx includes automatic recovery for audio device disconnections. If you restart Pipewire (e.g., `systemctl --user restart pipewire`), LedFx will:
+1. Detect the stream error and prevent memory leaks
+2. Automatically attempt to reconnect every 10 seconds (up to 5 attempts)
+3. Resume normal operation once the audio device is available again
+
+No manual intervention should be required after audio system restarts.
+
 ## macOS
 
 Tested on macOS Catalina 10.15.7
