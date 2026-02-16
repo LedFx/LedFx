@@ -569,15 +569,15 @@ class AudioInputSource:
             # These warrant incrementing the error counter
             has_critical_error = False
             status_str = str(status)
-            
+
             # Check actual CallbackFlags attributes for critical errors
             # Priming output errors indicate device initialization/connection issues
-            if hasattr(status, 'priming_output') and status.priming_output:
+            if hasattr(status, "priming_output") and status.priming_output:
                 has_critical_error = True
             # Also check for "prime" substring in status string for broader compatibility
             elif "prime" in status_str.lower():
                 has_critical_error = True
-            
+
             if has_critical_error:
                 with self.lock:
                     self._stream_error_count += 1
@@ -595,9 +595,12 @@ class AudioInputSource:
             # Log overflow/underflow only in debug mode (non-critical, transient issues)
             elif _LOGGER.isEnabledFor(logging.DEBUG):
                 # Check actual attributes if available
-                if hasattr(status, 'input_overflow') and status.input_overflow:
+                if hasattr(status, "input_overflow") and status.input_overflow:
                     _LOGGER.debug("Audio input overflow detected")
-                if hasattr(status, 'output_underflow') and status.output_underflow:
+                if (
+                    hasattr(status, "output_underflow")
+                    and status.output_underflow
+                ):
                     _LOGGER.debug("Audio output underflow detected")
 
         # Check if stream is still active before processing (fast check, no try needed)
