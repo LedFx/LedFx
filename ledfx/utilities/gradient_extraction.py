@@ -190,10 +190,16 @@ def extract_dominant_colors(
             r, g, b = (c / 255.0 for c in avg_color[:3])
             h, s, v = colorsys.rgb_to_hsv(r, g, b)
             return [
-                {"rgb": list(avg_color[:3]), "hsv": [h, s, v], "frequency": 1.0}
+                {
+                    "rgb": list(avg_color[:3]),
+                    "hsv": [h, s, v],
+                    "frequency": 1.0,
+                }
             ]
         except Exception:
-            _LOGGER.warning("Failed to extract average color fallback", exc_info=True)
+            _LOGGER.warning(
+                "Failed to extract average color fallback", exc_info=True
+            )
             # Return safe default (black) if even fallback fails
             return [
                 {"rgb": [0, 0, 0], "hsv": [0.0, 0.0, 0.0], "frequency": 1.0}
