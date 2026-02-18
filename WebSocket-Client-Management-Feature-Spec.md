@@ -170,6 +170,8 @@ Use cases:
 #### Description
 Enable clients to broadcast messages to other connected clients through the server, with flexible targeting options.
 
+**Security Note:** All broadcasts must use server-derived sender identity to prevent impersonation. See "Sender Identity and Security Model" section below for details.
+
 #### Use Cases
 
 1. **Visualizer Sync** - Controller broadcasts preset change to all visualizer displays
@@ -203,9 +205,144 @@ Enable clients to broadcast messages to other connected clients through the serv
   - Type value must be a valid client type
   - If no targets match filters, request fails with error
 
+#### Target Specification Validation Rules
+
+**Security Invariant:** Targeting must be explicit. Invalid or ambiguous target specifications fail closed (broadcast rejected, not sent to unintended recipients).
+
+**Common Pitfall:** If `mode="type"` with missing/empty `value`, naive implementations might match clients with `type=None`, causing unintended targeting of all clients without metadata.
+
+**Required Validation:**
+
+1. **Mode: `"all"`**
+   - No additional fields required
+   - Ignore `value`, `names`, or `uuids` if present
+   - Always valid
+
+2. **Mode: `"type"`**
+   - **MUST** include `value` field
+   - `value` **MUST** be a non-empty string
+   - `value` **MUST** be a valid client type from the enum
+   - Reject if `value` is missing, empty string, or null
+   - **Error**: `"Target mode 'type' requires a non-empty 'value' field"`
+
+3. **Mode: `"names"`**
+   - **MUST** include `names` field
+   - `names` **MUST** be a non-empty list
+   - Each name **MUST** be a non-empty string
+   - Reject if `names` is missing, empty list, or contains empty strings
+   - **Error**: `"Target mode 'names' requires a non-empty 'names' list"`
+
+4. **Mode: `"uuids"`**
+   - **MUST** include `uuids` field
+   - `uuids` **MUST** be a non-empty list
+   - Each UUID **MUST** be a non-empty string
+   - Reject if `uuids` is missing, empty list, or contains empty strings
+   - **Error**: `"Target mode 'uuids' requires a non-empty 'uuids' list"`
+
+---
+
+**Example Requests:**
+
+✅ **Valid Requests:**
+```javascript
+// Mode: all
+{ target: { mode: "all" } }
+
+// Mode: type
+{ target: { mode: "type", value: "visualiser" } }
+
+// Mode: names
+{ target: { mode: "names", names: ["Display 1", "Display 2"] } }
+
+// Mode: uuids
+{ target: { mode: "uuids", uuids: ["abc-123", "def-456"] } }
+```
+
+❌ **Invalid Requests (Must Reject with 400):**
+```javascript
+// Missing value for type mode
+{ target: { mode: "type" } }
+// Error: "Target mode 'type' requires a non-empty 'value' field"
+
+// Empty value for type mode
+{ target: { mode: "type", value: "" } }
+// Error: "Target mode 'type' requires a non-empty 'value' field"
+
+// Null value for type mode
+{ target: { mode: "type", value: null } }
+// Error: "Target mode 'type' requires a non-empty 'value' field"
+
+// Missing names for names mode
+{ target: { mode: "names" } }
+// Error: "Target mode 'names' requires a non-empty 'names' list"
+
+// Empty names list
+{ target: { mode: "names", names: [] } }
+// Error: "Target mode 'names' requires a non-empty 'names' list"
+
+// Names list with empty string
+{ target: { mode: "names", names: ["Display 1", ""] } }
+// Error: "Target mode 'names' requires a non-empty 'names' list"
+
+// Missing uuids for uuids mode
+{ target: { mode: "uuids" } }
+// Error: "Target mode 'uuids' requires a non-empty 'uuids' list"
+
+// Empty uuids list
+{ target: { mode: "uuids", uuids: [] } }
+// Error: "Target mode 'uuids' requires a non-empty 'uuids' list"
+```
+
+---
+
+**Test Cases:**
+
+- ✅ `mode="all"` → broadcasts to all connected clients
+- ✅ `mode="type", value="visualiser"` → broadcasts to clients with `type="visualiser"`
+- ✅ `mode="type", value="unknown"` → broadcasts to clients with `type="unknown"`
+- ❌ `mode="type", value=""` → rejected (400 error)
+- ❌ `mode="type", value=null` → rejected (400 error)
+- ❌ `mode="type"` (missing value) → rejected (400 error)
+- ✅ `mode="type", value="display"` with no matching clients → rejected (no targets matched)
+- ✅ `mode="type", value="display"` with client `type=None` → client NOT targeted (explicit type required)
+- ✅ `mode="names", names=["Client-1"]` → broadcasts to client named "Client-1"
+- ❌ `mode="names", names=[]` → rejected (400 error)
+- ❌ `mode="names"` (missing names) → rejected (400 error)
+- ✅ `mode="uuids", uuids=["abc-123"]` → broadcasts to client with uuid "abc-123"
+- ❌ `mode="uuids", uuids=[]` → rejected (400 error)
+- ❌ `mode="uuids"` (missing uuids) → rejected (400 error)
+
+**Client Matching Behavior:**
+
+When `mode="type"`, only clients with explicitly set `type` metadata are considered:
+- Client with `type="visualiser"` → matches filter `value="visualiser"`
+- Client with `type="unknown"` → matches filter `value="unknown"`  
+- Client with `type=None` (no metadata set) → does NOT match any type filter
+- Client with `type=""` (empty string, shouldn't happen) → does NOT match any type filter
+
+This prevents accidental broadcasts to clients that haven't registered metadata.
+
 #### API Surface
 
-**REST API:**
+**WebSocket API (Recommended):**
+
+```javascript
+// Client sends via WebSocket (sender identity derived from connection)
+{
+  type: "broadcast",
+  broadcast_type: "visualiser_control",
+  target: {
+    mode: "type",
+    value: "display"
+  },
+  payload: {
+    command: "set_brightness",
+    value: 80
+  }
+}
+```
+
+**REST API (Alternative):**
 
 ```http
 POST /api/clients
@@ -214,7 +351,6 @@ Content-Type: application/json
 {
   "action": "broadcast",
   "broadcast_type": "visualiser_control",
-  "sender_id": "uuid-of-sender",
   "target": {
     "mode": "type",
     "value": "display"
@@ -225,6 +361,12 @@ Content-Type: application/json
   }
 }
 ```
+
+**Security Notes:** 
+- No `sender_id` field - server derives sender identity from the authenticated request
+- **Restricted to localhost by default** (127.0.0.1, ::1) to prevent LAN-wide abuse
+- Remote access requires explicit `allow_remote_broadcast: true` configuration
+- See "Access Control for Broadcast Endpoints" section for details
 
 **Response:**
 ```json
@@ -251,13 +393,15 @@ Content-Type: application/json
 
 #### Event Flow
 
-1. Client sends broadcast request to REST API
-2. Server validates schema and payload size
-3. Server filters target clients based on targeting mode
-4. If no targets match, return error
-5. Server fires `ClientBroadcastEvent` with enriched payload
-6. WebSocket connections subscribed to events receive the broadcast
-7. Clients filter by `target_uuids` to determine if message is for them
+1. Client sends broadcast request (via WebSocket or REST API)
+2. Server derives sender identity from authenticated connection (never trusts client-provided sender_id)
+3. Server validates schema and payload size
+4. Server filters target clients based on targeting mode
+5. If no targets match, return error
+6. Server fires `ClientBroadcastEvent` with server-derived sender fields
+7. Server logs broadcast with audit trail (request_id, sender, targets, type)
+8. WebSocket connections subscribed to events receive the broadcast
+9. Clients filter by `target_uuids` to determine if message is for them
 
 **Event Payload:**
 
@@ -265,16 +409,172 @@ Content-Type: application/json
 {
   event_type: "client_broadcast",
   broadcast_type: "visualiser_control",
-  sender_id: "uuid-of-sender",
-  sender_name: "Living Room Controller",
+  broadcast_id: "b-abc123def456",           // Server-generated unique ID
+  sender_uuid: "uuid-of-sender",            // Server-derived (trustworthy)
+  sender_name: "Living Room Controller",    // From metadata (may be null)
+  sender_type: "controller",                // From metadata (may be "unknown")
   target_uuids: ["uuid-1", "uuid-2", "uuid-3"],
   payload: {
     command: "set_brightness",
-    value: 80,
-    // Note: target_uuids is injected by server for client-side filtering
+    value: 80
   }
 }
 ```
+
+**Security Guarantee:** All sender fields (`sender_uuid`, `sender_name`, `sender_type`) are populated by the server based on the authenticated connection, never from client-provided data.
+
+---
+
+### Sender Identity and Security Model
+
+#### The Problem: Client-Provided Sender Identity is Insecure
+
+The current PR implementation accepts `sender_id` from the client request body. **This is a critical security vulnerability** because:
+
+1. **Impersonation Attack**: Any client can claim to be any other client by sending a different UUID
+   - Malicious client can send broadcasts appearing to come from a trusted admin client
+   - No technical enforcement prevents identity spoofing
+
+2. **Misleading Audit Logs**: Logs record the claimed `sender_id`, not the actual caller
+   - Debugging becomes impossible when logs are untrustworthy
+   - Security incidents cannot be traced to real actors
+
+3. **Social Engineering**: Users trust broadcasts from known devices
+   - Attacker broadcasts malicious commands appearing to come from "Living Room Display"
+   - Users may follow instructions thinking they're from a legitimate source
+
+4. **No Accountability**: Without verified sender identity, there's no way to:
+   - Rate-limit abusive clients
+   - Block misbehaving clients
+   - Audit who did what
+
+#### Security Invariant
+
+**Sender identity MUST be derived from the authenticated connection, NEVER from client-provided data.**
+
+The server is the sole source of truth for client identity. Any `sender_id` field in a client request MUST be ignored or rejected with an error.
+
+#### Implementation Approaches
+
+**Option A: WebSocket-Only Broadcasts (Recommended)** ✅
+
+Add new WebSocket message type: `{"type": "broadcast", ...}`
+
+**How it works:**
+- Client sends broadcast message via its existing WebSocket connection
+- Server uses the connection's UUID (already authenticated) as sender identity
+- Server looks up sender metadata (name, type) from class-level storage
+- No REST endpoint needed for broadcasts
+
+**Advantages:**
+- Inherently secure: sender = authenticated WebSocket connection
+- Consistent with WebSocket-first architecture
+- Simpler implementation (no REST auth to manage)
+- Real-time bidirectional communication already established
+
+**Sender Identity Resolution:**
+```python
+# In WebSocket handler
+async def handle_broadcast(self, data):
+    sender_uuid = self.client_id  # From WebSocket connection instance
+    sender_metadata = await self.get_all_clients_metadata()
+    sender_name = sender_metadata.get(sender_uuid, {}).get("name")
+    sender_type = sender_metadata.get(sender_uuid, {}).get("type", "unknown")
+    # sender_uuid, sender_name, sender_type are now server-derived and trustworthy
+```
+
+---
+
+**Option B: REST API Broadcasts (If Needed)**
+
+If REST broadcasts are required (e.g., for external integrations without WebSocket connections):
+
+**How it works:**
+- Client sends `POST /api/clients` with broadcast action (NO `sender_id` field)
+- Server uses existing REST authentication to identify the caller
+- Server maps authenticated session/token to a sender identity
+- If unauthenticated (current state), use special system sender
+
+**Note:** This design works within LedFx's existing authentication model without requiring new authentication mechanisms.
+
+**Sender Identity Resolution:**
+```python
+# In REST endpoint handler
+async def post(self, request):
+    # Use existing LedFx authentication
+    # (Exact mechanism depends on existing auth implementation)
+    
+    # If REST API uses session cookies:
+    session = await get_session(request)
+    sender_uuid = session.get("client_uuid")  # or create one
+    
+    # If REST API uses tokens:
+    token = request.headers.get("Authorization")
+    sender_uuid = await validate_token_and_get_uuid(token)
+    
+    # If no auth available (publicly accessible endpoint):
+    sender_uuid = "system"  # Special system sender
+    sender_name = "LedFx System"
+    sender_type = "api"
+    
+    # Never trust request.json().get("sender_id")
+```
+
+**Challenges:**
+- REST requests may not have an associated WebSocket connection UUID
+- Need to define how external API clients get a persistent identity
+- More complex than WebSocket-only approach
+
+**Recommendation:** If existing REST API authentication doesn't provide a clear client identity mapping, prefer Option A (WebSocket-only broadcasts).
+
+#### Event Payload Identity Fields
+
+All `ClientBroadcastEvent` payloads MUST include server-derived sender fields:
+
+```python
+{
+    "sender_uuid": str,          # Server-derived, never from client
+    "sender_name": str | None,   # From metadata, fallback to "Client-{uuid[:8]}"
+    "sender_type": str,          # From metadata, default "unknown"
+    "sender_ip": str | None,     # From connection, useful for debugging
+}
+```
+
+**Fallback Behavior:**
+- If metadata not set: `sender_name = f"Client-{sender_uuid[:8]}"`
+- If type not set: `sender_type = "unknown"`
+- If metadata lookup fails: Log error, use UUID-based fallback
+
+#### Audit Logging Requirements
+
+Every broadcast request MUST be logged with:
+
+```python
+_LOGGER.info(
+    f"Broadcast request_id={broadcast_id} "
+    f"from sender_uuid={sender_uuid} ({sender_name}, {sender_type}) "
+    f"ip={sender_ip} "
+    f"to targets={len(target_uuids)} ({target_mode}:{target_value}) "
+    f"type={broadcast_type} "
+    f"payload_size={len(json.dumps(payload))} bytes"
+)
+```
+
+**Log Fields:**
+- `request_id` / `broadcast_id`: Unique identifier for correlation
+- `sender_uuid`: Server-derived sender identity (trustworthy)
+- `sender_name`, `sender_type`: Sender metadata (if available)
+- `sender_ip`: Connection IP address
+- `target_mode`, `target_value`: How targets were selected
+- `targets`: Number of matched target clients
+- `broadcast_type`: Envelope type
+- `payload_size`: Byte size of payload (not full payload, for privacy)
+- `timestamp`: Implicit in log entry
+
+**Security Logging:**
+- Failed broadcasts: Log with `_LOGGER.warning()` (client error)
+- Invalid sender resolution: Log with `_LOGGER.error()` (system error)
+- Suspicious patterns: High-frequency broadcasts from single sender
 
 ---
 
@@ -294,6 +594,143 @@ Content-Type: application/json
 - **Event Ordering**: Events must fire only after related state changes are persisted
 
 ### Security
+
+#### Access Control for Broadcast Endpoints
+
+**Threat Model:**
+
+If LedFx binds to `0.0.0.0` for LAN usage (common deployment pattern), an unauthenticated REST broadcast endpoint (`POST /api/clients`) becomes a **LAN-wide message injection surface**:
+
+- Any device on the network can send broadcasts
+- Malicious actor can spam broadcasts to disrupt service or confuse users
+- Social engineering attacks via fake broadcasts from spoofed senders
+- Without authentication, no accountability or blocking mechanism
+
+**Design Decision: Localhost-Only by Default**
+
+Restrict `POST /api/clients` (broadcast action) to **localhost connections only** by default:
+
+- **Allowed sources**: `127.0.0.1` (IPv4 loopback), `::1` (IPv6 loopback)
+- **Rejected sources**: All non-loopback addresses (LAN, WAN)
+- **Opt-in widening**: Explicit configuration required to allow remote broadcasts
+
+**Rationale:**
+- WebSocket broadcasts (from authenticated connections) remain the primary use case
+- REST broadcasts are for local scripts/automation, not remote clients
+- Remote clients should use WebSocket connections for broadcasts
+- Defense in depth: even if sender identity is secure, limit attack surface
+
+---
+
+**Acceptance Criteria:**
+
+1. **Loopback Requests Allowed:**
+   ```http
+   POST http://127.0.0.1:8888/api/clients  # ✅ Allowed
+   POST http://[::1]:8888/api/clients       # ✅ Allowed
+   ```
+
+2. **Non-Loopback Requests Rejected:**
+   ```http
+   POST http://192.168.1.100:8888/api/clients  # ❌ Rejected with 403
+   ```
+   
+   **Error Response:**
+   ```json
+   {
+     "status": "failed",
+     "message": "Remote broadcast requests are not allowed. Broadcasts must originate from localhost (127.0.0.1 or ::1) or use WebSocket connections. To enable remote REST broadcasts, set 'allow_remote_broadcast: true' in configuration.",
+     "type": "error"
+   }
+   ```
+   
+   **Logging:**
+   ```python
+   _LOGGER.warning(
+       f"Rejected remote broadcast request from {client_ip} "
+       f"(allow_remote_broadcast=false)"
+   )
+   ```
+
+3. **Reverse Proxy Behavior:**
+   
+   When LedFx runs behind a reverse proxy (nginx, Caddy, Apache), all requests appear to come from the proxy's IP (often `127.0.0.1`).
+   
+   **Default Behavior (Secure):**
+   - Do NOT trust `X-Forwarded-For` or `X-Real-IP` headers by default
+   - Use direct connection IP only
+   - If proxy is on localhost, all proxied requests appear as localhost (allowed)
+   
+   **Proxy Configuration (Opt-In):**
+   - If `trusted_proxies` is configured, trust forwarded headers from those IPs only
+   - Extract real client IP from `X-Forwarded-For` header
+   - Apply localhost restriction to real client IP
+   
+   **Example:**
+   ```yaml
+   # config.yaml
+   allow_remote_broadcast: false        # Default: localhost only
+   trusted_proxies:                     # Optional: trust these proxies
+     - "127.0.0.1"                      # Local nginx
+     - "10.0.0.5"                       # Trusted internal proxy
+   ```
+   
+   **Implementation Pseudocode:**
+   ```python
+   def get_client_ip(request):
+       peer_ip = request.transport.get_extra_info('peername')[0]
+       
+       # If trusted_proxies configured and peer is trusted
+       if peer_ip in config.get('trusted_proxies', []):
+           forwarded_for = request.headers.get('X-Forwarded-For')
+           if forwarded_for:
+               # Use first IP in chain (real client)
+               return forwarded_for.split(',')[0].strip()
+       
+       return peer_ip
+   
+   def is_localhost(ip):
+       return ip in ('127.0.0.1', '::1', 'localhost')
+   
+   async def post(self, request):
+       action = data.get('action')
+       if action == 'broadcast':
+           client_ip = get_client_ip(request)
+           
+           if not is_localhost(client_ip):
+               if not self._ledfx.config.get('allow_remote_broadcast', False):
+                   _LOGGER.warning(
+                       f"Rejected remote broadcast from {client_ip}"
+                   )
+                   return await self.invalid_request(
+                       "Remote broadcast requests are not allowed. "
+                       "Broadcasts must originate from localhost or use WebSocket connections."
+                   )
+   ```
+
+---
+
+**Configuration Reference:**
+
+| Config Key | Type | Default | Description |
+|------------|------|---------|-------------|
+| `allow_remote_broadcast` | Boolean | `false` | Allow REST broadcast requests from non-localhost IPs |
+| `trusted_proxies` | List[String] | `[]` | IP addresses of trusted reverse proxies (enables X-Forwarded-For parsing) |
+
+**Security Implications:**
+- Setting `allow_remote_broadcast: true` exposes broadcast endpoint to LAN without authentication
+- Use `trusted_proxies` only in controlled environments where proxy is trusted
+- Misconfigured `trusted_proxies` can allow IP spoofing via forged X-Forwarded-For headers
+
+**Recommended Additional Mitigations:**
+- **Rate Limiting**: Implement per-IP rate limits for broadcast requests (e.g., 10 requests/minute)
+- **Firewall Rules**: Use OS-level firewall to restrict LedFx port to localhost only if remote broadcasts not needed
+
+For this feature, we focus on **localhost restriction** as the primary defense, working within existing authentication constraints. Rate limiting should be addressed in separate enhancements.
+
+---
+
+#### General Security Requirements
 
 - **Rate Limiting**: Consider rate limiting for:
   - Client metadata updates (prevent rapid name change spam)
@@ -477,6 +914,50 @@ client_types:
 - Sender receives ACK events
 - More complex, but enables reliable protocols
 - Can add later if mission-critical broadcasts emerge
+
+---
+
+### 6. Broadcast Sender Identity Method
+
+**Question**: Should broadcasts be WebSocket-only or also support REST API?
+
+**Current Design Concern:** REST API broadcasts require clear sender identity derivation without adding new authentication.
+
+**Option A - WebSocket-Only Broadcasts:** ✅ **Current Intent**
+```javascript
+// Client sends via WebSocket
+{ type: "broadcast", broadcast_type: "...", target: {...}, payload: {...} }
+```
+- **Pros**: 
+  - Sender identity = WebSocket connection UUID (already authenticated)
+  - No new authentication needed
+  - Consistent with WebSocket-first architecture
+  - Simpler, more secure
+- **Cons**: 
+  - External API clients without WebSocket connections cannot broadcast
+  - Requires WebSocket support in all broadcasting clients
+- **Rationale**: Most LedFx clients (web UI, mobile apps) maintain WebSocket connections. External scripts can connect via WebSocket if they need to broadcast.
+
+**Option B - Support Both WebSocket and REST:**
+```http
+POST /api/clients  # REST broadcast endpoint
+```
+- **Pros**: 
+  - More flexible for external integrations
+  - Scripts can broadcast without maintaining WebSocket connection
+- **Cons**: 
+  - Must derive sender identity from REST authentication
+  - More complex if REST API lacks strong client identity
+  - Risk of "system" sender being overused
+  - **Security concern**: Creates LAN-wide attack surface if LedFx binds to 0.0.0.0
+- **Implementation**: 
+  - Use existing REST auth to map request → sender UUID, fallback to special "system" sender if unauthenticated
+  - **Restrict to localhost by default** (127.0.0.1, ::1) - see "Access Control for Broadcast Endpoints" in Security section
+  - Require explicit `allow_remote_broadcast: true` config to enable remote access
+
+**Decision Needed Before Implementation**: 
+1. Confirm whether WebSocket-only is acceptable, or if REST broadcasts are required for existing integrations
+2. If REST is needed, confirm localhost-only restriction with opt-in remote access is acceptable
 
 ---
 
