@@ -31,6 +31,30 @@ This document outlines the enhancement of LedFx's WebSocket connection system to
 
 ---
 
+## WebSocket-Centric Architecture (v1)
+
+**Design Philosophy:** This feature enhancement is built on LedFx's WebSocket-first architecture. All client-to-client broadcasting in v1 originates from WebSocket connections.
+
+**Why WebSocket-Originated Broadcasts:**
+
+1. **Verified Sender Identity** - Sender UUID is derived directly from the authenticated WebSocket connection, eliminating spoofing risks
+2. **Architectural Consistency** - Matches LedFx's existing event-driven, real-time communication model
+3. **Simplified Authentication** - No additional REST authentication layer needed; WebSocket connections are already authenticated
+4. **Bidirectional Communication** - Clients can send broadcasts and receive responses over the same connection
+
+**REST Broadcast Endpoint (Optional):**
+
+A REST broadcast endpoint (`POST /api/clients`) is **optional** for v1 and should only be implemented if a documented integration use case requires it (e.g., external automation scripts that cannot maintain WebSocket connections).
+
+If implemented, REST broadcasts MUST:
+- Be restricted to localhost (127.0.0.1, ::1) by default
+- Require explicit `allow_remote_broadcast: true` configuration to enable remote access
+- Use a special "system" sender identity for unauthenticated requests
+
+**v1 Scope:** WebSocket-originated broadcasts are the primary interface. REST broadcasts are advanced/optional features for edge cases only.
+
+---
+
 ## Feature Requirements
 
 ### Feature 1: Persistent Client Metadata
@@ -324,7 +348,7 @@ This prevents accidental broadcasts to clients that haven't registered metadata.
 
 #### API Surface
 
-**WebSocket API (Recommended):**
+**WebSocket API (Primary Interface for v1):**
 
 ```javascript
 // Client sends via WebSocket (sender identity derived from connection)
@@ -342,7 +366,9 @@ This prevents accidental broadcasts to clients that haven't registered metadata.
 }
 ```
 
-**REST API (Alternative):**
+**REST API (Optional / Advanced - Not Required for v1 Core UX):**
+
+_Note: REST broadcasts are optional for v1 and should only be implemented if a documented integration use case exists. Most clients (web UI, mobile apps) maintain WebSocket connections and should use the WebSocket broadcast API above._
 
 ```http
 POST /api/clients
@@ -362,11 +388,13 @@ Content-Type: application/json
 }
 ```
 
-**Security Notes:** 
-- No `sender_id` field - server derives sender identity from the authenticated request
+**Important Notes:** 
+- No `sender_id` field - server derives sender identity from the request context
 - **Restricted to localhost by default** (127.0.0.1, ::1) to prevent LAN-wide abuse
 - Remote access requires explicit `allow_remote_broadcast: true` configuration
+- If unauthenticated, uses special "system" sender identity
 - See "Access Control for Broadcast Endpoints" section for details
+- **Any `sender_id` field in the request body is rejected or ignored**
 
 **Response:**
 ```json
@@ -450,9 +478,14 @@ The current PR implementation accepts `sender_id` from the client request body. 
 
 #### Security Invariant
 
-**Sender identity MUST be derived from the authenticated connection, NEVER from client-provided data.**
+**Sender identity MUST be derived from the authenticated WebSocket connection, NEVER from client-provided data.**
 
-The server is the sole source of truth for client identity. Any `sender_id` field in a client request MUST be ignored or rejected with an error.
+The server is the sole source of truth for client identity:
+- For WebSocket broadcasts: `sender_uuid` comes from the WebSocket connection instance (`self.client_id`)
+- For REST broadcasts (if implemented): Server derives identity from request context or uses "system" sender
+- Any `sender_id` field in a client request body MUST be rejected with an error (do not silently ignore)
+
+**Critical:** `sender_uuid` is ALWAYS server-derived from the WebSocket connection. Client-provided sender identity fields are security vulnerabilities and must not be accepted.
 
 #### Implementation Approaches
 
@@ -615,10 +648,12 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
 - **Opt-in widening**: Explicit configuration required to allow remote broadcasts
 
 **Rationale:**
-- WebSocket broadcasts (from authenticated connections) remain the primary use case
-- REST broadcasts are for local scripts/automation, not remote clients
-- Remote clients should use WebSocket connections for broadcasts
+- WebSocket broadcasts (from authenticated connections) are the primary v1 interface
+- REST broadcasts are optional and intended only for local scripts/automation that cannot maintain WebSocket connections
+- Remote clients should use WebSocket connections for broadcasts (web UI, mobile apps, API clients)
 - Defense in depth: even if sender identity is secure, limit attack surface
+
+**Important:** WebSocket broadcasts are unaffected by this localhost restriction because they are inherently tied to authenticated WebSocket connections. Localhost restriction applies only to the optional REST broadcast endpoint. Clients broadcasting via WebSocket can be on any IP address (LAN, WAN) as long as they have an authenticated WebSocket connection.
 
 ---
 
@@ -726,7 +761,9 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
 - **Rate Limiting**: Implement per-IP rate limits for broadcast requests (e.g., 10 requests/minute)
 - **Firewall Rules**: Use OS-level firewall to restrict LedFx port to localhost only if remote broadcasts not needed
 
-For this feature, we focus on **localhost restriction** as the primary defense, working within existing authentication constraints. Rate limiting should be addressed in separate enhancements.
+For this feature, we focus on **localhost restriction** as the primary defense for the optional REST broadcast endpoint, working within existing authentication constraints. Rate limiting should be addressed in separate enhancements.
+
+**Clarification:** The localhost restriction applies only to REST broadcasts (`POST /api/clients`). It does NOT apply to WebSocket broadcasts, which are the primary v1 interface and rely on WebSocket connection authentication. REST broadcasts are not required for core UX and are disabled by default (localhost-only).
 
 ---
 
@@ -994,11 +1031,12 @@ This feature will be considered successfully implemented when:
 - Update `GET /api/clients` to return metadata
 - Fire `ClientsUpdatedEvent` on metadata changes
 
-### Phase 3: Broadcasting (Advanced Feature)
-- Implement `POST /api/clients` broadcast action
+### Phase 3: Broadcasting (Core Feature)
+- Implement WebSocket `broadcast` message handler (primary interface)
 - Implement target filtering for all modes
 - Fire `ClientBroadcastEvent` with proper routing
 - Add payload validation and size limits
+- (Optional) Implement `POST /api/clients` REST broadcast action with localhost restriction
 
 ### Phase 4: Testing & Documentation
 - Write comprehensive unit tests
@@ -1024,6 +1062,14 @@ The following are explicitly **not** included in this feature:
 - ❌ Rate limiting (should be added separately if needed)
 - ❌ Client permissions/roles system
 - ❌ Broadcast encryption or signing
+
+### Out of Scope (v1 Specifically)
+
+The following are **not goals for v1** and should only be considered if specific use cases emerge:
+
+- ❌ Remote REST broadcasts (non-localhost) - WebSocket broadcasts are the primary interface
+- ❌ Unauthenticated REST broadcast support - If REST broadcasts are implemented, unauthenticated requests use "system" sender only
+- ❌ REST broadcast as primary interface - WebSocket broadcasts are primary; REST is optional/advanced only
 
 These could be considered for future enhancements if use cases emerge.
 
