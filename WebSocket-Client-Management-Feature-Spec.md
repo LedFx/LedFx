@@ -340,7 +340,7 @@ Enable clients to broadcast messages to other connected clients through the serv
 
 When `mode="type"`, only clients with explicitly set `type` metadata are considered:
 - Client with `type="visualiser"` → matches filter `value="visualiser"`
-- Client with `type="unknown"` → matches filter `value="unknown"`  
+- Client with `type="unknown"` → matches filter `value="unknown"`
 - Client with `type=None` (no metadata set) → does NOT match any type filter
 - Client with `type=""` (empty string, shouldn't happen) → does NOT match any type filter
 
@@ -536,20 +536,20 @@ If REST broadcasts are required (e.g., for external integrations without WebSock
 async def post(self, request):
     # Use existing LedFx authentication
     # (Exact mechanism depends on existing auth implementation)
-    
+
     # If REST API uses session cookies:
     session = await get_session(request)
     sender_uuid = session.get("client_uuid")  # or create one
-    
+
     # If REST API uses tokens:
     token = request.headers.get("Authorization")
     sender_uuid = await validate_token_and_get_uuid(token)
-    
+
     # If no auth available (publicly accessible endpoint):
     sender_uuid = "system"  # Special system sender
     sender_name = "LedFx System"
     sender_type = "api"
-    
+
     # Never trust request.json().get("sender_id")
 ```
 
@@ -669,7 +669,7 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
    ```http
    POST http://192.168.1.100:8888/api/clients  # ❌ Rejected with 403
    ```
-   
+
    **Error Response:**
    ```json
    {
@@ -678,7 +678,7 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
      "type": "error"
    }
    ```
-   
+
    **Logging:**
    ```python
    _LOGGER.warning(
@@ -688,19 +688,19 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
    ```
 
 3. **Reverse Proxy Behavior:**
-   
+
    When LedFx runs behind a reverse proxy (nginx, Caddy, Apache), all requests appear to come from the proxy's IP (often `127.0.0.1`).
-   
+
    **Default Behavior (Secure):**
    - Do NOT trust `X-Forwarded-For` or `X-Real-IP` headers by default
    - Use direct connection IP only
    - If proxy is on localhost, all proxied requests appear as localhost (allowed)
-   
+
    **Proxy Configuration (Opt-In):**
    - If `trusted_proxies` is configured, trust forwarded headers from those IPs only
    - Extract real client IP from `X-Forwarded-For` header
    - Apply localhost restriction to real client IP
-   
+
    **Example:**
    ```yaml
    # config.yaml
@@ -709,29 +709,29 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
      - "127.0.0.1"                      # Local nginx
      - "10.0.0.5"                       # Trusted internal proxy
    ```
-   
+
    **Implementation Pseudocode:**
    ```python
    def get_client_ip(request):
        peer_ip = request.transport.get_extra_info('peername')[0]
-       
+
        # If trusted_proxies configured and peer is trusted
        if peer_ip in config.get('trusted_proxies', []):
            forwarded_for = request.headers.get('X-Forwarded-For')
            if forwarded_for:
                # Use first IP in chain (real client)
                return forwarded_for.split(',')[0].strip()
-       
+
        return peer_ip
-   
+
    def is_localhost(ip):
        return ip in ('127.0.0.1', '::1', 'localhost')
-   
+
    async def post(self, request):
        action = data.get('action')
        if action == 'broadcast':
            client_ip = get_client_ip(request)
-           
+
            if not is_localhost(client_ip):
                if not self._ledfx.config.get('allow_remote_broadcast', False):
                    _LOGGER.warning(
@@ -965,12 +965,12 @@ client_types:
 // Client sends via WebSocket
 { type: "broadcast", broadcast_type: "...", target: {...}, payload: {...} }
 ```
-- **Pros**: 
+- **Pros**:
   - Sender identity = WebSocket connection UUID (already authenticated)
   - No new authentication needed
   - Consistent with WebSocket-first architecture
   - Simpler, more secure
-- **Cons**: 
+- **Cons**:
   - External API clients without WebSocket connections cannot broadcast
   - Requires WebSocket support in all broadcasting clients
 - **Rationale**: Most LedFx clients (web UI, mobile apps) maintain WebSocket connections. External scripts can connect via WebSocket if they need to broadcast.
@@ -979,20 +979,20 @@ client_types:
 ```http
 POST /api/clients  # REST broadcast endpoint
 ```
-- **Pros**: 
+- **Pros**:
   - More flexible for external integrations
   - Scripts can broadcast without maintaining WebSocket connection
-- **Cons**: 
+- **Cons**:
   - Must derive sender identity from REST authentication
   - More complex if REST API lacks strong client identity
   - Risk of "system" sender being overused
   - **Security concern**: Creates LAN-wide attack surface if LedFx binds to 0.0.0.0
-- **Implementation**: 
+- **Implementation**:
   - Use existing REST auth to map request → sender UUID, fallback to special "system" sender if unauthenticated
   - **Restrict to localhost by default** (127.0.0.1, ::1) - see "Access Control for Broadcast Endpoints" in Security section
   - Require explicit `allow_remote_broadcast: true` config to enable remote access
 
-**Decision Needed Before Implementation**: 
+**Decision Needed Before Implementation**:
 1. Confirm whether WebSocket-only is acceptable, or if REST broadcasts are required for existing integrations
 2. If REST is needed, confirm localhost-only restriction with opt-in remote access is acceptable
 
