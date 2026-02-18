@@ -1,8 +1,8 @@
 # PR #1711: WebSocket Client Management Enhancement - Design Analysis
 
-**PR Title:** Feat: Enhance ws client management  
-**Status:** Open  
-**Branch:** `feat/enhance-ws-client-management` → `main`  
+**PR Title:** Feat: Enhance ws client management
+**Status:** Open
+**Branch:** `feat/enhance-ws-client-management` → `main`
 **Analysis Date:** 2026-02-17
 
 ---
@@ -564,10 +564,10 @@ The PR does not include tests for:
    ```python
    async def test_concurrent_name_conflict():
        """Two clients with same name both get unique names"""
-   
+
    async def test_metadata_persists_before_event():
        """Event listeners see updated metadata"""
-   
+
    async def test_broadcast_filters_invalid_uuids():
        """Broadcast ignores non-existent UUIDs"""
    ```
@@ -605,15 +605,15 @@ The PR does not include tests for:
 @websocket_handler("set_client_info")
 async def set_client_info_handler(self, message):
     """Initial client information setup"""
-    
+
     # 1. Extract and validate inputs
     device_id = message.get("device_id")
     name = message.get("name", f"Client-{self.uid[:8]}")
     client_type = message.get("client_type", "unknown")
-    
+
     if client_type not in VALID_CLIENT_TYPES:
         client_type = "unknown"
-    
+
     # 2. Atomic name deconfliction & persistence
     async with WebsocketConnection.metadata_lock:
         # Check and update in same critical section
@@ -622,12 +622,12 @@ async def set_client_info_handler(self, message):
         while self._name_exists_unsafe(final_name, exclude_uuid=self.uid):
             final_name = f"{name} ({counter})"
             counter += 1
-        
+
         # Store instance attributes
         self.device_id = device_id
         self.client_name = final_name
         self.client_type = client_type
-        
+
         # Persist to class-level storage
         WebsocketConnection.client_metadata[self.uid] = {
             "ip": self.client_ip,
@@ -637,12 +637,12 @@ async def set_client_info_handler(self, message):
             "connected_at": self.connected_at,
             "last_active": time.time(),
         }
-        
+
         name_conflict = final_name != name
-    
+
     # 3. Fire event (after lock released, metadata now consistent)
     self._ledfx.events.fire_event(ClientsUpdatedEvent())
-    
+
     # 4. Confirm to client
     self.send({
         "event_type": "client_info_updated",
@@ -665,16 +665,16 @@ def _name_exists_unsafe(self, name, exclude_uuid=None):
 ```python
 async def handle(self, request):
     # ... connection setup ...
-    
+
     async for message in self._socket:
         try:
             data = json.loads(message.data)
             msg_type = data.get("type")
-            
+
             if msg_type in websocket_handlers:
                 handler = websocket_handlers[msg_type]
                 result = handler(self, data)
-                
+
                 # Support both sync and async handlers
                 if asyncio.iscoroutine(result):
                     await result
@@ -689,10 +689,10 @@ async def handle(self, request):
 def _filter_targets(self, target_config, clients):
     """Filter clients based on target configuration"""
     mode = target_config["mode"]
-    
+
     if mode == "all":
         return list(clients.keys())
-    
+
     if mode == "type":
         client_type = target_config.get("value")
         if not client_type:
@@ -702,7 +702,7 @@ def _filter_targets(self, target_config, clients):
             uuid for uuid, meta in clients.items()
             if meta.get("type") == client_type
         ]
-    
+
     if mode == "names":
         target_names = set(target_config.get("names", []))
         if not target_names:
@@ -711,12 +711,12 @@ def _filter_targets(self, target_config, clients):
             uuid for uuid, meta in clients.items()
             if meta.get("name") in target_names
         ]
-    
+
     if mode == "uuids":
         requested = set(target_config.get("uuids", []))
         known = set(clients.keys())
         return list(requested & known)
-    
+
     _LOGGER.error(f"Unknown target mode: {mode}")
     return []
 ```
@@ -851,6 +851,6 @@ vs. patching current PR: 10+ hours with higher risk and technical debt.
 
 ---
 
-**Document Version:** 1.0  
-**Author:** GitHub Copilot (Claude Sonnet 4.5)  
+**Document Version:** 1.0
+**Author:** GitHub Copilot (Claude Sonnet 4.5)
 **Last Updated:** 2026-02-17

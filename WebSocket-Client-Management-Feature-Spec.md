@@ -1,8 +1,8 @@
 # WebSocket Client Management Enhancement - Feature Specification
 
-**Status:** Draft for Discussion  
-**Target Release:** TBD  
-**Author:** LedFx Core Team  
+**Status:** Draft for Discussion
+**Target Release:** TBD
+**Author:** LedFx Core Team
 **Date:** 2026-02-17
 
 ---
@@ -197,7 +197,7 @@ Enable clients to broadcast messages to other connected clients through the serv
 
 - **Payload Size Limit**: 2 KB maximum (configurable via constant)
 - **Schema Validation**: Voluptuous schema enforcement
-- **Target Validation**: 
+- **Target Validation**:
   - Specified UUIDs must exist in connected clients
   - Specified names must exist in connected clients
   - Type value must be a valid client type
@@ -327,7 +327,7 @@ Content-Type: application/json
 
 ### Testing Requirements
 
-- **Unit Tests**: 
+- **Unit Tests**:
   - Name conflict resolution (sequential and concurrent)
   - Target filtering logic for all modes
   - Payload validation and size limits
@@ -384,7 +384,7 @@ The following questions should be resolved before implementation:
 
 **Question**: Should `GET /api/clients` maintain backwards compatibility?
 
-**Current**: Returns `{ "uuid": "ip", ... }` (simple IP map)  
+**Current**: Returns `{ "uuid": "ip", ... }` (simple IP map)
 **Proposed**: Returns `{ "uuid": { metadata }, ... }` (metadata objects)
 
 **Option A - Query Parameter (Non-Breaking):** ✅ **Current Intent**
@@ -628,8 +628,8 @@ Before merging, confirm:
 
 ---
 
-**Document Status:** Ready for Review  
-**Next Steps:** 
+**Document Status:** Ready for Review
+**Next Steps:**
 1. Review with PR author and core team
 2. Resolve open design questions
 3. Approve scope and proceed to implementation
