@@ -388,7 +388,7 @@ Content-Type: application/json
 }
 ```
 
-**Important Notes:** 
+**Important Notes:**
 - No `sender_id` field - server derives sender identity from the request context
 - **Restricted to localhost by default** (127.0.0.1, ::1) to prevent LAN-wide abuse
 - Remote access requires explicit `allow_remote_broadcast: true` configuration
