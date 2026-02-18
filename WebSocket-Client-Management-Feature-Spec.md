@@ -44,7 +44,7 @@ This document outlines the enhancement of LedFx's WebSocket connection system to
 
 **REST Broadcast Endpoint (Future):**
 
-A REST broadcast endpoint (`POST /api/clients`) is **NOT implemented in v1**. 
+A REST broadcast endpoint (`POST /api/clients`) is **NOT implemented in v1**.
 
 **v1 Scope:** WebSocket-only broadcasts. REST endpoint deferred to future release.
 
@@ -1016,7 +1016,7 @@ This feature will be considered successfully implemented when:
 - Implement thread-safe metadata update utilities
 
 ### Phase 2: Client Metadata (Core Feature)
-- **Implement `set_client_info` handler** (async):  
+- **Implement `set_client_info` handler** (async):
   - Use `@websocket_handler("set_client_info")` decorator
   - Extract: device_id, name (default `f"Client-{uuid[:8]}"`), client_type (default "unknown")
   - Validate client_type against VALID_CLIENT_TYPES list
@@ -1164,7 +1164,7 @@ class WebsocketConnection:
     map_lock = asyncio.Lock()  # Existing
     client_metadata = {}  # NEW: UUID -> metadata dict
     metadata_lock = asyncio.Lock()  # NEW: Protect metadata access
-    
+
     def __init__(self, ledfx):
         # ... existing init ...
         # Instance attributes for this connection
@@ -1196,16 +1196,16 @@ if handler:
 async def set_client_info_handler(self, message):  # NOTE: async def
     # Extract data
     name = message.get("name", f"Client-{self.uid[:8]}")
-    
+
     # Async operations with proper awaits
     name_conflict = await self._check_and_resolve_name(name)
-    
+
     # Update instance attributes
     self.client_name = name
-    
+
     # Await metadata persistence
     await self._update_metadata()
-    
+
     # THEN fire event (after persistence)
     self._ledfx.events.fire_event(ClientsUpdatedEvent())
 ```
@@ -1235,12 +1235,12 @@ async def get_all_clients_metadata(cls):
 ```python
 finally:
     # ... existing cleanup ...
-    
+
     # Remove metadata
     async with WebsocketConnection.metadata_lock:
         if self.uid in WebsocketConnection.client_metadata:
             del WebsocketConnection.client_metadata[self.uid]
-    
+
     # Fire event after cleanup
     self._ledfx.events.fire_event(ClientsUpdatedEvent())
 ```
@@ -1259,14 +1259,14 @@ broadcast_id = f"b-{int(time.time() * 1000)}"  # Millisecond timestamp
 def get_client_ip(request):
     """Extract client IP with proxy support"""
     peer_ip = request.transport.get_extra_info('peername')[0]
-    
+
     # Check trusted proxies
     trusted = self._ledfx.config.get('trusted_proxies', [])
     if peer_ip in trusted:
         forwarded = request.headers.get('X-Forwarded-For')
         if forwarded:
             return forwarded.split(',')[0].strip()
-    
+
     return peer_ip
 
 def is_localhost(ip):
