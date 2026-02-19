@@ -1065,7 +1065,7 @@ This feature will be considered successfully implemented when:
   - Derive sender: `sender_uuid = self.uid`, lookup sender_name and sender_type from metadata
   - Call `_filter_targets()` to get target_uuids list
   - Reject if no targets matched
-  - Generate `broadcast_id = f"b-{int(time.time() * 1000)}"`
+  - Generate `broadcast_id = f"b-{uuid.uuid4()}"`
   - Fire `ClientBroadcastEvent(broadcast_type, sender_uuid, sender_name, sender_type, target_uuids, payload)`
   - Log broadcast with audit fields
   - Return success response with broadcast_id, targets_matched, targets list
@@ -1251,9 +1251,9 @@ finally:
 ### Broadcast ID Generation
 
 ```python
-import time
+import uuid
 
-broadcast_id = f"b-{int(time.time() * 1000)}"  # Millisecond timestamp
+broadcast_id = f"b-{uuid.uuid4()}"  # UUID for guaranteed uniqueness
 ```
 
 ### Localhost IP Check
@@ -1299,7 +1299,7 @@ class ClientBroadcastEvent(Event):
     ):
         super().__init__(Event.CLIENT_BROADCAST)
         self.broadcast_type = broadcast_type
-        self.broadcast_id = f"b-{int(time.time() * 1000)}"  # Server-generated
+        self.broadcast_id = broadcast_id  # Passed from handler (UUID-based)
         self.sender_uuid = sender_uuid
         self.sender_name = sender_name
         self.sender_type = sender_type

@@ -366,7 +366,7 @@ Broadcast a message to other clients based on target specification.
 {
   "id": 3,
   "event_type": "broadcast_sent",
-  "broadcast_id": "b-1708272045123",
+  "broadcast_id": "b-e7a3f2d1-4cd4-45e1-9b89-37c82281222d",
   "targets_matched": 2,
   "target_uuids": [
     "823f78cd-24fa-4cd4-908f-979249350dea",
@@ -404,7 +404,7 @@ Generated when a client broadcasts a message. Target clients should subscribe to
 ``` json
 {
   "event_type": "client_broadcast",
-  "broadcast_id": "b-1708272045123",
+  "broadcast_id": "b-e7a3f2d1-4cd4-45e1-9b89-37c82281222d",
   "broadcast_type": "scene_sync",
   "sender_uuid": "8743a845-40ba-4427-8ae6-361b2be6fac6",
   "sender_name": "Controller App",

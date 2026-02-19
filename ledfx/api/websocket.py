@@ -578,8 +578,8 @@ class WebsocketConnection:
             )
             return
 
-        # Generate broadcast ID
-        broadcast_id = f"b-{int(time.time() * 1000)}"
+        # Generate unique broadcast ID
+        broadcast_id = f"b-{uuid.uuid4()}"
 
         # Fire broadcast event (subscribers will receive it)
         self._ledfx.events.fire_event(
