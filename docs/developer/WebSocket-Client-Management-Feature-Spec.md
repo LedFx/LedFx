@@ -475,7 +475,7 @@ The current PR implementation accepts `sender_id` from the client request body. 
 **Sender identity MUST be derived from the authenticated WebSocket connection, NEVER from client-provided data.**
 
 The server is the sole source of truth for client identity:
-- For WebSocket broadcasts: `sender_uuid` comes from the WebSocket connection instance (`self.client_id`)
+- For WebSocket broadcasts: `sender_uuid` comes from the WebSocket connection instance (`self.uid`)
 - For REST broadcasts (if implemented): Server derives identity from request context or uses "system" sender
 - Any `sender_id` field in a client request body MUST be rejected with an error (do not silently ignore)
 
@@ -503,10 +503,10 @@ Add new WebSocket message type: `{"type": "broadcast", ...}`
 ```python
 # In WebSocket handler
 async def handle_broadcast(self, data):
-    sender_uuid = self.client_id  # From WebSocket connection instance
-    sender_metadata = await self.get_all_clients_metadata()
-    sender_name = sender_metadata.get(sender_uuid, {}).get("name")
-    sender_type = sender_metadata.get(sender_uuid, {}).get("type", "unknown")
+    # Derive sender identity from WebSocket connection (server-side)
+    sender_uuid = self.uid  # Canonical client UUID
+    sender_name = self.client_name or f"Client-{sender_uuid[:8]}"
+    sender_type = self.client_type
     # sender_uuid, sender_name, sender_type are now server-derived and trustworthy
 ```
 
