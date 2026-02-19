@@ -633,7 +633,9 @@ class WebsocketConnection:
 
         # Filter targets based on target configuration
         target_config = validated_data["target"]
-        target_uuids = self._filter_targets(target_config, clients, sender_uuid)
+        target_uuids = self._filter_targets(
+            target_config, clients, sender_uuid
+        )
 
         # Reject if no targets matched
         if not target_uuids:
