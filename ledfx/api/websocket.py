@@ -382,7 +382,6 @@ class WebsocketConnection:
                 "type": self.client_type,
                 "device_id": self.device_id,
                 "connected_at": self.connected_at,
-                "last_active": time.time(),
             }
 
     @classmethod

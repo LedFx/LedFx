@@ -117,7 +117,6 @@ class TestPhase1Infrastructure:
         assert metadata["device_id"] == "device-123"
         assert metadata["ip"] == "192.168.1.100"
         assert "connected_at" in metadata
-        assert "last_active" in metadata
 
     @pytest.mark.asyncio
     async def test_get_all_clients_metadata(self, websocket_connection):

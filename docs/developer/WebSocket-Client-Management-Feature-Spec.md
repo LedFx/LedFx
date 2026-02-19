@@ -73,7 +73,6 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 | `type` | String (enum) | Client category | Client-provided with validation |
 | `ip` | String | Client IP address | Auto-detected (existing) |
 | `connected_at` | Timestamp | Initial connection time | Auto-generated |
-| `last_active` | Timestamp | Last message received | Auto-updated |
 
 #### Client Types (Enumeration)
 
@@ -158,16 +157,14 @@ GET /api/clients?detailed=true
     "device_id": "abc123-device-uuid",
     "name": "Living Room Display",
     "type": "display",
-    "connected_at": 1708188000.123,
-    "last_active": 1708188100.456
+    "connected_at": 1708188000.123
   },
   "client-uuid-2": {
     "ip": "192.168.1.101",
     "device_id": null,
     "name": "Client-e7a3f2d1",
     "type": "unknown",
-    "connected_at": 1708188050.789,
-    "last_active": 1708188090.234
+    "connected_at": 1708188050.789
   }
 }
 ```
@@ -1037,7 +1034,6 @@ This feature will be considered successfully implemented when:
 - **Implement async `_update_metadata()`**:
   - Acquire `metadata_lock`
   - Update `WebsocketConnection.client_metadata[self.uid]` with all fields
-  - Update `last_active` timestamp
 - **Implement classmethod `get_all_clients_metadata()`**:
   - Acquire `metadata_lock`
   - Return deep copy of `client_metadata`

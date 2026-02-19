@@ -126,24 +126,21 @@ Returns metadata for all active websocket clients
     "name": "Living Room Display",
     "type": "visualiser",
     "device_id": "device-123",
-    "connected_at": 1708272000.123,
-    "last_active": 1708272045.456
+    "connected_at": 1708272000.123
   },
   "34361601-1416-428d-9b89-37c82281222d": {
     "ip": "127.0.0.1",
     "name": "Controller App",
     "type": "controller",
     "device_id": null,
-    "connected_at": 1708272010.789,
-    "last_active": 1708272045.123
+    "connected_at": 1708272010.789
   },
   "8743a845-40ba-4427-8ae6-361b2be6fac6": {
     "ip": "1.2.3.4",
     "name": "Client-8743a845",
     "type": "unknown",
     "device_id": null,
-    "connected_at": 1708272020.456,
-    "last_active": 1708272040.789
+    "connected_at": 1708272020.456
   }
 }
 ```
@@ -154,7 +151,6 @@ Returns metadata for all active websocket clients
 - `type`: Client type - one of: `controller`, `visualiser`, `mobile`, `display`, `api`, `unknown`
 - `device_id`: Optional device identifier provided by client
 - `connected_at`: Unix timestamp when client connected
-- `last_active`: Unix timestamp of last metadata update
 
 **POST**
 
