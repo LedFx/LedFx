@@ -563,9 +563,10 @@ All `ClientBroadcastEvent` payloads MUST include server-derived sender fields:
     "sender_uuid": str,          # Server-derived, never from client
     "sender_name": str | None,   # From metadata, fallback to "Client-{uuid[:8]}"
     "sender_type": str,          # From metadata, default "unknown"
-    "sender_ip": str | None,     # From connection, useful for debugging
 }
 ```
+
+> **Privacy Note:** `sender_ip` is intentionally excluded from broadcast events to protect client privacy. IP addresses are only available in server-side connection metadata and logs.
 
 **Fallback Behavior:**
 - If metadata not set: `sender_name = f"Client-{sender_uuid[:8]}"`
@@ -578,25 +579,21 @@ Every broadcast request MUST be logged with:
 
 ```python
 _LOGGER.info(
-    f"Broadcast request_id={broadcast_id} "
-    f"from sender_uuid={sender_uuid} ({sender_name}, {sender_type}) "
-    f"ip={sender_ip} "
-    f"to targets={len(target_uuids)} ({target_mode}:{target_value}) "
-    f"type={broadcast_type} "
-    f"payload_size={len(json.dumps(payload))} bytes"
+    f"Broadcast {broadcast_id}: type={broadcast_type}, "
+    f"sender={sender_name} ({sender_uuid[:8]}), "
+    f"targets={len(target_uuids)} clients"
 )
 ```
 
 **Log Fields:**
-- `request_id` / `broadcast_id`: Unique identifier for correlation
-- `sender_uuid`: Server-derived sender identity (trustworthy)
-- `sender_name`, `sender_type`: Sender metadata (if available)
-- `sender_ip`: Connection IP address
-- `target_mode`, `target_value`: How targets were selected
-- `targets`: Number of matched target clients
+- `broadcast_id`: Unique identifier for correlation
 - `broadcast_type`: Envelope type
-- `payload_size`: Byte size of payload (not full payload, for privacy)
+- `sender_name`: Sender metadata
+- `sender_uuid`: Server-derived sender identity (truncated for readability)
+- `targets`: Number of matched target clients
 - `timestamp`: Implicit in log entry
+
+> **Privacy Note:** The audit log intentionally omits payload contents and sender IP addresses. IP addresses are available in connection metadata (`GET /api/clients`) if needed for debugging.
 
 **Security Logging:**
 - Failed broadcasts: Log with `_LOGGER.warning()` (client error)
