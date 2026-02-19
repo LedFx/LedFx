@@ -113,25 +113,62 @@ The following rest api calls support client tracking
 
 **GET**
 
-Returns a list of all active websocket clients by UID and IP address
+::: warning BREAKING CHANGE
+As of this version, GET /api/clients returns full client metadata objects instead of simple IP strings.
+:::
+
+Returns metadata for all active websocket clients
 
 ``` json
 {
-"823f78cd-24fa-4cd4-908f-979249350dea": "127.0.0.1",
-"34361601-1416-428d-9b89-37c82281222d": "127.0.0.1",
-"8743a845-40ba-4427-8ae6-361b2be6fac6": "1.2.3.4"
+  "823f78cd-24fa-4cd4-908f-979249350dea": {
+    "ip": "127.0.0.1",
+    "name": "Living Room Display",
+    "type": "visualiser",
+    "device_id": "device-123",
+    "connected_at": 1708272000.123,
+    "last_active": 1708272045.456
+  },
+  "34361601-1416-428d-9b89-37c82281222d": {
+    "ip": "127.0.0.1",
+    "name": "Controller App",
+    "type": "controller",
+    "device_id": null,
+    "connected_at": 1708272010.789,
+    "last_active": 1708272045.123
+  },
+  "8743a845-40ba-4427-8ae6-361b2be6fac6": {
+    "ip": "1.2.3.4",
+    "name": "Client-8743a845",
+    "type": "unknown",
+    "device_id": null,
+    "connected_at": 1708272020.456,
+    "last_active": 1708272040.789
+  }
 }
 ```
+
+**Metadata Fields:**
+- `ip`: Client IP address
+- `name`: Client-provided name (or auto-generated `Client-{uuid[:8]}`)
+- `type`: Client type - one of: `controller`, `visualiser`, `mobile`, `display`, `api`, `unknown`
+- `device_id`: Optional device identifier provided by client
+- `connected_at`: Unix timestamp when client connected
+- `last_active`: Unix timestamp of last metadata update
 
 **POST**
 
 Supports an extensible set of actions
 
-##### "action": "sync"
+##### "action": "sync" (Legacy - Pending Removal)
+
+> **⚠️ Deprecated**: This sync action will be removed in a future release. Use the new [client broadcasting system](#broadcasting-messages) instead, which provides better security (server-derived sender identity) and more flexible targeting options.
+>
+> **For Frontend Developers**: See [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) for step-by-step migration instructions.
 
 Sync action can be used to inform other clients that they should sync their configurations to pick up changes made by the originating client.
 
-Calling client should provide its own websocket id
+The calling client should provide its `client_id` (obtained from the `client_id` event upon WebSocket connection):
 
 ``` json
 {
@@ -140,12 +177,324 @@ Calling client should provide its own websocket id
 }
 ```
 
-Will generate a client_sync event sent to all active websockets that are subscribed to the event type
+Will generate a client_sync event sent to all active websockets that are subscribed to the event type:
 
 ``` json
 {
   "event_type": "client_sync",
   "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
+}
+```
+
+**Note**: Unlike the new broadcasting system, this endpoint does not validate sender identity. For secure client-to-client communication, use the [broadcast WebSocket message](#broadcasting-messages) instead.
+
+## Client Management (Client Metadata & Broadcasting)
+
+> **📘 Quick Start**: See [WebSocket Client Examples Guide](../developer/websocket_client_examples.md) for practical implementation examples.
+>
+> **🔄 Migrating from Legacy?** If your code uses the old `POST /api/clients` sync action, see [Client Sync Migration Guide](../developer/client_sync_migration_guide.md).
+
+LedFx provides a client management system that allows WebSocket clients to:
+- Set persistent metadata (name, type, device ID)
+- Update their display name
+- Broadcast messages to other connected clients
+- Receive notifications when client list changes
+
+### Client Metadata
+
+Clients can provide metadata about themselves to enable better identification and targeted communication.
+
+#### set_client_info WebSocket Message
+
+Set client metadata when first connecting. This is typically sent once after receiving the `client_id` event.
+
+**Client → Server:**
+``` json
+{
+  "id": 1,
+  "type": "set_client_info",
+  "data": {
+    "name": "Living Room Display",
+    "type": "visualiser",
+    "device_id": "device-123"
+  }
+}
+```
+
+**Fields:**
+- `name` (optional): Display name for this client. If not provided or conflicts with existing name, will auto-generate or append counter
+- `type` (optional): Client type - one of: `controller`, `visualiser`, `mobile`, `display`, `api`, `unknown`. Defaults to `unknown`. **Immutable after first set.**
+- `device_id` (optional): Optional device identifier string
+
+**Server → Client Response:**
+``` json
+{
+  "id": 1,
+  "event_type": "client_info_updated",
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
+  "name": "Living Room Display",
+  "type": "visualiser",
+  "name_conflict": false
+}
+```
+
+**Response Fields:**
+- `client_id`: UUID of this client
+- `name`: Final assigned name (may differ from requested if conflict occurred)
+- `type`: Final assigned type
+- `name_conflict`: `true` if name was modified due to conflict, `false` otherwise
+
+**Name Conflict Handling:**
+If the requested name is already taken, the server will append a counter:
+- First conflict: `"Display"` → `"Display (2)"`
+- Second conflict: `"Display (2)"` → `"Display (3)"`
+- And so on...
+
+#### update_client_info WebSocket Message
+
+Update client name while connected. Type cannot be changed (immutable).
+
+**Client → Server:**
+``` json
+{
+  "id": 2,
+  "type": "update_client_info",
+  "data": {
+    "name": "Bedroom Display"
+  }
+}
+```
+
+**Server → Client Success:**
+``` json
+{
+  "id": 2,
+  "event_type": "client_info_updated",
+  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c",
+  "name": "Bedroom Display",
+  "type": "visualiser"
+}
+```
+
+**Server → Client Error (Name Taken):**
+``` json
+{
+  "id": 2,
+  "success": false,
+  "error": {
+    "message": "Name 'Bedroom Display' is already taken by another client"
+  }
+}
+```
+
+#### clients_updated Event
+
+Generated when client list or metadata changes (connect, disconnect, name update).
+
+``` json
+{
+  "event_type": "clients_updated"
+}
+```
+
+**Usage:**
+Subscribe to this event to be notified when to refetch the client list via `GET /api/clients`.
+
+### Client-to-Client Broadcasting
+
+Clients can broadcast messages to other connected clients through the server. The server ensures sender identity is authenticated and cannot be spoofed.
+
+#### broadcast WebSocket Message
+
+Broadcast a message to other clients based on target specification.
+
+**Client → Server:**
+``` json
+{
+  "id": 3,
+  "type": "broadcast",
+  "data": {
+    "broadcast_type": "scene_sync",
+    "target": {
+      "mode": "type",
+      "value": "visualiser"
+    },
+    "payload": {
+      "scene_id": "party-mode",
+      "action": "activate"
+    }
+  }
+}
+```
+
+**Required Fields:**
+- `broadcast_type`: Type of broadcast - one of: `visualiser_control`, `scene_sync`, `color_palette`, `custom`
+- `target`: Object specifying recipients (see Target Modes below)
+- `payload`: Dictionary with custom data (max 2048 bytes when JSON-encoded)
+
+**Target Modes:**
+
+1. **Broadcast to All:**
+``` json
+{
+  "mode": "all"
+}
+```
+
+2. **Broadcast to Client Type:**
+``` json
+{
+  "mode": "type",
+  "value": "visualiser"
+}
+```
+
+3. **Broadcast to Specific Names:**
+``` json
+{
+  "mode": "names",
+  "names": ["Living Room Display", "Bedroom Display"]
+}
+```
+
+4. **Broadcast to Specific UUIDs:**
+``` json
+{
+  "mode": "uuids",
+  "uuids": ["823f78cd-24fa-4cd4-908f-979249350dea", "34361601-1416-428d-9b89-37c82281222d"]
+}
+```
+
+**Server → Client Success:**
+``` json
+{
+  "id": 3,
+  "event_type": "broadcast_sent",
+  "broadcast_id": "b-1708272045123",
+  "targets_matched": 2,
+  "target_uuids": [
+    "823f78cd-24fa-4cd4-908f-979249350dea",
+    "34361601-1416-428d-9b89-37c82281222d"
+  ]
+}
+```
+
+**Server → Client Error (No Targets):**
+``` json
+{
+  "id": 3,
+  "success": false,
+  "error": {
+    "message": "No clients matched target specification: {\"mode\": \"type\", \"value\": \"nonexistent\"}"
+  }
+}
+```
+
+**Server → Client Error (Payload Too Large):**
+``` json
+{
+  "id": 3,
+  "success": false,
+  "error": {
+    "message": "Payload size (2500 bytes) exceeds maximum (2048 bytes)"
+  }
+}
+```
+
+#### client_broadcast Event
+
+Generated when a client broadcasts a message. Target clients should subscribe to this event to receive broadcasts.
+
+``` json
+{
+  "event_type": "client_broadcast",
+  "broadcast_id": "b-1708272045123",
+  "broadcast_type": "scene_sync",
+  "sender_uuid": "8743a845-40ba-4427-8ae6-361b2be6fac6",
+  "sender_name": "Controller App",
+  "sender_type": "controller",
+  "target_uuids": [
+    "823f78cd-24fa-4cd4-908f-979249350dea",
+    "34361601-1416-428d-9b89-37c82281222d"
+  ],
+  "payload": {
+    "scene_id": "party-mode",
+    "action": "activate"
+  }
+}
+```
+
+**Event Fields:**
+- `broadcast_id`: Server-generated unique ID for this broadcast
+- `broadcast_type`: Type of broadcast
+- `sender_uuid`: UUID of the client that sent the broadcast (server-authenticated)
+- `sender_name`: Display name of sender (server-derived)
+- `sender_type`: Type of sender client (server-derived)
+- `target_uuids`: List of UUIDs that matched the target specification
+- `payload`: Custom data from sender
+
+**Important Security Note:**
+All sender identity fields (`sender_uuid`, `sender_name`, `sender_type`) are derived by the server from the authenticated WebSocket connection and cannot be spoofed by the client.
+
+**Usage Example:**
+``` javascript
+// Subscribe to broadcasts
+websocket.send(JSON.stringify({
+  id: 1,
+  type: "subscribe_event",
+  event_type: "client_broadcast"
+}));
+
+// Handle incoming broadcasts
+websocket.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+
+  if (data.event_type === "client_broadcast") {
+    // Check if this broadcast is for us
+    if (data.target_uuids.includes(myClientId)) {
+      // Filter out our own broadcasts if desired
+      if (data.sender_uuid !== myClientId) {
+        handleBroadcast(data.broadcast_type, data.payload);
+      }
+    }
+  }
+};
+```
+
+### Example Client Flow
+
+1. **Connect and Register:**
+``` javascript
+// Receive client ID
+{"event_type": "client_id", "client_id": "uuid..."}
+
+// Set metadata
+{"id": 1, "type": "set_client_info", "data": {"name": "My App", "type": "controller"}}
+
+// Receive confirmation
+{"id": 1, "event_type": "client_info_updated", ...}
+```
+
+2. **Subscribe to Events:**
+``` javascript
+// Subscribe to client list changes
+{"id": 2, "type": "subscribe_event", "event_type": "clients_updated"}
+
+// Subscribe to broadcasts
+{"id": 3, "type": "subscribe_event", "event_type": "client_broadcast"}
+```
+
+3. **Send Broadcast:**
+``` javascript
+// Broadcast to all visualisers
+{
+  "id": 4,
+  "type": "broadcast",
+  "data": {
+    "broadcast_type": "color_palette",
+    "target": {"mode": "type", "value": "visualiser"},
+    "payload": {"colors": ["#ff0000", "#00ff00", "#0000ff"]}
+  }
 }
 ```
 

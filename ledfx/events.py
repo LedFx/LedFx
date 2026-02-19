@@ -34,6 +34,8 @@ class Event:
     CLIENT_CONNECTED = "client_connected"
     CLIENT_DISCONNECTED = "client_disconnected"
     CLIENT_SYNC = "client_sync"
+    CLIENTS_UPDATED = "clients_updated"
+    CLIENT_BROADCAST = "client_broadcast"
     PLAYLIST_STARTED = "playlist_started"
     PLAYLIST_ADVANCED = "playlist_advanced"
     PLAYLIST_STOPPED = "playlist_stopped"
@@ -174,6 +176,36 @@ class ClientSyncEvent(Event):
     def __init__(self, client_id: str):
         super().__init__(Event.CLIENT_SYNC)
         self.client_id = client_id
+
+
+class ClientsUpdatedEvent(Event):
+    """Event emitted when client list/metadata changes"""
+
+    def __init__(self):
+        super().__init__(Event.CLIENTS_UPDATED)
+
+
+class ClientBroadcastEvent(Event):
+    """Event emitted when a client broadcasts a message"""
+
+    def __init__(
+        self,
+        broadcast_type: str,
+        broadcast_id: str,
+        sender_uuid: str,
+        sender_name: str | None,
+        sender_type: str,
+        target_uuids: list[str],
+        payload: dict,
+    ):
+        super().__init__(Event.CLIENT_BROADCAST)
+        self.broadcast_type = broadcast_type
+        self.broadcast_id = broadcast_id
+        self.sender_uuid = sender_uuid
+        self.sender_name = sender_name
+        self.sender_type = sender_type
+        self.target_uuids = target_uuids
+        self.payload = payload
 
 
 class DeviceUpdateEvent(Event):

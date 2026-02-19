@@ -105,11 +105,10 @@ Each WebSocket connection should maintain a persistent identity with metadata th
   client_type: "display"            // optional, defaults to "unknown"
 }
 
-// Update metadata while connected
+// Update metadata while connected (name only - type is immutable)
 {
   type: "update_client_info",
-  name: "Bedroom Display",          // optional, update name only
-  client_type: "visualiser"         // optional, update type only
+  name: "Bedroom Display"           // optional, update name only
 }
 ```
 
@@ -179,7 +178,7 @@ GET /api/clients?detailed=true
 
 Fired when:
 - A client connects or disconnects
-- A client's metadata changes (name or type update)
+- A client's metadata changes (name update)
 
 Event payload: (no additional data, listeners should query `/api/clients` for current state)
 
@@ -1027,9 +1026,9 @@ This feature will be considered successfully implemented when:
   - Send confirmation: `{"event_type": "client_info_updated", "client_id": self.uid, "name": ..., "type": ..., "name_conflict": bool}`
   - Fire `ClientsUpdatedEvent()` **after** metadata persists
 - **Implement `update_client_info` handler** (async):
-  - Extract optional: name, client_type
+  - Extract optional: name
   - If name provided: check uniqueness, reject if taken (send error), otherwise update
-  - If client_type provided and valid: update
+  - **Note**: client_type is immutable after `set_client_info` - cannot be updated
   - **Await** `_update_metadata()`
   - Send confirmation, fire `ClientsUpdatedEvent()`
 - **Implement async `_name_exists(name, exclude_uuid=None)`**:

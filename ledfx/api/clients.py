@@ -17,13 +17,15 @@ class ClientEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """
-        Get the list of client IPs
+        Get the list of connected clients with metadata
 
         Returns:
-            web.Response: The response containing the list of client IPs
+            web.Response: Dictionary of client UUIDs to metadata objects
+                Format: { "uuid": { "name": "...", "type": "...", "ip": "...", ... }, ... }
         """
 
-        clients = await WebsocketConnection.get_all_clients()
+        # Breaking change: Always return full metadata objects
+        clients = await WebsocketConnection.get_all_clients_metadata()
 
         return await self.bare_request_success(clients)
 

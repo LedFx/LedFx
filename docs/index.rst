@@ -11,6 +11,9 @@
    /developer/developer
    /developer/architecture
    /developer/gradient_extraction
+   /developer/WebSocket-Client-Management-Feature-Spec
+   /developer/websocket_client_examples
+   /developer/client_sync_migration_guide
    /README
 
 .. toctree::
