@@ -86,10 +86,15 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 #### Client Name Requirements
 
 - **Uniqueness**: Client names must be unique across all connected clients
-- **Conflict Resolution**: If a requested name is already taken, automatically append a counter: `"MyClient"` → `"MyClient (1)"` → `"MyClient (2)"`
+- **Conflict Resolution (Initial Registration)**: When `set_client_info` is called with a taken name, automatically append a counter: `"MyClient"` → `"MyClient (1)"` → `"MyClient (2)"`
+  - Client receives confirmation with `name_conflict: true` flag to indicate modification
+  - Ensures smooth initial connection without blocking on name conflicts
+- **Conflict Resolution (Explicit Rename)**: When `update_client_info` is called with a taken name, reject with error
+  - User-initiated renames require explicit acknowledgment - no silent auto-modification
+  - Client must choose alternative name and retry
 - **Auto-generation**: If no name provided, generate: `"Client-{first-8-chars-of-uuid}"`
 - **Persistence**: Name persists for the duration of the connection only
-- **Updates**: Clients can request name changes after connection (subject to uniqueness check)
+- **Updates**: Clients can request name changes after connection via `update_client_info` (subject to uniqueness check)
 
 #### API Surface
 
@@ -1013,14 +1018,19 @@ This feature will be considered successfully implemented when:
   - Extract: device_id, name (default `f"Client-{uuid[:8]}"`), client_type (default "unknown")
   - Validate client_type against VALID_CLIENT_TYPES list
   - Check name uniqueness using async `_name_exists()` method (with lock)
-  - If name conflict, append ` (N)` counter
+  - **Auto-resolve conflicts**: If name conflict, append ` (N)` counter until unique
+    - Rationale: Initial registration should succeed smoothly; auto-numbering is acceptable UX
+    - Set `name_conflict` flag to inform client their requested name was modified
   - Store to instance attributes: `self.device_id`, `self.client_name`, `self.client_type`
   - **Await** `_update_metadata()` to persist
   - Send confirmation: `{"event_type": "client_info_updated", "client_id": self.uid, "name": ..., "type": ..., "name_conflict": bool}`
   - Fire `ClientsUpdatedEvent()` **after** metadata persists
 - **Implement `update_client_info` handler** (async):
   - Extract optional: name
-  - If name provided: check uniqueness, reject if taken (send error), otherwise update
+  - **Reject conflicts**: If name provided and already taken by another client, send error and return
+    - Rationale: Explicit rename should not auto-modify; user needs feedback to choose alternative name
+    - This differs from `set_client_info` by design - explicit rename actions require explicit user acknowledgment
+  - If name is unique (or updating to own current name): update `self.client_name`
   - **Note**: client_type is immutable after `set_client_info` - cannot be updated
   - **Await** `_update_metadata()`
   - Send confirmation, fire `ClientsUpdatedEvent()`
