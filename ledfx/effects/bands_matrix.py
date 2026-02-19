@@ -51,27 +51,31 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
         out = np.tile(self.r, (3, 1)).T
         np.clip(out, 0, 1, out=out)
         out_split = np.array_split(out, bands_active, axis=0)
-        
+
         # Pre-calculate gradient direction multiplier (avoid conditional in loop)
         grad_sign = -1.0 if self.flip_gradient else 1.0
         grad_offset = 1.0 if self.flip_gradient else 0.0
-        
+
         # Process all bands using vectorized operations
         for i in range(bands_active):
             band_width = len(out_split[i])
             volume = int(out_split[i].max() * band_width)
-            
+
             # Fill entire band with background color first (avoids conditional)
             out_split[i][:] = self.bkg_color
-            
+
             # Vectorized gradient calculation for active pixels
             if volume > 0:
                 # Calculate gradient values for all positions at once
                 positions = np.arange(volume, dtype=np.float32)
-                gradient_values = grad_offset + grad_sign * (positions / band_width)
+                gradient_values = grad_offset + grad_sign * (
+                    positions / band_width
+                )
                 # Get all gradient colors at once using vectorized method
-                out_split[i][:volume] = self.get_gradient_color_vectorized1d(gradient_values)
-            
+                out_split[i][:volume] = self.get_gradient_color_vectorized1d(
+                    gradient_values
+                )
+
             # Flip every other band (in-place)
             if i & 1:  # Bitwise AND is faster than modulo
                 out_split[i] = out_split[i][::-1]
