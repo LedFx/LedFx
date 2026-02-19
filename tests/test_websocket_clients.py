@@ -55,7 +55,7 @@ class TestPhase1Infrastructure:
     """Test Phase 1: Infrastructure components"""
 
     @pytest.mark.asyncio
-    async def test_metadata_storage_initialization(self, websocket_connection):
+    async def test_metadata_storage_initialization(self):
         """Test that class-level metadata storage is initialized"""
         assert hasattr(WebsocketConnection, "client_metadata")
         assert hasattr(WebsocketConnection, "metadata_lock")
@@ -119,7 +119,7 @@ class TestPhase1Infrastructure:
         assert "connected_at" in metadata
 
     @pytest.mark.asyncio
-    async def test_get_all_clients_metadata(self, websocket_connection):
+    async def test_get_all_clients_metadata(self):
         """Test get_all_clients_metadata returns deep copy"""
         # Pre-populate metadata
         WebsocketConnection.client_metadata["uuid-1"] = {
