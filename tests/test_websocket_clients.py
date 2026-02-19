@@ -23,12 +23,18 @@ from ledfx.events import ClientBroadcastEvent, ClientsUpdatedEvent
 
 @pytest.fixture
 def mock_ledfx():
-    """Create a mock LedFx instance"""
+    """Create a mock LedFx instance with proper event loop cleanup"""
     ledfx = MagicMock()
-    ledfx.loop = asyncio.new_event_loop()
+    loop = asyncio.new_event_loop()
+    ledfx.loop = loop
     ledfx.events = MagicMock()
     ledfx.events.fire_event = MagicMock()
-    return ledfx
+    
+    yield ledfx
+    
+    # Clean up event loop resources
+    loop.close()
+    asyncio.set_event_loop(None)
 
 
 @pytest.fixture
