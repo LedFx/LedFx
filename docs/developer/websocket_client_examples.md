@@ -17,7 +17,7 @@ This document provides practical examples for implementing the WebSocket client 
 
 ### Lifecycle: Client Connection & Registration
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Client
     participant WebSocket
@@ -75,7 +75,7 @@ function setClientInfo() {
 
 ### Lifecycle: Name Conflict Resolution
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Client1
     participant Client2
@@ -202,7 +202,7 @@ getConnectedClients().then(clients => {
 
 ### Lifecycle: Broadcasting to All Clients
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Sender
     participant Server
@@ -252,7 +252,7 @@ broadcastToAll('scene_sync', {
 
 ### Lifecycle: Targeted Broadcasting (By Type)
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Controller
     participant Server
@@ -381,7 +381,7 @@ broadcastWithConfirmation('scene_sync', {mode: 'all'}, {scene: 'chill'})
 
 ### Lifecycle: Client List Change Notification
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant ClientA
     participant Server
@@ -410,7 +410,7 @@ sequenceDiagram
 
 ### Lifecycle: Receiving and Filtering Broadcasts
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Sender
     participant Server
@@ -544,7 +544,7 @@ function handleColorPalette(payload) {
 
 ### Lifecycle: End-to-End Scene Sync (Controller → Visualisers)
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Controller
     participant Server
@@ -883,7 +883,7 @@ function connectWithRetry(maxRetries = 5, delay = 1000) {
 
 #### Lifecycle: Reconnection with Exponential Backoff
 
-```mermaid
+```{mermaid}
 sequenceDiagram
     participant Client
     participant WebSocket
