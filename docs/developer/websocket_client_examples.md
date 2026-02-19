@@ -3,7 +3,6 @@
 This document provides practical examples for implementing the WebSocket client management features in LedFx.
 
 > **Migrating from Legacy System?** If you're updating code that uses the old `POST /api/clients` sync action or `client_sync` events, see the [Client Sync Migration Guide](client_sync_migration_guide.md) for step-by-step migration instructions.
-
 > **📊 Lifecycle Diagrams**: This document includes Mermaid sequence diagrams throughout to visualize key interaction patterns.
 
 ## Table of Contents
@@ -98,7 +97,11 @@ sequenceDiagram
 
 ### Setting Client Info with Error Handling
 
-```javascript
+```javascript// Helper: Generate unique message IDs
+let messageIdCounter = 1;
+function getNextMessageId() {
+  return messageIdCounter++;
+}
 function setClientInfo(name, type, deviceId = null) {
   const messageId = getNextMessageId();
 
@@ -125,17 +128,35 @@ function setClientInfo(name, type, deviceId = null) {
             console.warn(`Name conflict: "${name}" changed to "${data.name}"`);
           }
 
-          websocket.removeEventListener('message', handler);
+          cleanup();
           resolve(data);
         } else if (data.success === false) {
           console.error('Failed to set metadata:', data.error);
-          websocket.removeEventListener('message', handler);
+          cleanup();
           reject(data.error);
         }
       }
     };
 
+    const closeHandler = () => {
+      cleanup();
+      reject(new Error('WebSocket connection closed'));
+    };
+
+    const cleanup = () => {
+      websocket.removeEventListener('message', handler);
+      websocket.removeEventListener('close', closeHandler);
+      clearTimeout(timeoutId);
+    };
+
+    // Timeout after 5 seconds
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error('Request timeout'));
+    }, 5000);
+
     websocket.addEventListener('message', handler);
+    websocket.addEventListener('close', closeHandler);
   });
 }
 
@@ -353,17 +374,35 @@ function broadcastWithConfirmation(broadcastType, target, payload) {
       if (data.id === messageId) {
         if (data.event_type === 'broadcast_sent') {
           console.log(`Broadcast ${data.broadcast_id} sent to ${data.targets_matched} clients`);
-          websocket.removeEventListener('message', handler);
+          cleanup();
           resolve(data);
         } else if (data.success === false) {
           console.error('Broadcast failed:', data.error);
-          websocket.removeEventListener('message', handler);
+          cleanup();
           reject(data.error);
         }
       }
     };
 
+    const closeHandler = () => {
+      cleanup();
+      reject(new Error('WebSocket connection closed'));
+    };
+
+    const cleanup = () => {
+      websocket.removeEventListener('message', handler);
+      websocket.removeEventListener('close', closeHandler);
+      clearTimeout(timeoutId);
+    };
+
+    // Timeout after 5 seconds
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error('Request timeout'));
+    }, 5000);
+
     websocket.addEventListener('message', handler);
+    websocket.addEventListener('close', closeHandler);
   });
 }
 
@@ -480,11 +519,24 @@ function updateClientListUI(clients) {
   Object.entries(clients).forEach(([uuid, metadata]) => {
     const item = document.createElement('div');
     item.className = 'client-item';
-    item.innerHTML = `
-      <strong>${metadata.name}</strong>
-      <span class="badge">${metadata.type}</span>
-      <span class="ip">${metadata.ip}</span>
-    `;
+
+    // Safely create name element
+    const nameElement = document.createElement('strong');
+    nameElement.textContent = metadata.name;
+    item.appendChild(nameElement);
+
+    // Safely create type badge
+    const typeElement = document.createElement('span');
+    typeElement.className = 'badge';
+    typeElement.textContent = metadata.type;
+    item.appendChild(typeElement);
+
+    // Safely create IP element
+    const ipElement = document.createElement('span');
+    ipElement.className = 'ip';
+    ipElement.textContent = metadata.ip;
+    item.appendChild(ipElement);
+
     listElement.appendChild(item);
   });
 }
@@ -867,8 +919,10 @@ function connectWithRetry(maxRetries = 5, delay = 1000) {
     ws.onclose = () => {
       if (retries < maxRetries) {
         retries++;
-        console.log(`Reconnecting... (${retries}/${maxRetries})`);
-        setTimeout(connect, delay * retries);
+        // Exponential backoff: 1s, 2s, 4s, 8s, 16s...
+        const backoffDelay = delay * Math.pow(2, retries - 1);
+        console.log(`Reconnecting in ${backoffDelay}ms... (${retries}/${maxRetries})`);
+        setTimeout(connect, backoffDelay);
       } else {
         console.error('Max reconnection attempts reached');
       }
@@ -906,6 +960,11 @@ sequenceDiagram
     Note over Client: Retry 2: Wait 2s
 
     Client->>WebSocket: Reconnect Attempt 2
+    WebSocket--xClient: Connection Failed
+    WebSocket->>Client: onclose event
+    Note over Client: Retry 3: Wait 4s
+
+    Client->>WebSocket: Reconnect Attempt 3
     WebSocket->>Server: Connected
     Server->>Client: NEW client_id event
     Note over Client: Store new client_id,<br/>re-register metadata,<br/>re-subscribe to events
