@@ -29,9 +29,9 @@ def mock_ledfx():
     ledfx.loop = loop
     ledfx.events = MagicMock()
     ledfx.events.fire_event = MagicMock()
-    
+
     yield ledfx
-    
+
     # Clean up event loop resources
     loop.close()
     asyncio.set_event_loop(None)
