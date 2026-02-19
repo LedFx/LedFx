@@ -98,16 +98,22 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 ```javascript
 // Initial metadata setup (typically sent immediately after connection)
 {
+  id: 1,                            // required message correlation ID
   type: "set_client_info",
-  device_id: "abc123-device-uuid",  // optional, for recognizing returning devices
-  name: "Living Room Display",      // optional, will auto-generate if missing
-  client_type: "display"            // optional, defaults to "unknown"
+  data: {
+    device_id: "abc123-device-uuid",  // optional, for recognizing returning devices
+    name: "Living Room Display",      // optional, will auto-generate if missing
+    type: "display"                   // optional, defaults to "unknown"
+  }
 }
 
 // Update metadata while connected (name only - type is immutable)
 {
+  id: 2,                            // required message correlation ID
   type: "update_client_info",
-  name: "Bedroom Display"           // optional, update name only
+  data: {
+    name: "Bedroom Display"           // optional, update name only
+  }
 }
 ```
 
@@ -116,6 +122,7 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 ```javascript
 // Confirmation after metadata set/update
 {
+  id: 1,                            // echoes request id
   event_type: "client_info_updated",
   client_id: "uuid-of-this-client",
   name: "Living Room Display",      // final name (may differ if conflict)
@@ -125,9 +132,11 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 
 // Error response
 {
-  event_type: "error",
-  message: "Name already in use",
-  id: "original-message-id"
+  id: 1,                            // echoes request id
+  success: false,
+  error: {
+    message: "Name already in use"
+  }
 }
 ```
 
