@@ -601,7 +601,9 @@ class TestPhase3Broadcasting:
         response = websocket_connection.send.call_args[0][0]
         assert response["event_type"] == "broadcast_sent"
         assert "broadcast_id" in response
-        assert response["targets_matched"] == 1  # Only target (sender excluded)
+        assert (
+            response["targets_matched"] == 1
+        )  # Only target (sender excluded)
 
     @pytest.mark.asyncio
     async def test_broadcast_handler_no_sender_id_field(
