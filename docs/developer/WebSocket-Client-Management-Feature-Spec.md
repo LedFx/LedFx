@@ -711,7 +711,7 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
    **Implementation Pseudocode:**
    ```python
    import ipaddress
-   
+
    def get_client_ip(request, config):
        peer_ip = request.transport.get_extra_info('peername')[0]
 
