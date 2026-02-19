@@ -22,7 +22,7 @@ from ledfx.events import ClientBroadcastEvent, ClientsUpdatedEvent
 def mock_ledfx():
     """Create a mock LedFx instance"""
     ledfx = MagicMock()
-    ledfx.loop = asyncio.get_event_loop()
+    ledfx.loop = asyncio.new_event_loop()
     ledfx.events = MagicMock()
     ledfx.events.fire_event = MagicMock()
     return ledfx
