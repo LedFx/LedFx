@@ -1,4 +1,7 @@
-"""Tests for WebSocket client management features (Phase 1-3)"""
+"""Tests for WebSocket client management features (Phase 1-3)
+
+Comprehensive test suite for client metadata, broadcasting, and connection management.
+"""
 
 import asyncio
 import time
