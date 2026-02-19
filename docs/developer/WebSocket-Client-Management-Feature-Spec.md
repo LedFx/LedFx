@@ -147,7 +147,7 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 
 **REST API:**
 
-```http
+```
 GET /api/clients
 ```
 
@@ -420,7 +420,7 @@ This prevents accidental broadcasts to clients that haven't registered metadata.
 
 _Note: REST broadcasts are optional for v1 and should only be implemented if a documented integration use case exists. Most clients (web UI, mobile apps) maintain WebSocket connections and should use the WebSocket broadcast API above._
 
-```http
+```
 POST /api/clients
 Content-Type: application/json
 
@@ -707,13 +707,13 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
 **Acceptance Criteria:**
 
 1. **Loopback Requests Allowed:**
-   ```http
+   ```
    POST http://127.0.0.1:8888/api/clients  # ✅ Allowed
    POST http://[::1]:8888/api/clients       # ✅ Allowed
    ```
 
 2. **Non-Loopback Requests Rejected:**
-   ```http
+   ```
    POST http://192.168.1.100:8888/api/clients  # ❌ Rejected with 403
    ```
 
@@ -925,7 +925,7 @@ For this feature, we focus on **localhost restriction** as the primary defense f
 - Frontend and backend released together
 
 **Implementation**:
-```http
+```
 GET /api/clients
 # Returns: { "uuid": { "name": "...", "type": "...", "ip": "...", ... }, ... }
 ```

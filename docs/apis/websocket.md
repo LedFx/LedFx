@@ -158,7 +158,7 @@ Supports an extensible set of actions
 
 ##### "action": "sync" (Legacy - Pending Removal)
 
-> **⚠️ Deprecated**: This sync action will be removed in a future release. Use the new [client broadcasting system](#broadcasting-messages) instead, which provides better security (server-derived sender identity) and more flexible targeting options.
+> **⚠️ Deprecated**: This sync action will be removed in a future release. Use the new [client broadcasting system](#client-to-client-broadcasting) instead, which provides better security (server-derived sender identity) and more flexible targeting options.
 >
 > **For Frontend Developers**: See [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) for step-by-step migration instructions.
 
@@ -182,7 +182,7 @@ Will generate a client_sync event sent to all active websockets that are subscri
 }
 ```
 
-**Note**: Unlike the new broadcasting system, this endpoint does not validate sender identity. For secure client-to-client communication, use the [broadcast WebSocket message](#broadcasting-messages) instead.
+**Note**: Unlike the new broadcasting system, this endpoint does not validate sender identity. For secure client-to-client communication, use the [broadcast WebSocket message](#client-to-client-broadcasting) instead.
 
 ## Client Management (Client Metadata & Broadcasting)
 
