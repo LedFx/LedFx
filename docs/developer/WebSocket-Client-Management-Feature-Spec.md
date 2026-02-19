@@ -710,7 +710,9 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
 
    **Implementation Pseudocode:**
    ```python
-   def get_client_ip(request):
+   import ipaddress
+   
+   def get_client_ip(request, config):
        peer_ip = request.transport.get_extra_info('peername')[0]
 
        # If trusted_proxies configured and peer is trusted
@@ -723,12 +725,16 @@ Restrict `POST /api/clients` (broadcast action) to **localhost connections only*
        return peer_ip
 
    def is_localhost(ip):
-       return ip in ('127.0.0.1', '::1', 'localhost')
+       """Check if IP is loopback (handles IPv4, IPv6, and IPv4-mapped IPv6)"""
+       try:
+           return ipaddress.ip_address(ip).is_loopback
+       except ValueError:
+           return ip == 'localhost'
 
    async def post(self, request):
        action = data.get('action')
        if action == 'broadcast':
-           client_ip = get_client_ip(request)
+           client_ip = get_client_ip(request, self._ledfx.config)
 
            if not is_localhost(client_ip):
                if not self._ledfx.config.get('allow_remote_broadcast', False):
@@ -1258,13 +1264,17 @@ broadcast_id = f"b-{uuid.uuid4()}"  # UUID for guaranteed uniqueness
 
 ### Localhost IP Check
 
+**Note:** Current implementation uses `request.remote` directly. The following are reference implementations for advanced proxy/loopback handling if needed:
+
 ```python
-def get_client_ip(request):
+import ipaddress
+
+def get_client_ip(request, config):
     """Extract client IP with proxy support"""
     peer_ip = request.transport.get_extra_info('peername')[0]
 
     # Check trusted proxies
-    trusted = self._ledfx.config.get('trusted_proxies', [])
+    trusted = config.get('trusted_proxies', [])
     if peer_ip in trusted:
         forwarded = request.headers.get('X-Forwarded-For')
         if forwarded:
@@ -1273,8 +1283,12 @@ def get_client_ip(request):
     return peer_ip
 
 def is_localhost(ip):
-    """Check if IP is loopback"""
-    return ip in ('127.0.0.1', '::1', 'localhost')
+    """Check if IP is loopback (handles IPv4, IPv6, and IPv4-mapped IPv6)"""
+    try:
+        return ipaddress.ip_address(ip).is_loopback
+    except ValueError:
+        # Handle hostname 'localhost'
+        return ip == 'localhost'
 ```
 
 ### Event Class Constructors
