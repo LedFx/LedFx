@@ -1131,7 +1131,7 @@ This feature will be considered successfully implemented when:
   - Call `_filter_targets()` to get target_uuids list
   - Reject if no targets matched
   - Generate `broadcast_id = f"b-{uuid.uuid4()}"`
-  - Fire `ClientBroadcastEvent(broadcast_type, sender_uuid, sender_name, sender_type, target_uuids, payload)`
+  - Fire `ClientBroadcastEvent(broadcast_type, broadcast_id, sender_uuid, sender_name, sender_type, target_uuids, payload)`
   - Log broadcast with audit fields
   - Return success response with broadcast_id, targets_matched, targets list
 - **Note**: REST broadcast endpoint (`POST /api/clients` action="broadcast") is NOT implemented in v1. Deferred to future release if use case emerges.
@@ -1445,6 +1445,7 @@ class ClientBroadcastEvent(Event):
     def __init__(
         self,
         broadcast_type: str,
+        broadcast_id: str,
         sender_uuid: str,
         sender_name: str | None,
         sender_type: str,

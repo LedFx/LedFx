@@ -550,7 +550,7 @@ websocket.onmessage = (event) => {
 
   if (data.event_type === 'client_broadcast') {
     // Check if this broadcast is for us
-    if (!data.target_uuids.includes(myClientId)) {
+    if (!Array.isArray(data.target_uuids) || !data.target_uuids.includes(myClientId)) {
       return; // Not for us
     }
 
@@ -649,6 +649,7 @@ class LedFxController {
     this.websocket = null;
     this.clientId = null;
     this.messageId = 1;
+    this.registrationMessageId = null;
     this.connectedClients = {};
   }
 
@@ -677,14 +678,18 @@ class LedFxController {
         break;
 
       case 'client_info_updated':
-        if (data.id === 1) {
+        if (data.id === this.registrationMessageId) {
           console.log('Registered as controller:', data.name);
-          this.refreshClientList();
+          this.refreshClientList().catch(err =>
+            console.error('Failed to refresh client list:', err)
+          );
         }
         break;
 
       case 'clients_updated':
-        this.refreshClientList();
+        this.refreshClientList().catch(err =>
+          console.error('Failed to refresh client list:', err)
+        );
         break;
 
       case 'broadcast_sent':
@@ -694,6 +699,7 @@ class LedFxController {
   }
 
   registerAsController() {
+    this.registrationMessageId = this.messageId;
     this.send({
       id: this.messageId++,
       type: 'set_client_info',
@@ -833,7 +839,7 @@ class LedFxVisualiser {
 
   handleBroadcast(data) {
     // Ignore broadcasts not for us
-    if (!data.target_uuids.includes(this.clientId)) {
+    if (!Array.isArray(data.target_uuids) || !data.target_uuids.includes(this.clientId)) {
       return;
     }
 
