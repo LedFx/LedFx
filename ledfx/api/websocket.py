@@ -494,12 +494,24 @@ class WebsocketConnection:
             )
 
     # Phase 3: Broadcasting methods
-    def _filter_targets(self, target_config: dict, clients: dict) -> list[str]:
-        """Filter clients based on target configuration (fail-closed validation)"""
+    def _filter_targets(
+        self, target_config: dict, clients: dict, sender_uuid: str
+    ) -> list[str]:
+        """Filter clients based on target configuration (fail-closed validation).
+
+        Args:
+            target_config: Targeting specification with mode and parameters
+            clients: Dictionary of connected clients {uuid: metadata}
+            sender_uuid: UUID of sender (excluded from mode='all' to prevent self-echo)
+
+        Returns:
+            List of target client UUIDs (sender excluded from mode='all')
+        """
         mode = target_config.get("mode")
 
         if mode == "all":
-            return list(clients.keys())
+            # Exclude sender to prevent self-echo
+            return [uuid for uuid in clients.keys() if uuid != sender_uuid]
 
         elif mode == "type":
             value = target_config.get("value")
@@ -568,7 +580,7 @@ class WebsocketConnection:
 
         # Filter targets based on target configuration
         target_config = validated_data["target"]
-        target_uuids = self._filter_targets(target_config, clients)
+        target_uuids = self._filter_targets(target_config, clients, sender_uuid)
 
         # Reject if no targets matched
         if not target_uuids:

@@ -225,10 +225,11 @@ Enable clients to broadcast messages to other connected clients through the serv
 - **Payload Size Limit**: 2 KB maximum (configurable via constant)
 - **Schema Validation**: Voluptuous schema enforcement
 - **Target Validation**:
-  - Specified UUIDs must exist in connected clients
-  - Specified names must exist in connected clients
+  - **Lenient Filtering**: For `mode="names"` and `mode="uuids"`, non-existent identifiers are silently filtered (broadcasts to whoever exists from the list)
+  - **Fail-Closed Security**: If NO targets remain after filtering, request fails with error (prevents accidental broadcasts to zero recipients)
+  - **Sender Exclusion**: For `mode="all"`, sender is automatically excluded to prevent self-echo
   - Type value must be a valid client type
-  - If no targets match filters, request fails with error
+  - Request fails only if no targets match after filtering
 
 #### Target Specification Validation Rules
 
@@ -239,9 +240,10 @@ Enable clients to broadcast messages to other connected clients through the serv
 **Required Validation:**
 
 1. **Mode: `"all"`**
+   - Broadcasts to all connected clients **except sender** (prevents self-echo)
    - No additional fields required
    - Ignore `value`, `names`, or `uuids` if present
-   - Always valid
+   - Always valid (assuming at least one other client is connected)
 
 2. **Mode: `"type"`**
    - **MUST** include `value` field
@@ -255,19 +257,20 @@ Enable clients to broadcast messages to other connected clients through the serv
    - `names` **MUST** be a non-empty list
    - Each name **MUST** be a non-empty string
    - Reject if `names` is missing, empty list, or contains empty strings
-   - **Error**: `"Target mode 'names' requires a non-empty 'names' list"`
+   - **Lenient Filtering**: Non-existent names are silently ignored (broadcasts to whoever exists)
+   - **Fail-Closed**: If NO clients match any of the specified names, request fails
+   - **Error**: `"Target mode 'names' requires a non-empty 'names' list"` (schema validation)
+   - **Error**: `"No clients matched target specification"` (zero matches after filtering)
 
 4. **Mode: `"uuids"`**
    - **MUST** include `uuids` field
    - `uuids` **MUST** be a non-empty list
    - Each UUID **MUST** be a non-empty string
    - Reject if `uuids` is missing, empty list, or contains empty strings
-   - **Error**: `"Target mode 'uuids' requires a non-empty 'uuids' list"`
-
----
-
-**Example Requests:**
-
+   - **Lenient Filtering**: Non-existent UUIDs are silently ignored (broadcasts to whoever exists)
+   - **Fail-Closed**: If NO clients match any of the specified UUIDs, request fails
+   - **Error**: `"Target mode 'uuids' requires a non-empty 'uuids' list"` (schema validation)
+   - **Error**: `"No clients matched target specification"` (zero matches after filtering)
 ✅ **Valid Requests:**
 ```javascript
 // Mode: all
@@ -320,9 +323,51 @@ Enable clients to broadcast messages to other connected clients through the serv
 
 ---
 
+**Lenient Filtering Examples:**
+
+The lenient filtering behavior allows broadcasts to "whoever is available" from a list, which is useful for multi-device scenarios where clients may disconnect/reconnect:
+
+```javascript
+// Scenario: Sender wants to broadcast to Display 1, Display 2, Display 3
+// Currently connected: Display 1 (uuid-1), Display 2 (uuid-2)
+// Display 3 is offline
+
+// Request with mode="names"
+{
+  target: { mode: "names", names: ["Display 1", "Display 2", "Display 3"] }
+}
+
+// Result: ✅ Broadcasts to Display 1 and Display 2
+// "Display 3" is silently ignored (not connected)
+// targets_matched: 2
+
+// If ALL specified names are offline:
+{
+  target: { mode: "names", names: ["Display 3", "Display 4"] }
+}
+// Result: ❌ Error "No clients matched target specification"
+```
+
+**Sender Exclusion Example:**
+
+```javascript
+// Scenario: 3 clients connected (uuid-sender, uuid-1, uuid-2)
+// Sender (uuid-sender) broadcasts with mode="all"
+
+{
+  target: { mode: "all" }
+}
+
+// Result: ✅ Broadcasts to uuid-1 and uuid-2 only
+// uuid-sender (the sender) is automatically excluded to prevent self-echo
+// targets_matched: 2
+```
+
+---
+
 **Test Cases:**
 
-- ✅ `mode="all"` → broadcasts to all connected clients
+- ✅ `mode="all"` → broadcasts to all connected clients **except sender**
 - ✅ `mode="type", value="visualiser"` → broadcasts to clients with `type="visualiser"`
 - ✅ `mode="type", value="unknown"` → broadcasts to clients with `type="unknown"`
 - ❌ `mode="type", value=""` → rejected (400 error)
@@ -331,9 +376,13 @@ Enable clients to broadcast messages to other connected clients through the serv
 - ✅ `mode="type", value="display"` with no matching clients → rejected (no targets matched)
 - ✅ `mode="type", value="display"` with client `type=None` → client NOT targeted (explicit type required)
 - ✅ `mode="names", names=["Client-1"]` → broadcasts to client named "Client-1"
+- ✅ `mode="names", names=["Client-1", "Client-999"]` with only Client-1 connected → broadcasts to Client-1 (lenient)
+- ✅ `mode="names", names=["Client-999"]` with Client-999 offline → rejected (no targets matched)
 - ❌ `mode="names", names=[]` → rejected (400 error)
 - ❌ `mode="names"` (missing names) → rejected (400 error)
 - ✅ `mode="uuids", uuids=["abc-123"]` → broadcasts to client with uuid "abc-123"
+- ✅ `mode="uuids", uuids=["abc-123", "xyz-999"]` with only abc-123 connected → broadcasts to abc-123 (lenient)
+- ✅ `mode="uuids", uuids=["xyz-999"]` with xyz-999 offline → rejected (no targets matched)
 - ❌ `mode="uuids", uuids=[]` → rejected (400 error)
 - ❌ `mode="uuids"` (missing uuids) → rejected (400 error)
 
@@ -1076,12 +1125,13 @@ This feature will be considered successfully implemented when:
   - Log broadcast with audit fields
   - Return success response with broadcast_id, targets_matched, targets list
 - **Note**: REST broadcast endpoint (`POST /api/clients` action="broadcast") is NOT implemented in v1. Deferred to future release if use case emerges.
-- **Implement `_filter_targets(target_config, clients)` method**:
-  - mode="all": return all UUIDs
+- **Implement `_filter_targets(target_config, clients, sender_uuid)` method**:
+  - mode="all": return all UUIDs **except sender_uuid** (prevents self-echo)
   - mode="type": filter by `meta.get("type") == value` (reject if value missing/empty)
-  - mode="names": filter by `meta.get("name") in names` (reject if names missing/empty)
-  - mode="uuids": filter by UUID in known clients (reject if uuids missing/empty)
+  - mode="names": filter by `meta.get("name") in names` (lenient: silently ignore non-existent names)
+  - mode="uuids": filter by UUID in known clients (lenient: silently ignore non-existent UUIDs)
   - Return empty list if mode invalid or validation fails
+  - **Lenient rationale**: Allows "broadcast to whoever is available" from a list of potential targets
 - Add payload validation and size limits
 
 ### Phase 4: Testing & Documentation
