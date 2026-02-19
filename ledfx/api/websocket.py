@@ -514,10 +514,7 @@ class WebsocketConnection:
                     client_uuid,
                     meta,
                 ) in WebsocketConnection.client_metadata.items():
-                    if (
-                        client_uuid != self.uid
-                        and meta.get("name") == name
-                    ):
+                    if client_uuid != self.uid and meta.get("name") == name:
                         self.send_error(
                             message["id"],
                             f"Name '{name}' is already taken by another client",
