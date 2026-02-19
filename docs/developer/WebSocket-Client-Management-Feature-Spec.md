@@ -1042,7 +1042,8 @@ This feature will be considered successfully implemented when:
   - Update `WebsocketConnection.client_metadata[self.uid]` with all fields
 - **Implement classmethod `get_all_clients_metadata()`**:
   - Acquire `metadata_lock`
-  - Return deep copy of `client_metadata`
+  - Return deep copy: `{uuid: meta.copy() for uuid, meta in client_metadata.items()}`
+  - This protects class state from mutations by callers
 - **Update `GET /api/clients`**:
   - Always return `await WebsocketConnection.get_all_clients_metadata()` (breaking change)
 - Fire `ClientsUpdatedEvent` on connect/disconnect (already exists, verify metadata cleanup on disconnect)
@@ -1225,7 +1226,10 @@ async def _name_exists(self, name, exclude_uuid=None):
 async def get_all_clients_metadata(cls):
     """Get metadata snapshot with proper locking"""
     async with cls.metadata_lock:
-        return dict(cls.client_metadata)  # Return copy
+        # Return deep copy: new outer dict + copy of each inner metadata dict
+        return {
+            uuid: meta.copy() for uuid, meta in cls.client_metadata.items()
+        }
 ```
 
 ### Metadata Cleanup on Disconnect
