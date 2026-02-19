@@ -507,19 +507,36 @@ class WebsocketConnection:
 
         # Update name if provided
         if name is not None:
-            # Check if name is already taken by another client
-            if await self._name_exists(name, exclude_uuid=self.uid):
-                self.send_error(
-                    message["id"],
-                    f"Name '{name}' is already taken by another client",
-                )
-                return
-            self.client_name = name
+            # Atomically check and update name (prevents TOCTOU race)
+            async with WebsocketConnection.metadata_lock:
+                # Check if name is already taken by another client
+                for (
+                    client_uuid,
+                    meta,
+                ) in WebsocketConnection.client_metadata.items():
+                    if (
+                        client_uuid != self.uid
+                        and meta.get("name") == name
+                    ):
+                        self.send_error(
+                            message["id"],
+                            f"Name '{name}' is already taken by another client",
+                        )
+                        return
 
-            # Persist metadata
-            await self._update_metadata()
+                # Name is available - update instance attribute
+                self.client_name = name
 
-            # Send confirmation
+                # Persist metadata (still holding lock)
+                WebsocketConnection.client_metadata[self.uid] = {
+                    "ip": self.client_ip,
+                    "name": self.client_name,
+                    "type": self.client_type,
+                    "device_id": self.device_id,
+                    "connected_at": self.connected_at,
+                }
+
+            # Send confirmation (after atomic operation completes)
             self.send(
                 {
                     "id": message["id"],
