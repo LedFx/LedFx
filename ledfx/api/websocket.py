@@ -373,6 +373,66 @@ class WebsocketConnection:
                     return True
             return False
 
+    async def _reserve_and_set_client_name(
+        self, desired_name: str
+    ) -> tuple[str, bool]:
+        """Atomically check for name conflicts, resolve them, and persist metadata.
+
+        This method acquires metadata_lock once and holds it throughout the entire
+        operation to prevent TOCTOU race conditions where multiple clients could
+        end up with the same name.
+
+        Args:
+            desired_name: The name the client wants to use
+
+        Returns:
+            Tuple of (resolved_name, name_conflict_flag)
+            - resolved_name: The actual name assigned (may have " (N)" suffix)
+            - name_conflict_flag: True if the name was modified due to conflict
+        """
+        async with WebsocketConnection.metadata_lock:
+            # Check uniqueness and resolve conflicts while holding lock
+            original_name = desired_name
+            resolved_name = desired_name
+            counter = 1
+            name_conflict = False
+
+            while True:
+                # Check if name exists (exclude self)
+                name_taken = False
+                for (
+                    client_uuid,
+                    meta,
+                ) in WebsocketConnection.client_metadata.items():
+                    if (
+                        client_uuid != self.uid
+                        and meta.get("name") == resolved_name
+                    ):
+                        name_taken = True
+                        break
+
+                if not name_taken:
+                    break
+
+                # Name conflict - increment counter
+                name_conflict = True
+                counter += 1
+                resolved_name = f"{original_name} ({counter})"
+
+            # Update instance attribute
+            self.client_name = resolved_name
+
+            # Persist metadata (still holding lock)
+            WebsocketConnection.client_metadata[self.uid] = {
+                "ip": self.client_ip,
+                "name": self.client_name,
+                "type": self.client_type,
+                "device_id": self.device_id,
+                "connected_at": self.connected_at,
+            }
+
+            return resolved_name, name_conflict
+
     async def _update_metadata(self):
         """Update class-level metadata storage (thread-safe)"""
         async with WebsocketConnection.metadata_lock:
@@ -411,39 +471,32 @@ class WebsocketConnection:
         if not name:
             name = f"Client-{self.uid[:8]}"
 
-        # Check name uniqueness and append counter if needed
-        original_name = name
-        counter = 1
-        name_conflict = False
-        while await self._name_exists(name, exclude_uuid=self.uid):
-            name_conflict = True
-            counter += 1
-            name = f"{original_name} ({counter})"
-
-        # Store to instance attributes
+        # Store device_id and type before atomic name reservation
         self.device_id = device_id
-        self.client_name = name
         self.client_type = client_type
 
-        # Persist metadata
-        await self._update_metadata()
+        # Atomically check, resolve conflicts, and persist metadata
+        # This prevents TOCTOU race conditions
+        resolved_name, name_conflict = await self._reserve_and_set_client_name(
+            name
+        )
 
-        # Send confirmation
+        # Send confirmation (after atomic operation completes)
         self.send(
             {
                 "id": message["id"],
                 "event_type": "client_info_updated",
                 "client_id": self.uid,
-                "name": self.client_name,
+                "name": resolved_name,
                 "type": self.client_type,
                 "name_conflict": name_conflict,
             }
         )
 
-        # Fire event
+        # Fire event (only after metadata is persisted)
         self._ledfx.events.fire_event(ClientsUpdatedEvent())
         _LOGGER.info(
-            f"Client {self.uid} set info: name='{self.client_name}', type='{self.client_type}'"
+            f"Client {self.uid} set info: name='{resolved_name}', type='{self.client_type}'"
         )
 
     @websocket_handler("update_client_info")

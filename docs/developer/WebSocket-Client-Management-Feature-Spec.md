@@ -469,7 +469,7 @@ Content-Type: application/json
 
 #### Event Flow
 
-1. Client sends broadcast request (via WebSocket or REST API)
+1. Client sends broadcast request (via WebSocket)
 2. Server derives sender identity from authenticated connection (never trusts client-provided sender_id)
 3. Server validates schema and payload size
 4. Server filters target clients based on targeting mode
@@ -1072,14 +1072,14 @@ This feature will be considered successfully implemented when:
   - Use `@websocket_handler("set_client_info")` decorator
   - Extract: device_id, name (default `f"Client-{uuid[:8]}"`), client_type (default "unknown")
   - Validate client_type against VALID_CLIENT_TYPES list
-  - Check name uniqueness using async `_name_exists()` method (with lock)
-  - **Auto-resolve conflicts**: If name conflict, append ` (N)` counter until unique
+  - **Atomically check and resolve name conflicts** using `_reserve_and_set_client_name()` helper
+    - This helper acquires metadata_lock ONCE and holds it throughout: check conflicts, resolve by appending ` (N)`, persist metadata
+    - **TOCTOU Prevention**: Lock is held continuously to prevent race conditions where multiple clients could end up with the same name
+    - Returns: (resolved_name, name_conflict_flag)
     - Rationale: Initial registration should succeed smoothly; auto-numbering is acceptable UX
-    - Set `name_conflict` flag to inform client their requested name was modified
-  - Store to instance attributes: `self.device_id`, `self.client_name`, `self.client_type`
-  - **Await** `_update_metadata()` to persist
+  - Store to instance attributes: `self.device_id`, `self.client_type` (before atomic call), `self.client_name` (set by atomic helper)
   - Send confirmation: `{"event_type": "client_info_updated", "client_id": self.uid, "name": ..., "type": ..., "name_conflict": bool}`
-  - Fire `ClientsUpdatedEvent()` **after** metadata persists
+  - Fire `ClientsUpdatedEvent()` **after** atomic operation completes
 - **Implement `update_client_info` handler** (async):
   - Extract optional: name
   - **Reject conflicts**: If name provided and already taken by another client, send error and return
@@ -1089,9 +1089,19 @@ This feature will be considered successfully implemented when:
   - **Note**: client_type is immutable after `set_client_info` - cannot be updated
   - **Await** `_update_metadata()`
   - Send confirmation, fire `ClientsUpdatedEvent()`
+- **Implement async `_reserve_and_set_client_name(desired_name)`**:
+  - **ATOMIC OPERATION**: Acquire `metadata_lock` and hold throughout entire operation
+  - Check for name conflicts (exclude self.uid)
+  - Resolve conflicts by appending ` (N)` counter until unique
+  - Set `self.client_name` to resolved name
+  - Persist metadata to `client_metadata[self.uid]` (still holding lock)
+  - Release lock
+  - Return (resolved_name, name_conflict_flag)
+  - **Critical**: This prevents TOCTOU race conditions - the check, resolve, and persist happen atomically
 - **Implement async `_name_exists(name, exclude_uuid=None)`**:
   - Acquire `metadata_lock` before reading `client_metadata`
   - Return True if name found in any client except exclude_uuid
+  - **Note**: For `set_client_info`, use `_reserve_and_set_client_name()` instead to avoid TOCTOU issues
 - **Implement async `_update_metadata()`**:
   - Acquire `metadata_lock`
   - Update `WebsocketConnection.client_metadata[self.uid]` with all fields
@@ -1250,19 +1260,31 @@ if handler:
 ```python
 @websocket_handler("set_client_info")
 async def set_client_info_handler(self, message):  # NOTE: async def
-    # Extract data
-    name = message.get("name", f"Client-{self.uid[:8]}")
-
-    # Async operations with proper awaits
-    name_conflict = await self._check_and_resolve_name(name)
-
-    # Update instance attributes
-    self.client_name = name
-
-    # Await metadata persistence
-    await self._update_metadata()
-
-    # THEN fire event (after persistence)
+    # Extract and validate data
+    data = message.get("data", {})
+    name = data.get("name", f"Client-{self.uid[:8]}")
+    client_type = data.get("type", "unknown")
+    
+    # Validate type
+    if client_type not in VALID_CLIENT_TYPES:
+        client_type = "unknown"
+    
+    # Set attributes before atomic operation
+    self.device_id = data.get("device_id")
+    self.client_type = client_type
+    
+    # Atomically check, resolve conflicts, and persist (TOCTOU-safe)
+    resolved_name, name_conflict = await self._reserve_and_set_client_name(name)
+    
+    # Send confirmation (after atomic operation completes)
+    self.send({
+        "id": message["id"],
+        "event_type": "client_info_updated",
+        "name": resolved_name,
+        "name_conflict": name_conflict
+    })
+    
+    # Fire event (after persistence, no TOCTOU window)
     self._ledfx.events.fire_event(ClientsUpdatedEvent())
 ```
 
@@ -1287,6 +1309,74 @@ async def get_all_clients_metadata(cls):
             uuid: meta.copy() for uuid, meta in cls.client_metadata.items()
         }
 ```
+
+### Atomic Write Pattern (TOCTOU Prevention)
+
+**Atomically Check, Resolve Conflicts, and Persist:**
+```python
+async def _reserve_and_set_client_name(self, desired_name: str) -> tuple[str, bool]:
+    """Atomically check for name conflicts, resolve them, and persist metadata.
+    
+    This prevents TOCTOU race conditions by holding the lock throughout
+    the entire check-resolve-persist operation.
+    
+    Returns:
+        (resolved_name, name_conflict_flag)
+    """
+    async with WebsocketConnection.metadata_lock:
+        # Check and resolve conflicts (while holding lock)
+        original_name = desired_name
+        resolved_name = desired_name
+        counter = 1
+        name_conflict = False
+        
+        while True:
+            # Check if name exists (exclude self)
+            name_taken = False
+            for client_uuid, meta in WebsocketConnection.client_metadata.items():
+                if client_uuid != self.uid and meta.get("name") == resolved_name:
+                    name_taken = True
+                    break
+            
+            if not name_taken:
+                break
+            
+            # Conflict - append counter
+            name_conflict = True
+            counter += 1
+            resolved_name = f"{original_name} ({counter})"
+        
+        # Update instance attribute
+        self.client_name = resolved_name
+        
+        # Persist metadata (still holding lock)
+        WebsocketConnection.client_metadata[self.uid] = {
+            "ip": self.client_ip,
+            "name": self.client_name,
+            "type": self.client_type,
+            "device_id": self.device_id,
+            "connected_at": self.connected_at,
+        }
+        
+        # Lock is released here, after both check and persist complete
+        return resolved_name, name_conflict
+```
+
+**Why This Pattern Matters:**
+
+The broken two-step pattern would be:
+```python
+# BROKEN - TOCTOU Race Condition:
+while await self._name_exists(name):  # Lock acquired, released
+    name = f"{name} ({counter})"
+    counter += 1
+await self._update_metadata()  # Lock acquired again, released
+
+# Problem: Between _name_exists() releasing the lock and _update_metadata()
+# acquiring it, another client could register the same name we just checked.
+```
+
+The atomic pattern prevents this by holding the lock continuously.
 
 ### Metadata Cleanup on Disconnect
 
