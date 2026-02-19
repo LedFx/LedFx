@@ -143,22 +143,12 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 **REST API:**
 
 ```http
-# Backward compatible: Returns simple IP map (existing behavior)
 GET /api/clients
-
-# Enhanced: Returns full metadata objects
-GET /api/clients?detailed=true
 ```
 
-**Response (default, backward compatible):**
-```json
-{
-  "client-uuid-1": "192.168.1.100",
-  "client-uuid-2": "192.168.1.101"
-}
-```
+> **Breaking Change**: As of this version, GET /api/clients always returns full client metadata objects (not just IP strings).
 
-**Response (detailed=true):**
+**Response:**
 ```json
 {
   "client-uuid-1": {
@@ -1047,9 +1037,7 @@ This feature will be considered successfully implemented when:
   - Acquire `metadata_lock`
   - Return deep copy of `client_metadata`
 - **Update `GET /api/clients`**:
-  - Parse `?detailed=true` query parameter
-  - If detailed: return `await WebsocketConnection.get_all_clients_metadata()`
-  - If not detailed (default): return `{uuid: meta["ip"] for uuid, meta in metadata.items()}`
+  - Always return `await WebsocketConnection.get_all_clients_metadata()` (breaking change)
 - Fire `ClientsUpdatedEvent` on connect/disconnect (already exists, verify metadata cleanup on disconnect)
 
 ### Phase 3: Broadcasting (Core Feature)
