@@ -1264,18 +1264,18 @@ async def set_client_info_handler(self, message):  # NOTE: async def
     data = message.get("data", {})
     name = data.get("name", f"Client-{self.uid[:8]}")
     client_type = data.get("type", "unknown")
-    
+
     # Validate type
     if client_type not in VALID_CLIENT_TYPES:
         client_type = "unknown"
-    
+
     # Set attributes before atomic operation
     self.device_id = data.get("device_id")
     self.client_type = client_type
-    
+
     # Atomically check, resolve conflicts, and persist (TOCTOU-safe)
     resolved_name, name_conflict = await self._reserve_and_set_client_name(name)
-    
+
     # Send confirmation (after atomic operation completes)
     self.send({
         "id": message["id"],
@@ -1283,7 +1283,7 @@ async def set_client_info_handler(self, message):  # NOTE: async def
         "name": resolved_name,
         "name_conflict": name_conflict
     })
-    
+
     # Fire event (after persistence, no TOCTOU window)
     self._ledfx.events.fire_event(ClientsUpdatedEvent())
 ```
@@ -1316,10 +1316,10 @@ async def get_all_clients_metadata(cls):
 ```python
 async def _reserve_and_set_client_name(self, desired_name: str) -> tuple[str, bool]:
     """Atomically check for name conflicts, resolve them, and persist metadata.
-    
+
     This prevents TOCTOU race conditions by holding the lock throughout
     the entire check-resolve-persist operation.
-    
+
     Returns:
         (resolved_name, name_conflict_flag)
     """
@@ -1329,7 +1329,7 @@ async def _reserve_and_set_client_name(self, desired_name: str) -> tuple[str, bo
         resolved_name = desired_name
         counter = 1
         name_conflict = False
-        
+
         while True:
             # Check if name exists (exclude self)
             name_taken = False
@@ -1337,18 +1337,18 @@ async def _reserve_and_set_client_name(self, desired_name: str) -> tuple[str, bo
                 if client_uuid != self.uid and meta.get("name") == resolved_name:
                     name_taken = True
                     break
-            
+
             if not name_taken:
                 break
-            
+
             # Conflict - append counter
             name_conflict = True
             counter += 1
             resolved_name = f"{original_name} ({counter})"
-        
+
         # Update instance attribute
         self.client_name = resolved_name
-        
+
         # Persist metadata (still holding lock)
         WebsocketConnection.client_metadata[self.uid] = {
             "ip": self.client_ip,
@@ -1357,7 +1357,7 @@ async def _reserve_and_set_client_name(self, desired_name: str) -> tuple[str, bo
             "device_id": self.device_id,
             "connected_at": self.connected_at,
         }
-        
+
         # Lock is released here, after both check and persist complete
         return resolved_name, name_conflict
 ```
