@@ -1004,7 +1004,7 @@ This feature will be considered successfully implemented when:
   - `self.device_id = None`
   - `self.client_name = None`
   - `self.client_type = "unknown"`
-  - `self.connected_at = time.time()` (set in __init__ or handle method)
+  - `self.connected_at = time.time()` (set in `__init__` or handle method)
 - Implement thread-safe metadata update utilities
 
 ### Phase 2: Client Metadata (Core Feature)
