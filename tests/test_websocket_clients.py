@@ -422,9 +422,10 @@ class TestPhase2ClientMetadata:
         websocket_connection.send = MagicMock()
         await websocket_connection.update_client_info_handler(message)
 
-        # Should send "No valid updates" message
+        # Should send error response with "No valid updates" message
         response = websocket_connection.send.call_args[0][0]
-        assert "No valid updates" in response.get("message", "")
+        assert response["success"] is False
+        assert "No valid updates" in response.get("error", {}).get("message", "")
 
 
 class TestPhase3Broadcasting:
