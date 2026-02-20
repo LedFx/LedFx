@@ -265,9 +265,11 @@ All correction parameters and thresholds are defined as module-level constants f
 - **Accent masking**: HSV thresholds for filtering dark pixels in accent pass (legacy, dark backgrounds only)
 
 See constant definitions at top of [gradient_extraction.py](../../ledfx/utilities/gradient_extraction.py).
-BG_LOW_S_V = 0.28
 
-# Gradient building
+#### Example Constants
+
+```
+BG_LOW_S_V = 0.28
 BLEND_FRAC = 0.10  # Island gradient blend fraction
 GAMMA_BLEND = 0.00  # Disabled for accuracy
 ```

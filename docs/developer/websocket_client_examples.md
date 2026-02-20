@@ -1,4 +1,4 @@
-# WebSocket Client Management - Usage Examples
+# WebSocket Client - Usage Examples
 
 This document provides practical examples for implementing the WebSocket client management features in LedFx.
 

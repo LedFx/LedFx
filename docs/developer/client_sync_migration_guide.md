@@ -1,4 +1,6 @@
-# Migration Guide: Legacy Client Sync → New Client Management System
+# Websocket Client Migration Guide
+
+**Legacy Client Sync → New Client Management System**
 
 ## Overview
 
