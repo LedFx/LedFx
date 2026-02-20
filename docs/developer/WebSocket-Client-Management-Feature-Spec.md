@@ -227,7 +227,7 @@ Enable clients to broadcast messages to other connected clients through the serv
 - **Target Validation**:
   - **Lenient Filtering**: For `mode="names"` and `mode="uuids"`, non-existent identifiers are silently filtered (broadcasts to whoever exists from the list)
   - **Fail-Closed Security**: If NO targets remain after filtering, request fails with error (prevents accidental broadcasts to zero recipients)
-  - **Sender Exclusion**: 
+  - **Sender Exclusion**:
     - `mode="all"`: Sender is automatically excluded (prevents self-echo)
     - `mode="type"`: Sender is included if they match the specified type
     - `mode="names"`: Sender is excluded UNLESS their name is explicitly in the names list
@@ -561,7 +561,7 @@ Content-Type: application/json
 
 The current implementation uses LedFx's existing event system which broadcasts to all subscribers. This means:
 
-1. **Server-Side:** 
+1. **Server-Side:**
    - Server fires `ClientBroadcastEvent` to the event system
    - Event system sends to **ALL** WebSocket connections subscribed to `client_broadcast`
    - The `target_uuids` list is included as metadata in the event payload
@@ -593,12 +593,12 @@ if (data.event_type === 'client_broadcast') {
   if (!data.target_uuids.includes(myClientId)) {
     return; // Not for us - discard immediately
   }
-  
+
   // 2. OPTIONAL: Filter out own broadcasts
   if (data.sender_uuid === myClientId) {
     return; // We sent this - discard
   }
-  
+
   // 3. Process the broadcast
   handleBroadcast(data);
 }
