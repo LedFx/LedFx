@@ -83,8 +83,8 @@ class HSVEffect(GradientEffect):
         # Convert hues to gradient indexes using pre-allocated buffer
         np.mod(h, 1, out=h)
         np.multiply(h, self.pixel_count - 1, out=h)
-        np.rint(h, out=h)
-        np.copyto(self._h_indices, h.astype(int))
+        np.floor(h, out=h)
+        self._h_indices[:] = h.astype(int, copy=False)
         
         # Grab the colors from the gradient
         pixels[:] = self.get_gradient()[:, self._h_indices].T
