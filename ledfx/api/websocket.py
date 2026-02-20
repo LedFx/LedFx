@@ -6,8 +6,7 @@ import struct
 import time
 import uuid
 from concurrent import futures
-from typing import Any, ClassVar, Dict
-from uuid import UUID
+from typing import Any, ClassVar
 
 import numpy as np
 import pybase64
