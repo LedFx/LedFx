@@ -571,7 +571,7 @@ class WebsocketConnection:
 
         # Fire event
         self._ledfx.events.fire_event(ClientsUpdatedEvent())
-        
+
         # Log what was updated
         updates = []
         if name is not None:

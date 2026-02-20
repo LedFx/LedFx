@@ -178,11 +178,11 @@ You can update client name and/or type after initial connection:
 function updateClientInfo(newName, newType) {
   const messageId = getNextMessageId();
   const data = {};
-  
+
   if (newName !== undefined) {
     data.name = newName;
   }
-  
+
   if (newType !== undefined) {
     data.type = newType;
   }

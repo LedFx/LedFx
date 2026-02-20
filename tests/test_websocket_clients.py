@@ -327,9 +327,7 @@ class TestPhase2ClientMetadata:
         assert "already taken" in error_message
 
     @pytest.mark.asyncio
-    async def test_update_client_info_type_update(
-        self, websocket_connection
-    ):
+    async def test_update_client_info_type_update(self, websocket_connection):
         """Test that update_client_info can change type"""
         # Pre-set initial metadata
         websocket_connection.client_name = "TestClient"
@@ -349,7 +347,9 @@ class TestPhase2ClientMetadata:
         assert websocket_connection.client_type == "visualiser"
 
         # Verify metadata was persisted
-        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
+        metadata = WebsocketConnection.client_metadata[
+            websocket_connection.uid
+        ]
         assert metadata["type"] == "visualiser"
 
         # Verify response
@@ -358,9 +358,7 @@ class TestPhase2ClientMetadata:
         assert response["type"] == "visualiser"
 
     @pytest.mark.asyncio
-    async def test_update_client_info_invalid_type(
-        self, websocket_connection
-    ):
+    async def test_update_client_info_invalid_type(self, websocket_connection):
         """Test that update_client_info defaults invalid types to unknown"""
         websocket_connection.client_name = "TestClient"
         websocket_connection.client_type = "controller"
@@ -405,7 +403,9 @@ class TestPhase2ClientMetadata:
         assert websocket_connection.client_type == "display"
 
         # Verify metadata was persisted
-        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
+        metadata = WebsocketConnection.client_metadata[
+            websocket_connection.uid
+        ]
         assert metadata["name"] == "NewName"
         assert metadata["type"] == "display"
 
