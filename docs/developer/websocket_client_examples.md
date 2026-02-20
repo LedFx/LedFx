@@ -36,7 +36,7 @@ sequenceDiagram
     Server-->>WebSocket: clients_updated event (to subscribers)
 ```
 
-```javascript
+```
 const websocket = new WebSocket('ws://localhost:8888/api/websocket');
 let myClientId = null;
 
@@ -97,7 +97,8 @@ sequenceDiagram
 
 ### Setting Client Info with Error Handling
 
-```javascript// Helper: Generate unique message IDs
+```
+// Helper: Generate unique message IDs
 let messageIdCounter = 1;
 function getNextMessageId() {
   return messageIdCounter++;
@@ -174,7 +175,7 @@ setClientInfo('Living Room Display', 'visualiser', 'esp32-001')
 
 You can update client name and/or type after initial connection:
 
-```javascript
+```
 function updateClientInfo(newName, newType) {
   const messageId = getNextMessageId();
   const data = {};
@@ -216,7 +217,7 @@ document.getElementById('typeSelect').addEventListener('change', (e) => {
 
 ### Fetching Client List
 
-```javascript
+```
 async function getConnectedClients() {
   const response = await fetch('http://localhost:8888/api/clients');
   const data = await response.json();
@@ -270,7 +271,7 @@ sequenceDiagram
 
 ### Broadcasting to All Clients
 
-```javascript
+```
 function broadcastToAll(messageType, payload) {
   const messageId = getNextMessageId();
 
@@ -322,7 +323,7 @@ sequenceDiagram
 
 ### Broadcasting to Specific Client Types
 
-```javascript
+```
 function broadcastToVisualisers(payload) {
   websocket.send(JSON.stringify({
     id: getNextMessageId(),
@@ -348,7 +349,7 @@ broadcastToVisualisers({
 
 ### Broadcasting to Specific Clients by Name
 
-```javascript
+```
 function broadcastToNamedClients(names, payload) {
   websocket.send(JSON.stringify({
     id: getNextMessageId(),
@@ -376,7 +377,7 @@ broadcastToNamedClients(
 
 ### Broadcasting with Response Handling
 
-```javascript
+```
 function broadcastWithConfirmation(broadcastType, target, payload) {
   const messageId = getNextMessageId();
 
@@ -480,19 +481,22 @@ sequenceDiagram
     participant OtherClient
 
     Note over Receiver: client_id: "abc-123"<br/>Subscribed to client_broadcast
-    Note over OtherClient: client_id: "xyz-789"
+    Note over OtherClient: client_id: "xyz-789"<br/>Subscribed to client_broadcast
 
     Sender->>Server: broadcast {target: {mode: "uuids", uuids: ["abc-123"]}}
-    Server->>Server: Filter targets
+    Server->>Server: Determine targets<br/>for audit & response
 
-    par Send to matched targets
+    par Broadcast to ALL subscribers
         Server->>Receiver: client_broadcast {target_uuids: ["abc-123"]}
-        Note over OtherClient: No event sent<br/>(not in target list)
+        Server->>OtherClient: client_broadcast {target_uuids: ["abc-123"]}
     end
 
     Receiver->>Receiver: Check: "abc-123" in target_uuids? ✓
     Receiver->>Receiver: Check: sender_uuid != "abc-123"? ✓
     Note over Receiver: Process broadcast payload
+
+    OtherClient->>OtherClient: Check: "xyz-789" in target_uuids? ✗
+    Note over OtherClient: Discard (not in target list)
 
     alt Sender receives their own broadcast
         Sender->>Sender: Check: sender_uuid == own client_id?
@@ -502,7 +506,7 @@ sequenceDiagram
 
 ### Subscribing to Client Events
 
-```javascript
+```
 // Subscribe to clients_updated event
 websocket.send(JSON.stringify({
   id: getNextMessageId(),
@@ -520,7 +524,7 @@ websocket.send(JSON.stringify({
 
 ### Handling Client List Changes
 
-```javascript
+```
 websocket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
@@ -569,7 +573,7 @@ function updateClientListUI(clients) {
 
 **Important:** Broadcast events are sent to ALL subscribers of `client_broadcast`. You MUST filter by `target_uuids` to determine if the message is intended for you. This is client-side filtering - the server does not selectively send to specific connections.
 
-```javascript
+```
 websocket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
@@ -668,7 +672,7 @@ sequenceDiagram
 
 A controller app that manages scenes and broadcasts to visualisers:
 
-```javascript
+```
 class LedFxController {
   constructor(wsUrl = 'ws://localhost:8888/api/websocket') {
     this.wsUrl = wsUrl;
@@ -804,7 +808,7 @@ setTimeout(() => {
 
 A visualiser app that receives broadcasts and updates display:
 
-```javascript
+```
 class LedFxVisualiser {
   constructor(name, wsUrl = 'ws://localhost:8888/api/websocket') {
     this.name = name;
@@ -942,7 +946,7 @@ Choose the correct `broadcast_type` to help receivers handle messages appropriat
 Subscribe to `clients_updated` to keep your client list synchronized.
 
 ### 7. Implement Reconnection Logic
-```javascript
+```
 function connectWithRetry(maxRetries = 5, delay = 1000) {
   let retries = 0;
 
@@ -1008,7 +1012,7 @@ sequenceDiagram
 
 ### Problem: Not Receiving Broadcasts
 **Solution**: Ensure you've subscribed to the `client_broadcast` event:
-```javascript
+```
 websocket.send(JSON.stringify({
   id: 1,
   type: 'subscribe_event',
@@ -1018,20 +1022,20 @@ websocket.send(JSON.stringify({
 
 ### Problem: Name Conflict Every Time
 **Solution**: Check if another client is using your name. Consider adding a unique suffix:
-```javascript
+```
 const name = `My App ${Math.random().toString(36).substr(2, 4)}`;
 ```
 
 ### Problem: Broadcast Fails with "No targets matched"
 **Solution**: Verify target specification is correct and target clients exist. Fetch client list to confirm:
-```javascript
+```
 const clients = await getConnectedClients();
 console.log('Available clients:', Object.values(clients).map(c => c.name));
 ```
 
 ### Problem: Payload Too Large Error
 **Solution**: Reduce payload size or split into multiple broadcasts:
-```javascript
+```
 // Instead of sending large data
 const largePayload = { image: base64ImageData }; // Too large!
 

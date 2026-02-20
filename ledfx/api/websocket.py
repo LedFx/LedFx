@@ -6,6 +6,8 @@ import struct
 import time
 import uuid
 from concurrent import futures
+from typing import Any, ClassVar, Dict
+from uuid import UUID
 
 import numpy as np
 import pybase64
@@ -113,8 +115,8 @@ class WebsocketConnection:
     ip_uid_map = {}
     map_lock = asyncio.Lock()
     # Phase 1: Class-level metadata storage
-    client_metadata = {}  # UUID -> metadata dict
-    metadata_lock = asyncio.Lock()
+    client_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}  # UUID -> metadata dict
+    metadata_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
 
     def __init__(self, ledfx):
         self._ledfx = ledfx

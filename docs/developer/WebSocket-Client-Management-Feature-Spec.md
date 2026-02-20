@@ -86,7 +86,7 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 #### Client Name Requirements
 
 - **Uniqueness**: Client names must be unique across all connected clients
-- **Conflict Resolution (Initial Registration)**: When `set_client_info` is called with a taken name, automatically append a counter: `"MyClient"` → `"MyClient (1)"` → `"MyClient (2)"`
+- **Conflict Resolution (Initial Registration)**: When `set_client_info` is called with a taken name, automatically append a counter: `"MyClient"` → `"MyClient (2)"` → `"MyClient (3)"`
   - Client receives confirmation with `name_conflict: true` flag to indicate modification
   - Ensures smooth initial connection without blocking on name conflicts
 - **Conflict Resolution (Explicit Rename)**: When `update_client_info` is called with a taken name, reject with error
@@ -217,7 +217,7 @@ Enable clients to broadcast messages to other connected clients through the serv
 | Mode | Description | Configuration | Sender Behavior |
 |------|-------------|---------------|-----------------|
 | `all` | Broadcast to all connected clients | No additional config | Auto-excluded (prevents self-echo) |
-| `type` | Target all clients of a specific type | `value: "display"` | Auto-excluded (prevents self-echo) |
+| `type` | Target all clients of a specific type | `value: "display"` | Included if sender matches specified type |
 | `names` | Target specific clients by name | `names: ["Display 1", "Display 2"]` | Included only if sender's name is in list |
 | `uuids` | Target specific clients by UUID | `uuids: ["uuid-1", "uuid-2"]` | Included only if sender's UUID is in list |
 
@@ -1181,7 +1181,7 @@ This feature will be considered successfully implemented when:
   - Extract: device_id, name (default `f"Client-{uuid[:8]}"`), client_type (default "unknown")
   - Validate client_type against VALID_CLIENT_TYPES list
   - **Atomically check and resolve name conflicts** using `_reserve_and_set_client_name()` helper
-    - This helper acquires metadata_lock ONCE and holds it throughout: check conflicts, resolve by appending ` (N)`, persist metadata
+    - This helper acquires metadata_lock ONCE and holds it throughout: check conflicts, resolve by appending `(N)`, persist metadata
     - **TOCTOU Prevention**: Lock is held continuously to prevent race conditions where multiple clients could end up with the same name
     - Returns: (resolved_name, name_conflict_flag)
     - Rationale: Initial registration should succeed smoothly; auto-numbering is acceptable UX
@@ -1191,18 +1191,21 @@ This feature will be considered successfully implemented when:
 - **Implement `update_client_info` handler** (async):
   - Extract optional: name, type
   - **Validate type**: If type provided and invalid, default to "unknown" with warning (same as set_client_info)
-  - **Reject name conflicts**: If name provided and already taken by another client, send error and return
-    - Rationale: Explicit rename should not auto-modify; user needs feedback to choose alternative name
-    - This differs from `set_client_info` by design - explicit rename actions require explicit user acknowledgment
-  - If name is unique (or updating to own current name): update `self.client_name`
-  - If type provided: update `self.client_type`
-  - **Atomic operation**: Both name and type updates happen within single metadata_lock acquisition
-  - **Await** `_update_metadata()`
+  - **Atomic operation**: Both name and type updates happen within single `metadata_lock` acquisition
+    - Acquire `WebsocketConnection.metadata_lock` and hold throughout entire operation
+    - **If name provided**: Check if name is already taken by another client (exclude self.uid)
+      - If taken: Send error and return (explicit rename requires user acknowledgment)
+      - If available: Update `self.client_name`
+    - **If type provided**: Update `self.client_type`
+    - Persist metadata to `client_metadata[self.uid]` (still holding lock)
+    - Release lock
+    - **Critical**: This prevents TOCTOU race conditions - the check and persist happen atomically
   - Send confirmation, fire `ClientsUpdatedEvent()`
+  - **Note**: Unlike `set_client_info`, this rejects name conflicts rather than auto-resolving them
 - **Implement async `_reserve_and_set_client_name(desired_name)`**:
   - **ATOMIC OPERATION**: Acquire `metadata_lock` and hold throughout entire operation
   - Check for name conflicts (exclude self.uid)
-  - Resolve conflicts by appending ` (N)` counter until unique
+  - Resolve conflicts by appending `(N)` counter until unique
   - Set `self.client_name` to resolved name
   - Persist metadata to `client_metadata[self.uid]` (still holding lock)
   - Release lock
@@ -1602,7 +1605,7 @@ class ClientBroadcastEvent(Event):
 
 **Flow:**
 1. Desktop connects, sets name "Desktop Control"
-2. Phone connects, tries to set name "Desktop Control" → auto-renamed to "Desktop Control (1)"
+2. Phone connects, tries to set name "Desktop Control" → auto-renamed to "Desktop Control (2)"
 3. User activates scene "Party Mode" on desktop
 4. Desktop broadcasts to `mode: "all"`: `{ broadcast_type: "scene_sync", scene_id: "party_mode" }`
 5. Phone receives broadcast, updates its UI to show "Party Mode" is active
