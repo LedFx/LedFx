@@ -146,9 +146,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         for _ in range(self._speed_int):
             # Flip buffers for each rendering pass.
             self._cur_buffer = 1 - self._cur_buffer
-            self._do_ripple(
-                self._buffer, self._cur_buffer, self._damp_factor
-            )
+            self._do_ripple(self._buffer, self._cur_buffer, self._damp_factor)
 
         # Create new drops if any (drops_queue is never None during active render)
         while not self.drops_queue.empty():
@@ -167,7 +165,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         # Important: Keep unclipped version for saturation calculation
         np.add(current_buf, shift_v, out=self.hsv_array[:, 2])
         np.divide(self.hsv_array[:, 2], 1 + shift_v, out=self.hsv_array[:, 2])
-        
+
         # Saturation starts at 1.0, and then for over-bright values (above 1),
         # reduce saturation to make it look hot.
         # MUST use unclipped transformed value for saturation calculation
@@ -175,7 +173,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         np.multiply(self.hsv_array[:, 1], -1, out=self.hsv_array[:, 1])
         np.add(self.hsv_array[:, 1], 2.0, out=self.hsv_array[:, 1])
         np.clip(self.hsv_array[:, 1], 0.0, 1.0, out=self.hsv_array[:, 1])
-        
+
         # Now clip the value channel (after saturation calc uses unclipped version)
         np.clip(self.hsv_array[:, 2], 0.0, 1.0, out=self.hsv_array[:, 2])
 
@@ -204,12 +202,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         # position.  This slows down the waves somewhat and still looks nice.
         # Vectorized implementation - MUCH faster than Python for loop
         buf[dest][1:-1] = (
-            (
-                buf[src][:-2]
-                + buf[src][2:]
-                + buf[src][1:-1] * 2
-            )
-            / 2
+            (buf[src][:-2] + buf[src][2:] + buf[src][1:-1] * 2) / 2
         ) - buf[dest][1:-1]
 
         buf[dest] = smooth(buf[dest], 1.0)

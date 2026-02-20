@@ -73,7 +73,7 @@ class HSVEffect(GradientEffect):
         h = self.hsv_array[:, 0]
         s = self.hsv_array[:, 1]
         v = self.hsv_array[:, 2]
-        
+
         if self._config["fix_hues"]:
             # fix_hue_fast modifies h in place
             self.fix_hue_fast(h)
@@ -88,11 +88,11 @@ class HSVEffect(GradientEffect):
         
         # Grab the colors from the gradient
         pixels[:] = self.get_gradient()[:, self._h_indices].T
-        
+
         # Apply saturation to colors - optimized to use pre-allocated buffer
         np.max(pixels, axis=1, out=self._pixel_max[:, 0])
         pixels += (self._pixel_max - pixels) * (1 - s).reshape(-1, 1)
-        
+
         # Apply value (brightness) to colors
         pixels *= v.reshape(-1, 1)
 
