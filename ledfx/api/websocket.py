@@ -501,15 +501,36 @@ class WebsocketConnection:
 
     @websocket_handler("update_client_info")
     async def update_client_info_handler(self, message):
-        """Handle client metadata updates (name only - type is immutable after set_client_info)"""
+        """Handle client metadata updates (name and type)"""
         data = message.get("data", {})
         name = data.get("name")
+        client_type = data.get("type")
 
-        # Update name if provided
-        if name is not None:
-            # Atomically check and update name (prevents TOCTOU race)
-            async with WebsocketConnection.metadata_lock:
-                # Check if name is already taken by another client
+        # Validate and normalize type if provided
+        if client_type is not None:
+            if client_type not in VALID_CLIENT_TYPES:
+                _LOGGER.warning(
+                    f"Invalid client_type '{client_type}' from {self.uid}, defaulting to 'unknown'"
+                )
+                client_type = "unknown"
+
+        # Check if any updates were provided
+        if name is None and client_type is None:
+            # No valid updates provided
+            self.send(
+                {
+                    "id": message["id"],
+                    "event_type": "client_info_updated",
+                    "client_id": self.uid,
+                    "message": "No valid updates provided",
+                }
+            )
+            return
+
+        # Atomically update name and/or type (prevents TOCTOU race)
+        async with WebsocketConnection.metadata_lock:
+            # Check if name is already taken by another client (if name update requested)
+            if name is not None:
                 for (
                     client_uuid,
                     meta,
@@ -524,41 +545,40 @@ class WebsocketConnection:
                 # Name is available - update instance attribute
                 self.client_name = name
 
-                # Persist metadata (still holding lock)
-                WebsocketConnection.client_metadata[self.uid] = {
-                    "ip": self.client_ip,
-                    "name": self.client_name,
-                    "type": self.client_type,
-                    "device_id": self.device_id,
-                    "connected_at": self.connected_at,
-                }
+            # Update type if provided
+            if client_type is not None:
+                self.client_type = client_type
 
-            # Send confirmation (after atomic operation completes)
-            self.send(
-                {
-                    "id": message["id"],
-                    "event_type": "client_info_updated",
-                    "client_id": self.uid,
-                    "name": self.client_name,
-                    "type": self.client_type,
-                }
-            )
+            # Persist metadata (still holding lock)
+            WebsocketConnection.client_metadata[self.uid] = {
+                "ip": self.client_ip,
+                "name": self.client_name,
+                "type": self.client_type,
+                "device_id": self.device_id,
+                "connected_at": self.connected_at,
+            }
 
-            # Fire event
-            self._ledfx.events.fire_event(ClientsUpdatedEvent())
-            _LOGGER.info(
-                f"Client {self.uid} updated name to '{self.client_name}'"
-            )
-        else:
-            # No valid updates provided
-            self.send(
-                {
-                    "id": message["id"],
-                    "event_type": "client_info_updated",
-                    "client_id": self.uid,
-                    "message": "No valid updates provided",
-                }
-            )
+        # Send confirmation (after atomic operation completes)
+        self.send(
+            {
+                "id": message["id"],
+                "event_type": "client_info_updated",
+                "client_id": self.uid,
+                "name": self.client_name,
+                "type": self.client_type,
+            }
+        )
+
+        # Fire event
+        self._ledfx.events.fire_event(ClientsUpdatedEvent())
+        
+        # Log what was updated
+        updates = []
+        if name is not None:
+            updates.append(f"name='{self.client_name}'")
+        if client_type is not None:
+            updates.append(f"type='{self.client_type}'")
+        _LOGGER.info(f"Client {self.uid} updated: {', '.join(updates)}")
 
     # Phase 3: Broadcasting methods
     def _filter_targets(

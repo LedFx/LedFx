@@ -219,7 +219,7 @@ Set client metadata when first connecting. This is typically sent once after rec
 
 **Fields:**
 - `name` (optional): Display name for this client. If not provided or conflicts with existing name, will auto-generate or append counter
-- `type` (optional): Client type - one of: `controller`, `visualiser`, `mobile`, `display`, `api`, `unknown`. Defaults to `unknown`. **Immutable after first set.**
+- `type` (optional): Client type - one of: `controller`, `visualiser`, `mobile`, `display`, `api`, `unknown`. Defaults to `unknown`.
 - `device_id` (optional): Optional device identifier string
 
 **Server → Client Response:**
@@ -248,7 +248,7 @@ If the requested name is already taken, the server will append a counter:
 
 #### update_client_info WebSocket Message
 
-Update client name while connected. Type cannot be changed (immutable).
+Update client name and/or type while connected.
 
 **Client → Server:**
 ``` json
@@ -256,10 +256,15 @@ Update client name while connected. Type cannot be changed (immutable).
   "id": 2,
   "type": "update_client_info",
   "data": {
-    "name": "Bedroom Display"
+    "name": "Bedroom Display",
+    "type": "visualiser"
   }
 }
 ```
+
+**Fields:**
+- `name` (optional): New display name for this client. Must be unique across connected clients.
+- `type` (optional): New client type - one of: `controller`, `visualiser`, `mobile`, `display`, `api`, `unknown`. Invalid types default to `unknown`.
 
 **Server → Client Success:**
 ``` json

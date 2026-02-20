@@ -112,12 +112,13 @@ Each WebSocket connection should maintain a persistent identity with metadata th
   }
 }
 
-// Update metadata while connected (name only - type is immutable)
+// Update metadata while connected (name and type)
 {
   id: 2,                            // required message correlation ID
   type: "update_client_info",
   data: {
-    name: "Bedroom Display"           // optional, update name only
+    name: "Bedroom Display",          // optional, update name
+    type: "display"                   // optional, update type
   }
 }
 ```
@@ -1188,12 +1189,14 @@ This feature will be considered successfully implemented when:
   - Send confirmation: `{"event_type": "client_info_updated", "client_id": self.uid, "name": ..., "type": ..., "name_conflict": bool}`
   - Fire `ClientsUpdatedEvent()` **after** atomic operation completes
 - **Implement `update_client_info` handler** (async):
-  - Extract optional: name
-  - **Reject conflicts**: If name provided and already taken by another client, send error and return
+  - Extract optional: name, type
+  - **Validate type**: If type provided and invalid, default to "unknown" with warning (same as set_client_info)
+  - **Reject name conflicts**: If name provided and already taken by another client, send error and return
     - Rationale: Explicit rename should not auto-modify; user needs feedback to choose alternative name
     - This differs from `set_client_info` by design - explicit rename actions require explicit user acknowledgment
   - If name is unique (or updating to own current name): update `self.client_name`
-  - **Note**: client_type is immutable after `set_client_info` - cannot be updated
+  - If type provided: update `self.client_type`
+  - **Atomic operation**: Both name and type updates happen within single metadata_lock acquisition
   - **Await** `_update_metadata()`
   - Send confirmation, fire `ClientsUpdatedEvent()`
 - **Implement async `_reserve_and_set_client_name(desired_name)`**:

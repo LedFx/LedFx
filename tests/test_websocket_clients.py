@@ -327,10 +327,10 @@ class TestPhase2ClientMetadata:
         assert "already taken" in error_message
 
     @pytest.mark.asyncio
-    async def test_update_client_info_type_immutable(
+    async def test_update_client_info_type_update(
         self, websocket_connection
     ):
-        """Test that update_client_info cannot change type (immutable)"""
+        """Test that update_client_info can change type"""
         # Pre-set initial metadata
         websocket_connection.client_name = "TestClient"
         websocket_connection.client_type = "controller"
@@ -339,18 +339,80 @@ class TestPhase2ClientMetadata:
         message = {
             "id": 1,
             "type": "update_client_info",
-            "data": {"type": "visualiser"},  # Attempt to change type
+            "data": {"type": "visualiser"},
         }
 
         websocket_connection.send = MagicMock()
         await websocket_connection.update_client_info_handler(message)
 
-        # Type should remain unchanged
-        assert websocket_connection.client_type == "controller"
+        # Type should be updated
+        assert websocket_connection.client_type == "visualiser"
 
-        # Should send "No valid updates" message
+        # Verify metadata was persisted
+        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
+        assert metadata["type"] == "visualiser"
+
+        # Verify response
         response = websocket_connection.send.call_args[0][0]
-        assert "No valid updates" in response.get("message", "")
+        assert response["event_type"] == "client_info_updated"
+        assert response["type"] == "visualiser"
+
+    @pytest.mark.asyncio
+    async def test_update_client_info_invalid_type(
+        self, websocket_connection
+    ):
+        """Test that update_client_info defaults invalid types to unknown"""
+        websocket_connection.client_name = "TestClient"
+        websocket_connection.client_type = "controller"
+        await websocket_connection._update_metadata()
+
+        message = {
+            "id": 1,
+            "type": "update_client_info",
+            "data": {"type": "invalid_type"},
+        }
+
+        websocket_connection.send = MagicMock()
+        await websocket_connection.update_client_info_handler(message)
+
+        # Invalid type should default to unknown
+        assert websocket_connection.client_type == "unknown"
+
+        # Verify response
+        response = websocket_connection.send.call_args[0][0]
+        assert response["type"] == "unknown"
+
+    @pytest.mark.asyncio
+    async def test_update_client_info_name_and_type(
+        self, websocket_connection
+    ):
+        """Test that update_client_info can update both name and type"""
+        websocket_connection.client_name = "TestClient"
+        websocket_connection.client_type = "controller"
+        await websocket_connection._update_metadata()
+
+        message = {
+            "id": 1,
+            "type": "update_client_info",
+            "data": {"name": "NewName", "type": "display"},
+        }
+
+        websocket_connection.send = MagicMock()
+        await websocket_connection.update_client_info_handler(message)
+
+        # Both should be updated
+        assert websocket_connection.client_name == "NewName"
+        assert websocket_connection.client_type == "display"
+
+        # Verify metadata was persisted
+        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
+        assert metadata["name"] == "NewName"
+        assert metadata["type"] == "display"
+
+        # Verify response
+        response = websocket_connection.send.call_args[0][0]
+        assert response["name"] == "NewName"
+        assert response["type"] == "display"
 
     @pytest.mark.asyncio
     async def test_update_client_info_no_updates(self, websocket_connection):

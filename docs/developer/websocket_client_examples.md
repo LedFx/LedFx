@@ -170,24 +170,47 @@ setClientInfo('Living Room Display', 'visualiser', 'esp32-001')
   });
 ```
 
-### Updating Client Name
+### Updating Client Metadata
+
+You can update client name and/or type after initial connection:
 
 ```javascript
-function updateClientName(newName) {
+function updateClientInfo(newName, newType) {
   const messageId = getNextMessageId();
+  const data = {};
+  
+  if (newName !== undefined) {
+    data.name = newName;
+  }
+  
+  if (newType !== undefined) {
+    data.type = newType;
+  }
 
   websocket.send(JSON.stringify({
     id: messageId,
     type: 'update_client_info',
-    data: {
-      name: newName
-    }
+    data: data
   }));
 }
 
+// Example: Update name only
+updateClientInfo('New Display Name', undefined);
+
+// Example: Update type only
+updateClientInfo(undefined, 'visualiser');
+
+// Example: Update both name and type
+updateClientInfo('Bedroom Display', 'display');
+
 // Example: Update name when user changes it in UI
 document.getElementById('nameInput').addEventListener('change', (e) => {
-  updateClientName(e.target.value);
+  updateClientInfo(e.target.value, undefined);
+});
+
+// Example: Update type when user selects from dropdown
+document.getElementById('typeSelect').addEventListener('change', (e) => {
+  updateClientInfo(undefined, e.target.value);
 });
 ```
 
