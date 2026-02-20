@@ -525,14 +525,7 @@ class WebsocketConnection:
         # Check if any updates were provided
         if name is None and client_type is None:
             # No valid updates provided
-            self.send(
-                {
-                    "id": message["id"],
-                    "event_type": "client_info_updated",
-                    "client_id": self.uid,
-                    "message": "No valid updates provided",
-                }
-            )
+            self.send_error(message["id"], "No valid updates provided")
             return
 
         # Atomically update name and/or type (prevents TOCTOU race)
@@ -657,7 +650,8 @@ class WebsocketConnection:
 
         # Validate payload size
         payload = validated_data["payload"]
-        payload_size = len(json.dumps(payload))
+        payload_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        payload_size = len(payload_bytes)
         if payload_size > MAX_PAYLOAD_SIZE:
             self.send_error(
                 message["id"],
