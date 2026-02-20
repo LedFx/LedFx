@@ -85,7 +85,7 @@ class HSVEffect(GradientEffect):
         np.multiply(h, self.pixel_count - 1, out=h)
         np.floor(h, out=h)
         self._h_indices[:] = h.astype(int, copy=False)
-        
+
         # Grab the colors from the gradient
         pixels[:] = self.get_gradient()[:, self._h_indices].T
 
