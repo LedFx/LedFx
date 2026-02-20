@@ -361,6 +361,7 @@ class WebsocketConnection:
             self._ledfx.events.fire_event(
                 ClientDisconnectedEvent(self.uid, self.client_ip)
             )
+            self._ledfx.events.fire_event(ClientsUpdatedEvent())
 
         return socket
 

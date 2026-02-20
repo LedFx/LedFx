@@ -453,15 +453,18 @@ This prevents accidental broadcasts to clients that haven't registered metadata.
 ```javascript
 // Client sends via WebSocket (sender identity derived from connection)
 {
-  type: "broadcast",
-  broadcast_type: "visualiser_control",
-  target: {
-    mode: "type",
-    value: "display"
-  },
-  payload: {
-    command: "set_brightness",
-    value: 80
+  "id": 1,
+  "type": "broadcast",
+  "data": {
+    "broadcast_type": "visualiser_control",
+    "target": {
+      "mode": "type",
+      "value": "display"
+    },
+    "payload": {
+      "command": "set_brightness",
+      "value": 80
+    }
   }
 }
 ```
