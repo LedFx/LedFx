@@ -425,7 +425,9 @@ class TestPhase2ClientMetadata:
         # Should send error response with "No valid updates" message
         response = websocket_connection.send.call_args[0][0]
         assert response["success"] is False
-        assert "No valid updates" in response.get("error", {}).get("message", "")
+        assert "No valid updates" in response.get("error", {}).get(
+            "message", ""
+        )
 
 
 class TestPhase3Broadcasting:
