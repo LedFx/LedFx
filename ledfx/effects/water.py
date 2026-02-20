@@ -63,6 +63,9 @@ class Water(AudioReactiveEffect, HSVEffect):
         super().__init__(ledfx, config)
         # Queue will contain tuples of (pixel location, water height value)
         self.drops_queue = queue.Queue()
+        # Cache computed config values
+        self._damp_factor = None
+        self._speed_int = None
 
     def on_activate(self, pixel_count):
         # Double buffered rendering
@@ -76,6 +79,14 @@ class Water(AudioReactiveEffect, HSVEffect):
             (0.625, 2.5),
             (0.875, -1.5),
         ]
+        # Pre-compute config-dependent values
+        self._damp_factor = 2 ** self._config["viscosity"]
+        self._speed_int = int(self._config["speed"])
+
+    def config_updated(self, config):
+        """Cache computed config values to avoid repeated calculations"""
+        self._damp_factor = 2 ** config["viscosity"]
+        self._speed_int = int(config["speed"])
 
     def deactivate(self):
         empty_queue(self.drops_queue)
@@ -132,36 +143,41 @@ class Water(AudioReactiveEffect, HSVEffect):
 
     def render_hsv(self):
         # Run water calculations
-        for _ in range(0, int(self._config["speed"])):
+        for _ in range(self._speed_int):
             # Flip buffers for each rendering pass.
             self._cur_buffer = 1 - self._cur_buffer
             self._do_ripple(
-                self._buffer, self._cur_buffer, 2 ** self._config["viscosity"]
+                self._buffer, self._cur_buffer, self._damp_factor
             )
 
-        # Create new drops if any
-        if self.drops_queue is None:
-            self.drops_queue = queue.Queue()
+        # Create new drops if any (drops_queue is never None during active render)
         while not self.drops_queue.empty():
             drop_pos, drop_height = self.drops_queue.get()
             self._create_drop(drop_pos, drop_height)
 
-        # Render
+        # Render - cache the current buffer reference
+        current_buf = self._buffer[self._cur_buffer]
+        shift_v = self._config["vertical_shift"]
 
         # Hues are a triangle of the raw values which makes for some nice effects.
-        self.hsv_array[:, 0] = triangle(self._buffer[self._cur_buffer])
+        self.hsv_array[:, 0] = triangle(current_buf)
 
         # Shift the values buffer up by the shift amount and then scale to fit.
         # Values can still be out of bounds, so we clamp.
-        self._v = self._buffer[self._cur_buffer]
-        shift_v = self._config["vertical_shift"]
-        self._v = (self._v + shift_v) / (1 + shift_v)
-        self.hsv_array[:, 2] = np.clip(self._v, 0.0, 1.0)
-
+        # Important: Keep unclipped version for saturation calculation
+        np.add(current_buf, shift_v, out=self.hsv_array[:, 2])
+        np.divide(self.hsv_array[:, 2], 1 + shift_v, out=self.hsv_array[:, 2])
+        
         # Saturation starts at 1.0, and then for over-bright values (above 1),
         # reduce saturation to make it look hot.
-        self._s = np.clip(-1 * (self._v + shift_v) + 2.0, 0.0, 1.0)
-        self.hsv_array[:, 1] = self._s
+        # MUST use unclipped transformed value for saturation calculation
+        np.add(self.hsv_array[:, 2], shift_v, out=self.hsv_array[:, 1])
+        np.multiply(self.hsv_array[:, 1], -1, out=self.hsv_array[:, 1])
+        np.add(self.hsv_array[:, 1], 2.0, out=self.hsv_array[:, 1])
+        np.clip(self.hsv_array[:, 1], 0.0, 1.0, out=self.hsv_array[:, 1])
+        
+        # Now clip the value channel (after saturation calc uses unclipped version)
+        np.clip(self.hsv_array[:, 2], 0.0, 1.0, out=self.hsv_array[:, 2])
 
     def _create_drop(self, position, height):
         self._buffer[0][position] = self._buffer[0][position - 1] = (
@@ -186,15 +202,15 @@ class Water(AudioReactiveEffect, HSVEffect):
         # The 2D version of this algorithm uses the north and south neighbors.
         # Since we don't have that here, I dropped in the value at the current
         # position.  This slows down the waves somewhat and still looks nice.
-        for pixel in range(1, self.pixel_count - 1):
-            buf[dest][pixel] = (
-                (
-                    buf[src][pixel - 1]
-                    + buf[src][pixel + 1]
-                    + buf[src][pixel] * 2
-                )
-                / 2
-            ) - buf[dest][pixel]
+        # Vectorized implementation - MUCH faster than Python for loop
+        buf[dest][1:-1] = (
+            (
+                buf[src][:-2]
+                + buf[src][2:]
+                + buf[src][1:-1] * 2
+            )
+            / 2
+        ) - buf[dest][1:-1]
 
         buf[dest] = smooth(buf[dest], 1.0)
         buf[dest] -= buf[dest] / damp_factor

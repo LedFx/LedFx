@@ -48,9 +48,15 @@ class HSVEffect(GradientEffect):
         super().__init__(ledfx, config)
         self._dt = 0
         self.hsv_array = None
+        # Pre-allocated working buffers for performance
+        self._h_indices = None
+        self._pixel_max = None
 
     def on_activate(self, pixel_count):
         self.hsv_array = np.zeros((pixel_count, 3))
+        # Pre-allocate working buffers to avoid repeated allocations
+        self._h_indices = np.zeros(pixel_count, dtype=int)
+        self._pixel_max = np.zeros((pixel_count, 1))
         # self.output = np.zeros((pixel_count, 3))
 
     def config_updated(self, config):
@@ -62,26 +68,33 @@ class HSVEffect(GradientEffect):
         self._dt = time.time_ns() - self._start_time
         self.render_hsv()
 
-        hsv = np.copy(self.hsv_array)
+        # No copy needed - hsv_array is fully overwritten each frame by child classes
+        # Get direct views of HSV columns
+        h = self.hsv_array[:, 0]
+        s = self.hsv_array[:, 1]
+        v = self.hsv_array[:, 2]
+        
         if self._config["fix_hues"]:
-            h = self.fix_hue_fast(hsv[:, 0])
-        else:
-            h = hsv[:, 0]
+            # fix_hue_fast modifies h in place
+            self.fix_hue_fast(h)
 
-        s = hsv[:, 1].reshape(-1, 1)
-        v = hsv[:, 2].reshape(-1, 1)
         pixels = self.pixels
 
-        # Convert hues to gradient indexes
-        h %= 1
-        h *= self.pixel_count - 1
-        h = h.astype(int)
+        # Convert hues to gradient indexes using pre-allocated buffer
+        np.mod(h, 1, out=h)
+        np.multiply(h, self.pixel_count - 1, out=h)
+        np.rint(h, out=h)
+        np.copyto(self._h_indices, h.astype(int))
+        
         # Grab the colors from the gradient
-        pixels[:] = self.get_gradient()[:, h].T
-        # Apply saturation to colors
-        pixels += (np.max(pixels, axis=1).reshape(-1, 1) - pixels) * (1 - s)
+        pixels[:] = self.get_gradient()[:, self._h_indices].T
+        
+        # Apply saturation to colors - optimized to use pre-allocated buffer
+        np.max(pixels, axis=1, out=self._pixel_max[:, 0])
+        pixels += (self._pixel_max - pixels) * (1 - s).reshape(-1, 1)
+        
         # Apply value (brightness) to colors
-        pixels *= v
+        pixels *= v.reshape(-1, 1)
 
         self.roll_gradient()
 
