@@ -422,6 +422,27 @@ class TestPhase3Broadcasting:
         assert len(result) == 0  # Fail-closed: return empty list
 
     @pytest.mark.asyncio
+    async def test_filter_targets_mode_type_includes_sender(
+        self, websocket_connection
+    ):
+        """Test _filter_targets with mode='type' includes sender if sender matches type"""
+        clients = {
+            "uuid-sender": {"name": "Sender", "type": "visualiser"},
+            "uuid-2": {"name": "Client2", "type": "visualiser"},
+            "uuid-3": {"name": "Client3", "type": "controller"},
+        }
+
+        target_config = {"mode": "type", "value": "visualiser"}
+        result = websocket_connection._filter_targets(
+            target_config, clients, "uuid-sender"
+        )
+
+        # Sender included because they match type="visualiser"
+        assert len(result) == 2
+        assert "uuid-2" in result
+        assert "uuid-sender" in result
+
+    @pytest.mark.asyncio
     async def test_filter_targets_mode_names(self, websocket_connection):
         """Test _filter_targets with mode='names'"""
         clients = {
@@ -523,10 +544,54 @@ class TestPhase3Broadcasting:
         assert "uuid-1" in result
 
     @pytest.mark.asyncio
+    async def test_filter_targets_mode_names_sender_included(
+        self, websocket_connection
+    ):
+        """Test mode='names' includes sender only if explicitly listed in the names array"""
+        clients = {
+            "uuid-sender": {"name": "Sender", "type": "controller"},
+            "uuid-1": {"name": "Client1", "type": "visualiser"},
+        }
+
+        # Explicitly target sender via name
+        target_config = {"mode": "names", "names": ["Sender", "Client1"]}
+        result = websocket_connection._filter_targets(
+            target_config, clients, "uuid-sender"
+        )
+
+        # Sender included because explicitly targeted by name
+        assert len(result) == 2
+        assert "uuid-sender" in result
+        assert "uuid-1" in result
+
+    @pytest.mark.asyncio
+    async def test_filter_targets_mode_names_sender_excluded(
+        self, websocket_connection
+    ):
+        """Test mode='names' excludes sender when sender's name is not in the list"""
+        clients = {
+            "uuid-sender": {"name": "Sender", "type": "controller"},
+            "uuid-1": {"name": "Client1", "type": "visualiser"},
+            "uuid-2": {"name": "Client2", "type": "visualiser"},
+        }
+
+        # Target specific names, NOT including sender
+        target_config = {"mode": "names", "names": ["Client1", "Client2"]}
+        result = websocket_connection._filter_targets(
+            target_config, clients, "uuid-sender"
+        )
+
+        # Sender excluded because not in the names list
+        assert len(result) == 2
+        assert "uuid-1" in result
+        assert "uuid-2" in result
+        assert "uuid-sender" not in result
+
+    @pytest.mark.asyncio
     async def test_filter_targets_mode_uuids_sender_included(
         self, websocket_connection
     ):
-        """Test mode='uuids' includes sender if explicitly listed (only mode='all' excludes sender)"""
+        """Test mode='uuids' includes sender only if explicitly listed in the uuids array"""
         clients = {
             "uuid-sender": {"name": "Sender", "type": "controller"},
             "uuid-1": {"name": "Client1", "type": "visualiser"},
@@ -542,6 +607,29 @@ class TestPhase3Broadcasting:
         assert len(result) == 2
         assert "uuid-sender" in result
         assert "uuid-1" in result
+
+    @pytest.mark.asyncio
+    async def test_filter_targets_mode_uuids_sender_excluded(
+        self, websocket_connection
+    ):
+        """Test mode='uuids' excludes sender when sender's UUID is not in the list"""
+        clients = {
+            "uuid-sender": {"name": "Sender", "type": "controller"},
+            "uuid-1": {"name": "Client1", "type": "visualiser"},
+            "uuid-2": {"name": "Client2", "type": "visualiser"},
+        }
+
+        # Target specific UUIDs, NOT including sender
+        target_config = {"mode": "uuids", "uuids": ["uuid-1", "uuid-2"]}
+        result = websocket_connection._filter_targets(
+            target_config, clients, "uuid-sender"
+        )
+
+        # Sender excluded because not in the uuids list
+        assert len(result) == 2
+        assert "uuid-1" in result
+        assert "uuid-2" in result
+        assert "uuid-sender" not in result
 
     @pytest.mark.asyncio
     async def test_filter_targets_mode_all_sender_only(

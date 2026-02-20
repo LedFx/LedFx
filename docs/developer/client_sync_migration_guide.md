@@ -199,7 +199,13 @@ ws.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
   if (data.event_type === 'client_broadcast') {
-    // Filter out our own broadcasts
+    // REQUIRED: Check if broadcast is for us
+    // All subscribers receive all broadcasts - must filter client-side
+    if (!data.target_uuids || !data.target_uuids.includes(clientId)) {
+      return; // Not for us
+    }
+
+    // OPTIONAL: Filter out our own broadcasts
     if (data.sender_uuid === clientId) {
       return;
     }

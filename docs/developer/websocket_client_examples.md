@@ -544,19 +544,22 @@ function updateClientListUI(clients) {
 
 ### Receiving Broadcasts
 
+**Important:** Broadcast events are sent to ALL subscribers of `client_broadcast`. You MUST filter by `target_uuids` to determine if the message is intended for you. This is client-side filtering - the server does not selectively send to specific connections.
+
 ```javascript
 websocket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
   if (data.event_type === 'client_broadcast') {
-    // Check if this broadcast is for us
+    // REQUIRED: Check if this broadcast is for us
+    // All subscribers receive this event - we must filter client-side
     if (!Array.isArray(data.target_uuids) || !data.target_uuids.includes(myClientId)) {
-      return; // Not for us
+      return; // Not for us - discard
     }
 
-    // Filter out our own broadcasts
+    // OPTIONAL: Filter out our own broadcasts
     if (data.sender_uuid === myClientId) {
-      return; // We sent this
+      return; // We sent this - discard
     }
 
     console.log(`Broadcast from ${data.sender_name}:`, data.payload);
@@ -838,12 +841,13 @@ class LedFxVisualiser {
   }
 
   handleBroadcast(data) {
-    // Ignore broadcasts not for us
+    // REQUIRED: Client-side filtering
+    // All subscribers receive this event - we must check target_uuids
     if (!Array.isArray(data.target_uuids) || !data.target_uuids.includes(this.clientId)) {
-      return;
+      return; // Not intended for us
     }
 
-    // Ignore our own broadcasts
+    // OPTIONAL: Ignore our own broadcasts
     if (data.sender_uuid === this.clientId) {
       return;
     }
@@ -898,8 +902,8 @@ Always call `set_client_info` after receiving your client ID to enable proper id
 ### 2. Handle Name Conflicts Gracefully
 Check the `name_conflict` flag in responses and inform users if their chosen name was modified.
 
-### 3. Filter Broadcasts Appropriately
-Always check `target_uuids` to ensure broadcasts are intended for you, and filter out your own broadcasts.
+### 3. REQUIRED: Filter Broadcasts Client-Side
+**Critical:** Broadcast events are sent to ALL subscribers. You MUST check if your UUID is in `target_uuids` before processing. This is not optional - the server does not restrict delivery to specific connections. Always filter out your own broadcasts as well.
 
 ### 4. Validate Payload Size
 Keep broadcast payloads under 2048 bytes. For larger data, use REST API endpoints and broadcast just references.

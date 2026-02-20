@@ -213,12 +213,12 @@ Enable clients to broadcast messages to other connected clients through the serv
 
 #### Targeting Modes
 
-| Mode | Description | Configuration |
-|------|-------------|---------------|
-| `all` | Broadcast to all connected clients | No additional config |
-| `type` | Target all clients of a specific type | `value: "display"` |
-| `names` | Target specific clients by name | `names: ["Display 1", "Display 2"]` |
-| `uuids` | Target specific clients by UUID | `uuids: ["uuid-1", "uuid-2"]` |
+| Mode | Description | Configuration | Sender Behavior |
+|------|-------------|---------------|-----------------|
+| `all` | Broadcast to all connected clients | No additional config | Auto-excluded (prevents self-echo) |
+| `type` | Target all clients of a specific type | `value: "display"` | Auto-excluded (prevents self-echo) |
+| `names` | Target specific clients by name | `names: ["Display 1", "Display 2"]` | Included only if sender's name is in list |
+| `uuids` | Target specific clients by UUID | `uuids: ["uuid-1", "uuid-2"]` | Included only if sender's UUID is in list |
 
 #### Request Validation
 
@@ -227,7 +227,11 @@ Enable clients to broadcast messages to other connected clients through the serv
 - **Target Validation**:
   - **Lenient Filtering**: For `mode="names"` and `mode="uuids"`, non-existent identifiers are silently filtered (broadcasts to whoever exists from the list)
   - **Fail-Closed Security**: If NO targets remain after filtering, request fails with error (prevents accidental broadcasts to zero recipients)
-  - **Sender Exclusion**: For `mode="all"`, sender is automatically excluded to prevent self-echo
+  - **Sender Exclusion**: 
+    - `mode="all"`: Sender is automatically excluded (prevents self-echo)
+    - `mode="type"`: Sender is included if they match the specified type
+    - `mode="names"`: Sender is excluded UNLESS their name is explicitly in the names list
+    - `mode="uuids"`: Sender is excluded UNLESS their UUID is explicitly in the uuids list
   - Type value must be a valid client type
   - Request fails only if no targets match after filtering
 
@@ -348,18 +352,61 @@ The lenient filtering behavior allows broadcasts to "whoever is available" from 
 // Result: ❌ Error "No clients matched target specification"
 ```
 
-**Sender Exclusion Example:**
+**Sender Exclusion Examples:**
 
 ```javascript
-// Scenario: 3 clients connected (uuid-sender, uuid-1, uuid-2)
-// Sender (uuid-sender) broadcasts with mode="all"
+// Scenario 1: mode="all" - Sender always excluded
+// 3 clients connected (uuid-sender, uuid-1, uuid-2)
 
 {
   target: { mode: "all" }
 }
-
 // Result: ✅ Broadcasts to uuid-1 and uuid-2 only
 // uuid-sender (the sender) is automatically excluded to prevent self-echo
+// targets_matched: 2
+
+// Scenario 2: mode="type" - Sender included if matching type
+// Sender has type="display", 2 other displays connected
+
+{
+  target: { mode: "type", value: "display" }
+}
+// Result: ✅ Broadcasts to all 3 displays (including sender)
+// Sender is included because they match type="display"
+// targets_matched: 3
+
+// Scenario 3: mode="uuids" - Honors explicit list
+// Sender is uuid-sender
+
+{
+  target: { mode: "uuids", uuids: ["uuid-1", "uuid-2"] }
+}
+// Result: ✅ Broadcasts to uuid-1 and uuid-2
+// Sender (uuid-sender) NOT in list, so excluded
+// targets_matched: 2
+
+{
+  target: { mode: "uuids", uuids: ["uuid-sender", "uuid-1"] }
+}
+// Result: ✅ Broadcasts to uuid-sender and uuid-1
+// Sender (uuid-sender) IS in list, so INCLUDED (explicit opt-in)
+// targets_matched: 2
+
+// Scenario 4: mode="names" - Honors explicit list
+// Sender name is "Controller-1"
+
+{
+  target: { mode: "names", names: ["Display-1", "Display-2"] }
+}
+// Result: ✅ Broadcasts to Display-1 and Display-2
+// Sender (Controller-1) NOT in list, so excluded
+// targets_matched: 2
+
+{
+  target: { mode: "names", names: ["Controller-1", "Display-1"] }
+}
+// Result: ✅ Broadcasts to Controller-1 and Display-1
+// Sender (Controller-1) IS in list, so INCLUDED (explicit opt-in)
 // targets_matched: 2
 ```
 
@@ -368,19 +415,21 @@ The lenient filtering behavior allows broadcasts to "whoever is available" from 
 **Test Cases:**
 
 - ✅ `mode="all"` → broadcasts to all connected clients **except sender**
-- ✅ `mode="type", value="visualiser"` → broadcasts to clients with `type="visualiser"`
-- ✅ `mode="type", value="unknown"` → broadcasts to clients with `type="unknown"`
+- ✅ `mode="type", value="visualiser"` → broadcasts to clients with `type="visualiser"` **including sender if sender matches type**
+- ✅ `mode="type", value="unknown"` → broadcasts to clients with `type="unknown"` **including sender if sender matches type**
 - ❌ `mode="type", value=""` → rejected (400 error)
 - ❌ `mode="type", value=null` → rejected (400 error)
 - ❌ `mode="type"` (missing value) → rejected (400 error)
 - ✅ `mode="type", value="display"` with no matching clients → rejected (no targets matched)
 - ✅ `mode="type", value="display"` with client `type=None` → client NOT targeted (explicit type required)
-- ✅ `mode="names", names=["Client-1"]` → broadcasts to client named "Client-1"
+- ✅ `mode="names", names=["Client-1"]` with sender name != "Client-1" → broadcasts to Client-1 only (sender excluded)
+- ✅ `mode="names", names=["Client-1", "Sender-Name"]` with sender name = "Sender-Name" → broadcasts to Client-1 and sender (explicit inclusion)
 - ✅ `mode="names", names=["Client-1", "Client-999"]` with only Client-1 connected → broadcasts to Client-1 (lenient)
 - ✅ `mode="names", names=["Client-999"]` with Client-999 offline → rejected (no targets matched)
 - ❌ `mode="names", names=[]` → rejected (400 error)
 - ❌ `mode="names"` (missing names) → rejected (400 error)
-- ✅ `mode="uuids", uuids=["abc-123"]` → broadcasts to client with uuid "abc-123"
+- ✅ `mode="uuids", uuids=["abc-123"]` with sender uuid != "abc-123" → broadcasts to abc-123 only (sender excluded)
+- ✅ `mode="uuids", uuids=["abc-123", "sender-uuid"]` with sender uuid = "sender-uuid" → broadcasts to abc-123 and sender (explicit inclusion)
 - ✅ `mode="uuids", uuids=["abc-123", "xyz-999"]` with only abc-123 connected → broadcasts to abc-123 (lenient)
 - ✅ `mode="uuids", uuids=["xyz-999"]` with xyz-999 offline → rejected (no targets matched)
 - ❌ `mode="uuids", uuids=[]` → rejected (400 error)
@@ -476,8 +525,13 @@ Content-Type: application/json
 5. If no targets match, return error
 6. Server fires `ClientBroadcastEvent` with server-derived sender fields
 7. Server logs broadcast with audit trail (request_id, sender, targets, type)
-8. WebSocket connections subscribed to events receive the broadcast
-9. Clients filter by `target_uuids` to determine if message is for them
+8. **Server sends broadcast event to ALL subscribers** of `client_broadcast` event type
+9. **Clients MUST filter by checking if their UUID is in `target_uuids` list** (client-side filtering)
+
+**Important:** The broadcast event is sent to all clients subscribed to `client_broadcast`, regardless of the targeting mode. The `target_uuids` field is metadata that clients use for client-side filtering. This means:
+- All subscribers receive the event payload (including those not in `target_uuids`)
+- Clients are responsible for checking `target_uuids.includes(myClientId)` before processing
+- Sensitive data in payloads is visible to all subscribers (consider this in your threat model)
 
 **Event Payload:**
 
@@ -498,6 +552,59 @@ Content-Type: application/json
 ```
 
 **Security Guarantee:** All sender fields (`sender_uuid`, `sender_name`, `sender_type`) are populated by the server based on the authenticated connection, never from client-provided data.
+
+---
+
+### Broadcast Delivery Architecture
+
+**Design Decision:** Broadcast-to-All with Client-Side Filtering
+
+The current implementation uses LedFx's existing event system which broadcasts to all subscribers. This means:
+
+1. **Server-Side:** 
+   - Server fires `ClientBroadcastEvent` to the event system
+   - Event system sends to **ALL** WebSocket connections subscribed to `client_broadcast`
+   - The `target_uuids` list is included as metadata in the event payload
+
+2. **Client-Side:**
+   - **Every subscriber receives every broadcast event**
+   - Clients **MUST** check if their UUID is in `target_uuids` before processing
+   - Clients **SHOULD** filter out their own broadcasts (check `sender_uuid`)
+
+**Architectural Implications:**
+
+✅ **Advantages:**
+- Simple implementation using existing event infrastructure
+- Consistent with LedFx's event-driven architecture
+- No need to maintain WebSocket connection registry for targeting
+
+❌ **Limitations:**
+- **Privacy:** All subscribers see payload data not intended for them (visible before client-side filtering)
+- **Efficiency:** Network bandwidth used sending to clients who will discard the message
+- **Security Audit:** Harder to prove data isolation since all clients receive all payloads
+
+**Client Implementation Requirements:**
+
+All clients subscribing to `client_broadcast` events **MUST** implement this filtering pattern:
+
+```javascript
+if (data.event_type === 'client_broadcast') {
+  // 1. REQUIRED: Check if broadcast is for us
+  if (!data.target_uuids.includes(myClientId)) {
+    return; // Not for us - discard immediately
+  }
+  
+  // 2. OPTIONAL: Filter out own broadcasts
+  if (data.sender_uuid === myClientId) {
+    return; // We sent this - discard
+  }
+  
+  // 3. Process the broadcast
+  handleBroadcast(data);
+}
+```
+
+**Future Consideration:** A targeted delivery system could be implemented by maintaining a class-level registry of WebSocket connections indexed by UUID and sending directly to target connections, bypassing the event system for broadcasts.
 
 ---
 
@@ -1137,11 +1244,12 @@ This feature will be considered successfully implemented when:
 - **Note**: REST broadcast endpoint (`POST /api/clients` action="broadcast") is NOT implemented in v1. Deferred to future release if use case emerges.
 - **Implement `_filter_targets(target_config, clients, sender_uuid)` method**:
   - mode="all": return all UUIDs **except sender_uuid** (prevents self-echo)
-  - mode="type": filter by `meta.get("type") == value` (reject if value missing/empty)
-  - mode="names": filter by `meta.get("name") in names` (lenient: silently ignore non-existent names)
-  - mode="uuids": filter by UUID in known clients (lenient: silently ignore non-existent UUIDs)
+  - mode="type": filter by `meta.get("type") == value`, **include sender if they match the type**
+  - mode="names": filter by `meta.get("name") in names` (lenient: silently ignore non-existent names), **include sender only if sender's name is in the names list**
+  - mode="uuids": filter by UUID in known clients (lenient: silently ignore non-existent UUIDs), **include sender only if sender_uuid is in the uuids list**
   - Return empty list if mode invalid or validation fails
   - **Lenient rationale**: Allows "broadcast to whoever is available" from a list of potential targets
+  - **Sender exclusion rationale**: Only mode="all" auto-excludes sender to prevent self-echo across all clients. Type-based and explicit targeting modes include sender if they match the criteria, allowing use cases like "all displays update together" or "notify all controllers including myself".
 - Add payload validation and size limits
 
 ### Phase 4: Testing & Documentation

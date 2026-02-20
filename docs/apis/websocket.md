@@ -399,7 +399,10 @@ Broadcast a message to other clients based on target specification.
 
 #### client_broadcast Event
 
-Generated when a client broadcasts a message. Target clients should subscribe to this event to receive broadcasts.
+Generated when a client broadcasts a message.
+
+**Important - Client-Side Filtering Required:**
+This event is sent to **ALL clients subscribed** to `client_broadcast`, regardless of the broadcast target specification. Clients **MUST** check if their UUID is in the `target_uuids` array before processing the broadcast. This is a client-side filtering pattern - the server does not selectively send to specific WebSocket connections.
 
 ``` json
 {
@@ -426,8 +429,10 @@ Generated when a client broadcasts a message. Target clients should subscribe to
 - `sender_uuid`: UUID of the client that sent the broadcast (server-authenticated)
 - `sender_name`: Display name of sender (server-derived)
 - `sender_type`: Type of sender client (server-derived)
-- `target_uuids`: List of UUIDs that matched the target specification
+- `target_uuids`: List of UUIDs that matched the target specification (clients MUST check if their UUID is in this list)
 - `payload`: Custom data from sender
+
+**Critical:** `target_uuids` is a filter list, not a delivery restriction. All subscribers receive this event.
 
 **Important Security Note:**
 All sender identity fields (`sender_uuid`, `sender_name`, `sender_type`) are derived by the server from the authenticated WebSocket connection and cannot be spoofed by the client.
@@ -446,13 +451,19 @@ websocket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
   if (data.event_type === "client_broadcast") {
-    // Check if this broadcast is for us
-    if (data.target_uuids.includes(myClientId)) {
-      // Filter out our own broadcasts if desired
-      if (data.sender_uuid !== myClientId) {
-        handleBroadcast(data.broadcast_type, data.payload);
-      }
+    // REQUIRED: Check if this broadcast is intended for us
+    // All subscribers receive this event - we must filter client-side
+    if (!data.target_uuids.includes(myClientId)) {
+      return; // Not for us - ignore
     }
+
+    // Optional: Filter out our own broadcasts
+    if (data.sender_uuid === myClientId) {
+      return; // We sent this - ignore
+    }
+
+    // Now process the broadcast
+    handleBroadcast(data.broadcast_type, data.payload);
   }
 };
 ```
