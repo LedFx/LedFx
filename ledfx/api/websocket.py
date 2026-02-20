@@ -65,8 +65,12 @@ BROADCAST_SCHEMA = vol.Schema(
             {
                 vol.Required("mode"): vol.In(TARGET_MODES),
                 vol.Optional("value"): str,  # For mode="type"
-                vol.Optional("names"): [str],  # For mode="names"
-                vol.Optional("uuids"): [str],  # For mode="uuids"
+                vol.Optional("names"): [
+                    vol.All(str, vol.Length(min=1))
+                ],  # For mode="names"
+                vol.Optional("uuids"): [
+                    vol.All(str, vol.Length(min=1))
+                ],  # For mode="uuids"
             },
             extra=vol.PREVENT_EXTRA,
         ),
