@@ -115,7 +115,9 @@ class WebsocketConnection:
     ip_uid_map = {}
     map_lock = asyncio.Lock()
     # Phase 1: Class-level metadata storage
-    client_metadata: ClassVar[Dict[str, Dict[str, Any]]] = {}  # UUID -> metadata dict
+    client_metadata: ClassVar[dict[str, dict[str, Any]]] = (
+        {}
+    )  # UUID -> metadata dict
     metadata_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
 
     def __init__(self, ledfx):
