@@ -4,6 +4,10 @@
 
 This document outlines the enhancement of LedFx's WebSocket connection system to support persistent client metadata tracking and client-to-client messaging capabilities. These features enable richer multi-client experiences, better observability of connected clients, and coordinated interactions between frontend instances, mobile apps, and API clients.
 
+Please also see the dev guides:
+- [WebSocket Client Examples](../developer/websocket_client_examples.md)
+- [Client Sync Migration Guide](../developer/client_sync_migration_guide.md)
+
 ---
 
 ## WebSocket-Centric Architecture (v1)
@@ -684,9 +688,7 @@ _LOGGER.info(
   - Old format: `{ "uuid": "ip_address", ... }` (simple IP map)
   - New format: `{ "uuid": { metadata_object }, ... }` (full metadata)
   - **Breaking change** - frontend must update to new format
-- **Extended POST Endpoint**: `POST /api/clients` with `action: "sync"` continues to work unchanged
-  - New `action: "broadcast"` added alongside existing actions
-  - **Non-breaking change** - additive only
+
 ### Backwards Compatibility
 
 - **Existing WebSocket Clients**: Clients that don't send `set_client_info` should continue working
@@ -697,8 +699,6 @@ _LOGGER.info(
   - **Old format**: `{ "uuid": "ip_address", ... }` (simple IP map)
   - **New format**: `{ "uuid": { "name": "...", "type": "...", "ip": "...", ... }, ... }` (metadata objects)
   - **Impact**: Frontend and any external integrations must update in same release
-- **Extended POST Endpoint**: `POST /api/clients` with `action: "sync"` must continue to work unchanged
-  - New `action: "broadcast"` added alongside existing actions
 
 ---
 

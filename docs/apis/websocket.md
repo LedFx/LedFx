@@ -39,12 +39,6 @@ This functionality is intended to support notification between clients of connec
       WebSocketMgr-->>ClientEndpoint: UUID→IP mapping dictionary
       ClientEndpoint-->>Client: HTTP 200 with {"result": client_list}
 
-      Note over Client,EventSystem: Client Sync Action
-      Client->>ClientEndpoint: POST /api/clients {"action": "sync", "client_id": UUID}
-      ClientEndpoint->>ClientEndpoint: Validate JSON and action field
-      ClientEndpoint->>EventSystem: Fire ClientSyncEvent(client_id or "unknown")
-      ClientEndpoint-->>Client: HTTP 200 {"result": "success", "action": "sync"}
-
       Note over Client,EventSystem: WebSocket Disconnection Flow
       Client->>WebSocketMgr: Close WebSocket connection
       WebSocketMgr->>WebSocketMgr: Remove UUID from ip_uid_map (thread-safe with map_lock)
@@ -92,18 +86,11 @@ Generated when an existing client disconnects its websocket to the backend.
 }
 ```
 
-#### client_sync
+#### client_broadcast
 
-Generated when a client makes a POST to the rest api endpoint /api/clients with "action": "sync"
+Generated when a client broadcasts a message to other clients. See [Client Management (Client Metadata & Broadcasting)](#client-management-client-metadata--broadcasting) below for details on the new client broadcasting system.
 
-This is intended to allow a client to inform other clients they should sync their configuration due to stimulated changes. The receiving client can filter against its own id to avoid self recursive notifications
-
-``` json
-{
-  "event_type": "client_sync",
-  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
-}
-```
+> **Note**: The legacy `client_sync` event has been replaced by the more secure and flexible `client_broadcast` event. See [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) for migration instructions.
 
 ### client rest api
 
@@ -152,37 +139,10 @@ Returns metadata for all active websocket clients
 - `device_id`: Optional device identifier provided by client
 - `connected_at`: Unix timestamp when client connected
 
-**POST**
-
-Supports an extensible set of actions
-
-##### "action": "sync" (Legacy - Pending Removal)
-
-> **⚠️ Deprecated**: This sync action will be removed in a future release. Use the new [client broadcasting system](#client-to-client-broadcasting) instead, which provides better security (server-derived sender identity) and more flexible targeting options.
->
-> **For Frontend Developers**: See [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) for step-by-step migration instructions.
-
-Sync action can be used to inform other clients that they should sync their configurations to pick up changes made by the originating client.
-
-The calling client should provide its `client_id` (obtained from the `client_id` event upon WebSocket connection):
-
-``` json
-{
-   "action": "sync",
-   "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
-}
-```
-
-Will generate a client_sync event sent to all active websockets that are subscribed to the event type:
-
-``` json
-{
-  "event_type": "client_sync",
-  "client_id": "e59d112e-3652-41e5-acb1-94538b4cb27c"
-}
-```
-
-**Note**: Unlike the new broadcasting system, this endpoint does not validate sender identity. For secure client-to-client communication, use the [broadcast WebSocket message](#client-to-client-broadcasting) instead.
+> **📘 For Client Management**: Client metadata management, broadcasting, and related functionality has been moved to its own comprehensive documentation. See:
+> - [WebSocket Client API](websocket_client.md) - Full API specification
+> - [WebSocket Client Examples](../developer/websocket_client_examples.md) - Practical implementation examples
+> - [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) - Migration from legacy sync system
 
 ## Client Management (Client Metadata & Broadcasting)
 
