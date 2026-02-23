@@ -13,7 +13,7 @@ repos:
     - id: trailing-whitespace
     - id: check-toml
   - repo: https://github.com/PyCQA/isort
-    rev: 7.0.0
+    rev: 8.0.0
     hooks:
       - id: isort
         args: ["--profile=black"]
