@@ -38,6 +38,7 @@ hiddenimports = [
     "sentry_sdk.integrations.logging",
     "sentry_sdk.integrations.threading",
     "pyfastnoiselite",
+    "pyfastnoiselite.pyfastnoiselite",
     "xled",
     "xled.control",
     "aubio",
