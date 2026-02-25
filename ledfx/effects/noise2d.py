@@ -98,11 +98,11 @@ class Noise2d(Twod, GradientEffect):
             self.noise_x = random.random()
             self.noise_y = random.random()
             self.noise_z = random.random()
-            
+
             self.noise = fnl.FastNoiseLite()
             self.noise.noise_type = fnl.NoiseType.NoiseType_OpenSimplex2
             self.noise.frequency = 0.6
-            
+
             self.first_run = False
 
         self.scale_x = self.zoom / self.r_width
@@ -167,19 +167,21 @@ class Noise2d(Twod, GradientEffect):
         ###################################################################################
         # FastNoiseLite uses gen_from_coords for vectorized generation
         # Create meshgrid for 2D coordinates
-        x_grid, y_grid = np.meshgrid(y_array, x_array, indexing='xy')
+        x_grid, y_grid = np.meshgrid(y_array, x_array, indexing="xy")
         # Flatten coordinates - gen_from_coords expects shape (3, N) not (N, 3)
         x_flat = x_grid.flatten()
         y_flat = y_grid.flatten()
         z_flat = np.full_like(x_flat, self.noise_z)
         # Stack as rows: [all_x, all_y, all_z] with shape (3, N)
         coords = np.stack([x_flat, y_flat, z_flat], axis=0).astype(np.float32)
-        
+
         # Generate noise for all points at once (vectorized)
         noise_flat = self.noise.gen_from_coords(coords)
-        
+
         # Reshape back to 2D array and add extra dimension for consistency
-        self.noise_3d = noise_flat.reshape(self.r_height, self.r_width)[:, :, np.newaxis]
+        self.noise_3d = noise_flat.reshape(self.r_height, self.r_width)[
+            :, :, np.newaxis
+        ]
 
         # slice out the unwanted dimension
         self.noise_sliced = self.noise_3d[..., 0]

@@ -104,7 +104,7 @@ class Soap2D(Twod, GradientEffect):
             # Lower frequency for Soap due to additional freq scaling (self._freq=3.0)
             self._fnl.frequency = 0.3
             noise_was_none = True
-        
+
         if phase_was_none:
             r = np.random.RandomState()
             self._phase = np.array(
@@ -158,19 +158,19 @@ class Soap2D(Twod, GradientEffect):
 
         # FastNoiseLite uses gen_from_coords for vectorized generation
         # Create meshgrid for 2D coordinates
-        x_grid, y_grid = np.meshgrid(x, y, indexing='xy')
+        x_grid, y_grid = np.meshgrid(x, y, indexing="xy")
         # Flatten coordinates
         x_flat = x_grid.flatten()
         y_flat = y_grid.flatten()
         # Stack as rows: [all_x, all_y] with shape (2, N)
         coords = np.stack([x_flat, y_flat], axis=0).astype(np.float32)
-        
+
         # Generate noise for all points at once (vectorized)
         noise_flat = self._fnl.gen_from_coords(coords)
-        
+
         # Reshape back to 2D array (H, W)
         n2 = noise_flat.reshape(H, W).astype(np.float32)
-        
+
         return (n2 + 1.0) * 0.5
 
     # ---------- smear (WLED-style: pixels for in-bounds, palette for OOB) ----------
@@ -203,20 +203,20 @@ class Soap2D(Twod, GradientEffect):
             # Create index arrays: rows stay fixed, columns shift
             row_idx = np.arange(H)[:, None]  # (H, 1)
             col_base = np.arange(W)[None, :]  # (1, W)
-            
+
             # Calculate shifted indices
             zD = col_base + sgn[:, None] * d_i[:, None]
             zF = zD + sgn[:, None]
-            
+
             # Clamp indices and check bounds
             a_idx = np.clip(zD, 0, W - 1)
             b_idx = np.clip(zF, 0, W - 1)
             inA = (zD >= 0) & (zD < W)
             inB = (zF >= 0) & (zF < W)
-            
+
             # Pre-allocate output
             out = np.empty((H, W, 3), dtype=np.float32)
-            
+
             # Process each color channel
             for c in range(3):
                 # Gather pixel values using fancy indexing
@@ -224,29 +224,29 @@ class Soap2D(Twod, GradientEffect):
                 B_pix = pixels_prev[row_idx, b_idx, c]
                 A_pal = palette_rgb[row_idx, a_idx, c]
                 B_pal = palette_rgb[row_idx, b_idx, c]
-                
+
                 # Blend based on bounds (faster to compute per-channel)
                 A = np.where(inA, A_pix, A_pal)
                 B = np.where(inB, B_pix, B_pal)
                 out[:, :, c] = A * (1.0 - wB[:, None]) + B * wB[:, None]
         else:
-            # Smear across Y (vertical)  
+            # Smear across Y (vertical)
             col_idx = np.arange(W)[None, :]  # (1, W)
             row_base = np.arange(H)[:, None]  # (H, 1)
-            
+
             # Calculate shifted indices
             zD = row_base + sgn[None, :] * d_i[None, :]
             zF = zD + sgn[None, :]
-            
+
             # Clamp indices and check bounds
             a_idx = np.clip(zD, 0, H - 1)
             b_idx = np.clip(zF, 0, H - 1)
             inA = (zD >= 0) & (zD < H)
             inB = (zF >= 0) & (zF < H)
-            
+
             # Pre-allocate output
             out = np.empty((H, W, 3), dtype=np.float32)
-            
+
             # Process each color channel
             for c in range(3):
                 # Gather pixel values using fancy indexing
@@ -254,7 +254,7 @@ class Soap2D(Twod, GradientEffect):
                 B_pix = pixels_prev[b_idx, col_idx, c]
                 A_pal = palette_rgb[a_idx, col_idx, c]
                 B_pal = palette_rgb[b_idx, col_idx, c]
-                
+
                 # Blend based on bounds
                 A = np.where(inA, A_pix, A_pal)
                 B = np.where(inB, B_pix, B_pal)
