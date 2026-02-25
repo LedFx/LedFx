@@ -18,7 +18,7 @@ In this example, three devices with 1,024, 4,096, and 16,384 pixels
 <br><br>
 
 ```{note}
-The code has been thoroughly rewritten to be numpy and FastNoiseLite based to attempt to keep performance in the python runtime. None the less, it is a very expensive effect.
+The code has been thoroughly rewritten to be NumPy and FastNoiseLite based to improve performance in the Python runtime. Nonetheless, it is a very expensive effect.
 If performance is a concern, monitor frame time in **Advanced → Diag switch**.
 ```
 
