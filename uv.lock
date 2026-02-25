@@ -1105,6 +1105,7 @@ dependencies = [
     { name = "pillow" },
     { name = "psutil" },
     { name = "pybase64" },
+    { name = "pyfastnoiselite" },
     { name = "pyserial" },
     { name = "pystray" },
     { name = "python-dotenv" },
@@ -1118,7 +1119,6 @@ dependencies = [
     { name = "sounddevice" },
     { name = "stupidartnet" },
     { name = "uvloop", marker = "sys_platform != 'win32'" },
-    { name = "vnoise" },
     { name = "voluptuous" },
     { name = "wheel" },
     { name = "winloop", marker = "sys_platform == 'win32'" },
@@ -1186,6 +1186,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=10.1.0" },
     { name = "psutil", specifier = ">=5.9.7" },
     { name = "pybase64", specifier = "~=1.4.0" },
+    { name = "pyfastnoiselite", specifier = ">=0.0.7" },
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pystray", specifier = ">=0.19.5" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
@@ -1200,7 +1201,6 @@ requires-dist = [
     { name = "sounddevice", specifier = ">=0.4.6" },
     { name = "stupidartnet", specifier = ">=1.6.0,<2.0.0" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.16.0" },
-    { name = "vnoise", specifier = ">=0.1.0,<1.0.0" },
     { name = "voluptuous", specifier = ">=0.14.1" },
     { name = "wheel", specifier = ">=0.36.2" },
     { name = "winloop", marker = "sys_platform == 'win32'", specifier = ">=0.3.1" },
@@ -2331,6 +2331,45 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/1f/f2/f11dd73284122713f5f89fc940f370d035fa8e1e078d446b3313955157fe/pydantic_core-2.41.5-pp311-pypy311_pp73-musllinux_1_1_armv7l.whl", hash = "sha256:a668ce24de96165bb239160b3d854943128f4334822900534f2fe947930e5770", size = 2330317, upload-time = "2025-11-04T13:43:40.406Z" },
     { url = "https://files.pythonhosted.org/packages/88/9d/b06ca6acfe4abb296110fb1273a4d848a0bfb2ff65f3ee92127b3244e16b/pydantic_core-2.41.5-pp311-pypy311_pp73-musllinux_1_1_x86_64.whl", hash = "sha256:f14f8f046c14563f8eb3f45f499cc658ab8d10072961e07225e507adb700e93f", size = 2316992, upload-time = "2025-11-04T13:43:43.602Z" },
     { url = "https://files.pythonhosted.org/packages/36/c7/cfc8e811f061c841d7990b0201912c3556bfeb99cdcb7ed24adc8d6f8704/pydantic_core-2.41.5-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:56121965f7a4dc965bff783d70b907ddf3d57f6eba29b6d2e5dabfaf07799c51", size = 2145302, upload-time = "2025-11-04T13:43:46.64Z" },
+]
+
+[[package]]
+name = "pyfastnoiselite"
+version = "0.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/d6/05385525e1872fff0314bfcb7e9540805f4fee8d7a5af14676e740b7030e/pyfastnoiselite-0.0.7-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:e99cf82a7f9d91ad49c9a345542277239891419edb49c20adbac13f3508b0121", size = 105803, upload-time = "2025-12-07T11:40:20.597Z" },
+    { url = "https://files.pythonhosted.org/packages/03/ef/dec4899fa7f6a407f80b35c0d86551c9601d38964f963b51755362898c0a/pyfastnoiselite-0.0.7-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:75ecb603323c208ef6b29d12a309d51e93ee0b98c56aee9eb58405ac9d91b8d3", size = 98309, upload-time = "2025-12-07T11:40:21.973Z" },
+    { url = "https://files.pythonhosted.org/packages/b5/d4/4378ac3baec4c8c8cb259f3e8d72bd3ada553fe37bda12e6c6726bec5251/pyfastnoiselite-0.0.7-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:334436c854f7c26d340bc6431f51026e6f1a26f156a132dcf1a87819f9b91aba", size = 602995, upload-time = "2025-12-07T11:40:23.247Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/42/f86aede00d3d940bcff30f200c62de248732c87c6aa64b700d85b0890f42/pyfastnoiselite-0.0.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:3c77ba93e79993fe0e69f3928a7ab54e18474c30783417d9a6f5223e238ccd65", size = 612047, upload-time = "2025-12-07T11:40:24.866Z" },
+    { url = "https://files.pythonhosted.org/packages/98/3f/06e7c64dbac2e54ebe6a87a3de47ffbe1d78b53f106b4ce734638ce461e2/pyfastnoiselite-0.0.7-cp310-cp310-musllinux_1_2_aarch64.whl", hash = "sha256:8ec4733b391a07a46b9c0d24719dc77b14ecc4296fcb9da9c6cc133a1cf01a58", size = 1551286, upload-time = "2025-12-07T11:40:26.691Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/50/d8f1402d0d790ac2bce8cf50ad7c670592f3889d57f6b85f03592f0f492a/pyfastnoiselite-0.0.7-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:a4a2f156bcb6940ec44fa10e55e0a1155bc9bb6f53ea5550583b220799509b57", size = 1614551, upload-time = "2025-12-07T11:40:28.55Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/6a/b00c5d26681108b75922742baf6577b7a8d81a86db22987c8ae78aacbc19/pyfastnoiselite-0.0.7-cp310-cp310-win_amd64.whl", hash = "sha256:c15e86814356fc536ea1efcce93f5f1d78a7eb55c5b43edcb6784f72dddeeac5", size = 96904, upload-time = "2025-12-07T11:40:30.147Z" },
+    { url = "https://files.pythonhosted.org/packages/11/85/2b482dbc81e7d5002a7ba95dbeebd941a8de1f2bc66da48af5cbbeb9c599/pyfastnoiselite-0.0.7-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:1e823b9dbb55018320701f295af7b20654a40a508b73d6f011c19462caa566c9", size = 105434, upload-time = "2025-12-07T11:40:31.715Z" },
+    { url = "https://files.pythonhosted.org/packages/75/5b/7201b44d90310c239d23ba8d1b28149e8c856308a0d7365425be0368c935/pyfastnoiselite-0.0.7-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:6361d5bfb5b7cffe72343752471ebe1c68eed4554d709afaa14460ecfdd9c79f", size = 97865, upload-time = "2025-12-07T11:40:32.842Z" },
+    { url = "https://files.pythonhosted.org/packages/48/07/70a890f284493ad92fd70120e13b396cea426df01a74d55dc93f3fab9728/pyfastnoiselite-0.0.7-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6ffce821f24ea514ca73f888e0fbc4f93fcf2b31ddd626d6d78a2b3d7f4eeb19", size = 633775, upload-time = "2025-12-07T11:40:34.429Z" },
+    { url = "https://files.pythonhosted.org/packages/30/f4/7a24601f8b83e58c60bd8bfc4890a781ccb76b9e522c4deed8b48712a276/pyfastnoiselite-0.0.7-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f8c3ca9a890bee02c538a19a9010dfb5524429dd6a0a8c2c4c958707e0ddee98", size = 643516, upload-time = "2025-12-07T11:40:35.71Z" },
+    { url = "https://files.pythonhosted.org/packages/be/1d/b4e662b207ca55d49761df2e08fbc96882182c311832b7a759d572e8fa91/pyfastnoiselite-0.0.7-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:718449e1c69d8ae07b4415fb92aa7a39c63c8839b5e89086408779d50562b341", size = 1579476, upload-time = "2025-12-07T11:40:37.57Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/1c/46022f3b7ac668413b5538da848eaf17a4c59c9cc61e3bb287fe188c88ac/pyfastnoiselite-0.0.7-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:4eee007514185359f9a9a8268b6aa013490bd400a5cfcc610f68435d58c1cd3d", size = 1645494, upload-time = "2025-12-07T11:40:38.969Z" },
+    { url = "https://files.pythonhosted.org/packages/6c/10/325162e557323f60d198da5f27d727503d436dd34eda8444977376a85bb2/pyfastnoiselite-0.0.7-cp311-cp311-win_amd64.whl", hash = "sha256:5825158ba59fc0995c78807e503ccc593f69d34c4e0680ab2c1713a1e2772530", size = 96701, upload-time = "2025-12-07T11:40:40.53Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/09/b57e228ded268c561192ada0616368e05d882f2f4559846df6533a0336e4/pyfastnoiselite-0.0.7-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:323cd4796b3b406a8095d03c61e0d2eb0e2f5b894ae696cf21fabfa7fc16bb0a", size = 106366, upload-time = "2025-12-07T11:40:41.621Z" },
+    { url = "https://files.pythonhosted.org/packages/69/6c/77963be0bd6cd3f9dd52a4439988d8279a96ffc0278177e6d6fd93a38fa2/pyfastnoiselite-0.0.7-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2f391c5c0b727e3132cf3c5f09d4dab7c5a464f60af7f0bc3b5cda855e4914cb", size = 97741, upload-time = "2025-12-07T11:40:42.785Z" },
+    { url = "https://files.pythonhosted.org/packages/88/ec/ff0faaacc52b40e596142e93e4a313d5cc147e0621d144f9992a460f08f1/pyfastnoiselite-0.0.7-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:3b2012085ec56936903cba0dd83a2e1bbd9c853a40b0924377efaafbcfff2c15", size = 619215, upload-time = "2025-12-07T11:40:44.368Z" },
+    { url = "https://files.pythonhosted.org/packages/68/f7/9b91c4eeace4db8b2b9a756e2a4e981378f14f4ad8c8daf0ac5631a54aa7/pyfastnoiselite-0.0.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:98fd99f11b2e0d1f918976f633d49977c896b948552e58034e1e606af7d875ad", size = 632771, upload-time = "2025-12-07T11:40:46.138Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/a8/a8af80b162d74173212583ff136a265abafc4d59755915bcaa38bd223cc1/pyfastnoiselite-0.0.7-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:4d6169506d3dd1df2d90e89d80ed9dc97575c531b6e410da4a1655d76c134472", size = 1568566, upload-time = "2025-12-07T11:40:47.437Z" },
+    { url = "https://files.pythonhosted.org/packages/6b/5a/ea8dcb55cfa7372c682ac345e555f6b2764930a1f5dfb7b1b46e25b15ed7/pyfastnoiselite-0.0.7-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:38c879e8a27687a5c726ce3b1fc6ff1dac3a11f0e1cb98f2d443f1568b0a73af", size = 1637053, upload-time = "2025-12-07T11:40:48.809Z" },
+    { url = "https://files.pythonhosted.org/packages/ae/fa/d21b4060d6377512d6798c109a5bfb7c6ab242882be023f2d628493a37bd/pyfastnoiselite-0.0.7-cp312-cp312-win_amd64.whl", hash = "sha256:caedb539fe02b5ec180917583be70b21fd7ee9abdd636c0496bf3cb4646ed2fc", size = 96459, upload-time = "2025-12-07T11:40:50.489Z" },
+    { url = "https://files.pythonhosted.org/packages/73/18/793730c59081cf4c428d9e026afb7a52fd5570f50cb765ac3d51dced8cbb/pyfastnoiselite-0.0.7-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:b9fff9e05ae2b807e70786cf1e37a45f47ded0e124fe6a8424c5e3e4a624942d", size = 103741, upload-time = "2025-12-07T11:40:51.613Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/30/4319f3f7c816815404acb7fefe97837d8103031c8226d5382a632609ac35/pyfastnoiselite-0.0.7-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:69998a75ff27848832efd24a034d3b2e3aa8fff9a2dd58b9c4477c028064874c", size = 96114, upload-time = "2025-12-07T11:40:53.057Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/ec/53b81ce1ea297cb2d4af8102f03db147ffb2852397293099fcaa5b8a2d31/pyfastnoiselite-0.0.7-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:7d88a5e1df8cf78f103e5bcaa6a31e921ad03edb2b3afcfd2a674f4f69e14bd3", size = 612653, upload-time = "2025-12-07T11:40:54.638Z" },
+    { url = "https://files.pythonhosted.org/packages/36/db/46c5e605a08f33946ef8d3c50d9a1fddbf4582b30b5fc44031dc7f4a452d/pyfastnoiselite-0.0.7-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:157577976a131815d521573a69107c2db914179ddede3ebeb202f5aaf687e039", size = 627450, upload-time = "2025-12-07T11:40:55.988Z" },
+    { url = "https://files.pythonhosted.org/packages/7c/0c/8c58f7be55c6568d8a056b7680b38f1b0a70b4237c452fab7cc04678a697/pyfastnoiselite-0.0.7-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ccd928d2cec0072ebd58922ca09e117389677ad49707ff7004730b4e786c9c25", size = 1565581, upload-time = "2025-12-07T11:40:57.396Z" },
+    { url = "https://files.pythonhosted.org/packages/30/4b/d78dff87473e0586c101f4761c568939669b12e0b271bcf617ee3ec6da24/pyfastnoiselite-0.0.7-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:5e9d753a723968524e4428f78d324c72cc3798edffb7565723893b866c2530b1", size = 1635781, upload-time = "2025-12-07T11:40:58.986Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/1d/2580419cb1090262dccf0be431e4810f64b97c94688df0113c9feb98b168/pyfastnoiselite-0.0.7-cp313-cp313-win_amd64.whl", hash = "sha256:4362d2502b9f99b1ed7a11916e6faffdec43a8da8e3ddbc0278c5e5e89207bfc", size = 96162, upload-time = "2025-12-07T11:41:00.325Z" },
 ]
 
 [[package]]
@@ -3647,20 +3686,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/20/28/e6f1a6f655d620846bd9df527390ecc26b3805a0c5989048c210e22c5ca9/virtualenv-20.35.4.tar.gz", hash = "sha256:643d3914d73d3eeb0c552cbb12d7e82adf0e504dbf86a3182f8771a153a1971c", size = 6028799, upload-time = "2025-10-29T06:57:40.511Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/79/0c/c05523fa3181fdf0c9c52a6ba91a23fbf3246cc095f26f6516f9c60e6771/virtualenv-20.35.4-py3-none-any.whl", hash = "sha256:c21c9cede36c9753eeade68ba7d523529f228a403463376cf821eaae2b650f1b", size = 6005095, upload-time = "2025-10-29T06:57:37.598Z" },
-]
-
-[[package]]
-name = "vnoise"
-version = "0.1.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "setuptools" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/59/aa/f5109ddf1eb65bbb3382a2c4e6949d0a5725db7274efa3a750b4c29a8214/vnoise-0.1.0.tar.gz", hash = "sha256:831b529bc0c035edaf65218ee5c0586f4e8255452af8f6ddf003d80e7bf9c038", size = 7745, upload-time = "2021-02-24T22:21:42.551Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/f8/db4e04f4466a356137eb79152f1f8562d5052e223c44f67adb796f66b07d/vnoise-0.1.0-py3-none-any.whl", hash = "sha256:520fc5fb5fff7eb0a8a0161566bbca8cdef9aa1d4fab7c499a2451ba7d3729d1", size = 6917, upload-time = "2021-02-24T22:21:39.351Z" },
 ]
 
 [[package]]

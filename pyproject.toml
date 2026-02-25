@@ -36,7 +36,7 @@ dependencies = [
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
     "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "vnoise>=0.1.0,<1.0.0",
+    "pyfastnoiselite>=0.0.7",
     "netifaces2>=0.0.22",
     "packaging>=21.0",
     "xled>=0.7.0",

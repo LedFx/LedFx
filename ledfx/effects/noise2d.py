@@ -2,9 +2,9 @@ import logging
 import random
 
 import numpy as np
-import vnoise
 import voluptuous as vol
 from PIL import Image
+from pyfastnoiselite import pyfastnoiselite as fnl
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -98,7 +98,11 @@ class Noise2d(Twod, GradientEffect):
             self.noise_x = random.random()
             self.noise_y = random.random()
             self.noise_z = random.random()
-            self.noise = vnoise.Noise()
+            
+            self.noise = fnl.FastNoiseLite()
+            self.noise.noise_type = fnl.NoiseType.NoiseType_OpenSimplex2
+            self.noise.frequency = 0.6
+            
             self.first_run = False
 
         self.scale_x = self.zoom / self.r_width
@@ -159,14 +163,23 @@ class Noise2d(Twod, GradientEffect):
         z_array = np.array([self.noise_z])
 
         ###################################################################################
-        # This is where the magic happens, calling the lib of choice to get the noise plane
+        # This is where the magic happens, calling the lib to get the noise plane
         ###################################################################################
-        # opensimplex at 128x128 on dev machine is 200 ms per frame - Unusable
-        #        self.noise_3d = opensimplex.noise3array(x_array, y_array, z_array)
-        # vnoise at 128x128 on dev machine is 2.5 ms per frame - Current best candidate
-        self.noise_3d = self.noise.noise3(
-            x_array, y_array, z_array, grid_mode=True
-        )
+        # FastNoiseLite uses gen_from_coords for vectorized generation
+        # Create meshgrid for 2D coordinates
+        x_grid, y_grid = np.meshgrid(y_array, x_array, indexing='xy')
+        # Flatten coordinates - gen_from_coords expects shape (3, N) not (N, 3)
+        x_flat = x_grid.flatten()
+        y_flat = y_grid.flatten()
+        z_flat = np.full_like(x_flat, self.noise_z)
+        # Stack as rows: [all_x, all_y, all_z] with shape (3, N)
+        coords = np.stack([x_flat, y_flat, z_flat], axis=0).astype(np.float32)
+        
+        # Generate noise for all points at once (vectorized)
+        noise_flat = self.noise.gen_from_coords(coords)
+        
+        # Reshape back to 2D array and add extra dimension for consistency
+        self.noise_3d = noise_flat.reshape(self.r_height, self.r_width)[:, :, np.newaxis]
 
         # slice out the unwanted dimension
         self.noise_sliced = self.noise_3d[..., 0]

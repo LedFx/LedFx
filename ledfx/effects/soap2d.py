@@ -1,9 +1,9 @@
 import logging
 
 import numpy as np
-import vnoise
 import voluptuous as vol
 from PIL import Image
+from pyfastnoiselite import pyfastnoiselite as fnl
 
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
@@ -49,8 +49,8 @@ class Soap2D(Twod, GradientEffect):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        # vnoise
-        self._vn = None
+        # noise library
+        self._fnl = None  # fastnoiselite instance
         # noise state
         self._phase = None  # x,y drift (2D)
         self._noise = None  # (H,W) float32 [0..1]
@@ -61,7 +61,6 @@ class Soap2D(Twod, GradientEffect):
         self._w = 0
         # tuning
         self._freq = 3.0
-        self._octaves = 1  # faster, close to noise2d.py behavior
 
         self._need_seed = True
         self.impulse = 0.0
@@ -95,19 +94,25 @@ class Soap2D(Twod, GradientEffect):
         resized = self._ensure_buffers()
 
         # Track whether we initialized these now so we only reseed when needed
-        vn_was_none = self._vn is None
+        noise_was_none = False
         phase_was_none = self._phase is None
 
-        if vn_was_none:
-            self._vn = vnoise.Noise()
+        # Initialize the noise library
+        if self._fnl is None:
+            self._fnl = fnl.FastNoiseLite()
+            self._fnl.noise_type = fnl.NoiseType.NoiseType_OpenSimplex2
+            # Lower frequency for Soap due to additional freq scaling (self._freq=3.0)
+            self._fnl.frequency = 0.3
+            noise_was_none = True
+        
         if phase_was_none:
             r = np.random.RandomState()
             self._phase = np.array(
                 [r.rand() * 256, r.rand() * 256], dtype=np.float32
             )
 
-        # Only request seeding if buffers were created/resized or we just initialized vn/phase
-        if resized or vn_was_none or phase_was_none:
+        # Only request seeding if buffers were created/resized or we just initialized noise/phase
+        if resized or noise_was_none or phase_was_none:
             self._need_seed = True
 
     def _ensure_buffers(self, force: bool = False) -> bool:
@@ -133,7 +138,7 @@ class Soap2D(Twod, GradientEffect):
 
     # ---------- noise ----------
 
-    def _gen_noise_field01(self, freq: float, octaves: int) -> np.ndarray:
+    def _gen_noise_field01(self, freq: float) -> np.ndarray:
         """
         Generate (H,W) noise in [0,1] using cached 1D ramps (no per-frame linspace alloc).
         2D noise; motion from drifting x/y.
@@ -151,9 +156,21 @@ class Soap2D(Twod, GradientEffect):
         x = x0 + step_x * self._x_ramp
         y = y0 + step_y * self._y_ramp
 
-        n2 = self._vn.noise2(y, x, grid_mode=True, octaves=octaves).astype(
-            np.float32
-        )
+        # FastNoiseLite uses gen_from_coords for vectorized generation
+        # Create meshgrid for 2D coordinates
+        x_grid, y_grid = np.meshgrid(x, y, indexing='xy')
+        # Flatten coordinates
+        x_flat = x_grid.flatten()
+        y_flat = y_grid.flatten()
+        # Stack as rows: [all_x, all_y] with shape (2, N)
+        coords = np.stack([x_flat, y_flat], axis=0).astype(np.float32)
+        
+        # Generate noise for all points at once (vectorized)
+        noise_flat = self._fnl.gen_from_coords(coords)
+        
+        # Reshape back to 2D array (H, W)
+        n2 = noise_flat.reshape(H, W).astype(np.float32)
+        
         return (n2 + 1.0) * 0.5
 
     # ---------- smear (WLED-style: pixels for in-bounds, palette for OOB) ----------
@@ -166,61 +183,82 @@ class Soap2D(Twod, GradientEffect):
         axis: int,
     ) -> np.ndarray:
         """
-        Smear along one axis with signed shifts, vectorized with take_along_axis.
+        Optimized smear using direct indexing instead of take_along_axis.
         In-bounds taps come from `pixels_prev`; OOB taps come from `palette_rgb`.
         axis: 1 -> smear across X (rows), 0 -> smear across Y (cols)
         returns new (H,W,3) float32
         """
         H, W, _ = pixels_prev.shape
 
-        if axis == 1:
-            N = W
-            j = self._j_w  # (1,W)
-        else:
-            N = H
-            j = self._j_h  # (1,H)
-
-        # per-line signed shifts
-        sgn = np.sign(amount).astype(np.int32)[:, None]  # (L,1)
-        mag = np.abs(amount)[:, None]  # (L,1)
-        d_i = np.floor(mag).astype(np.int32)  # (L,1)
-        frac = (mag - d_i).astype(np.float32)  # (L,1)
-        eased = frac * frac * (3.0 - 2.0 * frac)  # (L,1) smoothstep
-        wB = eased[:, :, None]  # (L,N,1) for broadcast in blend
-
-        zD = j + sgn * d_i  # (L,N)
-        zF = zD + sgn  # (L,N)
-
-        inA = (zD >= 0) & (zD < N)
-        inB = (zF >= 0) & (zF < N)
-
-        a_idx = np.clip(zD, 0, N - 1).astype(np.int32)  # (L,N)
-        b_idx = np.clip(zF, 0, N - 1).astype(np.int32)  # (L,N)
+        # Pre-compute shift parameters
+        sgn = np.sign(amount).astype(np.int32)
+        mag = np.abs(amount)
+        d_i = np.floor(mag).astype(np.int32)
+        frac = (mag - d_i).astype(np.float32)
+        # Smoothstep easing
+        wB = frac * frac * (3.0 - 2.0 * frac)
 
         if axis == 1:
-            # Gather along columns (axis=1), shapes -> (H,W,3)
-            A_src = np.take_along_axis(pixels_prev, a_idx[:, :, None], axis=1)
-            B_src = np.take_along_axis(pixels_prev, b_idx[:, :, None], axis=1)
-            A_pal = np.take_along_axis(palette_rgb, a_idx[:, :, None], axis=1)
-            B_pal = np.take_along_axis(palette_rgb, b_idx[:, :, None], axis=1)
-            inA3, inB3 = inA[:, :, None], inB[:, :, None]
-            A = np.where(inA3, A_src, A_pal)
-            B = np.where(inB3, B_src, B_pal)
-            out = A * (1.0 - wB) + B * wB
+            # Smear across X (horizontal)
+            # Create index arrays: rows stay fixed, columns shift
+            row_idx = np.arange(H)[:, None]  # (H, 1)
+            col_base = np.arange(W)[None, :]  # (1, W)
+            
+            # Calculate shifted indices
+            zD = col_base + sgn[:, None] * d_i[:, None]
+            zF = zD + sgn[:, None]
+            
+            # Clamp indices and check bounds
+            a_idx = np.clip(zD, 0, W - 1)
+            b_idx = np.clip(zF, 0, W - 1)
+            inA = (zD >= 0) & (zD < W)
+            inB = (zF >= 0) & (zF < W)
+            
+            # Pre-allocate output
+            out = np.empty((H, W, 3), dtype=np.float32)
+            
+            # Process each color channel
+            for c in range(3):
+                # Gather pixel values using fancy indexing
+                A_pix = pixels_prev[row_idx, a_idx, c]
+                B_pix = pixels_prev[row_idx, b_idx, c]
+                A_pal = palette_rgb[row_idx, a_idx, c]
+                B_pal = palette_rgb[row_idx, b_idx, c]
+                
+                # Blend based on bounds (faster to compute per-channel)
+                A = np.where(inA, A_pix, A_pal)
+                B = np.where(inB, B_pix, B_pal)
+                out[:, :, c] = A * (1.0 - wB[:, None]) + B * wB[:, None]
         else:
-            # Work on transposed views to gather along rows cleanly:
-            # (W,H,3) so we can index along axis=1 with (W,H,1) indices
-            pixT = pixels_prev.transpose(1, 0, 2)
-            palT = palette_rgb.transpose(1, 0, 2)
-            A_src = np.take_along_axis(pixT, a_idx[:, :, None], axis=1)
-            B_src = np.take_along_axis(pixT, b_idx[:, :, None], axis=1)
-            A_pal = np.take_along_axis(palT, a_idx[:, :, None], axis=1)
-            B_pal = np.take_along_axis(palT, b_idx[:, :, None], axis=1)
-            inA3, inB3 = inA[:, :, None], inB[:, :, None]
-            A = np.where(inA3, A_src, A_pal)
-            B = np.where(inB3, B_src, B_pal)
-            outT = A * (1.0 - wB) + B * wB  # (W,H,3)
-            out = outT.transpose(1, 0, 2)  # back to (H,W,3)
+            # Smear across Y (vertical)  
+            col_idx = np.arange(W)[None, :]  # (1, W)
+            row_base = np.arange(H)[:, None]  # (H, 1)
+            
+            # Calculate shifted indices
+            zD = row_base + sgn[None, :] * d_i[None, :]
+            zF = zD + sgn[None, :]
+            
+            # Clamp indices and check bounds
+            a_idx = np.clip(zD, 0, H - 1)
+            b_idx = np.clip(zF, 0, H - 1)
+            inA = (zD >= 0) & (zD < H)
+            inB = (zF >= 0) & (zF < H)
+            
+            # Pre-allocate output
+            out = np.empty((H, W, 3), dtype=np.float32)
+            
+            # Process each color channel
+            for c in range(3):
+                # Gather pixel values using fancy indexing
+                A_pix = pixels_prev[a_idx, col_idx, c]
+                B_pix = pixels_prev[b_idx, col_idx, c]
+                A_pal = palette_rgb[a_idx, col_idx, c]
+                B_pal = palette_rgb[b_idx, col_idx, c]
+                
+                # Blend based on bounds
+                A = np.where(inA, A_pix, A_pal)
+                B = np.where(inB, B_pix, B_pal)
+                out[:, :, c] = A * (1.0 - wB[None, :]) + B * wB[None, :]
 
         return out
 
@@ -244,7 +282,7 @@ class Soap2D(Twod, GradientEffect):
         self._phase += move
 
         # noise + EMA smoothing
-        new_field = self._gen_noise_field01(self._freq, self._octaves)
+        new_field = self._gen_noise_field01(self._freq)
         self._noise = self._noise * self.smooth + new_field * (
             1.0 - self.smooth
         )

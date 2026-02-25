@@ -2,7 +2,7 @@
 
 ## Overview
 
-Soap is a **matrix noise effect** using the vnoise lib to generate and then smear 2d noise through time.
+Soap is a **matrix noise effect** using the FastNoiseLite library to generate and then smear 2D noise through time.
 
 It is inspired strongly by the original WLED Soap effect in [WLED github](https://github.com/wled/WLED/blob/3f90366aa86151e73424dd7c756f95ecbfaf143d/wled00/FX.cpp#L7563)
 
@@ -18,7 +18,7 @@ In this example, three devices with 1,024, 4,096, and 16,384 pixels
 <br><br>
 
 ```{note}
-The code has been thouroughly rewritten to be numpy and vnoise based to attempt to keep performance in the python runtime. None the less, it is a very expensive effect.
+The code has been thoroughly rewritten to be numpy and FastNoiseLite based to attempt to keep performance in the python runtime. None the less, it is a very expensive effect.
 If performance is a concern, monitor frame time in **Advanced → Diag switch**.
 ```
 
