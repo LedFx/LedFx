@@ -19,6 +19,7 @@ Effects
    matrix/digitalrain
    matrix/flame
    matrix/radial
+   matrix/smoke
    matrix/soap
    matrix/waterfall
    matrix/number

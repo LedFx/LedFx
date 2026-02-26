@@ -1,4 +1,106 @@
 ledfx_presets = {
+    "smoke2d": {
+        "ash": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #000e01 23.00%,#e9efeb 52.00%,#000000 80.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "speed": 0.6,
+                "stretch": 2,
+                "test": False,
+                "zoom": 1
+            },
+            "name": "ASH"
+        },
+        "broil": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #06e913 0.00%,#1a0101 39.00%,#000000 66.00%,#03fb00 100.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "speed": 0.6,
+                "stretch": 2,
+                "test": False,
+                "zoom": 2
+            },
+            "name": "broil"
+        },
+        "rgb": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #ff0000 0.00%,#000000 25.00%,#1aff00 48.00%,#000000 75.00%,#0004fb 99.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "speed": 1.0,
+                "stretch": 1.5,
+                "test": False,
+                "zoom": 2.0
+            },
+            "name": "RGB"
+        },
+        "storm": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "gradient": "linear-gradient(90deg, #0000ff 0.00%,#00ffff 33.00%,#800080 66.00%,#ff00b2 99.00%)",
+                "gradient_roll": 0.0,
+                "impulse_decay": 0.06,
+                "mirror": False,
+                "multiplier": 2.0,
+                "rotate": 0,
+                "speed": 2.9,
+                "stretch": 1.5,
+                "test": False,
+                "zoom": 4.6
+            },
+            "name": "STORM"
+        }
+    },
     "number": {
         "clock": {
             "config": {
