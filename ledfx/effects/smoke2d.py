@@ -8,7 +8,6 @@ from pyfastnoiselite import pyfastnoiselite as fnl
 
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-from ledfx.events import GeneralDiagEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -69,15 +68,6 @@ class Smoke2d(Twod, GradientEffect):
         self.zoom = self._config["zoom"]
         self.multiplier = self._config["multiplier"]
 
-        # Hardcoded FastNoiseLite parameters for optimal performance
-        self.base_frequency = 0.6
-        self.fractal_type = "fbm"
-        self.octaves = 4
-        self.lacunarity = 2.0
-        self.gain = 0.5
-        self.weighted_strength = 0.0
-        self.ping_pong_strength = 2.0
-
         self.lows_impulse_filter = self.create_filter(
             alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
         )
@@ -97,7 +87,7 @@ class Smoke2d(Twod, GradientEffect):
 
             self.noise = fnl.FastNoiseLite()
             self.noise.noise_type = fnl.NoiseType.NoiseType_OpenSimplex2
-            self.noise.frequency = float(self.base_frequency)
+            self.noise.frequency = 0.6
 
             # Set FBm fractal type and parameters (hardcoded for optimal performance)
             self.noise.fractal_type = fnl.FractalType.FractalType_FBm
@@ -118,15 +108,6 @@ class Smoke2d(Twod, GradientEffect):
         )
 
     def draw(self):
-        if self.test:
-            self.draw_test(self.m_draw)
-            self._ledfx.events.fire_event(
-                GeneralDiagEvent(
-                    f"Smoke2d: {self.r_width}x{self.r_height}\n"
-                    f"lows_impulse: {self.lows_impulse:.2f}\n"
-                    f"fractal: {self.fractal_type} oct={self.octaves}"
-                )
-            )
 
         # time invariant movement through noise space
         mov = 0.5 * self.speed * self.passed
