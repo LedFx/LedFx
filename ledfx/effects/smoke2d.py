@@ -130,8 +130,12 @@ class Smoke2d(Twod, GradientEffect):
         noise_y0 = self.noise_y - (scale_y * self.r_width / 2)
 
         # Build coordinate plane (vectorized)
-        x_array = np.linspace(noise_x0, noise_x0 + scale_x * self.r_height, self.r_height)
-        y_array = np.linspace(noise_y0, noise_y0 + scale_y * self.r_width, self.r_width)
+        x_array = np.linspace(
+            noise_x0, noise_x0 + scale_x * self.r_height, self.r_height
+        )
+        y_array = np.linspace(
+            noise_y0, noise_y0 + scale_y * self.r_width, self.r_width
+        )
 
         x_grid, y_grid = np.meshgrid(y_array, x_array, indexing="xy")
         x_flat = x_grid.ravel()
@@ -151,5 +155,7 @@ class Smoke2d(Twod, GradientEffect):
         # (kept cheap + safe)
         np.clip(noise_norm, 0.0, 1.0, out=noise_norm)
 
-        color_array = self.get_gradient_color_vectorized2d(noise_norm).astype(np.uint8)
+        color_array = self.get_gradient_color_vectorized2d(noise_norm).astype(
+            np.uint8
+        )
         self.matrix = Image.fromarray(color_array, "RGB")
