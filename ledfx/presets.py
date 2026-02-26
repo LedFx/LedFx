@@ -21,9 +21,9 @@ ledfx_presets = {
                 "speed": 0.6,
                 "stretch": 2,
                 "test": False,
-                "zoom": 1
+                "zoom": 1,
             },
-            "name": "ASH"
+            "name": "ASH",
         },
         "broil": {
             "config": {
@@ -46,9 +46,9 @@ ledfx_presets = {
                 "speed": 0.6,
                 "stretch": 2,
                 "test": False,
-                "zoom": 2
+                "zoom": 2,
             },
-            "name": "broil"
+            "name": "broil",
         },
         "rgb": {
             "config": {
@@ -71,9 +71,9 @@ ledfx_presets = {
                 "speed": 1.0,
                 "stretch": 1.5,
                 "test": False,
-                "zoom": 2.0
+                "zoom": 2.0,
             },
-            "name": "RGB"
+            "name": "RGB",
         },
         "storm": {
             "config": {
@@ -96,10 +96,10 @@ ledfx_presets = {
                 "speed": 2.9,
                 "stretch": 1.5,
                 "test": False,
-                "zoom": 4.6
+                "zoom": 4.6,
             },
-            "name": "STORM"
-        }
+            "name": "STORM",
+        },
     },
     "number": {
         "clock": {
