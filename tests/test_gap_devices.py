@@ -5,7 +5,6 @@ Gap devices are dummy placeholders created by the frontend to represent
 empty spaces in discontiguous virtual matrix mappings.
 """
 
-import pytest
 
 from ledfx.utils import is_gap_device
 
@@ -77,7 +76,6 @@ class TestGapDeviceIntegration:
         """Test the validation logic for gap devices by reading source code."""
         # This is a basic sanity check - the actual validation is tested
         # through the API tests in test_definitions/virtual_config.py
-        import ledfx.devices
 
         # Verify that the function is imported and available where needed
         import ledfx.virtuals
@@ -92,8 +90,6 @@ class TestGapDeviceIntegration:
 
     def test_devices_module_imports(self):
         """Verify devices module imports is_gap_device."""
-        import ledfx.devices
-
         # Check that the module can access is_gap_device
         from ledfx.utils import is_gap_device
 
