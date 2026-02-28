@@ -5,7 +5,6 @@ Gap devices are dummy placeholders created by the frontend to represent
 empty spaces in discontiguous virtual matrix mappings.
 """
 
-
 from ledfx.utils import is_gap_device
 
 
