@@ -38,7 +38,9 @@ class TestGapDeviceIdentification:
         assert not is_gap_device(MockDevice("dummy", "dummy"))
         assert not is_gap_device(MockDevice("", "dummy"))
         assert not is_gap_device(MockDevice("gapdevice", "dummy"))  # no hyphen
-        assert not is_gap_device(MockDevice("my-gap-device", "dummy"))  # doesn't start with gap-
+        assert not is_gap_device(
+            MockDevice("my-gap-device", "dummy")
+        )  # doesn't start with gap-
 
     def test_special_device_types(self):
         """Test that special device types are not confused with gap devices."""
@@ -75,15 +77,15 @@ class TestGapDeviceIntegration:
         """Test the validation logic for gap devices by reading source code."""
         # This is a basic sanity check - the actual validation is tested
         # through the API tests in test_definitions/virtual_config.py
-        from ledfx.utils import is_gap_device
+        import ledfx.devices
 
         # Verify that the function is imported and available where needed
         import ledfx.virtuals
-        import ledfx.devices
+        from ledfx.utils import is_gap_device
 
         # Check that the module imports is_gap_device
-        assert hasattr(ledfx.virtuals, 'is_gap_device')
-        
+        assert hasattr(ledfx.virtuals, "is_gap_device")
+
         # Test with proper mock devices
         assert is_gap_device(MockDevice("gap-test", "dummy"))
         assert not is_gap_device(MockDevice("real-device", "wled"))
@@ -94,5 +96,5 @@ class TestGapDeviceIntegration:
 
         # Check that the module can access is_gap_device
         from ledfx.utils import is_gap_device
-        assert is_gap_device(MockDevice("gap-test", "dummy"))
 
+        assert is_gap_device(MockDevice("gap-test", "dummy"))
