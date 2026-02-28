@@ -29,6 +29,12 @@ So lets add a device using the bottom icon
 2)  Give the device a name, in this case we are looking to imply the
     matrix layout and that it is fake, so use fake64x64, but its
     arbitrary
+
+    **Note:** Do not name your device starting with `gap-` as this prefix
+    is reserved for internal matrix editor placeholders. See the
+    [Reserved Device Naming](/howto/virtuals.html#reserved-device-naming-gap-devices)
+    section in the virtuals documentation for details.
+
 3)  Set the number of required pixels, so for a 64 x 64 matrix = 4096,
     this is also the current limit of the front end update pixel count
 4)  hit ADD
