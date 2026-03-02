@@ -389,12 +389,14 @@ class Virtual:
         virtual_offset = 0
 
         for device_id, device_start, device_end, reverse in self._segments:
+            segment_width = device_end - device_start + 1
+
             # Skip gap devices - they are placeholders for empty space
+            # But still advance virtual_offset to consume those pixels from the virtual's buffer
             device = self._ledfx.devices.get(device_id)
             if is_gap_device(device):
+                virtual_offset += segment_width
                 continue
-
-            segment_width = device_end - device_start + 1
 
             # Skip segments with invalid width
             if segment_width <= 0:
@@ -1220,11 +1222,15 @@ class Virtual:
         data_start = 0
         segments_by_device = {}
         for device_id, device_start, device_end, inverse in self._segments:
+            segment_width = device_end - device_start + 1
+            
             # Skip gap devices - they are placeholders for empty space
+            # But still advance data_start to consume those pixels from the virtual's buffer
             device = self._ledfx.devices.get(device_id)
             if is_gap_device(device):
+                data_start += segment_width
                 continue
-            segment_width = device_end - device_start + 1
+            
             if not inverse:
                 start = data_start
                 stop = data_start + segment_width
@@ -1269,21 +1275,18 @@ class Virtual:
         if self._config["mapping"] == "span":
             total = 0
             for device_id, start_pixel, end_pixel, invert in self._segments:
-                # Skip gap devices - they don't contribute to pixel count
-                device = self._ledfx.devices.get(device_id)
-                if is_gap_device(device):
-                    continue
+                # Include ALL pixels, even gap devices
+                # Gap pixels are rendered but not displayed - they create empty space in the layout
                 total += end_pixel - start_pixel + 1
             return total
         elif self._config["mapping"] == "copy":
             if self._segments:
-                # Skip gap devices when calculating max segment size
-                non_gap_segments = [
+                # For copy mode, use the maximum segment size (including gaps)
+                all_segments = [
                     (end_pixel - start_pixel + 1)
                     for device_id, start_pixel, end_pixel, _ in self._segments
-                    if not is_gap_device(self._ledfx.devices.get(device_id))
                 ]
-                return max(non_gap_segments) if non_gap_segments else 0
+                return max(all_segments) if all_segments else 0
             else:
                 return 0
 
