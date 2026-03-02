@@ -272,3 +272,44 @@ devices of 16x64, not 4 of 32x32.
 As we can only stack in one dimension, putting the 4 devices of 16x64
 together via virtuals will allow you to achieve a 64x64 matrix
 controlled by a single virtual in ledfx.
+
+## Reserved Device Naming: Gap Devices
+
+**IMPORTANT:** Avoid naming your devices with the `gap-` prefix.
+
+### What are Gap Devices?
+
+Gap devices are special placeholder devices automatically created by the
+matrix editor in the frontend when building discontiguous LED layouts.
+These placeholders represent empty spaces in matrix configurations where
+no physical LEDs exist.
+
+### Identification
+
+Gap devices are identified by **both** of the following criteria:
+
+-   Device name starts with `gap-` (e.g., `gap-0`, `gap-1`)
+-   Device type is `dummy`
+
+### Why This Matters
+
+LedFx internally filters gap devices from runtime operations. If you
+name your own devices with the `gap-` prefix and set them as dummy type,
+they will be treated as gap placeholders and excluded from:
+
+-   Pixel count calculations
+-   Device flushing operations
+-   Segment activation
+-   Effect rendering
+
+### Best Practice
+
+**Do not name your devices starting with `gap-`**. This naming convention
+is reserved for internal use by the matrix editor. Choose descriptive
+names like:
+
+-   `strip-1`, `matrix-main`, `bedroom-leds` ✓
+-   `gap-device`, `gap-strip` ✗
+
+If you have existing devices with `gap-` names, rename them to avoid
+conflicts with the matrix editor's placeholder system.
