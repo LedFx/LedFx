@@ -30,14 +30,11 @@ class TestCoreAudioMonitoringIntegration:
     @patch("ledfx.core.create_audio_device_monitor")
     def test_core_creates_monitor_on_init(self, mock_create_monitor):
         """Test that core initializes audio_device_monitor to None"""
-        from ledfx.core import LedFxCore
         from ledfx.config import LedFxConfig
+        from ledfx.core import LedFxCore
 
         # Create minimal config
-        config = LedFxConfig(
-            config_dir="test_config", 
-            create_if_missing=False
-        )
+        config = LedFxConfig(config_dir="test_config", create_if_missing=False)
 
         with patch.object(config, "_load_config"):
             core = LedFxCore(config_dir="test_config")
@@ -117,9 +114,7 @@ class TestCoreAudioMonitoringIntegration:
                 pass
 
     @patch("ledfx.core.create_audio_device_monitor")
-    async def test_core_handles_monitor_unavailable(
-        self, mock_create_monitor
-    ):
+    async def test_core_handles_monitor_unavailable(self, mock_create_monitor):
         """Test that core works when monitor is unavailable (None)"""
         from ledfx.core import LedFxCore
 
@@ -198,14 +193,16 @@ class TestCoreAudioDeviceListRefresh:
         """Test that _on_audio_device_list_changed callback calls refresh_device_list"""
         from ledfx.core import LedFxCore
         from ledfx.events import AudioDeviceListChangedEvent
-        
-        # Create a minimal core instance 
+
+        # Create a minimal core instance
         core = MagicMock()
         core.__class__ = LedFxCore
-        
+
         # Call the callback directly
-        LedFxCore._on_audio_device_list_changed(core, AudioDeviceListChangedEvent())
-        
+        LedFxCore._on_audio_device_list_changed(
+            core, AudioDeviceListChangedEvent()
+        )
+
         # Verify refresh was called
         mock_refresh.assert_called_once()
 
@@ -213,10 +210,10 @@ class TestCoreAudioDeviceListRefresh:
     def test_refresh_called_on_event(self, mock_refresh):
         """Test that refresh_device_list is called when event fires (via callback)"""
         from ledfx.events import AudioDeviceListChangedEvent
-        
+
         # This test verifies the callback exists and would call refresh
         event = AudioDeviceListChangedEvent()
-        
+
         # The actual integration is tested manually or in end-to-end tests
         # This test documents the expected behavior
         assert event.event_type == "audio_device_list_changed"

@@ -54,41 +54,62 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
     def start_monitoring(self):
         """Start monitoring using IMMNotificationClient."""
         try:
-            import comtypes
-            from comtypes import GUID, COMMETHOD
             from ctypes import POINTER
+
+            import comtypes
+            from comtypes import COMMETHOD, GUID
+            from pycaw.constants import CLSID_MMDeviceEnumerator
             from pycaw.pycaw import (
                 AudioUtilities,
                 IMMDeviceEnumerator,
             )
-            from pycaw.constants import CLSID_MMDeviceEnumerator
 
             _LOGGER.info("Starting Windows audio device monitor")
 
             # Define IMMNotificationClient interface for comtypes
             class IMMNotificationClient(comtypes.IUnknown):
-                _iid_ = GUID('{7991EEC9-7E89-4D85-8390-6C703CEC60C0}')
+                _iid_ = GUID("{7991EEC9-7E89-4D85-8390-6C703CEC60C0}")
                 _methods_ = [
-                    COMMETHOD([], comtypes.HRESULT, 'OnDeviceStateChanged',
-                              (['in'], comtypes.c_wchar_p, 'pwstrDeviceId'),
-                              (['in'], comtypes.c_ulong, 'dwNewState')),
-                    COMMETHOD([], comtypes.HRESULT, 'OnDeviceAdded',
-                              (['in'], comtypes.c_wchar_p, 'pwstrDeviceId')),
-                    COMMETHOD([], comtypes.HRESULT, 'OnDeviceRemoved',
-                              (['in'], comtypes.c_wchar_p, 'pwstrDeviceId')),
-                    COMMETHOD([], comtypes.HRESULT, 'OnDefaultDeviceChanged',
-                              (['in'], comtypes.c_int, 'flow'),
-                              (['in'], comtypes.c_int, 'role'),
-                              (['in'], comtypes.c_wchar_p, 'pwstrDefaultDeviceId')),
-                    COMMETHOD([], comtypes.HRESULT, 'OnPropertyValueChanged',
-                              (['in'], comtypes.c_wchar_p, 'pwstrDeviceId'),
-                              (['in'], POINTER(comtypes.c_int), 'key'))
+                    COMMETHOD(
+                        [],
+                        comtypes.HRESULT,
+                        "OnDeviceStateChanged",
+                        (["in"], comtypes.c_wchar_p, "pwstrDeviceId"),
+                        (["in"], comtypes.c_ulong, "dwNewState"),
+                    ),
+                    COMMETHOD(
+                        [],
+                        comtypes.HRESULT,
+                        "OnDeviceAdded",
+                        (["in"], comtypes.c_wchar_p, "pwstrDeviceId"),
+                    ),
+                    COMMETHOD(
+                        [],
+                        comtypes.HRESULT,
+                        "OnDeviceRemoved",
+                        (["in"], comtypes.c_wchar_p, "pwstrDeviceId"),
+                    ),
+                    COMMETHOD(
+                        [],
+                        comtypes.HRESULT,
+                        "OnDefaultDeviceChanged",
+                        (["in"], comtypes.c_int, "flow"),
+                        (["in"], comtypes.c_int, "role"),
+                        (["in"], comtypes.c_wchar_p, "pwstrDefaultDeviceId"),
+                    ),
+                    COMMETHOD(
+                        [],
+                        comtypes.HRESULT,
+                        "OnPropertyValueChanged",
+                        (["in"], comtypes.c_wchar_p, "pwstrDeviceId"),
+                        (["in"], POINTER(comtypes.c_int), "key"),
+                    ),
                 ]
 
             # Create concrete implementation
             class DeviceNotificationClient(comtypes.COMObject):
                 _com_interfaces_ = [IMMNotificationClient]
-                
+
                 def __init__(self, callback):
                     super().__init__()
                     self.callback = callback
@@ -103,17 +124,27 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
                     self.callback()
                     return 0
 
-                def IMMNotificationClient_OnDeviceStateChanged(self, pwstrDeviceId, dwNewState):
-                    _LOGGER.debug(f"Device state changed: {pwstrDeviceId} state={dwNewState}")
+                def IMMNotificationClient_OnDeviceStateChanged(
+                    self, pwstrDeviceId, dwNewState
+                ):
+                    _LOGGER.debug(
+                        f"Device state changed: {pwstrDeviceId} state={dwNewState}"
+                    )
                     self.callback()
                     return 0
 
-                def IMMNotificationClient_OnDefaultDeviceChanged(self, flow, role, pwstrDefaultDeviceId):
-                    _LOGGER.debug(f"Default device changed: {pwstrDefaultDeviceId}")
+                def IMMNotificationClient_OnDefaultDeviceChanged(
+                    self, flow, role, pwstrDefaultDeviceId
+                ):
+                    _LOGGER.debug(
+                        f"Default device changed: {pwstrDefaultDeviceId}"
+                    )
                     # Don't fire event for default device change, only for list changes
                     return 0
 
-                def IMMNotificationClient_OnPropertyValueChanged(self, pwstrDeviceId, key):
+                def IMMNotificationClient_OnPropertyValueChanged(
+                    self, pwstrDeviceId, key
+                ):
                     # Properties changing doesn't mean the device list changed
                     return 0
 
@@ -126,12 +157,12 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
                         IMMDeviceEnumerator,
                         comtypes.CLSCTX_INPROC_SERVER,
                     )
-                    
+
                     # Create notification client in this thread (COM apartment threading)
                     self._notification_client = DeviceNotificationClient(
                         self._fire_device_list_changed_event
                     )
-                    
+
                     device_enumerator.RegisterEndpointNotificationCallback(
                         self._notification_client
                     )
@@ -146,7 +177,9 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
 
                 finally:
                     try:
-                        if hasattr(self, '_device_enumerator') and hasattr(self, '_notification_client'):
+                        if hasattr(self, "_device_enumerator") and hasattr(
+                            self, "_notification_client"
+                        ):
                             self._device_enumerator.UnregisterEndpointNotificationCallback(
                                 self._notification_client
                             )
@@ -173,7 +206,7 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
     def stop_monitoring(self):
         """Stop monitoring."""
         self._running = False
-        if hasattr(self, '_stop_event'):
+        if hasattr(self, "_stop_event"):
             self._stop_event.set()  # Wake up the waiting thread
         if self._monitor_thread:
             self._monitor_thread.join(timeout=2.0)

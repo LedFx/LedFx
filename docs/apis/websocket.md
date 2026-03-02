@@ -539,7 +539,7 @@ When this event is received, the frontend should re-fetch the device list via `/
 
 **Note:** This event is platform-specific and requires:
 - Windows: `pycaw` library
-- macOS: `pyobjc-framework-CoreAudio` library  
+- macOS: `pyobjc-framework-CoreAudio` library
 - Linux: `pyudev` library
 
 ### colors_updated

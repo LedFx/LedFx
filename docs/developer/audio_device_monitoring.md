@@ -55,7 +55,7 @@ from pycaw.pycaw import IMMDeviceEnumerator, IMMNotificationClient
 
 **Monitors:**
 - `OnDeviceAdded()` - New audio device connected
-- `OnDeviceRemoved()` - Audio device disconnected  
+- `OnDeviceRemoved()` - Audio device disconnected
 - `OnDeviceStateChanged()` - Device state changed (e.g., enabled/disabled)
 
 **Thread model:** Runs in separate thread with COM initialization
@@ -105,7 +105,7 @@ This ensures that subsequent calls to `/api/audio/devices` return the current de
 def _start_audio_device_monitor(self):
     """Start the audio device monitor for the current platform."""
     # ... monitor initialization ...
-    
+
     # Register event listener to refresh device list when devices change
     self.events.add_listener(
         self._on_audio_device_list_changed,
@@ -125,7 +125,7 @@ def _on_audio_device_list_changed(self, event):
 Audio device monitoring is **enabled by default** on all platforms with the appropriate platform-specific dependencies installed automatically:
 
 - **Windows**: `pycaw` (Core Audio API)
-- **macOS**: `pyobjc-framework-CoreAudio` 
+- **macOS**: `pyobjc-framework-CoreAudio`
 - **Linux**: `pyudev`
 
 ### Standard Installation
@@ -210,22 +210,22 @@ from ledfx.events import Event
 async def test_device_monitor_creation(ledfx_instance, event_loop):
     monitor = create_audio_device_monitor(ledfx_instance, event_loop)
     assert monitor is not None
-    
-@pytest.mark.asyncio  
+
+@pytest.mark.asyncio
 async def test_device_list_changed_event(ledfx_instance, event_loop):
     events_received = []
-    
+
     def event_callback(event):
         events_received.append(event)
-    
+
     ledfx_instance.events.add_listener(
-        event_callback, 
+        event_callback,
         Event.AUDIO_DEVICE_LIST_CHANGED
     )
-    
+
     # Simulate device change (platform-specific)
     # ...
-    
+
     assert len(events_received) > 0
 ```
 
@@ -318,7 +318,7 @@ Inherits from `Event`, no additional properties.
 ```python
 class AudioDeviceListChangedEvent(Event):
     """Event emitted when the system audio device list changes (devices added/removed)"""
-    
+
     def __init__(self):
         super().__init__(Event.AUDIO_DEVICE_LIST_CHANGED)
 ```
@@ -331,7 +331,7 @@ Factory function to create platform-specific monitor.
 - `ledfx_instance`: LedFx core instance
 - `loop`: asyncio event loop
 
-**Returns:** 
+**Returns:**
 - `AudioDeviceMonitor` subclass instance, or `None` if platform unsupported
 
 **Example:**
