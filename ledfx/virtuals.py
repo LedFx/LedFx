@@ -1223,14 +1223,14 @@ class Virtual:
         segments_by_device = {}
         for device_id, device_start, device_end, inverse in self._segments:
             segment_width = device_end - device_start + 1
-            
+
             # Skip gap devices - they are placeholders for empty space
             # But still advance data_start to consume those pixels from the virtual's buffer
             device = self._ledfx.devices.get(device_id)
             if is_gap_device(device):
                 data_start += segment_width
                 continue
-            
+
             if not inverse:
                 start = data_start
                 stop = data_start + segment_width
