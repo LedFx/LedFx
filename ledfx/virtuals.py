@@ -250,13 +250,12 @@ class Virtual:
         # Get device for validation
         device = self._ledfx.devices.get(device_id)
 
-        # Skip validation for gap devices - they are dummy placeholders
-        if is_gap_device(device):
-            return segment
-
         if device is None:
             msg = f"Invalid device id: {device_id}"
             valid = False
+        # Skip validation for gap devices - they are dummy placeholders
+        elif is_gap_device(device):
+            return segment
         elif (
             start_pixel < 0
             or end_pixel < 0

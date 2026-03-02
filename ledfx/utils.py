@@ -792,12 +792,14 @@ def is_gap_device(device) -> bool:
     2. The device type is "dummy"
 
     Args:
-        device: The device object to check.
+        device: The device object to check. Can be None.
 
     Returns:
         bool: True if the device ID starts with "gap-" AND the device type
-              is "dummy", False otherwise.
+              is "dummy", False otherwise (including when device is None).
     """
+    if device is None:
+        return False
     return device.id.startswith("gap-") and device.type == "dummy"
 
 
