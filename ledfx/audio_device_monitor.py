@@ -164,8 +164,6 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
                         self._notification_client
                     )
                     self._device_enumerator = device_enumerator
-                    self._running = True
-                    self._stop_event = threading.Event()
                     _LOGGER.info("Windows audio device monitor started")
 
                     # Keep thread alive - COM callbacks are event-driven by Windows
@@ -184,6 +182,10 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
                         pass
                     comtypes.CoUninitialize()
 
+            # Initialize state before starting thread to avoid race conditions
+            self._stop_event = threading.Event()
+            self._running = True
+            
             self._monitor_thread = threading.Thread(
                 target=monitor_thread, daemon=True, name="AudioDeviceMonitor"
             )
@@ -302,7 +304,6 @@ class LinuxAudioDeviceMonitor(AudioDeviceMonitor):
             monitor.filter_by(subsystem="sound")
 
             def monitor_thread():
-                self._running = True
                 _LOGGER.info("Linux audio device monitor started")
 
                 try:
@@ -328,6 +329,9 @@ class LinuxAudioDeviceMonitor(AudioDeviceMonitor):
                         exc_info=True,
                     )
 
+            # Initialize state before starting thread to avoid race conditions
+            self._running = True
+            
             self._monitor_thread = threading.Thread(
                 target=monitor_thread, daemon=True, name="AudioDeviceMonitor"
             )

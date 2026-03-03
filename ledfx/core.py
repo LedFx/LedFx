@@ -26,6 +26,7 @@ from ledfx.config import (
     remove_virtuals_active_effects,
     save_config,
 )
+from ledfx.audio_device_monitor import create_audio_device_monitor
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -170,8 +171,6 @@ class LedFxCore:
     def _start_audio_device_monitor(self):
         """Start the audio device monitor for the current platform."""
         try:
-            from ledfx.audio_device_monitor import create_audio_device_monitor
-
             self.audio_device_monitor = create_audio_device_monitor(
                 self, self.loop
             )
@@ -179,7 +178,7 @@ class LedFxCore:
                 self.audio_device_monitor.start_monitoring()
 
                 # Register event listener to refresh device list when devices change
-                self.events.add_listener(
+                self._remove_audio_device_listener = self.events.add_listener(
                     self._on_audio_device_list_changed,
                     Event.AUDIO_DEVICE_LIST_CHANGED,
                 )
@@ -558,6 +557,11 @@ class LedFxCore:
             # Stop audio device monitor
             if self.audio_device_monitor:
                 try:
+                    # Unregister the event listener
+                    if hasattr(self, "_remove_audio_device_listener"):
+                        self._remove_audio_device_listener()
+                    
+                    # Stop monitoring
                     self.audio_device_monitor.stop_monitoring()
                 except Exception as e:
                     _LOGGER.warning(

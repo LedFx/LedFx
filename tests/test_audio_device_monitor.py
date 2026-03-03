@@ -1,5 +1,6 @@
 """Tests for ledfx/audio_device_monitor.py - Audio device monitoring"""
 
+import inspect
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -30,12 +31,26 @@ class TestAudioDeviceMonitorBase:
                 pass
 
         monitor = TestMonitor(mock_ledfx, mock_loop)
-        monitor._fire_device_list_changed_event()
 
-        # Verify run_coroutine_threadsafe was called
-        # Note: We can't easily verify the exact call since it uses asyncio.run_coroutine_threadsafe
-        assert monitor._loop is mock_loop
-        assert monitor._ledfx is mock_ledfx
+        # Mock asyncio.run_coroutine_threadsafe
+        with patch(
+            "ledfx.audio_device_monitor.asyncio.run_coroutine_threadsafe"
+        ) as mock_run_coroutine:
+            monitor._fire_device_list_changed_event()
+
+            # Verify run_coroutine_threadsafe was called with a coroutine and the loop
+            mock_run_coroutine.assert_called_once()
+            call_args = mock_run_coroutine.call_args
+            
+            # First argument should be a coroutine
+            coro = call_args[0][0]
+            assert inspect.iscoroutine(coro)
+            
+            # Second argument should be the mock_loop
+            assert call_args[0][1] is mock_loop
+            
+            # Clean up the coroutine to avoid "never awaited" warning
+            coro.close()
 
     def test_abstract_methods_raise_not_implemented(self):
         """Test that abstract methods can't be instantiated without implementation"""
