@@ -177,14 +177,13 @@ class LedFxCore:
             )
             if self.audio_device_monitor:
                 self.audio_device_monitor.start_monitoring()
-                
+
                 # Register event listener to refresh device list when devices change
-                from ledfx.effects.audio import AudioInputSource
                 self.events.add_listener(
                     self._on_audio_device_list_changed,
-                    Event.AUDIO_DEVICE_LIST_CHANGED
+                    Event.AUDIO_DEVICE_LIST_CHANGED,
                 )
-                
+
                 _LOGGER.info("Audio device monitor enabled")
             else:
                 _LOGGER.debug(
@@ -199,6 +198,7 @@ class LedFxCore:
     def _on_audio_device_list_changed(self, event):
         """Handle audio device list changes by refreshing the cached device list."""
         from ledfx.effects.audio import AudioInputSource
+
         AudioInputSource.refresh_device_list()
         _LOGGER.info("Audio device list updated in response to system change")
 
@@ -554,14 +554,16 @@ class LedFxCore:
             _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
             # Fire a shutdown event
             self.events.fire_event(LedFxShutdownEvent())
-            
+
             # Stop audio device monitor
             if self.audio_device_monitor:
                 try:
                     self.audio_device_monitor.stop_monitoring()
                 except Exception as e:
-                    _LOGGER.warning(f"Error stopping audio device monitor: {e}")
-            
+                    _LOGGER.warning(
+                        f"Error stopping audio device monitor: {e}"
+                    )
+
             _LOGGER.info("Stopping HTTP Server...")
             await self.http.stop()
 

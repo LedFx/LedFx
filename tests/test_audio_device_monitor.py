@@ -1,20 +1,16 @@
 """Tests for ledfx/audio_device_monitor.py - Audio device monitoring"""
 
-import asyncio
-import sys
-import threading
-from unittest.mock import MagicMock, Mock, patch, call
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from ledfx.audio_device_monitor import (
     AudioDeviceMonitor,
-    WindowsAudioDeviceMonitor,
-    MacOSAudioDeviceMonitor,
     LinuxAudioDeviceMonitor,
+    MacOSAudioDeviceMonitor,
+    WindowsAudioDeviceMonitor,
     create_audio_device_monitor,
 )
-from ledfx.events import Event
 
 
 class TestAudioDeviceMonitorBase:
@@ -122,7 +118,9 @@ class TestWindowsAudioDeviceMonitor:
         mock_loop = MagicMock()
 
         # Patch the import inside start_monitoring
-        with patch("builtins.__import__", side_effect=ImportError("pycaw not found")):
+        with patch(
+            "builtins.__import__", side_effect=ImportError("pycaw not found")
+        ):
             monitor = WindowsAudioDeviceMonitor(mock_ledfx, mock_loop)
             monitor.start_monitoring()  # Should not raise
 
@@ -151,7 +149,10 @@ class TestMacOSAudioDeviceMonitor:
         mock_loop = MagicMock()
 
         # Patch the import inside start_monitoring
-        with patch("builtins.__import__", side_effect=ImportError("CoreAudio not found")):
+        with patch(
+            "builtins.__import__",
+            side_effect=ImportError("CoreAudio not found"),
+        ):
             monitor = MacOSAudioDeviceMonitor(mock_ledfx, mock_loop)
             monitor.start_monitoring()  # Should not raise
 
@@ -180,7 +181,9 @@ class TestLinuxAudioDeviceMonitor:
         mock_loop = MagicMock()
 
         # Patch the import inside start_monitoring
-        with patch("builtins.__import__", side_effect=ImportError("pyudev not found")):
+        with patch(
+            "builtins.__import__", side_effect=ImportError("pyudev not found")
+        ):
             monitor = LinuxAudioDeviceMonitor(mock_ledfx, mock_loop)
             monitor.start_monitoring()  # Should not raise
 
