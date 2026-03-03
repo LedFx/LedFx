@@ -185,7 +185,7 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
             # Initialize state before starting thread to avoid race conditions
             self._stop_event = threading.Event()
             self._running = True
-            
+
             self._monitor_thread = threading.Thread(
                 target=monitor_thread, daemon=True, name="AudioDeviceMonitor"
             )
@@ -331,7 +331,7 @@ class LinuxAudioDeviceMonitor(AudioDeviceMonitor):
 
             # Initialize state before starting thread to avoid race conditions
             self._running = True
-            
+
             self._monitor_thread = threading.Thread(
                 target=monitor_thread, daemon=True, name="AudioDeviceMonitor"
             )

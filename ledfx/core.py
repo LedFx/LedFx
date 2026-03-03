@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pybase64
 
+from ledfx.audio_device_monitor import create_audio_device_monitor
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
@@ -26,7 +27,6 @@ from ledfx.config import (
     remove_virtuals_active_effects,
     save_config,
 )
-from ledfx.audio_device_monitor import create_audio_device_monitor
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -560,7 +560,7 @@ class LedFxCore:
                     # Unregister the event listener
                     if hasattr(self, "_remove_audio_device_listener"):
                         self._remove_audio_device_listener()
-                    
+
                     # Stop monitoring
                     self.audio_device_monitor.stop_monitoring()
                 except Exception as e:
