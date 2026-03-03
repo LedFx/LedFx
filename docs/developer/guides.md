@@ -5,6 +5,7 @@ This section contains a limited set of detailed guides for developers working wi
 ```{toctree}
 :maxdepth: 1
 
+audio_device_monitoring
 gradient_extraction
 websocket_client_examples
 client_sync_migration_guide

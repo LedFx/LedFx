@@ -32,7 +32,7 @@ So lets add a device using the bottom icon
 
     **Note:** Do not name your device starting with `gap-` as this prefix
     is reserved for internal matrix editor placeholders. See the
-    [Reserved Device Naming](/howto/virtuals.html#reserved-device-naming-gap-devices)
+    [Reserved Device Naming](virtuals.md#reserved-device-naming-gap-devices)
     section in the virtuals documentation for details.
 
 3)  Set the number of required pixels, so for a 64 x 64 matrix = 4096,
