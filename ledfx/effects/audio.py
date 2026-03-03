@@ -36,6 +36,23 @@ class AudioInputSource:
     _subscriber_threshold = 0
     _timer = None
     _last_active = None
+    _device_list_cache = None  # Cache for device list
+
+    @staticmethod
+    def refresh_device_list():
+        """
+        Force sounddevice/PortAudio to rescan audio devices.
+        This is necessary because PortAudio caches the device list at initialization.
+        """
+        try:
+            # Force PortAudio to rescan devices by terminating and reinitializing
+            sd._terminate()
+            sd._initialize()
+            # Clear the device list cache
+            AudioInputSource._device_list_cache = None
+            _LOGGER.info("Audio device list refreshed")
+        except Exception as e:
+            _LOGGER.warning(f"Failed to refresh audio device list: {e}")
 
     @staticmethod
     def device_index_validator(val):

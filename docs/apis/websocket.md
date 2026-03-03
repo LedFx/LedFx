@@ -521,6 +521,27 @@ The `audio_input_device_changed` event is emitted when the an audio reactive eff
 - `event_type`: Always `"audio_input_device_changed"`.
 - `audio_input_device_name`: The friendly name of the selected audio device.
 
+### audio_device_list_changed
+The `audio_device_list_changed` event is emitted when the system audio device list changes (devices are added or removed). LedFx automatically detects device changes using native OS APIs and refreshes the internal device list.
+
+**Payload Example:**
+```json
+{
+  "event_type": "audio_device_list_changed"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"audio_device_list_changed"`.
+
+**Usage:**
+When this event is received, the frontend should re-fetch the device list via `/api/audio/devices` to update the UI. The backend has already refreshed its internal device cache, so the API will return the current device list.
+
+**Note:** This event is platform-specific and requires:
+- Windows: `pycaw` library
+- macOS: `pyobjc-framework-CoreAudio` library  
+- Linux: `pyudev` library
+
 ### colors_updated
 The `colors_updated` event is emitted when user-defined colors or gradients are added, modified, or deleted via the `/api/colors` endpoint.
 

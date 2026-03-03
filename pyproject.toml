@@ -41,6 +41,9 @@ dependencies = [
     "packaging>=21.0",
     "xled>=0.7.0",
     "samplerate-ledfx>=0.2.3",
+    "pycaw>=20220416; sys_platform == \"win32\"",
+    "pyobjc-framework-CoreAudio>=10.0; sys_platform == \"darwin\"",
+    "pyudev>=0.24.0; sys_platform == \"linux\"",
 ]
 name = "LedFx"
 version = "2.1.5"

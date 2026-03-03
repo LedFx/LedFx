@@ -109,6 +109,8 @@ Query and manage audio input devices
 
 Returns a list of all available audio input devices and the currently active device index.
 
+**Note:** The device list is automatically refreshed when the system detects audio device changes (devices added/removed). When an `audio_device_list_changed` WebSocket event is received, calling this endpoint will return the updated device list.
+
 example response:
 
 ``` json
