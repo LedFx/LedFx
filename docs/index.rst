@@ -11,6 +11,7 @@
    /developer/developer
    /developer/architecture
    /developer/guides
+   /developer/guidance
    /README
 
 .. toctree::
