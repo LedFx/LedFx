@@ -512,9 +512,9 @@ def generate_typescript_types() -> str:
 
         # Replicate the schema definition from ledfx/devices/__init__.py
         # Need to import fps_validator or handle it
-        from ledfx.devices import (
+        from ledfx.devices import (  # Import the validator if needed
             fps_validator,
-        )  # Import the validator if needed
+        )
 
         base_schema_dict_def = {
             vol.Required(
