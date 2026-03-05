@@ -41,14 +41,14 @@ class TestAudioDeviceMonitorBase:
             # Verify run_coroutine_threadsafe was called with a coroutine and the loop
             mock_run_coroutine.assert_called_once()
             call_args = mock_run_coroutine.call_args
-            
+
             # First argument should be a coroutine
             coro = call_args[0][0]
             assert inspect.iscoroutine(coro)
-            
+
             # Second argument should be the mock_loop
             assert call_args[0][1] is mock_loop
-            
+
             # Clean up the coroutine to avoid "never awaited" warning
             coro.close()
 
