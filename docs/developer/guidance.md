@@ -396,21 +396,85 @@ The current LedFx implementation has **no debouncing** - it fires events immedia
 
 ---
 
+## Workspace Strategy
+
+### Monorepo During Development (Recommended)
+
+To maintain context and simplify development, create the `audio-hotplug` library **inside the LedFx workspace** during extraction and development phases. Migrate to a separate repository only after the library is stable and published.
+
+**Directory Structure:**
+```
+LedFx/                         (existing LedFx repo)
+  ledfx/
+    audio_device_monitor.py    (source code to extract)
+    core.py
+  audio-hotplug/               (NEW - temporary location)
+    src/
+      audio_hotplug/
+    tests/
+    examples/
+    pyproject.toml
+    README.md
+  docs/
+  tests/
+```
+
+**Advantages:**
+- ✅ AI assistant maintains full context to both codebases
+- ✅ Easy reference to source implementation during extraction
+- ✅ Test LedFx integration locally before publishing
+- ✅ Single terminal/environment for development
+- ✅ Run both test suites without workspace switching
+- ✅ Use local path dependencies for testing: `uv add --dev -e ../audio-hotplug`
+
+**Migration Timeline:**
+- **Phases 0-3**: Develop in LedFx workspace at `LedFx/audio-hotplug/`
+- **Phase 3 (Publishing)**: Create separate GitHub repo, copy code, publish to PyPI
+- **Phase 4**: LedFx uses published PyPI package
+- **Post-Phase 4**: Remove `audio-hotplug/` directory from LedFx workspace
+
+**Alternative Approaches:**
+
+If you prefer immediate separation, consider:
+- **Multi-root workspace**: Add both projects to VS Code workspace
+- **Parallel workspaces**: Switch between projects (requires manual context sharing)
+
+For this guide, we assume the **monorepo approach** for optimal development flow.
+
+---
+
 ## Execution Phases
 
-### Phase 0: Repository Setup (Week 1)
+### Phase 0: Project Setup (Week 1)
 
-**Goal:** Create infrastructure for independent development
+**Goal:** Create library structure inside LedFx workspace
 
-- [ ] Create `audio-hotplug` repo under `https://github.com/LedFx`
-- [ ] Set up uv project with `pyproject.toml`
-- [ ] Python version support: 3.10-3.13 (match LedFx)
-- [ ] Add CI/CD workflow (GitHub Actions for win/mac/linux)
-- [ ] Configure pre-commit hooks (black, ruff, isort, mypy)
+**Location:** Create at `LedFx/audio-hotplug/` (inside LedFx workspace root)
+
+- [ ] Create directory: `mkdir audio-hotplug && cd audio-hotplug`
+- [ ] Initialize uv project: `uv init --lib`
+- [ ] Set up src layout: `mkdir -p src/audio_hotplug/_platform`
+- [ ] Create pyproject.toml with:
+  - Name: `audio-hotplug`
+  - Python version: `>=3.10,<3.14` (match LedFx)
+  - Platform-specific dependencies with markers
+  - Dev dependencies: pytest, black, ruff, mypy, build, twine
+- [ ] Create basic package structure:
+  - `src/audio_hotplug/__init__.py`
+  - `src/audio_hotplug/_base.py`
+  - `src/audio_hotplug/_debounce.py`
+  - `src/audio_hotplug/monitor.py`
+  - `src/audio_hotplug/_platform/__init__.py`
+- [ ] Create `tests/` directory
+- [ ] Create `examples/` directory
 - [ ] Create README.md with project goals
-- [ ] Add LICENSE (MIT or same as LedFx)
+- [ ] Create LICENSE file (MIT recommended)
+- [ ] Add `.gitignore` for Python projects
+- [ ] Initialize separate git tracking: `git init` (optional at this stage)
 
-**Deliverable:** Empty repo with CI infrastructure passing
+**Note:** CI/CD will be set up when migrating to separate repo in Phase 3.
+
+**Deliverable:** Project structure ready for development at `LedFx/audio-hotplug/`
 
 ### Phase 1: Core Extraction (Week 1-2)
 
@@ -457,36 +521,101 @@ The current LedFx implementation has **no debouncing** - it fires events immedia
 
 **Deliverable:** Working monitors on all 3 platforms
 
-### Phase 3: Publishing (Week 3)
+### Phase 3: Repository Migration & Publishing (Week 3)
 
-**Goal:** Make library available publicly
+**Goal:** Move to separate repo and publish to PyPI
 
-- [ ] Finalize README.md with usage examples
-- [ ] Add CHANGELOG.md
+#### Step A: Migrate to Separate Repository
+
+- [ ] Create `audio-hotplug` repo on GitHub under `https://github.com/LedFx/audio-hotplug`
+- [ ] Copy library code to separate location:
+  ```bash
+  cd ..
+  cp -r audio-hotplug ../audio-hotplug-repo
+  cd ../audio-hotplug-repo
+  ```
+- [ ] Initialize git (if not already done):
+  ```bash
+  git init
+  git add .
+  git commit -m "Initial commit: audio-hotplug v0.1.0"
+  ```
+- [ ] Connect to GitHub:
+  ```bash
+  git remote add origin https://github.com/LedFx/audio-hotplug.git
+  git push -u origin main
+  ```
+- [ ] Set up CI/CD workflow (GitHub Actions for win/mac/linux)
+- [ ] Configure pre-commit hooks (black, ruff, isort, mypy)
+- [ ] Verify CI passes on GitHub
+
+#### Step B: Prepare for Publishing
+
+- [ ] Finalize README.md with usage examples and badges
+- [ ] Add CHANGELOG.md with v0.1.0 notes
 - [ ] Set version to `0.1.0` in `pyproject.toml`
+- [ ] Add repository URLs to pyproject.toml metadata
+- [ ] Ensure all tests pass: `uv run pytest -v`
+
+#### Step C: Publish to Package Indexes
+
 - [ ] Build: `uv run python -m build`
 - [ ] Check: `uv run twine check dist/*`
 - [ ] Publish to TestPyPI: `uv run twine upload --repository testpypi dist/*`
-- [ ] Install from TestPyPI in clean environment
+- [ ] Install from TestPyPI in clean environment:
+  ```bash
+  uv venv test-env
+  source test-env/bin/activate  # or test-env\Scripts\activate on Windows
+  uv pip install --index-url https://test.pypi.org/simple/ audio-hotplug
+  ```
 - [ ] Run manual tests with TestPyPI install
-- [ ] Verify dependency resolution works
+- [ ] Verify platform-specific dependencies resolve correctly
 - [ ] Publish to PyPI: `uv run twine upload dist/*`
 - [ ] Tag release: `git tag v0.1.0 && git push --tags`
 - [ ] Create GitHub release with notes
 
-**Deliverable:** `audio-hotplug>=0.1.0` available on PyPI
+#### Step D: Cleanup LedFx Workspace (Optional)
+
+- [ ] Keep `LedFx/audio-hotplug/` for local testing during Phase 4
+- [ ] Remove after Phase 4 completion
+
+**Deliverable:** `audio-hotplug>=0.1.0` available on PyPI from separate GitHub repo
 
 ### Phase 4: LedFx Integration (Week 3-4)
 
 **Goal:** Replace LedFx internal implementation with library
 
-#### Step A: Add Dependency (No Behavior Change)
-- [ ] Add `audio-hotplug>=0.1.0` to LedFx `pyproject.toml`
-- [ ] Run `uv sync` to install
-- [ ] Keep existing `ledfx/audio_device_monitor.py` temporarily
-- [ ] Verify LedFx still works
+#### Step A: Test with Local Path (Optional but Recommended)
 
-#### Step B: Replace Monitor Creation
+Before using the PyPI package, test integration with the local library:
+
+- [ ] Add local path dependency to LedFx `pyproject.toml`:
+  ```toml
+  [tool.uv.sources]
+  audio-hotplug = { path = "./audio-hotplug", editable = true }
+  ```
+- [ ] Or use command: `uv add --dev -e ./audio-hotplug`
+- [ ] Implement integration (Step B below) using local library
+- [ ] Run LedFx test suite
+- [ ] Manual test: plug/unplug devices
+- [ ] Fix any issues with library before publishing
+- [ ] Once working, remove local path dependency
+
+#### Step B: Add Production Dependency
+
+- [ ] Replace local path with PyPI package in LedFx `pyproject.toml`:
+  ```toml
+  dependencies = [
+      # ... existing dependencies
+      "audio-hotplug>=0.1.0",
+  ]
+  ```
+- [ ] Remove `[tool.uv.sources]` section if added in Step A
+- [ ] Run `uv sync` to install from PyPI
+- [ ] Keep existing `ledfx/audio_device_monitor.py` temporarily
+- [ ] Verify LedFx still works with PyPI package
+
+#### Step C: Replace Monitor Creation
 - [ ] Modify `ledfx/core.py` imports:
   ```python
   from audio_hotplug import create_monitor
@@ -505,7 +634,7 @@ The current LedFx implementation has **no debouncing** - it fires events immedia
       _LOGGER.info("Audio device list updated")
   ```
 
-#### Step C: Testing
+#### Step D: Testing
 - [ ] Run LedFx test suite
 - [ ] Manual test: plug/unplug headset
 - [ ] Manual test: change default audio device
@@ -514,12 +643,13 @@ The current LedFx implementation has **no debouncing** - it fires events immedia
 - [ ] Verify websocket notifications still work (if applicable)
 - [ ] Test on Windows, macOS, Linux
 
-#### Step D: Cleanup
+#### Step E: Cleanup
 - [ ] Delete `ledfx/audio_device_monitor.py`
 - [ ] Remove `AudioDeviceListChangedEvent` from `ledfx/events.py` (if unused)
 - [ ] Remove event listener registration code
 - [ ] Update LedFx documentation
 - [ ] Update `docs/developer/audio_device_monitoring.md`
+- [ ] Remove `LedFx/audio-hotplug/` directory from workspace (optional)
 
 **Deliverable:** LedFx uses external library, old code removed
 
