@@ -71,7 +71,9 @@ class MacOSAudioDeviceMonitor(AudioDeviceMonitor):
         """Stop monitoring."""
         self._running = False
 
-        if hasattr(self, "_property_address") and hasattr(self, "_callback_ref"):
+        if hasattr(self, "_property_address") and hasattr(
+            self, "_callback_ref"
+        ):
             try:
                 from CoreAudio import (
                     AudioObjectRemovePropertyListener,

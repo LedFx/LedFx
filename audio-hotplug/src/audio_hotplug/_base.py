@@ -55,9 +55,9 @@ class AudioDeviceMonitor(ABC):
 
     def _initialize_debouncer(self, on_change: Callback) -> None:
         """Initialize the debouncer with the user callback.
-        
+
         Call this at the start of your platform's start() implementation.
-        
+
         Args:
             on_change: The user's callback to debounce.
         """

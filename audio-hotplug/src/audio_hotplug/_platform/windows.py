@@ -122,8 +122,7 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
                     # Create notification client in this thread (COM apartment threading)
                     # Trigger debouncer when device changes occur
                     self._notification_client = DeviceNotificationClient(
-                        lambda: self._debouncer.trigger(),
-                        self._logger
+                        lambda: self._debouncer.trigger(), self._logger
                     )
 
                     device_enumerator.RegisterEndpointNotificationCallback(

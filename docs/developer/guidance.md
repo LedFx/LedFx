@@ -545,7 +545,7 @@ For this guide, we assume the **monorepo approach** for optimal development flow
 
 **Deliverable:** ✅ Platform implementations complete, Windows tested, macOS/Linux need validation
 
-**Notes:** 
+**Notes:**
 - macOS and Linux implementations follow the same pattern as Windows
 - Community testing on those platforms will be important before v1.0 release
 - All implementations use the same debouncer and callback architecture verified in Phase 1
