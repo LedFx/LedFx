@@ -528,27 +528,38 @@ For this guide, we assume the **monorepo approach** for optimal development flow
 #### Linux Monitor
 - [x] Port `_platform/linux.py` from LedFx
 - [x] Remove LedFx event firing, replace with `_debouncer.trigger()`
-- [ ] Test on Linux: plug/unplug USB audio
-- [ ] Verify pyudev monitoring works
-- **Status:** ⚠️ Ported but untested (requires Linux environment)
+- [x] Test on Linux: plug/unplug USB audio
+- [x] Verify pyudev monitoring works
+- **Status:** ✅ Tested on Linux (pyudev monitor started, callbacks triggered, debouncing verified)
 
 #### Integration
 - [x] Create `examples/monitor_print.py` for manual testing
 - [x] Test Windows platform manually
+- [x] Test Linux platform manually  
 - [x] Verify debouncing works (rapid changes → coalesced callbacks)
-- **Status:** ✅ Windows verified, macOS/Linux need platform-specific testing
+- **Status:** ✅ Windows and Linux verified, macOS needs platform-specific testing
 
 **Test Results:**
 - Windows: Monitor started successfully, callbacks fired on initialization
-- Debouncing: Working as expected (200ms coalescing)
-- Example script: Ready for manual testing on all platforms
+- Linux: Monitor started successfully using pyudev, device add/remove events detected, debouncing verified (200ms coalescing)
+- Debouncing: Working as expected on both platforms
+- Example scripts: `monitor_print.py`, `test_linux_manual.py`, `list_audio_devices_linux.py`
 
-**Deliverable:** ✅ Platform implementations complete, Windows tested, macOS/Linux need validation
+**Deliverable:** ✅ Platform implementations complete, Windows and Linux tested, macOS needs validation
 
 **Notes:**
-- macOS and Linux implementations follow the same pattern as Windows
-- Community testing on those platforms will be important before v1.0 release
+- macOS implementation follows the same pattern as Windows and Linux
+- Linux testing verified on Ubuntu with multiple USB audio devices:
+  - Logitech StreamCam (webcam with audio)
+  - Sound Blaster GS3 (USB sound card)
+  - Samson Meteor Mic (USB microphone)
+  - Generic USB Audio device
+  - Intel SOF audio (built-in)
+- pyudev successfully monitors 'sound' subsystem for add/remove events
+- Community testing on macOS will be important before v1.0 release
 - All implementations use the same debouncer and callback architecture verified in Phase 1
+
+**Status:** Phase 2 MOSTLY COMPLETE - Ready for Phase 3 (publishing), macOS testing can be done post-release
 
 ### Phase 3: Repository Migration & Publishing (Week 3)
 
