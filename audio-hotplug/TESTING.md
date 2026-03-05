@@ -56,7 +56,7 @@ This document describes the testing performed on the `audio-hotplug` library acr
 - **Status:** ✅ TESTED
 - **Date:** March 4, 2026
 - **Platform:** Ubuntu Linux (kernel info: see below)
-- **Test Method:** 
+- **Test Method:**
   - Basic: `examples/monitor_print.py`
   - Comprehensive: `examples/test_linux_manual.py`
   - Device enumeration: `examples/list_audio_devices_linux.py`
@@ -253,7 +253,7 @@ uv run python examples/list_audio_devices_linux.py
 ## Next Steps
 
 1. ✅ Phase 1 Unit Tests - COMPLETE
-2. ✅ Phase 2 Windows Testing - COMPLETE  
+2. ✅ Phase 2 Windows Testing - COMPLETE
 3. ✅ Phase 2 Linux Testing - COMPLETE
 4. ⚠️ Phase 2 macOS Testing - NEEDS TESTING
 5. 📋 Phase 3 Publishing - Ready to proceed

@@ -535,7 +535,7 @@ For this guide, we assume the **monorepo approach** for optimal development flow
 #### Integration
 - [x] Create `examples/monitor_print.py` for manual testing
 - [x] Test Windows platform manually
-- [x] Test Linux platform manually  
+- [x] Test Linux platform manually
 - [x] Verify debouncing works (rapid changes → coalesced callbacks)
 - **Status:** ✅ Windows and Linux verified, macOS needs platform-specific testing
 

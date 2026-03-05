@@ -40,13 +40,13 @@ def on_devices_changed():
     global callback_count, last_callback_time
     callback_count += 1
     current_time = datetime.now()
-    
+
     if last_callback_time:
         delta_ms = (current_time - last_callback_time).total_seconds() * 1000
         print(f"\n🔊 Callback #{callback_count} - Delta: {delta_ms:.0f}ms")
     else:
         print(f"\n🔊 Callback #{callback_count} - Initial")
-    
+
     last_callback_time = current_time
     print(f"   Time: {current_time.strftime('%H:%M:%S.%f')[:-3]}")
 
