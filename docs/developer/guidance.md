@@ -257,9 +257,9 @@ This acts as the primary manual smoke test.
 
 ## Publishing process
 
-1) Publish to **TestPyPI** first  
-2) Install from TestPyPI into a clean environment and run the example harness  
-3) Publish to PyPI  
+1) Publish to **TestPyPI** first
+2) Install from TestPyPI into a clean environment and run the example harness
+3) Publish to PyPI
 4) Tag release in GitHub
 
 Versioning:
@@ -346,7 +346,7 @@ The new API improves callback handling by supporting both sync and async callbac
 def on_change():
     audio_lib.refresh_devices()
 
-# Async callback  
+# Async callback
 async def on_change():
     await notify_websocket_clients()
     audio_lib.refresh_devices()
