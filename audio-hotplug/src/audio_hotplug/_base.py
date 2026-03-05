@@ -3,8 +3,8 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Union
 from collections.abc import Awaitable
+from typing import Callable, Optional, Union
 
 from ._debounce import Debouncer
 

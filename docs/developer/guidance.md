@@ -501,7 +501,7 @@ For this guide, we assume the **monorepo approach** for optimal development flow
 - Total tests: 33 passed
 - Coverage: 87% overall
   - `_debounce.py`: 100% coverage
-  - `_base.py`: 90% coverage  
+  - `_base.py`: 90% coverage
   - `monitor.py`: 80% coverage
 - Verified: Debouncing, callback scheduling (sync/async), factory platform detection, thread safety
 
