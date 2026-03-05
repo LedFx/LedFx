@@ -6,6 +6,8 @@ from abc import ABC, abstractmethod
 from typing import Callable, Optional, Union
 from collections.abc import Awaitable
 
+from ._debounce import Debouncer
+
 Callback = Union[Callable[[], None], Callable[[], Awaitable[None]]]
 
 
@@ -33,6 +35,7 @@ class AudioDeviceMonitor(ABC):
         self._debounce_ms = debounce_ms
         self._logger = logger or logging.getLogger(self.__class__.__name__)
         self._callback: Optional[Callback] = None
+        self._debouncer: Optional[Debouncer] = None
         self._running = False
 
     @abstractmethod
@@ -49,6 +52,21 @@ class AudioDeviceMonitor(ABC):
     def stop(self) -> None:
         """Stop monitoring. Safe to call multiple times."""
         pass
+
+    def _initialize_debouncer(self, on_change: Callback) -> None:
+        """Initialize the debouncer with the user callback.
+        
+        Call this at the start of your platform's start() implementation.
+        
+        Args:
+            on_change: The user's callback to debounce.
+        """
+        self._callback = on_change
+        self._running = True
+        # Debouncer will call _notify when triggered
+        self._debouncer = Debouncer(
+            lambda: self._notify(on_change), delay_ms=self._debounce_ms
+        )
 
     def _notify(self, callback: Callback) -> None:
         """Schedule callback on the event loop thread safely.
