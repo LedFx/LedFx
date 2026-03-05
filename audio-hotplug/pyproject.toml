@@ -1,0 +1,87 @@
+[project]
+name = "audio-hotplug"
+version = "0.1.0"
+description = "Cross-platform audio device hotplug detection with debouncing"
+readme = "README.md"
+authors = [
+    { name = "LedFx Developers", email = "developers@ledfx.app" }
+]
+requires-python = ">=3.10,<3.14"
+license = { text = "MIT" }
+keywords = ["audio", "device", "hotplug", "monitoring", "udev", "coreaudio"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio",
+    "Topic :: System :: Hardware",
+]
+
+# Platform-specific dependencies using markers
+dependencies = [
+    "pycaw>=20220416; platform_system=='Windows'",
+    "comtypes>=1.1.14; platform_system=='Windows'",
+    "pyobjc-framework-CoreAudio>=9.0; platform_system=='Darwin'",
+    "pyudev>=0.24.0; platform_system=='Linux'",
+]
+
+[project.optional-dependencies]
+# Explicit platform extras for manual installation
+windows = ["pycaw>=20220416", "comtypes>=1.1.14"]
+macos = ["pyobjc-framework-CoreAudio>=9.0"]
+linux = ["pyudev>=0.24.0"]
+
+# Development dependencies
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/LedFx/audio-hotplug"
+Repository = "https://github.com/LedFx/audio-hotplug"
+Issues = "https://github.com/LedFx/audio-hotplug/issues"
+Documentation = "https://github.com/LedFx/audio-hotplug#readme"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.black]
+line-length = 88
+target-version = ["py310", "py311", "py312", "py313"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]  # Line length handled by black
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
