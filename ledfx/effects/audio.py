@@ -6,12 +6,11 @@ from collections import deque
 from functools import cached_property, lru_cache
 
 import aubio
+import ledfx.api.websocket
 import numpy as np
 import samplerate
 import sounddevice as sd
 import voluptuous as vol
-
-import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter

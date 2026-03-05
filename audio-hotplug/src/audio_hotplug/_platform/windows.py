@@ -4,6 +4,7 @@
 # This is a placeholder to establish the module structure
 
 import threading
+
 from .._base import AudioDeviceMonitor, Callback
 
 
@@ -12,7 +13,9 @@ class WindowsAudioDeviceMonitor(AudioDeviceMonitor):
 
     def start(self, on_change: Callback) -> None:
         """Start monitoring using Core Audio API."""
-        raise NotImplementedError("Windows monitor implementation pending (Phase 2)")
+        raise NotImplementedError(
+            "Windows monitor implementation pending (Phase 2)"
+        )
 
     def stop(self) -> None:
         """Stop monitoring."""

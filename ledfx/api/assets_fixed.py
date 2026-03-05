@@ -4,7 +4,6 @@ import logging
 import os
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.assets import _list_assets_from_directory
 from ledfx.consts import LEDFX_ASSETS_PATH

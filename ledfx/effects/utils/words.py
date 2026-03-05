@@ -3,11 +3,10 @@ import math
 import os
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFont
-
 from ledfx.color import parse_color
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.utils.pose import Pose, biased_round
+from PIL import Image, ImageDraw, ImageFont
 
 _LOGGER = logging.getLogger(__name__)
 

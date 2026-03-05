@@ -2,10 +2,9 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+from ledfx.devices import NetworkedDevice
 from pythonosc.osc_message_builder import OscMessageBuilder
 from pythonosc.udp_client import SimpleUDPClient
-
-from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 

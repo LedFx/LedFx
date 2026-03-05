@@ -2,9 +2,8 @@ import logging
 from enum import Enum
 
 import voluptuous as vol
-from PIL import Image
-
 from ledfx.effects import Effect
+from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -7,9 +7,8 @@ import shutil
 import sys
 
 import voluptuous as vol
-from packaging.version import parse as parse_version
-
 from ledfx.consts import CONFIGURATION_VERSION
+from packaging.version import parse as parse_version
 
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
@@ -530,7 +529,6 @@ def migrate_config(old_config):
     import copy
 
     import voluptuous as vol
-
     from ledfx.effects import Effects
 
     effects = Effects(DummyLedfx()).classes()

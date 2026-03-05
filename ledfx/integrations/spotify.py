@@ -7,7 +7,6 @@ import logging
 # import aiohttp
 # import asyncio
 import voluptuous as vol
-
 from ledfx.integrations import Integration
 
 # import numpy as np

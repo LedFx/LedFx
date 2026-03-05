@@ -7,7 +7,6 @@ from concurrent import futures
 from json import JSONDecodeError
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.events import Event
 

@@ -3,9 +3,8 @@
 import os
 import tempfile
 
-from PIL import Image
-
 from ledfx.utils import open_gif
+from PIL import Image
 
 
 def create_test_gif(path):

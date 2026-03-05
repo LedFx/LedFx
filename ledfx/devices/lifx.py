@@ -3,6 +3,8 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+from ledfx.devices import NetworkedDevice, fps_validator
+from ledfx.utils import AVAILABLE_FPS, async_fire_and_forget
 from lifx import (
     HSBK,
     Animator,
@@ -17,9 +19,6 @@ from lifx import (
 )
 from lifx.exceptions import LifxTimeoutError
 from lifx.protocol import packets
-
-from ledfx.devices import NetworkedDevice, fps_validator
-from ledfx.utils import AVAILABLE_FPS, async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 

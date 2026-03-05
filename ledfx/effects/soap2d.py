@@ -2,12 +2,11 @@ import logging
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image
-from pyfastnoiselite import pyfastnoiselite as fnl
-
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
+from PIL import Image
+from pyfastnoiselite import pyfastnoiselite as fnl
 
 _LOGGER = logging.getLogger(__name__)
 

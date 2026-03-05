@@ -3,12 +3,11 @@ import random
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image
-from pyfastnoiselite import pyfastnoiselite as fnl
-
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.events import GeneralDiagEvent
+from PIL import Image
+from pyfastnoiselite import pyfastnoiselite as fnl
 
 _LOGGER = logging.getLogger(__name__)
 

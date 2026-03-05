@@ -2,7 +2,6 @@ import logging
 import os
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.consts import PROJECT_VERSION
 

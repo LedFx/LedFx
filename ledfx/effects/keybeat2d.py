@@ -4,7 +4,6 @@ import os
 import PIL.ImageEnhance as ImageEnhance
 import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
-
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod

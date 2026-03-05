@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pybase64
-
 from ledfx.audio_device_monitor import create_audio_device_monitor
 from ledfx.color import (
     LEDFX_COLORS,

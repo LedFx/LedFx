@@ -11,7 +11,9 @@ class MacOSAudioDeviceMonitor(AudioDeviceMonitor):
 
     def start(self, on_change: Callback) -> None:
         """Start monitoring using CoreAudio."""
-        raise NotImplementedError("macOS monitor implementation pending (Phase 2)")
+        raise NotImplementedError(
+            "macOS monitor implementation pending (Phase 2)"
+        )
 
     def stop(self) -> None:
         """Stop monitoring."""

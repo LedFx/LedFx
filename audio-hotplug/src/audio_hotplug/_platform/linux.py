@@ -11,7 +11,9 @@ class LinuxAudioDeviceMonitor(AudioDeviceMonitor):
 
     def start(self, on_change: Callback) -> None:
         """Start monitoring using pyudev."""
-        raise NotImplementedError("Linux monitor implementation pending (Phase 2)")
+        raise NotImplementedError(
+            "Linux monitor implementation pending (Phase 2)"
+        )
 
     def stop(self) -> None:
         """Stop monitoring."""

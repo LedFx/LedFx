@@ -12,7 +12,6 @@ import numpy as np
 import pybase64
 import voluptuous as vol
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import (

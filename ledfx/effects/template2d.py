@@ -1,7 +1,6 @@
 import logging
 
 import voluptuous as vol
-
 from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
 

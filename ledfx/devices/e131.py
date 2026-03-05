@@ -4,7 +4,6 @@ import threading
 import numpy as np
 import sacn
 import voluptuous as vol
-
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)

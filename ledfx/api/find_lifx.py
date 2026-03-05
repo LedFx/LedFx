@@ -5,11 +5,10 @@ import random
 from json import JSONDecodeError
 
 from aiohttp import web
+from ledfx.api import RestEndpoint
 from lifx import LifxError, discover_mdns, find_by_ip
 from lifx.network import UdpTransport, create_message, parse_message
 from lifx.protocol import packets
-
-from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
 

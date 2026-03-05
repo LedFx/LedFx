@@ -3,7 +3,6 @@ import socket
 import struct
 
 import voluptuous as vol
-
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)

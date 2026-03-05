@@ -3,14 +3,15 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from typing import Awaitable, Callable, Optional, Union
+from typing import Callable, Optional, Union
+from collections.abc import Awaitable
 
 Callback = Union[Callable[[], None], Callable[[], Awaitable[None]]]
 
 
 class AudioDeviceMonitor(ABC):
     """Abstract base class for platform-specific audio device monitors.
-    
+
     Monitors system audio device changes (add/remove/state changes) and
     invokes a user callback when changes are detected.
     """
@@ -22,7 +23,7 @@ class AudioDeviceMonitor(ABC):
         logger: Optional[logging.Logger] = None,
     ):
         """Initialize the monitor.
-        
+
         Args:
             loop: Event loop for callback scheduling. If None, attempts to get running loop.
             debounce_ms: Milliseconds to wait before invoking callback after last change.
@@ -37,7 +38,7 @@ class AudioDeviceMonitor(ABC):
     @abstractmethod
     def start(self, on_change: Callback) -> None:
         """Start monitoring for device changes.
-        
+
         Args:
             on_change: Callback to invoke when device changes detected.
                       Can be sync or async function.
@@ -51,7 +52,7 @@ class AudioDeviceMonitor(ABC):
 
     def _notify(self, callback: Callback) -> None:
         """Schedule callback on the event loop thread safely.
-        
+
         Args:
             callback: The callback to invoke.
         """
@@ -72,12 +73,16 @@ class AudioDeviceMonitor(ABC):
                 try:
                     callback()
                 except Exception as e:
-                    self._logger.error(f"Error in callback: {e}", exc_info=True)
+                    self._logger.error(
+                        f"Error in callback: {e}", exc_info=True
+                    )
                 return
 
         # Schedule on loop thread
         if asyncio.iscoroutinefunction(callback):
-            asyncio.run_coroutine_threadsafe(self._safe_async_callback(callback), loop)
+            asyncio.run_coroutine_threadsafe(
+                self._safe_async_callback(callback), loop
+            )
         else:
             loop.call_soon_threadsafe(self._safe_sync_callback, callback)
 
@@ -88,7 +93,9 @@ class AudioDeviceMonitor(ABC):
         except Exception as e:
             self._logger.error(f"Error in sync callback: {e}", exc_info=True)
 
-    async def _safe_async_callback(self, callback: Callable[[], Awaitable[None]]) -> None:
+    async def _safe_async_callback(
+        self, callback: Callable[[], Awaitable[None]]
+    ) -> None:
         """Wrap async callback with error handling."""
         try:
             await callback()

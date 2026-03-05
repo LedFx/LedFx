@@ -7,12 +7,11 @@ from functools import lru_cache
 
 import numpy as np
 import voluptuous as vol
-from numpy.typing import NDArray
-
 from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
 from ledfx.effects.utils.logsec_helper import LogSecHelper
 from ledfx.events import EffectUpdatedEvent
 from ledfx.utils import BaseRegistry, RegistryLoader
+from numpy.typing import NDArray
 
 _LOGGER = logging.getLogger(__name__)
 

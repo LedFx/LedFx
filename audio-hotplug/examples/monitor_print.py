@@ -29,20 +29,20 @@ def on_devices_changed():
 async def main():
     """Run the monitor."""
     loop = asyncio.get_running_loop()
-    
+
     print("Starting audio device monitor...")
     print("Plug or unplug audio devices to see detection in action.")
     print("Press Ctrl+C to stop.\n")
-    
+
     monitor = create_monitor(loop=loop, debounce_ms=200)
-    
+
     if monitor is None:
         print("❌ Audio device monitoring not supported on this platform")
         return
-    
+
     monitor.start(on_devices_changed)
     print("✅ Monitor started. Waiting for device changes...\n")
-    
+
     try:
         # Run forever
         while True:

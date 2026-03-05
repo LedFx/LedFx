@@ -2,7 +2,6 @@ import logging
 
 import serial
 import voluptuous as vol
-
 from ledfx.devices import SerialDevice, packets
 from ledfx.events import DevicesUpdatedEvent
 

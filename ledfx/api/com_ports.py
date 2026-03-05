@@ -2,7 +2,6 @@ import logging
 
 import serial.tools.list_ports
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)

@@ -4,9 +4,8 @@ import ssl
 import sys
 import time
 
-from aiohttp import web
-
 import ledfx_frontend
+from aiohttp import web
 from ledfx.api import RestApi
 
 try:

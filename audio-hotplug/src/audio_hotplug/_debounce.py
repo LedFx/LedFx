@@ -6,14 +6,14 @@ from typing import Callable
 
 class Debouncer:
     """Thread-safe debouncer that coalesces rapid triggers into a single callback.
-    
+
     When triggered multiple times within the debounce period, only invokes
     the callback once after the period expires from the last trigger.
     """
 
     def __init__(self, callback: Callable[[], None], delay_ms: int = 200):
         """Initialize the debouncer.
-        
+
         Args:
             callback: Function to invoke after debounce period.
             delay_ms: Milliseconds to wait after last trigger before invoking callback.
@@ -29,7 +29,7 @@ class Debouncer:
             # Cancel existing timer if any
             if self._timer is not None and self._timer.is_alive():
                 self._timer.cancel()
-            
+
             # Start new timer
             self._timer = threading.Timer(self._delay_s, self._invoke_callback)
             self._timer.daemon = True

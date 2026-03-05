@@ -4,7 +4,6 @@ from json import JSONDecodeError
 
 import pybase64
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.utils import open_image
 

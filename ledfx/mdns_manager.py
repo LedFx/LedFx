@@ -1,14 +1,13 @@
 import logging
 
+from ledfx.events import Event
+from ledfx.utils import async_fire_and_forget
 from zeroconf import ServiceStateChange, Zeroconf
 from zeroconf.asyncio import (
     AsyncServiceBrowser,
     AsyncServiceInfo,
     AsyncZeroconf,
 )
-
-from ledfx.events import Event
-from ledfx.utils import async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
 

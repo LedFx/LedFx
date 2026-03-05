@@ -8,8 +8,8 @@ and that cache operations work correctly with thumbnail variants.
 import os
 
 import pytest
-
 from ledfx.libraries.cache import ImageCache
+
 from tests.test_utilities.naughty_strings import (
     naughty_filenames,
     naughty_paths,

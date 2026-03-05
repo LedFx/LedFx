@@ -2,7 +2,6 @@ import queue
 
 import numpy as np
 import voluptuous as vol
-
 from ledfx.effects import smooth
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect

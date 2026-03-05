@@ -4,7 +4,6 @@ import logging
 import os
 
 from aiohttp import web
-
 from ledfx import assets
 from ledfx.api import RestEndpoint
 from ledfx.utils import get_image_cache, open_image

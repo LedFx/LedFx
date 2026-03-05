@@ -1,10 +1,9 @@
 import logging
 
-import voluptuous as vol
-from numpy import zeros
-
 import ledfx.devices.launchpad_lib as launchpad
+import voluptuous as vol
 from ledfx.devices import MidiDevice
+from numpy import zeros
 
 # import timeit
 

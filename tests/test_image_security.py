@@ -8,10 +8,10 @@ import io
 import os
 from unittest.mock import MagicMock, patch
 
-from PIL import Image
-
 from ledfx.utilities.security_utils import is_allowed_image_extension
 from ledfx.utils import init_image_cache, open_gif, open_image
+from PIL import Image
+
 from tests.test_utilities.naughty_strings import (
     naughty_filenames,
     naughty_paths,

@@ -4,7 +4,6 @@ import inspect
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 from ledfx.audio_device_monitor import (
     AudioDeviceMonitor,
     LinuxAudioDeviceMonitor,

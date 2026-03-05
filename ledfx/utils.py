@@ -44,7 +44,6 @@ import PIL.ImageFont as ImageFont
 import requests
 import voluptuous as vol
 from dotenv import load_dotenv
-
 from ledfx.color import LEDFX_GRADIENTS
 from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
@@ -72,7 +71,6 @@ try:
     from bokeh.models import Label
     from bokeh.palettes import Category10
     from bokeh.plotting import figure
-
     from ledfx.config import get_default_config_directory
 
     bokeh_available = True

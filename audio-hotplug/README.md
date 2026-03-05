@@ -37,10 +37,10 @@ def on_audio_devices_changed():
 
 async def main():
     loop = asyncio.get_running_loop()
-    
+
     # Create monitor with 200ms debounce
     monitor = create_monitor(loop=loop, debounce_ms=200)
-    
+
     if monitor:
         monitor.start(on_audio_devices_changed)
         # Your application code here...

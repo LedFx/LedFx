@@ -2,7 +2,6 @@ import logging
 
 import paho.mqtt.client as mqtt
 import voluptuous as vol
-
 from ledfx.events import SceneActivatedEvent
 
 # from ledfx.events import Event

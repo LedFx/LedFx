@@ -2,7 +2,6 @@ import logging
 
 from aiohttp import web
 from icmplib import async_ping
-
 from ledfx.api import RestEndpoint
 from ledfx.utils import resolve_destination
 

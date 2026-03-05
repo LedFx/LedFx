@@ -3,7 +3,6 @@ import logging
 import flux_led
 import numpy as np
 import voluptuous as vol
-
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)

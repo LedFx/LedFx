@@ -5,10 +5,9 @@ from enum import Enum
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image
-
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
+from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 

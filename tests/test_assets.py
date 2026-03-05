@@ -9,8 +9,6 @@ import io
 import os
 
 import pytest
-from PIL import Image
-
 from ledfx.assets import (
     DEFAULT_MAX_ASSET_SIZE_BYTES,
     delete_asset,
@@ -24,6 +22,7 @@ from ledfx.assets import (
     validate_asset_extension,
     validate_asset_size,
 )
+from PIL import Image
 
 
 @pytest.fixture
