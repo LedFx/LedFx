@@ -4,7 +4,28 @@
 This document describes how to extract the audio device change detection introduced in LedFx PR #1725 into a **platform-agnostic PyPI dependency**. The new library should do **one thing**: detect “audio device topology changed” on Windows/macOS/Linux and invoke a user callback (debounced/coalesced). LedFx will keep responsibility for **PortAudio refresh** and any **LedFx event/websocket** behavior.
 
 ---
+## 📍 Current Status (Last Updated: 2026-03-05)
 
+**Location:** `audio-hotplug/` directory in LedFx monorepo (development workspace)
+
+**Completed Phases:**
+- ✅ **Phase 0**: Project structure, package skeleton, pyproject.toml
+- ✅ **Phase 1**: Core abstractions (debouncer, base class, factory) + 33 unit tests (87% coverage)
+- ✅ **Phase 2**: Platform monitor implementations (Windows, macOS, Linux)
+
+**Testing Status:**
+- ✅ **Windows**: Tested and working (monitor starts, callbacks fire, debouncing verified)
+- ⚠️ **macOS**: Implementation complete but **needs testing on macOS system**
+- ⚠️ **Linux**: Implementation complete but **needs testing on Linux system**
+
+**Next Steps:**
+- 🔍 **Community Testing**: Need validation on Linux and macOS
+- 📦 **Phase 3**: Migrate to separate repo and publish to PyPI
+- 🔗 **Phase 4**: Integrate into LedFx
+
+**For Linux/macOS Testers**: Jump to [Platform-Specific Testing Guide](#platform-specific-testing-guide) for instructions.
+
+---
 ## Goals
 
 - Create a new PyPI package (working name): **audio-hotplug**
@@ -560,6 +581,44 @@ For this guide, we assume the **monorepo approach** for optimal development flow
 - All implementations use the same debouncer and callback architecture verified in Phase 1
 
 **Status:** Phase 2 MOSTLY COMPLETE - Ready for Phase 3 (publishing), macOS testing can be done post-release
+
+**For detailed testing results and procedures, see [TESTING.md](../audio-hotplug/TESTING.md)**
+
+---
+
+## Quick Testing Guide for Community Contributors
+
+### Testing on Your Platform
+
+If you want to help test on Linux, macOS, or Windows:
+
+**1. Setup:**
+```bash
+cd audio-hotplug
+uv sync --extra dev
+```
+
+**2. Run Unit Tests:**
+```bash
+uv run pytest -v  # Should pass all 33 tests
+```
+
+**3. Run Manual Test:**
+```bash
+uv run python examples/monitor_print.py
+```
+
+**4. Expected Behavior:**
+- Monitor starts without errors
+- Plug/unplug USB audio device → prints "🔊 Audio devices changed!"
+- Rapid changes are debounced (200ms coalescing)
+- Clean shutdown with Ctrl+C
+
+**5. Report Results:**
+- Comment on PR #1725 with platform, Python version, and test outcomes
+- See [TESTING.md](../audio-hotplug/TESTING.md) for detailed test procedures and examples
+
+---
 
 ### Phase 3: Repository Migration & Publishing (Week 3)
 
