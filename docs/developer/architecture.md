@@ -4,7 +4,7 @@ For a general overview read [copilot-instructions.md](https://github.com/LedFx/L
 
 This file is also used to prime your copilot context if working in VS Code.
 
-The following are generated via AI assisted spelunking, but are then hand curated for relevance.
+The following are generated with AI assisted spelunking, but are then hand curated for relevance.
 
 ## LedFx runtime flow
 
