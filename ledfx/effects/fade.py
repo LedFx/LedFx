@@ -1,5 +1,6 @@
 import numpy as np
 import voluptuous as vol
+
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.temporal import TemporalEffect
 

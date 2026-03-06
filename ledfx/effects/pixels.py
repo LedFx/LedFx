@@ -4,6 +4,7 @@ import time
 import numpy as np
 import psutil
 import voluptuous as vol
+
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.temporal import TemporalEffect
 from ledfx.utils import Teleplot

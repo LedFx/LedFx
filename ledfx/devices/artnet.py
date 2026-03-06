@@ -3,6 +3,8 @@ import math
 
 import numpy as np
 import voluptuous as vol
+from stupidArtnet import StupidArtnet
+
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.utils.rgbw_conversion import (
     RGB_MAPPING,
@@ -10,7 +12,6 @@ from ledfx.devices.utils.rgbw_conversion import (
     OutputMode,
 )
 from ledfx.utils import check_if_ip_is_broadcast, extract_uint8_seq
-from stupidArtnet import StupidArtnet
 
 _LOGGER = logging.getLogger(__name__)
 

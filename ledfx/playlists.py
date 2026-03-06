@@ -14,6 +14,7 @@ import sys
 import time
 
 import voluptuous as vol
+
 from ledfx.config import save_config
 from ledfx.events import (
     PlaylistAdvancedEvent,

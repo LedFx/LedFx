@@ -4,6 +4,7 @@ from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect

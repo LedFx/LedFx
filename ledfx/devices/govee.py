@@ -6,6 +6,7 @@ import time
 
 import numpy as np
 import voluptuous as vol
+
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.__init__ import fps_validator
 from ledfx.devices.utils.socket_singleton import SocketSingleton

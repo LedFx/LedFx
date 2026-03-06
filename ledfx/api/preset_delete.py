@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 

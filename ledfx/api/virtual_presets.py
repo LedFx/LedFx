@@ -2,6 +2,7 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.config import configs_match, save_config
 from ledfx.utils import (

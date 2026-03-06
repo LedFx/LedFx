@@ -3,6 +3,7 @@ from json import JSONDecodeError
 
 import requests
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)

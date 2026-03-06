@@ -1,6 +1,7 @@
 import logging
 
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.tools.ts_generator import generate_typescript_types
 

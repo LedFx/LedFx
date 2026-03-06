@@ -9,6 +9,8 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 import voluptuous as vol
+from sacn.sending.sender_socket_base import DEFAULT_PORT
+
 from ledfx.config import save_config
 from ledfx.events import (
     DeviceCreatedEvent,
@@ -29,7 +31,6 @@ from ledfx.utils import (
     resolve_destination,
     wled_support_DDP,
 )
-from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 _LOGGER = logging.getLogger(__name__)
 

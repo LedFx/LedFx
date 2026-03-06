@@ -1,6 +1,7 @@
 import logging
 
 import voluptuous as vol
+
 from ledfx.config import (
     configs_match,
     save_config,

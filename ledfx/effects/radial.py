@@ -2,11 +2,12 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+from PIL import Image
+
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import nonlinear_log
 from ledfx.virtuals import virtual_id_validator
-from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 

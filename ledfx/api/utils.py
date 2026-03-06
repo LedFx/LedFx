@@ -3,6 +3,7 @@
 import collections
 
 import voluptuous as vol
+
 from ledfx.config import _default_wled_settings
 from ledfx.effects.audio import AudioInputSource
 from ledfx.utils import AVAILABLE_FPS, generate_title

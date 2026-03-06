@@ -1,6 +1,7 @@
 import logging
 
 import voluptuous as vol
+
 from ledfx.devices import Device
 from ledfx.utils import BaseRegistry
 

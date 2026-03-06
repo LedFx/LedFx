@@ -1,6 +1,7 @@
 import json
 
 import pytest
+
 from ledfx.api.scenes_id import SceneEndpoint
 
 

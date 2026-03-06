@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+
 from ledfx.color import parse_color, validate_color
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect

@@ -3,6 +3,7 @@ from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.config import (

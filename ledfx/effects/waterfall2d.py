@@ -2,9 +2,10 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+from PIL import Image, ImageDraw
+
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
-from PIL import Image, ImageDraw
 
 _LOGGER = logging.getLogger(__name__)
 

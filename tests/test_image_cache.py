@@ -9,9 +9,10 @@ import os
 from unittest.mock import MagicMock, patch
 
 import pytest
+from PIL import Image
+
 from ledfx.libraries.cache import ImageCache
 from ledfx.utils import get_image_cache, init_image_cache, open_gif, open_image
-from PIL import Image
 
 
 @pytest.fixture

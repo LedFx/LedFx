@@ -2,6 +2,7 @@ import asyncio
 import random
 
 import pytest
+
 from ledfx.playlists import PlaylistManager
 
 

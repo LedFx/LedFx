@@ -1,4 +1,5 @@
 import pytest
+
 from ledfx.api.virtual_presets import VirtualPresetsEndpoint
 
 

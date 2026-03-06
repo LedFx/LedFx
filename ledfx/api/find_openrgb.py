@@ -2,8 +2,9 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
-from ledfx.api import RestEndpoint
 from openrgb import OpenRGBClient
+
+from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
 

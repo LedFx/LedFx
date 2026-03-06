@@ -1,9 +1,10 @@
 import logging
 
 import voluptuous as vol
+from numpy import ndarray
+
 from ledfx.devices import Device
 from ledfx.utils import BaseRegistry
-from numpy import ndarray
 
 _LOGGER = logging.getLogger(__name__)
 

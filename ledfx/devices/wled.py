@@ -1,6 +1,7 @@
 import logging
 
 import voluptuous as vol
+
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device

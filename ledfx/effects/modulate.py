@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+
 from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)

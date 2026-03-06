@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import voluptuous as vol
 import xled
+
 from ledfx.config import save_config
 from ledfx.devices import NetworkedDevice
 

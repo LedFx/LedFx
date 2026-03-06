@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import AioHTTPTestCase
+
 from ledfx.api.scenes import ScenesEndpoint
 from ledfx.api.scenes_id import SceneEndpoint
 

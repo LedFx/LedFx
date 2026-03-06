@@ -5,6 +5,7 @@ from json import JSONDecodeError
 import PIL.ImageSequence as ImageSequence
 import pybase64
 from aiohttp import web
+
 from ledfx.api import RestEndpoint
 from ledfx.utils import open_gif
 

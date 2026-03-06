@@ -1,6 +1,7 @@
 import asyncio
 
 import pytest
+
 from ledfx.playlists import PlaylistManager
 
 

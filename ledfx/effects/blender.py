@@ -2,8 +2,9 @@ import logging
 
 import numpy as np
 import voluptuous as vol
-from ledfx.effects.audio import AudioReactiveEffect
 from PIL import Image, ImageOps
+
+from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
 

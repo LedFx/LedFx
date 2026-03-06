@@ -4,10 +4,11 @@ import io
 import logging
 
 from aiohttp import web
+from PIL import Image
+
 from ledfx import assets
 from ledfx.api import RestEndpoint
 from ledfx.utils import get_image_cache
-from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 

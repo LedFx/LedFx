@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 import voluptuous as vol
+
 from ledfx.devices import UDPDevice, packets
 
 _LOGGER = logging.getLogger(__name__)
