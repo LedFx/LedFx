@@ -44,6 +44,7 @@ dependencies = [
     "pycaw>=20220416; sys_platform == \"win32\"",
     "pyobjc-framework-CoreAudio>=10.0; sys_platform == \"darwin\"",
     "pyudev>=0.24.0; sys_platform == \"linux\"",
+    "audio-hotplug",
 ]
 name = "LedFx"
 version = "2.1.5"
@@ -121,6 +122,9 @@ default-groups = []
 members = [
     "audio-hotplug",
 ]
+
+[tool.uv.sources]
+audio-hotplug = { workspace = true }
 
 
 [tool.black]

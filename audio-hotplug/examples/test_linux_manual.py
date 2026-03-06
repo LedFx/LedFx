@@ -15,12 +15,11 @@ Then:
 import asyncio
 import logging
 import sys
-import time
 from datetime import datetime
 
 sys.path.insert(0, "../src")
 
-from audio_hotplug import create_monitor
+from audio_hotplug import create_monitor  # noqa: E402
 
 # Configure detailed logging
 logging.basicConfig(

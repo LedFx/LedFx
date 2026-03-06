@@ -8,7 +8,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pybase64
-from ledfx.audio_device_monitor import create_audio_device_monitor
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
@@ -29,7 +28,9 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
+from ledfx.effects.audio import AudioInputSource
 from ledfx.events import (
+    AudioDeviceListChangedEvent,
     Event,
     Events,
     LedFxShutdownEvent,
@@ -54,6 +55,8 @@ from ledfx.utils import (
     shape_to_fit_len,
 )
 from ledfx.virtuals import Virtuals
+
+from audio_hotplug import create_monitor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -170,18 +173,12 @@ class LedFxCore:
     def _start_audio_device_monitor(self):
         """Start the audio device monitor for the current platform."""
         try:
-            self.audio_device_monitor = create_audio_device_monitor(
-                self, self.loop
+            self.audio_device_monitor = create_monitor(
+                loop=self.loop, debounce_ms=200
             )
             if self.audio_device_monitor:
-                self.audio_device_monitor.start_monitoring()
-
-                # Register event listener to refresh device list when devices change
-                self._remove_audio_device_listener = self.events.add_listener(
-                    self._on_audio_device_list_changed,
-                    Event.AUDIO_DEVICE_LIST_CHANGED,
-                )
-
+                # Start monitoring with callback to refresh device list
+                self.audio_device_monitor.start(self._on_audio_devices_changed)
                 _LOGGER.info("Audio device monitor enabled")
             else:
                 _LOGGER.debug(
@@ -193,11 +190,14 @@ class LedFxCore:
                 "Device list will not update automatically when devices are added/removed."
             )
 
-    def _on_audio_device_list_changed(self, event):
-        """Handle audio device list changes by refreshing the cached device list."""
-        from ledfx.effects.audio import AudioInputSource
-
+    def _on_audio_devices_changed(self):
+        """Callback for audio-hotplug library when device changes detected."""
+        # Refresh the device list
         AudioInputSource.refresh_device_list()
+
+        # Fire LedFx event for any listeners (e.g., websocket notifications)
+        self.events.fire_event(AudioDeviceListChangedEvent())
+
         _LOGGER.info("Audio device list updated in response to system change")
 
     def loop_exception_handler(self, loop, context):
@@ -556,12 +556,7 @@ class LedFxCore:
             # Stop audio device monitor
             if self.audio_device_monitor:
                 try:
-                    # Unregister the event listener
-                    if hasattr(self, "_remove_audio_device_listener"):
-                        self._remove_audio_device_listener()
-
-                    # Stop monitoring
-                    self.audio_device_monitor.stop_monitoring()
+                    self.audio_device_monitor.stop()
                 except Exception as e:
                     _LOGGER.warning(
                         f"Error stopping audio device monitor: {e}"

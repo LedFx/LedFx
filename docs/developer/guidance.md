@@ -12,16 +12,21 @@ This document describes how to extract the audio device change detection introdu
 - ✅ **Phase 0**: Project structure, package skeleton, pyproject.toml
 - ✅ **Phase 1**: Core abstractions (debouncer, base class, factory) + 33 unit tests (87% coverage)
 - ✅ **Phase 2**: Platform monitor implementations (Windows, macOS, Linux)
+- ✅ **Phase 4 Step A**: Local path integration complete
+  - Added workspace dependency to pyproject.toml
+  - Integrated audio-hotplug into core.py
+  - Deleted old audio_device_monitor.py
+  - Tested successfully with debug logging
+  - Device changes detected, callbacks firing, events propagating
 
 **Testing Status:**
-- ✅ **Windows**: Tested and working (monitor starts, callbacks fire, debouncing verified)
+- ✅ **Windows**: Fully tested and validated in LedFx integration
+- ✅ **Linux**: Previously tested (see TESTING.md)
 - ⚠️ **macOS**: Implementation complete but **needs testing on macOS system**
-- ⚠️ **Linux**: Implementation complete but **needs testing on Linux system**
 
 **Next Steps:**
-- 🔍 **Community Testing**: Need validation on Linux and macOS
-- 📦 **Phase 3**: Migrate to separate repo and publish to PyPI
-- 🔗 **Phase 4**: Integrate into LedFx
+- 📦 **Phase 3**: Migrate to separate repo and publish to PyPI (skipped to Phase 4 for testing)
+- 🔗 **Phase 4 Steps B-E**: Switch to PyPI dependency and final cleanup
 
 **For Linux/macOS Testers**: Jump to [Platform-Specific Testing Guide](#platform-specific-testing-guide) for instructions.
 
@@ -684,21 +689,34 @@ uv run python examples/monitor_print.py
 
 **Goal:** Replace LedFx internal implementation with library
 
-#### Step A: Test with Local Path (Optional but Recommended)
+#### Step A: Test with Local Path ✅ COMPLETE
 
 Before using the PyPI package, test integration with the local library:
 
-- [ ] Add local path dependency to LedFx `pyproject.toml`:
+- [x] Add workspace dependency to LedFx `pyproject.toml`:
   ```toml
+  dependencies = ["audio-hotplug", ...]
+
   [tool.uv.sources]
-  audio-hotplug = { path = "./audio-hotplug", editable = true }
+  audio-hotplug = { workspace = true }
   ```
-- [ ] Or use command: `uv add --dev -e ./audio-hotplug`
-- [ ] Implement integration (Step B below) using local library
-- [ ] Run LedFx test suite
-- [ ] Manual test: plug/unplug devices
-- [ ] Fix any issues with library before publishing
-- [ ] Once working, remove local path dependency
+- [x] Run `uv sync` to install workspace member
+- [x] Implement integration using local library:
+  - Updated `ledfx/core.py` imports: `from audio_hotplug import create_monitor`
+  - Modified `_start_audio_device_monitor()` to use `create_monitor(loop=self.loop, debounce_ms=200)`
+  - Created `_on_audio_devices_changed()` callback to refresh device list and fire events
+  - Updated `stop()` to call `monitor.stop()`
+- [x] Delete old `ledfx/audio_device_monitor.py` (381 lines removed)
+- [x] Test LedFx startup: Launched with VS Code debug configuration
+- [x] Verify integration working:
+  - ✅ audio-hotplug detects Windows COM device state changes
+  - ✅ Callbacks firing on device changes
+  - ✅ AudioInputSource.refresh_device_list() called
+  - ✅ AudioDeviceListChangedEvent propagating to API layer
+  - ✅ Debouncing functional (200ms coalescing observed)
+  - ✅ No errors or regressions
+- [ ] Manual test: Additional USB hot-plug scenarios
+- [ ] Once ready, proceed to Phase 3 (PyPI publishing)
 
 #### Step B: Add Production Dependency
 

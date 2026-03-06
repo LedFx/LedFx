@@ -13,7 +13,7 @@ import sys
 # Add src to path for local development
 sys.path.insert(0, "../src")
 
-from audio_hotplug import create_monitor
+from audio_hotplug import create_monitor  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
