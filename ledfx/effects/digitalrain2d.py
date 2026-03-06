@@ -3,7 +3,6 @@ import random
 
 import numpy as np
 import voluptuous as vol
-
 from ledfx.color import validate_gradient
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod

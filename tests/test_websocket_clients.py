@@ -9,7 +9,6 @@ from unittest.mock import MagicMock
 
 import pytest
 import voluptuous as vol
-
 from ledfx.api.websocket import (
     BROADCAST_SCHEMA,
     BROADCAST_TYPES,

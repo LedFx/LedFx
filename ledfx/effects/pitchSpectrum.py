@@ -1,6 +1,5 @@
 import numpy as np
 import voluptuous as vol
-
 from ledfx.color import RGB
 from ledfx.effects.audio import MAX_MIDI, MIN_MIDI, AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect

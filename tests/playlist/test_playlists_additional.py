@@ -3,7 +3,6 @@ import json
 
 import pytest
 from aiohttp import web
-
 from ledfx.api.playlists import PlaylistsEndpoint
 from ledfx.playlists import PlaylistManager
 

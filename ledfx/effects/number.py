@@ -3,11 +3,10 @@ from datetime import datetime
 
 import numpy as np
 import voluptuous as vol
-from PIL import ImageFont
-
 from ledfx.effects.texter2d import Texter2d
 from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
 from ledfx.utils import Teleplot
+from PIL import ImageFont
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -3,8 +3,6 @@ from collections import namedtuple
 
 import numpy as np
 import voluptuous as vol
-from PIL import Image
-
 from ledfx.color import (
     hsv_to_rgb_vect,
     parse_color,
@@ -12,6 +10,7 @@ from ledfx.color import (
     validate_color,
 )
 from ledfx.effects.twod import Twod
+from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 

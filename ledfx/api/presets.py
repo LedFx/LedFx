@@ -2,7 +2,6 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.utils import generate_defaults, inject_missing_default_keys

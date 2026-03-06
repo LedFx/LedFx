@@ -5,7 +5,6 @@ from json import JSONDecodeError
 
 import aiohttp_cors
 from aiohttp import web
-
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)

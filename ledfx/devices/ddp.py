@@ -5,10 +5,9 @@ from typing import Union
 
 import numpy as np
 import voluptuous as vol
-from numpy import ndarray
-
 from ledfx.devices import UDPDevice
 from ledfx.events import DevicesUpdatedEvent
+from numpy import ndarray
 
 _LOGGER = logging.getLogger(__name__)
 

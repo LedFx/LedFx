@@ -5,12 +5,11 @@ from collections import namedtuple
 from math import log
 
 import aubio
+import ledfx.effects.mel as mel
 import numpy as np
 
 # import sounddevice as sd
 import voluptuous as vol
-
-import ledfx.effects.mel as mel
 from ledfx.effects import fast_blur_array
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent

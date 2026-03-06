@@ -7,7 +7,6 @@ from typing import Optional
 
 import numpy as np
 import voluptuous as vol
-
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels

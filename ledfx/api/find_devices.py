@@ -1,7 +1,6 @@
 from json import JSONDecodeError
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.utils import async_fire_and_forget, set_name_to_icon
 

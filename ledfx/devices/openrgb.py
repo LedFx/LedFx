@@ -3,9 +3,8 @@ import socket
 
 import numpy as np
 import voluptuous as vol
-from openrgb import OpenRGBClient
-
 from ledfx.devices import NetworkedDevice, packets
+from openrgb import OpenRGBClient
 
 _LOGGER = logging.getLogger(__name__)
 

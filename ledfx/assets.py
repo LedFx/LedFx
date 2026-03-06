@@ -23,7 +23,6 @@ import tempfile
 from datetime import datetime, timezone
 
 import PIL.Image as Image
-
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata

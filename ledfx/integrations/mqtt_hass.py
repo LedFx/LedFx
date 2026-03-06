@@ -4,7 +4,6 @@ import socket
 
 import paho.mqtt.client as mqtt
 import voluptuous as vol
-
 from ledfx.color import parse_color
 from ledfx.config import save_config
 from ledfx.consts import PROJECT_VERSION

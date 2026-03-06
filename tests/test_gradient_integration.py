@@ -4,10 +4,9 @@ import io
 import tempfile
 
 import pytest
-from PIL import Image
-
 from ledfx.assets import list_assets, save_asset
 from ledfx.libraries.cache import ImageCache
+from PIL import Image
 
 
 class TestImageCacheGradientIntegration:

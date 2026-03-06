@@ -2,7 +2,6 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS, convertToJsonSchema
 from ledfx.config import CORE_CONFIG_SCHEMA, WLED_CONFIG_SCHEMA

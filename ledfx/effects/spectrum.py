@@ -1,6 +1,5 @@
 import numpy as np
 import voluptuous as vol
-
 from ledfx.effects.audio import AudioReactiveEffect
 
 

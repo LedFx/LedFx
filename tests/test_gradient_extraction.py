@@ -1,7 +1,5 @@
 """Unit tests for gradient extraction utilities."""
 
-from PIL import Image
-
 from ledfx.utilities.gradient_extraction import (
     apply_led_correction,
     build_gradient_stops,
@@ -10,6 +8,7 @@ from ledfx.utilities.gradient_extraction import (
     extract_dominant_colors,
     extract_gradient_metadata,
 )
+from PIL import Image
 
 
 class TestExtractDominantColors:

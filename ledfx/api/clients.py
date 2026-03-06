@@ -2,7 +2,6 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.api.websocket import WebsocketConnection
 from ledfx.events import ClientSyncEvent

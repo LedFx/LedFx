@@ -2,7 +2,6 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
-
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual_effects import process_fallback
 from ledfx.color import (

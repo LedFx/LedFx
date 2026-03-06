@@ -5,9 +5,8 @@ from typing import Optional
 
 import requests
 import voluptuous as vol
-from requests import ConnectTimeout, ReadTimeout
-
 from ledfx.devices import NetworkedDevice
+from requests import ConnectTimeout, ReadTimeout
 
 _LOGGER = logging.getLogger(__name__)
 
