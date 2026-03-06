@@ -42,6 +42,10 @@ except ImportError:
     }
     rpi_supported = False
 
+COLOR_CORRECTION = {
+    "Normal": 1,
+    "Simple": 2,
+}
 
 # This wrapper is required to prevent config_update lifecycle breakage
 # You cannot inherit from Device directly
@@ -56,6 +60,9 @@ class RPI_WS281X(DeviceWrapper):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "color_correction", description="Color correction", default="Normal"
+            ): vol.In(list(COLOR_CORRECTION.keys())),
+            vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
                 default=1,
@@ -63,7 +70,7 @@ class RPI_WS281X(DeviceWrapper):
             vol.Required(
                 "gpio_pin",
                 description="Raspberry Pi GPIO pin your LEDs are connected to",
-                default=10,
+                default=18,
             ): vol.In(list([10, 12, 13, 18, 21])),
             vol.Required(
                 "color_order", description="Color order", default="RGB"
@@ -119,13 +126,24 @@ class RPI_WS281X(DeviceWrapper):
     def flush(self, data):
         """Flush LED data to the strip"""
 
-        for idx, rgb in enumerate(data):
-            if self.color_order == SK6812_STRIP_RGBW:
+        if self.color_order == SK6812_STRIP_RGBW:
+            for idx, rgb in enumerate(data):
+                if self.color_correction == 2: # Simple
+                    r, g, b = rgb
+                    min_val = min(r, g, b)
+                    r_remain = r - min_val
+                    g_remain = g - min_val
+                    b_remain = b - min_val
+                    rgb = [r_remain, g_remain, b_remain, min_val]
+                else:
+                    rgb.append(0) # add 0 for W channel
+
                 self.strip.setPixelColor(
                     idx,
-                    (round(rgb[0]) << 24) | (round(rgb[1]) << 16) | (round(rgb[2]) << 8),
+                    (round(rgb[0]) << 24) | (round(rgb[1]) << 16) | (round(rgb[2]) << 8), round(rgb[3])
                 )
-            else:
+        else:
+            for idx, rgb in enumerate(data):
                 self.strip.setPixelColor(
                     idx,
                     (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2]),
