@@ -761,12 +761,14 @@ Before using the PyPI package, test integration with the local library:
 - [ ] Test on Windows, macOS, Linux
 
 #### Step E: Cleanup
-- [ ] Delete `ledfx/audio_device_monitor.py`
-- [ ] Remove `AudioDeviceListChangedEvent` from `ledfx/events.py` (if unused)
-- [ ] Remove event listener registration code
-- [ ] Update LedFx documentation
-- [ ] Update `docs/developer/audio_device_monitoring.md`
-- [ ] Remove `LedFx/audio-hotplug/` directory from workspace (optional)
+- [x] Delete `ledfx/audio_device_monitor.py` (completed in Step A)
+- [x] Delete obsolete test files:
+  - `tests/test_audio_device_monitor.py`
+  - `tests/test_core_audio_monitoring.py`
+- [x] Remove event listener registration code (completed in Step A)
+- [x] Delete `docs/developer/audio_device_monitoring.md` (obsolete documentation)
+- [ ] ~~Remove `AudioDeviceListChangedEvent` from `ledfx/events.py`~~ (still used for event propagation)
+- [ ] Remove `LedFx/audio-hotplug/` directory from workspace (optional, after PyPI migration)
 
 **Deliverable:** LedFx uses external library, old code removed
 
