@@ -15,6 +15,7 @@ try:
         WS2811_STRIP_GRB,
         WS2811_STRIP_RBG,
         WS2811_STRIP_RGB,
+        SK6812_STRIP_RGBW,
         PixelStrip,
     )
 
@@ -25,6 +26,7 @@ try:
         "BRG": WS2811_STRIP_BRG,
         "GBR": WS2811_STRIP_GBR,
         "BGR": WS2811_STRIP_BGR,
+        "RGBW": SK6812_STRIP_RGBW,
     }
     rpi_supported = True
 except ImportError:
@@ -36,6 +38,7 @@ except ImportError:
         "BRG": 4,
         "GBR": 5,
         "BGR": 6,
+        "RGBW": 7,
     }
     rpi_supported = False
 
@@ -106,6 +109,7 @@ class RPI_WS281X(DeviceWrapper):
             self.LED_CHANNEL,
             self.color_order,
         )
+
         self.strip.begin()
         super().activate()
 
@@ -116,8 +120,14 @@ class RPI_WS281X(DeviceWrapper):
         """Flush LED data to the strip"""
 
         for idx, rgb in enumerate(data):
-            self.strip.setPixelColor(
-                idx,
-                (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2]),
-            )
+            if self.color_order == SK6812_STRIP_RGBW:
+                self.strip.setPixelColor(
+                    idx,
+                    (round(rgb[0]) << 24) | (round(rgb[1]) << 16) | (round(rgb[2]) << 8),
+                )
+            else:
+                self.strip.setPixelColor(
+                    idx,
+                    (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2]),
+                )
         self.strip.show()
