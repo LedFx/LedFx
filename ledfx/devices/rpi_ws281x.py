@@ -5,6 +5,9 @@ import voluptuous as vol
 from ledfx.devices import Device
 from ledfx.utils import BaseRegistry
 
+import numpy as np
+
+
 _LOGGER = logging.getLogger(__name__)
 
 try:
@@ -87,6 +90,7 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_CHANNEL = 0
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
         self._device_type = "RPi_WS281X"
+        self.color_correction = 1
 
     def config_updated(self, config):
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
@@ -134,13 +138,13 @@ class RPI_WS281X(DeviceWrapper):
                     r_remain = r - min_val
                     g_remain = g - min_val
                     b_remain = b - min_val
-                    rgb = [r_remain, g_remain, b_remain, min_val]
+                    rgb = np.array([r_remain, g_remain, b_remain, min_val])
                 else:
-                    rgb.append(0) # add 0 for W channel
+                    rgb = np.append(rgb,0) # add 0 for W channel
 
                 self.strip.setPixelColor(
                     idx,
-                    (round(rgb[0]) << 24) | (round(rgb[1]) << 16) | (round(rgb[2]) << 8), round(rgb[3])
+                    (round(rgb[3]) << 24) | (round(rgb[1]) << 16) | (round(rgb[0]) << 8) | round(rgb[2]),
                 )
         else:
             for idx, rgb in enumerate(data):
