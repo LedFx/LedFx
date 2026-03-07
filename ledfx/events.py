@@ -29,6 +29,7 @@ class Event:
     GLOBAL_PAUSE = "global_pause"
     VIRTUAL_PAUSE = "virtual_pause"
     AUDIO_INPUT_DEVICE_CHANGED = "audio_input_device_changed"
+    AUDIO_DEVICE_LIST_CHANGED = "audio_device_list_changed"
     VIRTUAL_DIAG = "virtual_diag"
     GENERAL_DIAG = "general_diag"
     CLIENT_CONNECTED = "client_connected"
@@ -268,6 +269,13 @@ class AudioDeviceChangeEvent(Event):
     def __init__(self, audio_input_device_name: str):
         super().__init__(Event.AUDIO_INPUT_DEVICE_CHANGED)
         self.audio_input_device_name = audio_input_device_name
+
+
+class AudioDeviceListChangedEvent(Event):
+    """Event emitted when the system audio device list changes (devices added/removed)"""
+
+    def __init__(self):
+        super().__init__(Event.AUDIO_DEVICE_LIST_CHANGED)
 
 
 class GraphUpdateEvent(Event):
