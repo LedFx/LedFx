@@ -27,6 +27,7 @@ from ledfx.utils import (
     clean_ip,
     generate_id,
     get_icon_name,
+    is_gap_device,
     resolve_destination,
     wled_support_DDP,
 )
@@ -330,8 +331,8 @@ class Device(BaseRegistry):
         # Efficient overlap detection using sorted intervals
         overlapping_virtuals = set()
 
-        # Skip overlap checking for gap-mapping device (it's a placeholder, not real hardware)
-        if self.id == "gap-mapping":
+        # Skip overlap checking for gap devices (they are placeholders, not real hardware)
+        if is_gap_device(self):
             overlapping_virtuals = set()
         else:
             # Group existing segments by virtual_id and sort by start position

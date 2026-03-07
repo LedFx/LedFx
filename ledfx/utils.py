@@ -779,6 +779,30 @@ def generate_title(id):
     return re.sub("[^a-zA-Z0-9]", " ", id).title()
 
 
+def is_gap_device(device) -> bool:
+    """
+    Check if a device is a fake gap device used for discontiguous mappings.
+
+    Gap devices are dummy placeholders created by the frontend's matrix editor
+    to represent empty/unused pixels in discontiguous layouts. They should be
+    skipped during rendering and device processing.
+
+    A device is considered a gap device if and only if:
+    1. The device ID starts with "gap-"
+    2. The device type is "dummy"
+
+    Args:
+        device: The device object to check. Can be None.
+
+    Returns:
+        bool: True if the device ID starts with "gap-" AND the device type
+              is "dummy", False otherwise (including when device is None).
+    """
+    if device is None:
+        return False
+    return device.id.startswith("gap-") and device.type == "dummy"
+
+
 def hasattr_explicit(cls, attr):
     """
     Returns True if the given object has explicitly declared an attribute,
