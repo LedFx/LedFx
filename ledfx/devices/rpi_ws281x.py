@@ -47,7 +47,7 @@ except ImportError:
 
 COLOR_CORRECTION = {
     "Normal": 1,
-    "Simple": 2,
+    "W-Channel": 2,
 }
 
 # This wrapper is required to prevent config_update lifecycle breakage
@@ -63,7 +63,7 @@ class RPI_WS281X(DeviceWrapper):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
-                "color_correction", description="Color correction", default="Normal"
+                "color_correction", description="Color correction", default="W-Channel"
             ): vol.In(list(COLOR_CORRECTION.keys())),
             vol.Required(
                 "pixel_count",
@@ -90,7 +90,7 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_CHANNEL = 0
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
         self._device_type = "RPi_WS281X"
-        self.color_correction = 1
+        self.color_correction = 2
 
     def config_updated(self, config):
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
