@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pybase64
+from audio_hotplug import create_monitor
 
 from ledfx.color import (
     LEDFX_COLORS,
@@ -29,7 +30,9 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
+from ledfx.effects.audio import AudioInputSource
 from ledfx.events import (
+    AudioDeviceListChangedEvent,
     Event,
     Events,
     LedFxShutdownEvent,
@@ -127,6 +130,9 @@ class LedFxCore:
         self.loop.set_exception_handler(self.loop_exception_handler)
         asyncio.set_event_loop(self.loop)
 
+        # Audio device monitor will be started after loop is running
+        self.audio_device_monitor = None
+
         if self.config.get("debug_asyncio", False):
             self.loop.set_debug(True)
 
@@ -163,6 +169,36 @@ class LedFxCore:
 
     def dev_enabled(self):
         return self.config["dev_mode"]
+
+    def _start_audio_device_monitor(self):
+        """Start the audio device monitor for the current platform."""
+        try:
+            self.audio_device_monitor = create_monitor(
+                loop=self.loop, debounce_ms=200
+            )
+            if self.audio_device_monitor:
+                # Start monitoring with callback to refresh device list
+                self.audio_device_monitor.start(self._on_audio_devices_changed)
+                _LOGGER.info("Audio device monitor enabled")
+            else:
+                _LOGGER.debug(
+                    "Audio device monitoring not available on this platform"
+                )
+        except Exception as e:
+            _LOGGER.warning(
+                f"Failed to start audio device monitor: {e}. "
+                "Device list will not update automatically when devices are added/removed."
+            )
+
+    def _on_audio_devices_changed(self):
+        """Callback for audio-hotplug library when device changes detected."""
+        # Refresh the device list
+        AudioInputSource.refresh_device_list()
+
+        # Fire LedFx event for any listeners (e.g., websocket notifications)
+        self.events.fire_event(AudioDeviceListChangedEvent())
+
+        _LOGGER.info("Audio device list updated in response to system change")
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
@@ -437,6 +473,9 @@ class LedFxCore:
         # websockets and REST endpoints are fully ready before the UI opens.
         await self.http.start(get_ssl_certs(config_dir=self.config_dir))
 
+        # Start audio device monitor for OS-level device change notifications
+        self._start_audio_device_monitor()
+
         # Only open the UI once devices and virtuals have been initialized
         if open_ui:
             self.open_ui()
@@ -513,6 +552,16 @@ class LedFxCore:
             _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
             # Fire a shutdown event
             self.events.fire_event(LedFxShutdownEvent())
+
+            # Stop audio device monitor
+            if self.audio_device_monitor:
+                try:
+                    self.audio_device_monitor.stop()
+                except Exception as e:
+                    _LOGGER.warning(
+                        f"Error stopping audio device monitor: {e}"
+                    )
+
             _LOGGER.info("Stopping HTTP Server...")
             await self.http.stop()
 

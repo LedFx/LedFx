@@ -521,6 +521,22 @@ The `audio_input_device_changed` event is emitted when the an audio reactive eff
 - `event_type`: Always `"audio_input_device_changed"`.
 - `audio_input_device_name`: The friendly name of the selected audio device.
 
+### audio_device_list_changed
+The `audio_device_list_changed` event is emitted when the system audio device list changes (devices are added or removed). LedFx uses the `audio-hotplug` library to automatically detect device changes and refresh the internal audio device list.
+
+**Payload Example:**
+```json
+{
+  "event_type": "audio_device_list_changed"
+}
+```
+
+**Fields:**
+- `event_type`: Always `"audio_device_list_changed"`.
+
+**Usage:**
+When this event is received, the frontend should re-fetch the device list via `/api/audio/devices` to update the UI. The backend has already refreshed its internal device cache, so the API will return the current device list.
+
 ### colors_updated
 The `colors_updated` event is emitted when user-defined colors or gradients are added, modified, or deleted via the `/api/colors` endpoint.
 
@@ -796,31 +812,3 @@ The `general_diag` WebSocket event is emitted to provide arbitrary diagnostic me
 **Usage:**
 Listen for this event to receive general diagnostic messages from the system, which may be useful for debugging or displaying system status in the frontend.
 If a monospaced font is used then back end can attempt table live updates with scroll set to false which is default if not explicitly set.
-
----
-
-## System Events
-
-::: warning
-The documentation on on Events is very incomplete
-New sections are added as new events are commited, but all the pre-existing behaviour should be considered undocumented
-:::
-
-### `audio_input_device_changed`
-
-The `audio_input_device_changed` WebSocket event is emitted when the audio input device is changed via the `/api/audio/devices` endpoint or through other configuration updates.
-
-**Payload Example:**
-```json
-{
-  "event_type": "audio_input_device_changed",
-  "audio_input_device_name": "Stereo Mix (Realtek High Definition Audio)"
-}
-```
-
-**Fields:**
-- `event_type`: Always `"audio_input_device_changed"`.
-- `audio_input_device_name`: The name of the newly selected audio input device.
-
-**Usage:**
-Subscribe to this event to be notified when the audio input device changes, allowing frontends to update their UI to reflect the current audio source. This is particularly useful for keeping multiple clients synchronized when audio device settings are changed.
