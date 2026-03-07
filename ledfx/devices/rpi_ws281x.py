@@ -1,5 +1,6 @@
 import logging
 
+import numpy as np
 import voluptuous as vol
 
 from ledfx.devices import Device
@@ -9,6 +10,7 @@ _LOGGER = logging.getLogger(__name__)
 
 try:
     from rpi_ws281x import (
+        SK6812_STRIP_RGBW,
         WS2811_STRIP_BGR,
         WS2811_STRIP_BRG,
         WS2811_STRIP_GBR,
@@ -25,6 +27,7 @@ try:
         "BRG": WS2811_STRIP_BRG,
         "GBR": WS2811_STRIP_GBR,
         "BGR": WS2811_STRIP_BGR,
+        "RGBW": SK6812_STRIP_RGBW,
     }
     rpi_supported = True
 except ImportError:
@@ -36,8 +39,14 @@ except ImportError:
         "BRG": 4,
         "GBR": 5,
         "BGR": 6,
+        "RGBW": 7,
     }
     rpi_supported = False
+
+COLOR_CORRECTION = {
+    "Normal": 1,
+    "W-Channel": 2,
+}
 
 
 # This wrapper is required to prevent config_update lifecycle breakage
@@ -53,6 +62,11 @@ class RPI_WS281X(DeviceWrapper):
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
+                "color_correction",
+                description="Color correction",
+                default="W-Channel",
+            ): vol.In(list(COLOR_CORRECTION.keys())),
+            vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
                 default=1,
@@ -60,7 +74,7 @@ class RPI_WS281X(DeviceWrapper):
             vol.Required(
                 "gpio_pin",
                 description="Raspberry Pi GPIO pin your LEDs are connected to",
-                default=10,
+                default=18,
             ): vol.In(list([10, 12, 13, 18, 21])),
             vol.Required(
                 "color_order", description="Color order", default="RGB"
@@ -77,6 +91,7 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_CHANNEL = 0
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
         self._device_type = "RPi_WS281X"
+        self.color_correction = 2
 
     def config_updated(self, config):
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
@@ -106,6 +121,7 @@ class RPI_WS281X(DeviceWrapper):
             self.LED_CHANNEL,
             self.color_order,
         )
+
         self.strip.begin()
         super().activate()
 
@@ -115,9 +131,31 @@ class RPI_WS281X(DeviceWrapper):
     def flush(self, data):
         """Flush LED data to the strip"""
 
-        for idx, rgb in enumerate(data):
-            self.strip.setPixelColor(
-                idx,
-                (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2]),
-            )
+        if self.color_order == SK6812_STRIP_RGBW:
+            for idx, rgb in enumerate(data):
+                if self.color_correction == 2:  # Simple
+                    r, g, b = rgb
+                    min_val = min(r, g, b)
+                    r_remain = r - min_val
+                    g_remain = g - min_val
+                    b_remain = b - min_val
+                    rgb = np.array([r_remain, g_remain, b_remain, min_val])
+                else:
+                    rgb = np.append(rgb, 0)  # add 0 for W channel
+
+                self.strip.setPixelColor(
+                    idx,
+                    (round(rgb[3]) << 24)
+                    | (round(rgb[1]) << 16)
+                    | (round(rgb[0]) << 8)
+                    | round(rgb[2]),
+                )
+        else:
+            for idx, rgb in enumerate(data):
+                self.strip.setPixelColor(
+                    idx,
+                    (round(rgb[0]) << 16)
+                    | (round(rgb[1]) << 8)
+                    | round(rgb[2]),
+                )
         self.strip.show()
