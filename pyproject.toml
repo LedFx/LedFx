@@ -41,6 +41,7 @@ dependencies = [
     "packaging>=21.0",
     "xled>=0.7.0",
     "samplerate-ledfx>=0.2.3",
+    "audio-hotplug>=0.1.0",
 ]
 name = "LedFx"
 version = "2.1.5"
@@ -113,7 +114,6 @@ asyncio_default_fixture_loop_scope = "function"
 # A bit slower, but it works for our use case
 link-mode = "copy"
 default-groups = []
-
 
 [tool.black]
 line-length = 79
