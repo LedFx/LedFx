@@ -193,7 +193,7 @@ class LedFxCore:
     def _on_audio_devices_changed(self):
         """
         Callback for audio-hotplug library when device changes detected.
-        
+
         Delegates all audio recovery logic to AudioInputSource.handle_device_list_change()
         to keep audio lifecycle management in one place.
         """
