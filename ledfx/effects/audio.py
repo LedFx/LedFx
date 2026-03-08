@@ -91,7 +91,7 @@ class AudioInputSource:
     def _update_device_config(self, device_idx):
         """
         Update device index in both local and central configs.
-        
+
         Args:
             device_idx: The device index to set, or None to clear
         """
@@ -157,7 +157,7 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._last_device_name = None
                 AudioInputSource._last_active = None
-            
+
             # Use default device logic (prefers loopback of default output, then default input)
             fallback_idx = AudioInputSource.default_device_index()
             if fallback_idx is not None:
@@ -189,8 +189,6 @@ class AudioInputSource:
             _LOGGER.error(
                 f"Failed to reactivate audio stream after device change: {e}"
             )
-
-
 
     @staticmethod
     def device_index_validator(val):
