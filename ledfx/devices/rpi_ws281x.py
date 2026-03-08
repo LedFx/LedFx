@@ -10,18 +10,18 @@ _LOGGER = logging.getLogger(__name__)
 
 try:
     from rpi_ws281x import (
+        SK6812_STRIP_BGRW,
+        SK6812_STRIP_BRGW,
+        SK6812_STRIP_GBRW,
+        SK6812_STRIP_GRBW,
+        SK6812_STRIP_RBGW,
+        SK6812_STRIP_RGBW,
         WS2811_STRIP_BGR,
         WS2811_STRIP_BRG,
         WS2811_STRIP_GBR,
         WS2811_STRIP_GRB,
         WS2811_STRIP_RBG,
         WS2811_STRIP_RGB,
-        SK6812_STRIP_RGBW,
-        SK6812_STRIP_RBGW,
-        SK6812_STRIP_GRBW,
-        SK6812_STRIP_GBRW,
-        SK6812_STRIP_BRGW,
-        SK6812_STRIP_BGRW,
         PixelStrip,
     )
 
@@ -103,9 +103,7 @@ class RPI_WS281X(DeviceWrapper):
                 default=18,
             ): vol.In(list([10, 12, 13, 18, 21])),
             vol.Required(
-                "color_order",
-                description="Color order",
-                default="RGB"
+                "color_order", description="Color order", default="RGB"
             ): vol.In(list(COLOR_ORDERS.keys())),
         }
     )
@@ -171,9 +169,13 @@ class RPI_WS281X(DeviceWrapper):
                     min_val = min(r, g, b)
 
                     if self.color_correction == WHITE_CORRECTION["Accurate"]:
-                        rgb = np.array([r - min_val, g - min_val, b - min_val, min_val]) # W channel from RGB and RGB is reduced
+                        rgb = np.array(
+                            [r - min_val, g - min_val, b - min_val, min_val]
+                        )  # W channel from RGB and RGB is reduced
                     elif self.color_correction == WHITE_CORRECTION["Brighter"]:
-                        rgb = np.append(rgb, min_val)  # add min_val for W channel and RGB is not reduced
+                        rgb = np.append(
+                            rgb, min_val
+                        )  # add min_val for W channel and RGB is not reduced
                 else:
                     rgb = np.append(rgb, 0)  # add 0 for W channel
 
