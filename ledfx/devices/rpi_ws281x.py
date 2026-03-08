@@ -10,13 +10,18 @@ _LOGGER = logging.getLogger(__name__)
 
 try:
     from rpi_ws281x import (
-        SK6812_STRIP_RGBW,
         WS2811_STRIP_BGR,
         WS2811_STRIP_BRG,
         WS2811_STRIP_GBR,
         WS2811_STRIP_GRB,
         WS2811_STRIP_RBG,
         WS2811_STRIP_RGB,
+        SK6812_STRIP_RGBW,
+        SK6812_STRIP_RBGW,
+        SK6812_STRIP_GRBW,
+        SK6812_STRIP_GBRW,
+        SK6812_STRIP_BRGW,
+        SK6812_STRIP_BGRW,
         PixelStrip,
     )
 
@@ -28,7 +33,22 @@ try:
         "GBR": WS2811_STRIP_GBR,
         "BGR": WS2811_STRIP_BGR,
         "RGBW": SK6812_STRIP_RGBW,
+        "RBGW": SK6812_STRIP_RBGW,
+        "GRBW": SK6812_STRIP_GRBW,
+        "GBRW": SK6812_STRIP_GBRW,
+        "BRGW": SK6812_STRIP_BRGW,
+        "BGRW": SK6812_STRIP_BGRW,
     }
+
+    RGBW_MODES = {
+        SK6812_STRIP_RGBW,
+        SK6812_STRIP_RBGW,
+        SK6812_STRIP_GRBW,
+        SK6812_STRIP_GBRW,
+        SK6812_STRIP_BRGW,
+        SK6812_STRIP_BGRW,
+    }
+
     rpi_supported = True
 except ImportError:
     # dummy values to stop things going bang
@@ -40,12 +60,18 @@ except ImportError:
         "GBR": 5,
         "BGR": 6,
         "RGBW": 7,
+        "RBGW": 8,
+        "GRBW": 9,
+        "GBRW": 10,
+        "BRGW": 11,
+        "BGRW": 12,
     }
     rpi_supported = False
 
-COLOR_CORRECTION = {
-    "Normal": 1,
-    "W-Channel": 2,
+WHITE_CORRECTION = {
+    "None": 1,
+    "Accurate": 2,
+    "Brighter": 3,
 }
 
 
@@ -63,9 +89,9 @@ class RPI_WS281X(DeviceWrapper):
         {
             vol.Required(
                 "color_correction",
-                description="Color correction",
-                default="W-Channel",
-            ): vol.In(list(COLOR_CORRECTION.keys())),
+                description="White handling",
+                default="None",
+            ): vol.In(list(WHITE_CORRECTION.keys())),
             vol.Required(
                 "pixel_count",
                 description="Number of individual pixels",
@@ -77,7 +103,9 @@ class RPI_WS281X(DeviceWrapper):
                 default=18,
             ): vol.In(list([10, 12, 13, 18, 21])),
             vol.Required(
-                "color_order", description="Color order", default="RGB"
+                "color_order",
+                description="Color order",
+                default="RGB"
             ): vol.In(list(COLOR_ORDERS.keys())),
         }
     )
@@ -91,10 +119,15 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_CHANNEL = 0
         self.color_order = COLOR_ORDERS[self._config["color_order"]]
         self._device_type = "RPi_WS281X"
-        self.color_correction = 2
+        self.color_correction = WHITE_CORRECTION[
+            self._config["color_correction"]
+        ]
 
     def config_updated(self, config):
-        self.color_order = COLOR_ORDERS[self._config["color_order"]]
+        self.color_order = COLOR_ORDERS[config["color_order"]]
+        self.color_correction = WHITE_CORRECTION[
+            self._config["color_correction"]
+        ]
         self.deactivate()
         self.activate()
 
@@ -131,23 +164,24 @@ class RPI_WS281X(DeviceWrapper):
     def flush(self, data):
         """Flush LED data to the strip"""
 
-        if self.color_order == SK6812_STRIP_RGBW:
+        if self.color_order in RGBW_MODES:
             for idx, rgb in enumerate(data):
-                if self.color_correction == 2:  # Simple
+                if self.color_correction != WHITE_CORRECTION["None"]:
                     r, g, b = rgb
                     min_val = min(r, g, b)
-                    r_remain = r - min_val
-                    g_remain = g - min_val
-                    b_remain = b - min_val
-                    rgb = np.array([r_remain, g_remain, b_remain, min_val])
+
+                    if self.color_correction == WHITE_CORRECTION["Accurate"]:
+                        rgb = np.array([r - min_val, g - min_val, b - min_val, min_val]) # W channel from RGB and RGB is reduced
+                    elif self.color_correction == WHITE_CORRECTION["Brighter"]:
+                        rgb = np.append(rgb, min_val)  # add min_val for W channel and RGB is not reduced
                 else:
                     rgb = np.append(rgb, 0)  # add 0 for W channel
 
                 self.strip.setPixelColor(
                     idx,
                     (round(rgb[3]) << 24)
-                    | (round(rgb[1]) << 16)
-                    | (round(rgb[0]) << 8)
+                    | (round(rgb[0]) << 16)
+                    | (round(rgb[1]) << 8)
                     | round(rgb[2]),
                 )
         else:
