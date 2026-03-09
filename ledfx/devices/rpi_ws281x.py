@@ -1,17 +1,15 @@
 import logging
 
 import numpy as np
-
 import voluptuous as vol
 
 from ledfx.devices import Device
-from ledfx.utils import BaseRegistry
-
 from ledfx.devices.utils.rgbw_conversion import (
     RGB_MAPPING,
     WHITE_FUNCS_MAPPING,
     OutputMode,
 )
+from ledfx.utils import BaseRegistry
 
 RGB_MAPPING = RGB_MAPPING + [color + "W" for color in RGB_MAPPING]
 
@@ -19,14 +17,15 @@ _LOGGER = logging.getLogger(__name__)
 
 try:
     from rpi_ws281x import (
-        WS2811_STRIP_RGB,
         SK6812_STRIP_RGBW,
+        WS2811_STRIP_RGB,
         PixelStrip,
     )
 
     rpi_supported = True
 except ImportError:
     rpi_supported = False
+
 
 # This wrapper is required to prevent config_update lifecycle breakage
 # You cannot inherit from Device directly
@@ -60,7 +59,6 @@ class RPI_WS281X(DeviceWrapper):
                 description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
                 default="None",
             ): vol.All(str, vol.In(WHITE_FUNCS_MAPPING.keys())),
-
         }
     )
 
@@ -74,14 +72,18 @@ class RPI_WS281X(DeviceWrapper):
         self._device_type = "RPi_WS281X"
         self.rgb_order = config.get("rgb_order")
         self.white_mode = config.get("white_mode")
-        self.output_mode = OutputMode(self.rgb_order.strip("W"), self.white_mode)
+        self.output_mode = OutputMode(
+            self.rgb_order.strip("W"), self.white_mode
+        )
         self.config = config
         self.activate()
 
     def config_updated(self, config):
         self.rgb_order = config.get("rgb_order")
         self.white_mode = config.get("white_mode")
-        self.output_mode = OutputMode(self.rgb_order.strip("W"), self.white_mode)
+        self.output_mode = OutputMode(
+            self.rgb_order.strip("W"), self.white_mode
+        )
         self.deactivate()
         self.activate()
 
@@ -137,7 +139,7 @@ class RPI_WS281X(DeviceWrapper):
                 data_rgbw = np.zeros((data.shape[0], 4), dtype=data.dtype)
                 data_rgbw[:, :3] = data
             else:
-                data_rgbw=data
+                data_rgbw = data
 
             for idx, rgbw in enumerate(data_rgbw):
                 self.strip.setPixelColor(
