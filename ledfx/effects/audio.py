@@ -88,6 +88,18 @@ class AudioInputSource:
 
         return was_active
 
+    def _update_device_config(self, device_idx):
+        """
+        Update device index in both local and central configs.
+        
+        Args:
+            device_idx: The device index to set, or None to clear
+        """
+        self._config["audio_device"] = device_idx
+        # Sync the entire audio config to central config (matches update_config pattern)
+        if hasattr(self, "_ledfx") and self._ledfx:
+            self._ledfx.config["audio"] = self._config
+
     def handle_device_list_change(self):
         """
         Handle audio device list changes with automatic stream recovery.
@@ -145,7 +157,16 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._last_device_name = None
                 AudioInputSource._last_active = None
-            # Let activate() use default device via validator
+            
+            # Use default device logic (prefers loopback of default output, then default input)
+            fallback_idx = AudioInputSource.default_device_index()
+            if fallback_idx is not None:
+                _LOGGER.info(f"Using fallback device at index {fallback_idx}")
+                self._update_device_config(fallback_idx)
+            else:
+                # No valid devices at all - clear config to trigger validator
+                _LOGGER.warning("No fallback device available")
+                self._update_device_config(None)
         else:
             current_config_idx = self._config.get("audio_device", -1)
             if found_idx != current_config_idx:
@@ -158,12 +179,7 @@ class AudioInputSource:
                 )
 
             # Always update config with found index to ensure consistency
-            self._config["audio_device"] = found_idx
-            # Also update LedFx's central config
-            if hasattr(self, "_ledfx") and self._ledfx:
-                audio_config = self._ledfx.config.get("audio", {})
-                audio_config["audio_device"] = found_idx
-                self._ledfx.config["audio"] = audio_config
+            self._update_device_config(found_idx)
 
         # Reactivate the stream with the updated configuration
         try:
@@ -173,6 +189,8 @@ class AudioInputSource:
             _LOGGER.error(
                 f"Failed to reactivate audio stream after device change: {e}"
             )
+
+
 
     @staticmethod
     def device_index_validator(val):
