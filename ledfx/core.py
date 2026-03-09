@@ -191,9 +191,18 @@ class LedFxCore:
             )
 
     def _on_audio_devices_changed(self):
-        """Callback for audio-hotplug library when device changes detected."""
-        # Refresh the device list
-        AudioInputSource.refresh_device_list()
+        """
+        Callback for audio-hotplug library when device changes detected.
+        
+        Delegates all audio recovery logic to AudioInputSource.handle_device_list_change()
+        to keep audio lifecycle management in one place.
+        """
+        # Let AudioInputSource handle the full lifecycle: stop, refresh, recover, restart
+        if hasattr(self, "audio") and self.audio:
+            self.audio.handle_device_list_change()
+        else:
+            # If no audio instance yet, just refresh the device list
+            AudioInputSource.refresh_device_list()
 
         # Fire LedFx event for any listeners (e.g., websocket notifications)
         self.events.fire_event(AudioDeviceListChangedEvent())

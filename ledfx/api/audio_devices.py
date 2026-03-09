@@ -25,7 +25,7 @@ class AudioDevicesEndpoint(RestEndpoint):
             web.Response: The response containing the list of audio devices and the active device index.
         """
         audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
-            self._ledfx.config.get("audio_device", {})
+            self._ledfx.config.get("audio", {})
         )
 
         response = {}
