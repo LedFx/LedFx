@@ -13,6 +13,7 @@ import voluptuous as vol
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
+from ledfx.config import save_config
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
@@ -99,6 +100,11 @@ class AudioInputSource:
         # Sync the entire audio config to central config (matches update_config pattern)
         if hasattr(self, "_ledfx") and self._ledfx:
             self._ledfx.config["audio"] = self._config
+            # Persist to disk so recovered device survives restarts
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
 
     def handle_device_list_change(self):
         """
@@ -413,9 +419,13 @@ class AudioInputSource:
             device_idx = default_device
 
         elif device_idx not in valid_device_indexes:
-            device_name = input_devices.get(device_idx, {}).get(
-                "name", f"index {device_idx}"
-            )
+            # Get device name safely (input_devices is a tuple, not dict)
+            try:
+                device_name = input_devices[device_idx].get(
+                    "name", f"index {device_idx}"
+                )
+            except (IndexError, KeyError):
+                device_name = f"index {device_idx}"
             _LOGGER.warning(
                 f"Audio device {device_name} not in valid_device_indexes. Reverting to default input device: {default_device}"
             )
@@ -468,6 +478,20 @@ class AudioInputSource:
             self.delay_queue = queue.Queue(maxsize=samples_to_delay)
         else:
             self.delay_queue = None
+
+        def update_device_tracking(device_idx):
+            """
+            Update class-level tracking of active device index and name.
+            Thread-safe with class lock protection.
+            """
+            with AudioInputSource._class_lock:
+                AudioInputSource._last_active = device_idx
+                device_name = input_devices[device_idx].get("name", None)
+                AudioInputSource._last_device_name = (
+                    f"{hostapis[input_devices[device_idx]['hostapi']]['name']}: {device_name}"
+                    if device_name
+                    else None
+                )
 
         def open_audio_stream(device_idx):
             """
@@ -531,17 +555,8 @@ class AudioInputSource:
 
         try:
             open_audio_stream(device_idx)
-            # Protect concurrent access to _last_active and _last_device_name with class lock
-            # Save both index and name so we can find device after indices change
-            with AudioInputSource._class_lock:
-                AudioInputSource._last_active = device_idx
-                # Save the device name for recovery after device list changes
-                device_name = input_devices[device_idx].get("name", None)
-                AudioInputSource._last_device_name = (
-                    f"{hostapis[input_devices[device_idx]['hostapi']]['name']}: {device_name}"
-                    if device_name
-                    else None
-                )
+            # Save device index and name for recovery after device list changes
+            update_device_tracking(device_idx)
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
@@ -550,6 +565,8 @@ class AudioInputSource:
         except sd.PortAudioError as e:
             _LOGGER.error(f"{e}, Reverting to default input device")
             open_audio_stream(default_device)
+            # Update tracking for the fallback device
+            update_device_tracking(default_device)
 
     def deactivate(self):
         # Stop the stream outside the lock to avoid deadlock with audio callback
