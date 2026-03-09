@@ -21,6 +21,7 @@ from ledfx.events import (
     ClientDisconnectedEvent,
     ClientsUpdatedEvent,
     Event,
+    FrontendVisualiserDataEvent,
     SongDetectedEvent,
 )
 from ledfx.utils import empty_queue
@@ -857,6 +858,63 @@ class WebsocketConnection:
                 duration=message.get("duration"),
                 playing=message.get("playing", False),
                 timestamp=message.get("timestamp"),
+            )
+        )
+
+    @websocket_handler("frontend_visualiser_data")
+    def frontend_visualiser_data_handler(self, message):
+        """
+        Handle incoming visualiser pixel data FROM frontend TO backend.
+        This is the opposite direction of visualisation_update events.
+
+        Expected message format:
+        {
+            "id": int,
+            "type": "frontend_visualiser_data",
+            "client_id": str,  # UUID of sending client
+            "vis_id": str (default: "visualiser-capture"),
+            "pixels": "<base64_string>",  # Base64-encoded RGB bytes
+            "shape": [rows, cols],
+            "encoding": "base64-rgb"
+        }
+        """
+        vis_id = message.get("vis_id", "visualiser-capture")
+        pixels_b64 = message.get("pixels")
+        shape = message.get("shape")
+        client_id = message.get("client_id")
+
+        if pixels_b64 is None or shape is None:
+            _LOGGER.warning(
+                "Received frontend_visualiser_data without pixels or shape"
+            )
+            return
+
+        if client_id is None:
+            _LOGGER.warning(
+                "Received frontend_visualiser_data without client_id"
+            )
+            return
+
+        try:
+            # Decode base64 string to raw RGB bytes
+            rgb_bytes = pybase64.b64decode(pixels_b64)
+
+            # Convert bytes to numpy array and reshape to [rows, cols, 3]
+            rows, cols = shape
+            pixels = np.frombuffer(rgb_bytes, dtype=np.uint8).reshape(
+                rows, cols, 3
+            )
+
+        except Exception as e:
+            _LOGGER.error(
+                f"Error decoding frontend visualiser data: {e}", exc_info=True
+            )
+            return
+
+        # Fire the frontend visualiser data event
+        self._ledfx.events.fire_event(
+            FrontendVisualiserDataEvent(
+                vis_id=vis_id, pixels=pixels, shape=shape, client_id=client_id
             )
         )
 

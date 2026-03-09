@@ -18,6 +18,7 @@ class Event:
     DEVICES_UPDATED = "devices_updated"
     VIRTUAL_UPDATE = "virtual_update"
     VISUALISATION_UPDATE = "visualisation_update"
+    FRONTEND_VISUALISER_DATA = "frontend_visualiser_data"
     GRAPH_UPDATE = "graph_update"
     EFFECT_SET = "effect_set"
     EFFECT_UPDATED = "effect_updated"
@@ -311,6 +312,25 @@ class VisualisationUpdateEvent(Event):
         self.shape = shape
 
 
+class FrontendVisualiserDataEvent(Event):
+    """Event fired when frontend sends captured visualiser pixel data to backend
+    Used for frontend-driven effects (opposite direction of VisualisationUpdateEvent)
+    """
+
+    def __init__(
+        self,
+        vis_id: str,  # identifier for the visualiser source
+        pixels: np.ndarray,  # RGB pixel array
+        shape: tuple,  # (rows, cols) shape of the pixel data
+        client_id: str,  # UUID of the client that sent the data
+    ):
+        super().__init__(Event.FRONTEND_VISUALISER_DATA)
+        self.vis_id = vis_id
+        self.pixels = pixels
+        self.shape = shape
+        self.client_id = client_id
+
+
 class EffectSetEvent(Event):
     """Event emitted when an effect is set"""
 
@@ -534,11 +554,14 @@ class Events:
 
     def fire_event(self, event: Event) -> None:
         listeners = self._listeners.get(event.event_type, [])
+
         if not listeners:
             return
 
         for listener in listeners:
-            if not listener.filter_event(event):
+            filtered = listener.filter_event(event)
+
+            if not filtered:
                 self._ledfx.loop.call_soon_threadsafe(listener.callback, event)
 
     def add_listener(
