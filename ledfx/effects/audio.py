@@ -36,9 +36,8 @@ class AudioInputSource:
     _subscriber_threshold = 0
     _timer = None
     _last_active = None
-    _last_device_name = (
-        None  # Track device by name, not index (indices can change)
-    )
+    # Track device by name, not index (indices can change)
+    _last_device_name = None
     _device_list_cache = None  # Cache for device list
     _class_lock = threading.Lock()  # Class-level lock for shared state
 
