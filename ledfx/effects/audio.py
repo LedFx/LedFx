@@ -13,6 +13,7 @@ import voluptuous as vol
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
+from ledfx.config import save_config
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
@@ -36,14 +37,46 @@ class AudioInputSource:
     _subscriber_threshold = 0
     _timer = None
     _last_active = None
+    # Track device by name, not index (indices can change)
+    _last_device_name = None
     _device_list_cache = None  # Cache for device list
+    _class_lock = threading.Lock()  # Class-level lock for shared state
 
     @staticmethod
     def refresh_device_list():
         """
         Force sounddevice/PortAudio to rescan audio devices.
         This is necessary because PortAudio caches the device list at initialization.
+
+        If an audio stream is active, it will be gracefully stopped before refreshing.
+
+        Returns:
+            bool: True if an audio stream was active before refresh (and should be reactivated),
+                  False otherwise
         """
+        # Check if there's an active stream that needs to be stopped
+        # Use class lock to safely cache and clear the stream reference
+        stream_to_close = None
+        with AudioInputSource._class_lock:
+            was_active = AudioInputSource._audio_stream_active
+
+            if was_active:
+                _LOGGER.info(
+                    "Stopping audio stream before device list refresh..."
+                )
+                # Cache and clear inside lock (atomic operation)
+                stream_to_close = AudioInputSource._stream
+                AudioInputSource._stream = None
+                AudioInputSource._audio_stream_active = False
+
+        # Close outside lock to avoid deadlock with audio callbacks
+        if stream_to_close:
+            try:
+                stream_to_close.stop()
+                stream_to_close.close()
+            except Exception as e:
+                _LOGGER.warning(f"Error closing stream during refresh: {e}")
+
         try:
             # Force PortAudio to rescan devices by terminating and reinitializing
             sd._terminate()
@@ -53,6 +86,115 @@ class AudioInputSource:
             _LOGGER.info("Audio device list refreshed")
         except Exception as e:
             _LOGGER.warning(f"Failed to refresh audio device list: {e}")
+
+        return was_active
+
+    def _update_device_config(self, device_idx):
+        """
+        Update device index in both local and central configs.
+
+        Args:
+            device_idx: The device index to set, or None to clear
+        """
+        self._config["audio_device"] = device_idx
+        # Sync the entire audio config to central config (matches update_config pattern)
+        if hasattr(self, "_ledfx") and self._ledfx:
+            self._ledfx.config["audio"] = self._config
+            # Persist to disk so recovered device survives restarts
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+
+    def handle_device_list_change(self):
+        """
+        Handle audio device list changes with automatic stream recovery.
+
+        This method encapsulates the full lifecycle:
+        1. Stop active stream and refresh device list
+        2. Find previously active device by name (indices may have shifted)
+        3. Update config with new device index if changed
+        4. Reactivate stream with correct device
+
+        This keeps all audio recovery logic in one place rather than split
+        across core.py and audio.py.
+        """
+        # Stop any active stream and refresh the device list
+        was_active = self.refresh_device_list()
+
+        # If no stream was active, nothing to recover
+        if not was_active:
+            _LOGGER.debug(
+                "Device list changed but no audio stream was active - no recovery needed"
+            )
+            return
+
+        # Try to find the previously active device by name
+        # (device indices may have shifted after plug/unplug)
+        with AudioInputSource._class_lock:
+            last_device_name = AudioInputSource._last_device_name
+            last_device_idx = AudioInputSource._last_active
+
+        if not last_device_name:
+            _LOGGER.warning(
+                "Cannot recover audio stream: previous device name not tracked"
+            )
+            # Try to reactivate with current config anyway
+            try:
+                self.activate()
+            except Exception as e:
+                _LOGGER.error(
+                    f"Failed to reactivate audio stream after device change: {e}"
+                )
+            return
+
+        # Find device at its new index
+        _LOGGER.info(
+            f"Attempting to recover audio device '{last_device_name}' (was at index {last_device_idx})"
+        )
+        found_idx = self.get_device_index_by_name(last_device_name)
+
+        if found_idx == -1:
+            _LOGGER.warning(
+                f"Previously active device '{last_device_name}' no longer available after device list change. "
+                f"Will use default device."
+            )
+            # Clear the stored device info since it's gone
+            with AudioInputSource._class_lock:
+                AudioInputSource._last_device_name = None
+                AudioInputSource._last_active = None
+
+            # Use default device logic (prefers loopback of default output, then default input)
+            fallback_idx = AudioInputSource.default_device_index()
+            if fallback_idx is not None:
+                _LOGGER.info(f"Using fallback device at index {fallback_idx}")
+                self._update_device_config(fallback_idx)
+            else:
+                # No valid devices at all - clear config to trigger validator
+                _LOGGER.warning("No fallback device available")
+                self._update_device_config(None)
+        else:
+            current_config_idx = self._config.get("audio_device", -1)
+            if found_idx != current_config_idx:
+                _LOGGER.info(
+                    f"Device list changed: '{last_device_name}' moved from index {current_config_idx} to {found_idx}"
+                )
+            else:
+                _LOGGER.info(
+                    f"Device list changed: '{last_device_name}' still at index {found_idx}"
+                )
+
+            # Always update config with found index to ensure consistency
+            self._update_device_config(found_idx)
+
+        # Reactivate the stream with the updated configuration
+        try:
+            _LOGGER.info("Reactivating audio stream after device list refresh")
+            self.activate()
+        except Exception as e:
+            _LOGGER.error(
+                f"Failed to reactivate audio stream after device change: {e}"
+            )
 
     @staticmethod
     def device_index_validator(val):
@@ -207,22 +349,22 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
-        if self._audio_stream_active:
+        if AudioInputSource._audio_stream_active:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
 
         # cache up last active and lets see if it changes
-        # Read _last_active with lock protection
-        with self.lock:
-            last_active = self._last_active
+        # Read _last_active with class lock protection
+        with AudioInputSource._class_lock:
+            last_active = AudioInputSource._last_active
 
         # Activate outside the lock to avoid deadlock
         if len(self._callbacks) != 0:
             self.activate()
 
         # Check if device changed and fire event if needed
-        with self.lock:
-            if last_active != self._last_active:
+        with AudioInputSource._class_lock:
+            if last_active != AudioInputSource._last_active:
                 self._ledfx.events.fire_event(
                     AudioDeviceChangeEvent(
                         self.input_devices()[self._config["audio_device"]]
@@ -277,8 +419,15 @@ class AudioInputSource:
             device_idx = default_device
 
         elif device_idx not in valid_device_indexes:
+            # Get device name safely (input_devices is a tuple, not dict)
+            try:
+                device_name = input_devices[device_idx].get(
+                    "name", f"index {device_idx}"
+                )
+            except (IndexError, KeyError):
+                device_name = f"index {device_idx}"
             _LOGGER.warning(
-                f"Audio device {input_devices[device_idx]['name']} not in valid_device_indexes. Reverting to default input device: {default_device}"
+                f"Audio device {device_name} not in valid_device_indexes. Reverting to default input device: {default_device}"
             )
             device_idx = default_device
 
@@ -330,6 +479,20 @@ class AudioInputSource:
         else:
             self.delay_queue = None
 
+        def update_device_tracking(device_idx):
+            """
+            Update class-level tracking of active device index and name.
+            Thread-safe with class lock protection.
+            """
+            with AudioInputSource._class_lock:
+                AudioInputSource._last_active = device_idx
+                device_name = input_devices[device_idx].get("name", None)
+                AudioInputSource._last_device_name = (
+                    f"{hostapis[input_devices[device_idx]['hostapi']]['name']}: {device_name}"
+                    if device_name
+                    else None
+                )
+
         def open_audio_stream(device_idx):
             """
             Opens an audio stream for the specified input device.
@@ -360,13 +523,13 @@ class AudioInputSource:
                 channels = 1
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
-                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = self._stream = (
-                    WebAudioStream(
-                        device["client"], self._audio_sample_callback
-                    )
+                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
+                    AudioInputSource._stream
+                ) = WebAudioStream(
+                    device["client"], self._audio_sample_callback
                 )
             else:
-                self._stream = self._audio.InputStream(
+                AudioInputSource._stream = self._audio.InputStream(
                     samplerate=int(device["default_samplerate"]),
                     device=device_idx,
                     callback=self._audio_sample_callback,
@@ -386,14 +549,14 @@ class AudioInputSource:
                 f"Audio source opened: {hostapis[device['hostapi']]['name']}: {device.get('name', device.get('client'))}"
             )
 
-            self._stream.start()
-            self._audio_stream_active = True
+            AudioInputSource._stream.start()
+            with AudioInputSource._class_lock:
+                AudioInputSource._audio_stream_active = True
 
         try:
             open_audio_stream(device_idx)
-            # Protect concurrent access to _last_active with lock
-            with self.lock:
-                self._last_active = device_idx
+            # Save device index and name for recovery after device list changes
+            update_device_tracking(device_idx)
         except OSError as e:
             _LOGGER.critical(
                 f"Unable to open Audio Device: {e} - please retry."
@@ -402,17 +565,19 @@ class AudioInputSource:
         except sd.PortAudioError as e:
             _LOGGER.error(f"{e}, Reverting to default input device")
             open_audio_stream(default_device)
+            # Update tracking for the fallback device
+            update_device_tracking(default_device)
 
     def deactivate(self):
         # Stop the stream outside the lock to avoid deadlock with audio callback
         # The audio callback thread may be waiting to complete, and if it needs
-        # any locks, holding self.lock while calling stop() creates a circular wait
+        # any locks, holding the lock while calling stop() creates a circular wait
         stream_to_close = None
-        with self.lock:
-            if self._stream:
-                stream_to_close = self._stream
-                self._stream = None
-            self._audio_stream_active = False
+        with AudioInputSource._class_lock:
+            if AudioInputSource._stream:
+                stream_to_close = AudioInputSource._stream
+                AudioInputSource._stream = None
+            AudioInputSource._audio_stream_active = False
 
         # Stop/close outside the lock
         if stream_to_close:
@@ -423,7 +588,10 @@ class AudioInputSource:
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
-        if len(self._callbacks) > 0 and not self._audio_stream_active:
+        if (
+            len(self._callbacks) > 0
+            and not AudioInputSource._audio_stream_active
+        ):
             self.activate()
         if self._timer is not None:
             self._timer.cancel()
@@ -435,7 +603,7 @@ class AudioInputSource:
             self._callbacks.remove(callback)
         if (
             len(self._callbacks) <= self._subscriber_threshold
-            and self._audio_stream_active
+            and AudioInputSource._audio_stream_active
         ):
             if self._timer is not None:
                 self._timer.cancel()
@@ -448,14 +616,47 @@ class AudioInputSource:
         self._timer = None
         if (
             len(self._callbacks) <= self._subscriber_threshold
-            and self._audio_stream_active
+            and AudioInputSource._audio_stream_active
         ):
             self.deactivate()
 
     def get_device_index_by_name(self, device_name: str):
-        for key, value in self.input_devices().items():
+        """
+        Find device index by name string.
+        Tries exact match first, then falls back to partial match since
+        device names can be truncated.
+
+        Uses careful partial matching to avoid false positives when device
+        names are similar (e.g., "Microphone" vs "Microphone (Realtek)").
+        """
+        devices = self.input_devices()
+
+        # First try exact match
+        for key, value in devices.items():
             if device_name == value:
                 return key
+
+        # Fallback to partial match (device names can be truncated)
+        # Only match if the stored name is contained in the current device name
+        # (not the reverse, to avoid matching shorter names incorrectly)
+        best_match_idx = -1
+        best_match_len = 0
+
+        for key, value in devices.items():
+            # Case 1: Stored name is substring of current device name
+            # This handles truncation where stored name is shorter
+            if device_name in value:
+                # Prefer longer matches to find the most specific device
+                if len(value) > best_match_len:
+                    best_match_idx = key
+                    best_match_len = len(value)
+
+        if best_match_idx != -1:
+            _LOGGER.debug(
+                f"Found device by partial match: '{device_name}' in '{devices[best_match_idx]}' at index {best_match_idx}"
+            )
+            return best_match_idx
+
         return -1
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
