@@ -72,20 +72,16 @@ class RPI_WS281X(DeviceWrapper):
         try:
             self.white_mode = config.get("white_mode")
         except:
-            _LOGGER.warning("white_mode not set, setting to \'None\'.")
+            _LOGGER.warning("white_mode not set, setting to 'None'.")
             self.white_mode = "None"
-        self.output_mode = OutputMode(
-            self.color_order, self.white_mode
-        )
+        self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.config = config
         self.activate()
 
     def config_updated(self, config):
         self.color_order = config.get("color_order")
         self.white_mode = config.get("white_mode")
-        self.output_mode = OutputMode(
-            self.color_order, self.white_mode
-        )
+        self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.deactivate()
         self.activate()
 
@@ -101,9 +97,9 @@ class RPI_WS281X(DeviceWrapper):
         # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/50cc48bbb5d6ab2d205e58606892514a29571f5e/examples/strandtest.py#L20
         self.LED_CHANNEL = 1 if self.config["gpio_pin"] == 13 else 0
 
-        if self.white_mode == "None":       # RGB strip
+        if self.white_mode == "None":  # RGB strip
             strip_type = WS2811_STRIP_RGB
-        else:                               # RGBW strip
+        else:  # RGBW strip
             strip_type = SK6812_STRIP_RGBW
 
         self.strip = PixelStrip(
@@ -132,10 +128,19 @@ class RPI_WS281X(DeviceWrapper):
         # Switch between 24bit (RGB) and 32bit (RGBW) output
         if self.white_mode == "None":
             # RGB: R, G, B
-            color_func = lambda c: (round(c[0]) << 16) | (round(c[1]) << 8) | round(c[2])
+            color_func = (
+                lambda c: (round(c[0]) << 16)
+                | (round(c[1]) << 8)
+                | round(c[2])
+            )
         else:
             # RGBW: W, R, G, B
-            color_func = lambda c: (round(c[3]) << 24) | (round(c[0]) << 16) | (round(c[1]) << 8) | round(c[2])
+            color_func = (
+                lambda c: (round(c[3]) << 24)
+                | (round(c[0]) << 16)
+                | (round(c[1]) << 8)
+                | round(c[2])
+            )
 
         for idx, color in enumerate(data):
             self.strip.setPixelColor(idx, color_func(color))
