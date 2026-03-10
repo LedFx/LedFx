@@ -124,11 +124,8 @@ class RPI_WS281X(DeviceWrapper):
         if self.white_mode == "None":
             # RGB: R, G, B
             def color_func(c):
-                return (
-                    (round(c[0]) << 16)
-                    | (round(c[1]) << 8)
-                    | round(c[2])
-                )
+                return (round(c[0]) << 16) | (round(c[1]) << 8) | round(c[2])
+
         else:
             # RGBW: W, R, G, B
             def color_func(c):
