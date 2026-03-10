@@ -72,7 +72,7 @@ class RPI_WS281X(DeviceWrapper):
         try:
             self.white_mode = config.get("white_mode")
         except (AttributeError, TypeError):
-            _LOGGER.warning("white_mode not set, setting to \'None\'.")
+            _LOGGER.warning("white_mode not set, setting to 'None'.")
             self.white_mode = "None"
         self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.config = config
