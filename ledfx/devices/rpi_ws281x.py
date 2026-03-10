@@ -68,18 +68,14 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_CHANNEL = 0
         self._device_type = "RPi_WS281X"
         self.color_order = config.get("color_order")
-        if not config.get("white_mode"):
-            self.white_mode = "None"
-            _LOGGER.warning("white_mode not set, setting to 'None'.")
-        else:
-            self.white_mode = config.get("white_mode")
+        self.white_mode = config.get("white_mode") or "None"
         self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.config = config
         self.activate()
 
     def config_updated(self, config):
         self.color_order = config.get("color_order")
-        self.white_mode = config.get("white_mode")
+        self.white_mode = config.get("white_mode") or "None"
         self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.deactivate()
         self.activate()
@@ -127,19 +123,21 @@ class RPI_WS281X(DeviceWrapper):
         # Switch between 24bit (RGB) and 32bit (RGBW) output
         if self.white_mode == "None":
             # RGB: R, G, B
-            color_func = (
-                lambda c: (round(c[0]) << 16)
-                | (round(c[1]) << 8)
-                | round(c[2])
-            )
+            def color_func(c):
+                return (
+                    (round(c[0]) << 16)
+                    | (round(c[1]) << 8)
+                    | round(c[2])
+                )
         else:
             # RGBW: W, R, G, B
-            color_func = (
-                lambda c: (round(c[3]) << 24)
-                | (round(c[0]) << 16)
-                | (round(c[1]) << 8)
-                | round(c[2])
-            )
+            def color_func(c):
+                return (
+                    (round(c[3]) << 24)
+                    | (round(c[0]) << 16)
+                    | (round(c[1]) << 8)
+                    | round(c[2])
+                )
 
         for idx, color in enumerate(data):
             self.strip.setPixelColor(idx, color_func(color))
