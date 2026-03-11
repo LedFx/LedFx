@@ -49,11 +49,13 @@ class TwinklySquaresDevice(NetworkedDevice):
             self.ctrl.set_mode("rt")
             info = self.ctrl.get_device_info()
             _LOGGER.debug(
-                f"Twinkly Squares device {self.name} info: %s", info.data
+                "Twinkly Squares device %s info: %s", self.name, info.data
             )
         except Exception as e:
             _LOGGER.warning(
-                f"Failed to activate Twinkly Squares device {self.name}: {e}"
+                "Failed to activate Twinkly Squares device %s: %s",
+                self.name,
+                e,
             )
             self.ctrl = None
             self.set_offline()
@@ -71,7 +73,10 @@ class TwinklySquaresDevice(NetworkedDevice):
         actual_width = len(np.unique(np.round(x01_temp * 1000)))
         actual_height = len(np.unique(np.round(y01_temp * 1000)))
         _LOGGER.info(
-            f"Twinkly grid: {actual_width}×{actual_height} = {actual_width * actual_height} LEDs"
+            "Twinkly grid: %sx%s = %s LEDs",
+            actual_width,
+            actual_height,
+            actual_width * actual_height,
         )
 
         # Cache the matrix dimensions for virtual configuration
@@ -94,7 +99,10 @@ class TwinklySquaresDevice(NetworkedDevice):
             if virtual.is_device == self.id:
                 if virtual.config.get("rows", 1) != self.matrix_height:
                     _LOGGER.info(
-                        f"Updating virtual {virtual.id} rows from {virtual.config.get('rows', 1)} to {self.matrix_height}"
+                        "Updating virtual %s rows from %s to %s",
+                        virtual.id,
+                        virtual.config.get("rows", 1),
+                        self.matrix_height,
                     )
                     virtual.config = {"rows": self.matrix_height}
                     virtual.virtual_cfg["config"]["rows"] = self.matrix_height
@@ -151,7 +159,7 @@ class TwinklySquaresDevice(NetworkedDevice):
                 idx: count for idx, count in counts.items() if count > 1
             }
             _LOGGER.warning(
-                f"LED layout collision: {len(collisions)} duplicates found"
+                "LED layout collision: %s duplicates found", len(collisions)
             )
             raise ValueError(
                 "LED layout collision – need resolution adjustment"

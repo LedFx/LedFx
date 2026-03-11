@@ -176,7 +176,7 @@ class WebsocketConnection:
             self._sender_queue.put_nowait(message)
         except asyncio.QueueFull:
             _LOGGER.error(
-                f"Client sender queue size exceeded {MAX_PENDING_MESSAGES}"
+                "Client sender queue size exceeded %s", MAX_PENDING_MESSAGES
             )
             self.close()
 
@@ -318,7 +318,7 @@ class WebsocketConnection:
                         handler(self, message)
                 else:
                     _LOGGER.error(
-                        f"Received unknown command {message['type']}"
+                        "Received unknown command %s", message["type"]
                     )
                     self.send_error(message["id"], "Unknown command type.")
 
@@ -332,7 +332,7 @@ class WebsocketConnection:
             if socket.closed:
                 _LOGGER.info("Connection closed by client.")
             else:
-                _LOGGER.exception(f"Unexpected TypeError: {e}")
+                _LOGGER.exception("Unexpected TypeError: %s", e)
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Connection cancelled")
@@ -471,7 +471,9 @@ class WebsocketConnection:
         # Validate client_type
         if client_type not in VALID_CLIENT_TYPES:
             _LOGGER.warning(
-                f"Invalid client_type '{client_type}' from {self.uid}, defaulting to 'unknown'"
+                "Invalid client_type '%s' from %s, defaulting to 'unknown'",
+                client_type,
+                self.uid,
             )
             client_type = "unknown"
 
@@ -504,7 +506,10 @@ class WebsocketConnection:
         # Fire event (only after metadata is persisted)
         self._ledfx.events.fire_event(ClientsUpdatedEvent())
         _LOGGER.info(
-            f"Client {self.uid} set info: name='{resolved_name}', type='{self.client_type}'"
+            "Client %s set info: name='%s', type='%s'",
+            self.uid,
+            resolved_name,
+            self.client_type,
         )
 
     @websocket_handler("update_client_info")
@@ -518,7 +523,9 @@ class WebsocketConnection:
         if client_type is not None:
             if client_type not in VALID_CLIENT_TYPES:
                 _LOGGER.warning(
-                    f"Invalid client_type '{client_type}' from {self.uid}, defaulting to 'unknown'"
+                    "Invalid client_type '%s' from %s, defaulting to 'unknown'",
+                    client_type,
+                    self.uid,
                 )
                 client_type = "unknown"
 
@@ -579,7 +586,7 @@ class WebsocketConnection:
             updates.append(f"name='{self.client_name}'")
         if client_type is not None:
             updates.append(f"type='{self.client_type}'")
-        _LOGGER.info(f"Client {self.uid} updated: {', '.join(updates)}")
+        _LOGGER.info("Client %s updated: %s", self.uid, ", ".join(updates))
 
     # Phase 3: Broadcasting methods
     def _filter_targets(
@@ -634,7 +641,7 @@ class WebsocketConnection:
             ]
 
         else:
-            _LOGGER.warning(f"Invalid target mode: {mode}")
+            _LOGGER.warning("Invalid target mode: %s", mode)
             return []
 
     @websocket_handler("broadcast")
@@ -699,9 +706,12 @@ class WebsocketConnection:
 
         # Log broadcast for audit
         _LOGGER.info(
-            f"Broadcast {broadcast_id}: type={validated_data['broadcast_type']}, "
-            f"sender={sender_name} ({sender_uuid[:8]}), "
-            f"targets={len(target_uuids)} clients"
+            "Broadcast %s: type=%s, sender=%s (%s), targets=%s clients",
+            broadcast_id,
+            validated_data["broadcast_type"],
+            sender_name,
+            sender_uuid[:8],
+            len(target_uuids),
         )
 
         # Send success response
@@ -723,13 +733,15 @@ class WebsocketConnection:
         # Some events are not subscribable - send an error message if the user tries to subscribe to one with a hint on what to use instead
         if message.get("event_type") in NON_SUBSCRIBABLE_EVENTS.keys():
             msg = f"Websocket cannot subscribe to {message.get('event_type')} events - use {NON_SUBSCRIBABLE_EVENTS[message.get('event_type')]} instead"
-            _LOGGER.warning(f"{msg}.")
+            _LOGGER.warning("%s.", msg)
             self.send_error(message["id"], msg)
             return
 
-        _LOGGER.debug(f"  sub Q: {hex(id(self))} {str(message)[:80]}")
+        _LOGGER.debug("  sub Q: %s %s", hex(id(self)), str(message)[:80])
         _LOGGER.debug(
-            f"Websocket subscribing to event {message.get('event_type')} with filter {message.get('event_filter')}"
+            "Websocket subscribing to event %s with filter %s",
+            message.get("event_type"),
+            message.get("event_filter"),
         )
         self._listeners[message["id"]] = self._ledfx.events.add_listener(
             notify_websocket,
@@ -739,15 +751,15 @@ class WebsocketConnection:
 
     @websocket_handler("unsubscribe_event")
     def unsubscribe_event_handler(self, message):
-        _LOGGER.debug(f"unsub Q: {hex(id(self))} {str(message)[:80]}")
+        _LOGGER.debug("unsub Q: %s %s", hex(id(self)), str(message)[:80])
         subscription_id = message["id"]
 
-        _LOGGER.debug(f"Websocket unsubscribing event id {subscription_id}")
+        _LOGGER.debug("Websocket unsubscribing event id %s", subscription_id)
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
         else:
             _LOGGER.warning(
-                f"Unsubscibe unknown subscription ID {subscription_id}"
+                "Unsubscibe unknown subscription ID %s", subscription_id
             )
 
     @websocket_handler("audio_stream_start")
@@ -755,22 +767,24 @@ class WebsocketConnection:
         client = message.get("client")
 
         if client in WEB_AUDIO_CLIENTS:
-            _LOGGER.warning(f"Web audio client {client} already exists")
+            _LOGGER.warning("Web audio client %s already exists", client)
             return
 
-        _LOGGER.info(f"Web audio stream opened by client {client}")
+        _LOGGER.info("Web audio stream opened by client %s", client)
         WEB_AUDIO_CLIENTS.add(client)
 
     @websocket_handler("audio_stream_stop")
     def audio_stream_stop_handler(self, message):
         client = message.get("client")
-        _LOGGER.info(f"Web audio stream closed by client {client}")
+        _LOGGER.info("Web audio stream closed by client %s", client)
         WEB_AUDIO_CLIENTS.discard(client)
 
     @websocket_handler("audio_stream_config")
     def audio_stream_config_handler(self, message):
         _LOGGER.info(
-            f"WebAudioConfig from {message.get('client')}: {message.get('data')}"
+            "WebAudioConfig from %s: %s",
+            message.get("client"),
+            message.get("data"),
         )
 
     @websocket_handler("audio_stream_data")
@@ -843,7 +857,9 @@ class WebsocketConnection:
         }
         """
         _LOGGER.info(
-            f"Received song info: {message.get('artist')} - {message.get('title')}"
+            "Received song info: %s - %s",
+            message.get("artist"),
+            message.get("title"),
         )
 
         # Fire the event which will be broadcast to all subscribed clients
@@ -888,4 +904,4 @@ class WebAudioStream:
             try:
                 self.callback(self._data, None, None, None)
             except Exception as e:
-                _LOGGER.error(e)
+                _LOGGER.error("%s", e)

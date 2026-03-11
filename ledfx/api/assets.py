@@ -33,7 +33,7 @@ class AssetsEndpoint(RestEndpoint):
             asset_list = assets.list_assets(self._ledfx.config_dir)
             return await self.bare_request_success({"assets": asset_list})
         except Exception as e:
-            _LOGGER.warning(f"Failed to list assets: {e}")
+            _LOGGER.warning("Failed to list assets: %s", e)
             return await self.internal_error(
                 message=f"Failed to list assets: {e}"
             )
@@ -142,7 +142,7 @@ class AssetsEndpoint(RestEndpoint):
             )
 
         except Exception as e:
-            _LOGGER.warning(f"Failed to delete asset {asset_path}: {e}")
+            _LOGGER.warning("Failed to delete asset %s: %s", asset_path, e)
             return await self.internal_error(
                 message=f"Failed to delete asset: {e}"
             )

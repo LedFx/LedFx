@@ -66,14 +66,18 @@ class OSCServerDevice(NetworkedDevice):
     def activate(self):
         self._client = SimpleUDPClient(self.destination, self._config["port"])
         _LOGGER.debug(
-            f"{self._device_type} sender for {self._config['name']} started."
+            "%s sender for %s started.",
+            self._device_type,
+            self._config["name"],
         )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
         _LOGGER.debug(
-            f"{self._device_type} sender for {self._config['name']} stopped."
+            "%s sender for %s stopped.",
+            self._device_type,
+            self._config["name"],
         )
         if "_client" in dir(self):
             self._client._sock.close()

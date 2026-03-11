@@ -25,6 +25,11 @@ repos:
     rev: 26.1.0 # Replace by any tag/version: https://github.com/psf/black/tags
     hooks:
       - id: black
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.0
+    hooks:
+      - id: ruff
+        args: ["--select=G004"]
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.21.2
     hooks:

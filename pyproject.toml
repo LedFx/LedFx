@@ -115,6 +115,9 @@ asyncio_default_fixture_loop_scope = "function"
 link-mode = "copy"
 default-groups = []
 
+[tool.ruff.lint]
+select = ["G004"]
+
 [tool.black]
 line-length = 79
 

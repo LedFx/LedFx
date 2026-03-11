@@ -412,7 +412,7 @@ def resolve_gradient(
         try:
             parsed = parse_gradient(trimmed)
         except Exception as e:
-            _LOGGER.warning(f"Failed to parse gradient {trimmed}: {e}")
+            _LOGGER.warning("Failed to parse gradient %s: %s", trimmed, e)
             parsed = None
 
     return config_string, parsed

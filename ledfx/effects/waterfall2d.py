@@ -229,7 +229,7 @@ class Waterfall(Twod, GradientEffect):
         total_time = self.passed + self.drop_remainder
         ticks, self.drop_remainder = divmod(total_time, self.drop_tick)
 
-        # _LOGGER.info(f"Waterfall dropping {ticks} ticks")
+        # _LOGGER.info("Waterfall dropping %s ticks", ticks)
         for _ in range(int(ticks)):
             if self.center:
                 self.scroll_center_history_one_row()

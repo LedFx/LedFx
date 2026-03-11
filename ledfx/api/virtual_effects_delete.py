@@ -40,7 +40,9 @@ class EffectsEndpoint(RestEndpoint):
             )
 
         _LOGGER.info(
-            f"Deleting effect {effect_type} for virtual {virtual_id} from effects"
+            "Deleting effect %s for virtual %s from effects",
+            effect_type,
+            virtual_id,
         )
 
         # clearing specific effect from history
@@ -53,7 +55,7 @@ class EffectsEndpoint(RestEndpoint):
                 virtual.virtual_cfg.pop("effect", None)
         except Exception as e:
             _LOGGER.error(
-                f"Error clearing active effect in effects delete: {e}"
+                "Error clearing active effect in effects delete: %s", e
             )
 
         virtual.virtual_cfg.get("effects", {}).pop(effect_type, None)

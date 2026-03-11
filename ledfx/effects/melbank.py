@@ -473,7 +473,7 @@ class Melbanks:
                 self.melbank_collection.append(
                     {"id": melbank_id, "config": melbank_config}
                 )
-                _LOGGER.debug(f"Melbank {i} created from default config.")
+                _LOGGER.debug("Melbank %s created from default config.", i)
         else:  # if melbank_configs is not empty
             for melbank in self.melbank_collection:
 
@@ -490,7 +490,7 @@ class Melbanks:
                 ]
                 melbank = Melbank(self._audio, melbank_config)
                 self.melbank_processors.append(melbank)
-                _LOGGER.debug(f"Melbank {melbank_id} loaded from config.")
+                _LOGGER.debug("Melbank %s loaded from config.", melbank_id)
 
         # some things  we do not want to have in the config for the melbanks - they are not user editable at an individual melbank level
         melbank_global_settings = ["samples", "peak_isolation", "coeffs_type"]

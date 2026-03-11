@@ -26,7 +26,7 @@ class EffectsEndpoint(RestEndpoint):
                 f"Virtual with ID {virtual_id} not found"
             )
 
-        _LOGGER.info(f"Fire fallback for virtual {virtual_id}")
+        _LOGGER.info("Fire fallback for virtual %s", virtual_id)
 
         virtual.fallback_fire_set_with_lock()
         response = {"status": "success"}

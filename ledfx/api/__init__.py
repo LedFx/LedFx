@@ -21,7 +21,10 @@ class RestEndpoint(BaseRegistry):
     async def handler(self, request: web.Request):
         short_uuid = str(uuid.uuid4())[:4]
         _LOGGER.debug(
-            f"LedFx API Request {short_uuid}: {request.method} {request.path}"
+            "LedFx API Request %s: %s %s",
+            short_uuid,
+            request.method,
+            request.path,
         )
         body = None
         # Skip body parsing for multipart requests - they need to use request.multipart()
@@ -33,7 +36,7 @@ class RestEndpoint(BaseRegistry):
                 body = await request.text()
             finally:
                 _LOGGER.debug(
-                    f"LedFx API Request {short_uuid} payload: {body}"
+                    "LedFx API Request %s payload: %s", short_uuid, body
                 )
 
         method = getattr(self, request.method.lower(), None)

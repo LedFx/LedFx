@@ -37,7 +37,7 @@ class PlaylistsEndpoint(RestEndpoint):
             playlist = await self._ledfx.playlists.create_or_replace(data)
             return await self.request_success(data={"playlist": playlist})
         except Exception as e:
-            _LOGGER.exception(e)
+            _LOGGER.exception("%s", e)
             return await self.invalid_request(str(e))
 
     async def put(self, request: web.Request) -> web.Response:
@@ -151,7 +151,7 @@ class PlaylistsEndpoint(RestEndpoint):
                 return await self.invalid_request(f"Unknown action: {action}")
 
         except Exception as e:
-            _LOGGER.exception(e)
+            _LOGGER.exception("%s", e)
             return await self.internal_error(str(e))
 
     async def delete(self, request: web.Request) -> web.Response:

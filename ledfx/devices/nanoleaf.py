@@ -87,13 +87,15 @@ class NanoleafDevice(NetworkedDevice):
                 )
             except (ConnectTimeout, ReadTimeout) as e:
                 _LOGGER.warning(
-                    f"{self.name} activate failure, Is Nanoleaf powered? {e}"
+                    "%s activate failure, Is Nanoleaf powered? %s",
+                    self.name,
+                    e,
                 )
                 self.set_offline()
                 return
 
             if response.status_code == 400:
-                _LOGGER.warning(f"{self.name} Bad Request Response")
+                _LOGGER.warning("%s Bad Request Response", self.name)
                 self.set_offline()
                 return
 
@@ -161,13 +163,13 @@ class NanoleafDevice(NetworkedDevice):
         except (ConnectTimeout, ReadTimeout) as e:
 
             _LOGGER.warning(
-                f"{self.name} WriteTCP failure, Is Nanoleaf powered? {e}"
+                "%s WriteTCP failure, Is Nanoleaf powered? %s", self.name, e
             )
             self.set_offline()
             return
 
         if response.status_code == 400:
-            _LOGGER.warning(f"{self.name} Bad Request Response")
+            _LOGGER.warning("%s Bad Request Response", self.name)
             self.set_offline()
             return
 
@@ -208,7 +210,7 @@ class NanoleafDevice(NetworkedDevice):
             self.url(self.config["auth_token"])
         ).json()
 
-        _LOGGER.debug(f"nanoleaf config response: {nanoleaf_config}")
+        _LOGGER.debug("nanoleaf config response: %s", nanoleaf_config)
         _LOGGER.info("parsing panel layout...")
 
         panels = [

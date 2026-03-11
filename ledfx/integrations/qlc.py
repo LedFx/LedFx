@@ -125,7 +125,9 @@ class QLC(Integration):
         if active:
             self._add_listener(event_type, event_filter, qlc_payload)
         _LOGGER.info(
-            f"QLC+ payload linked to event '{event_type}' with filter {event_filter}"
+            "QLC+ payload linked to event '%s' with filter %s",
+            event_type,
+            event_filter,
         )
 
     def delete_event(self, event_type, event_filter):
@@ -138,7 +140,9 @@ class QLC(Integration):
             if (_event_type == event_type) and (_event_filter == event_filter):
                 del self._data[idx]
         _LOGGER.info(
-            f"QLC+ payload deleted for event '{event_type}' with filter {event_filter}"
+            "QLC+ payload deleted for event '%s' with filter %s",
+            event_type,
+            event_filter,
         )
 
     def toggle_event(self, event_type, event_filter):
@@ -162,7 +166,10 @@ class QLC(Integration):
                     self._add_listener(event_type, event_filter, _qlc_payload)
                 # log action
                 _LOGGER.info(
-                    f"QLC+ payload {'disabled' if _active else 'enabled'} for event '{event_type}' with filter {event_filter}"
+                    "QLC+ payload %s for event '%s' with filter %s",
+                    "disabled" if _active else "enabled",
+                    event_type,
+                    event_filter,
                 )
                 return True  # success
         return False  # failed to find event_type with this event_filter
@@ -183,7 +190,9 @@ class QLC(Integration):
         def make_callback(qlc_payload):
             def callback(_):
                 _LOGGER.info(
-                    f"QLC+ sent payload, triggered by event '{event_type}' with filter {event_filter}"
+                    "QLC+ sent payload, triggered by event '%s' with filter %s",
+                    event_type,
+                    event_filter,
                 )
                 async_fire_and_forget(
                     self._send_payload(qlc_payload), loop=self._ledfx.loop
@@ -270,7 +279,7 @@ class QLCWebsocketClient:
                 return True
             except aiohttp.client_exceptions.ClientConnectorError:
                 _LOGGER.info(
-                    f"Connection to {self.domain} failed. Retrying in 5s..."
+                    "Connection to %s failed. Retrying in 5s...", self.domain
                 )
                 await asyncio.sleep(5)
             except asyncio.CancelledError:
@@ -299,7 +308,7 @@ class QLCWebsocketClient:
 
         await self.websocket.send_str(message)
         # Every call to the logger is a performance hit
-        _LOGGER.debug(f"Sent message {message} to {self.domain}")
+        _LOGGER.debug("Sent message %s to %s", message, self.domain)
 
     async def receive(self):
         """Receive one message from the WebSocket."""

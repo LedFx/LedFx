@@ -98,7 +98,7 @@ class Imagespin(Twod):
                 url_path, config_dir=self._ledfx.config_dir
             )
             if self.bass_image:
-                _LOGGER.info(f"pre scaled {self.bass_image.size}")
+                _LOGGER.info("pre scaled %s", self.bass_image.size)
 
                 if self.bass_image.mode != "RGBA":
                     # If it doesn't have an alpha channel, create a new image with an alpha channel

@@ -228,10 +228,14 @@ class Keybeat2d(Twod, GifBase):
 
         if self.logsec.diag:
             _LOGGER.info(
-                f"framecount {self.framecount} beat frames {self.beat_frames}"
+                "framecount %s beat frames %s",
+                self.framecount,
+                self.beat_frames,
             )
             _LOGGER.info(
-                f"framecount {self.framecount} skip frames {self.skip_frames}"
+                "framecount %s skip frames %s",
+                self.framecount,
+                self.skip_frames,
             )
 
         # Close old post_frames before creating new ones
@@ -271,31 +275,41 @@ class Keybeat2d(Twod, GifBase):
             si = sl - 1 - s
             if self.logsec.diag:
                 _LOGGER.info(
-                    f"si: {si} skip_index: {skip_index} resolves {self.skip_frames[si]} from {self.skip_frames}"
+                    "si: %s skip_index: %s resolves %s from %s",
+                    si,
+                    skip_index,
+                    self.skip_frames[si],
+                    self.skip_frames,
                 )
             bl = len(self.beat_frames)
             for b, beat_index in enumerate(reversed(self.beat_frames)):
                 bi = bl - 1 - b
                 if self.logsec.diag:
                     _LOGGER.info(
-                        f"bi: {bi} beat_index: {beat_index} resolves {self.beat_frames[bi]} from {self.beat_frames}"
+                        "bi: %s beat_index: %s resolves %s from %s",
+                        bi,
+                        beat_index,
+                        self.beat_frames[bi],
+                        self.beat_frames,
                     )
                 if beat_index > skip_index:
                     self.beat_frames[bi] -= 1
                     if self.logsec.diag:
-                        _LOGGER.info(f"reduce by 1 {self.beat_frames[bi]}")
+                        _LOGGER.info("reduce by 1 %s", self.beat_frames[bi])
                 if beat_index == skip_index:
                     del self.beat_frames[bi]
                     if self.logsec.diag:
                         _LOGGER.info(
-                            f"delete {beat_index} from {self.beat_frames}"
+                            "delete %s from %s", beat_index, self.beat_frames
                         )
 
         self.framecount = len(self.post_frames)
 
         if self.logsec.diag:
             _LOGGER.info(
-                f"framecount {self.framecount} beat frames {self.beat_frames}"
+                "framecount %s beat frames %s",
+                self.framecount,
+                self.beat_frames,
             )
 
         # for ping pong, first lets copy all the frames in reverse order, without repeating the end frames
@@ -327,7 +341,9 @@ class Keybeat2d(Twod, GifBase):
                     "************************* Ping Pong impacts *************************"
                 )
                 _LOGGER.info(
-                    f"framecount {self.framecount} beat frames {self.beat_frames}"
+                    "framecount %s beat frames %s",
+                    self.framecount,
+                    self.beat_frames,
                 )
 
         # we have beat frames, that are now correctly indexed against image frames
@@ -358,8 +374,8 @@ class Keybeat2d(Twod, GifBase):
             _LOGGER.info(
                 "************************* end beat frame debug *************************"
             )
-            _LOGGER.info(f"beat_frames: {self.beat_frames}")
-            _LOGGER.info(f"beat_incs  {self.beat_incs}")
+            _LOGGER.info("beat_frames: %s", self.beat_frames)
+            _LOGGER.info("beat_incs  %s", self.beat_incs)
             _LOGGER.info(
                 "************************* end beat frame debug *************************"
             )
@@ -521,7 +537,8 @@ class Keybeat2d(Twod, GifBase):
                 skip_beat = True
                 if self.deep_diag:
                     _LOGGER.info(
-                        f"skip beat threshold triggered: {self.now - self.last_beat_t:0.6f}"
+                        "skip beat threshold triggered: %s",
+                        self.now - self.last_beat_t,
                     )
             else:
                 beat_kick = True
@@ -564,7 +581,14 @@ class Keybeat2d(Twod, GifBase):
 
         if self.deep_diag:
             _LOGGER.info(
-                f"self.beat {self.beat:0.6f} beat_inc: {self.beat_incs[self.beat_idx]:0.6f} beat_idx: {self.beat_idx} frame_progress: {frame_progress:0.6f} kick: {beat_kick} seq: {self.frame_s} frame: {self.frame_c}"
+                "self.beat %s beat_inc: %s beat_idx: %s frame_progress: %s kick: %s seq: %s frame: %s",
+                self.beat,
+                self.beat_incs[self.beat_idx],
+                self.beat_idx,
+                frame_progress,
+                beat_kick,
+                self.frame_s,
+                self.frame_c,
             )
 
         current_frame = self.frames[self.frame_c]

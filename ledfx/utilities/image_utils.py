@@ -33,5 +33,7 @@ def get_image_metadata(
             is_animated = n_frames > 1
             return width, height, img_format, n_frames, is_animated
     except Exception as e:
-        _LOGGER.warning(f"Could not read image metadata for {abs_path}: {e}")
+        _LOGGER.warning(
+            "Could not read image metadata for %s: %s", abs_path, e
+        )
         return 0, 0, None, 1, False

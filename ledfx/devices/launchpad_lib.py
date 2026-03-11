@@ -56,13 +56,13 @@ class RtmidiWrap:
                         ports = midi.get_ports()
                     except Exception as exc:
                         _LOGGER.warning(
-                            f"Could not probe MIDI ouput ports: {exc}"
+                            "Could not probe MIDI ouput ports: %s", exc
                         )
                         continue
                     for port, pname in enumerate(ports):
-                        _LOGGER.info(f"SearchDevices: {port} {pname}")
+                        _LOGGER.info("SearchDevices: %s %s", port, pname)
                         if str(pname.lower()).find(name.lower()) >= 0:
-                            _LOGGER.info(f"{port} {pname}")
+                            _LOGGER.info("%s %s", port, pname)
                             ret.append(port)
                 if input:
                     try:
@@ -70,12 +70,12 @@ class RtmidiWrap:
                         ports = midi.get_ports()
                     except Exception as exc:
                         _LOGGER.warning(
-                            f"Could not probe MIDI input ports: {exc}"
+                            "Could not probe MIDI input ports: %s", exc
                         )
                         continue
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
-                            _LOGGER.info(f"{port} {pname}")
+                            _LOGGER.info("%s %s", port, pname)
                             ret.append(port)
                 del midi
 
@@ -103,7 +103,7 @@ class RtmidiWrap:
                     midi_id, interactive=False
                 )
             except Exception as e:
-                _LOGGER.warning(f"{e}")
+                _LOGGER.warning("%s", e)
                 self.devOut = None
                 self.nameOut = None
                 return False
@@ -201,7 +201,7 @@ class LaunchpadBase:
     def flush(self, data, alpha, diag):
         if self.do_once:
             _LOGGER.warning(
-                f"flush not implemented for {self.__class__.__name__}"
+                "flush not implemented for %s", self.__class__.__name__
             )
             self.do_once = False
         return False
@@ -818,11 +818,11 @@ class LaunchpadMk2(LaunchpadPro):
             self.midi.RawWriteSysEx(send_buffer)
 
         except RuntimeError as e:
-            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            _LOGGER.warning("Flush (%s): %s", type(e).__name__, e)
             return False
 
         except RtmidiSystemError as e:
-            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            _LOGGER.warning("Flush (%s): %s", type(e).__name__, e)
             return False
 
         if diag:
@@ -834,7 +834,7 @@ class LaunchpadMk2(LaunchpadPro):
                 self.frame = 0
             else:
                 self.frame += 1
-            _LOGGER.info(f"Launchpad Mk2 flush {self.fps} : {now - start}")
+            _LOGGER.debug("Launchpad Mk2 flush %s : %s", self.fps, now - start)
             self.lasttime = nowint
 
         return True
@@ -1559,11 +1559,11 @@ class LaunchpadLPX(LaunchpadPro):
             self.midi.RawWriteSysEx(send_buffer)
 
         except RuntimeError as e:
-            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            _LOGGER.warning("Flush (%s): %s", type(e).__name__, e)
             return False
 
         except RtmidiSystemError as e:
-            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            _LOGGER.warning("Flush (%s): %s", type(e).__name__, e)
             return False
 
         if diag:
@@ -1575,7 +1575,7 @@ class LaunchpadLPX(LaunchpadPro):
                 self.frame = 0
             else:
                 self.frame += 1
-            _LOGGER.info(f"Launchpad X flush {self.fps} : {now - start}")
+            _LOGGER.debug("Launchpad X flush %s : %s", self.fps, now - start)
             self.lasttime = nowint
 
         return True
@@ -2131,11 +2131,11 @@ class LaunchpadS(LaunchpadPro):
             self.buffer0 = not self.buffer0
 
         except RuntimeError as e:
-            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            _LOGGER.warning("Flush (%s): %s", type(e).__name__, e)
             return False
 
         except RtmidiSystemError as e:
-            _LOGGER.warning(f"Flush ({type(e).__name__}): {e}")
+            _LOGGER.warning("Flush (%s): %s", type(e).__name__, e)
             return False
 
         if diag:
@@ -2147,7 +2147,7 @@ class LaunchpadS(LaunchpadPro):
                 self.frame = 0
             else:
                 self.frame += 1
-            _LOGGER.info(f"Launchpad S flush {self.fps} : {now - start}")
+            _LOGGER.debug("Launchpad S flush %s : %s", self.fps, now - start)
             self.lasttime = nowint
 
         return True

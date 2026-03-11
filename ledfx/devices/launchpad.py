@@ -61,7 +61,10 @@ def find_launchpad() -> dict:
     lp = launchpad.LaunchpadBase()
     for pad in launchpads:
         _LOGGER.info(
-            f"Searching for {pad['name']} on {pad['number']} with {pad['search']}"
+            "Searching for %s on %s with %s",
+            pad["name"],
+            pad["number"],
+            pad["search"],
         )
         if lp.Check(pad["number"], pad["search"]):
             lp = pad["class"]
@@ -80,7 +83,7 @@ def dump_methods(instance):
             continue
 
         if callable(getattr(instance, mName)):
-            _LOGGER.debug(f"     {mName}()")
+            _LOGGER.debug("     %s()", mName)
 
 
 class LaunchpadDevice(MidiDevice):
@@ -137,7 +140,7 @@ class LaunchpadDevice(MidiDevice):
         )
         if not success:
             _LOGGER.warning(
-                f"Error in Launchpad {self.lp_name} flush, setting offline"
+                "Error in Launchpad %s flush, setting offline", self.lp_name
             )
             self.set_offline()
 
@@ -161,12 +164,15 @@ class LaunchpadDevice(MidiDevice):
 
         if self.lp_name is None:
             _LOGGER.warning(
-                f"Launchpad validation failed class: {self.lp.__class__.__name__}"
+                "Launchpad validation failed class: %s",
+                self.lp.__class__.__name__,
             )
             self.lp = None
         else:
             _LOGGER.info(
-                f"Launchpad {self.lp_name} device class: {self.lp.__class__.__name__}"
+                "Launchpad %s device class: %s",
+                self.lp_name,
+                self.lp.__class__.__name__,
             )
 
     def deactivate(self):
@@ -198,16 +204,19 @@ class LaunchpadDevice(MidiDevice):
     def validate_launchpad(self) -> str:
         for pad in launchpads:
             _LOGGER.info(
-                f"Validating {pad['name']} on {pad['number']} with {pad['search']}"
+                "Validating %s on %s with %s",
+                pad["name"],
+                pad["number"],
+                pad["search"],
             )
 
             if self.lp.Check(pad["number"], pad["search"]):
                 self.lp = pad["class"]
                 if self.lp.Open(pad["number"], pad["search"]):
-                    _LOGGER.info(f" - {pad['name']}: OK")
+                    _LOGGER.info(" - %s: OK", pad["name"])
                     return pad["name"]
                 else:
-                    _LOGGER.error(f" - {pad['name']}: ERROR")
+                    _LOGGER.error(" - %s: ERROR", pad["name"])
                     return None
         _LOGGER.warning(" validate - No Launchpad available")
         return None

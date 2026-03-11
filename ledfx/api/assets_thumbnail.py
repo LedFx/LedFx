@@ -290,7 +290,11 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     )
 
                     _LOGGER.debug(
-                        f"Returning cached thumbnail for {asset_path} (size={size}, dimension={dimension}, animated={animated})"
+                        "Returning cached thumbnail for %s (size=%s, dimension=%s, animated=%s)",
+                        asset_path,
+                        size,
+                        dimension,
+                        animated,
                     )
 
                     return web.Response(
@@ -299,7 +303,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     )
                 except Exception as e:
                     _LOGGER.warning(
-                        f"Failed to read cached thumbnail, regenerating: {e}"
+                        "Failed to read cached thumbnail, regenerating: %s", e
                     )
                     # Delete corrupt cache entry and fall through to regenerate
                     cache.delete(cache_url, cache_params)
@@ -334,7 +338,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                             type="error",
                         )
                 except Exception as e:
-                    _LOGGER.warning(f"Failed to fetch URL {asset_path}: {e}")
+                    _LOGGER.warning(
+                        "Failed to fetch URL %s: %s", asset_path, e
+                    )
                     return await self.invalid_request(
                         message=f"Failed to fetch URL: {e}",
                         type="error",
@@ -420,11 +426,12 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                                     params=cache_params,
                                 )
                                 _LOGGER.debug(
-                                    f"Cached animated thumbnail for {asset_path}"
+                                    "Cached animated thumbnail for %s",
+                                    asset_path,
                                 )
                             except Exception as e:
                                 _LOGGER.warning(
-                                    f"Failed to cache thumbnail: {e}"
+                                    "Failed to cache thumbnail: %s", e
                                 )
 
                         return web.Response(
@@ -475,11 +482,12 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                                     params=cache_params,
                                 )
                                 _LOGGER.debug(
-                                    f"Cached static thumbnail for {asset_path}"
+                                    "Cached static thumbnail for %s",
+                                    asset_path,
                                 )
                             except Exception as e:
                                 _LOGGER.warning(
-                                    f"Failed to cache thumbnail: {e}"
+                                    "Failed to cache thumbnail: %s", e
                                 )
 
                         return web.Response(
@@ -489,14 +497,14 @@ class AssetsThumbnailEndpoint(RestEndpoint):
 
             except Exception as e:
                 _LOGGER.warning(
-                    f"Failed to generate thumbnail for {asset_path}: {e}"
+                    "Failed to generate thumbnail for %s: %s", asset_path, e
                 )
                 return await self.internal_error(
                     message=f"Failed to generate thumbnail: {e}"
                 )
 
         except Exception as e:
-            _LOGGER.warning(f"Failed to process thumbnail request: {e}")
+            _LOGGER.warning("Failed to process thumbnail request: %s", e)
             return await self.internal_error(
                 message=f"Failed to process request: {e}"
             )

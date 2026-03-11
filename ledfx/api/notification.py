@@ -43,7 +43,7 @@ class NotifyEndpoint(RestEndpoint):
                 'Required attribute "text" was not provided'
             )
 
-        _LOGGER.info(f"notify: {title} --- {text}")
+        _LOGGER.info("notify: %s --- %s", title, text)
         if self.icon is not None:
             if self.icon.HAS_NOTIFICATION:
                 self.icon.notify(f"{title}:\n{text}")

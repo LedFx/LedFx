@@ -43,7 +43,9 @@ class VisDeduplicateQ(asyncio.Queue):
                     for existing_item in self._queue
                 ):
                     _LOGGER.info(
-                        f"Queue: {hex(id(self))} discarding, qsize {self.qsize()}"
+                        "Queue: %s discarding, qsize %s",
+                        hex(id(self)),
+                        self.qsize(),
                     )
                     return
         super().put_nowait(item)
