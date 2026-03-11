@@ -3,40 +3,24 @@ import logging
 import voluptuous as vol
 
 from ledfx.devices import Device
+from ledfx.devices.utils.rgbw_conversion import (
+    RGB_MAPPING,
+    WHITE_FUNCS_MAPPING,
+    OutputMode,
+)
 from ledfx.utils import BaseRegistry
 
 _LOGGER = logging.getLogger(__name__)
 
 try:
     from rpi_ws281x import (
-        WS2811_STRIP_BGR,
-        WS2811_STRIP_BRG,
-        WS2811_STRIP_GBR,
-        WS2811_STRIP_GRB,
-        WS2811_STRIP_RBG,
+        SK6812_STRIP_RGBW,
         WS2811_STRIP_RGB,
         PixelStrip,
     )
 
-    COLOR_ORDERS = {
-        "RGB": WS2811_STRIP_RGB,
-        "RBG": WS2811_STRIP_RBG,
-        "GRB": WS2811_STRIP_GRB,
-        "BRG": WS2811_STRIP_BRG,
-        "GBR": WS2811_STRIP_GBR,
-        "BGR": WS2811_STRIP_BGR,
-    }
     rpi_supported = True
 except ImportError:
-    # dummy values to stop things going bang
-    COLOR_ORDERS = {
-        "RGB": 1,
-        "RBG": 2,
-        "GRB": 3,
-        "BRG": 4,
-        "GBR": 5,
-        "BGR": 6,
-    }
     rpi_supported = False
 
 
@@ -48,7 +32,7 @@ class DeviceWrapper(Device):
 
 
 class RPI_WS281X(DeviceWrapper):
-    """RPi WS281X device support"""
+    """RPi WS281X/SK6812 device support"""
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -62,9 +46,16 @@ class RPI_WS281X(DeviceWrapper):
                 description="Raspberry Pi GPIO pin your LEDs are connected to",
                 default=10,
             ): vol.In(list([10, 12, 13, 18, 21])),
-            vol.Required(
-                "color_order", description="Color order", default="RGB"
-            ): vol.In(list(COLOR_ORDERS.keys())),
+            vol.Optional(
+                "color_order",
+                description="RGB data order mode, supported for physical hardware that just doesn't play by the rules",
+                default="RGB",
+            ): vol.All(str, vol.In(RGB_MAPPING)),
+            vol.Optional(
+                "white_mode",
+                description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
+                default="None",
+            ): vol.All(str, vol.In(WHITE_FUNCS_MAPPING.keys())),
         }
     )
 
@@ -75,11 +66,17 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_BRIGHTNESS = 255
         self.LED_INVERT = False
         self.LED_CHANNEL = 0
-        self.color_order = COLOR_ORDERS[self._config["color_order"]]
         self._device_type = "RPi_WS281X"
+        self.color_order = config.get("color_order")
+        self.white_mode = config.get("white_mode") or "None"
+        self.output_mode = OutputMode(self.color_order, self.white_mode)
+        self.config = config
+        self.activate()
 
     def config_updated(self, config):
-        self.color_order = COLOR_ORDERS[self._config["color_order"]]
+        self.color_order = config.get("color_order")
+        self.white_mode = config.get("white_mode") or "None"
+        self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.deactivate()
         self.activate()
 
@@ -93,8 +90,12 @@ class RPI_WS281X(DeviceWrapper):
 
         # following configuration is based on the example from the rpi-ws281x library
         # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/50cc48bbb5d6ab2d205e58606892514a29571f5e/examples/strandtest.py#L20
-        if self.config["gpio_pin"] == 13:
-            self.LED_CHANNEL = 1
+        self.LED_CHANNEL = 1 if self.config["gpio_pin"] == 13 else 0
+
+        if self.white_mode == "None":  # RGB strip
+            strip_type = WS2811_STRIP_RGB
+        else:  # RGBW strip
+            strip_type = SK6812_STRIP_RGBW
 
         self.strip = PixelStrip(
             self.pixel_count,
@@ -104,8 +105,9 @@ class RPI_WS281X(DeviceWrapper):
             self.LED_INVERT,
             self.LED_BRIGHTNESS,
             self.LED_CHANNEL,
-            self.color_order,
+            strip_type,
         )
+
         self.strip.begin()
         super().activate()
 
@@ -115,9 +117,26 @@ class RPI_WS281X(DeviceWrapper):
     def flush(self, data):
         """Flush LED data to the strip"""
 
-        for idx, rgb in enumerate(data):
-            self.strip.setPixelColor(
-                idx,
-                (round(rgb[0]) << 16) | (round(rgb[1]) << 8) | round(rgb[2]),
-            )
+        # Apply color mapping function
+        data = self.output_mode.apply(data)
+
+        # Switch between 24bit (RGB) and 32bit (RGBW) output
+        if self.white_mode == "None":
+            # RGB: R, G, B
+            def color_func(c):
+                return (round(c[0]) << 16) | (round(c[1]) << 8) | round(c[2])
+
+        else:
+            # RGBW: W, R, G, B
+            def color_func(c):
+                return (
+                    (round(c[3]) << 24)
+                    | (round(c[0]) << 16)
+                    | (round(c[1]) << 8)
+                    | round(c[2])
+                )
+
+        for idx, color in enumerate(data):
+            self.strip.setPixelColor(idx, color_func(color))
+
         self.strip.show()
