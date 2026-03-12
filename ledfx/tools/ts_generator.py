@@ -3,7 +3,6 @@
 # Author: YeonV
 
 import logging
-import traceback
 from typing import Any, Callable
 
 import voluptuous as vol
@@ -570,9 +569,8 @@ def generate_typescript_types() -> str:
             base_device_config_interface_name = "Record<string, any>"
             output_ts_string += f"// Manual base schema dict failed\nexport type {base_device_config_interface_name} = Record<string, any>;\n\n"
 
-    except Exception as e:
-        _LOGGER.error("Error manually processing base Device schema: %s", e)
-        traceback.print_exc()
+    except Exception:
+        _LOGGER.exception("Error manually processing base Device schema")
         base_device_config_interface_name = "Record<string, any>"
         output_ts_string += f"// Error manual base device schema\nexport type {base_device_config_interface_name} = Record<string, any>;\n\n"
         base_device_schema_object = None  # Ensure reset on error

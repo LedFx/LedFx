@@ -60,9 +60,9 @@ class RtmidiWrap:
                         )
                         continue
                     for port, pname in enumerate(ports):
-                        _LOGGER.info("SearchDevices: %s %s", port, pname)
+                        _LOGGER.debug("SearchDevices: %s %s", port, pname)
                         if str(pname.lower()).find(name.lower()) >= 0:
-                            _LOGGER.info("%s %s", port, pname)
+                            _LOGGER.debug("%s %s", port, pname)
                             ret.append(port)
                 if input:
                     try:
@@ -75,7 +75,7 @@ class RtmidiWrap:
                         continue
                     for port, pname in enumerate(ports):
                         if str(pname.lower()).find(name.lower()) >= 0:
-                            _LOGGER.info("%s %s", port, pname)
+                            _LOGGER.debug("%s %s", port, pname)
                             ret.append(port)
                 del midi
 

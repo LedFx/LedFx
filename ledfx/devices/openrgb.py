@@ -87,7 +87,9 @@ class OpenRGB(NetworkedDevice):
 
         except (ConnectionRefusedError, TimeoutError):
             _LOGGER.warning(
-                "%s not reachable. Is OpenRGB server running?",
+                "OpenRGB server %s:%s not reachable for device %s. Is OpenRGB server running?",
+                self.ip_address,
+                self.port,
                 self.openrgb_device_id,
             )
             self.set_offline()

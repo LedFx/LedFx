@@ -781,7 +781,7 @@ def migrate_config(old_config):
                 if not corresponding_virtual:
                     _LOGGER.warning(
                         "Could not match device id %s to any virtuals. Discarding this device from scene %s.",
-                        device,
+                        virtual_ish,
                         scene_id,
                     )
                     continue

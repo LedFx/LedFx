@@ -35,8 +35,18 @@ class RestEndpoint(BaseRegistry):
             except JSONDecodeError:
                 body = await request.text()
             finally:
+                if isinstance(body, dict):
+                    body_summary = {"keys": sorted(body.keys())}
+                elif isinstance(body, list):
+                    body_summary = {"items": len(body)}
+                elif body is None:
+                    body_summary = None
+                else:
+                    body_summary = {"length": len(str(body))}
                 _LOGGER.debug(
-                    "LedFx API Request %s payload: %s", short_uuid, body
+                    "LedFx API Request %s payload summary: %s",
+                    short_uuid,
+                    body_summary,
                 )
 
         method = getattr(self, request.method.lower(), None)

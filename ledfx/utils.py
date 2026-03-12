@@ -154,7 +154,7 @@ def fps_to_sleep_interval(fps):
 
 
 def install_package(package):
-    _LOGGER.debug("Installed package: %s", package)
+    _LOGGER.debug("Installing package: %s", package)
     env = os.environ.copy()
     args = [
         sys.executable,
@@ -173,13 +173,15 @@ def install_package(package):
             stderr.decode("utf-8").lstrip().strip(),
         )
         return False
+    _LOGGER.debug("Installed package: %s", package)
     return True
 
 
 def import_or_install(package):
     try:
+        module = importlib.import_module(package)
         _LOGGER.debug("Imported package: %s", package)
-        return importlib.import_module(package)
+        return module
 
     except ImportError:
         install_package(package)

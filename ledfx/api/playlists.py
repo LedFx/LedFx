@@ -37,7 +37,7 @@ class PlaylistsEndpoint(RestEndpoint):
             playlist = await self._ledfx.playlists.create_or_replace(data)
             return await self.request_success(data={"playlist": playlist})
         except Exception as e:
-            _LOGGER.exception("%s", e)
+            _LOGGER.warning("Playlist request rejected: %s", e)
             return await self.invalid_request(str(e))
 
     async def put(self, request: web.Request) -> web.Response:
