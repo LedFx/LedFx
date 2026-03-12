@@ -1132,7 +1132,7 @@ class RegistryLoader:
         """
 
         found = self.discover_modules(package)
-        _LOGGER.debug("Importing %s from %s", found, package)
+        _LOGGER.debug("Importing %s modules from %s", len(found), package)
         for name in found:
             try:
                 importlib.import_module(name)
@@ -1140,6 +1140,7 @@ class RegistryLoader:
                 _LOGGER.warning(
                     "Failed to import %s from %s: %s", name, package, e
                 )
+        _LOGGER.debug("Finished importing from %s", package)
 
     def discover_modules(self, package):
         """Discovers all modules in the package"""
@@ -2223,7 +2224,7 @@ def is_package_installed(package_name: str, import_name: str = None) -> bool:
     # Try to get import spec
     spec = importlib.util.find_spec(import_name)
     if spec is None:
-        _LOGGER.info(
+        _LOGGER.debug(
             "Optional dependency '%s' not found (import name: '%s').",
             package_name,
             import_name,
@@ -2238,9 +2239,11 @@ def is_package_installed(package_name: str, import_name: str = None) -> bool:
 
     path = spec.origin or "unknown"
 
-    _LOGGER.info("Optional dependency '%s' is installed:", package_name)
-    _LOGGER.info("  ├── Version: %s", version)
-    _LOGGER.info("  └── Path:    %s", path)
+    _LOGGER.debug(
+        "Optional dependency '%s' is installed (version: %s)",
+        package_name,
+        version,
+    )
     return True
 
 
@@ -2662,24 +2665,24 @@ def get_sorted_physical_ips() -> list[str]:
             "bridge",  # macOS
         ]
 
-        _LOGGER.info("Starting local IP discovery")
+        _LOGGER.debug("Starting local IP discovery")
 
         stats = psutil.net_if_stats()
         counters = psutil.net_io_counters(pernic=True)
 
         for iface_name, iface_addrs in psutil.net_if_addrs().items():
             if not any(keyword in iface_name for keyword in physical_keywords):
-                _LOGGER.info("Skipping non-physical interface: %s", iface_name)
+                _LOGGER.debug("Skipping non-physical interface: %s", iface_name)
                 continue
             if iface_name not in stats or not stats[iface_name].isup:
-                _LOGGER.info("Skipping inactive interface: %s", iface_name)
+                _LOGGER.debug("Skipping inactive interface: %s", iface_name)
                 continue
 
-            _LOGGER.info("Inspecting interface: %s", iface_name)
+            _LOGGER.debug("Inspecting interface: %s", iface_name)
             for addr in iface_addrs:
                 if addr.family == socket.AF_INET:
                     if addr.address.startswith("127."):
-                        _LOGGER.info(
+                        _LOGGER.debug(
                             "Skipping loopback address on %s: %s",
                             iface_name,
                             addr.address,
@@ -2691,7 +2694,7 @@ def get_sorted_physical_ips() -> list[str]:
                         if counter
                         else 0
                     )
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "Discovered IP %s on %s with usage %s",
                         addr.address,
                         iface_name,
@@ -2737,7 +2740,7 @@ def get_primary_ip() -> str:
         )  # Doesn't send packets; just gets routing info
         ip = s.getsockname()[0]
         s.close()
-        _LOGGER.info("Primary outbound IP detected: %s", ip)
+        _LOGGER.debug("Primary outbound IP detected: %s", ip)
         return ip
     except Exception as e:
         _LOGGER.warning("Primary IP detection via socket failed: %s", e)
