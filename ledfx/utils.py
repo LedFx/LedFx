@@ -2672,7 +2672,9 @@ def get_sorted_physical_ips() -> list[str]:
 
         for iface_name, iface_addrs in psutil.net_if_addrs().items():
             if not any(keyword in iface_name for keyword in physical_keywords):
-                _LOGGER.debug("Skipping non-physical interface: %s", iface_name)
+                _LOGGER.debug(
+                    "Skipping non-physical interface: %s", iface_name
+                )
                 continue
             if iface_name not in stats or not stats[iface_name].isup:
                 _LOGGER.debug("Skipping inactive interface: %s", iface_name)
