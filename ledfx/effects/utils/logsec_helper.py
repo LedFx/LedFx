@@ -58,7 +58,10 @@ class LogSecHelper:
         self.phy.qual = data.get("wifi", {}).get("signal")
 
         _LOGGER.info(
-            f"{self.effect._virtual.name}:{self.effect.name} wled info: {self.phy}"
+            "%s:%s wled info: %s",
+            self.effect._virtual.name,
+            self.effect.name,
+            self.phy,
         )
 
     def log_sec(self, current_time):
@@ -110,7 +113,15 @@ class LogSecHelper:
                 sleep_ms = sleep_sec * 1000
 
                 _LOGGER.warning(
-                    f"{virt.id}: {self.effect.name}: FPS {self.fps} Render avg:{r_avg_ms:0.3f} min:{r_min_ms:0.3f} max:{r_max_ms:0.3f} Cycle: {cycle_ms:0.3f} Sleep: {sleep_ms:0.3f} (ms)"
+                    "%s: %s: FPS %s Render avg:%.3f min:%.3f max:%.3f Cycle: %.3f Sleep: %.3f (ms)",
+                    virt.id,
+                    self.effect.name,
+                    self.fps,
+                    r_avg_ms,
+                    r_min_ms,
+                    r_max_ms,
+                    cycle_ms,
+                    sleep_ms,
                 )
                 Teleplot.send(f"{virt.id}_avg_ms:{r_avg_ms}")
 

@@ -365,4 +365,5 @@ async def test_post_scene_warns_preset_without_type():
             warning_msg = mock_logger.warning.call_args[0][0]
             assert "preset" in warning_msg.lower()
             assert "type" in warning_msg.lower()
-            assert "v1" in warning_msg
+            warning_args = mock_logger.warning.call_args[0][1:]
+            assert "v1" in warning_args

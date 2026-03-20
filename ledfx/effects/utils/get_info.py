@@ -14,7 +14,7 @@ async def fetch_info(session, ip_address, callback):
             data = await response.json()
             callback(data)
     except Exception as e:
-        _LOGGER.warning(f"Error fetching info from {ip_address}: {e}")
+        _LOGGER.warning("Error fetching info from %s: %s", ip_address, e)
 
 
 # A wrapper that launches the request asynchronously
@@ -23,7 +23,7 @@ def get_info_async(loop, ip_address, callback):
     try:
         loop.create_task(_start_request(ip_address, callback))
     except RuntimeError as e:
-        _LOGGER.warning(f"Error creating task in the provided loop: {e}")
+        _LOGGER.warning("Error creating task in the provided loop: %s", e)
 
 
 # Internal coroutine to be launched as a task

@@ -111,7 +111,9 @@ class PixelsEffect(TemporalEffect):
                 mem_mb = process.memory_info().rss / (1024 * 1024)
 
                 _LOGGER.warning(
-                    f"[MEMORY] {self._virtual.id} render loop: {mem_mb:.1f} MB"
+                    "[MEMORY] %s render loop: %.1f MB",
+                    self._virtual.id,
+                    mem_mb,
                 )
                 Teleplot.send(f"{self._virtual.id}_MB:{mem_mb}")
                 self.last_memory_log_time = current_time

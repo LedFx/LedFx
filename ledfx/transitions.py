@@ -36,7 +36,9 @@ class Transitions(metaclass=IterClass):
     def pre_validate(self, x1, x2):
         if np.shape(x1) != np.shape(x2):
             _LOGGER.error(
-                f"Transitions.pre_validate: Shapes of x1 and x2 do not match: {np.shape(x1)} != {np.shape(x2)}"
+                "Transitions.pre_validate: Shapes of x1 and x2 do not match: %s != %s",
+                np.shape(x1),
+                np.shape(x2),
             )
             return False
         return True

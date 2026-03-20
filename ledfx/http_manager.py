@@ -126,7 +126,7 @@ class HttpServer:
             self.base_url = ("http{}://localhost:{}").format(
                 "s" if ssl_context else "", port
             )
-        print(("Started webinterface at {}").format(self.base_url))
+        _LOGGER.info("Started webinterface at %s", self.base_url)
 
     def handle_start_error(self, error):
         _LOGGER.error(

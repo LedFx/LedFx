@@ -58,11 +58,11 @@ class MQTT(Integration):
         self._client = None
         self._data = []
         self._listeners = []
-        _LOGGER.info(f"CONFIG: {self._config}")
+        _LOGGER.info("CONFIG: %s", self._config)
 
     def on_connect(self, client, userdata, flags, rc):
         _LOGGER.info("Connecting2")
-        _LOGGER.info("Connected with result code " + str(rc))
+        _LOGGER.info("Connected with result code %s", rc)
 
         client.subscribe(f"{self._config['topic']}/#")
         # client.publish(self._config['topic'], "connected")
@@ -77,7 +77,7 @@ class MQTT(Integration):
         )
 
     def on_message(self, client, userdata, msg):
-        _LOGGER.info(msg.topic + " " + str(msg.payload))
+        _LOGGER.info("%s %s", msg.topic, msg.payload)
 
         if msg.topic == f"{self._config['topic']}/SCENE":
             scene_id = msg.payload.decode("utf8")
@@ -87,14 +87,16 @@ class MQTT(Integration):
                     "status": "failed",
                     "reason": 'Required attribute "scene_id" was not provided',
                 }
-                return _LOGGER.warning(response)
-            _LOGGER.warning(str(self._ledfx.config["scenes"].keys()))
+                _LOGGER.warning("%s", response)
+                return
+            _LOGGER.warning("%s", self._ledfx.config["scenes"].keys())
             if scene_id not in self._ledfx.config["scenes"].keys():
                 response = {
                     "status": "failed",
                     "reason": f'Scene "{scene_id}" does not exist',
                 }
-                return _LOGGER.warning(response)
+                _LOGGER.warning("%s", response)
+                return
 
             scene = self._ledfx.config["scenes"][scene_id]
 
@@ -102,9 +104,9 @@ class MQTT(Integration):
                 # Check virtual is in scene, make no changes if it isn't
                 if virtual.id not in scene["virtuals"].keys():
                     _LOGGER.info(
-                        ("virtual with id {} has no data in scene {}").format(
-                            virtual.id, scene_id
-                        )
+                        "virtual with id %s has no data in scene %s",
+                        virtual.id,
+                        scene_id,
                     )
                     continue
 
@@ -137,4 +139,4 @@ class MQTT(Integration):
             self._config["ip_address"], self._config["port"], 60
         )
         client.loop_start()
-        _LOGGER.info(client)
+        _LOGGER.info("%s", client)

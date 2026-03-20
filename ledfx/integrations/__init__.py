@@ -37,25 +37,19 @@ class Integration(BaseRegistry):
             async_fire_and_forget(self.deactivate(), self._ledfx.loop)
 
     async def activate(self):
-        _LOGGER.info(
-            ("Activating {} integration").format(self._config["name"])
-        )
+        _LOGGER.info("Activating %s integration", self._config["name"])
         self._active = True
         self._status = Status.CONNECTING
         async_fire_and_forget(self.connect(), self._ledfx.loop)
 
     async def deactivate(self):
-        _LOGGER.info(
-            ("Deactivating {} integration").format(self._config["name"])
-        )
+        _LOGGER.info("Deactivating %s integration", self._config["name"])
         self._active = False
         self._status = Status.DISCONNECTING
         async_fire_and_forget(self.disconnect(), self._ledfx.loop)
 
     async def reconnect(self):
-        _LOGGER.info(
-            ("Reconnecting {} integration").format(self._config["name"])
-        )
+        _LOGGER.info("Reconnecting %s integration", self._config["name"])
         self._status = Status.DISCONNECTING
         await self.disconnect()
         self._status = Status.CONNECTING
@@ -130,7 +124,7 @@ class Integrations(RegistryLoader):
     def create_from_config(self, config):
         for integration in config:
             name = integration["config"]["name"]
-            _LOGGER.debug(f"Loading integration from config: {name}")
+            _LOGGER.debug("Loading integration from config: %s", name)
             try:
                 self._ledfx.integrations.create(
                     id=integration["id"],
@@ -141,7 +135,7 @@ class Integrations(RegistryLoader):
                     ledfx=self._ledfx,
                 )
             except Exception as e:
-                _LOGGER.warning(f"Failed to load integration: {e}")
+                _LOGGER.warning("Failed to load integration: %s", e)
 
     async def close_all_connections(self):
         for integration in self.values():

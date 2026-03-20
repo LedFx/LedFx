@@ -206,7 +206,7 @@ class Texter2d(Twod, GradientEffect):
             data.high_power(filtered=False)
         )
 
-    #        _LOGGER.info(f"lows: {self.lows_impulse:3.3f} mids: {self.mids_impulse:3.3f} high: {self.high_impulse:3.3f}")
+    #        _LOGGER.info("lows: %s mids: %s high: %s", self.lows_impulse, self.mids_impulse, self.high_impulse)
 
     def draw(self):
         if self.test:
@@ -303,7 +303,7 @@ class Texter2d(Twod, GradientEffect):
                     1.0, 0.1 + self.lows_impulse * self.multiplier
                 )
 
-        # _LOGGER.info(f"{self.sentence.wordblocks[0].pose.y:3.3f})")
+        # _LOGGER.info("%s)", self.sentence.wordblocks[0].pose.y)
 
     ############################################################################
     # carousel
@@ -331,7 +331,7 @@ class Texter2d(Twod, GradientEffect):
     ############################################################################
 
     def wave_init(self):
-        # _LOGGER.info(f"wave_init: {self.sentence.text} {self.passed}")
+        # _LOGGER.info("wave_init: %s %s", self.sentence.text, self.passed)
         # wave is the temp home for any old spam effect
         offset = 2 / (self.sentence.wordcount + 5)
         for idx, word in enumerate(self.sentence.wordblocks):
@@ -342,7 +342,7 @@ class Texter2d(Twod, GradientEffect):
             word.pose.lefty_righty = 1 if idx % 2 == 0 else -1
 
     def wave_func(self):
-        # _LOGGER.info(f"wave_func: {self.sentence.text} {self.passed}")
+        # _LOGGER.info("wave_func: %s %s", self.sentence.text, self.passed)
         for idx, word in enumerate(self.sentence.wordblocks):
             word.pose.d_rotation = (
                 self.impulses[idx] * self.multiplier * word.pose.lefty_righty
@@ -421,7 +421,7 @@ class Texter2d(Twod, GradientEffect):
         else:
             transition = 1
 
-        # _LOGGER.info(f"focus_word: {self.sentence.word_focused_on} text ({focus_word.text}) {self.sentence.word_focus:3.3f} transition: {transition:3.3f}")
+        # _LOGGER.info("focus_word: %s text (%s) %s transition: %s", self.sentence.word_focused_on, focus_word.text, self.sentence.word_focus, transition)
 
         focus_word.pose.size = tween(
             focus_word.pose.size,

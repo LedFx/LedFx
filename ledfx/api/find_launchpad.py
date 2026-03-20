@@ -31,5 +31,5 @@ class FindLaunchpadDevicesEndpoint(RestEndpoint):
             _LOGGER.warning("No launchpad found")
             return await self.request_success("info", "No launchpad found")
 
-        _LOGGER.info(f"Found launchpad: {found}")
+        _LOGGER.info("Found launchpad: %s", found)
         return await self.request_success("info", "Found launchpad", found)

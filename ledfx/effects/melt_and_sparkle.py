@@ -103,7 +103,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
             data.lows_power(filtered=False)
         )
         # self._lows_power = 0
-        # _LOGGER.debug(f"bass {self._lows_power}")
+        # _LOGGER.debug("bass %s", self._lows_power)
 
         if (
             self._lows_power > self.strobe_cutoff

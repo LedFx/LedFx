@@ -169,9 +169,8 @@ class IntegrationsEndpoint(RestEndpoint):
             # Create new integration if no id is given
             integration_id = generate_id(integration_config.get("name"))
             _LOGGER.info(
-                ("Creating {} integration with config {}").format(
-                    integration_type, integration_config
-                )
+                "Creating %s integration",
+                integration_type,
             )
         else:
             # Update existing integration if valid id is given
@@ -183,9 +182,9 @@ class IntegrationsEndpoint(RestEndpoint):
                 )
 
             _LOGGER.info(
-                ("Updating {} integration '{}' with config {}").format(
-                    integration_type, integration_id, integration_config
-                )
+                "Updating %s integration '%s'",
+                integration_type,
+                integration_id,
             )
 
             self._ledfx.integrations.destroy(integration_id)

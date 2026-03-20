@@ -942,9 +942,14 @@ def _extract_gradient_metadata_from_image(
         processing_time_ms = int((time.time() - start_time) * 1000)
 
         _LOGGER.debug(
-            f"Gradient extraction completed in {processing_time_ms}ms "
-            f"(size: {pil_image.size[0]}x{pil_image.size[1]}, "
-            f"colors: {len(colors)}, pattern: {'interleaved' if background else 'weighted'})"
+            "Gradient extraction completed in %sms "
+            "(size: %sx%s, "
+            "colors: %s, pattern: %s)",
+            processing_time_ms,
+            pil_image.size[0],
+            pil_image.size[1],
+            len(colors),
+            "interleaved" if background else "weighted",
         )
 
         pattern = "interleaved" if background else "weighted"

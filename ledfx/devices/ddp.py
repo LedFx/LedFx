@@ -93,7 +93,7 @@ class DDPDevice(UDPDevice):
             )
             if self.connection_warning:
                 # If we have reconnected, log it, come back online, and fire an event to the frontend
-                _LOGGER.info(f"DDP connection to {self.name} re-established.")
+                _LOGGER.info("DDP connection to %s re-established.", self.name)
                 self.connection_warning = False
                 self._online = True
                 self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
@@ -103,7 +103,9 @@ class DDPDevice(UDPDevice):
             # print warning only once until it clears
             if not self.connection_warning:
                 # If we have lost connection, log it, go offline, and fire an event to the frontend
-                _LOGGER.warning(f"Error in DDP connection to {self.name}: {e}")
+                _LOGGER.warning(
+                    "Error in DDP connection to %s: %s", self.name, e
+                )
                 self.connection_warning = True
                 self._online = False
                 self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))

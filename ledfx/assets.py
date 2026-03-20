@@ -85,9 +85,9 @@ def ensure_assets_directory(config_dir: str) -> None:
     if not os.path.exists(assets_dir):
         try:
             os.makedirs(assets_dir, exist_ok=True)
-            _LOGGER.info(f"Created assets directory: {assets_dir}")
+            _LOGGER.info("Created assets directory: %s", assets_dir)
         except OSError as e:
-            _LOGGER.warning(f"Failed to create assets directory: {e}")
+            _LOGGER.warning("Failed to create assets directory: %s", e)
             raise
 
 
@@ -111,7 +111,7 @@ def _load_asset_metadata_cache(assets_dir: str) -> dict:
         with open(cache_path, encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
-        _LOGGER.warning(f"Failed to load asset metadata cache: {e}")
+        _LOGGER.warning("Failed to load asset metadata cache: %s", e)
         return {}
 
 
@@ -131,7 +131,7 @@ def _save_asset_metadata_cache(assets_dir: str, cache: dict) -> None:
         with open(cache_path, "w", encoding="utf-8") as f:
             json.dump(cache, f, indent=2)
     except Exception as e:
-        _LOGGER.warning(f"Failed to save asset metadata cache: {e}")
+        _LOGGER.warning("Failed to save asset metadata cache: %s", e)
 
 
 def resolve_safe_asset_path(
@@ -260,7 +260,7 @@ def validate_asset_content(
         return True, None, image
 
     except Exception as e:
-        _LOGGER.warning(f"Image validation failed for {file_path}: {e}")
+        _LOGGER.warning("Image validation failed for %s: %s", file_path, e)
         return False, f"Not a valid image file: {e}", None
 
 
@@ -341,13 +341,13 @@ def save_asset(
         config_dir, relative_path, create_dirs=True
     )
     if not is_valid:
-        _LOGGER.warning(f"Path validation failed: {error}")
+        _LOGGER.warning("Path validation failed: %s", error)
         return False, None, error
 
     # 2. Validate file extension
     is_valid, error = validate_asset_extension(absolute_path)
     if not is_valid:
-        _LOGGER.warning(f"Extension validation failed: {error}")
+        _LOGGER.warning("Extension validation failed: %s", error)
         return False, None, error
 
     # 3. Check for overwrite if not allowed
@@ -361,13 +361,13 @@ def save_asset(
     # 4. Validate file size
     is_valid, error = validate_asset_size(data, max_size)
     if not is_valid:
-        _LOGGER.warning(f"Size validation failed: {error}")
+        _LOGGER.warning("Size validation failed: %s", error)
         return False, None, error
 
     # 5. Validate content is a real image
     is_valid, error, image = validate_asset_content(data, absolute_path)
     if not is_valid:
-        _LOGGER.warning(f"Content validation failed: {error}")
+        _LOGGER.warning("Content validation failed: %s", error)
         return False, None, error
 
     # Image validated, can close it now
@@ -398,7 +398,7 @@ def save_asset(
         os.rename(temp_path, absolute_path)
         temp_path = None  # Mark as moved
 
-        _LOGGER.info(f"Saved asset: {relative_path} ({len(data)} bytes)")
+        _LOGGER.info("Saved asset: %s (%s bytes)", relative_path, len(data))
 
         # Clear any cached thumbnails for this asset to prevent stale thumbnails
         try:
@@ -408,18 +408,22 @@ def save_asset(
                 deleted_count = cache.delete_all_for_url(cache_url)
                 if deleted_count > 0:
                     _LOGGER.info(
-                        f"Cleared {deleted_count} cached thumbnail(s) for {relative_path}"
+                        "Cleared %s cached thumbnail(s) for %s",
+                        deleted_count,
+                        relative_path,
                     )
         except Exception as e:
             # Log but don't fail the save operation if cache clearing fails
             _LOGGER.warning(
-                f"Failed to clear cached thumbnails for {relative_path}: {e}"
+                "Failed to clear cached thumbnails for %s: %s",
+                relative_path,
+                e,
             )
 
         return True, absolute_path, None
 
     except Exception as e:
-        _LOGGER.warning(f"Failed to save asset {relative_path}: {e}")
+        _LOGGER.warning("Failed to save asset %s: %s", relative_path, e)
         return False, None, f"Write failed: {e}"
 
     finally:
@@ -435,7 +439,7 @@ def save_asset(
                 os.remove(temp_path)
             except Exception as e:
                 _LOGGER.warning(
-                    f"Failed to clean up temp file {temp_path}: {e}"
+                    "Failed to clean up temp file %s: %s", temp_path, e
                 )
 
 
@@ -461,7 +465,7 @@ def delete_asset(
         config_dir, relative_path, create_dirs=False
     )
     if not is_valid:
-        _LOGGER.warning(f"Path validation failed for delete: {error}")
+        _LOGGER.warning("Path validation failed for delete: %s", error)
         return False, error
 
     # Check if file exists
@@ -475,7 +479,7 @@ def delete_asset(
     # Delete the file
     try:
         os.remove(absolute_path)
-        _LOGGER.info(f"Deleted asset: {relative_path}")
+        _LOGGER.info("Deleted asset: %s", relative_path)
 
         # Invalidate metadata cache entry
         assets_dir = get_assets_directory(config_dir)
@@ -492,7 +496,7 @@ def delete_asset(
         return True, None
 
     except Exception as e:
-        _LOGGER.warning(f"Failed to delete asset {relative_path}: {e}")
+        _LOGGER.warning("Failed to delete asset %s: %s", relative_path, e)
         return False, f"Delete failed: {e}"
 
 
@@ -514,13 +518,13 @@ def _cleanup_empty_directories(config_dir: str, dir_path: str) -> None:
             # Only remove if directory is empty
             if os.path.isdir(current) and not os.listdir(current):
                 os.rmdir(current)
-                _LOGGER.debug(f"Removed empty directory: {current}")
+                _LOGGER.debug("Removed empty directory: %s", current)
                 current = os.path.dirname(current)
             else:
                 # Not empty or not a directory, stop
                 break
         except Exception as e:
-            _LOGGER.debug(f"Could not remove directory {current}: {e}")
+            _LOGGER.debug("Could not remove directory %s: %s", current, e)
             break
 
 
@@ -552,7 +556,9 @@ def _list_assets_from_directory(
     """
     if not os.path.exists(root_dir):
         _LOGGER.debug(
-            f"{log_prefix.capitalize()} directory does not exist: {root_dir}"
+            "%s directory does not exist: %s",
+            log_prefix.capitalize(),
+            root_dir,
         )
         return []
 
@@ -590,7 +596,9 @@ def _list_assets_from_directory(
                 _, ext = os.path.splitext(filename)
                 if ext.lower() not in ALLOWED_IMAGE_EXTENSIONS:
                     _LOGGER.debug(
-                        f"Skipping non-image file in {log_prefix}: {rel_path}"
+                        "Skipping non-image file in %s: %s",
+                        log_prefix,
+                        rel_path,
                     )
                     continue
 
@@ -619,7 +627,9 @@ def _list_assets_from_directory(
                         # Use cached metadata if file hasn't changed
                         gradient_data = cached_entry.get("gradients")
                         _LOGGER.debug(
-                            f"Using cached metadata for {log_prefix} {rel_path}"
+                            "Using cached metadata for %s %s",
+                            log_prefix,
+                            rel_path,
                         )
                     else:
                         # Extract gradients for new or modified files
@@ -633,7 +643,10 @@ def _list_assets_from_directory(
                             cache_updated = True
                         except Exception as e:
                             _LOGGER.warning(
-                                f"Failed to extract gradients for {log_prefix} {rel_path}: {e}",
+                                "Failed to extract gradients for %s %s: %s",
+                                log_prefix,
+                                rel_path,
+                                e,
                                 exc_info=False,
                             )
                             # Cache the failure to avoid re-attempting on every list
@@ -660,7 +673,10 @@ def _list_assets_from_directory(
 
                 except Exception as e:
                     _LOGGER.warning(
-                        f"Could not get metadata for {log_prefix} {rel_path}: {e}"
+                        "Could not get metadata for %s %s: %s",
+                        log_prefix,
+                        rel_path,
+                        e,
                     )
                     # Skip this file if we can't get its metadata
                     continue
@@ -668,14 +684,14 @@ def _list_assets_from_directory(
         # Sort by path for consistent ordering
         assets.sort(key=lambda x: x["path"])
 
-        _LOGGER.debug(f"Listed {len(assets)} {log_prefix} with metadata")
+        _LOGGER.debug("Listed %s %s with metadata", len(assets), log_prefix)
 
         # Save metadata cache if it was updated
         if cache_updated:
             _save_asset_metadata_cache(cache_location, metadata_cache)
 
     except Exception as e:
-        _LOGGER.warning(f"Error listing {log_prefix}: {e}")
+        _LOGGER.warning("Error listing %s: %s", log_prefix, e)
 
     return assets
 

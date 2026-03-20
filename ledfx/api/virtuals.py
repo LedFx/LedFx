@@ -78,7 +78,7 @@ class VirtualsEndpoint(RestEndpoint):
             # Update the virtual's configuration
             virtual.config = virtual_config
             _LOGGER.info(
-                f"Updated virtual {virtual.id} config to {virtual_config}"
+                "Updated virtual %s config to %s", virtual.id, virtual_config
             )
 
             virtual.virtual_cfg["config"] = virtual.config
@@ -101,7 +101,7 @@ class VirtualsEndpoint(RestEndpoint):
             virtual_id = generate_id(virtual_config.get("name"))
 
             # Create the virtual
-            _LOGGER.info(f"Creating virtual with config {virtual_config}")
+            _LOGGER.info("Creating virtual with config %s", virtual_config)
 
             virtual = self._ledfx.virtuals.create(
                 id=virtual_id,

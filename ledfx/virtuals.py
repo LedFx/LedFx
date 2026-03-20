@@ -264,7 +264,12 @@ class Virtual:
             or end_pixel >= device.pixel_count
         ):
             _LOGGER.warning(
-                f"Invalid segment pixels in Virtual '{self.name}': segment('{device.name}' ({start_pixel}, {end_pixel})) valid pixels between (0, {device.pixel_count - 1})"
+                "Invalid segment pixels in Virtual '%s': segment('%s' (%s, %s)) valid pixels between (0, %s)",
+                self.name,
+                device.name,
+                start_pixel,
+                end_pixel,
+                device.pixel_count - 1,
             )
             if start_pixel < 0:
                 start_pixel = 0
@@ -277,7 +282,7 @@ class Virtual:
             if end_pixel >= device.pixel_count:
                 end_pixel = device.pixel_count - 1
             segment = [device_id, start_pixel, end_pixel, invert]
-            _LOGGER.warning(f"Fixed to {segment}")
+            _LOGGER.warning("Fixed to %s", segment)
 
         if not valid:
             _LOGGER.error(msg)
@@ -358,7 +363,10 @@ class Virtual:
                 self.virtual_cfg["segments"] = self._segments
 
             _LOGGER.debug(
-                f"Virtual {self.id}: updated with {len(self._segments)} segments, totalling {self.pixel_count} pixels"
+                "Virtual %s: updated with %s segments, totalling %s pixels",
+                self.id,
+                len(self._segments),
+                self.pixel_count,
             )
             self._ledfx.virtuals.check_and_deactivate_devices()
 
@@ -381,7 +389,7 @@ class Virtual:
             return
 
         _LOGGER.info(
-            f"Virtual {self.id}: compiling device remap for complex segments"
+            "Virtual %s: compiling device remap for complex segments", self.id
         )
 
         # Group segments by device and build index arrays
@@ -468,7 +476,7 @@ class Virtual:
                 "config"
             ]
         except KeyError:
-            _LOGGER.error(f"Cannot find preset: {preset_info}")
+            _LOGGER.error("Cannot find preset: %s", preset_info)
             return
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config
@@ -490,7 +498,7 @@ class Virtual:
                 )
                 self.set_effect(effect, fallback=None)
                 self.update_effect_config(effect)
-                _LOGGER.info(f"{self.name} set_fallback: suppress = False")
+                _LOGGER.info("%s set_fallback: suppress = False", self.name)
             else:
                 # there was no active effect when the fallback effect started
                 self.clear_effect()
@@ -511,7 +519,7 @@ class Virtual:
             self.fallback_timer = None
         self.fallback_suppress_transition = False
         self.fallback_active = False
-        _LOGGER.info(f"{self.name} fallback_clear: suppress = False")
+        _LOGGER.info("%s fallback_clear: suppress = False", self.name)
 
     def fallback_start(self, fallback: float):
         """Suppress transitions, clear and start the fallback timer
@@ -521,11 +529,11 @@ class Virtual:
             fallback (float): Time in seconds to wait before firing the fallback
         """
         self.fallback_suppress_transition = True
-        _LOGGER.info(f"{self.name} fallback_start: suppress = True")
+        _LOGGER.info("%s fallback_start: suppress = True", self.name)
 
         if self.fallback_timer is not None:
             self.fallback_timer.cancel()
-        _LOGGER.info(f"Setting fallback timer for {fallback} seconds")
+        _LOGGER.info("Setting fallback timer for %s seconds", fallback)
         self.fallback_timer = threading.Timer(fallback, self.fallback_fire_set)
         self.fallback_timer.start()
         self.fallback_active = True
@@ -541,7 +549,7 @@ class Virtual:
             self.fallback_timer.cancel()
             self.fallback_timer = None
         if self.fallback_active:
-            _LOGGER.info(f"{self.name} fallback_fire_set")
+            _LOGGER.info("%s fallback_fire_set", self.name)
             self.fallback_fire = True
 
     def set_effect(self, effect, fallback: Optional[float] = None):
@@ -574,7 +582,7 @@ class Virtual:
                     self.fallback_effect_type = self._active_effect.type
                     self.fallback_config = self._active_effect.config
                     _LOGGER.info(
-                        f"Setting fallback to {self.fallback_effect_type}"
+                        "Setting fallback to %s", self.fallback_effect_type
                     )
                 # else: don't let new fallbacks override active fallbacks, just bump the timer
                 self.fallback_start(fallback)
@@ -611,7 +619,8 @@ class Virtual:
             self._active_effect = effect
             if self._active_effect is None:
                 _LOGGER.warning(
-                    f"No effect was set (effect is None). Skipping activation for virtual '{self.id}'."
+                    "No effect was set (effect is None). Skipping activation for virtual '%s'.",
+                    self.id,
                 )
                 return
             self._active_effect.activate(self)
@@ -917,7 +926,7 @@ class Virtual:
             try:
                 self.activate_segments(self._segments)
             except ValueError as e:
-                _LOGGER.error(e)
+                _LOGGER.error("%s", e)
             self._os_active = False
 
         # self.thread_function()
@@ -1386,7 +1395,7 @@ class Virtual:
                             ]
                         else:
                             _LOGGER.info(
-                                f"virtual of {virtual_id} has no transitions"
+                                "virtual of %s has no transitions", virtual_id
                             )
             if (
                 "frequency_min" in _config.keys()
@@ -1563,7 +1572,7 @@ class Virtuals:
 
     def create_from_config(self, config, pause_all=False):
         for virtual_cfg in config:
-            _LOGGER.debug(f"Loading virtual from config: {virtual_cfg}")
+            _LOGGER.debug("Loading virtual from config: %s", virtual_cfg)
             new_virtual = self._ledfx.virtuals.create(
                 id=virtual_cfg["id"],
                 config=virtual_cfg["config"],
@@ -1761,7 +1770,8 @@ class Virtuals:
         for device in self._ledfx.devices.values():
             if device.id not in active_devices and device.is_active():
                 _LOGGER.info(
-                    f"Deactivating device {device.id} as it is not in use by any active virtuals"
+                    "Deactivating device %s as it is not in use by any active virtuals",
+                    device.id,
                 )
                 device.deactivate()
 
@@ -1785,9 +1795,13 @@ class Virtuals:
             )
 
             _LOGGER.info(
-                f"{virtual_id:<29} {str(virtual.is_device):<29}{str(virtual.active):<10}{str(virtual.streaming):<10}"
+                "%-29s %-29s%-10s%-10s",
+                virtual_id,
+                virtual.is_device,
+                virtual.active,
+                virtual.streaming,
             )
-        _LOGGER.info(f"Active Devices: {active_devices}")
+        _LOGGER.info("Active Devices: %s", active_devices)
 
 
 def virtual_id_validator(virtual_id: str) -> str:

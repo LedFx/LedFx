@@ -178,7 +178,7 @@ class Textblock:
                 )
 
                 # _LOGGER.info(
-                #     f"Textblock {self.text} x: {self.pose.x:3.3f} y: {self.pose.y:3.3f} {x} {y} ang: {self.pose.ang:3.3f} size: {self.pose.size:3.3f}")
+                #     "Textblock %s x: %s y: %s %s %s ang: %s size: %s", self.text, self.pose.x, self.pose.y, x, y, self.pose.ang, self.pose.size)
 
                 capped_alpha = min(1.0, max(0.0, self.pose.alpha))
                 if capped_alpha < 1.0:
@@ -230,7 +230,7 @@ class Sentence:
         for word in self.text.split():
             wordblock = Textblock(word, self.font, disp_size)
             self.wordblocks.append(wordblock)
-            _LOGGER.debug(f"Wordblock {word} created")
+            _LOGGER.debug("Wordblock %s created", word)
         self.space_block = Textblock(" ", self.font, disp_size)
         self.wordcount = len(self.wordblocks)
         self.color_points = np.array(

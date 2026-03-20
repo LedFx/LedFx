@@ -299,8 +299,9 @@ class ScenesEndpoint(RestEndpoint):
                             virtual_config["preset"] = virtual_data["preset"]
                         else:
                             _LOGGER.warning(
-                                f"Virtual '{virtualid}' has 'preset' field but missing required 'type' field. "
-                                "Preset field will not be saved."
+                                "Virtual '%s' has 'preset' field but missing required 'type' field. "
+                                "Preset field will not be saved.",
+                                virtualid,
                             )
 
                     scene_config["virtuals"][virtualid] = virtual_config
@@ -317,7 +318,7 @@ class ScenesEndpoint(RestEndpoint):
                         effect["config"] = virtual.active_effect.config
                     else:
                         _LOGGER.debug(
-                            f"Skipping DummyEffect for virtual {virtual.id}"
+                            "Skipping DummyEffect for virtual %s", virtual.id
                         )
                 scene_config["virtuals"][virtual.id] = effect
 

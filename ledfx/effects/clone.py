@@ -71,7 +71,7 @@ class Clone(Twod):
         # if we hit 5 in a row, lets just give up and stop impacting the system
         if self.fails >= 5:
             self.giveup = True
-            _LOGGER.warning(f"Clone giving up after {self.fails} failures")
+            _LOGGER.warning("Clone giving up after %s failures", self.fails)
             self.fails = 0
 
         if self.giveup:
@@ -92,7 +92,7 @@ class Clone(Twod):
             except Exception as e:
                 self.fails += 1
                 _LOGGER.warning(
-                    f"Clone Error setting up grab: {self.fails} {e}"
+                    "Clone Error setting up grab: %s %s", self.fails, e
                 )
                 self.sct = None
                 return
@@ -101,7 +101,9 @@ class Clone(Twod):
             frame = self.sct.grab(self.grab)
         except Exception as e:
             self.fails += 1
-            _LOGGER.warning(f"Clone Error grabbing frame :{self.fails}: {e}")
+            _LOGGER.warning(
+                "Clone Error grabbing frame :%s: %s", self.fails, e
+            )
             self.sct = None
             return
 
