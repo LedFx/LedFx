@@ -149,6 +149,37 @@ class Virtual:
     else:
         _min_time = time.get_clock_info("monotonic").resolution
 
+    def _validate_and_set_frequency_range(self, config):
+        """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""
+        # Ensure frequency_min < frequency_max
+        if config["frequency_min"] >= config["frequency_max"]:
+            _LOGGER.warning(
+                "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
+                config["frequency_min"],
+                config["frequency_max"],
+            )
+            config["frequency_min"], config["frequency_max"] = (
+                config["frequency_max"],
+                config["frequency_min"],
+            )
+        
+        # If still equal after swap, adjust to create 1 Hz range
+        if config["frequency_min"] == config["frequency_max"]:
+            if config["frequency_max"] < MAX_FREQ:
+                config["frequency_max"] += 1
+            else:
+                config["frequency_min"] -= 1
+            _LOGGER.warning(
+                "Frequency range was zero-width. Adjusted to %s-%s Hz.",
+                config["frequency_min"],
+                config["frequency_max"],
+            )
+        
+        # Update frequency range object
+        self.frequency_range = FrequencyRange(
+            config["frequency_min"], config["frequency_max"]
+        )
+
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = config
@@ -186,22 +217,8 @@ class Virtual:
         # Initialize calibration cache per instance to avoid concurrent access issues
         self._calibration_cache = CalibratorPatternCache()
 
-        # Ensure frequency_min < frequency_max
-        if self._config["frequency_min"] >= self._config["frequency_max"]:
-            _LOGGER.warning(
-                "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                self._config["frequency_min"],
-                self._config["frequency_max"],
-            )
-            self._config["frequency_min"], self._config["frequency_max"] = (
-                self._config["frequency_max"],
-                self._config["frequency_min"],
-            )
-
-        # Initialize frequency range from config
-        self.frequency_range = FrequencyRange(
-            self._config["frequency_min"], self._config["frequency_max"]
-        )
+        # Validate, adjust, and initialize frequency range
+        self._validate_and_set_frequency_range(self._config)
 
         # Initialize transitions - will be resized in _reactivate_effect() when effect activates
         self.transitions = Transitions(0)
@@ -1413,22 +1430,8 @@ class Virtual:
                 "frequency_min" in new_config.keys()
                 or "frequency_max" in new_config.keys()
             ):
-                # Ensure frequency_min < frequency_max
-                if _config["frequency_min"] >= _config["frequency_max"]:
-                    _LOGGER.warning(
-                        "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                        _config["frequency_min"],
-                        _config["frequency_max"],
-                    )
-                    _config["frequency_min"], _config["frequency_max"] = (
-                        _config["frequency_max"],
-                        _config["frequency_min"],
-                    )
-
-                # Update frequency range object
-                self.frequency_range = FrequencyRange(
-                    _config["frequency_min"], _config["frequency_max"]
-                )
+                # Validate, adjust, and update frequency range
+                self._validate_and_set_frequency_range(_config)
 
                 # Clear cached effect properties so the changes take effect
                 if self._active_effect is not None:

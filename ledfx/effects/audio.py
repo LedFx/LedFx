@@ -1251,7 +1251,7 @@ class AudioReactiveEffect(Effect):
 
     @cached_property
     def _melbank_max_idx(self):
-        return next(
+        max_idx = next(
             (
                 idx
                 for idx, freq in enumerate(
@@ -1267,6 +1267,8 @@ class AudioReactiveEffect(Effect):
                 ].melbank_frequencies
             ),
         )
+        # Ensure max_idx is always at least min_idx + 1 to prevent empty slices
+        return max(max_idx, self._melbank_min_idx + 1)
 
     @cached_property
     def _input_mel_length(self):
