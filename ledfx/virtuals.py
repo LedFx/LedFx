@@ -151,19 +151,7 @@ class Virtual:
 
     def _validate_and_set_frequency_range(self, config):
         """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""
-        # Ensure frequency_min < frequency_max
-        if config["frequency_min"] >= config["frequency_max"]:
-            _LOGGER.warning(
-                "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                config["frequency_min"],
-                config["frequency_max"],
-            )
-            config["frequency_min"], config["frequency_max"] = (
-                config["frequency_max"],
-                config["frequency_min"],
-            )
-
-        # If still equal after swap, adjust to create 1 Hz range
+        # Handle equality first
         if config["frequency_min"] == config["frequency_max"]:
             if config["frequency_max"] < MAX_FREQ:
                 config["frequency_max"] += 1
@@ -173,6 +161,17 @@ class Virtual:
                 "Frequency range was zero-width. Adjusted to %s-%s Hz.",
                 config["frequency_min"],
                 config["frequency_max"],
+            )
+        # Then handle inversion
+        elif config["frequency_min"] > config["frequency_max"]:
+            _LOGGER.warning(
+                "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
+                config["frequency_min"],
+                config["frequency_max"],
+            )
+            config["frequency_min"], config["frequency_max"] = (
+                config["frequency_max"],
+                config["frequency_min"],
             )
 
         # Update frequency range object
