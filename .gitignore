@@ -59,6 +59,8 @@ performance_insights.txt
 
 # Debugging task may leave this folder behind if it crashes
 debug_config
+# Development config directory (isolated from pytest)
+dev_config
 # spec file build may leave the ledfx.env behind
 ledfx.env
 # Misc
@@ -68,9 +70,8 @@ frontend/*.eslintcache
 
 
 #Pycache from numba
-ledfx/effects/__pycache__/*
-ledfx/__pycache__/*
-__pycache__/*
+__pycache__/
+*.pyc
 
 # Setups
 /installer/*
