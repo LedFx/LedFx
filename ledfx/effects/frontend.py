@@ -46,15 +46,17 @@ class FrontendEffect(TemporalEffect):
                     # Cache the first client ID we receive
                     self._cached_client_id = event.client_id
                     _LOGGER.info(
-                        f"Frontend effect: cached client ID {event.client_id}"
+                        "Frontend effect: cached client ID %s",
+                        event.client_id,
                     )
                 elif self._cached_client_id != event.client_id:
                     # Ignore updates from other client IDs, warn only once per client
                     if event.client_id not in self._rejected_client_ids:
                         self._rejected_client_ids.add(event.client_id)
                         _LOGGER.warning(
-                            f"Frontend effect: ignoring updates from client {event.client_id}, "
-                            f"already bound to client {self._cached_client_id}"
+                            "Frontend effect: ignoring updates from client %s, already bound to client %s",
+                            event.client_id,
+                            self._cached_client_id,
                         )
                     return
 
@@ -70,7 +72,9 @@ class FrontendEffect(TemporalEffect):
             if elapsed >= self._fps_report_interval:
                 fps = self._frame_count / elapsed
                 _LOGGER.info(
-                    f"Frontend effect: receiving {fps:.1f} FPS from client {self._cached_client_id}"
+                    "Frontend effect: receiving %.1f FPS from client %s",
+                    fps,
+                    self._cached_client_id,
                 )
                 self._frame_count = 0
                 self._fps_last_time = current_time
@@ -131,7 +135,9 @@ class FrontendEffect(TemporalEffect):
 
             except Exception as e:
                 _LOGGER.error(
-                    f"Error processing visualisation data: {e}", exc_info=True
+                    "Error processing visualisation data: %s",
+                    e,
+                    exc_info=True,
                 )
 
         # Register the listener with the event system, filtered to only our vis_id
