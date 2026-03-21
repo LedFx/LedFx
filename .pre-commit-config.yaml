@@ -34,4 +34,4 @@ repos:
     rev: v3.21.2
     hooks:
       - id: pyupgrade
-        args: [--py39-plus]
+        args: [--py39-plus, --keep-percent-format]

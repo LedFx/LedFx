@@ -1237,18 +1237,21 @@ class AudioReactiveEffect(Effect):
     @cached_property
     def _melbank_min_idx(self):
         return next(
-            idx
-            for idx, freq in enumerate(
-                self.audio.melbanks.melbank_processors[
-                    self._selected_melbank
-                ].melbank_frequencies
-            )
-            if freq >= self._virtual.frequency_range.min
+            (
+                idx
+                for idx, freq in enumerate(
+                    self.audio.melbanks.melbank_processors[
+                        self._selected_melbank
+                    ].melbank_frequencies
+                )
+                if freq >= self._virtual.frequency_range.min
+            ),
+            0,  # Default to 0 if no frequency >= min
         )
 
     @cached_property
     def _melbank_max_idx(self):
-        return next(
+        max_idx = next(
             (
                 idx
                 for idx, freq in enumerate(
@@ -1264,10 +1267,22 @@ class AudioReactiveEffect(Effect):
                 ].melbank_frequencies
             ),
         )
+        # Ensure max_idx is always at least min_idx + 1 to prevent empty slices
+        return max(max_idx, self._melbank_min_idx + 1)
 
     @cached_property
     def _input_mel_length(self):
-        return self._melbank_max_idx - self._melbank_min_idx
+        length = self._melbank_max_idx - self._melbank_min_idx
+        # Ensure we have at least 1 frequency bin to avoid crashes
+        if length < 1:
+            _LOGGER.warning(
+                "Frequency range %s-%sHz resulted in %s melbank bins. Adjusting to minimum of 1 bin. Consider using a wider frequency range.",
+                self._virtual.frequency_range.min,
+                self._virtual.frequency_range.max,
+                length,
+            )
+            return 1
+        return length
 
     @lru_cache(maxsize=16)
     def _melbank_interp_linspaces(self, size):
@@ -1317,9 +1332,18 @@ class AudioReactiveEffect(Effect):
         """
         Returns the melbank split into three sections (unequal length)
         Useful for effects that use lows, mids, and highs
+
+        Returns three arrays guaranteed to be safe for max/mean operations
+        (empty arrays replaced with array containing 0.0)
         """
         melbank = self.melbank(**kwargs)
         mel_length = len(melbank)
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
-        return np.split(melbank, splits)
+        thirds = np.split(melbank, splits)
+
+        # Ensure each third has at least one element to prevent NaN from max/mean
+        # on empty arrays (can happen with very narrow frequency ranges)
+        return tuple(
+            arr if len(arr) > 0 else np.array([0.0]) for arr in thirds
+        )

@@ -14,7 +14,6 @@ from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
     MAX_FREQ,
     MIN_FREQ,
-    MIN_FREQ_DIFFERENCE,
     FrequencyRange,
 )
 from ledfx.effects.oneshots.oneshot import Oneshot
@@ -150,6 +149,36 @@ class Virtual:
     else:
         _min_time = time.get_clock_info("monotonic").resolution
 
+    def _validate_and_set_frequency_range(self, config):
+        """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""
+        # Handle equality first
+        if config["frequency_min"] == config["frequency_max"]:
+            if config["frequency_max"] < MAX_FREQ:
+                config["frequency_max"] += 1
+            else:
+                config["frequency_min"] -= 1
+            _LOGGER.warning(
+                "Frequency range was zero-width. Adjusted to %s-%s Hz.",
+                config["frequency_min"],
+                config["frequency_max"],
+            )
+        # Then handle inversion
+        elif config["frequency_min"] > config["frequency_max"]:
+            _LOGGER.warning(
+                "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
+                config["frequency_min"],
+                config["frequency_max"],
+            )
+            config["frequency_min"], config["frequency_max"] = (
+                config["frequency_max"],
+                config["frequency_min"],
+            )
+
+        # Update frequency range object
+        self.frequency_range = FrequencyRange(
+            config["frequency_min"], config["frequency_max"]
+        )
+
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self._config = config
@@ -187,9 +216,8 @@ class Virtual:
         # Initialize calibration cache per instance to avoid concurrent access issues
         self._calibration_cache = CalibratorPatternCache()
 
-        self.frequency_range = FrequencyRange(
-            self._config["frequency_min"], self._config["frequency_max"]
-        )
+        # Validate, adjust, and initialize frequency range
+        self._validate_and_set_frequency_range(self._config)
 
         # Initialize transitions - will be resized in _reactivate_effect() when effect activates
         self.transitions = Transitions(0)
@@ -1398,38 +1426,16 @@ class Virtual:
                                 "virtual of %s has no transitions", virtual_id
                             )
             if (
-                "frequency_min" in _config.keys()
-                or "frequency_max" in _config.keys()
+                "frequency_min" in new_config.keys()
+                or "frequency_max" in new_config.keys()
             ):
-                # if these are in config, manually sanitise them
-                _config["frequency_min"] = min(
-                    _config["frequency_min"], MAX_FREQ - MIN_FREQ_DIFFERENCE
-                )
-                _config["frequency_min"] = max(
-                    _config["frequency_min"], MIN_FREQ
-                )
-                _config["frequency_max"] = max(
-                    _config["frequency_max"], MIN_FREQ + MIN_FREQ_DIFFERENCE
-                )
-                _config["frequency_max"] = min(
-                    _config["frequency_max"], MAX_FREQ
-                )
-                diff = abs(_config["frequency_max"] - _config["frequency_min"])
-                if diff < MIN_FREQ_DIFFERENCE:
-                    _config["frequency_max"] += diff
+                # Validate, adjust, and update frequency range
+                self._validate_and_set_frequency_range(_config)
 
+                # Clear cached effect properties so the changes take effect
                 if self._active_effect is not None:
-                    # if they're changed, clear some cached properties
-                    # so the changes take effect
-                    if (
-                        _config["frequency_min"]
-                        != self._config["frequency_min"]
-                        or _config["frequency_max"]
-                        != self._config["frequency_max"]
-                    ) and (
-                        hasattr(
-                            self._active_effect, "clear_melbank_freq_props"
-                        )
+                    if hasattr(
+                        self._active_effect, "clear_melbank_freq_props"
                     ):
                         self._active_effect.clear_melbank_freq_props()
 
@@ -1452,10 +1458,6 @@ class Virtual:
             _config["rotate"] = 0
 
         setattr(self, "_config", _config)
-
-        self.frequency_range = FrequencyRange(
-            self._config["frequency_min"], self._config["frequency_max"]
-        )
 
         old_complex_segments = self.complex_segments
         self.complex_segments = _config.get("complex_segments", False)
@@ -1584,6 +1586,9 @@ class Virtuals:
             # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
             # used for effect, effects, last_effect etc
             new_virtual.virtual_cfg = virtual_cfg
+
+            # Update virtual_cfg with validated config in case initialization adjusted frequencies
+            virtual_cfg["config"] = new_virtual.config
 
             if "segments" in virtual_cfg:
                 try:

@@ -68,9 +68,8 @@ frontend/*.eslintcache
 
 
 #Pycache from numba
-ledfx/effects/__pycache__/*
-ledfx/__pycache__/*
-__pycache__/*
+__pycache__/
+*.pyc
 
 # Setups
 /installer/*
