@@ -190,10 +190,12 @@ class Virtual:
         if self._config["frequency_min"] >= self._config["frequency_max"]:
             _LOGGER.warning(
                 "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                self._config["frequency_min"], self._config["frequency_max"]
+                self._config["frequency_min"],
+                self._config["frequency_max"],
             )
             self._config["frequency_min"], self._config["frequency_max"] = (
-                self._config["frequency_max"], self._config["frequency_min"]
+                self._config["frequency_max"],
+                self._config["frequency_min"],
             )
 
         # Initialize frequency range from config
@@ -1415,20 +1417,24 @@ class Virtual:
                 if _config["frequency_min"] >= _config["frequency_max"]:
                     _LOGGER.warning(
                         "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                        _config["frequency_min"], _config["frequency_max"]
+                        _config["frequency_min"],
+                        _config["frequency_max"],
                     )
                     _config["frequency_min"], _config["frequency_max"] = (
-                        _config["frequency_max"], _config["frequency_min"]
+                        _config["frequency_max"],
+                        _config["frequency_min"],
                     )
-                
+
                 # Update frequency range object
                 self.frequency_range = FrequencyRange(
                     _config["frequency_min"], _config["frequency_max"]
                 )
-                
+
                 # Clear cached effect properties so the changes take effect
                 if self._active_effect is not None:
-                    if hasattr(self._active_effect, "clear_melbank_freq_props"):
+                    if hasattr(
+                        self._active_effect, "clear_melbank_freq_props"
+                    ):
                         self._active_effect.clear_melbank_freq_props()
 
             if self._active_effect is not None:
@@ -1578,7 +1584,7 @@ class Virtuals:
             # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
             # used for effect, effects, last_effect etc
             new_virtual.virtual_cfg = virtual_cfg
-            
+
             # Update virtual_cfg with validated config in case initialization adjusted frequencies
             virtual_cfg["config"] = new_virtual.config
 

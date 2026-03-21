@@ -1275,7 +1275,9 @@ class AudioReactiveEffect(Effect):
         if length < 1:
             _LOGGER.warning(
                 "Frequency range %s-%sHz resulted in %s melbank bins. Adjusting to minimum of 1 bin. Consider using a wider frequency range.",
-                self._virtual.frequency_range.min, self._virtual.frequency_range.max, length
+                self._virtual.frequency_range.min,
+                self._virtual.frequency_range.max,
+                length,
             )
             return 1
         return length
@@ -1328,7 +1330,7 @@ class AudioReactiveEffect(Effect):
         """
         Returns the melbank split into three sections (unequal length)
         Useful for effects that use lows, mids, and highs
-        
+
         Returns three arrays guaranteed to be safe for max/mean operations
         (empty arrays replaced with array containing 0.0)
         """
@@ -1337,7 +1339,9 @@ class AudioReactiveEffect(Effect):
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
         thirds = np.split(melbank, splits)
-        
+
         # Ensure each third has at least one element to prevent NaN from max/mean
         # on empty arrays (can happen with very narrow frequency ranges)
-        return tuple(arr if len(arr) > 0 else np.array([0.0]) for arr in thirds)
+        return tuple(
+            arr if len(arr) > 0 else np.array([0.0]) for arr in thirds
+        )
