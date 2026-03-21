@@ -123,7 +123,9 @@ class ConfigEndpoint(RestEndpoint):
                 ) == parse_version(CONFIGURATION_VERSION)
             except (KeyError, AssertionError):
                 _LOGGER.warning(
-                    f"LedFx config version: {CONFIGURATION_VERSION}, import config version: {config.get('configuration_version', 'UNDEFINED (old!)')}"
+                    "LedFx config version: %s, import config version: %s",
+                    CONFIGURATION_VERSION,
+                    config.get("configuration_version", "UNDEFINED (old!)"),
                 )
                 try:
                     config = migrate_config(config)

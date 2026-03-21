@@ -75,7 +75,7 @@ class AudioInputSource:
                 stream_to_close.stop()
                 stream_to_close.close()
             except Exception as e:
-                _LOGGER.warning(f"Error closing stream during refresh: {e}")
+                _LOGGER.warning("Error closing stream during refresh: %s", e)
 
         try:
             # Force PortAudio to rescan devices by terminating and reinitializing
@@ -85,7 +85,7 @@ class AudioInputSource:
             AudioInputSource._device_list_cache = None
             _LOGGER.info("Audio device list refreshed")
         except Exception as e:
-            _LOGGER.warning(f"Failed to refresh audio device list: {e}")
+            _LOGGER.warning("Failed to refresh audio device list: %s", e)
 
         return was_active
 
@@ -144,20 +144,24 @@ class AudioInputSource:
                 self.activate()
             except Exception as e:
                 _LOGGER.error(
-                    f"Failed to reactivate audio stream after device change: {e}"
+                    "Failed to reactivate audio stream after device change: %s",
+                    e,
                 )
             return
 
         # Find device at its new index
         _LOGGER.info(
-            f"Attempting to recover audio device '{last_device_name}' (was at index {last_device_idx})"
+            "Attempting to recover audio device '%s' (was at index %s)",
+            last_device_name,
+            last_device_idx,
         )
         found_idx = self.get_device_index_by_name(last_device_name)
 
         if found_idx == -1:
             _LOGGER.warning(
-                f"Previously active device '{last_device_name}' no longer available after device list change. "
-                f"Will use default device."
+                "Previously active device '%s' no longer available after device list change. "
+                "Will use default device.",
+                last_device_name,
             )
             # Clear the stored device info since it's gone
             with AudioInputSource._class_lock:
@@ -167,7 +171,7 @@ class AudioInputSource:
             # Use default device logic (prefers loopback of default output, then default input)
             fallback_idx = AudioInputSource.default_device_index()
             if fallback_idx is not None:
-                _LOGGER.info(f"Using fallback device at index {fallback_idx}")
+                _LOGGER.info("Using fallback device at index %s", fallback_idx)
                 self._update_device_config(fallback_idx)
             else:
                 # No valid devices at all - clear config to trigger validator
@@ -177,11 +181,16 @@ class AudioInputSource:
             current_config_idx = self._config.get("audio_device", -1)
             if found_idx != current_config_idx:
                 _LOGGER.info(
-                    f"Device list changed: '{last_device_name}' moved from index {current_config_idx} to {found_idx}"
+                    "Device list changed: '%s' moved from index %s to %s",
+                    last_device_name,
+                    current_config_idx,
+                    found_idx,
                 )
             else:
                 _LOGGER.info(
-                    f"Device list changed: '{last_device_name}' still at index {found_idx}"
+                    "Device list changed: '%s' still at index %s",
+                    last_device_name,
+                    found_idx,
                 )
 
             # Always update config with found index to ensure consistency
@@ -193,7 +202,7 @@ class AudioInputSource:
             self.activate()
         except Exception as e:
             _LOGGER.error(
-                f"Failed to reactivate audio stream after device change: {e}"
+                "Failed to reactivate audio stream after device change: %s", e
             )
 
     @staticmethod
@@ -240,7 +249,9 @@ class AudioInputSource:
 
             # We need to run over the device list looking for the target devices name
             _LOGGER.debug(
-                f"Looking for audio loopback device for default output device at index {default_output_device_idx}: {default_output_device_name}"
+                "Looking for audio loopback device for default output device at index %s: %s",
+                default_output_device_idx,
+                default_output_device_name,
             )
             for device_index, device in enumerate(device_list):
                 # sometimes the audio device name string is truncated, so we need to match what we have and Loopback but otherwise be sloppy
@@ -250,7 +261,9 @@ class AudioInputSource:
                 ):
                     # Return the loopback device index
                     _LOGGER.debug(
-                        f"Found audio loopback device for default output device at index {device_index}: {device['name']}"
+                        "Found audio loopback device for default output device at index %s: %s",
+                        device_index,
+                        device["name"],
                     )
                     return device_index
 
@@ -264,7 +277,9 @@ class AudioInputSource:
         else:
             if default_input_device_idx in valid_device_indexes:
                 _LOGGER.debug(
-                    f"No audio loopback device found for default output device. Using default input device at index {default_input_device_idx}: {device_list[default_input_device_idx]['name']}"
+                    "No audio loopback device found for default output device. Using default input device at index %s: %s",
+                    default_input_device_idx,
+                    device_list[default_input_device_idx]["name"],
                 )
                 return default_input_device_idx
             else:
@@ -272,7 +287,9 @@ class AudioInputSource:
                 if len(valid_device_indexes) > 0:
                     first_valid_idx = next(iter(valid_device_indexes))
                     _LOGGER.debug(
-                        f"No valid default audio input device found. Using first valid input device at index {first_valid_idx}: {device_list[first_valid_idx]['name']}"
+                        "No valid default audio input device found. Using first valid input device at index %s: %s",
+                        first_valid_idx,
+                        device_list[first_valid_idx]["name"],
                     )
                     return first_valid_idx
 
@@ -378,7 +395,9 @@ class AudioInputSource:
             try:
                 self._audio = sd
             except OSError as Error:
-                _LOGGER.critical(f"Sounddevice error: {Error}. Shutting down.")
+                _LOGGER.critical(
+                    "Sounddevice error: %s. Shutting down.", Error
+                )
                 self._ledfx.stop()
 
         # Enumerate all of the input devices and find the one matching the
@@ -404,17 +423,23 @@ class AudioInputSource:
             device_name = input_devices[index]["name"]
             input_channels = input_devices[index]["max_input_channels"]
             _LOGGER.debug(
-                f"Audio Device {index}\t{hostapi_name}\t{device_name}\tinput_channels: {input_channels}"
+                "Audio Device %s\t%s\t%s\tinput_channels: %s",
+                index,
+                hostapi_name,
+                device_name,
+                input_channels,
             )
         _LOGGER.debug("********************************************")
         device_idx = self._config["audio_device"]
         _LOGGER.debug(
-            f"default_device: {default_device} config_device: {device_idx}"
+            "default_device: %s config_device: %s", default_device, device_idx
         )
 
         if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
-                f"Audio device out of range: {device_idx}. Reverting to default input device: {default_device}"
+                "Audio device out of range: %s. Reverting to default input device: %s",
+                device_idx,
+                default_device,
             )
             device_idx = default_device
 
@@ -427,7 +452,9 @@ class AudioInputSource:
             except (IndexError, KeyError):
                 device_name = f"index {device_idx}"
             _LOGGER.warning(
-                f"Audio device {device_name} not in valid_device_indexes. Reverting to default input device: {default_device}"
+                "Audio device %s not in valid_device_indexes. Reverting to default input device: %s",
+                device_name,
+                default_device,
             )
             device_idx = default_device
 
@@ -514,7 +541,9 @@ class AudioInputSource:
                 and "Loopback" in device["name"]
             ):
                 _LOGGER.info(
-                    f"Loopback device detected: {device['name']} with {device['max_input_channels']} channels"
+                    "Loopback device detected: %s with %s channels",
+                    device["name"],
+                    device["max_input_channels"],
                 )
             else:
                 # if are not a windows loopback device, we will downmix to mono
@@ -546,7 +575,9 @@ class AudioInputSource:
             self.resampler = samplerate.Resampler("sinc_fastest", channels=1)
 
             _LOGGER.info(
-                f"Audio source opened: {hostapis[device['hostapi']]['name']}: {device.get('name', device.get('client'))}"
+                "Audio source opened: %s: %s",
+                hostapis[device["hostapi"]]["name"],
+                device.get("name", device.get("client")),
             )
 
             AudioInputSource._stream.start()
@@ -559,11 +590,11 @@ class AudioInputSource:
             update_device_tracking(device_idx)
         except OSError as e:
             _LOGGER.critical(
-                f"Unable to open Audio Device: {e} - please retry."
+                "Unable to open Audio Device: %s - please retry.", e
             )
             self.deactivate()
         except sd.PortAudioError as e:
-            _LOGGER.error(f"{e}, Reverting to default input device")
+            _LOGGER.error("%s, Reverting to default input device", e)
             open_audio_stream(default_device)
             # Update tracking for the fallback device
             update_device_tracking(default_device)
@@ -653,7 +684,10 @@ class AudioInputSource:
 
         if best_match_idx != -1:
             _LOGGER.debug(
-                f"Found device by partial match: '{device_name}' in '{devices[best_match_idx]}' at index {best_match_idx}"
+                "Found device by partial match: '%s' in '%s' at index %s",
+                device_name,
+                devices[best_match_idx],
+                best_match_idx,
             )
             return best_match_idx
 
@@ -681,7 +715,9 @@ class AudioInputSource:
 
         if len(processed_audio_sample) != out_sample_len:
             _LOGGER.debug(
-                f"Discarded malformed audio frame - {len(processed_audio_sample)} samples, expected {out_sample_len}"
+                "Discarded malformed audio frame - %s samples, expected %s",
+                len(processed_audio_sample),
+                out_sample_len,
             )
             return
 
@@ -928,7 +964,7 @@ class AudioAnalysisSource(AudioInputSource):
         try:
             return self._pitch(self.audio_sample(raw=True))[0]
         except ValueError as e:
-            _LOGGER.warning(e)
+            _LOGGER.warning("%s", e)
             return 0
 
     @lru_cache(maxsize=None)
@@ -936,7 +972,7 @@ class AudioAnalysisSource(AudioInputSource):
         try:
             return bool(self._onset(self.audio_sample(raw=True))[0])
         except ValueError as e:
-            _LOGGER.warning(e)
+            _LOGGER.warning("%s", e)
             return 0
 
     @lru_cache(maxsize=None)
@@ -947,7 +983,7 @@ class AudioAnalysisSource(AudioInputSource):
         try:
             return bool(self._tempo(self.audio_sample(raw=True))[0])
         except ValueError as e:
-            _LOGGER.warning(e)
+            _LOGGER.warning("%s", e)
             return False
 
     @lru_cache(maxsize=None)
@@ -1201,18 +1237,21 @@ class AudioReactiveEffect(Effect):
     @cached_property
     def _melbank_min_idx(self):
         return next(
-            idx
-            for idx, freq in enumerate(
-                self.audio.melbanks.melbank_processors[
-                    self._selected_melbank
-                ].melbank_frequencies
-            )
-            if freq >= self._virtual.frequency_range.min
+            (
+                idx
+                for idx, freq in enumerate(
+                    self.audio.melbanks.melbank_processors[
+                        self._selected_melbank
+                    ].melbank_frequencies
+                )
+                if freq >= self._virtual.frequency_range.min
+            ),
+            0,  # Default to 0 if no frequency >= min
         )
 
     @cached_property
     def _melbank_max_idx(self):
-        return next(
+        max_idx = next(
             (
                 idx
                 for idx, freq in enumerate(
@@ -1228,10 +1267,22 @@ class AudioReactiveEffect(Effect):
                 ].melbank_frequencies
             ),
         )
+        # Ensure max_idx is always at least min_idx + 1 to prevent empty slices
+        return max(max_idx, self._melbank_min_idx + 1)
 
     @cached_property
     def _input_mel_length(self):
-        return self._melbank_max_idx - self._melbank_min_idx
+        length = self._melbank_max_idx - self._melbank_min_idx
+        # Ensure we have at least 1 frequency bin to avoid crashes
+        if length < 1:
+            _LOGGER.warning(
+                "Frequency range %s-%sHz resulted in %s melbank bins. Adjusting to minimum of 1 bin. Consider using a wider frequency range.",
+                self._virtual.frequency_range.min,
+                self._virtual.frequency_range.max,
+                length,
+            )
+            return 1
+        return length
 
     @lru_cache(maxsize=16)
     def _melbank_interp_linspaces(self, size):
@@ -1281,9 +1332,18 @@ class AudioReactiveEffect(Effect):
         """
         Returns the melbank split into three sections (unequal length)
         Useful for effects that use lows, mids, and highs
+
+        Returns three arrays guaranteed to be safe for max/mean operations
+        (empty arrays replaced with array containing 0.0)
         """
         melbank = self.melbank(**kwargs)
         mel_length = len(melbank)
         splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
 
-        return np.split(melbank, splits)
+        thirds = np.split(melbank, splits)
+
+        # Ensure each third has at least one element to prevent NaN from max/mean
+        # on empty arrays (can happen with very narrow frequency ranges)
+        return tuple(
+            arr if len(arr) > 0 else np.array([0.0]) for arr in thirds
+        )

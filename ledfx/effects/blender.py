@@ -187,7 +187,9 @@ class Blender(AudioReactiveEffect):
             )
         except Exception as e:
             _LOGGER.warning(
-                f"Virtual {self._virtual.name} Blender virtuals not ready {e}"
+                "Virtual %s Blender virtuals not ready %s",
+                self._virtual.name,
+                e,
             )
             return
 

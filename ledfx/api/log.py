@@ -78,7 +78,7 @@ class LogEndpoint(RestEndpoint):
                 )
             self._rate_limit[peer_ip] = now
 
-        _LOGGER.info(f"Frontend log: {sanitized}")
+        _LOGGER.info("Frontend log: %s", sanitized)
         return await self.bare_request_success({"status": "success"})
 
     async def get(self, request: web.Request) -> web.Response:
@@ -127,7 +127,7 @@ class LogWebsocket:
             if self._socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception(f"Unexpected TypeError: {e}")
+                _LOGGER.exception("Unexpected TypeError: %s", e)
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")
@@ -170,7 +170,7 @@ class LogWebsocket:
             if socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception(f"Unexpected TypeError: {e}")
+                _LOGGER.exception("Unexpected TypeError: %s", e)
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")

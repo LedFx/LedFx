@@ -177,7 +177,9 @@ def resolve_safe_path_in_directory(
                 try:
                     os.makedirs(parent_dir, exist_ok=True)
                     _LOGGER.debug(
-                        f"Created {directory_name} subdirectory: {parent_dir}"
+                        "Created %s subdirectory: %s",
+                        directory_name,
+                        parent_dir,
                     )
                 except OSError as e:
                     return (
@@ -189,7 +191,9 @@ def resolve_safe_path_in_directory(
         return True, resolved_path, None
 
     except (ValueError, OSError) as e:
-        _LOGGER.warning(f"Path resolution failed for '{relative_path}': {e}")
+        _LOGGER.warning(
+            "Path resolution failed for '%s': %s", relative_path, e
+        )
         return False, None, f"Invalid path: {e}"
 
 
@@ -230,12 +234,13 @@ def validate_local_path(
                 continue
 
         _LOGGER.warning(
-            f"Path traversal attempt blocked: {file_path} is outside allowed directories"
+            "Path traversal attempt blocked: %s is outside allowed directories",
+            file_path,
         )
         return False, None
 
     except (ValueError, OSError) as e:
-        _LOGGER.warning(f"Invalid path rejected: {file_path} : {e}")
+        _LOGGER.warning("Invalid path rejected: %s : %s", file_path, e)
         return False, None
 
 
@@ -399,14 +404,16 @@ def validate_pil_image(image: Image.Image) -> bool:
     """
     # Check format
     if image.format not in ALLOWED_PIL_FORMATS:
-        _LOGGER.warning(f"Rejected unsupported image format: {image.format}")
+        _LOGGER.warning("Rejected unsupported image format: %s", image.format)
         return False
 
     # Check pixel dimensions (prevent decompression bombs)
     if image.width * image.height > MAX_IMAGE_PIXELS:
         _LOGGER.warning(
-            f"Image too large: {image.width}x{image.height} pixels "
-            f"(max {MAX_IMAGE_PIXELS})"
+            "Image too large: %sx%s pixels (max %s)",
+            image.width,
+            image.height,
+            MAX_IMAGE_PIXELS,
         )
         return False
 

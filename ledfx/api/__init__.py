@@ -21,7 +21,10 @@ class RestEndpoint(BaseRegistry):
     async def handler(self, request: web.Request):
         short_uuid = str(uuid.uuid4())[:4]
         _LOGGER.debug(
-            f"LedFx API Request {short_uuid}: {request.method} {request.path}"
+            "LedFx API Request %s: %s %s",
+            short_uuid,
+            request.method,
+            request.path,
         )
         body = None
         # Skip body parsing for multipart requests - they need to use request.multipart()
@@ -32,8 +35,18 @@ class RestEndpoint(BaseRegistry):
             except JSONDecodeError:
                 body = await request.text()
             finally:
+                if isinstance(body, dict):
+                    body_summary = {"keys": sorted(body.keys())}
+                elif isinstance(body, list):
+                    body_summary = {"items": len(body)}
+                elif body is None:
+                    body_summary = None
+                else:
+                    body_summary = {"length": len(str(body))}
                 _LOGGER.debug(
-                    f"LedFx API Request {short_uuid} payload: {body}"
+                    "LedFx API Request %s payload summary: %s",
+                    short_uuid,
+                    body_summary,
                 )
 
         method = getattr(self, request.method.lower(), None)

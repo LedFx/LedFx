@@ -87,14 +87,17 @@ class OpenRGB(NetworkedDevice):
 
         except (ConnectionRefusedError, TimeoutError):
             _LOGGER.warning(
-                f"{self.openrgb_device_id} not reachable. Is OpenRGB server running?"
+                "OpenRGB server %s:%s not reachable for device %s. Is OpenRGB server running?",
+                self.ip_address,
+                self.port,
+                self.openrgb_device_id,
             )
             self.set_offline()
             return
 
         except IndexError:
             _LOGGER.warning(
-                f"Couldn't find OpenRGB device ID: {self.openrgb_device_id}"
+                "Couldn't find OpenRGB device ID: %s", self.openrgb_device_id
             )
             self.set_offline()
             return
@@ -105,7 +108,8 @@ class OpenRGB(NetworkedDevice):
                 device_supports_direct = True
         if not device_supports_direct:
             _LOGGER.warning(
-                f"{self.openrgb_device_id} doesn't support direct mode - not supported by LedFx."
+                "%s doesn't support direct mode - not supported by LedFx.",
+                self.openrgb_device_id,
             )
             self.set_offline()
             return
@@ -150,7 +154,10 @@ class OpenRGB(NetworkedDevice):
         ) as e:
             # Unexpected device disconnect - deactivate and tell the frontend
             _LOGGER.warning(
-                f"Device {self.name} connection issue ({type(e).__name__}): {e}"
+                "Device %s connection issue (%s): %s",
+                self.name,
+                type(e).__name__,
+                e,
             )
             self.set_offline()
 

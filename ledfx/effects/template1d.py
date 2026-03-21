@@ -87,7 +87,9 @@ class Template1d(AudioReactiveEffect):
         self.beat = 0
         # if you are going to log something, use the logger
         _LOGGER.info(
-            f"This is effect logging spam, but only visible if running in verbose mode due to the info() method\ncolor_beat is {self.color_beat} and the string_value is: {self.string_value}"
+            "This is effect logging spam, but only visible if running in verbose mode due to the info() method\ncolor_beat is %s and the string_value is: %s",
+            self.color_beat,
+            self.string_value,
         )
 
     def audio_data_updated(self, data):

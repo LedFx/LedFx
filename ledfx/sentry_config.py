@@ -40,7 +40,7 @@ def setup_sentry():
             # TODO: trap explicit exceptions if it becomes clear what they are
         except Exception as e:
             commit_hash = "unknown"
-            _LOGGER.warning(f"Failed to get git commit hash: {e}")
+            _LOGGER.warning("Failed to get git commit hash: %s", e)
         finally:
             commit_hash = commit_hash[:7]
             release = f"ledfx@{PROJECT_VERSION}-{commit_hash}"
@@ -52,9 +52,9 @@ def setup_sentry():
         release = f"ledfx@{PROJECT_VERSION}"
 
     _LOGGER.info("Sentry Configuration:")
-    _LOGGER.info(f"DSN (first ten): {sentry_dsn[8:18]}")
-    _LOGGER.info(f"Sample rate: {sample_rate}")
-    _LOGGER.info(f"LedFx release: {release}")
+    _LOGGER.info("DSN (first ten): %s", sentry_dsn[8:18])
+    _LOGGER.info("Sample rate: %s", sample_rate)
+    _LOGGER.info("LedFx release: %s", release)
 
     sentry_sdk.init(
         sentry_dsn,

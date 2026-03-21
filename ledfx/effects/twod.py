@@ -146,7 +146,10 @@ class Twod(AudioReactiveEffect):
             old_matrix.close()
         if self.matrix.size != (self.t_width, self.t_height):
             _LOGGER.error(
-                f"Matrix is wrong size {self.matrix.size} vs r {(self.r_width, self.r_height)} vs t {(self.t_width, self.t_height)}"
+                "Matrix is wrong size %s vs r %s vs t %s",
+                self.matrix.size,
+                (self.r_width, self.r_height),
+                (self.t_width, self.t_height),
             )
 
         rgb_array = np.frombuffer(self.matrix.tobytes(), dtype=np.uint8)
@@ -162,7 +165,12 @@ class Twod(AudioReactiveEffect):
             # show image on screen
             self.matrix.show()
             _LOGGER.info(
-                f"dump {self.t_width}x{self.t_height} R: {self.rotate_t} F: {self.flip2d} M: {self.mirror2d}"
+                "dump %sx%s R: %s F: %s M: %s",
+                self.t_width,
+                self.t_height,
+                self.rotate_t,
+                self.flip2d,
+                self.mirror2d,
             )
 
     def draw_test(self, rgb_draw):

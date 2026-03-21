@@ -356,7 +356,7 @@ class Effect(BaseRegistry):
                 if hasattr(base, "on_activate"):
                     base.on_activate(self, virtual.effective_pixel_count)
             self._active = True
-            _LOGGER.info(f"Effect {self.NAME} activated.")
+            _LOGGER.info("Effect %s activated.", self.NAME)
 
     def _deactivate(self):
         # we need this wrapper to ensure the full chain of
@@ -375,7 +375,7 @@ class Effect(BaseRegistry):
             self.logsec.effect = None
             self.logsec.diag = False
         self._active = False
-        _LOGGER.info(f"Effect {self.NAME} deactivated.")
+        _LOGGER.info("Effect %s deactivated.", self.NAME)
 
     @classmethod
     def get_combined_default_schema(cls):
@@ -399,7 +399,7 @@ class Effect(BaseRegistry):
                 validated_config = type(self).schema()(config)
             except vol.Invalid as err:
                 _LOGGER.warning(
-                    f"Error updating effect {self.NAME} config: {err}"
+                    "Error updating effect %s config: %s", self.NAME, err
                 )
                 return
 
@@ -442,7 +442,7 @@ class Effect(BaseRegistry):
                     base.config_updated(self, self._config)
 
             _LOGGER.debug(
-                f"Effect {self.NAME} config updated to {validated_config}."
+                "Effect %s config updated to %s.", self.NAME, validated_config
             )
 
             if self._virtual:

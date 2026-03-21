@@ -84,7 +84,10 @@ class ZeroConfRunner:
             state_change (ServiceStateChange): The state change event.
         """
         _LOGGER.debug(
-            f"Service {name} of type {service_type} state changed: {state_change}"
+            "Service %s of type %s state changed: %s",
+            name,
+            service_type,
+            state_change,
         )
         if state_change is not ServiceStateChange.Added:
             return
@@ -111,7 +114,7 @@ class ZeroConfRunner:
         await info.async_request(zeroconf, 3000)
         if info:
             hostname = str(info.server).rstrip(".")
-            _LOGGER.info(f"Found WLED device: {hostname}")
+            _LOGGER.info("Found WLED device: %s", hostname)
 
             device_type = "wled"
             device_config = {"ip_address": hostname}

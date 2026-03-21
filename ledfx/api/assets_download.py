@@ -125,7 +125,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
                         type="error",
                     )
             except Exception as e:
-                _LOGGER.warning(f"Failed to fetch URL {asset_path}: {e}")
+                _LOGGER.warning("Failed to fetch URL %s: %s", asset_path, e)
                 return await self.invalid_request(
                     message=f"Failed to fetch URL: {e}",
                     type="error",
@@ -143,7 +143,9 @@ class AssetsDownloadEndpoint(RestEndpoint):
                         type="error",
                     )
             except Exception as e:
-                _LOGGER.warning(f"Failed to retrieve asset {asset_path}: {e}")
+                _LOGGER.warning(
+                    "Failed to retrieve asset %s: %s", asset_path, e
+                )
                 return await self.internal_error(
                     message=f"Failed to retrieve asset: {e}"
                 )

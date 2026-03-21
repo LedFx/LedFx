@@ -195,7 +195,9 @@ class EffectsEndpoint(RestEndpoint):
                                 )
                             except Exception as e:
                                 _LOGGER.warning(
-                                    f"Failed to sample gradient at {group['value']}: {e}"
+                                    "Failed to sample gradient at %s: %s",
+                                    group["value"],
+                                    e,
                                 )
                                 continue
                             for color_key in group["keys"]:
@@ -299,7 +301,9 @@ class EffectsEndpoint(RestEndpoint):
                     updated += 1
                 except Exception as e:
                     _LOGGER.warning(
-                        f"Failed to update config on virtual {getattr(virtual, 'id', '?')}: {e}"
+                        "Failed to update config on virtual %s: %s",
+                        getattr(virtual, "id", "?"),
+                        e,
                     )
                     skipped += 1
             else:
@@ -314,7 +318,7 @@ class EffectsEndpoint(RestEndpoint):
                 )
             except Exception as e:
                 _LOGGER.warning(
-                    f"Failed to save config after apply_global: {e}"
+                    "Failed to save config after apply_global: %s", e
                 )
 
         return await self.request_success(
@@ -394,7 +398,7 @@ class EffectsEndpoint(RestEndpoint):
                 applied += 1
             except (ValueError, RuntimeError) as msg:
                 _LOGGER.warning(
-                    f"Unable to set effect on virtual {vid}: {msg}"
+                    "Unable to set effect on virtual %s: %s", vid, msg
                 )
                 failed += 1
 
@@ -407,7 +411,7 @@ class EffectsEndpoint(RestEndpoint):
                 )
             except Exception as e:
                 _LOGGER.warning(
-                    f"Failed to save config after apply_global_effect: {e}"
+                    "Failed to save config after apply_global_effect: %s", e
                 )
 
         return await self.request_success(

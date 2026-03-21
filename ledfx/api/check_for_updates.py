@@ -32,7 +32,7 @@ class CheckLedFxUpdatesEndPoint(RestEndpoint):
             release_url = UpdateChecker.get_release_url()
             if UpdateChecker.update_available():
                 msg = "New LedFx version is available"
-                _LOGGER.warning(f"{msg}.")
+                _LOGGER.warning("%s.", msg)
                 return await self.request_success(
                     type="warning",
                     message=msg,
@@ -44,10 +44,10 @@ class CheckLedFxUpdatesEndPoint(RestEndpoint):
                 )
             else:
                 msg = "LedFx is up to date"
-                _LOGGER.info(f"{msg}.")
+                _LOGGER.info("%s.", msg)
 
                 return await self.request_success(type="success", message=msg)
         else:
             msg = "Unable to check for updates"
-            _LOGGER.warning(f"{msg}.")
+            _LOGGER.warning("%s.", msg)
             return await self.request_success(type="info", message=msg)

@@ -58,7 +58,7 @@ class DeviceEndpoint(RestEndpoint):
                 "Required attribute 'config' was not provided"
             )
         _LOGGER.debug(
-            f"Updating device {device_id} with config {device_config}"
+            "Updating device %s with config %s", device_id, device_config
         )
 
         try:

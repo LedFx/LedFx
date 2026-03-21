@@ -106,7 +106,8 @@ class ArtNetDevice(NetworkedDevice):
     def activate(self):
         if self._artnet:
             _LOGGER.warning(
-                f"Art-Net sender already started for device {self.config['name']}"
+                "Art-Net sender already started for device %s",
+                self.config["name"],
             )
 
         # check if provided address is a broadcast address
@@ -227,4 +228,4 @@ class ArtNetDevice(NetworkedDevice):
             finally:
                 self.lock.release()
         else:
-            _LOGGER.error(f"Panic could not get lock {self.config['name']}")
+            _LOGGER.error("Panic could not get lock %s", self.config["name"])

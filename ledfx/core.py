@@ -186,8 +186,9 @@ class LedFxCore:
                 )
         except Exception as e:
             _LOGGER.warning(
-                f"Failed to start audio device monitor: {e}. "
-                "Device list will not update automatically when devices are added/removed."
+                "Failed to start audio device monitor: %s. "
+                "Device list will not update automatically when devices are added/removed.",
+                e,
             )
 
     def _on_audio_devices_changed(self):
@@ -220,7 +221,8 @@ class LedFxCore:
             )
 
         _LOGGER.error(
-            "Exception in core event loop: {}".format(context["message"]),
+            "Exception in core event loop: %s",
+            context["message"],
             **kwargs,
         )
 
@@ -235,7 +237,8 @@ class LedFxCore:
             webbrowser.get().open(url)
         except webbrowser.Error:
             _LOGGER.warning(
-                f"Failed to open default web browser. To access LedFx's web ui, open {url} in your browser."
+                "Failed to open default web browser. To access LedFx's web ui, open %s in your browser.",
+                url,
             )
 
     def setup_icon_menu(self):
@@ -378,7 +381,9 @@ class LedFxCore:
                 latest_version = UpdateChecker.get_latest_version()
                 release_url = UpdateChecker.get_release_url()
                 _LOGGER.warning(
-                    f"New version of LedFx available: {latest_version} - {release_url}"
+                    "New version of LedFx available: %s - %s",
+                    latest_version,
+                    release_url,
                 )
 
                 if self.icon and self.icon.HAS_NOTIFICATION:
@@ -424,7 +429,9 @@ class LedFxCore:
         return self.exit_code
 
     async def async_start(self, open_ui=False, pause_all=False):
-        _LOGGER.info(f"Starting LedFx, listening on {self.host}:{self.port}")
+        _LOGGER.info(
+            "Starting LedFx, listening on %s:%s", self.host, self.port
+        )
 
         if (
             self.icon is not None
@@ -515,19 +522,24 @@ class LedFxCore:
                 output_file_path = os.path.join(project_root, output_file_name)
 
                 _LOGGER.info(
-                    f"Attempting to write TypeScript types to: {output_file_path}"
+                    "Attempting to write TypeScript types to: %s",
+                    output_file_path,
                 )
                 with open(output_file_path, "w", encoding="utf-8") as f:
                     f.write(ts_code_string)
                 _LOGGER.info(
-                    f"Successfully wrote TypeScript types to {output_file_path}"
+                    "Successfully wrote TypeScript types to %s",
+                    output_file_path,
                 )
 
             except OSError as e:
-                _LOGGER.error(f"IOError writing TypeScript types to file: {e}")
+                _LOGGER.error(
+                    "IOError writing TypeScript types to file: %s", e
+                )
             except Exception as e:
                 _LOGGER.error(
-                    f"Unexpected error writing TypeScript types to file: {e}"
+                    "Unexpected error writing TypeScript types to file: %s",
+                    e,
                 )
 
             self.stop(5)
@@ -538,11 +550,13 @@ class LedFxCore:
         if self.config["startup_scene_id"] != "":
             if self.scenes.activate(self.config["startup_scene_id"]):
                 _LOGGER.info(
-                    f"startup_scene_id; {self.config['startup_scene_id']} activated."
+                    "startup_scene_id; %s activated.",
+                    self.config["startup_scene_id"],
                 )
             else:
                 _LOGGER.warning(
-                    f"startup_scene_id: {self.config['startup_scene_id']} not found."
+                    "startup_scene_id: %s not found.",
+                    self.config["startup_scene_id"],
                 )
 
         if pause_all:
@@ -556,7 +570,7 @@ class LedFxCore:
         if not self.loop:
             return
 
-        print("Stopping LedFx.")
+        _LOGGER.info("Stopping LedFx.")
         try:
             _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
             # Fire a shutdown event
@@ -568,7 +582,7 @@ class LedFxCore:
                     self.audio_device_monitor.stop()
                 except Exception as e:
                     _LOGGER.warning(
-                        f"Error stopping audio device monitor: {e}"
+                        "Error stopping audio device monitor: %s", e
                     )
 
             _LOGGER.info("Stopping HTTP Server...")
@@ -582,7 +596,7 @@ class LedFxCore:
             ]
             if tasks:
                 _LOGGER.debug(
-                    f"Killing {len(tasks)} tasks prior to shutdown..."
+                    "Killing %s tasks prior to shutdown...", len(tasks)
                 )
                 # Cancel all tasks concurrently
                 group = asyncio.gather(*tasks, return_exceptions=True)
@@ -597,7 +611,7 @@ class LedFxCore:
             save_config(config=self.config, config_dir=self.config_dir)
 
         except Exception as e:
-            _LOGGER.error(f"An error occurred while stopping: {e}")
+            _LOGGER.error("An error occurred while stopping: %s", e)
             self.exit_code = 1
 
         finally:

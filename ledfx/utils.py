@@ -154,7 +154,7 @@ def fps_to_sleep_interval(fps):
 
 
 def install_package(package):
-    _LOGGER.debug(f"Installed package: {package}")
+    _LOGGER.debug("Installing package: %s", package)
     env = os.environ.copy()
     args = [
         sys.executable,
@@ -173,13 +173,15 @@ def install_package(package):
             stderr.decode("utf-8").lstrip().strip(),
         )
         return False
+    _LOGGER.debug("Installed package: %s", package)
     return True
 
 
 def import_or_install(package):
     try:
-        _LOGGER.debug(f"Imported package: {package}")
-        return importlib.import_module(package)
+        module = importlib.import_module(package)
+        _LOGGER.debug("Imported package: %s", package)
+        return module
 
     except ImportError:
         install_package(package)
@@ -265,7 +267,7 @@ def check_if_ip_is_broadcast(thisip):
         return False
 
     except OSError as e:
-        _LOGGER.warning(f"Unable to check if ip is a broadcast address: {e}")
+        _LOGGER.warning("Unable to check if ip is a broadcast address: %s", e)
         return False
 
 
@@ -290,9 +292,9 @@ def async_fire_and_return(coro, callback, timeout=10):
         if exc:
             # Handle wonderful empty TimeoutError exception
             if isinstance(exc, TimeoutError):
-                _LOGGER.warning(f"Coroutine {future} timed out.")
+                _LOGGER.warning("Coroutine %s timed out.", future)
             else:
-                _LOGGER.error(exc)
+                _LOGGER.error("%s", exc)
         else:
             callback(future.result())
 
@@ -395,7 +397,7 @@ class WLED:
             config: dict, with all wled configuration info
         """
         _LOGGER.info(
-            f"WLED {self.ip_address}: Attempting to contact device..."
+            "WLED %s: Attempting to contact device...", self.ip_address
         )
         response = await WLED._wled_request(
             requests.get, self.ip_address, "json/info"
@@ -409,7 +411,9 @@ class WLED:
             )
 
         _LOGGER.info(
-            f"WLED compatible device brand:{wled_config['brand']} at {self.ip_address} configuration received"
+            "WLED compatible device brand:%s at %s configuration received",
+            wled_config["brand"],
+            self.ip_address,
         )
 
         return wled_config
@@ -420,14 +424,16 @@ class WLED:
         Returns:
             nodes: dict, with all wled nodes info
         """
-        _LOGGER.info(f"WLED {self.ip_address}: Attempting to get nodes...")
+        _LOGGER.info("WLED %s: Attempting to get nodes...", self.ip_address)
         response = await WLED._wled_request(
             requests.get, self.ip_address, "json/nodes"
         )
 
         wled_nodes = response.json()
 
-        _LOGGER.debug(f"WLED {self.ip_address}: Received config {wled_nodes}")
+        _LOGGER.debug(
+            "WLED %s: Received config %s", self.ip_address, wled_nodes
+        )
 
         return wled_nodes
 
@@ -480,7 +486,7 @@ class WLED:
         )
 
         _LOGGER.info(
-            f"WLED {self.ip_address}: Turned {'on' if state else 'off'}."
+            "WLED %s: Turned %s.", self.ip_address, "on" if state else "off"
         )
 
     async def set_brightness(self, brightness):
@@ -500,7 +506,7 @@ class WLED:
         )
 
         _LOGGER.info(
-            f"WLED {self.ip_address}: Set brightness to {brightness}."
+            "WLED %s: Set brightness to %s.", self.ip_address, brightness
         )
 
     def enable_realtime_gamma(self):
@@ -513,7 +519,7 @@ class WLED:
         self.sync_settings["if"]["live"]["no-gc"] = False
 
         _LOGGER.info(
-            f"WLED {self.ip_address}: Enabled realtime gamma correction"
+            "WLED %s: Enabled realtime gamma correction", self.ip_address
         )
 
     def force_max_brightness(self):
@@ -524,7 +530,7 @@ class WLED:
         """
         self.sync_settings["if"]["live"]["maxbri"] = True
 
-        _LOGGER.info(f"WLED {self.ip_address}: Enabled force max brightness")
+        _LOGGER.info("WLED %s: Enabled force max brightness", self.ip_address)
 
     def multirgb_dmx_mode(self):
         """
@@ -534,7 +540,7 @@ class WLED:
         """
         self.sync_settings["if"]["live"]["dmx"]["mode"] = 4
 
-        _LOGGER.info(f"WLED {self.ip_address}: Enabled Multi RGB")
+        _LOGGER.info("WLED %s: Enabled Multi RGB", self.ip_address)
 
     def first_universe(self):
         """
@@ -544,7 +550,7 @@ class WLED:
         """
         self.sync_settings["if"]["live"]["dmx"]["uni"] = 1
 
-        _LOGGER.info(f"WLED {self.ip_address}: Set first Universe = 1")
+        _LOGGER.info("WLED %s: Set first Universe = 1", self.ip_address)
 
     def first_dmx_address(self):
         """
@@ -554,7 +560,7 @@ class WLED:
         """
         self.sync_settings["if"]["live"]["dmx"]["addr"] = 1
 
-        _LOGGER.info(f"WLED {self.ip_address}: Set first DMX address = 1")
+        _LOGGER.info("WLED %s: Set first DMX address = 1", self.ip_address)
 
     def get_inactivity_timeout(self):
         """
@@ -578,7 +584,7 @@ class WLED:
         self.sync_settings["if"]["live"]["timeout"] = timeout * 10
 
         _LOGGER.info(
-            f"Set WLED device at {self.ip_address} timeout to {timeout}s"
+            "Set WLED device at %s timeout to %ss", self.ip_address, timeout
         )
 
     def set_sync_mode(self, mode):
@@ -610,7 +616,7 @@ class WLED:
         self.reboot_flag = True
 
         _LOGGER.info(
-            f"Set WLED device at {self.ip_address} to sync mode '{mode}'"
+            "Set WLED device at %s to sync mode '%s'", self.ip_address, mode
         )
 
     def get_sync_mode(self):
@@ -675,7 +681,7 @@ async def resolve_destination(
             dest = await loop.run_in_executor(
                 executor, socket.gethostbyname, cleaned_dest
             )
-            _LOGGER.debug(f"Resolved {cleaned_dest} to {dest}")
+            _LOGGER.debug("Resolved %s to %s", cleaned_dest, dest)
             return dest
             # dest = await loop.getaddrinfo(cleaned_dest, port)
             # return dest[0][4][0]
@@ -711,7 +717,7 @@ def read_ledfx_dotenv():
         path_to_load = os.path.join(parent_dir, "ledfx.env")
     if os.path.exists(path_to_load):
         load_dotenv(dotenv_path=path_to_load)
-        _LOGGER.debug(f"Loaded dotenv from {path_to_load}")
+        _LOGGER.debug("Loaded dotenv from %s", path_to_load)
 
 
 def currently_frozen():
@@ -743,7 +749,7 @@ def get_icon_path(icon_filename) -> str:
     )
 
     if not os.path.isfile(icon_location):
-        _LOGGER.error(f"No icon found at {icon_location}")
+        _LOGGER.error("No icon found at %s", icon_location)
 
     return icon_location
 
@@ -893,18 +899,18 @@ class UserDefaultCollection(MutableMapping):
         if val:
             return self._parser(val)
         raise KeyError(f"Unknown {self._collection_name}: {key}")
-        # _LOGGER.error(f"Unknown {self._collection_name}: {name}")
+        # _LOGGER.error("Unknown %s: %s", self._collection_name, name)
 
     def __delitem__(self, key):
         if key in self._default_vals:
             _LOGGER.error(
-                f"Cannot delete LedFx {self._collection_name}: {key}"
+                "Cannot delete LedFx %s: %s", self._collection_name, key
             )
             return
         if key in self._user_vals:
             del self._user_vals[key]
         _LOGGER.info(
-            f"Deleted {self._collection_name.lower().rstrip('s')}: {key}"
+            "Deleted %s: %s", self._collection_name.lower().rstrip("s"), key
         )
         save_config(
             config=self._ledfx.config,
@@ -917,12 +923,12 @@ class UserDefaultCollection(MutableMapping):
     def __setitem__(self, key, value):
         if key in self._default_vals:
             _LOGGER.error(
-                f"Cannot overwrite LedFx {self._collection_name}: {key}"
+                "Cannot overwrite LedFx %s: %s", self._collection_name, key
             )
             return
         self._user_vals[key] = self._validator(value)
         _LOGGER.info(
-            f"Saved {self._collection_name.lower().rstrip('s')}: {key}"
+            "Saved %s: %s", self._collection_name.lower().rstrip("s"), key
         )
         save_config(
             config=self._ledfx.config,
@@ -1126,12 +1132,15 @@ class RegistryLoader:
         """
 
         found = self.discover_modules(package)
-        _LOGGER.debug(f"Importing {found} from {package}")
+        _LOGGER.debug("Importing %s modules from %s", len(found), package)
         for name in found:
             try:
                 importlib.import_module(name)
             except ModuleNotFoundError as e:
-                _LOGGER.warning(f"Failed to import {name} from {package}: {e}")
+                _LOGGER.warning(
+                    "Failed to import %s from %s: %s", name, package, e
+                )
+        _LOGGER.debug("Finished importing from %s", package)
 
     def discover_modules(self, package):
         """Discovers all modules in the package"""
@@ -1171,14 +1180,14 @@ class RegistryLoader:
                 module = importlib.import_module(name, path)
                 sys.modules[name] = module
             except SyntaxError as e:
-                _LOGGER.error(f"Failed to reload {name}: {e}")
+                _LOGGER.error("Failed to reload %s: %s", name, e)
         else:
             pass
 
     def reload(self, force=False):
         """Reloads the registry"""
         found = self.discover_modules(self._package)
-        _LOGGER.debug(f"Reloading {found} from {self._package}")
+        _LOGGER.debug("Reloading %s from %s", found, self._package)
         for name in found:
             self.reload_module(name)
 
@@ -1186,7 +1195,9 @@ class RegistryLoader:
         """Loads and creates an object from the registry by type. If type is missing, logs a warning and returns None instead of raising."""
         if type not in self._cls.registry():
             _LOGGER.warning(
-                f"Couldn't find '{type}' in the {self._cls.__name__.lower()} registry. Skipping creation."
+                "Couldn't find '%s' in the %s registry. Skipping creation.",
+                type,
+                self._cls.__name__.lower(),
             )
             return None
 
@@ -1343,7 +1354,7 @@ class Graph:
             else:
                 compound = self.title
 
-            _LOGGER.info(f"Attempting to dump graph {compound}")
+            _LOGGER.info("Attempting to dump graph %s", compound)
             TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
             colors = cycle(Category10[10])
 
@@ -1530,7 +1541,7 @@ def init_image_cache(
     _config_dir = os.path.abspath(config_dir)
     _image_cache = ImageCache(config_dir, max_size_mb, max_items)
     _LOGGER.info(
-        f"Image cache initialized: max {max_size_mb}MB, {max_items} items"
+        "Image cache initialized: max %sMB, %s items", max_size_mb, max_items
     )
 
 
@@ -1580,16 +1591,16 @@ def _validate_and_open_image(
     """
     # Check file exists
     if not os.path.exists(resolved_path):
-        _LOGGER.warning(f"File not found: {original_path}")
+        _LOGGER.warning("File not found: %s", original_path)
         return None
 
     if not os.path.isfile(resolved_path):
-        _LOGGER.warning(f"Path is not a file: {original_path}")
+        _LOGGER.warning("Path is not a file: %s", original_path)
         return None
 
     # Validate extension
     if not is_allowed_image_extension(resolved_path):
-        _LOGGER.warning(f"Invalid image extension: {original_path}")
+        _LOGGER.warning("Invalid image extension: %s", original_path)
         return None
 
     # Check file size
@@ -1597,25 +1608,27 @@ def _validate_and_open_image(
         file_size = os.path.getsize(resolved_path)
         if file_size > MAX_IMAGE_SIZE_BYTES:
             _LOGGER.warning(
-                f"File too large: {file_size} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                "File too large: %s bytes (max %s)",
+                file_size,
+                MAX_IMAGE_SIZE_BYTES,
             )
             return None
 
     # Validate MIME type
     if not validate_image_mime_type(resolved_path):
-        _LOGGER.warning(f"Invalid image MIME type: {original_path}")
+        _LOGGER.warning("Invalid image MIME type: %s", original_path)
         return None
 
     # Open the image
     try:
         gif = Image.open(resolved_path)
     except Exception as e:
-        _LOGGER.warning(f"Failed to open image: {original_path} : {e}")
+        _LOGGER.warning("Failed to open image: %s : %s", original_path, e)
         return None
 
     # Validate PIL format and dimensions
     if not validate_pil_image(gif):
-        _LOGGER.warning(f"Invalid PIL format or dimensions: {original_path}")
+        _LOGGER.warning("Invalid PIL format or dimensions: %s", original_path)
         return None
 
     # Protect against single frame image like png, jpg
@@ -1680,7 +1693,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
             )
             if not is_valid:
                 _LOGGER.warning(
-                    f"Built-in asset path validation failed: {error}"
+                    "Built-in asset path validation failed: %s", error
                 )
                 return None
 
@@ -1704,27 +1717,32 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                             return gif
                         else:
                             _LOGGER.warning(
-                                f"Cached GIF failed validation, re-downloading: {gif_path}"
+                                "Cached GIF failed validation, re-downloading: %s",
+                                gif_path,
                             )
                             # Delete corrupt cache entry and fall through to download
                             _image_cache.delete(gif_path)
                     except Exception as e:
                         _LOGGER.warning(
-                            f"Error reading cached GIF, re-downloading: {gif_path} : {e}"
+                            "Error reading cached GIF, re-downloading: %s : %s",
+                            gif_path,
+                            e,
                         )
                         # Delete corrupt cache entry and fall through to download
                         _image_cache.delete(gif_path)
 
             # Validate extension
             if not is_allowed_image_extension(gif_path):
-                _LOGGER.warning(f"URL has invalid image extension: {gif_path}")
+                _LOGGER.warning(
+                    "URL has invalid image extension: %s", gif_path
+                )
                 return None
 
             # Validate URL safety (SSRF protection)
             is_safe, error_msg = validate_url_safety(gif_path)
             if not is_safe:
                 _LOGGER.warning(
-                    f"URL blocked for security: {gif_path} - {error_msg}"
+                    "URL blocked for security: %s - %s", gif_path, error_msg
                 )
                 return None
 
@@ -1740,7 +1758,9 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                     and int(content_length) > MAX_IMAGE_SIZE_BYTES
                 ):
                     _LOGGER.warning(
-                        f"Image too large: {content_length} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                        "Image too large: %s bytes (max %s)",
+                        content_length,
+                        MAX_IMAGE_SIZE_BYTES,
                     )
                     return None
 
@@ -1766,7 +1786,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 # Validate PIL format and dimensions
                 if not validate_pil_image(gif):
                     _LOGGER.warning(
-                        f"Invalid PIL format or dimensions: {gif_path}"
+                        "Invalid PIL format or dimensions: %s", gif_path
                     )
                     return None
 
@@ -1789,7 +1809,9 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
             # Allow single-letter schemes (Windows drive letters like C:)
             if parsed.scheme and len(parsed.scheme) > 1:
                 _LOGGER.warning(
-                    f"Invalid URL scheme '{parsed.scheme}' for local file: {gif_path}"
+                    "Invalid URL scheme '%s' for local file: %s",
+                    parsed.scheme,
+                    gif_path,
                 )
                 return None
 
@@ -1809,7 +1831,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 )
                 if not is_valid:
                     _LOGGER.warning(
-                        f"User asset path validation failed: {error}"
+                        "User asset path validation failed: %s", error
                     )
                     return None
 
@@ -1823,7 +1845,8 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 is_valid, validated_path = validate_local_image_path(gif_path)
                 if not is_valid:
                     _LOGGER.warning(
-                        f"Path traversal blocked or path outside config directory: {gif_path}"
+                        "Path traversal blocked or path outside config directory: %s",
+                        gif_path,
                     )
                     return None
 
@@ -1834,13 +1857,15 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
                 return gif if gif else None
 
     except urllib.error.HTTPError as e:
-        _LOGGER.warning(f"HTTP error fetching {gif_path}: {e.code} {e.reason}")
+        _LOGGER.warning(
+            "HTTP error fetching %s: %s %s", gif_path, e.code, e.reason
+        )
         return None
     except urllib.error.URLError as e:
-        _LOGGER.warning(f"URL error fetching {gif_path}: {e.reason}")
+        _LOGGER.warning("URL error fetching %s: %s", gif_path, e.reason)
         return None
     except Exception as e:
-        _LOGGER.warning(f"Failed to open gif: {gif_path} : {e}")
+        _LOGGER.warning("Failed to open gif: %s : %s", gif_path, e)
         return None
 
 
@@ -1885,7 +1910,7 @@ def open_image(image_path, force_refresh=False, config_dir=None):
             )
             if not is_valid:
                 _LOGGER.warning(
-                    f"Built-in image path validation failed: {error}"
+                    "Built-in image path validation failed: %s", error
                 )
                 return None
 
@@ -1906,13 +1931,16 @@ def open_image(image_path, force_refresh=False, config_dir=None):
                             return image
                         else:
                             _LOGGER.warning(
-                                f"Cached image failed validation, re-downloading: {image_path}"
+                                "Cached image failed validation, re-downloading: %s",
+                                image_path,
                             )
                             # Delete corrupt cache entry and fall through to download
                             _image_cache.delete(image_path)
                     except Exception as e:
                         _LOGGER.warning(
-                            f"Error reading cached image, re-downloading: {image_path} : {e}"
+                            "Error reading cached image, re-downloading: %s : %s",
+                            image_path,
+                            e,
                         )
                         # Delete corrupt cache entry and fall through to download
                         _image_cache.delete(image_path)
@@ -1920,7 +1948,7 @@ def open_image(image_path, force_refresh=False, config_dir=None):
             # Validate extension
             if not is_allowed_image_extension(image_path):
                 _LOGGER.warning(
-                    f"URL has invalid image extension: {image_path}"
+                    "URL has invalid image extension: %s", image_path
                 )
                 return None
 
@@ -1928,7 +1956,7 @@ def open_image(image_path, force_refresh=False, config_dir=None):
             is_safe, error_msg = validate_url_safety(image_path)
             if not is_safe:
                 _LOGGER.warning(
-                    f"URL blocked for security: {image_path} - {error_msg}"
+                    "URL blocked for security: %s - %s", image_path, error_msg
                 )
                 return None
 
@@ -1944,7 +1972,9 @@ def open_image(image_path, force_refresh=False, config_dir=None):
                     and int(content_length) > MAX_IMAGE_SIZE_BYTES
                 ):
                     _LOGGER.warning(
-                        f"Image too large: {content_length} bytes (max {MAX_IMAGE_SIZE_BYTES})"
+                        "Image too large: %s bytes (max %s)",
+                        content_length,
+                        MAX_IMAGE_SIZE_BYTES,
                     )
                     return None
 
@@ -1970,7 +2000,7 @@ def open_image(image_path, force_refresh=False, config_dir=None):
                 # Validate PIL format and dimensions
                 if not validate_pil_image(image):
                     _LOGGER.warning(
-                        f"Invalid PIL format or dimensions: {image_path}"
+                        "Invalid PIL format or dimensions: %s", image_path
                     )
                     return None
 
@@ -1989,7 +2019,9 @@ def open_image(image_path, force_refresh=False, config_dir=None):
             # Allow single-letter schemes (Windows drive letters like C:)
             if parsed.scheme and len(parsed.scheme) > 1:
                 _LOGGER.warning(
-                    f"Invalid URL scheme '{parsed.scheme}' for local file: {image_path}"
+                    "Invalid URL scheme '%s' for local file: %s",
+                    parsed.scheme,
+                    image_path,
                 )
                 return None
 
@@ -2009,7 +2041,7 @@ def open_image(image_path, force_refresh=False, config_dir=None):
                 )
                 if not is_valid:
                     _LOGGER.warning(
-                        f"User asset path validation failed: {error}"
+                        "User asset path validation failed: %s", error
                     )
                     return None
 
@@ -2025,7 +2057,8 @@ def open_image(image_path, force_refresh=False, config_dir=None):
                 )
                 if not is_valid:
                     _LOGGER.warning(
-                        f"Path traversal blocked or path outside config directory: {image_path}"
+                        "Path traversal blocked or path outside config directory: %s",
+                        image_path,
                     )
                     return None
 
@@ -2037,14 +2070,14 @@ def open_image(image_path, force_refresh=False, config_dir=None):
 
     except urllib.error.HTTPError as e:
         _LOGGER.warning(
-            f"HTTP error fetching {image_path}: {e.code} {e.reason}"
+            "HTTP error fetching %s: %s %s", image_path, e.code, e.reason
         )
         return None
     except urllib.error.URLError as e:
-        _LOGGER.warning(f"URL error fetching {image_path}: {e.reason}")
+        _LOGGER.warning("URL error fetching %s: %s", image_path, e.reason)
         return None
     except Exception as e:
-        _LOGGER.warning(f"Failed to open image: {image_path} : {e}")
+        _LOGGER.warning("Failed to open image: %s : %s", image_path, e)
         return None
 
 
@@ -2088,7 +2121,7 @@ def get_font(font_list, size):
     for font_name in font_list:
         try:
             font = ImageFont.truetype(font_name, size)
-            _LOGGER.info(f"Found font: {font_name}")
+            _LOGGER.info("Found font: %s", font_name)
             return font
         except OSError:
             continue
@@ -2161,15 +2194,18 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
 
 
 def log_packages():
-    _LOGGER.debug(f"{system()} : {release()} : {processor()}")
+    _LOGGER.debug("%s : %s : %s", system(), release(), processor())
     _LOGGER.debug(
-        f"{python_version()} : {python_build()} : {python_implementation()}"
+        "%s : %s : %s",
+        python_version(),
+        python_build(),
+        python_implementation(),
     )
     _LOGGER.debug("Packages")
     dists = list(metadata.distributions())
     dists.sort(key=lambda x: x.metadata["name"])
     for dist in dists:
-        _LOGGER.debug(f"{dist.metadata['name']} : {dist.version}")
+        _LOGGER.debug("%s : %s", dist.metadata["name"], dist.version)
 
 
 def is_package_installed(package_name: str, import_name: str = None) -> bool:
@@ -2188,8 +2224,10 @@ def is_package_installed(package_name: str, import_name: str = None) -> bool:
     # Try to get import spec
     spec = importlib.util.find_spec(import_name)
     if spec is None:
-        _LOGGER.info(
-            f"Optional dependency '{package_name}' not found (import name: '{import_name}')."
+        _LOGGER.debug(
+            "Optional dependency '%s' not found (import name: '%s').",
+            package_name,
+            import_name,
         )
         return False
 
@@ -2201,9 +2239,11 @@ def is_package_installed(package_name: str, import_name: str = None) -> bool:
 
     path = spec.origin or "unknown"
 
-    _LOGGER.info(f"Optional dependency '{package_name}' is installed:")
-    _LOGGER.info(f"  ├── Version: {version}")
-    _LOGGER.info(f"  └── Path:    {path}")
+    _LOGGER.debug(
+        "Optional dependency '%s' is installed (version: %s)",
+        package_name,
+        version,
+    )
     return True
 
 
@@ -2377,7 +2417,7 @@ class UpdateChecker:
             UpdateChecker._release_url = data["html_url"]
             UpdateChecker._update_check_succeeded = True
         except requests.RequestException as e:
-            _LOGGER.info(f"Failed to check for updates: {e}")
+            _LOGGER.info("Failed to check for updates: %s", e)
             UpdateChecker._update_check_succeeded = False
             return False
 
@@ -2569,7 +2609,7 @@ class Teleplot:
         try:
             Teleplot.sock.sendto(string.encode(), ("127.0.0.1", 47269))
         except Exception as e:
-            _LOGGER.error(f"Failed to send data to teleplot: {e}")
+            _LOGGER.error("Failed to send data to teleplot: %s", e)
 
 
 def aggressive_top_end_bias(x, boost):
@@ -2625,25 +2665,29 @@ def get_sorted_physical_ips() -> list[str]:
             "bridge",  # macOS
         ]
 
-        _LOGGER.info("Starting local IP discovery")
+        _LOGGER.debug("Starting local IP discovery")
 
         stats = psutil.net_if_stats()
         counters = psutil.net_io_counters(pernic=True)
 
         for iface_name, iface_addrs in psutil.net_if_addrs().items():
             if not any(keyword in iface_name for keyword in physical_keywords):
-                _LOGGER.info(f"Skipping non-physical interface: {iface_name}")
+                _LOGGER.debug(
+                    "Skipping non-physical interface: %s", iface_name
+                )
                 continue
             if iface_name not in stats or not stats[iface_name].isup:
-                _LOGGER.info(f"Skipping inactive interface: {iface_name}")
+                _LOGGER.debug("Skipping inactive interface: %s", iface_name)
                 continue
 
-            _LOGGER.info(f"Inspecting interface: {iface_name}")
+            _LOGGER.debug("Inspecting interface: %s", iface_name)
             for addr in iface_addrs:
                 if addr.family == socket.AF_INET:
                     if addr.address.startswith("127."):
-                        _LOGGER.info(
-                            f"Skipping loopback address on {iface_name}: {addr.address}"
+                        _LOGGER.debug(
+                            "Skipping loopback address on %s: %s",
+                            iface_name,
+                            addr.address,
                         )
                         continue
                     counter = counters.get(iface_name)
@@ -2652,12 +2696,15 @@ def get_sorted_physical_ips() -> list[str]:
                         if counter
                         else 0
                     )
-                    _LOGGER.info(
-                        f"Discovered IP {addr.address} on {iface_name} with usage {usage}"
+                    _LOGGER.debug(
+                        "Discovered IP %s on %s with usage %s",
+                        addr.address,
+                        iface_name,
+                        usage,
                     )
                     ip_usage_list.append((usage, addr.address))
     except Exception as e:
-        _LOGGER.warning(f"Failed to get network interface info: {e}")
+        _LOGGER.warning("Failed to get network interface info: %s", e)
         primary_ip = get_primary_ip()
         if primary_ip:
             return [primary_ip]
@@ -2678,7 +2725,7 @@ def get_sorted_physical_ips() -> list[str]:
             sorted_ips.remove(primary_ip)
         sorted_ips.insert(0, primary_ip)
 
-    _LOGGER.info(f"Final sorted IP list: {sorted_ips}")
+    _LOGGER.info("Final sorted IP list: %s", sorted_ips)
     return sorted_ips
 
 
@@ -2695,10 +2742,10 @@ def get_primary_ip() -> str:
         )  # Doesn't send packets; just gets routing info
         ip = s.getsockname()[0]
         s.close()
-        _LOGGER.info(f"Primary outbound IP detected: {ip}")
+        _LOGGER.debug("Primary outbound IP detected: %s", ip)
         return ip
     except Exception as e:
-        _LOGGER.warning(f"Primary IP detection via socket failed: {e}")
+        _LOGGER.warning("Primary IP detection via socket failed: %s", e)
         return None  # no fallback
 
 

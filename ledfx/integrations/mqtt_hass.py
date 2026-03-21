@@ -129,10 +129,7 @@ class MQTT_HASS(Integration):
             if virtual.active:
                 active_pixels += virtual.pixel_count
         _LOGGER.debug(
-            "active_pixels/total_pixels:"
-            + str(active_pixels)
-            + "/"
-            + str(total_pixels)
+            "active_pixels/total_pixels:%s/%s", active_pixels, total_pixels
         )
         # ToDo create sensor with total_pixels
 
@@ -420,10 +417,9 @@ class MQTT_HASS(Integration):
 
     def on_message(self, client, userdata, msg):
         _LOGGER.debug(
-            "MQTT-Message incoming: \n[MQTT    ] Topic: "
-            + msg.topic
-            + "\n[MQTT    ] Payload: "
-            + str(msg.payload)
+            "MQTT-Message incoming: \n[MQTT    ] Topic: %s\n[MQTT    ] Payload: %s",
+            msg.topic,
+            msg.payload,
         )
         segs = msg.topic.split("/")
         try:
@@ -490,7 +486,7 @@ class MQTT_HASS(Integration):
 
         # React to Global-PlayPause
         if virtualid == "ledfxplay":
-            # _LOGGER.info("Paused: " + str(self._ledfx.virtuals._paused) + str(payload))
+            # _LOGGER.info("Paused: %s%s", self._ledfx.virtuals._paused, payload)
             self._ledfx.virtuals.pause_all()
             paused_state = "OFF"
             if self._ledfx.virtuals._paused:
@@ -505,7 +501,7 @@ class MQTT_HASS(Integration):
 
         # React to Transition-Type
         if virtualid in self.TRANSITION_MAPPING.keys():
-            # _LOGGER.info("Transitions: " + str(payload))
+            # _LOGGER.info("Transitions: %s", payload)
             prior_state = self._ledfx.config["global_transitions"]
             self._ledfx.config["global_transitions"] = True
             virtual = self._ledfx.virtuals.get(
@@ -516,7 +512,7 @@ class MQTT_HASS(Integration):
                 try:
                     val = float(payload)
                 except ValueError as e:
-                    _LOGGER.warning(e)
+                    _LOGGER.warning("%s", e)
                     val = 0.5
             else:
                 val = payload
@@ -530,7 +526,7 @@ class MQTT_HASS(Integration):
 
         # React to Audio-Selector
         elif virtualid == "ledfxaudio":
-            _LOGGER.debug("AUDIO DEVICE BROOOO: " + str(payload))
+            _LOGGER.debug("AUDIO DEVICE BROOOO: %s", payload)
             if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
                 # index = self._ledfx.audio.get_device_index_by_name(payload)
                 index = -1

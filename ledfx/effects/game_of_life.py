@@ -150,7 +150,8 @@ class GameOfLifeVisualiser(Twod):
         )
         if self.r_height <= 4 or self.r_width <= 4:
             _LOGGER.info(
-                f"Board too small at {self.game.board_size} disabling beat injection of entities"
+                "Board too small at %s disabling beat injection of entities",
+                self.game.board_size,
             )
             self.inject = False
 
@@ -407,7 +408,7 @@ class GameOfLife:
         self.board[start_row : start_row + 3, start_col : start_col + 3] = (
             glider
         )
-        _LOGGER.debug(f"Added glider at: {start_row}x{start_col}")
+        _LOGGER.debug("Added glider at: %sx%s", start_row, start_col)
 
     def add_blinker(self):
         """
@@ -418,7 +419,7 @@ class GameOfLife:
         start_row = np.random.randint(0, rows - 1)
         start_col = np.random.randint(0, cols - 3)
         self.board[start_row, start_col : start_col + 3] = blinker
-        _LOGGER.debug(f"Added blinker at: {start_row}x{start_col}")
+        _LOGGER.debug("Added blinker at: %sx%s", start_row, start_col)
 
     def add_toad(self):
         """
@@ -429,7 +430,7 @@ class GameOfLife:
         start_row = np.random.randint(0, rows - 2)
         start_col = np.random.randint(0, cols - 4)
         self.board[start_row : start_row + 2, start_col : start_col + 4] = toad
-        _LOGGER.debug(f"Added toad at: {start_row}x{start_col}")
+        _LOGGER.debug("Added toad at: %sx%s", start_row, start_col)
 
     def add_beacon(self):
         """
@@ -444,7 +445,7 @@ class GameOfLife:
         self.board[start_row : start_row + 4, start_col : start_col + 4] = (
             beacon
         )
-        _LOGGER.debug(f"Added beacon at: {start_row}x{start_col}")
+        _LOGGER.debug("Added beacon at: %sx%s", start_row, start_col)
 
     def add_random_entity(self):
         """

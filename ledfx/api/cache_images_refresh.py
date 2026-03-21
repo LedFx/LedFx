@@ -75,7 +75,7 @@ class CacheRefreshEndpoint(RestEndpoint):
             deleted = cache.delete(url)
 
             # Immediately re-download and cache (force_refresh=True bypasses cache check)
-            _LOGGER.info(f"Actively refreshing cached URL: {url}")
+            _LOGGER.info("Actively refreshing cached URL: %s", url)
             image = open_image(
                 url, force_refresh=True, config_dir=self._ledfx.config_dir
             )

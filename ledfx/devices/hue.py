@@ -203,7 +203,8 @@ class HueDevice(NetworkedDevice):
                 handshake_success = True
             except Exception as e:
                 _LOGGER.warning(
-                    f"Failed to establish TLS handshake when activating the UDP stream. Retrying. {e}"
+                    "Failed to establish TLS handshake when activating the UDP stream. Retrying. %s",
+                    e,
                 )
 
         if not handshake_success:

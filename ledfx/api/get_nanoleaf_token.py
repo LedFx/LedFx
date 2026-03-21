@@ -46,7 +46,7 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
                 'Required attribute "port" was not provided'
             )
 
-        _LOGGER.info(f"Getting Nanoleaf token from {ip}:{port}")
+        _LOGGER.info("Getting Nanoleaf token from %s:%s", ip, port)
 
         try:
             response = requests.post(

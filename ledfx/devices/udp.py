@@ -129,7 +129,8 @@ class UDPRealtimeDevice(UDPDevice):
 
         else:  # fallback
             _LOGGER.warning(
-                f"UDP packet is configured incorrectly (please choose a packet that supports {self._config['pixel_count']} LEDs): https://kno.wled.ge/interfaces/udp-realtime/#udp-realtime \n Falling back to supported udp packet."
+                "UDP packet is configured incorrectly (please choose a packet that supports %s LEDs): https://kno.wled.ge/interfaces/udp-realtime/#udp-realtime \n Falling back to supported udp packet.",
+                self._config["pixel_count"],
             )
             if frame_size <= 490:  # DRGB
                 udpData = packets.build_drgb_packet(data, timeout)

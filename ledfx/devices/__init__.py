@@ -112,7 +112,7 @@ class Device(BaseRegistry):
                         base.config_updated(self, validated_config)
 
             _LOGGER.info(
-                f"Device {self.name} config updated to {validated_config}."
+                "Device %s config updated to %s.", self.name, validated_config
             )
 
             for virtual_id in self._ledfx.virtuals:
@@ -146,7 +146,7 @@ class Device(BaseRegistry):
         # update each segment from this virtual
         if not self._active:
             _LOGGER.warning(
-                f"Cannot update pixels of inactive device {self.name}"
+                "Cannot update pixels of inactive device %s", self.name
             )
             return
 
@@ -159,9 +159,13 @@ class Device(BaseRegistry):
                         self._pixels[dst_indices] = pixels
                     except (IndexError, ValueError, TypeError) as e:
                         _LOGGER.warning(
-                            f"Device {self.name}: scatter assignment failed - "
-                            f"dst_indices shape: {np.shape(dst_indices)}, "
-                            f"pixels shape: {pixels.shape}, error: {e}"
+                            "Device %s: scatter assignment failed - "
+                            "dst_indices shape: %s, "
+                            "pixels shape: %s, error: %s",
+                            self.name,
+                            np.shape(dst_indices),
+                            pixels.shape,
+                            e,
                         )
             else:
                 # Legacy range mode: (pixels, start, end)
@@ -186,7 +190,7 @@ class Device(BaseRegistry):
                 )
         else:
             _LOGGER.warning(
-                f"Flush skipped as {self.id} has no priority_virtual"
+                "Flush skipped as %s has no priority_virtual", self.id
             )
 
     def assemble_frame(self):
@@ -236,7 +240,7 @@ class Device(BaseRegistry):
             return self.priority_virtual.refresh_rate
         else:
             _LOGGER.warning(
-                f"refresh_rate() set 30 as {self.id} has no priority_virtual"
+                "refresh_rate() set 30 as %s has no priority_virtual", self.id
             )
             return 30
 
@@ -310,7 +314,10 @@ class Device(BaseRegistry):
 
             if external_virtuals:
                 _LOGGER.info(
-                    f"Device {self.id}: Device virtual '{self.id}' activating - deactivating external virtuals: {external_virtuals}"
+                    "Device %s: Device virtual '%s' activating - deactivating external virtuals: %s",
+                    self.id,
+                    self.id,
+                    external_virtuals,
                 )
                 for _virtual_id in external_virtuals:
                     external_virtual = self._ledfx.virtuals.get(_virtual_id)
@@ -324,7 +331,10 @@ class Device(BaseRegistry):
             device_virtual = self._ledfx.virtuals.get(self.id)
             if device_virtual and device_virtual.active:
                 _LOGGER.info(
-                    f"Device {self.id}: Deactivating device virtual '{self.id}' as external virtual '{virtual_id}' is streaming"
+                    "Device %s: Deactivating device virtual '%s' as external virtual '%s' is streaming",
+                    self.id,
+                    self.id,
+                    virtual_id,
                 )
                 device_virtual.deactivate()
 
@@ -536,7 +546,7 @@ class Device(BaseRegistry):
 
     def sub_v(self, name, icon, segs, rows):
         compound_name = f"{self.name}-{name}"
-        _LOGGER.info(f"Creating a virtual for device {compound_name}")
+        _LOGGER.info("Creating a virtual for device %s", compound_name)
         virtual_id = generate_id(compound_name)
         icon_name = get_icon_name(compound_name)
         if icon_name == "wled" and icon is not None:
@@ -609,14 +619,16 @@ class NetworkedDevice(Device):
                 self._config["ip_address"],
             )
             _LOGGER.info(
-                f"Device {self.name}: Resolved destination to {self._destination}"
+                "Device %s: Resolved destination to %s",
+                self.name,
+                self._destination,
             )
             self._online = True
             if success_callback:
                 success_callback()
         except ValueError as msg:
             self._online = False
-            _LOGGER.warning(f"Device {self.name}: {msg}")
+            _LOGGER.warning("Device %s: %s", self.name, msg)
 
     def activate(self, *args, **kwargs):
         if self._destination is None:
@@ -635,7 +647,7 @@ class NetworkedDevice(Device):
     def destination(self):
         if self._destination is None:
             _LOGGER.warning(
-                f"Device {self.name}: Searching for device... Is it online?"
+                "Device %s: Searching for device... Is it online?", self.name
             )
             async_fire_and_forget(
                 self.resolve_address(), loop=self._ledfx.loop
@@ -659,14 +671,18 @@ class UDPDevice(NetworkedDevice):
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         _LOGGER.debug(
-            f"{self._device_type} sender for {self._config['name']} started."
+            "%s sender for %s started.",
+            self._device_type,
+            self._config["name"],
         )
         super().activate()
 
     def deactivate(self):
         super().deactivate()
         _LOGGER.debug(
-            f"{self._device_type} sender for {self._config['name']} stopped."
+            "%s sender for %s stopped.",
+            self._device_type,
+            self._config["name"],
         )
         self._sock = None
 
@@ -738,7 +754,7 @@ class Devices(RegistryLoader):
 
     def create_from_config(self, config):
         for device in config:
-            _LOGGER.info(f"Loading device from config: {device}")
+            _LOGGER.info("Loading device from config: %s", device)
             try:
                 self._ledfx.devices.create(
                     id=device["id"],
@@ -749,7 +765,9 @@ class Devices(RegistryLoader):
             except Exception as e:
                 # be very prolific on ignoring devices if they are bad
                 _LOGGER.warning(
-                    f"Failed to load device {device.get('id', 'unknown')}: {e}"
+                    "Failed to load device %s: %s",
+                    device.get("id", "unknown"),
+                    e,
                 )
 
     def deactivate_devices(self):
@@ -789,7 +807,8 @@ class Devices(RegistryLoader):
                 )
             except ValueError:
                 _LOGGER.warning(
-                    f"Discarding device {device_ip} as it could not be resolved."
+                    "Discarding device %s as it could not be resolved.",
+                    device_ip,
                 )
                 return
 
@@ -825,11 +844,11 @@ class Devices(RegistryLoader):
             wled_build = wled_config["vid"]
 
             if wled_support_DDP(wled_build):
-                _LOGGER.info(f"WLED build Supports DDP: {wled_build}")
+                _LOGGER.info("WLED build Supports DDP: %s", wled_build)
                 sync_mode = "DDP"
             else:
                 _LOGGER.info(
-                    f"WLED build pre DDP, default to UDP: {wled_build}"
+                    "WLED build pre DDP, default to UDP: %s", wled_build
                 )
                 sync_mode = "UDP"
 
@@ -849,7 +868,9 @@ class Devices(RegistryLoader):
 
         # Create the device
         _LOGGER.info(
-            f"Adding device of type {device_type} with config {device_config}"
+            "Adding device of type %s with config %s",
+            device_type,
+            device_config,
         )
         device = self._ledfx.devices.create(
             id=device_id,
@@ -874,7 +895,7 @@ class Devices(RegistryLoader):
         )
 
         # Generate virtual configuration for the device
-        _LOGGER.info(f"Creating a virtual for device {device.name}")
+        _LOGGER.info("Creating a virtual for device %s", device.name)
         virtual_id = generate_id(device.name)
         virtual_config = {
             "name": device.name,

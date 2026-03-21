@@ -66,7 +66,7 @@ class GradientEffect(Effect):
         return diff * pow_x / (pow_x + np.power(1 - x, slope)) + start_val
 
     def _generate_gradient_curve(self, gradient, gradient_length):
-        _LOGGER.debug(f"Generating new gradient curve: {gradient}")
+        _LOGGER.debug("Generating new gradient curve: %s", gradient)
 
         try:
             gradient = parse_gradient(gradient)

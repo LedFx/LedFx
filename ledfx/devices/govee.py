@@ -88,7 +88,7 @@ class Govee(NetworkedDevice):
             self.udp_server.sendto(data, (self._config["ip_address"], port))
         except Exception as e:
             # we don't need this noise in sentry, and don't flood a standard log
-            _LOGGER.info(f"govee:send_udp:Error sending UDP message {e}")
+            _LOGGER.info("govee:send_udp:Error sending UDP message %s", e)
 
     # Set Light Brightness
     def set_brightness(self, value):
@@ -119,14 +119,14 @@ class Govee(NetworkedDevice):
         return full_packet
 
     def deactivate(self):
-        _LOGGER.info(f"Govee {self.name} deactivate")
+        _LOGGER.info("Govee %s deactivate", self.name)
         if self.udp_server is not None:
             self.send_deactivate()
             self.udp_server.close()
         super().deactivate()
 
     def activate(self):
-        _LOGGER.info(f"Govee {self.name} Activating UDP stream mode...")
+        _LOGGER.info("Govee %s Activating UDP stream mode...", self.name)
 
         try:
             if self._config["ignore_status"]:
@@ -137,7 +137,8 @@ class Govee(NetworkedDevice):
                 self.udp_server = SocketSingleton(recv_port=self.recv_port)
         except Exception as e:
             _LOGGER.error(
-                f"Error creating UDP socket, try ignore status device setting {e}"
+                "Error creating UDP socket, try ignore status device setting %s",
+                e,
             )
             self.set_offline()
             return
@@ -146,14 +147,14 @@ class Govee(NetworkedDevice):
             # enquiry to status is current used only to check if the device is responding adn set offline if not
             # the response information is of little use
             # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
-            _LOGGER.info(f"Fetching govee {self.name} device info...")
+            _LOGGER.info("Fetching govee %s device info...", self.name)
             status, active = self.get_device_status()
-            _LOGGER.info(f"{self.name} active: {active} {status}")
+            _LOGGER.info("%s active: %s %s", self.name, active, status)
             if not active:
                 self.set_offline()
                 return
         else:
-            _LOGGER.info(f"Ignoring Govee status check for {self.name}")
+            _LOGGER.info("Ignoring Govee status check for %s", self.name)
 
         if self._config["stretch_to_fit"]:
             self.pre_active[4] = 0x01
