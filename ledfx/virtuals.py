@@ -162,7 +162,7 @@ class Virtual:
                 config["frequency_max"],
                 config["frequency_min"],
             )
-        
+
         # If still equal after swap, adjust to create 1 Hz range
         if config["frequency_min"] == config["frequency_max"]:
             if config["frequency_max"] < MAX_FREQ:
@@ -174,7 +174,7 @@ class Virtual:
                 config["frequency_min"],
                 config["frequency_max"],
             )
-        
+
         # Update frequency range object
         self.frequency_range = FrequencyRange(
             config["frequency_min"], config["frequency_max"]
