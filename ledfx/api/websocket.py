@@ -923,7 +923,7 @@ class WebsocketConnection:
 
         except Exception as e:
             _LOGGER.error(
-                f"Error decoding frontend visualiser data: {e}", exc_info=True
+                "Error decoding frontend visualiser data: %s", e, exc_info=True
             )
             return
 
