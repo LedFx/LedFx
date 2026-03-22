@@ -40,12 +40,12 @@ MIN_FREQ = 20        # Minimum frequency (Hz)
 MEL_MAX_FREQS = [350, 2000, MAX_FREQ]  # Default melbank boundaries
 ```
 
-**Why 30000Hz sample rate?**  
+**Why 30000Hz sample rate?**
 While microphones may capture at ~40000Hz, LedFx processes audio at 30000Hz to:
 - Increase frequency resolution for bass (where Hz differences are smaller)
 - Focus processing power on the audible range humans care about
 
-**Why FFT_SIZE = 4096?**  
+**Why FFT_SIZE = 4096?**
 Larger FFT window provides:
 - Better frequency resolution: ~7.3Hz per bin (30000 / 4096)
 - Critical for distinguishing bass notes (e.g., 40Hz vs 50Hz)
@@ -248,7 +248,7 @@ Individual melbanks can have custom min/max frequencies while inheriting global 
 
 `peak_isolation` (default: 0.4) applies non-linear power scaling to emphasize peaks:
 - 0.0 = Linear response (no isolation)
-- 0.4 = Balanced (default)  
+- 0.4 = Balanced (default)
 - 1.0 = Maximum isolation (infinite power)
 
 Higher values make bright regions brighter and dim regions dimmer, creating more "punchy" visuals.
