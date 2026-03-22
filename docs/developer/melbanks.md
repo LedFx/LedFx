@@ -107,7 +107,7 @@ The default LedFx configuration creates 3 cumulative melbanks at different resol
 - Critical for kick drums, bass lines, sub frequencies
 - Narrowest frequency range for maximum bass detail
 
-**Melbank 1 (Mid: 20Hz - 2000Hz)** - 24 bins for bass through midrange  
+**Melbank 1 (Mid: 20Hz - 2000Hz)** - 24 bins for bass through midrange
 - Covers all of melbank 0 PLUS vocals, guitars, snares, melodic content
 - Moderate resolution: broader bins than melbank 0
 - Cumulative coverage from bass through midrange
