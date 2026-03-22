@@ -22,16 +22,17 @@ LedFx uses a multi-resolution melbank system with two main classes:
 
 ### `Melbanks` Class (Multiple Melbanks)
 - Manages a collection of melbanks at different resolutions
-- Default configuration creates 3 melbanks:
-  - **Low**: 20Hz - 350Hz (bass/sub-bass)
-  - **Mid**: 350Hz - 2000Hz (vocals/melody)
-  - **High**: 2000Hz - 15000Hz (treble/cymbals)
+- Default configuration creates 3 cumulative melbanks (all sharing the same 20Hz minimum frequency):
+  - **Low**: 20Hz - 350Hz (bass/sub-bass focused)
+  - **Mid**: 20Hz - 2000Hz (bass through midrange coverage)
+  - **High**: 20Hz - 15000Hz (full spectrum coverage)
+- Each melbank provides a different resolution view of the same frequency space
 - Shared melbank instances across all virtuals for performance
 - Single configuration affects all instances
 
 ## Core Constants
 
-```python
+```
 FFT_SIZE = 4096      # FFT window size
 MIC_RATE = 30000     # Effective sample rate (Hz)
 MAX_FREQ = 15000     # Maximum frequency (MIC_RATE / 2)
@@ -42,7 +43,6 @@ MEL_MAX_FREQS = [350, 2000, MAX_FREQ]  # Default melbank boundaries
 **Why 30000Hz sample rate?**  
 While microphones may capture at ~40000Hz, LedFx processes audio at 30000Hz to:
 - Increase frequency resolution for bass (where Hz differences are smaller)
-- Reduce latency slightly
 - Focus processing power on the audible range humans care about
 
 **Why FFT_SIZE = 4096?**  
@@ -99,24 +99,27 @@ The following table shows the actual frequency bins for a full-range melbank usi
 
 ### Bin Distribution for Individual Melbanks
 
-The default LedFx configuration creates 3 melbanks at different resolutions:
+The default LedFx configuration creates 3 cumulative melbanks at different resolutions, all sharing the same minimum frequency (20Hz) but with different maximum frequencies:
 
 **Melbank 0 (Low: 20Hz - 350Hz)** - 24 bins focused on bass
 - Covers sub-bass, bass, and low midrange
 - Very fine resolution: ~10-20Hz per bin
 - Critical for kick drums, bass lines, sub frequencies
+- Narrowest frequency range for maximum bass detail
 
-**Melbank 1 (Mid: 350Hz - 2000Hz)** - 24 bins for midrange  
-- Covers vocals, guitars, snares, most melodic content
-- Moderate resolution: ~50-80Hz per bin
-- Essential for most musical elements
+**Melbank 1 (Mid: 20Hz - 2000Hz)** - 24 bins for bass through midrange  
+- Covers all of melbank 0 PLUS vocals, guitars, snares, melodic content
+- Moderate resolution: broader bins than melbank 0
+- Cumulative coverage from bass through midrange
+- Useful for effects needing both bass and midrange response
 
-**Melbank 2 (High: 2000Hz - 15000Hz)** - 24 bins for treble
-- Covers cymbals, hi-hats, brilliance, air
-- Coarse resolution: ~200-500Hz per bin
-- Adds sparkle and energy to effects
+**Melbank 2 (High: 20Hz - 15000Hz)** - 24 bins for full spectrum
+- Covers all of melbanks 0 and 1 PLUS cymbals, hi-hats, brilliance, air
+- Coarsest resolution: widest bins spanning the entire audible range
+- Full spectrum coverage from sub-bass to high frequencies
+- Effects use this when they need the complete frequency picture
 
-> **Note**: The table above shows a single melbank spanning 20-15000Hz. In practice, effects automatically select the appropriate melbank based on their virtual's frequency range and extract only the relevant bins.
+> **Note**: Because melbanks are cumulative (all start at 20Hz), they provide nested views of the same audio data at different resolutions. Melbank 0 gives fine detail on bass, melbank 1 gives moderate detail across bass and mids, and melbank 2 gives coarse detail across the full spectrum. Effects automatically select the most appropriate melbank based on their configured frequency range.
 
 ## Coefficient Types
 
@@ -138,7 +141,7 @@ LedFx supports multiple mel-scale algorithms, each with different frequency weig
 
 Effects that inherit from `AudioReactiveEffect` can access melbank data through the `melbank()` method:
 
-```python
+```
 # Get melbank data for the effect's configured frequency range
 melbank_data = self.melbank(filtered=False, size=self.pixel_count)
 
@@ -156,7 +159,7 @@ Effects don't manually select melbanks. The system automatically:
 
 **Example**:
 - Virtual configured for 100Hz - 1000Hz
-- System selects melbank 1 (350Hz - 2000Hz) 
+- System selects melbank 1 (20Hz - 2000Hz) - the smallest melbank covering the requested range
 - Extracts bins covering 100Hz - 1000Hz
 - Interpolates to effect's pixel count
 
@@ -182,7 +185,7 @@ All virtuals share the same melbank instances to:
 ### Memory Layout
 
 Melbank data is stored in NumPy arrays for fast access:
-```python
+```
 self.melbanks = tuple(
     np.zeros(self.mel_len) for _ in range(self.mel_count)
 )
