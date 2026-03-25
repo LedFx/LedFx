@@ -43,6 +43,6 @@ The Frontend effect has no effect-specific settings beyond the shared matrix con
 
 ## Notes
 
-- The effect requires the frontend to be actively capturing and sending visualiser frames. If the frontend is not running or the visualiser is disabled, the matrix will remain blank
+- The effect requires the frontend to be actively capturing and sending visualiser frames. If the frontend is not running or the visualiser is disabled, the matrix will remain blank.
 - Frame rate is determined by the frontend capture rate; no upsampling or frame interpolation is applied.
 - The effect is intended for use with 2D matrix virtuals. It will work on 1D strips but the resize from a 2D source will result in a single row of pixels.
