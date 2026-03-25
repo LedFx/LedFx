@@ -3,22 +3,29 @@ import time
 
 import numpy as np
 import voluptuous as vol
+from PIL import Image
 
-from ledfx.effects.temporal import TemporalEffect
+from ledfx.effects.twod import Twod
 from ledfx.events import Event
-from ledfx.utils import resize_pixels
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class FrontendEffect(TemporalEffect):
+class FrontendEffect(Twod):
     """
-    Frontend effect that listens to frontend_visualiser_data events
+    Frontend effect that receives pixel data from the frontend visualiser
+    and displays it on the LED matrix using the Twod pipeline for
+    rotation and flip support.
     """
 
     NAME = "Frontend"
-    CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]
+    CATEGORY = "Matrix"
+    HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
+        "background_color",
+        "background_brightness",
+        "test",
+        "background_mode",
+    ]
 
     CONFIG_SCHEMA = vol.Schema({})
 
@@ -29,28 +36,48 @@ class FrontendEffect(TemporalEffect):
         self._rejected_client_ids = set()
         self._frame_count = 0
         self._fps_last_time = None
-        self._fps_report_interval = 5.0  # Report FPS every 5 seconds
+        self._fps_report_interval = 5.0
+        self._last_client_frame_time = None
+        self._client_timeout = (
+            3.0  # seconds before cached client is considered gone
+        )
+        self._incoming_pixels = None  # latest raw numpy array from frontend
 
     def on_activate(self, pixel_count):
         """Called when effect is activated - register event listener"""
 
-        # Define the callback for frontend visualiser data events
         def handle_frontend_visualiser_data(event):
-            """Callback for frontend_visualiser_data events - does the actual pixel processing"""
             if not hasattr(event, "pixels") or event.pixels is None:
                 return
 
-            # Handle client ID caching to prevent multiple frontends from interfering
+            # Handle client ID caching to prevent multiple frontends from interfering.
+            # If no data has been received from the cached client within the timeout,
+            # treat it as gone and accept the new client (handles page refresh).
             if hasattr(event, "client_id") and event.client_id:
-                if self._cached_client_id is None:
-                    # Cache the first client ID we receive
+                current_time = time.time()
+                cached_client_timed_out = (
+                    self._cached_client_id is not None
+                    and self._cached_client_id != event.client_id
+                    and self._last_client_frame_time is not None
+                    and (current_time - self._last_client_frame_time)
+                    > self._client_timeout
+                )
+
+                if self._cached_client_id is None or cached_client_timed_out:
+                    if cached_client_timed_out:
+                        _LOGGER.info(
+                            "Frontend effect: cached client %s timed out, switching to client %s",
+                            self._cached_client_id,
+                            event.client_id,
+                        )
+                    else:
+                        _LOGGER.info(
+                            "Frontend effect: cached client ID %s",
+                            event.client_id,
+                        )
                     self._cached_client_id = event.client_id
-                    _LOGGER.info(
-                        "Frontend effect: cached client ID %s",
-                        event.client_id,
-                    )
+                    self._rejected_client_ids.clear()
                 elif self._cached_client_id != event.client_id:
-                    # Ignore updates from other client IDs, warn only once per client
                     if event.client_id not in self._rejected_client_ids:
                         self._rejected_client_ids.add(event.client_id)
                         _LOGGER.warning(
@@ -59,6 +86,8 @@ class FrontendEffect(TemporalEffect):
                             self._cached_client_id,
                         )
                     return
+
+                self._last_client_frame_time = current_time
 
             # FPS tracking
             current_time = time.time()
@@ -79,68 +108,9 @@ class FrontendEffect(TemporalEffect):
                 self._frame_count = 0
                 self._fps_last_time = current_time
 
-            vis_pixels = event.pixels
-            vis_shape = (
-                event.shape
-                if hasattr(event, "shape")
-                else (1, len(vis_pixels))
-            )
+            # Store latest pixels for draw() to consume on the next render tick
+            self._incoming_pixels = event.pixels
 
-            try:
-                # Calculate our target shape based on virtual configuration
-                rows = self._virtual.config.get("rows", 1)
-                if rows > 1:
-                    # 2D matrix
-                    cols = self.pixel_count // rows
-                    target_shape = (rows, cols)
-                else:
-                    # 1D strip
-                    target_shape = (1, self.pixel_count)
-
-                incoming_total = (
-                    vis_shape[0] * vis_shape[1]
-                    if len(vis_shape) >= 2
-                    else len(vis_pixels)
-                )
-
-                if (
-                    vis_shape != target_shape
-                    or incoming_total != self.pixel_count
-                ):
-                    # resize_pixels will handle the [rows, cols, 3] format and return [N, 3]
-                    resized_pixels = resize_pixels(
-                        vis_pixels, vis_shape, target_shape
-                    )
-                    processed_pixels = resized_pixels
-                else:
-                    # Shapes match - need to flatten from [rows, cols, 3] to [N, 3]
-                    flattened = vis_pixels.reshape(-1, 3)
-                    processed_pixels = flattened
-
-                # Apply rotation if this is a 2D matrix (rows > 1)
-                if rows > 1:
-                    rotation = self._virtual.config.get("rotate", 0)
-                    if rotation != 0:
-                        # Reshape back to 2D matrix for rotation
-                        matrix_pixels = processed_pixels.reshape(
-                            target_shape[0], target_shape[1], 3
-                        )
-                        # Apply rotation: rot90 rotates counter-clockwise, k=rotation gives us 0°, 90°, 180°, 270°
-                        rotated = np.rot90(matrix_pixels, k=rotation)
-                        # Flatten back to [N, 3]
-                        processed_pixels = rotated.reshape(-1, 3)
-
-                with self.lock:
-                    self.pixels[:] = processed_pixels
-
-            except Exception as e:
-                _LOGGER.error(
-                    "Error processing visualisation data: %s",
-                    e,
-                    exc_info=True,
-                )
-
-        # Register the listener with the event system, filtered to only our vis_id
         self._event_listener = self._ledfx.events.add_listener(
             handle_frontend_visualiser_data,
             Event.FRONTEND_VISUALISER_DATA,
@@ -151,27 +121,31 @@ class FrontendEffect(TemporalEffect):
             "Frontend effect activated and listening for visualiser data"
         )
 
+    def draw(self):
+        """Called by Twod.render() — paste the latest frontend pixels into self.matrix."""
+        if self._incoming_pixels is None:
+            return
+
+        src = Image.fromarray(self._incoming_pixels.astype(np.uint8))
+        if src.size != (self.r_width, self.r_height):
+            src = src.resize((self.r_width, self.r_height), Image.BILINEAR)
+        self.matrix.paste(src)
+
     def deactivate(self):
         """Called when effect is deactivated - clean up event listener"""
         if self._event_listener is not None:
             _LOGGER.info("Frontend effect deactivating, removing listener")
-            self._event_listener()  # Call the removal function
+            self._event_listener()
             self._event_listener = None
 
-        # Reset cached client ID and rejected list for next session
         self._cached_client_id = None
         self._rejected_client_ids.clear()
         self._frame_count = 0
         self._fps_last_time = None
+        self._last_client_frame_time = None
+        self._incoming_pixels = None
 
         super().deactivate()
 
     def config_updated(self, config):
-        """Called when configuration is updated"""
-        pass
-
-    def effect_loop(self):
-        """Main rendering loop - minimal work, pixels updated by event callback"""
-        # Pixels are updated directly in the event callback
-        # This loop just keeps the effect running
-        pass
+        super().config_updated(config)
