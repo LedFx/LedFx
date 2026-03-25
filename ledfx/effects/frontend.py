@@ -43,76 +43,76 @@ class FrontendEffect(Twod):
         )
         self._incoming_pixels = None  # latest raw numpy array from frontend
 
-    def on_activate(self, pixel_count):
-        """Called when effect is activated - register event listener"""
+    def _handle_visualiser_data(self, event):
+        """Process incoming frontend visualiser data events."""
+        if not hasattr(event, "pixels") or event.pixels is None:
+            return
 
-        def handle_frontend_visualiser_data(event):
-            if not hasattr(event, "pixels") or event.pixels is None:
+        # Handle client ID caching to prevent multiple frontends from interfering.
+        # If no data has been received from the cached client within the timeout,
+        # treat it as gone and accept the new client (handles page refresh).
+        if hasattr(event, "client_id") and event.client_id:
+            current_time = time.time()
+            cached_client_timed_out = (
+                self._cached_client_id is not None
+                and self._cached_client_id != event.client_id
+                and self._last_client_frame_time is not None
+                and (current_time - self._last_client_frame_time)
+                > self._client_timeout
+            )
+
+            if self._cached_client_id is None or cached_client_timed_out:
+                if cached_client_timed_out:
+                    _LOGGER.info(
+                        "Frontend effect: cached client %s timed out, switching to client %s",
+                        self._cached_client_id,
+                        event.client_id,
+                    )
+                else:
+                    _LOGGER.info(
+                        "Frontend effect: cached client ID %s",
+                        event.client_id,
+                    )
+                self._cached_client_id = event.client_id
+                self._rejected_client_ids.clear()
+            elif self._cached_client_id != event.client_id:
+                if event.client_id not in self._rejected_client_ids:
+                    self._rejected_client_ids.add(event.client_id)
+                    _LOGGER.warning(
+                        "Frontend effect: ignoring updates from client %s, already bound to client %s",
+                        event.client_id,
+                        self._cached_client_id,
+                    )
                 return
 
-            # Handle client ID caching to prevent multiple frontends from interfering.
-            # If no data has been received from the cached client within the timeout,
-            # treat it as gone and accept the new client (handles page refresh).
-            if hasattr(event, "client_id") and event.client_id:
-                current_time = time.time()
-                cached_client_timed_out = (
-                    self._cached_client_id is not None
-                    and self._cached_client_id != event.client_id
-                    and self._last_client_frame_time is not None
-                    and (current_time - self._last_client_frame_time)
-                    > self._client_timeout
-                )
+            self._last_client_frame_time = current_time
 
-                if self._cached_client_id is None or cached_client_timed_out:
-                    if cached_client_timed_out:
-                        _LOGGER.info(
-                            "Frontend effect: cached client %s timed out, switching to client %s",
-                            self._cached_client_id,
-                            event.client_id,
-                        )
-                    else:
-                        _LOGGER.info(
-                            "Frontend effect: cached client ID %s",
-                            event.client_id,
-                        )
-                    self._cached_client_id = event.client_id
-                    self._rejected_client_ids.clear()
-                elif self._cached_client_id != event.client_id:
-                    if event.client_id not in self._rejected_client_ids:
-                        self._rejected_client_ids.add(event.client_id)
-                        _LOGGER.warning(
-                            "Frontend effect: ignoring updates from client %s, already bound to client %s",
-                            event.client_id,
-                            self._cached_client_id,
-                        )
-                    return
+        # FPS tracking
+        current_time = time.time()
+        if self._fps_last_time is None:
+            self._fps_last_time = current_time
+            self._frame_count = 0
 
-                self._last_client_frame_time = current_time
+        self._frame_count += 1
+        elapsed = current_time - self._fps_last_time
 
-            # FPS tracking
-            current_time = time.time()
-            if self._fps_last_time is None:
-                self._fps_last_time = current_time
-                self._frame_count = 0
+        if elapsed >= self._fps_report_interval:
+            fps = self._frame_count / elapsed
+            _LOGGER.info(
+                "Frontend effect: receiving %.1f FPS from client %s",
+                fps,
+                self._cached_client_id,
+            )
+            self._frame_count = 0
+            self._fps_last_time = current_time
 
-            self._frame_count += 1
-            elapsed = current_time - self._fps_last_time
+        # Store latest pixels for draw() to consume on the next render tick
+        self._incoming_pixels = event.pixels
 
-            if elapsed >= self._fps_report_interval:
-                fps = self._frame_count / elapsed
-                _LOGGER.info(
-                    "Frontend effect: receiving %.1f FPS from client %s",
-                    fps,
-                    self._cached_client_id,
-                )
-                self._frame_count = 0
-                self._fps_last_time = current_time
-
-            # Store latest pixels for draw() to consume on the next render tick
-            self._incoming_pixels = event.pixels
-
+    def on_activate(self, pixel_count):
+        """Called when effect is activated - register event listener"""
         self._event_listener = self._ledfx.events.add_listener(
-            handle_frontend_visualiser_data,
+            self._handle_visualiser_data,
             Event.FRONTEND_VISUALISER_DATA,
             event_filter={"vis_id": "visualiser-capture"},
         )
