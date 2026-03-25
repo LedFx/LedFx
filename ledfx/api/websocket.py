@@ -887,27 +887,23 @@ class WebsocketConnection:
         {
             "id": int,
             "type": "frontend_visualiser_data",
-            "client_id": str,  # UUID of sending client
             "vis_id": str (default: "visualiser-capture"),
             "pixels": "<base64_string>",  # Base64-encoded RGB bytes
             "shape": [rows, cols],
             "encoding": "base64-rgb"
         }
+
+        Note: client identity is derived from the server-assigned connection uid
+        (self.uid), not from any client_id field in the message.
         """
         vis_id = message.get("vis_id", "visualiser-capture")
         pixels_b64 = message.get("pixels")
         shape = message.get("shape")
-        client_id = message.get("client_id")
+        client_id = self.uid  # use server-assigned identity, not client-reported
 
         if pixels_b64 is None or shape is None:
             _LOGGER.warning(
                 "Received frontend_visualiser_data without pixels or shape"
-            )
-            return
-
-        if client_id is None:
-            _LOGGER.warning(
-                "Received frontend_visualiser_data without client_id"
             )
             return
 
@@ -921,9 +917,11 @@ class WebsocketConnection:
                 rows, cols, 3
             )
 
-        except Exception as e:
-            _LOGGER.error(
-                "Error decoding frontend visualiser data: %s", e, exc_info=True
+        except (ValueError, TypeError) as e:
+            _LOGGER.warning(
+                "Malformed frontend_visualiser_data frame from client %s: %s",
+                client_id,
+                e,
             )
             return
 
