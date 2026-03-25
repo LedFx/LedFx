@@ -4,7 +4,7 @@
 
 Frontend is a **matrix passthrough effect** that displays pixel data captured directly from the LedFx frontend visualiser onto an LED matrix.
 
-Rather than generating its own visuals, the effect receives real-time pixel frames sent by the browser over the WebSocket connection and renders them onto the virtual. This allows any visualisation visible in the LedFx UI — including other virtual's output as seen in the frontend — to be mirrored back to physical hardware.
+Rather than generating its own visuals, the effect receives real-time pixel frames sent by the browser over the WebSocket connection and renders them onto the virtual. This allows any visualisation visible in the LedFx UI — including other virtuals' output as seen in the frontend — to be mirrored back to physical hardware.
 
 Incoming frames are automatically resized to match the target matrix dimensions using bilinear interpolation, so the source resolution does not need to match the physical device.
 
