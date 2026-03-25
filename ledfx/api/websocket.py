@@ -899,7 +899,9 @@ class WebsocketConnection:
         vis_id = message.get("vis_id", "visualiser-capture")
         pixels_b64 = message.get("pixels")
         shape = message.get("shape")
-        client_id = self.uid  # use server-assigned identity, not client-reported
+        client_id = (
+            self.uid
+        )  # use server-assigned identity, not client-reported
 
         if pixels_b64 is None or shape is None:
             _LOGGER.warning(
