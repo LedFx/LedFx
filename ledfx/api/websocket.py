@@ -335,7 +335,9 @@ class WebsocketConnection:
         except (vol.Invalid, ValueError):
             _LOGGER.info("Invalid message format.")
             if message is not None:
-                self.send_error(message["id"], "Invalid message format.")
+                msg_id = message.get("id")
+                if msg_id is not None:
+                    self.send_error(msg_id, "Invalid message format.")
 
         except TypeError as e:
             if socket.closed:
