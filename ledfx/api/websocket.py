@@ -906,7 +906,10 @@ class WebsocketConnection:
 
             if msg_type == self._BINARY_MSG_FRONTEND_VIS:
                 if len(data) < 6:
-                    _LOGGER.warning("Binary frontend_visualiser_data too short from %s", self.uid)
+                    _LOGGER.warning(
+                        "Binary frontend_visualiser_data too short from %s",
+                        self.uid,
+                    )
                     return
 
                 width, height = struct.unpack_from("<HH", data, 1)
@@ -914,7 +917,10 @@ class WebsocketConnection:
                 offset = 6
 
                 if len(data) < offset + vis_id_len:
-                    _LOGGER.warning("Binary frontend_visualiser_data truncated vis_id from %s", self.uid)
+                    _LOGGER.warning(
+                        "Binary frontend_visualiser_data truncated vis_id from %s",
+                        self.uid,
+                    )
                     return
 
                 vis_id = data[offset : offset + vis_id_len].decode("utf-8")
@@ -922,7 +928,10 @@ class WebsocketConnection:
 
                 # Skip client_id length + bytes — identity comes from self.uid
                 if len(data) < offset + 1:
-                    _LOGGER.warning("Binary frontend_visualiser_data missing client_id length from %s", self.uid)
+                    _LOGGER.warning(
+                        "Binary frontend_visualiser_data missing client_id length from %s",
+                        self.uid,
+                    )
                     return
                 client_id_len = data[offset]
                 offset += 1 + client_id_len
@@ -933,11 +942,17 @@ class WebsocketConnection:
                     _LOGGER.warning(
                         "Binary frontend_visualiser_data pixel size mismatch from %s: "
                         "expected %d bytes for %dx%d, got %d",
-                        self.uid, expected_pixel_bytes, width, height, len(pixel_data),
+                        self.uid,
+                        expected_pixel_bytes,
+                        width,
+                        height,
+                        len(pixel_data),
                     )
                     return
 
-                pixels = np.frombuffer(pixel_data, dtype=np.uint8).reshape(height, width, 3)
+                pixels = np.frombuffer(pixel_data, dtype=np.uint8).reshape(
+                    height, width, 3
+                )
                 self._ledfx.events.fire_event(
                     FrontendVisualiserDataEvent(
                         vis_id=vis_id,
@@ -947,7 +962,11 @@ class WebsocketConnection:
                     )
                 )
             else:
-                _LOGGER.warning("Unknown binary message type 0x%02x from %s", msg_type, self.uid)
+                _LOGGER.warning(
+                    "Unknown binary message type 0x%02x from %s",
+                    msg_type,
+                    self.uid,
+                )
 
         except (ValueError, TypeError, struct.error) as e:
             _LOGGER.warning("Malformed binary frame from %s: %s", self.uid, e)
