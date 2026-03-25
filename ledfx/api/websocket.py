@@ -11,7 +11,7 @@ from typing import Any, ClassVar
 import numpy as np
 import pybase64
 import voluptuous as vol
-from aiohttp import web
+from aiohttp import WSMsgType, web
 
 from ledfx.api import RestEndpoint
 from ledfx.dedupequeue import VisDeduplicateQ
@@ -306,8 +306,15 @@ class WebsocketConnection:
         )
 
         try:
-            message = await socket.receive_json()
-            while message:
+            message = None
+            ws_msg = await socket.receive()
+            while ws_msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
+                if ws_msg.type == WSMsgType.BINARY:
+                    self._handle_binary_message(ws_msg.data)
+                    ws_msg = await socket.receive()
+                    continue
+
+                message = ws_msg.json()
                 message = BASE_MESSAGE_SCHEMA(message)
 
                 if message["type"] in websocket_handlers:
@@ -323,11 +330,12 @@ class WebsocketConnection:
                     )
                     self.send_error(message["id"], "Unknown command type.")
 
-                message = await socket.receive_json()
+                ws_msg = await socket.receive()
 
         except (vol.Invalid, ValueError):
             _LOGGER.info("Invalid message format.")
-            self.send_error(message["id"], "Invalid message format.")
+            if message is not None:
+                self.send_error(message["id"], "Invalid message format.")
 
         except TypeError as e:
             if socket.closed:
@@ -877,62 +885,72 @@ class WebsocketConnection:
             )
         )
 
-    @websocket_handler("frontend_visualiser_data")
-    def frontend_visualiser_data_handler(self, message):
+    _BINARY_MSG_FRONTEND_VIS = 0x01
+
+    def _handle_binary_message(self, data: bytes) -> None:
+        """Dispatch a raw binary WebSocket frame.
+
+        Binary frame layout (all integers little-endian):
+          [0]             uint8   message_type (0x01 = frontend_visualiser_data)
+          [1-2]           uint16  width
+          [3-4]           uint16  height
+          [5]             uint8   vis_id byte length (N)
+          [6 .. 6+N-1]   bytes   vis_id (UTF-8)
+          [6+N]           uint8   client_id byte length (M)  -- ignored, self.uid used
+          [7+N ..]        bytes   RGB pixels (width * height * 3)
         """
-        Handle incoming visualiser pixel data FROM frontend TO backend.
-        This is the opposite direction of visualisation_update events.
-
-        Expected message format:
-        {
-            "id": int,
-            "type": "frontend_visualiser_data",
-            "vis_id": str (default: "visualiser-capture"),
-            "pixels": "<base64_string>",  # Base64-encoded RGB bytes
-            "shape": [rows, cols],
-            "encoding": "base64-rgb"
-        }
-
-        Note: client identity is derived from the server-assigned connection uid
-        (self.uid), not from any client_id field in the message.
-        """
-        vis_id = message.get("vis_id", "visualiser-capture")
-        pixels_b64 = message.get("pixels")
-        shape = message.get("shape")
-        client_id = (
-            self.uid
-        )  # use server-assigned identity, not client-reported
-
-        if pixels_b64 is None or shape is None:
-            _LOGGER.warning(
-                "Received frontend_visualiser_data without pixels or shape"
-            )
-            return
-
         try:
-            # Decode base64 string to raw RGB bytes
-            rgb_bytes = pybase64.b64decode(pixels_b64)
+            if len(data) < 1:
+                return
+            msg_type = data[0]
 
-            # Convert bytes to numpy array and reshape to [rows, cols, 3]
-            rows, cols = shape
-            pixels = np.frombuffer(rgb_bytes, dtype=np.uint8).reshape(
-                rows, cols, 3
-            )
+            if msg_type == self._BINARY_MSG_FRONTEND_VIS:
+                if len(data) < 6:
+                    _LOGGER.warning("Binary frontend_visualiser_data too short from %s", self.uid)
+                    return
 
-        except (ValueError, TypeError) as e:
-            _LOGGER.warning(
-                "Malformed frontend_visualiser_data frame from client %s: %s",
-                client_id,
-                e,
-            )
-            return
+                width, height = struct.unpack_from("<HH", data, 1)
+                vis_id_len = data[5]
+                offset = 6
 
-        # Fire the frontend visualiser data event
-        self._ledfx.events.fire_event(
-            FrontendVisualiserDataEvent(
-                vis_id=vis_id, pixels=pixels, shape=shape, client_id=client_id
-            )
-        )
+                if len(data) < offset + vis_id_len:
+                    _LOGGER.warning("Binary frontend_visualiser_data truncated vis_id from %s", self.uid)
+                    return
+
+                vis_id = data[offset : offset + vis_id_len].decode("utf-8")
+                offset += vis_id_len
+
+                # Skip client_id length + bytes — identity comes from self.uid
+                if len(data) < offset + 1:
+                    _LOGGER.warning("Binary frontend_visualiser_data missing client_id length from %s", self.uid)
+                    return
+                client_id_len = data[offset]
+                offset += 1 + client_id_len
+
+                expected_pixel_bytes = width * height * 3
+                pixel_data = data[offset:]
+                if len(pixel_data) != expected_pixel_bytes:
+                    _LOGGER.warning(
+                        "Binary frontend_visualiser_data pixel size mismatch from %s: "
+                        "expected %d bytes for %dx%d, got %d",
+                        self.uid, expected_pixel_bytes, width, height, len(pixel_data),
+                    )
+                    return
+
+                pixels = np.frombuffer(pixel_data, dtype=np.uint8).reshape(height, width, 3)
+                self._ledfx.events.fire_event(
+                    FrontendVisualiserDataEvent(
+                        vis_id=vis_id,
+                        pixels=pixels,
+                        shape=[height, width],
+                        client_id=self.uid,
+                    )
+                )
+            else:
+                _LOGGER.warning("Unknown binary message type 0x%02x from %s", msg_type, self.uid)
+
+        except (ValueError, TypeError, struct.error) as e:
+            _LOGGER.warning("Malformed binary frame from %s: %s", self.uid, e)
 
 
 class WebAudioStream:

@@ -14,9 +14,9 @@ The effect supports all standard Twod matrix transforms — rotation (0°, 90°,
 
 ## How It Works
 
-1. The LedFx frontend captures a visualiser frame and encodes it as a base64 RGB byte stream.
-2. The encoded frame is sent to the backend over the WebSocket connection with a `frontend_visualiser_data` message type.
-3. The effect decodes the frame and stores it; on the next matrix render tick the frame is pasted into the Twod pipeline and written to the LED pixels.
+1. The LedFx frontend captures a visualiser frame and sends it to the backend as a raw binary WebSocket frame containing the pixel dimensions, source identifier, and interleaved RGB bytes.
+2. The backend unpacks the frame, reconstructs a pixel array, and fires an internal event.
+3. The effect receives the event and stores the pixel data; on the next matrix render tick the frame is pasted into the Twod pipeline and written to the LED pixels.
 
 ### Multiple Frontends
 
