@@ -82,7 +82,7 @@ The below image describes a basic setup - LedFx running on PC, communicating wit
 
 #. **Direct computer audio output to LedFx.**
       - By default on Windows LedFx will attempt to listen to your system audio.
-      - More information for `Linux and macOS users here <https://ledfx.readthedocs.io/en/latest/directing_audio.html>`_.
+      - More information for `Linux and macOS users here <https://ledfx.readthedocs.io/en/latest/settings/directing_audio.html>`_.
       - Play some music in the background.
 
 #. **Start LedFx.**
