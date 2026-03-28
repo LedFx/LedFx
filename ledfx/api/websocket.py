@@ -194,7 +194,7 @@ class WebsocketConnection:
             # Ordered control message
             if self._control_queue.qsize() >= MAX_PENDING_MESSAGES:
                 _LOGGER.warning(
-                    "Control queue full (%s), dropping oldest messages",
+                    "Control queue full (%s), dropping all pending messages",
                     MAX_PENDING_MESSAGES,
                 )
                 while not self._control_queue.empty():
