@@ -943,6 +943,7 @@ class TestConstants:
         assert "mobile" in VALID_CLIENT_TYPES
         assert "display" in VALID_CLIENT_TYPES
         assert "api" in VALID_CLIENT_TYPES
+        assert "not-set" in VALID_CLIENT_TYPES
         assert "unknown" in VALID_CLIENT_TYPES
 
     def test_broadcast_types(self):

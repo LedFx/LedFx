@@ -14,7 +14,6 @@ import voluptuous as vol
 from aiohttp import WSMsgType, web
 
 from ledfx.api import RestEndpoint
-from ledfx.dedupequeue import VisDeduplicateQ
 from ledfx.events import (
     ClientBroadcastEvent,
     ClientConnectedEvent,
@@ -24,7 +23,6 @@ from ledfx.events import (
     FrontendVisualiserDataEvent,
     SongDetectedEvent,
 )
-from ledfx.utils import empty_queue
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
@@ -37,6 +35,7 @@ VALID_CLIENT_TYPES = [
     "mobile",
     "display",
     "api",
+    "not-set",
     "unknown",
 ]
 
@@ -130,7 +129,11 @@ class WebsocketConnection:
         self._listeners = {}
         self._receiver_task = None
         self._sender_task = None
-        self._sender_queue = VisDeduplicateQ(maxsize=MAX_PENDING_MESSAGES)
+        # Dual-path sender: control queue for reliable ordered messages,
+        # single-slot mailbox dict for latest-value-wins vis frames.
+        self._control_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
+        self._vis_slots = {}  # vis_id -> latest message (overwrites old)
+        self._has_work = asyncio.Event()
         self.client_ip = None
         self.uid = None
         # Phase 1: Instance attributes for client metadata
@@ -163,23 +166,53 @@ class WebsocketConnection:
             return cls.ip_uid_map.copy()
 
     def send(self, message):
-        """Sends a message to the websocket connection
+        """Sends a message to the websocket connection.
 
-        Args:
-            message (str): The message to be sent
+        Vis updates (VISUALISATION_UPDATE / DEVICE_UPDATE) are placed in a
+        per-vis_id single-slot mailbox so the newest frame always overwrites
+        the previous unsent one.  All other messages go to an ordered control
+        queue for reliable delivery.
         """
+        if message is None:
+            # Shutdown sentinel — goes through the control queue
+            try:
+                self._control_queue.put_nowait(None)
+            except asyncio.QueueFull:
+                pass
+            self._has_work.set()
+            return
 
-        # If the queue is full, dump it and start again
-        if self._sender_queue.qsize() == MAX_PENDING_MESSAGES:
-            empty_queue(self._sender_queue)
+        event_type = message.get("event_type")
+        if event_type in (
+            Event.VISUALISATION_UPDATE,
+            Event.DEVICE_UPDATE,
+        ):
+            # Single-slot mailbox: overwrite any pending frame for this vis_id
+            vis_id = message.get("vis_id")
+            self._vis_slots[vis_id] = message
+        else:
+            # Ordered control message
+            if self._control_queue.qsize() >= MAX_PENDING_MESSAGES:
+                _LOGGER.warning(
+                    "Control queue full (%s), dropping oldest messages",
+                    MAX_PENDING_MESSAGES,
+                )
+                while not self._control_queue.empty():
+                    try:
+                        self._control_queue.get_nowait()
+                    except asyncio.QueueEmpty:
+                        break
+            try:
+                self._control_queue.put_nowait(message)
+            except asyncio.QueueFull:
+                _LOGGER.error(
+                    "Client sender queue size exceeded %s",
+                    MAX_PENDING_MESSAGES,
+                )
+                self.close()
+                return
 
-        try:
-            self._sender_queue.put_nowait(message)
-        except asyncio.QueueFull:
-            _LOGGER.error(
-                "Client sender queue size exceeded %s", MAX_PENDING_MESSAGES
-            )
-            self.close()
+        self._has_work.set()
 
     def send_error(self, id, message):
         """Sends an error string to the websocket connection.
@@ -212,29 +245,63 @@ class WebsocketConnection:
         return self.send({"id": id, "type": "event", **event.to_dict()})
 
     async def _sender(self):
-        """
-        Async write loop to pull from the queue and send
+        """Async write loop servicing control queue and vis mailbox.
 
-        This method is an asynchronous write loop that pulls messages from the sender queue and sends them over the websocket connection.
-        It continuously checks for new messages in the queue until the websocket connection is closed.
-        If there is an error serializing the message to JSON, it logs an error message.
-        If the websocket connection is closed by the client, it logs a message and breaks the loop.
+        Control messages are drained first (ordered, reliable).  Then the
+        latest vis frame for each vis_id is sent — any frames that were
+        overwritten between wake-ups are silently dropped, keeping latency
+        bounded and memory constant per vis_id.
         """
         _LOGGER.info("Starting websocket sender")
         while not self._socket.closed:
-            message = await self._sender_queue.get()
-            try:
-                # _LOGGER.debug("Sending websocket message")
-                await self._socket.send_json(message, dumps=json.dumps)
-            except TypeError as err:
-                _LOGGER.error(
-                    "Unable to serialize to JSON: %s\n%s",
-                    err,
-                    message,
-                )
-            except ConnectionResetError:
-                _LOGGER.info("Websocket connection closed by the client.")
-                break
+            await self._has_work.wait()
+            self._has_work.clear()
+
+            # --- control messages (reliable, ordered) ---
+            while not self._control_queue.empty():
+                try:
+                    message = self._control_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+                if message is None:
+                    _LOGGER.info("Stopped websocket sender.")
+                    return
+                try:
+                    await self._socket.send_json(
+                        message, dumps=json.dumps
+                    )
+                except TypeError as err:
+                    _LOGGER.error(
+                        "Unable to serialize to JSON: %s\n%s",
+                        err,
+                        message,
+                    )
+                except ConnectionResetError:
+                    _LOGGER.info(
+                        "Websocket connection closed by the client."
+                    )
+                    return
+
+            # --- vis frames (latest-value-wins per vis_id) ---
+            if self._vis_slots:
+                frames = self._vis_slots.copy()
+                self._vis_slots.clear()
+                for message in frames.values():
+                    try:
+                        await self._socket.send_json(
+                            message, dumps=json.dumps
+                        )
+                    except TypeError as err:
+                        _LOGGER.error(
+                            "Unable to serialize to JSON: %s\n%s",
+                            err,
+                            message,
+                        )
+                    except ConnectionResetError:
+                        _LOGGER.info(
+                            "Websocket connection closed by the client."
+                        )
+                        return
 
         _LOGGER.info("Stopped websocket sender.")
 
@@ -365,7 +432,7 @@ class WebsocketConnection:
             remove_listeners()
             self.clear_subscriptions()
 
-            # Gracefully stop the sender ensuring all messages get flushed
+            # Gracefully stop the sender
             self.send(None)
             await self._sender_task
 

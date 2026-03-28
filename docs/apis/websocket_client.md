@@ -60,6 +60,7 @@ Each WebSocket connection should maintain a persistent identity with metadata th
 - `mobile` - Mobile app client
 - `display` - Dedicated display device (e.g., Raspberry Pi kiosk)
 - `api` - Programmatic API client
+- `not-set` - Client has not yet declared its type
 - `unknown` - Fallback for unspecified clients
 
 #### Client Name Requirements
