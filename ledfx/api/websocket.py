@@ -267,9 +267,7 @@ class WebsocketConnection:
                     _LOGGER.info("Stopped websocket sender.")
                     return
                 try:
-                    await self._socket.send_json(
-                        message, dumps=json.dumps
-                    )
+                    await self._socket.send_json(message, dumps=json.dumps)
                 except TypeError as err:
                     _LOGGER.error(
                         "Unable to serialize to JSON: %s\n%s",
@@ -277,9 +275,7 @@ class WebsocketConnection:
                         message,
                     )
                 except ConnectionResetError:
-                    _LOGGER.info(
-                        "Websocket connection closed by the client."
-                    )
+                    _LOGGER.info("Websocket connection closed by the client.")
                     return
 
             # --- vis frames (latest-value-wins per vis_id) ---
@@ -288,9 +284,7 @@ class WebsocketConnection:
                 self._vis_slots.clear()
                 for message in frames.values():
                     try:
-                        await self._socket.send_json(
-                            message, dumps=json.dumps
-                        )
+                        await self._socket.send_json(message, dumps=json.dumps)
                     except TypeError as err:
                         _LOGGER.error(
                             "Unable to serialize to JSON: %s\n%s",
