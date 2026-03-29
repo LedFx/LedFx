@@ -34,9 +34,6 @@ class FrontendEffect(Twod):
         self._event_listener = None
         self._cached_client_id = None
         self._rejected_client_ids = set()
-        self._frame_count = 0
-        self._fps_last_time = None
-        self._fps_report_interval = 5.0
         self._last_client_frame_time = None
         self._client_timeout = (
             3.0  # seconds before cached client is considered gone
@@ -87,25 +84,6 @@ class FrontendEffect(Twod):
 
             self._last_client_frame_time = current_time
 
-        # FPS tracking
-        current_time = time.time()
-        if self._fps_last_time is None:
-            self._fps_last_time = current_time
-            self._frame_count = 0
-
-        self._frame_count += 1
-        elapsed = current_time - self._fps_last_time
-
-        if elapsed >= self._fps_report_interval:
-            fps = self._frame_count / elapsed
-            _LOGGER.info(
-                "Frontend effect: receiving %.1f FPS from client %s",
-                fps,
-                self._cached_client_id,
-            )
-            self._frame_count = 0
-            self._fps_last_time = current_time
-
         # Store latest pixels for draw() to consume on the next render tick
         self._incoming_pixels = event.pixels
 
@@ -140,8 +118,6 @@ class FrontendEffect(Twod):
 
         self._cached_client_id = None
         self._rejected_client_ids.clear()
-        self._frame_count = 0
-        self._fps_last_time = None
         self._last_client_frame_time = None
         self._incoming_pixels = None
 

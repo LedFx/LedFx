@@ -2,11 +2,13 @@
 
 ## Overview
 
-Frontend is a **matrix passthrough effect** that displays pixel data captured directly from the LedFx frontend visualiser onto an LED matrix.
+Frontend is a **matrix passthrough effect** that displays pixel data captured directly from the LedFx frontend BG Visualiser onto an LED matrix.
 
-Rather than generating its own visuals, the effect receives real-time pixel frames sent by the browser over the WebSocket connection and renders them onto the virtual. This allows any visualisation visible in the LedFx UI — including other virtuals' output as seen in the frontend — to be mirrored back to physical hardware.
+Rather than generating its own visuals, the effect receives real-time pixel frames sent by the browser over the WebSocket connection and renders them onto the virtual. This allows any visualisation running in the LedFx BG Visualiser to be mirrored to physical LED hardware.
 
-Incoming frames are automatically resized to match the target matrix dimensions using bilinear interpolation, so the source resolution does not need to match the physical device.
+![Frontend effect UI](/_static/effects/matrix/frontend/frontend1.png)
+
+Incoming frames are automatically resized to match the target matrix dimensions using bilinear interpolation, so the capture resolution does not need to match the physical device.
 
 The effect supports all standard Twod matrix transforms — rotation (0°, 90°, 180°, 270°) and horizontal/vertical flip — via the shared matrix settings.
 
@@ -14,9 +16,22 @@ The effect supports all standard Twod matrix transforms — rotation (0°, 90°,
 
 ## How It Works
 
-1. The LedFx frontend captures a visualiser frame and sends it to the backend as a raw binary WebSocket frame containing the pixel dimensions, source identifier, and interleaved RGB bytes.
-2. The backend unpacks the frame, reconstructs a pixel array, and fires an internal event.
-3. The effect receives the event and stores the pixel data; on the next matrix render tick the frame is pasted into the Twod pipeline and written to the LED pixels.
+1. Enable the **BG Visualiser** in the LedFx frontend (Settings → Features).
+2. Enable **BG Visualiser to Frontend Effect** and configure the capture resolution and FPS.
+3. The frontend captures visualiser frames and sends them to the backend as raw binary WebSocket frames containing the pixel dimensions, source identifier, and interleaved RGB bytes.
+4. The backend unpacks each frame, reconstructs a pixel array, and fires an internal event.
+5. The Frontend effect receives the event and stores the pixel data; on the next matrix render tick the frame is pasted into the Twod pipeline and written to the LED pixels.
+
+### Enabling the BG Visualiser
+
+The BG Visualiser and its capture feature are configured in the frontend under **Settings → Features**:
+
+![BG Visualiser to Frontend Effect configuration](/_static/effects/matrix/frontend/frontend2.png)
+
+- **BG Visualiser to Frontend Effect** — Master toggle. When enabled, the browser begins capturing and sending frames.
+- **Capture Resolution** — Width and height (in pixels) of the captured frame. Higher resolutions produce more detail but use more bandwidth. Typical values are 64×64 or 128×128.
+- **Capture FPS** — How many frames per second the browser sends to the backend. 30 FPS is a good default; lower values reduce CPU and network load.
+- **Show Debug Preview** — When enabled, displays a small overlay in the UI showing exactly what is being captured.
 
 ### Multiple Frontends
 
@@ -30,19 +45,15 @@ If the active client stops sending (e.g. the page is refreshed or closed), the e
 
 The Frontend effect has no effect-specific settings beyond the shared matrix controls.
 
-### Shared Matrix Settings
-
-| Setting | Description |
-|---|---|
-| **ROTATE** | Rotate the output 0°, 90°, 180°, or 270° |
-| **FLIP HORIZONTAL** | Mirror the image left-to-right |
-| **FLIP VERTICAL** | Flip the image top-to-bottom |
-| **BRIGHTNESS** | Overall output brightness multiplier |
+- **ROTATE** — Rotates the output by 90° for every unit.
+- **BRIGHTNESS** — Overall output brightness multiplier.
+- **FLIP V** — Flip the image top-to-bottom.
+- **FLIP H** — Mirror the image left-to-right.
 
 ---
 
 ## Notes
 
-- The effect requires the frontend to be actively capturing and sending visualiser frames. If the frontend is not running or the visualiser is disabled, the matrix will remain blank.
-- Frame rate is determined by the frontend capture rate; no upsampling or frame interpolation is applied.
-- The effect is intended for use with 2D matrix virtuals. It will work on 1D strips but the resize from a 2D source will result in a single row of pixels.
+- The effect requires the BG Visualiser to be enabled and **BG Visualiser to Frontend Effect** to be turned on. If not configured, the matrix will remain blank.
+- Frame rate is determined by the **Capture FPS** setting in the frontend; no upsampling or frame interpolation is applied by the backend.
+- The effect is intended for use with 2D matrix virtuals. It will work on 1D strips but the resize from a 2D source will produce a single row of pixels.
