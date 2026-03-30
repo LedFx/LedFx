@@ -17,7 +17,7 @@ Incoming frames are automatically resized to match the target matrix dimensions 
 1. Enable the **BG Visualiser** in the LedFx frontend (Settings → Features).
 2. Enable **BG Visualiser to Frontend Effect**
 3. The frontend captures visualiser frames and sends them to the backend as an event
-4. The Frontend effect receives the event and render the content into the virtual.
+4. The Frontend effect receives and renders the content into the virtual.
 
 ### Enabling the BG Visualiser
 
@@ -26,7 +26,7 @@ The BG Visualiser and its capture feature are configured in the frontend under *
 ![BG Visualiser to Frontend Effect configuration](/_static/effects/matrix/frontend/frontend2.png)
 
 - **BG Visualiser to Frontend Effect** — Master toggle. When enabled, the browser begins capturing and sending frames.
-- **Capture Resolution** — Width and height (in pixels) of the captured frame. Higher resolutions produce more detail but uses more bandwidth.
+- **Capture Resolution** — Width and height (in pixels) of the captured frame. Higher resolutions produce more detail but use more bandwidth.
 - **Capture FPS** — How many frames per second the browser sends to the backend. 
 - **Show Debug Preview** — When enabled, displays a small overlay in the UI showing exactly what is being captured.
 
