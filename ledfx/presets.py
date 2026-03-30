@@ -2355,6 +2355,24 @@ ledfx_presets = {
         },
     },
     "singleColor": {
+        "black": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "blur": 0,
+                "brightness": 1,
+                "color": "#000000",
+                "decay": 1,
+                "flip": False,
+                "mirror": True,
+                "modulate": False,
+                "modulation_effect": "sine",
+                "modulation_speed": 0.5,
+                "speed": 5,
+                "threshold": 0.7,
+            },
+            "name": "Black",
+        },
         "blue": {
             "config": {
                 "background_brightness": 1.0,
