@@ -10,17 +10,14 @@ Rather than generating its own visuals, the effect receives real-time pixel fram
 
 Incoming frames are automatically resized to match the target matrix dimensions using bilinear interpolation, so the capture resolution does not need to match the physical device.
 
-The effect supports all standard Twod matrix transforms — rotation (0°, 90°, 180°, 270°) and horizontal/vertical flip — via the shared matrix settings.
-
 ---
 
 ## How It Works
 
 1. Enable the **BG Visualiser** in the LedFx frontend (Settings → Features).
-2. Enable **BG Visualiser to Frontend Effect** and configure the capture resolution and FPS.
-3. The frontend captures visualiser frames and sends them to the backend as raw binary WebSocket frames containing the pixel dimensions, source identifier, and interleaved RGB bytes.
-4. The backend unpacks each frame, reconstructs a pixel array, and fires an internal event.
-5. The Frontend effect receives the event and stores the pixel data; on the next matrix render tick the frame is pasted into the Twod pipeline and written to the LED pixels.
+2. Enable **BG Visualiser to Frontend Effect**
+3. The frontend captures visualiser frames and sends them to the backend as an event
+4. The Frontend effect receives the event and render the content into the virtual.
 
 ### Enabling the BG Visualiser
 
@@ -29,8 +26,8 @@ The BG Visualiser and its capture feature are configured in the frontend under *
 ![BG Visualiser to Frontend Effect configuration](/_static/effects/matrix/frontend/frontend2.png)
 
 - **BG Visualiser to Frontend Effect** — Master toggle. When enabled, the browser begins capturing and sending frames.
-- **Capture Resolution** — Width and height (in pixels) of the captured frame. Higher resolutions produce more detail but use more bandwidth. Typical values are 64×64 or 128×128.
-- **Capture FPS** — How many frames per second the browser sends to the backend. 30 FPS is a good default; lower values reduce CPU and network load.
+- **Capture Resolution** — Width and height (in pixels) of the captured frame. Higher resolutions produce more detail but uses more bandwidth.
+- **Capture FPS** — How many frames per second the browser sends to the backend. 
 - **Show Debug Preview** — When enabled, displays a small overlay in the UI showing exactly what is being captured.
 
 ### Multiple Frontends
