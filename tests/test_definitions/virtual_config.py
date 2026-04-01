@@ -342,7 +342,7 @@ virtual_config_tests = {
                         "is_device": False,
                         "auto_generated": False,
                         "segments": [["test-dummy-2", 70, 127, False]],
-                        "pixel_count": 122,
+                        "pixel_count": 58,
                         "active": False,
                         "streaming": False,
                         "last_effect": None,

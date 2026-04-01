@@ -22,6 +22,17 @@ LedFx is a real-time LED visualization system that synchronizes LED lighting wit
 - **Dependencies**: Audio processing (aubio-ledfx, sounddevice), LED control (openrgb-python, sacn), web framework (aiohttp)
 - **Development Tools**: pre-commit hooks (black, flake8, isort, pyupgrade), VS Code integration
 
+### Command Execution
+
+**CRITICAL**: All Python commands MUST be run through `uv run`. Never use bare `python`, `pip`, or `pytest` directly.
+
+- Tests: `uv run pytest ...`
+- Scripts: `uv run python ...`
+- Linting: `uv run black ...`, `uv run flake8 ...`
+- Package ops: `uv sync`, `uv add`, NOT `pip install`
+
+Do NOT use `python -m pytest`, `python -m pip`, or activate the venv manually.
+
 ### Workspace Structure
 ```
 ledfx/                    # Main package

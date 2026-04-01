@@ -460,11 +460,28 @@ class Device(BaseRegistry):
             if hasattr(self, prop):
                 delattr(self, prop)
 
-    async def remove_from_virtuals(self):
-        # delete segments for this device in any virtuals
+    def _cleanup_virtual_from_scenes(self, virtual_id):
+        """Remove a virtual from all scene configurations."""
+        ledfx_scenes = self._ledfx.config["scenes"].copy()
+        for scene_id, scene_config in ledfx_scenes.items():
+            self._ledfx.config["scenes"][scene_id]["virtuals"] = {
+                _virtual_id: effect
+                for _virtual_id, effect in scene_config["virtuals"].items()
+                if _virtual_id != virtual_id
+            }
 
-        # list of ids to destroy after iterating
-        auto_generated_virtuals_to_destroy = []
+    async def remove_from_virtuals(self):
+        """Remove segments referencing this device from all virtuals.
+
+        Any virtual (auto-generated or user-created) that loses all of
+        its segments as a result is destroyed along with its scene
+        references and config entries.  This prevents persisting
+        "poisoned" zero-segment virtuals that would crash startup when
+        their effect is restored.
+        """
+
+        # Collect ids of virtuals to destroy after the iteration
+        virtuals_to_destroy = []
         for virtual in self._ledfx.virtuals.values():
             if not any(segment[0] == self.id for segment in virtual._segments):
                 continue
@@ -477,34 +494,43 @@ class Device(BaseRegistry):
                 for segment in virtual._segments
                 if segment[0] != self.id
             )
-            # If the virtual is auto generated and has no segments left, nuke it
-            if len(virtual._segments) == 0 and virtual.auto_generated:
+            # Invalidate cached properties that depend on _segments
+            virtual.invalidate_cached_props()
+
+            # If the virtual has no segments left, it cannot host an
+            # effect.  Destroy it regardless of auto_generated status to
+            # avoid persisting an invalid state that crashes on restart.
+            if len(virtual._segments) == 0:
                 virtual.clear_effect()
-                # cleanup this virtual from any scenes
-                ledfx_scenes = self._ledfx.config["scenes"].copy()
-                for scene_id, scene_config in ledfx_scenes.items():
-                    self._ledfx.config["scenes"][scene_id]["virtuals"] = {
-                        _virtual_id: effect
-                        for _virtual_id, effect in scene_config[
-                            "virtuals"
-                        ].items()
-                        if _virtual_id != virtual.id
-                    }
-                # add it to the list to be destroyed
-                auto_generated_virtuals_to_destroy.append(virtual.id)
+                self._cleanup_virtual_from_scenes(virtual.id)
+                virtuals_to_destroy.append(virtual.id)
+                _LOGGER.info(
+                    "Virtual %s lost all segments after device %s removal; "
+                    "scheduled for destruction",
+                    virtual.id,
+                    self.id,
+                )
                 continue
 
-            virtual.virtual_cfg["segments"] = virtual.segments
+            if (
+                hasattr(virtual, "virtual_cfg")
+                and virtual.virtual_cfg is not None
+            ):
+                virtual.virtual_cfg["segments"] = virtual.segments
 
             if active:
                 virtual.activate()
 
-        for id in auto_generated_virtuals_to_destroy:
+        for id in virtuals_to_destroy:
             virtual = self._ledfx.virtuals.get(id)
+            if virtual is None:
+                continue
             virtual.clear_effect()
             device_id = virtual.is_device
             device = self._ledfx.devices.get(device_id)
-            if device is not None:
+            # Skip destroying the device we are currently processing;
+            # the caller is responsible for that.
+            if device is not None and device_id != self.id:
                 await device.remove_from_virtuals()
                 self._ledfx.devices.destroy(device_id)
 
@@ -515,14 +541,9 @@ class Device(BaseRegistry):
                     if _device["id"] != device_id
                 ]
 
-            # cleanup this virtual from any scenes
-            ledfx_scenes = self._ledfx.config["scenes"].copy()
-            for scene_id, scene_config in ledfx_scenes.items():
-                self._ledfx.config["scenes"][scene_id]["virtuals"] = {
-                    _virtual_id: effect
-                    for _virtual_id, effect in scene_config["virtuals"].items()
-                    if _virtual_id != id
-                }
+            # cleanup this virtual from any scenes (may already be done,
+            # but idempotent)
+            self._cleanup_virtual_from_scenes(id)
 
             self._ledfx.virtuals.destroy(id)
 
@@ -534,7 +555,7 @@ class Device(BaseRegistry):
             ]
 
         # Save the configuration once after all deletions
-        if auto_generated_virtuals_to_destroy:
+        if virtuals_to_destroy:
             save_config(
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
