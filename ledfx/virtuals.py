@@ -1595,13 +1595,29 @@ class Virtuals:
                     new_virtual.update_segments(virtual_cfg["segments"])
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
-                        "Virtual Segment Changed. Not restoring segment"
+                        "Virtual %s: segment schema changed, not restoring segment",
+                        virtual_cfg["id"],
                     )
                     continue
-                except RuntimeError:
-                    pass
+                except (RuntimeError, ValueError) as e:
+                    _LOGGER.warning(
+                        "Virtual %s: failed to restore segments: %s",
+                        virtual_cfg["id"],
+                        e,
+                    )
+                    continue
 
-            if "effect" in virtual_cfg:
+            # Pre-check: skip effect restore if the virtual has no valid
+            # device segments.  This prevents a ValueError crash when a
+            # poisoned config (e.g. virtual whose device was deleted) is
+            # loaded at startup.
+            if "effect" in virtual_cfg and not new_virtual._devices:
+                _LOGGER.warning(
+                    "Virtual %s has no device segments; skipping "
+                    "effect restore to avoid startup crash",
+                    virtual_cfg["id"],
+                )
+            elif "effect" in virtual_cfg:
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
@@ -1611,10 +1627,15 @@ class Virtuals:
                     new_virtual.set_effect(effect)
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
-                        "Effect schema changed. Not restoring effect"
+                        "Virtual %s: effect schema changed, not restoring effect",
+                        virtual_cfg["id"],
                     )
-                except RuntimeError:
-                    pass
+                except (RuntimeError, ValueError) as e:
+                    _LOGGER.warning(
+                        "Virtual %s: failed to restore effect: %s",
+                        virtual_cfg["id"],
+                        e,
+                    )
 
             # This adds support for configs that are configured as paused
             # via the active key if it exists. Let the setter deal with it

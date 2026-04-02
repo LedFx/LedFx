@@ -55,7 +55,8 @@ jobs:
 
       - name: Run Tests
         run: |
-          uv run pytest -v
+          uv run pytest -v --timeout=120
+        timeout-minutes: 10
 
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v6
@@ -99,7 +100,8 @@ jobs:
 
       - name: Run Tests
         run: |
-          uv run pytest -v
+          uv run pytest -v --timeout=120
+        timeout-minutes: 10
 
       - name: Attach LedFx test log
         uses: actions/upload-artifact@v6

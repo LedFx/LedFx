@@ -170,7 +170,9 @@ class VirtualEndpoint(RestEndpoint):
         device = self._ledfx.devices.get(device_id)
         if device is not None:
             await device.remove_from_virtuals()
-            self._ledfx.devices.destroy(device_id)
+            # remove_from_virtuals may have already destroyed this device
+            if self._ledfx.devices.get(device_id) is not None:
+                self._ledfx.devices.destroy(device_id)
 
             # Update and save the configuration
             self._ledfx.config["devices"] = [
@@ -188,7 +190,9 @@ class VirtualEndpoint(RestEndpoint):
                 if _virtual_id != virtual_id
             }
 
-        self._ledfx.virtuals.destroy(virtual_id)
+        # remove_from_virtuals may have already destroyed this virtual
+        if self._ledfx.virtuals.get(virtual_id) is not None:
+            self._ledfx.virtuals.destroy(virtual_id)
 
         # Update and save the configuration
         self._ledfx.config["virtuals"] = [
