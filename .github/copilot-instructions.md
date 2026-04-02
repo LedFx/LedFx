@@ -213,7 +213,7 @@ When testing input validation, especially for file paths and URLs, use patterns 
 **CRITICAL**: Never conclude a library is broken without following this systematic process:
 
 1. **Consult Documentation FIRST**
-   - Check package metadata: `uv pip show <package>` or `pip show <package>`
+   - Check package metadata: `uv pip show <package>`
    - Read README/METADATA files in `.venv/Lib/site-packages/<package>*.dist-info/`
    - Look for homepage, documentation URLs, and repository links
    - Read usage examples in documentation
