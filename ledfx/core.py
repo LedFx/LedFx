@@ -226,9 +226,7 @@ class LedFxCore:
             _LOGGER.info("Sendspin server configured: %s", name)
 
         if sendspin_config:
-            _LOGGER.info(
-                "Loaded %d Sendspin server(s)", len(sendspin_config)
-            )
+            _LOGGER.info("Loaded %d Sendspin server(s)", len(sendspin_config))
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}

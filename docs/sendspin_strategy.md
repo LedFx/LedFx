@@ -303,7 +303,7 @@ def on_audio_chunk(audio_data: bytes, timestamp: int, format: AudioFormat):
 **Jump to Phase 3:** Native LedFx implementation using aiosendspin as dependency
 
 **Implementation Plan:**
-1. Add `aiosendspin` to `pyproject.toml` dependencies  
+1. Add `aiosendspin` to `pyproject.toml` dependencies
 2. Create `ledfx/sendspin/` module:
    - `client.py` - Wrapper around aiosendspin Client
    - `stream.py` - SendspinAudioStream implementing LedFx stream interface
@@ -441,7 +441,7 @@ import numpy as np
 
 class SendspinAudioStream:
     """Audio stream that receives Sendspin audio chunks and feeds LedFx"""
-    
+
     def __init__(self, config: dict, callback: callable):
         """
         Args:
@@ -459,21 +459,21 @@ class SendspinAudioStream:
         self._active = False
         self._client = None
         self._loop = None
-        
+
     async def _audio_chunk_handler(self, chunk: bytes, timestamp: int, format: AudioFormat):
         """Called by aiosendspin when audio chunk arrives"""
         if not self._active:
             return
-            
+
         # Convert to float32 mono (matching LedFx expectations)
         audio_float32 = self._convert_to_float32_mono(chunk, format)
-        
+
         # Call LedFx's callback (thread-safe)
         try:
             self.callback(audio_float32, len(audio_float32), None, None)
         except Exception as e:
             _LOGGER.error("Error in audio callback: %s", e)
-    
+
     def _convert_to_float32_mono(self, data: bytes, format: AudioFormat) -> np.ndarray:
         """Convert Sendspin audio to LedFx format"""
         # Handle PCM (int16 or int24)
@@ -490,47 +490,47 @@ class SendspinAudioStream:
         else:
             # Decode FLAC/Opus using appropriate decoder
             audio_float = self._decode_compressed(data, format)
-        
+
         # Convert stereo to mono if needed
         if format.channels == 2:
             audio_float = np.mean(audio_float.reshape(-1, 2), axis=1)
-        
+
         return audio_float.astype(np.float32)
-    
+
     def start(self):
         """Start receiving audio from Sendspin server"""
         self._active = True
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._run_client, daemon=True)
         self._thread.start()
-    
+
     def stop(self):
         """Stop receiving audio"""
         self._active = False
         if self._client:
             asyncio.run_coroutine_threadsafe(
-                self._client.disconnect(), 
+                self._client.disconnect(),
                 self._loop
             )
-    
+
     def close(self):
         """Clean shutdown"""
         self.stop()
         if self._loop:
             self._loop.stop()
-    
+
     def _run_client(self):
         """Background thread running asyncio event loop"""
         asyncio.set_event_loop(self._loop)
         self._loop.run_until_complete(self._connect_and_receive())
-    
+
     async def _connect_and_receive(self):
         """Connect to Sendspin server and start receiving audio"""
         self._client = Client(
             server_url=self.config['server_url'],
             client_name=self.config['client_name']
         )
-        
+
         # Configure as player role with preferred formats
         player_role = PlayerRole(
             supported_formats=[
@@ -540,9 +540,9 @@ class SendspinAudioStream:
             ],
             on_audio_chunk=self._audio_chunk_handler
         )
-        
+
         await self._client.connect(roles=[player_role])
-        
+
         # Keep connection alive
         while self._active:
             await asyncio.sleep(0.1)
@@ -565,11 +565,11 @@ def query_hostapis():
 @staticmethod
 def query_devices():
     # ... existing code ...
-    
+
     # Add Sendspin devices from config
     sendspin_configs = get_sendspin_configs_from_ledfx()
     sendspin_hostapi_idx = len(AudioInputSource.query_hostapis()) - 1
-    
+
     for idx, config in enumerate(sendspin_configs):
         devices.append({
             "hostapi": sendspin_hostapi_idx,
@@ -577,13 +577,13 @@ def query_devices():
             "max_input_channels": 1,
             "sendspin_config": config,
         })
-    
+
     return tuple(devices)
 
 # In AudioInputSource.activate() (~line 543)
 def activate(self):
     # ... existing code ...
-    
+
     elif hostapis[device["hostapi"]]["name"] == "SENDSPIN":
         from ledfx.sendspin.stream import SendspinAudioStream
         AudioInputSource._stream = SendspinAudioStream(
@@ -668,15 +668,15 @@ class SendspinAudioStream:
         self.callback = callback
         self.client = SendspinClient(config)
         self._active = False
-        
+
     def start(self):
         self._active = True
         self.client.connect()
         # Start background thread to receive audio
-        
+
     def stop(self):
         self._active = False
-        
+
     def close(self):
         self.client.disconnect()
 ```
@@ -874,7 +874,7 @@ All key questions have been answered through Phase 0-1 investigation:
 1. **Can LedFx directly reuse any current Sendspin client code?**
    - ✅ YES - Use `aiosendspin` Python library as a dependency
    - Apache-2.0 licensed, production-ready, actively maintained
-   
+
 2. **Is requesting PCM from Sendspin realistic and portable?**
    - ✅ YES - PCM is mandatory in Sendspin spec
    - Servers must support opus, flac, AND pcm

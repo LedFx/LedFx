@@ -232,9 +232,7 @@ class SendspinAudioStream:
         try:
             self._loop.run_until_complete(self._connect_and_receive())
         except Exception as e:
-            _LOGGER.error(
-                "Sendspin client error: %s", e, exc_info=True
-            )
+            _LOGGER.error("Sendspin client error: %s", e, exc_info=True)
         finally:
             self._loop.close()
 

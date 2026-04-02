@@ -321,9 +321,7 @@ class AudioInputSource:
         )
         if SENDSPIN_AVAILABLE:
             sendspin_idx = next(
-                i
-                for i, h in enumerate(hostapis)
-                if h["name"] == "SENDSPIN"
+                i for i, h in enumerate(hostapis) if h["name"] == "SENDSPIN"
             )
             devices = devices + tuple(
                 {
