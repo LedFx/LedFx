@@ -9,10 +9,11 @@ import logging
 import threading
 from typing import Callable, Optional
 
+from PIL.ImagePalette import raw
 import numpy as np
 
 try:
-    from aiosendspin.client import AudioFormat, PCMFormat, SendspinClient
+    from aiosendspin.client import AudioFormat, SendspinClient
     from aiosendspin.models import AudioCodec, PlayerCommand, Roles
     from aiosendspin.models.player import (
         ClientHelloPlayerSupport,
@@ -150,19 +151,18 @@ class SendspinAudioStream:
         Returns:
             numpy array of int32 values
         """
-        num_samples = len(data) // 3
-        samples = np.zeros(num_samples, dtype=np.int32)
-
-        for i in range(num_samples):
-            # Extract 3 bytes
-            b0, b1, b2 = data[i * 3 : (i + 1) * 3]
-            # Combine into int32 (sign-extend from 24-bit)
-            value = b0 | (b1 << 8) | (b2 << 16)
-            if value & 0x800000:  # Check sign bit
-                value |= 0xFF000000  # Sign extend
-            samples[i] = np.int32(value)
-
-        return samples
+        # Reshape to (n_samples, 3) for vectorized processing
+        raw = np.frombuffer(data, dtype=np.uint8)
+        raw = raw[: len(raw) - len(raw) % 3].reshape(-1, 3)
+        # Combine bytes: little-endian 24-bit
+        samples = (
+            raw[:, 0].astype(np.int32)
+            | (raw[:, 1].astype(np.int32) << 8)
+            | (raw[:, 2].astype(np.int32) << 16)
+        )
+        # Sign-extend from 24-bit
+        samples = np.where(samples & 0x800000, samples | 0xFF000000, samples)
+        return samples.astype(np.int32)
 
     def _stream_start_handler(self, stream_start_msg):
         """
