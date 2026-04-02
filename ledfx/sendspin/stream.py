@@ -9,8 +9,8 @@ import logging
 import threading
 from typing import Callable, Optional
 
-from PIL.ImagePalette import raw
 import numpy as np
+from PIL.ImagePalette import raw
 
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
