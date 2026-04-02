@@ -10,7 +10,6 @@ import threading
 from typing import Callable, Optional
 
 import numpy as np
-from PIL.ImagePalette import raw
 
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
