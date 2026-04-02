@@ -210,6 +210,26 @@ class LedFxCore:
 
         _LOGGER.info("Audio device list updated in response to system change")
 
+    def _load_sendspin_servers(self):
+        """Load Sendspin server configurations from config into the audio system."""
+        from ledfx.sendspin import SENDSPIN_AVAILABLE
+
+        if not SENDSPIN_AVAILABLE:
+            return
+
+        from ledfx.effects.audio import SENDSPIN_SERVERS
+
+        sendspin_config = self.config.get("sendspin_servers", {})
+        SENDSPIN_SERVERS.clear()
+        for name, config in sendspin_config.items():
+            SENDSPIN_SERVERS[name] = config
+            _LOGGER.info("Sendspin server configured: %s", name)
+
+        if sendspin_config:
+            _LOGGER.info(
+                "Loaded %d Sendspin server(s)", len(sendspin_config)
+            )
+
     def loop_exception_handler(self, loop, context):
         kwargs = {}
         exception = context.get("exception")
@@ -484,6 +504,9 @@ class LedFxCore:
             self.config["virtuals"], pause_all=pause_all
         )
         self.integrations.create_from_config(self.config["integrations"])
+
+        # Load Sendspin server configurations into audio system
+        self._load_sendspin_servers()
 
         # Start the HTTP server once internal registries are initialized so
         # websockets and REST endpoints are fully ready before the UI opens.
