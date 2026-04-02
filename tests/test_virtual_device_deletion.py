@@ -546,7 +546,6 @@ class TestSceneCleanupOnVirtualRemoval:
             segments=[["dev-1", 0, 49, False]],
         )
 
-
         bound = Device.remove_from_virtuals.__get__(device, type(device))
         await bound()
 
