@@ -224,9 +224,27 @@ def _make_virtual(
 
 @pytest.fixture(autouse=True)
 def _reset_virtuals_singleton():
-    """Ensure each test gets a fresh Virtuals singleton."""
+    """Ensure each test gets a fresh Virtuals singleton and properly
+    tears down any resources (threads, timers, scheduled handles) that
+    living Virtual instances may have started."""
     Virtuals._instance = None
     yield
+    instance = Virtuals._instance
+    if instance is not None:
+        for virtual in list(instance.values()):
+            # Stop the render thread if it was started
+            if getattr(virtual, "_active", False):
+                virtual._active = False
+            if hasattr(virtual, "_thread"):
+                virtual._thread.join(timeout=2)
+            # Cancel any pending fallback timer
+            if getattr(virtual, "fallback_timer", None) is not None:
+                virtual.fallback_timer.cancel()
+                virtual.fallback_timer = None
+            # Cancel any pending clear_handle
+            if getattr(virtual, "clear_handle", None) is not None:
+                virtual.clear_handle.cancel()
+                virtual.clear_handle = None
     Virtuals._instance = None
 
 
