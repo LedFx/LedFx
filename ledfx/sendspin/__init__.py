@@ -15,7 +15,7 @@ import sys
 # Only expose Sendspin functionality on Python 3.12+
 if sys.version_info >= (3, 12):
     try:
-        from ledfx.sendspin.stream import SendspinAudioStream
+        from ledfx.sendspin.stream import SendspinAudioStream # noqa: F401
 
         __all__ = ["SendspinAudioStream"]
         SENDSPIN_AVAILABLE = True
