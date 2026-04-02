@@ -142,13 +142,14 @@ class _DummyEffects:
     def __init__(self):
         self._objects = {}
 
-    def create(self, ledfx=None, type=None, config=None):
+    def create(self, ledfx=None, config=None, **kwargs):
+        effect_type = kwargs.get("type")
         effect = MagicMock()
-        effect.type = type
+        effect.type = effect_type
         effect.config = config or {}
         effect.is_active = True
-        effect.name = type
-        effect.id = f"{type}-1"
+        effect.name = effect_type
+        effect.id = f"{effect_type}-1"
         effect.logsec = None
         effect._active = True
         effect.pixels = None
