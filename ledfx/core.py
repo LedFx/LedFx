@@ -497,14 +497,16 @@ class LedFxCore:
         self.devices.create_from_config(self.config["devices"])
         await self.devices.async_initialize_devices()
 
+        # Load Sendspin server configurations into audio system BEFORE
+        # virtuals, since virtuals with active effects trigger audio
+        # initialization which validates the audio_device index.
+        self._load_sendspin_servers()
+
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(
             self.config["virtuals"], pause_all=pause_all
         )
         self.integrations.create_from_config(self.config["integrations"])
-
-        # Load Sendspin server configurations into audio system
-        self._load_sendspin_servers()
 
         # Start the HTTP server once internal registries are initialized so
         # websockets and REST endpoints are fully ready before the UI opens.
