@@ -210,7 +210,9 @@ class SendspinAudioStream:
         """Called on stream/clear (e.g. seek). Flush the playback buffer."""
         with self._buffer_lock:
             self._chunk_buffer.clear()
-        _LOGGER.debug("Playback buffer cleared (stream/clear, roles=%s)", roles)
+        _LOGGER.debug(
+            "Playback buffer cleared (stream/clear, roles=%s)", roles
+        )
 
     async def _playback_scheduler(self):
         """Release buffered chunks to LedFx at their scheduled play time."""
@@ -365,9 +367,7 @@ class SendspinAudioStream:
             # Register event handlers
             self._client.add_audio_chunk_listener(self._audio_chunk_handler)
             self._client.add_stream_start_listener(self._stream_start_handler)
-            self._client.add_stream_clear_listener(
-                self._stream_clear_handler
-            )
+            self._client.add_stream_clear_listener(self._stream_clear_handler)
 
             # Connect to server
             await self._client.connect(server_url)
