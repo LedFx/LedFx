@@ -11,6 +11,8 @@ from typing import Callable, Optional
 
 import numpy as np
 
+from ledfx.sendspin.config import BUFFER_CAPACITY
+
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
     from aiosendspin.models import AudioCodec, PlayerCommand, Roles
@@ -224,23 +226,42 @@ class SendspinAudioStream:
         _LOGGER.info("Sendspin stream closed")
 
     def _run_client(self):
-        """Background thread running asyncio event loop."""
+        """Background thread running asyncio event loop with reconnect."""
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
         try:
-            self._loop.run_until_complete(self._connect_and_receive())
+            self._loop.run_until_complete(self._reconnect_loop())
         except Exception as e:
             _LOGGER.error("Sendspin client error: %s", e, exc_info=True)
         finally:
             self._loop.close()
+
+    async def _reconnect_loop(self):
+        """Reconnect to Sendspin server with exponential backoff."""
+        backoff = 1.0
+        max_backoff = 30.0
+        while self._active:
+            try:
+                await self._connect_and_receive()
+                backoff = 1.0  # reset on clean exit
+            except Exception as e:
+                if not self._active:
+                    break
+                _LOGGER.warning(
+                    "Sendspin connection lost, retrying in %.0fs: %s",
+                    backoff,
+                    e,
+                )
+                await asyncio.sleep(backoff)
+                backoff = min(backoff * 2, max_backoff)
 
     async def _connect_and_receive(self):
         """Connect to Sendspin server and start receiving audio."""
         server_url = self.config.get("server_url")
         client_name = self.config.get("client_name", "LedFx")
         sample_rate = self.config.get("sample_rate", 48000)
-        buffer_capacity = self.config.get("buffer_capacity", 1000000)
+        buffer_capacity = BUFFER_CAPACITY
 
         _LOGGER.info(
             "Connecting to Sendspin server: %s as '%s'",
@@ -290,11 +311,7 @@ class SendspinAudioStream:
                 await asyncio.sleep(0.1)
 
         except Exception as e:
-            _LOGGER.error(
-                "Failed to connect to Sendspin server: %s",
-                e,
-                exc_info=True,
-            )
+            _LOGGER.warning("Sendspin connection attempt failed: %s", e)
             raise
         finally:
             if self._client:
@@ -302,3 +319,4 @@ class SendspinAudioStream:
                     await self._client.disconnect()
                 except Exception:
                     pass
+            self._client = None

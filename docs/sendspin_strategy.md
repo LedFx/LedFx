@@ -1,30 +1,47 @@
 # Strategy: Integrate Sendspin as a built-in LedFx audio source
 
-## ✅ Status: Ready to Implement (Phases 0-1 Complete)
+## ✅ Status: Implementation Complete (All Phases Done)
 
 **Major Discovery:** [aiosendspin](https://github.com/Sendspin/aiosendspin) Python library exists and is production-ready!
 
 ### Quick Summary
 
-- **What**: Add Sendspin as a native audio input source in LedFx (like WEB AUDIO)
-- **How**: Use `aiosendspin` library as dependency (Apache-2.0 licensed)
+- **What**: Sendspin is a native audio input source in LedFx (like WEB AUDIO)
+- **How**: Uses `aiosendspin` library as dependency (Apache-2.0 licensed)
 - **Why**: Enable LedFx to receive synchronized multi-room audio for visualization
-- **Architecture**: `SendspinAudioStream` class wrapping aiosendspin, feeding LedFx's audio pipeline
-- **Format**: Request PCM from Sendspin server → convert to float32 mono → feed to LedFx effects
-- **Integration Point**: Follow WEB AUDIO pattern in `ledfx/effects/audio.py`
+- **Architecture**: `SendspinAudioStream` in `ledfx/sendspin/stream.py`, feeding LedFx's audio pipeline
+- **Format**: Requests PCM 48kHz stereo int16 → converts to float32 mono → feeds LedFx effects
+- **Integration Point**: SENDSPIN host API in `ledfx/effects/audio.py`, following WEB AUDIO pattern
+- **Multi-server**: Multiple Sendspin servers configured via REST API, each appears as a separate device
 
-### Investigation Complete ✅
+### Implementation Complete ✅
 
 | Phase | Status | Key Findings |
 |-------|--------|--------------|
 | **Phase 0** | ✅ Complete | LedFx has callback-based audio architecture<br>WEB AUDIO proves non-PortAudio sources work<br>Integration point identified: `_audio_sample_callback()` |
 | **Phase 1** | ✅ Complete | aiosendspin library available (44 stars, actively maintained)<br>Sendspin supports PCM, FLAC, Opus<br>WebSocket-based with timestamp synchronization |
 | **Phase 2** | ⏭️ Skipped | Throwaway bridge not needed with mature library available |
-| **Phase 3** | 🚀 Ready | Architecture designed, ready to implement |
+| **Phase 3** | ✅ Complete | Native LedFx client fully implemented |
 
-### Next Action: Start Implementation
+### Implemented Files
 
-See [Recommended implementation order](#recommended-implementation-order-✅-updated) below for step-by-step guide.
+| File | Purpose |
+|------|---------|
+| `ledfx/sendspin/__init__.py` | Package; exposes `SENDSPIN_AVAILABLE` flag (Python 3.12+ only) |
+| `ledfx/sendspin/config.py` | Schema: `server_url`, `client_name`; `BUFFER_CAPACITY` constant |
+| `ledfx/sendspin/stream.py` | `SendspinAudioStream`: background thread, reconnect loop with exponential backoff |
+| `ledfx/effects/audio.py` | SENDSPIN host API, device-per-server query, `activate()` branch |
+| `ledfx/core.py` | `_load_sendspin_servers()`: syncs config → `SENDSPIN_SERVERS` at startup and on API change |
+| `ledfx/api/sendspin_servers.py` | `GET /api/sendspin/servers`, `POST /api/sendspin/servers` |
+| `ledfx/api/sendspin_server.py` | `PUT /api/sendspin/servers/{id}`, `DELETE /api/sendspin/servers/{id}` |
+| `ledfx/api/sendspin_discover.py` | `GET /api/sendspin/discover` — mDNS discovery via zeroconf |
+
+### Design Decisions Made
+
+- **Config simplified** to `server_url` + `client_name` only. `preferred_codec`, `sample_rate`, and `auto_reconnect` removed — PCM 48kHz is always requested; reconnect handled internally.
+- **`BUFFER_CAPACITY`** = 65536 bytes (~few hundred ms at 48kHz stereo) is a module constant, not per-server config.
+- **Reconnect** uses exponential backoff (1s → 30s cap) in `_reconnect_loop()`. No config knob needed.
+- **Multiple servers** supported: each `sendspin_servers` entry appears as its own device in the audio device list.
 
 ---
 
@@ -296,102 +313,29 @@ def on_audio_chunk(audio_data: bytes, timestamp: int, format: AudioFormat):
 | Non-playback role? | No - must use `player` role, but we control what happens with audio |
 | Visualizer role useful? | Future feature - provides FFT/features but not raw audio |
 
-### Recommended Path Forward
+### Outcome
 
-**Skip Phase 2 (throwaway bridge)** - not needed with aiosendspin available!
+**Phase 2 skipped** — aiosendspin made a throwaway bridge unnecessary.
 
-**Jump to Phase 3:** Native LedFx implementation using aiosendspin as dependency
+**Phase 3 implemented** using aiosendspin as dependency:
+1. `aiosendspin` added to `pyproject.toml` dependencies
+2. `ledfx/sendspin/` module created (`stream.py`, `config.py`)
+3. Integrated into `ledfx/effects/audio.py` (SENDSPIN host API, device-per-server listing)
+4. Configuration via REST API (see [Sendspin Servers API](apis/sendspin_servers.md))
 
-**Implementation Plan:**
-1. Add `aiosendspin` to `pyproject.toml` dependencies
-2. Create `ledfx/sendspin/` module:
-   - `client.py` - Wrapper around aiosendspin Client
-   - `stream.py` - SendspinAudioStream implementing LedFx stream interface
-3. Integrate into `ledfx/effects/audio.py` (add SENDSPIN host API)
-4. Add configuration UI (server URL, client name, format preferences)
-
-Primary inspection targets in Sendspin:
-
-* client connection / hello / role negotiation
-* stream start handling
-* audio chunk receive path
-* audio format negotiation
-* FLAC decoder path
-* playback submission path
-
-Questions to answer:
-
-* Where do incoming audio chunks first arrive?
-* Are chunks delivered as PCM, FLAC, or either?
-* Can a client request PCM directly?
-* Is FLAC decode reusable without dragging in unnecessary playback code?
-* Is there already a non-playback client role that can receive audio samples?
-* Does the visualizer role provide only FFT/features, or can it provide raw audio? Assume features-only unless proven otherwise.
-
-Suggested method:
-
-* Add temporary instrumentation in a local Sendspin checkout
-* Log for each stream:
-
-  * codec
-  * sample rate
-  * bit depth
-  * channels
-  * chunk size
-  * timestamps
-* If FLAC is present, verify exactly where decoded PCM becomes available
-
-Deliverables:
-
-* A short report naming the best PCM tap point
-* A decision: `prefer_pcm_direct` vs `decode_flac_in_ledfx`
-
-Success criteria:
-
-* We know exactly how to get audio samples without relying on speaker output capture.
+**Design decisions:**
+- Config simplified to `server_url` + `client_name` only. `preferred_codec`, `sample_rate`, and `auto_reconnect` removed — PCM 48kHz is always requested; reconnect handled in `_reconnect_loop()`.
+- `BUFFER_CAPACITY` = 65536 bytes is a module constant, not per-server config.
+- Reconnect uses exponential backoff (1s → 30s cap). No config knob needed.
+- Multiple servers supported: each `sendspin_servers` entry appears as its own device in the audio device list.
 
 ---
 
 ## Phase 2 - Build a throwaway bridge for validation
 
-Goal: prove Sendspin audio can drive LedFx effects reliably before embedding the client natively.
+**STATUS: ⏭️ SKIPPED** — aiosendspin library made this unnecessary. See Phase 3.
 
-Build a small standalone prototype process that:
-
-* connects to a Sendspin server as a client
-* receives audio
-* decodes if necessary
-* converts to float32
-* pushes samples into LedFx through the existing WEB AUDIO websocket interface
-
-**Note:** Based on Phase 0 findings, this validation step is **optional but recommended**. The WEB AUDIO interface expects:
-- WebSocket messages with type `"audio_stream_data_v2"`
-- Base64-encoded int16 PCM audio in the `data` field
-- Client identifier in the `client` field
-- Message format: `{"type": "audio_stream_data_v2", "client": "sendspin-test", "data": "<base64>"}`
-
-Why this phase matters:
-
-* It validates format assumptions
-* It validates chunk rate and buffering assumptions
-* It validates that LedFx visuals behave well with Sendspin-fed audio
-* It reduces risk before making LedFx changes
-
-Prototype requirements:
-
-* simple config file or CLI
-* server URL
-* room/client name
-* preferred audio format
-* LedFx websocket URL
-* structured logging
-* optional wav dump for debugging
-
-Non-goals:
-
-* polished UX
-* permanent architecture
-* deep settings UI
+~~Goal: prove Sendspin audio can drive LedFx effects reliably before embedding the client natively.~~
 
 Deliverables:
 
@@ -603,10 +547,6 @@ import voluptuous as vol
 SENDSPIN_CONFIG_SCHEMA = vol.Schema({
     vol.Required('server_url'): str,  # e.g., 'ws://192.168.1.100:8927/sendspin'
     vol.Optional('client_name', default='LedFx Visualizer'): str,
-    vol.Optional('preferred_codec', default='pcm'): vol.In(['pcm', 'opus', 'flac']),
-    vol.Optional('sample_rate', default=48000): vol.In([44100, 48000]),
-    vol.Optional('buffer_capacity', default=1000000): int,  # bytes
-    vol.Optional('auto_reconnect', default=True): bool,
 })
 ```
 
