@@ -7,7 +7,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.sendspin.config import DEFAULT_CLIENT_NAME
+from ledfx.sendspin.config import DEFAULT_CLIENT_NAME, validate_sendspin_server_url
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -17,10 +17,6 @@ def _sendspin_available():
     from ledfx.sendspin import SENDSPIN_AVAILABLE
 
     return SENDSPIN_AVAILABLE
-
-
-def _validate_server_url(url: str) -> bool:
-    return url.startswith("ws://") or url.startswith("wss://")
 
 
 class SendspinServersEndpoint(RestEndpoint):
@@ -48,28 +44,45 @@ class SendspinServersEndpoint(RestEndpoint):
         try:
             data = await request.json()
         except JSONDecodeError:
+            _LOGGER.warning("POST /api/sendspin/servers: invalid JSON body")
             return await self.json_decode_error()
 
         if "id" not in data:
+            _LOGGER.warning(
+                "POST /api/sendspin/servers: missing required field 'id'"
+            )
             return await self.invalid_request(
                 "Required key not provided: 'id'"
             )
 
         if "server_url" not in data:
+            _LOGGER.warning(
+                "POST /api/sendspin/servers: missing required field 'server_url'"
+            )
             return await self.invalid_request(
                 "Required key not provided: 'server_url'"
             )
 
         server_url = data["server_url"]
-        if not _validate_server_url(server_url):
-            return await self.invalid_request(
-                "server_url must start with ws:// or wss://"
+        if isinstance(server_url, str):
+            server_url = server_url.strip()
+        valid, reason = validate_sendspin_server_url(server_url)
+        if not valid:
+            _LOGGER.warning(
+                "POST /api/sendspin/servers: invalid server_url %r — %s",
+                server_url,
+                reason,
             )
+            return await self.invalid_request(reason)
 
         server_id = generate_id(data["id"])
         servers = self._ledfx.config.setdefault("sendspin_servers", {})
 
         if server_id in servers:
+            _LOGGER.warning(
+                "POST /api/sendspin/servers: server '%s' already exists",
+                server_id,
+            )
             return await self.invalid_request(
                 f"Server '{server_id}' already exists. Use PUT to update."
             )

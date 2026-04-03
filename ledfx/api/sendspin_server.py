@@ -8,6 +8,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.effects.audio import AudioInputSource
+from ledfx.sendspin.config import validate_sendspin_server_url
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,10 +17,6 @@ def _sendspin_available():
     from ledfx.sendspin import SENDSPIN_AVAILABLE
 
     return SENDSPIN_AVAILABLE
-
-
-def _validate_server_url(url: str) -> bool:
-    return url.startswith("ws://") or url.startswith("wss://")
 
 
 def _sync_active_stream(ledfx, server_id: str, *, restart: bool) -> None:
@@ -83,13 +80,21 @@ class SendspinServerEndpoint(RestEndpoint):
 
         url_changed = False
         if "server_url" in data:
-            if not _validate_server_url(data["server_url"]):
-                return await self.invalid_request(
-                    "server_url must start with ws:// or wss://"
+            server_url = data["server_url"]
+            if isinstance(server_url, str):
+                server_url = server_url.strip()
+            valid, reason = validate_sendspin_server_url(server_url)
+            if not valid:
+                _LOGGER.warning(
+                    "PUT /api/sendspin/servers/%s: invalid server_url %r — %s",
+                    server_id,
+                    server_url,
+                    reason,
                 )
-            if servers[server_id].get("server_url") != data["server_url"]:
+                return await self.invalid_request(reason)
+            if servers[server_id].get("server_url") != server_url:
                 url_changed = True
-            servers[server_id]["server_url"] = data["server_url"]
+            servers[server_id]["server_url"] = server_url
 
         if "client_name" in data:
             servers[server_id]["client_name"] = data["client_name"]

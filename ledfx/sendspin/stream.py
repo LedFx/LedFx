@@ -217,11 +217,22 @@ class SendspinAudioStream:
         """Clean shutdown of the stream."""
         self.stop()
 
-        if self._loop and self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._loop.stop)
-
+        # Give the thread up to 5 s to finish the scheduled disconnect cleanly
+        # before force-stopping the loop.  Calling loop.stop() immediately would
+        # abort the run_coroutine_threadsafe(disconnect()) future before it
+        # completes and produce "event loop stopped before Future completed".
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=5.0)
+
+        if self._thread and self._thread.is_alive():
+            # Thread did not finish in time; force-stop the loop so the thread
+            # can exit and then wait briefly for cleanup.
+            _LOGGER.warning(
+                "Sendspin thread did not exit within 5 s; force-stopping event loop"
+            )
+            if self._loop and self._loop.is_running():
+                self._loop.call_soon_threadsafe(self._loop.stop)
+            self._thread.join(timeout=2.0)
 
         _LOGGER.info("Sendspin stream closed")
 
@@ -317,6 +328,10 @@ class SendspinAudioStream:
             if self._client:
                 try:
                     await self._client.disconnect()
-                except Exception:
-                    pass
+                except Exception as e:
+                    _LOGGER.warning(
+                        "Sendspin disconnect failed during teardown: %s",
+                        e,
+                        exc_info=True,
+                    )
             self._client = None
