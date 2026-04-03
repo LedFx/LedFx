@@ -7,7 +7,10 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
-from ledfx.sendspin.config import DEFAULT_CLIENT_NAME, validate_sendspin_server_url
+from ledfx.sendspin.config import (
+    DEFAULT_CLIENT_NAME,
+    validate_sendspin_server_url,
+)
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)

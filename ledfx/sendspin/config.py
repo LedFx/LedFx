@@ -57,7 +57,10 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
         return False, "server_url must contain a non-empty hostname"
 
     if parsed.port is not None and not (0 <= parsed.port <= 65535):
-        return False, f"server_url port {parsed.port} is out of range (0-65535)"
+        return (
+            False,
+            f"server_url port {parsed.port} is out of range (0-65535)",
+        )
 
     path = parsed.path
     if "\x00" in path:
