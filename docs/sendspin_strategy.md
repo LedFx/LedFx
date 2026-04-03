@@ -645,7 +645,7 @@ Prefer the simplest stable path first.
 | `/api/sendspin/servers` | POST | Add a new server (`id`, `server_url`, optional `client_name`) |
 | `/api/sendspin/servers/{server_id}` | PUT | Update an existing server |
 | `/api/sendspin/servers/{server_id}` | DELETE | Remove a server |
-| `/api/sendspin/discover` | GET | mDNS scan for `_sendspin._tcp.local.` with configurable `timeout` |
+| `/api/sendspin/discover` | GET | mDNS scan for `_sendspin-server._tcp.local.` with configurable `timeout` |
 
 All endpoints return `400 / status: failed` when `SENDSPIN_AVAILABLE` is False (Python < 3.12 or `aiosendspin` not installed). Server URL is validated to start with `ws://` or `wss://`.
 

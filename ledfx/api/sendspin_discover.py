@@ -136,7 +136,17 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                 path = properties.get("path", "/sendspin")
                 if not path.startswith("/"):
                     path = "/" + path
-                server_url = f"ws://{host}:{port}{path}"
+                # Bracket IPv6 literals so the URL is valid (e.g. ws://[::1]:8927/…)
+                try:
+                    if isinstance(
+                        ipaddress.ip_address(host), ipaddress.IPv6Address
+                    ):
+                        url_host = f"[{host}]"
+                    else:
+                        url_host = host
+                except ValueError:
+                    url_host = host  # hostname string, no bracketing needed
+                server_url = f"ws://{url_host}:{port}{path}"
                 service_name = name.replace(f".{service_type}", "").strip(".")
 
                 async with lock:

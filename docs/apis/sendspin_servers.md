@@ -43,17 +43,14 @@ Returns all configured Sendspin servers.
 **Success Response:**
 ```json
 {
-  "status": "success",
-  "payload": {
-    "servers": {
-      "living-room": {
-        "server_url": "ws://192.168.1.12:8927/sendspin",
-        "client_name": "LedFx"
-      },
-      "office": {
-        "server_url": "ws://192.168.1.55:8927/sendspin",
-        "client_name": "LedFx-Office"
-      }
+  "servers": {
+    "living-room": {
+      "server_url": "ws://192.168.1.12:8927/sendspin",
+      "client_name": "LedFx"
+    },
+    "office": {
+      "server_url": "ws://192.168.1.55:8927/sendspin",
+      "client_name": "LedFx-Office"
     }
   }
 }
@@ -62,10 +59,7 @@ Returns all configured Sendspin servers.
 **When no servers are configured:**
 ```json
 {
-  "status": "success",
-  "payload": {
-    "servers": {}
-  }
+  "servers": {}
 }
 ```
 
