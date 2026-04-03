@@ -182,7 +182,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                 # Without this, async_close() kills the socket while async_request()
                 # is still waiting for a response, causing discovered servers to be lost.
                 if pending_tasks:
-                    _remaining = min(3.0, timeout)
+                    _remaining = max(3.0, timeout)
                     _, still_pending = await asyncio.wait(
                         pending_tasks, timeout=_remaining
                     )
