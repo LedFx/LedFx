@@ -185,7 +185,7 @@ class TestPostSendspinServers:
             assert (
                 data["status"] == "failed"
             ), f"Expected failure for url: {bad_url}"
-            assert "ws://" in data["payload"]["reason"]
+            assert "must be ws or wss" in data["payload"]["reason"]
 
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
     async def test_add_duplicate_server(self, _):
@@ -331,7 +331,7 @@ class TestPutSendspinServer:
         )
         data = await resp.json()
         assert data["status"] == "failed"
-        assert "ws://" in data["payload"]["reason"]
+        assert "must be ws or wss" in data["payload"]["reason"]
 
 
 # ---------------------------------------------------------------------------

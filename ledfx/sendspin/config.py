@@ -9,9 +9,10 @@ DEFAULT_SERVER_URL = "ws://192.168.1.12:8927/sendspin"
 DEFAULT_CLIENT_NAME = "LedFx"
 
 # Buffer capacity advertised to the Sendspin server during ClientHello.
-# ~64 KB is enough for a few hundred ms at 48kHz/16-bit stereo — keeps
-# latency low for a visualization client.
-BUFFER_CAPACITY = 65536
+# The server sends audio up to this many bytes ahead of the current play
+# position.  ~2 seconds at 48 kHz / 16-bit / stereo (192 000 B/s) gives
+# enough headroom for network jitter while keeping latency reasonable.
+BUFFER_CAPACITY = 384000
 
 # Sendspin configuration schema
 SENDSPIN_CONFIG_SCHEMA = vol.Schema(

@@ -5,6 +5,7 @@ receiving audio from a Sendspin server and converting it to LedFx's expected for
 """
 
 import asyncio
+import heapq
 import logging
 import threading
 from typing import Callable, Optional
@@ -53,6 +54,12 @@ class SendspinAudioStream:
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._thread: Optional[threading.Thread] = None
 
+        # Timestamp-sorted playback buffer: heap of (play_time_us, seq, audio)
+        self._chunk_buffer: list[tuple[int, int, np.ndarray]] = []
+        self._chunk_seq = 0
+        self._buffer_lock = threading.Lock()
+        self._scheduler_task: Optional[asyncio.Task] = None
+
         _LOGGER.info(
             "Sendspin stream initialized for server: %s",
             config.get("server_url", "unknown"),
@@ -62,24 +69,39 @@ class SendspinAudioStream:
         self, timestamp: int, chunk_data: bytes, audio_format: AudioFormat
     ):
         """
-        Called by aiosendspin when audio chunk arrives.
+        Called by aiosendspin when an audio chunk arrives.
+
+        Converts the audio to float32 mono and inserts it into a
+        timestamp-sorted buffer.  The scheduler loop releases chunks
+        to LedFx at the correct play time so visualisation stays in
+        sync with speakers playing the same stream.
 
         Args:
-            timestamp: Server timestamp in microseconds
+            timestamp: Server timestamp in microseconds (raw, not offset-adjusted)
             chunk_data: Raw audio bytes from Sendspin
             audio_format: Audio format description for this chunk
         """
-        if not self._active:
+        if not self._active or self._client is None:
             return
 
         try:
-            # Convert to float32 mono (matching LedFx expectations)
+            play_time_us = self._client.compute_play_time(timestamp)
+            now_us = int(self._loop.time() * 1_000_000)
+
+            # Drop chunks whose play time is already in the past (spec rule)
+            if play_time_us < now_us:
+                return
+
             audio_float32 = self._convert_to_float32_mono(
                 chunk_data, audio_format
             )
 
-            # Call LedFx's callback
-            self.callback(audio_float32, len(audio_float32), None, None)
+            with self._buffer_lock:
+                self._chunk_seq += 1
+                heapq.heappush(
+                    self._chunk_buffer,
+                    (play_time_us, self._chunk_seq, audio_float32),
+                )
 
         except Exception as e:
             _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
@@ -183,6 +205,38 @@ class SendspinAudioStream:
             )
         else:
             _LOGGER.info("Sendspin stream started (no player info)")
+
+    def _stream_clear_handler(self, roles):
+        """Called on stream/clear (e.g. seek). Flush the playback buffer."""
+        with self._buffer_lock:
+            self._chunk_buffer.clear()
+        _LOGGER.debug("Playback buffer cleared (stream/clear, roles=%s)", roles)
+
+    async def _playback_scheduler(self):
+        """Release buffered chunks to LedFx at their scheduled play time."""
+        while self._active:
+            chunk = None
+            with self._buffer_lock:
+                if self._chunk_buffer:
+                    play_time_us = self._chunk_buffer[0][0]
+                    now_us = int(self._loop.time() * 1_000_000)
+                    if play_time_us <= now_us:
+                        _, _, chunk = heapq.heappop(self._chunk_buffer)
+
+            if chunk is not None:
+                try:
+                    self.callback(chunk, len(chunk), None, None)
+                except Exception as e:
+                    _LOGGER.error(
+                        "Error in LedFx audio callback: %s", e, exc_info=True
+                    )
+                # Check immediately for more ready chunks
+                continue
+
+            # Nothing ready — sleep briefly before re-checking.
+            # 5 ms keeps CPU negligible while limiting scheduling jitter
+            # to well within acceptable limits for LED visualisation.
+            await asyncio.sleep(0.005)
 
     def start(self):
         """Start receiving audio from Sendspin server."""
@@ -311,11 +365,20 @@ class SendspinAudioStream:
             # Register event handlers
             self._client.add_audio_chunk_listener(self._audio_chunk_handler)
             self._client.add_stream_start_listener(self._stream_start_handler)
+            self._client.add_stream_clear_listener(
+                self._stream_clear_handler
+            )
 
             # Connect to server
             await self._client.connect(server_url)
 
             _LOGGER.info("Connected to Sendspin server successfully")
+
+            # Start the playback scheduler that drains the buffer at the
+            # correct timestamps.
+            self._scheduler_task = asyncio.ensure_future(
+                self._playback_scheduler()
+            )
 
             # Keep connection alive
             while self._active:
@@ -325,6 +388,17 @@ class SendspinAudioStream:
             _LOGGER.warning("Sendspin connection attempt failed: %s", e)
             raise
         finally:
+            if self._scheduler_task and not self._scheduler_task.done():
+                self._scheduler_task.cancel()
+                try:
+                    await self._scheduler_task
+                except asyncio.CancelledError:
+                    pass
+            self._scheduler_task = None
+
+            with self._buffer_lock:
+                self._chunk_buffer.clear()
+
             if self._client:
                 try:
                     await self._client.disconnect()
