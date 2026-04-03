@@ -37,7 +37,7 @@
 | `ledfx/core.py` | `_load_sendspin_servers()`: syncs config → `SENDSPIN_SERVERS` at startup and on API change |
 | `ledfx/api/sendspin_servers.py` | `GET /api/sendspin/servers`, `POST /api/sendspin/servers` |
 | `ledfx/api/sendspin_server.py` | `PUT /api/sendspin/servers/{id}`, `DELETE /api/sendspin/servers/{id}` |
-| `ledfx/api/sendspin_discover.py` | `GET /api/sendspin/discover` — mDNS discovery via zeroconf (`_sendspin._tcp.local.`) |
+| `ledfx/api/sendspin_discover.py` | `GET /api/sendspin/discover` — mDNS discovery via zeroconf (`_sendspin-server._tcp.local.`) |
 | `tests/test_api_sendspin_servers.py` | Integration tests for all three REST endpoints |
 
 ### Design Decisions Made

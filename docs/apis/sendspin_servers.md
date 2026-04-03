@@ -243,7 +243,9 @@ GET /api/sendspin/discover?timeout=5.0
   "status": "success",
   "payload": {
     "type": "info",
-    "reason": "Discovery complete. 2 server(s) found.",
+    "reason": "Discovery complete. 2 server(s) found."
+  },
+  "data": {
     "servers": [
       {
         "name": "Sendspin Living Room",
@@ -270,7 +272,9 @@ GET /api/sendspin/discover?timeout=5.0
   "status": "success",
   "payload": {
     "type": "info",
-    "reason": "Discovery complete. No Sendspin servers found on the local network.",
+    "reason": "Discovery complete. No Sendspin servers found on the local network."
+  },
+  "data": {
     "servers": []
   }
 }
