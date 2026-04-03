@@ -362,7 +362,11 @@ class SendspinAudioStream:
             # Create Sendspin client
             # client_id must be persistent across reconnections so the server
             # can associate this client with previous sessions (spec requirement).
-            client_id = f"ledfx-{self._server_id}" if self._server_id else f"ledfx-{id(self)}"
+            client_id = (
+                f"ledfx-{self._server_id}"
+                if self._server_id
+                else f"ledfx-{id(self)}"
+            )
             self._client = SendspinClient(
                 client_id=client_id,
                 client_name=client_name,
