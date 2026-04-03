@@ -383,7 +383,7 @@ ledfx/
 
 ### 3.1 SendspinAudioStream Class — as implemented
 
-Implements the stream interface expected by LedFx (matching `WebAudioStream`).  
+Implements the stream interface expected by LedFx (matching `WebAudioStream`).
 See [ledfx/sendspin/stream.py](../ledfx/sendspin/stream.py) for the full source.
 
 **Key implementation details that differ from the original plan:**
