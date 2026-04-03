@@ -591,6 +591,7 @@ class AudioInputSource:
                 AudioInputSource._stream = SendspinAudioStream(
                     device["sendspin_config"],
                     self._audio_sample_callback,
+                    server_id=device["name"],
                 )
             else:
                 AudioInputSource._stream = self._audio.InputStream(

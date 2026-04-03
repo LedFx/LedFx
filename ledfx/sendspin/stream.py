@@ -39,9 +39,11 @@ class SendspinAudioStream:
     Args:
         config: Configuration dict with server_url, client_name, etc.
         callback: LedFx's _audio_sample_callback(data, frame_count, time_info, status)
+        server_id: Stable identifier for this server config entry, used to
+            generate a persistent client_id across reconnections (spec requirement).
     """
 
-    def __init__(self, config: dict, callback: Callable):
+    def __init__(self, config: dict, callback: Callable, server_id: str = ""):
         if SendspinClient is None:
             raise ImportError(
                 "aiosendspin not available (requires Python 3.12+)"
@@ -49,6 +51,7 @@ class SendspinAudioStream:
 
         self.config = config
         self.callback = callback
+        self._server_id = server_id
         self._active = False
         self._client: Optional[SendspinClient] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -357,8 +360,11 @@ class SendspinAudioStream:
             )
 
             # Create Sendspin client
+            # client_id must be persistent across reconnections so the server
+            # can associate this client with previous sessions (spec requirement).
+            client_id = f"ledfx-{self._server_id}" if self._server_id else f"ledfx-{id(self)}"
             self._client = SendspinClient(
-                client_id=f"ledfx-{id(self)}",
+                client_id=client_id,
                 client_name=client_name,
                 roles=[Roles.PLAYER],
                 player_support=player_support,
