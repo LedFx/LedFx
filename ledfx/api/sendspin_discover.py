@@ -14,8 +14,10 @@ from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
 
-# mDNS service type broadcast by Sendspin servers
-_SENDSPIN_SERVICE_TYPE = "_sendspin._tcp.local."
+# mDNS service type broadcast by Sendspin servers (client-initiated connection path).
+# Note: _sendspin._tcp.local. is what CLIENTS advertise for server-initiated connections.
+# Servers advertise _sendspin-server._tcp.local. so that clients can discover them.
+_SENDSPIN_SERVICE_TYPE = "_sendspin-server._tcp.local."
 _DEFAULT_TIMEOUT = 3.0
 _MAX_TIMEOUT = 30.0
 _MIN_TIMEOUT = 0.1
@@ -129,7 +131,12 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                     return
 
                 port = info.port or 8927
-                server_url = f"ws://{host}:{port}/sendspin"
+                # Read WebSocket path from TXT record (spec recommends /sendspin)
+                properties = info.decoded_properties or {}
+                path = properties.get("path", "/sendspin")
+                if not path.startswith("/"):
+                    path = "/" + path
+                server_url = f"ws://{host}:{port}{path}"
                 service_name = name.replace(f".{service_type}", "").strip(".")
 
                 async with lock:
