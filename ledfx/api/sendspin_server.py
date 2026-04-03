@@ -40,7 +40,9 @@ class SendspinServerEndpoint(RestEndpoint):
 
         servers = self._ledfx.config.get("sendspin_servers", {})
         if server_id not in servers:
-            return await self.invalid_request(f"Server '{server_id}' not found.")
+            return await self.invalid_request(
+                f"Server '{server_id}' not found."
+            )
 
         if "server_url" in data:
             if not _validate_server_url(data["server_url"]):
@@ -60,7 +62,9 @@ class SendspinServerEndpoint(RestEndpoint):
             message=f"Sendspin server '{server_id}' updated.",
         )
 
-    async def delete(self, server_id: str, request: web.Request) -> web.Response:
+    async def delete(
+        self, server_id: str, request: web.Request
+    ) -> web.Response:
         """Remove a Sendspin server configuration."""
         if not _sendspin_available():
             return await self.invalid_request(
@@ -69,7 +73,9 @@ class SendspinServerEndpoint(RestEndpoint):
 
         servers = self._ledfx.config.get("sendspin_servers", {})
         if server_id not in servers:
-            return await self.invalid_request(f"Server '{server_id}' not found.")
+            return await self.invalid_request(
+                f"Server '{server_id}' not found."
+            )
 
         del servers[server_id]
 

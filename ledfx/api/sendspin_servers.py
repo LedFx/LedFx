@@ -51,7 +51,9 @@ class SendspinServersEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         if "id" not in data:
-            return await self.invalid_request("Required key not provided: 'id'")
+            return await self.invalid_request(
+                "Required key not provided: 'id'"
+            )
 
         if "server_url" not in data:
             return await self.invalid_request(

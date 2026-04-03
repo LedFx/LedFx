@@ -4,7 +4,11 @@ import asyncio
 import logging
 
 from aiohttp import web
-from zeroconf.asyncio import AsyncServiceBrowser, AsyncServiceInfo, AsyncZeroconf
+from zeroconf.asyncio import (
+    AsyncServiceBrowser,
+    AsyncServiceInfo,
+    AsyncZeroconf,
+)
 
 from ledfx.api import RestEndpoint
 
@@ -41,11 +45,11 @@ class SendspinDiscoverEndpoint(RestEndpoint):
             )
 
         try:
-            timeout = float(request.rel_url.query.get("timeout", _DEFAULT_TIMEOUT))
-        except (ValueError, TypeError):
-            return await self.invalid_request(
-                "timeout must be a number"
+            timeout = float(
+                request.rel_url.query.get("timeout", _DEFAULT_TIMEOUT)
             )
+        except (ValueError, TypeError):
+            return await self.invalid_request("timeout must be a number")
 
         if not (_MIN_TIMEOUT <= timeout <= _MAX_TIMEOUT):
             return await self.invalid_request(
@@ -60,7 +64,9 @@ class SendspinDiscoverEndpoint(RestEndpoint):
             for cfg in self._ledfx.config.get("sendspin_servers", {}).values()
         }
         for entry in discovered:
-            entry["already_configured"] = entry["server_url"] in configured_urls
+            entry["already_configured"] = (
+                entry["server_url"] in configured_urls
+            )
 
         count = len(discovered)
         if count:
@@ -88,7 +94,9 @@ class SendspinDiscoverEndpoint(RestEndpoint):
         aiozc = AsyncZeroconf()
         try:
 
-            async def _handle_service(zeroconf, service_type, name, state_change):
+            async def _handle_service(
+                zeroconf, service_type, name, state_change
+            ):
                 if state_change is not ServiceStateChange.Added:
                     return
                 info = AsyncServiceInfo(service_type, name)
@@ -113,7 +121,9 @@ class SendspinDiscoverEndpoint(RestEndpoint):
 
                 if host is None:
                     # Fall back to hostname
-                    host = str(info.server).rstrip(".") if info.server else None
+                    host = (
+                        str(info.server).rstrip(".") if info.server else None
+                    )
 
                 if host is None:
                     return
@@ -134,7 +144,9 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                             }
                         )
 
-            def on_service_state_change(zeroconf, service_type, name, state_change):
+            def on_service_state_change(
+                zeroconf, service_type, name, state_change
+            ):
                 task = asyncio.ensure_future(
                     _handle_service(zeroconf, service_type, name, state_change)
                 )
