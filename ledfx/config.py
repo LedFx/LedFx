@@ -186,6 +186,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("lifx_discovery_timeout", default=30): vol.All(
             int, vol.Range(min=1, max=120)
         ),
+        vol.Optional("sendspin_servers", default={}): dict,
     },
     extra=vol.ALLOW_EXTRA,
 )

@@ -18,6 +18,10 @@ from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, Event
+from ledfx.sendspin import SENDSPIN_AVAILABLE
+
+# Sendspin server configurations discovered or configured
+SENDSPIN_SERVERS = {}
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -295,19 +299,40 @@ class AudioInputSource:
 
     @staticmethod
     def query_hostapis():
-        return sd.query_hostapis() + ({"name": "WEB AUDIO"},)
+        apis = sd.query_hostapis() + ({"name": "WEB AUDIO"},)
+        if SENDSPIN_AVAILABLE:
+            apis = apis + ({"name": "SENDSPIN"},)
+        return apis
 
     @staticmethod
     def query_devices():
-        return sd.query_devices() + tuple(
+        hostapis = AudioInputSource.query_hostapis()
+        web_audio_idx = next(
+            i for i, h in enumerate(hostapis) if h["name"] == "WEB AUDIO"
+        )
+        devices = sd.query_devices() + tuple(
             {
-                "hostapi": len(AudioInputSource.query_hostapis()) - 1,
+                "hostapi": web_audio_idx,
                 "name": f"{client}",
                 "max_input_channels": 1,
                 "client": client,
             }
             for client in WEB_AUDIO_CLIENTS
         )
+        if SENDSPIN_AVAILABLE:
+            sendspin_idx = next(
+                i for i, h in enumerate(hostapis) if h["name"] == "SENDSPIN"
+            )
+            devices = devices + tuple(
+                {
+                    "hostapi": sendspin_idx,
+                    "name": name,
+                    "max_input_channels": 1,
+                    "sendspin_config": config,
+                }
+                for name, config in SENDSPIN_SERVERS.items()
+            )
+        return devices
 
     @staticmethod
     def input_devices():
@@ -556,6 +581,17 @@ class AudioInputSource:
                     AudioInputSource._stream
                 ) = WebAudioStream(
                     device["client"], self._audio_sample_callback
+                )
+            elif (
+                SENDSPIN_AVAILABLE
+                and hostapis[device["hostapi"]]["name"] == "SENDSPIN"
+            ):
+                from ledfx.sendspin.stream import SendspinAudioStream
+
+                AudioInputSource._stream = SendspinAudioStream(
+                    device["sendspin_config"],
+                    self._audio_sample_callback,
+                    server_id=device["name"],
                 )
             else:
                 AudioInputSource._stream = self._audio.InputStream(
