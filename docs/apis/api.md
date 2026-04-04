@@ -9,15 +9,31 @@ Information about LedFx
 
 **GET**
 
-Returns basic information about the LedFx instance as JSON
+Returns basic information about the LedFx instance as JSON, including a `features` object indicating which optional capabilities are available on this backend.
 
 ``` json
 {
   "url": "http://127.0.0.1:8888",
-  "name": "LedFx",
-  "version": "0.3.0"
+  "name": "LedFx Controller",
+  "version": "2.1.5",
+  "github_sha": "unknown",
+  "is_release": "false",
+  "developer_mode": false,
+  "features": {
+    "sendspin": true
+  }
 }
 ```
+
+### Features
+
+The `features` object provides boolean flags for optional backend capabilities that may not be available in all environments. Frontends should query this on startup to conditionally show or hide UI sections.
+
+| Feature | Description | Requirement |
+|---------|-------------|-------------|
+| `sendspin` | Sendspin synchronized multi-room audio integration | Python 3.12+ and `aiosendspin` package |
+
+When a feature is `false`, the corresponding API endpoints will return error responses and the frontend should hide the related UI.
 
 ## /api/config
 

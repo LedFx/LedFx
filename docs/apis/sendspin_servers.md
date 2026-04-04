@@ -8,6 +8,20 @@ LedFx provides REST API endpoints for managing Sendspin server connections. [Sen
 
 **Availability:** Requires Python 3.12+ and the `aiosendspin` package installed. On Python < 3.12 or without the package, all endpoints return a `501 Not Implemented` equivalent response.
 
+### Detecting Availability
+
+Before rendering Sendspin UI, frontends should check the `features.sendspin` flag from `GET /api/info`:
+
+```json
+{
+  "features": {
+    "sendspin": true
+  }
+}
+```
+
+When `sendspin` is `false`, the backend does not support Sendspin (Python < 3.12 or `aiosendspin` not installed). All `/api/sendspin/*` endpoints will return error responses and the frontend should hide the Sendspin section entirely.
+
 ---
 
 ## Data Model

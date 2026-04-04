@@ -5,6 +5,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.consts import PROJECT_VERSION
+from ledfx.sendspin import SENDSPIN_AVAILABLE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,5 +27,8 @@ class InfoEndpoint(RestEndpoint):
             "github_sha": os.getenv("GITHUB_SHA", "unknown"),
             "is_release": os.getenv("IS_RELEASE", "false").lower(),
             "developer_mode": self._ledfx.config["dev_mode"],
+            "features": {
+                "sendspin": SENDSPIN_AVAILABLE,
+            },
         }
         return await self.bare_request_success(response)
