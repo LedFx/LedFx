@@ -95,12 +95,18 @@ class AudioInputSource:
 
     def _update_device_config(self, device_idx):
         """
-        Update device index in both local and central configs.
+        Update device index and name in both local and central configs.
 
         Args:
             device_idx: The device index to set, or None to clear
         """
         self._config["audio_device"] = device_idx
+        # Keep the persisted name in sync with the index
+        if device_idx is not None:
+            devices = self.input_devices()
+            self._config["audio_device_name"] = devices.get(device_idx)
+        else:
+            self._config["audio_device_name"] = None
         # Sync the entire audio config to central config (matches update_config pattern)
         if hasattr(self, "_ledfx") and self._ledfx:
             self._ledfx.config["audio"] = self._config
@@ -364,6 +370,9 @@ class AudioInputSource:
                 vol.Optional(
                     "audio_device", default=default_device_index
                 ): AudioInputSource.device_index_validator,
+                vol.Optional("audio_device_name", default=None): vol.Any(
+                    None, str
+                ),
                 vol.Optional(
                     "delay_ms",
                     default=0,
@@ -395,6 +404,12 @@ class AudioInputSource:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
 
+        # Validate that the saved device index still points to the same
+        # device by checking the persisted name.  If the device list has
+        # changed (new devices added/removed, sendspin servers loaded)
+        # the index may now refer to a different device.
+        self._validate_device_by_name()
+
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
         with AudioInputSource._class_lock:
@@ -414,6 +429,57 @@ class AudioInputSource:
                 )
 
         self._ledfx.config["audio"] = self._config
+
+    def _validate_device_by_name(self):
+        """
+        Cross-check saved audio_device index against audio_device_name.
+
+        If the name at the saved index doesn't match, search for the device
+        by name.  Fall back to default_device_index() if not found.
+        """
+        saved_name = self._config.get("audio_device_name")
+        if saved_name is None:
+            # No name stored yet (first run or old config) — nothing to check
+            return
+
+        device_idx = self._config.get("audio_device")
+        devices = self.input_devices()
+
+        # Check if the current index still maps to the expected name
+        current_name = devices.get(device_idx)
+        if current_name == saved_name:
+            return  # All good — index and name agree
+
+        _LOGGER.warning(
+            "Audio device index %s no longer matches saved name '%s' "
+            "(now '%s'). Searching for device by name…",
+            device_idx,
+            saved_name,
+            current_name,
+        )
+
+        # Try to find the device at its new index
+        found_idx = self.get_device_index_by_name(saved_name)
+        if found_idx != -1:
+            _LOGGER.info(
+                "Found audio device '%s' at new index %s (was %s)",
+                saved_name,
+                found_idx,
+                device_idx,
+            )
+            self._config["audio_device"] = found_idx
+        else:
+            fallback = self.default_device_index()
+            fallback_name = devices.get(fallback, "unknown")
+            _LOGGER.warning(
+                "Saved audio device '%s' not found. "
+                "Falling back to default device at index %s ('%s').",
+                saved_name,
+                fallback,
+                fallback_name,
+            )
+            self._config["audio_device"] = fallback
+            self._config["audio_device_name"] = fallback_name
 
     def activate(self):
         if self._audio is None:
@@ -535,15 +601,19 @@ class AudioInputSource:
             """
             Update class-level tracking of active device index and name.
             Thread-safe with class lock protection.
+            Also persists the device name into the config for startup validation.
             """
             with AudioInputSource._class_lock:
                 AudioInputSource._last_active = device_idx
                 device_name = input_devices[device_idx].get("name", None)
-                AudioInputSource._last_device_name = (
+                full_name = (
                     f"{hostapis[input_devices[device_idx]['hostapi']]['name']}: {device_name}"
                     if device_name
                     else None
                 )
+                AudioInputSource._last_device_name = full_name
+            # Persist name so startup can verify the index still matches
+            self._config["audio_device_name"] = full_name
 
         def open_audio_stream(device_idx):
             """
