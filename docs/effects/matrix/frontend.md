@@ -18,6 +18,7 @@ Incoming frames are automatically resized to match the target matrix dimensions 
 2. Enable **BG Visualiser to Frontend Effect**
 3. The frontend captures visualiser frames and sends them to the backend as an event
 4. The Frontend effect receives and renders the content into the virtual.
+5. If the browser tab with BG Visualiser loses focus to another tab in the host browser, or if the browser is minimised, the BG Visualiser effect stops rendering until focus is regained.
 
 ### Enabling the BG Visualiser
 
