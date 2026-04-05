@@ -8,11 +8,17 @@ import asyncio
 import heapq
 import logging
 import threading
+import time
 from typing import Callable, Optional
 
 import numpy as np
 
 from ledfx.sendspin.config import BUFFER_CAPACITY
+
+try:
+    import av
+except ImportError:
+    av = None
 
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
@@ -27,6 +33,16 @@ except ImportError:
     AudioFormat = None
 
 _LOGGER = logging.getLogger(__name__)
+
+# Interval in seconds between bytes/sec debug log messages
+_BPS_LOG_INTERVAL = 5.0
+
+# Maximum samples per sub-chunk delivered to LedFx.
+# Large FLAC frames (e.g. 4608 samples = 96ms) are split into pieces
+# of this size so the FFT / beat-detection updates at ~60 Hz,
+# matching sounddevice's blocksize = device_rate / sample_rate
+# (e.g. 44100/60 = 735 for local mic, 48000/60 = 800 for Sendspin).
+_SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
 
 class SendspinAudioStream:
@@ -63,6 +79,25 @@ class SendspinAudioStream:
         self._buffer_lock = threading.Lock()
         self._scheduler_task: Optional[asyncio.Task] = None
 
+        # FLAC decoder (persistent across chunks within a stream)
+        self._flac_decoder: Optional["av.AudioCodecContext"] = None
+
+        # Leftover samples from previous frame, carried over so every
+        # callback receives exactly _SUB_CHUNK_SAMPLES samples.
+        self._leftover = np.array([], dtype=np.float32)
+
+        # Network throughput tracking
+        self._bps_bytes = 0
+        self._bps_time = 0.0
+
+        # Chunk pipeline debug counters (reset every _BPS_LOG_INTERVAL)
+        self._dbg_received = 0
+        self._dbg_dropped_past = 0
+        self._dbg_queued = 0
+        self._dbg_delivered = 0
+        self._dbg_samples_total = 0
+        self._dbg_time = 0.0
+
         _LOGGER.info(
             "Sendspin stream initialized for server: %s",
             config.get("server_url", "unknown"),
@@ -87,24 +122,90 @@ class SendspinAudioStream:
         if not self._active or self._client is None:
             return
 
+        # Track network throughput
+        now_mono = time.monotonic()
+        self._bps_bytes += len(chunk_data)
+        self._dbg_received += 1
+        if self._bps_time == 0.0:
+            self._bps_time = now_mono
+            self._dbg_time = now_mono
+        elif now_mono - self._bps_time >= _BPS_LOG_INTERVAL:
+            elapsed = now_mono - self._bps_time
+            bps = self._bps_bytes / elapsed
+            with self._buffer_lock:
+                buf_depth = len(self._chunk_buffer)
+            _LOGGER.debug(
+                "Sendspin stats over %.1fs: "
+                "%.1f KB/s | recv=%d drop=%d queued=%d delivered=%d | "
+                "samples_total=%d buf_depth=%d",
+                elapsed,
+                bps / 1024,
+                self._dbg_received,
+                self._dbg_dropped_past,
+                self._dbg_queued,
+                self._dbg_delivered,
+                self._dbg_samples_total,
+                buf_depth,
+            )
+            self._bps_bytes = 0
+            self._bps_time = now_mono
+            self._dbg_received = 0
+            self._dbg_dropped_past = 0
+            self._dbg_queued = 0
+            self._dbg_delivered = 0
+            self._dbg_samples_total = 0
+
         try:
             play_time_us = self._client.compute_play_time(timestamp)
             now_us = int(self._loop.time() * 1_000_000)
 
             # Drop chunks whose play time is already in the past (spec rule)
             if play_time_us < now_us:
+                self._dbg_dropped_past += 1
                 return
 
             audio_float32 = self._convert_to_float32_mono(
                 chunk_data, audio_format
             )
 
-            with self._buffer_lock:
-                self._chunk_seq += 1
-                heapq.heappush(
-                    self._chunk_buffer,
-                    (play_time_us, self._chunk_seq, audio_float32),
+            self._dbg_samples_total += len(audio_float32)
+
+            # Prepend any leftover samples from the previous frame so
+            # that every emitted sub-chunk is exactly _SUB_CHUNK_SAMPLES.
+            if len(self._leftover) > 0:
+                audio_float32 = np.concatenate(
+                    [self._leftover, audio_float32]
                 )
+                self._leftover = np.array([], dtype=np.float32)
+
+            total_samples = len(audio_float32)
+            sub_duration_us = int(
+                _SUB_CHUNK_SAMPLES
+                / audio_format.pcm_format.sample_rate
+                * 1_000_000
+            )
+
+            n_full = total_samples // _SUB_CHUNK_SAMPLES
+            remainder = total_samples % _SUB_CHUNK_SAMPLES
+
+            if n_full > 0:
+                with self._buffer_lock:
+                    for i in range(n_full):
+                        start = i * _SUB_CHUNK_SAMPLES
+                        end = start + _SUB_CHUNK_SAMPLES
+                        sub_play = play_time_us + i * sub_duration_us
+                        self._chunk_seq += 1
+                        heapq.heappush(
+                            self._chunk_buffer,
+                            (sub_play, self._chunk_seq, audio_float32[start:end]),
+                        )
+                self._dbg_queued += n_full
+
+            # Save leftover samples for the next frame
+            if remainder > 0:
+                self._leftover = audio_float32[
+                    n_full * _SUB_CHUNK_SAMPLES :
+                ]
 
         except Exception as e:
             _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
@@ -144,15 +245,9 @@ class SendspinAudioStream:
             else:
                 raise ValueError(f"Unsupported bit depth: {bit_depth}")
 
-        elif codec in (AudioCodec.FLAC, AudioCodec.OPUS):
-            # These codecs are decoded by aiosendspin before reaching us
-            # If we get here, treat as PCM
-            _LOGGER.warning(
-                "Received compressed %s data, attempting PCM decode", codec
-            )
-            # Assume int16 for compressed formats
-            audio = np.frombuffer(data, dtype=np.int16)
-            audio_float = audio.astype(np.float32) / 32768.0
+        elif codec == AudioCodec.FLAC:
+            # FLAC decode handles channel conversion internally
+            return self._decode_flac(data, audio_format)
         else:
             raise ValueError(f"Unsupported codec: {codec}")
 
@@ -165,6 +260,101 @@ class SendspinAudioStream:
             audio_float = audio_float[::channels]
 
         return audio_float.astype(np.float32)
+
+    def _init_flac_decoder(self, audio_format: AudioFormat):
+        """Create or reconfigure the persistent FLAC decoder."""
+        if av is None:
+            raise ImportError(
+                "PyAV (av) is required for FLAC decoding but not installed"
+            )
+        pcm = audio_format.pcm_format
+        decoder = av.CodecContext.create("flac", "r")
+        decoder.sample_rate = pcm.sample_rate
+        channels = pcm.channels
+        decoder.layout = "stereo" if channels == 2 else "mono"
+
+        codec_header = audio_format.codec_header
+        if codec_header:
+            # codec_header from server is: b"fLaC\x80" + 3-byte len + streaminfo
+            # Strip the fLaC stream marker + block header (8 bytes) to get raw streaminfo
+            if codec_header[:4] == b"fLaC":
+                decoder.extradata = codec_header[8:]
+            else:
+                decoder.extradata = codec_header
+
+        decoder.open()
+        self._flac_decoder = decoder
+        _LOGGER.info(
+            "FLAC decoder initialized: %dHz %dch",
+            pcm.sample_rate,
+            channels,
+        )
+
+    def _decode_flac(self, data: bytes, audio_format: AudioFormat) -> np.ndarray:
+        """
+        Decode a FLAC frame to float32 mono samples.
+
+        Handles planar/packed formats and channel downmix internally.
+        Returns float32 mono array ready for LedFx.
+        """
+        if self._flac_decoder is None:
+            self._init_flac_decoder(audio_format)
+
+        packet = av.Packet(data)
+        frames = self._flac_decoder.decode(packet)
+
+        parts = []
+        for frame in frames:
+            arr = frame.to_ndarray()
+            fmt = frame.format
+            is_planar = fmt.is_planar
+            channels = frame.layout.nb_channels
+
+            # Log format details on first decoded frame
+            if not self._flac_fmt_logged:
+                _LOGGER.info(
+                    "FLAC first frame: format=%s planar=%s shape=%s "
+                    "dtype=%s samples=%d rate=%d channels=%d layout=%s",
+                    fmt.name,
+                    is_planar,
+                    arr.shape,
+                    arr.dtype,
+                    frame.samples,
+                    frame.sample_rate,
+                    channels,
+                    frame.layout.name,
+                )
+                self._flac_fmt_logged = True
+
+            # Normalise to float32 based on sample format
+            fmt_name = fmt.name
+            if "32" in fmt_name and "flt" not in fmt_name:
+                scale = 2147483648.0
+            elif "flt" in fmt_name:
+                scale = 1.0
+            elif "16" in fmt_name:
+                scale = 32768.0
+            else:
+                scale = 32768.0
+
+            if is_planar and arr.ndim == 2 and channels >= 2:
+                # Planar: shape is (channels, samples) e.g. (2, 1200)
+                # Average channels to mono
+                mono = np.mean(arr.astype(np.float32), axis=0) / scale
+            elif not is_planar and channels >= 2:
+                # Packed interleaved: shape is (1, channels*samples)
+                flat = arr.flatten().astype(np.float32) / scale
+                mono = np.mean(flat.reshape(-1, channels), axis=1)
+            else:
+                # Mono
+                mono = arr.flatten().astype(np.float32) / scale
+
+            parts.append(mono)
+
+        if not parts:
+            return np.array([], dtype=np.float32)
+
+        return np.concatenate(parts)
 
     @staticmethod
     def _unpack_int24(data: bytes) -> np.ndarray:
@@ -209,8 +399,17 @@ class SendspinAudioStream:
         else:
             _LOGGER.info("Sendspin stream started (no player info)")
 
+        # Reset FLAC decoder on new stream (format may have changed)
+        self._flac_decoder = None
+        self._flac_fmt_logged = False
+        self._leftover = np.array([], dtype=np.float32)
+        # Reset throughput tracking
+        self._bps_bytes = 0
+        self._bps_time = 0.0
+
     def _stream_clear_handler(self, roles):
         """Called on stream/clear (e.g. seek). Flush the playback buffer."""
+        self._leftover = np.array([], dtype=np.float32)
         with self._buffer_lock:
             self._chunk_buffer.clear()
         _LOGGER.debug(
@@ -229,6 +428,7 @@ class SendspinAudioStream:
                         _, _, chunk = heapq.heappop(self._chunk_buffer)
 
             if chunk is not None:
+                self._dbg_delivered += 1
                 try:
                     self.callback(chunk, len(chunk), None, None)
                 except Exception as e:
@@ -340,15 +540,26 @@ class SendspinAudioStream:
         )
 
         try:
-            # Build supported format list
-            supported_formats = [
+            # Build supported format list — prefer FLAC (lower bandwidth)
+            # then fall back to PCM. Server picks the first mutually supported.
+            supported_formats = []
+            if av is not None:
+                supported_formats.append(
+                    SupportedAudioFormat(
+                        codec=AudioCodec.FLAC,
+                        channels=2,
+                        sample_rate=sample_rate,
+                        bit_depth=16,
+                    ),
+                )
+            supported_formats.append(
                 SupportedAudioFormat(
                     codec=AudioCodec.PCM,
                     channels=2,
                     sample_rate=sample_rate,
                     bit_depth=16,
                 ),
-            ]
+            )
 
             player_support = ClientHelloPlayerSupport(
                 supported_formats=supported_formats,
