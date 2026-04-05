@@ -82,6 +82,7 @@ class SendspinAudioStream:
         # Leftover samples from previous frame, carried over so every
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
         self._leftover = np.array([], dtype=np.float32)
+        self._leftover_ts = 0  # play-time (us) of leftover samples
 
         _LOGGER.info(
             "Sendspin stream initialized for server: %s",
@@ -111,36 +112,41 @@ class SendspinAudioStream:
             play_time_us = self._client.compute_play_time(timestamp)
             now_us = int(self._loop.time() * 1_000_000)
 
-            # Drop chunks whose play time is already in the past (spec rule)
-            if play_time_us < now_us:
-                return
-
             audio_float32 = self._convert_to_float32_mono(
                 chunk_data, audio_format
             )
 
-            # Prepend any leftover samples from the previous frame so
-            # that every emitted sub-chunk is exactly _SUB_CHUNK_SAMPLES.
-            if len(self._leftover) > 0:
-                audio_float32 = np.concatenate([self._leftover, audio_float32])
-                self._leftover = np.array([], dtype=np.float32)
-
-            total_samples = len(audio_float32)
             sub_duration_us = int(
                 _SUB_CHUNK_SAMPLES
                 / audio_format.pcm_format.sample_rate
                 * 1_000_000
             )
 
+            # Prepend any leftover samples from the previous frame and
+            # use the leftover's original timestamp as the base so
+            # carryover samples keep their scheduled play time.
+            if len(self._leftover) > 0:
+                audio_float32 = np.concatenate([self._leftover, audio_float32])
+                base_ts = self._leftover_ts
+                self._leftover = np.array([], dtype=np.float32)
+            else:
+                base_ts = play_time_us
+
+            total_samples = len(audio_float32)
             n_full = total_samples // _SUB_CHUNK_SAMPLES
             remainder = total_samples % _SUB_CHUNK_SAMPLES
 
+            # Per-sub-chunk late check: drop only sub-chunks whose
+            # play time is already in the past instead of discarding
+            # the entire packet.
             if n_full > 0:
                 with self._buffer_lock:
                     for i in range(n_full):
+                        sub_play = base_ts + i * sub_duration_us
+                        if sub_play < now_us:
+                            continue
                         start = i * _SUB_CHUNK_SAMPLES
                         end = start + _SUB_CHUNK_SAMPLES
-                        sub_play = play_time_us + i * sub_duration_us
                         self._chunk_seq += 1
                         heapq.heappush(
                             self._chunk_buffer,
@@ -150,11 +156,12 @@ class SendspinAudioStream:
                                 audio_float32[start:end].copy(),
                             ),
                         )
-            # Save leftover samples for the next frame
+            # Save leftover samples with their scheduled play time
             if remainder > 0:
                 self._leftover = audio_float32[
                     n_full * _SUB_CHUNK_SAMPLES :
                 ].copy()
+                self._leftover_ts = base_ts + n_full * sub_duration_us
 
         except Exception as e:
             _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
@@ -354,10 +361,12 @@ class SendspinAudioStream:
         self._flac_decoder = None
         self._flac_fmt_logged = False
         self._leftover = np.array([], dtype=np.float32)
+        self._leftover_ts = 0
 
     def _stream_clear_handler(self, roles):
         """Called on stream/clear (e.g. seek). Flush the playback buffer."""
         self._leftover = np.array([], dtype=np.float32)
+        self._leftover_ts = 0
         with self._buffer_lock:
             self._chunk_buffer.clear()
         _LOGGER.debug(
