@@ -84,9 +84,9 @@ Once a server has been added, it will appear as a selectable audio input device 
 When activated, LedFx will:
 
 1. Connect to the Sendspin server via WebSocket
-2. Negotiate for Flac Mono, with a fallback to PCM Mono
+2. Negotiate for FLAC Mono, with a fallback to PCM Mono
 3. Begin receiving audio chunks with timing information
-4. Feed the audio into the visualization pipeline synchronised with all other sendspin audio end points.
+4. Feed the audio into the visualization pipeline synchronized with all other sendspin audio end points.
 5. If the connection drops, LedFx will automatically attempt to reconnect with exponential backoff.
 
 
