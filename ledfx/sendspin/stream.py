@@ -77,6 +77,7 @@ class SendspinAudioStream:
 
         # FLAC decoder (persistent across chunks within a stream)
         self._flac_decoder: Optional["av.AudioCodecContext"] = None
+        self._flac_fmt_logged = False
 
         # Leftover samples from previous frame, carried over so every
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
@@ -145,13 +146,13 @@ class SendspinAudioStream:
                         self._chunk_seq += 1
                         heapq.heappush(
                             self._chunk_buffer,
-                            (sub_play, self._chunk_seq, audio_float32[start:end]),
+                            (sub_play, self._chunk_seq, audio_float32[start:end].copy()),
                         )
             # Save leftover samples for the next frame
             if remainder > 0:
                 self._leftover = audio_float32[
                     n_full * _SUB_CHUNK_SAMPLES :
-                ]
+                ].copy()
 
         except Exception as e:
             _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
@@ -300,7 +301,7 @@ class SendspinAudioStream:
         if not parts:
             return np.array([], dtype=np.float32)
 
-        return np.concatenate(parts)
+        return np.concatenate(parts).astype(np.float32)
 
     @staticmethod
     def _unpack_int24(data: bytes) -> np.ndarray:
