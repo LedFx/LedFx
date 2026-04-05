@@ -188,3 +188,7 @@ each number a byte is sent (can be up to 6 bytes per number), even
 though the audio data being sampled is only 16-bit. The ws-v2 setting
 instead sends the audio data as base64, which is a binary data encoding
 method, greatly reducing the used bandwidth.
+
+## Sendspin
+
+For network-based audio streaming via Sendspin, see the dedicated [Sendspin Audio Streaming](sendspin.md) page.

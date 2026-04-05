@@ -8,3 +8,5 @@ Settings
    :maxdepth: 2
 
    general
+   directing_audio
+   sendspin
