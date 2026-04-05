@@ -92,7 +92,6 @@ class FrontendEffect(Twod):
         self._event_listener = self._ledfx.events.add_listener(
             self._handle_visualiser_data,
             Event.FRONTEND_VISUALISER_DATA,
-            event_filter={"vis_id": "visualiser-capture"},
         )
 
         _LOGGER.info(
