@@ -8,7 +8,6 @@ import asyncio
 import heapq
 import logging
 import threading
-import time
 from typing import Callable, Optional
 
 import numpy as np
@@ -33,9 +32,6 @@ except ImportError:
     AudioFormat = None
 
 _LOGGER = logging.getLogger(__name__)
-
-# Interval in seconds between bytes/sec debug log messages
-_BPS_LOG_INTERVAL = 5.0
 
 # Maximum samples per sub-chunk delivered to LedFx.
 # Large FLAC frames (e.g. 4608 samples = 96ms) are split into pieces
@@ -86,18 +82,6 @@ class SendspinAudioStream:
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
         self._leftover = np.array([], dtype=np.float32)
 
-        # Network throughput tracking
-        self._bps_bytes = 0
-        self._bps_time = 0.0
-
-        # Chunk pipeline debug counters (reset every _BPS_LOG_INTERVAL)
-        self._dbg_received = 0
-        self._dbg_dropped_past = 0
-        self._dbg_queued = 0
-        self._dbg_delivered = 0
-        self._dbg_samples_total = 0
-        self._dbg_time = 0.0
-
         _LOGGER.info(
             "Sendspin stream initialized for server: %s",
             config.get("server_url", "unknown"),
@@ -122,53 +106,17 @@ class SendspinAudioStream:
         if not self._active or self._client is None:
             return
 
-        # Track network throughput
-        now_mono = time.monotonic()
-        self._bps_bytes += len(chunk_data)
-        self._dbg_received += 1
-        if self._bps_time == 0.0:
-            self._bps_time = now_mono
-            self._dbg_time = now_mono
-        elif now_mono - self._bps_time >= _BPS_LOG_INTERVAL:
-            elapsed = now_mono - self._bps_time
-            bps = self._bps_bytes / elapsed
-            with self._buffer_lock:
-                buf_depth = len(self._chunk_buffer)
-            _LOGGER.debug(
-                "Sendspin stats over %.1fs: "
-                "%.1f KB/s | recv=%d drop=%d queued=%d delivered=%d | "
-                "samples_total=%d buf_depth=%d",
-                elapsed,
-                bps / 1024,
-                self._dbg_received,
-                self._dbg_dropped_past,
-                self._dbg_queued,
-                self._dbg_delivered,
-                self._dbg_samples_total,
-                buf_depth,
-            )
-            self._bps_bytes = 0
-            self._bps_time = now_mono
-            self._dbg_received = 0
-            self._dbg_dropped_past = 0
-            self._dbg_queued = 0
-            self._dbg_delivered = 0
-            self._dbg_samples_total = 0
-
         try:
             play_time_us = self._client.compute_play_time(timestamp)
             now_us = int(self._loop.time() * 1_000_000)
 
             # Drop chunks whose play time is already in the past (spec rule)
             if play_time_us < now_us:
-                self._dbg_dropped_past += 1
                 return
 
             audio_float32 = self._convert_to_float32_mono(
                 chunk_data, audio_format
             )
-
-            self._dbg_samples_total += len(audio_float32)
 
             # Prepend any leftover samples from the previous frame so
             # that every emitted sub-chunk is exactly _SUB_CHUNK_SAMPLES.
@@ -199,8 +147,6 @@ class SendspinAudioStream:
                             self._chunk_buffer,
                             (sub_play, self._chunk_seq, audio_float32[start:end]),
                         )
-                self._dbg_queued += n_full
-
             # Save leftover samples for the next frame
             if remainder > 0:
                 self._leftover = audio_float32[
@@ -403,9 +349,6 @@ class SendspinAudioStream:
         self._flac_decoder = None
         self._flac_fmt_logged = False
         self._leftover = np.array([], dtype=np.float32)
-        # Reset throughput tracking
-        self._bps_bytes = 0
-        self._bps_time = 0.0
 
     def _stream_clear_handler(self, roles):
         """Called on stream/clear (e.g. seek). Flush the playback buffer."""
@@ -428,7 +371,6 @@ class SendspinAudioStream:
                         _, _, chunk = heapq.heappop(self._chunk_buffer)
 
             if chunk is not None:
-                self._dbg_delivered += 1
                 try:
                     self.callback(chunk, len(chunk), None, None)
                 except Exception as e:
@@ -542,12 +484,13 @@ class SendspinAudioStream:
         try:
             # Build supported format list — prefer FLAC (lower bandwidth)
             # then fall back to PCM. Server picks the first mutually supported.
+            # Request mono since LedFx downmixes to mono anyway.
             supported_formats = []
             if av is not None:
                 supported_formats.append(
                     SupportedAudioFormat(
                         codec=AudioCodec.FLAC,
-                        channels=2,
+                        channels=1,
                         sample_rate=sample_rate,
                         bit_depth=16,
                     ),
@@ -555,7 +498,7 @@ class SendspinAudioStream:
             supported_formats.append(
                 SupportedAudioFormat(
                     codec=AudioCodec.PCM,
-                    channels=2,
+                    channels=1,
                     sample_rate=sample_rate,
                     bit_depth=16,
                 ),
