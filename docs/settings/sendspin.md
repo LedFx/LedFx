@@ -57,7 +57,7 @@ A server can be manually added with the **+ADD SERVER** button
 
 ![yes, that button there](/_static/settings/sendspin/sendspin_servers4.png)
 
-This Sendspin server will now be available as an audio source in the Setttings / Audio drop down.
+This Sendspin server will now be available as an audio source in the Settings / Audio drop down.
 
 ### Auto-Discover Sendspin Servers
 
