@@ -1,6 +1,6 @@
 # Sendspin Audio Streaming
 
-[**Sendspin**](https://www.sendspin-audio.com/) is a synchronized multi-room audio system, integrated with [**Music Assistant**](https://www.music-assistant.io/) and [**Home Assistant**](https://www.home-assistant.io/).  
+[**Sendspin**](https://www.sendspin-audio.com/) is a synchronized multi-room audio system, integrated with [**Music Assistant**](https://www.music-assistant.io/) and [**Home Assistant**](https://www.home-assistant.io/).
 
 LedFx can connect to a Sendspin server as a client to receive audio for real-time visualization — no local microphone or loopback device required.
 
@@ -8,8 +8,8 @@ LedFx can connect to a Sendspin server as a client to receive audio for real-tim
 ::: title
 **WARNING**
 :::
-Sendspin support requires **Python 3.12 or later**.  
-If you are running an older Python version, Sendspin will not appear as an option.  
+Sendspin support requires **Python 3.12 or later**.
+If you are running an older Python version, Sendspin will not appear as an option.
 Check `http://your-ledfx-ip:8888/api/info` — the `sendspin` feature flag should be `true`.
 ::::
 
