@@ -69,7 +69,7 @@ After a short period of time all discovered networks will be displayed. Those al
 
 ![the easy way](/_static/settings/sendspin/sendspin_servers5.png)
 
-Each discoved server can be added by clicking the **ADD** action button.
+Each discovered server can be added by clicking the **ADD** action button.
 
 Details can then be modified before final commit with the **ADD** button.
 
