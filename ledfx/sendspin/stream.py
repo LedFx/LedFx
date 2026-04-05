@@ -122,9 +122,7 @@ class SendspinAudioStream:
             # Prepend any leftover samples from the previous frame so
             # that every emitted sub-chunk is exactly _SUB_CHUNK_SAMPLES.
             if len(self._leftover) > 0:
-                audio_float32 = np.concatenate(
-                    [self._leftover, audio_float32]
-                )
+                audio_float32 = np.concatenate([self._leftover, audio_float32])
                 self._leftover = np.array([], dtype=np.float32)
 
             total_samples = len(audio_float32)
@@ -146,7 +144,11 @@ class SendspinAudioStream:
                         self._chunk_seq += 1
                         heapq.heappush(
                             self._chunk_buffer,
-                            (sub_play, self._chunk_seq, audio_float32[start:end].copy()),
+                            (
+                                sub_play,
+                                self._chunk_seq,
+                                audio_float32[start:end].copy(),
+                            ),
                         )
             # Save leftover samples for the next frame
             if remainder > 0:
@@ -237,7 +239,9 @@ class SendspinAudioStream:
             channels,
         )
 
-    def _decode_flac(self, data: bytes, audio_format: AudioFormat) -> np.ndarray:
+    def _decode_flac(
+        self, data: bytes, audio_format: AudioFormat
+    ) -> np.ndarray:
         """
         Decode a FLAC frame to float32 mono samples.
 
