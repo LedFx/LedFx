@@ -625,15 +625,28 @@ class AudioInputSource:
             # Save device index and name for recovery after device list changes
             update_device_tracking(device_idx)
         except OSError as e:
-            _LOGGER.critical(
+            _LOGGER.warning(
                 "Unable to open Audio Device: %s - please retry.", e
             )
             self.deactivate()
         except sd.PortAudioError as e:
-            _LOGGER.error("%s, Reverting to default input device", e)
-            open_audio_stream(default_device)
-            # Update tracking for the fallback device
-            update_device_tracking(default_device)
+            if device_idx == default_device:
+                _LOGGER.warning(
+                    "Default audio device failed: %s - please retry or select a different device.",
+                    e,
+                )
+                self.deactivate()
+            else:
+                _LOGGER.warning("%s, Reverting to default input device", e)
+                try:
+                    open_audio_stream(default_device)
+                    update_device_tracking(default_device)
+                except (sd.PortAudioError, OSError) as e2:
+                    _LOGGER.warning(
+                        "Default audio device also failed: %s - please retry or select a different device.",
+                        e2,
+                    )
+                    self.deactivate()
 
     def deactivate(self):
         # Stop the stream outside the lock to avoid deadlock with audio callback
