@@ -245,15 +245,19 @@ class AudioInputSource:
         default_output_device_idx = sd.default.device["output"]
         default_input_device_idx = sd.default.device["input"]
         if len(device_list) == 0 or default_output_device_idx == -1:
-            _LOGGER.warning("No audio output devices found.")
+            _LOGGER.warning(
+                "No audio output devices found (device count: %s, default output idx: %s)",
+                len(device_list),
+                default_output_device_idx,
+            )
         else:
             default_output_device_name = device_list[
                 default_output_device_idx
             ]["name"]
 
             # We need to run over the device list looking for the target devices name
-            _LOGGER.debug(
-                "Looking for audio loopback device for default output device at index %s: %s",
+            _LOGGER.info(
+                "Default output device [%s]: '%s' - searching for its loopback",
                 default_output_device_idx,
                 default_output_device_name,
             )
@@ -264,12 +268,16 @@ class AudioInputSource:
                     and "[Loopback]" in device["name"]
                 ):
                     # Return the loopback device index
-                    _LOGGER.debug(
-                        "Found audio loopback device for default output device at index %s: %s",
+                    _LOGGER.info(
+                        "Found loopback device [%s]: '%s'",
                         device_index,
                         device["name"],
                     )
                     return device_index
+            _LOGGER.info(
+                "No loopback found for output device '%s'",
+                default_output_device_name,
+            )
 
         # The default input device index is not always valid (i.e no default input devices)
         valid_device_indexes = AudioInputSource.valid_device_indexes()
@@ -280,8 +288,8 @@ class AudioInputSource:
             return None
         else:
             if default_input_device_idx in valid_device_indexes:
-                _LOGGER.debug(
-                    "No audio loopback device found for default output device. Using default input device at index %s: %s",
+                _LOGGER.info(
+                    "No loopback available. Using default input device [%s]: '%s'",
                     default_input_device_idx,
                     device_list[default_input_device_idx]["name"],
                 )
@@ -290,8 +298,9 @@ class AudioInputSource:
                 # Return the first valid input device index if we can't find a valid default input device
                 if len(valid_device_indexes) > 0:
                     first_valid_idx = next(iter(valid_device_indexes))
-                    _LOGGER.debug(
-                        "No valid default audio input device found. Using first valid input device at index %s: %s",
+                    _LOGGER.info(
+                        "Default input device [%s] not valid. Using first valid input device [%s]: '%s'",
+                        default_input_device_idx,
                         first_valid_idx,
                         device_list[first_valid_idx]["name"],
                     )
@@ -441,29 +450,33 @@ class AudioInputSource:
             self.deactivate()
             return
         valid_device_indexes = self.valid_device_indexes()
-        _LOGGER.debug("********************************************")
-        _LOGGER.debug("Valid audio input devices:")
+        _LOGGER.info("============================================")
+        _LOGGER.info("Valid audio input devices:")
         for index in valid_device_indexes:
             hostapi_name = hostapis[input_devices[index]["hostapi"]]["name"]
             device_name = input_devices[index]["name"]
             input_channels = input_devices[index]["max_input_channels"]
-            _LOGGER.debug(
-                "Audio Device %s\t%s\t%s\tinput_channels: %s",
+            _LOGGER.info(
+                "  [%s] %s: %s (channels: %s)",
                 index,
                 hostapi_name,
                 device_name,
                 input_channels,
             )
-        _LOGGER.debug("********************************************")
+        _LOGGER.info("============================================")
         device_idx = self._config["audio_device"]
-        _LOGGER.debug(
-            "default_device: %s config_device: %s", default_device, device_idx
+        _LOGGER.info(
+            "Audio device selection: configured=%s, default=%s",
+            device_idx,
+            default_device,
         )
 
         if device_idx > max(valid_device_indexes):
             _LOGGER.warning(
-                "Audio device out of range: %s. Reverting to default input device: %s",
+                "Audio device index %s out of range (max valid: %s). "
+                "Falling back to default device index %s",
                 device_idx,
+                max(valid_device_indexes),
                 default_device,
             )
             device_idx = default_device
@@ -477,7 +490,9 @@ class AudioInputSource:
             except (IndexError, KeyError):
                 device_name = f"index {device_idx}"
             _LOGGER.warning(
-                "Audio device %s not in valid_device_indexes. Reverting to default input device: %s",
+                "Audio device [%s] '%s' not in valid devices. "
+                "Falling back to default device index %s",
+                device_idx,
                 device_name,
                 default_device,
             )
@@ -620,30 +635,48 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._audio_stream_active = True
 
+        _LOGGER.info(
+            "Attempting to open audio device [%s]: %s: %s",
+            device_idx,
+            hostapis[input_devices[device_idx]["hostapi"]]["name"],
+            input_devices[device_idx].get("name", "unknown"),
+        )
         try:
             open_audio_stream(device_idx)
             # Save device index and name for recovery after device list changes
             update_device_tracking(device_idx)
         except OSError as e:
             _LOGGER.warning(
-                "Unable to open Audio Device: %s - please retry.", e
+                "Unable to open audio device [%s]: %s - please retry.",
+                device_idx,
+                e,
             )
             self.deactivate()
         except sd.PortAudioError as e:
             if device_idx == default_device:
                 _LOGGER.warning(
-                    "Default audio device failed: %s - please retry or select a different device.",
+                    "Default audio device [%s] failed: %s - please retry or select a different device.",
+                    device_idx,
                     e,
                 )
                 self.deactivate()
             else:
-                _LOGGER.warning("%s, Reverting to default input device", e)
+                _LOGGER.warning(
+                    "Audio device [%s] failed: %s. "
+                    "Falling back to default device [%s]: %s: %s",
+                    device_idx,
+                    e,
+                    default_device,
+                    hostapis[input_devices[default_device]["hostapi"]]["name"],
+                    input_devices[default_device].get("name", "unknown"),
+                )
                 try:
                     open_audio_stream(default_device)
                     update_device_tracking(default_device)
                 except (sd.PortAudioError, OSError) as e2:
                     _LOGGER.warning(
-                        "Default audio device also failed: %s - please retry or select a different device.",
+                        "Fallback audio device [%s] also failed: %s - please retry or select a different device.",
+                        default_device,
                         e2,
                     )
                     self.deactivate()
