@@ -776,6 +776,24 @@ class AudioInputSource:
                     hostapis[input_devices[default_device]["hostapi"]]["name"],
                     input_devices[default_device].get("name", "unknown"),
                 )
+                # Reinitialize PortAudio before fallback attempt.
+                # A failed device open can poison PortAudio's internal
+                # state (e.g. WDM-KS failure leaves wrong format params
+                # like bits=8,align=2), causing the fallback device to
+                # fail even though it works from a clean state.
+                _LOGGER.info(
+                    "[AUDIO-DIAG] Reinitializing PortAudio before "
+                    "fallback attempt (clearing poisoned state)"
+                )
+                try:
+                    sd._terminate()
+                    time.sleep(1)
+                    sd._initialize()
+                    time.sleep(1)
+                except Exception as reinit_err:
+                    _LOGGER.warning(
+                        "PortAudio reinit failed: %s", reinit_err
+                    )
                 try:
                     open_audio_stream(default_device)
                     update_device_tracking(default_device)
