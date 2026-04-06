@@ -1618,6 +1618,12 @@ class Virtuals:
                     virtual_cfg["id"],
                 )
             elif "effect" in virtual_cfg:
+                _LOGGER.info(
+                    "[AUDIO-DIAG] Restoring effect requiring audio: "
+                    "effect='%s', virtual='%s'",
+                    virtual_cfg["effect"]["type"],
+                    virtual_cfg["id"],
+                )
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,

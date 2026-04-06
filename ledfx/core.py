@@ -132,6 +132,8 @@ class LedFxCore:
 
         # Audio device monitor will be started after loop is running
         self.audio_device_monitor = None
+        self._audio_startup_phase = True
+        self._startup_mono = time.monotonic()
 
         if self.config.get("debug_asyncio", False):
             self.loop.set_debug(True)
@@ -172,6 +174,13 @@ class LedFxCore:
 
     def _start_audio_device_monitor(self):
         """Start the audio device monitor for the current platform."""
+        # TEMPORARY: Disabled for diagnostics — investigating whether
+        # hotplug monitor contributes to audio startup regression.
+        _LOGGER.info(
+            "[AUDIO-DIAG] Audio device monitor DISABLED for diagnostics (t+%.2fs)",
+            time.monotonic() - self._startup_mono,
+        )
+        return
         try:
             self.audio_device_monitor = create_monitor(
                 loop=self.loop, debounce_ms=200
@@ -198,6 +207,13 @@ class LedFxCore:
         Delegates all audio recovery logic to AudioInputSource.handle_device_list_change()
         to keep audio lifecycle management in one place.
         """
+        _LOGGER.info(
+            "[AUDIO-DIAG] Device change event fired "
+            "(startup_phase=%s, t+%.2fs)",
+            self._audio_startup_phase,
+            time.monotonic() - self._startup_mono,
+        )
+
         # Let AudioInputSource handle the full lifecycle: stop, refresh, recover, restart
         if hasattr(self, "audio") and self.audio:
             self.audio.handle_device_list_change()
@@ -505,6 +521,11 @@ class LedFxCore:
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(
             self.config["virtuals"], pause_all=pause_all
+        )
+        self._audio_startup_phase = False
+        _LOGGER.info(
+            "[AUDIO-DIAG] Startup phase complete (t+%.2fs)",
+            time.monotonic() - self._startup_mono,
         )
         self.integrations.create_from_config(self.config["integrations"])
 

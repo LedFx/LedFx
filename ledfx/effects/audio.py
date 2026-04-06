@@ -45,6 +45,31 @@ class AudioInputSource:
     _last_device_name = None
     _device_list_cache = None  # Cache for device list
     _class_lock = threading.Lock()  # Class-level lock for shared state
+    _activating = False  # Re-entry guard for activate()
+
+    @staticmethod
+    def describe_device(index):
+        """Return a dict describing the audio device at the given index."""
+        try:
+            devices = sd.query_devices()
+            hostapis = sd.query_hostapis()
+            if index is None or index < 0 or index >= len(devices):
+                return {"index": index, "error": "invalid index"}
+            device = devices[index]
+            hostapi_name = hostapis[device["hostapi"]]["name"]
+            return {
+                "index": index,
+                "name": device.get("name", "unknown"),
+                "hostapi": hostapi_name,
+                "max_input_channels": device.get("max_input_channels", 0),
+                "max_output_channels": device.get("max_output_channels", 0),
+                "is_loopback": (
+                    hostapi_name == "Windows WASAPI"
+                    and "Loopback" in device.get("name", "")
+                ),
+            }
+        except Exception as e:
+            return {"index": index, "error": str(e)}
 
     @staticmethod
     def refresh_device_list():
@@ -58,6 +83,9 @@ class AudioInputSource:
             bool: True if an audio stream was active before refresh (and should be reactivated),
                   False otherwise
         """
+        _LOGGER.info(
+            "[AUDIO-DIAG] Refreshing device list (PortAudio terminate/init)"
+        )
         # Check if there's an active stream that needs to be stopped
         # Use class lock to safely cache and clear the stream reference
         stream_to_close = None
@@ -87,7 +115,15 @@ class AudioInputSource:
             sd._initialize()
             # Clear the device list cache
             AudioInputSource._device_list_cache = None
-            _LOGGER.info("Audio device list refreshed")
+            refreshed_devices = sd.query_devices()
+            device_names = [
+                d.get("name", "?") for d in refreshed_devices
+            ]
+            _LOGGER.info(
+                "[AUDIO-DIAG] Device list refreshed: %s devices: %s",
+                len(refreshed_devices),
+                device_names,
+            )
         except Exception as e:
             _LOGGER.warning("Failed to refresh audio device list: %s", e)
 
@@ -123,6 +159,15 @@ class AudioInputSource:
         This keeps all audio recovery logic in one place rather than split
         across core.py and audio.py.
         """
+        with AudioInputSource._class_lock:
+            prev_name = AudioInputSource._last_device_name
+            prev_idx = AudioInputSource._last_active
+        _LOGGER.info(
+            "[AUDIO-DIAG] Handling device list change (previous: [%s] '%s')",
+            prev_idx,
+            prev_name,
+        )
+
         # Stop any active stream and refresh the device list
         was_active = self.refresh_device_list()
 
@@ -202,8 +247,18 @@ class AudioInputSource:
 
         # Reactivate the stream with the updated configuration
         try:
-            _LOGGER.info("Reactivating audio stream after device list refresh")
+            _LOGGER.info(
+                "[AUDIO-DIAG] Reactivating audio after device change"
+            )
             self.activate()
+            with AudioInputSource._class_lock:
+                recovered_name = AudioInputSource._last_device_name
+                recovered_idx = AudioInputSource._last_active
+            _LOGGER.info(
+                "[AUDIO-DIAG] Recovery complete (now: [%s] '%s')",
+                recovered_idx,
+                recovered_name,
+            )
         except Exception as e:
             _LOGGER.error(
                 "Failed to reactivate audio stream after device change: %s", e
@@ -244,6 +299,13 @@ class AudioInputSource:
         device_list = sd.query_devices()
         default_output_device_idx = sd.default.device["output"]
         default_input_device_idx = sd.default.device["input"]
+        _LOGGER.info(
+            "[AUDIO-DIAG] Resolving default device "
+            "(output_idx=%s, input_idx=%s, total_devices=%s)",
+            default_output_device_idx,
+            default_input_device_idx,
+            len(device_list),
+        )
         if len(device_list) == 0 or default_output_device_idx == -1:
             _LOGGER.warning(
                 "No audio output devices found (device count: %s, default output idx: %s)",
@@ -269,13 +331,14 @@ class AudioInputSource:
                 ):
                     # Return the loopback device index
                     _LOGGER.info(
-                        "Found loopback device [%s]: '%s'",
+                        "[AUDIO-DIAG] Default device resolved: "
+                        "loopback [%s] '%s' (is_loopback=True)",
                         device_index,
                         device["name"],
                     )
                     return device_index
             _LOGGER.info(
-                "No loopback found for output device '%s'",
+                "[AUDIO-DIAG] No loopback found for output device '%s'",
                 default_output_device_name,
             )
 
@@ -289,7 +352,8 @@ class AudioInputSource:
         else:
             if default_input_device_idx in valid_device_indexes:
                 _LOGGER.info(
-                    "No loopback available. Using default input device [%s]: '%s'",
+                    "[AUDIO-DIAG] Default device resolved: "
+                    "input [%s] '%s' (is_loopback=False)",
                     default_input_device_idx,
                     device_list[default_input_device_idx]["name"],
                 )
@@ -299,10 +363,11 @@ class AudioInputSource:
                 if len(valid_device_indexes) > 0:
                     first_valid_idx = next(iter(valid_device_indexes))
                     _LOGGER.info(
-                        "Default input device [%s] not valid. Using first valid input device [%s]: '%s'",
-                        default_input_device_idx,
+                        "[AUDIO-DIAG] Default device resolved: "
+                        "first valid [%s] '%s' (default input [%s] invalid, is_loopback=False)",
                         first_valid_idx,
                         device_list[first_valid_idx]["name"],
+                        default_input_device_idx,
                     )
                     return first_valid_idx
 
@@ -425,6 +490,29 @@ class AudioInputSource:
         self._ledfx.config["audio"] = self._config
 
     def activate(self):
+        # Re-entry guard
+        if AudioInputSource._activating:
+            _LOGGER.info(
+                "[AUDIO-DIAG] activate() re-entry detected — skipping "
+                "(thread=%s)",
+                threading.current_thread().name,
+            )
+            return
+        AudioInputSource._activating = True
+        try:
+            self._activate_inner()
+        finally:
+            AudioInputSource._activating = False
+
+    def _activate_inner(self):
+        config_device = self._config.get("audio_device", "unset")
+        _LOGGER.info(
+            "[AUDIO-DIAG] activate() called "
+            "(configured_device=%s, thread=%s)",
+            config_device,
+            threading.current_thread().name,
+        )
+
         if self._audio is None:
             try:
                 self._audio = sd
@@ -635,17 +723,22 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._audio_stream_active = True
 
+        desc = self.describe_device(device_idx)
         _LOGGER.info(
-            "Attempting to open audio device [%s]: %s: %s",
-            device_idx,
-            hostapis[input_devices[device_idx]["hostapi"]]["name"],
-            input_devices[device_idx].get("name", "unknown"),
+            "[AUDIO-DIAG] Attempting to open device: %s",
+            desc,
         )
         try:
             open_audio_stream(device_idx)
             # Save device index and name for recovery after device list changes
             update_device_tracking(device_idx)
         except OSError as e:
+            _LOGGER.info(
+                "[AUDIO-DIAG] Device open FAILED (OSError): "
+                "device=%s, error=%s",
+                desc,
+                e,
+            )
             _LOGGER.warning(
                 "Unable to open audio device [%s]: %s - please retry.",
                 device_idx,
@@ -653,6 +746,12 @@ class AudioInputSource:
             )
             self.deactivate()
         except sd.PortAudioError as e:
+            _LOGGER.info(
+                "[AUDIO-DIAG] Device open FAILED (PortAudioError): "
+                "device=%s, error=%s",
+                desc,
+                e,
+            )
             if device_idx == default_device:
                 _LOGGER.warning(
                     "Default audio device [%s] failed: %s - please retry or select a different device.",
@@ -661,6 +760,17 @@ class AudioInputSource:
                 )
                 self.deactivate()
             else:
+                fallback_desc = self.describe_device(default_device)
+                _LOGGER.info(
+                    "[AUDIO-DIAG] Attempting fallback device: %s",
+                    fallback_desc,
+                )
+                if default_device == device_idx:
+                    _LOGGER.warning(
+                        "[AUDIO-DIAG] Fallback selected SAME device "
+                        "[%s] — potential loop",
+                        device_idx,
+                    )
                 _LOGGER.warning(
                     "Audio device [%s] failed: %s. "
                     "Falling back to default device [%s]: %s: %s",
@@ -673,7 +783,17 @@ class AudioInputSource:
                 try:
                     open_audio_stream(default_device)
                     update_device_tracking(default_device)
+                    _LOGGER.info(
+                        "[AUDIO-DIAG] Fallback device opened successfully: %s",
+                        fallback_desc,
+                    )
                 except (sd.PortAudioError, OSError) as e2:
+                    _LOGGER.info(
+                        "[AUDIO-DIAG] Fallback device ALSO FAILED: "
+                        "device=%s, error=%s",
+                        fallback_desc,
+                        e2,
+                    )
                     _LOGGER.warning(
                         "Fallback audio device [%s] also failed: %s - please retry or select a different device.",
                         default_device,
