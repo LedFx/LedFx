@@ -1,8 +1,8 @@
 # Audio Fallback Startup Failure Investigation
 
-**Branch:** `audio_fallback`  
-**PR:** [#1761 — Fix: audio fallback hardening](https://github.com/LedFx/LedFx/pull/1761)  
-**Date:** 2026-04-06  
+**Branch:** `audio_fallback`
+**PR:** [#1761 — Fix: audio fallback hardening](https://github.com/LedFx/LedFx/pull/1761)
+**Date:** 2026-04-06
 **Status:** Fix applied, awaiting user validation
 
 ---
