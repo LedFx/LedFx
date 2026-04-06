@@ -116,9 +116,7 @@ class AudioInputSource:
             # Clear the device list cache
             AudioInputSource._device_list_cache = None
             refreshed_devices = sd.query_devices()
-            device_names = [
-                d.get("name", "?") for d in refreshed_devices
-            ]
+            device_names = [d.get("name", "?") for d in refreshed_devices]
             _LOGGER.info(
                 "[AUDIO-DIAG] Device list refreshed: %s devices: %s",
                 len(refreshed_devices),
@@ -247,9 +245,7 @@ class AudioInputSource:
 
         # Reactivate the stream with the updated configuration
         try:
-            _LOGGER.info(
-                "[AUDIO-DIAG] Reactivating audio after device change"
-            )
+            _LOGGER.info("[AUDIO-DIAG] Reactivating audio after device change")
             self.activate()
             with AudioInputSource._class_lock:
                 recovered_name = AudioInputSource._last_device_name
