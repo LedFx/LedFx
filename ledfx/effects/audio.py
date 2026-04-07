@@ -417,7 +417,7 @@ class AudioInputSource:
         self._ledfx.config["audio"] = self._config
 
     def activate(self):
-        # Re-entry guard – must be atomic with _class_lock so concurrent
+        # Re-entry guard - must be atomic with _class_lock so concurrent
         # callers cannot both pass the check before either sets the flag.
         with AudioInputSource._class_lock:
             if AudioInputSource._activating:
