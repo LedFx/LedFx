@@ -3,7 +3,7 @@
 **Branch:** `audio_fallback`
 **PR:** [#1761 — Fix: audio fallback hardening](https://github.com/LedFx/LedFx/pull/1761)
 **Date:** 2026-04-06
-**Status:** Fix v3 testing — delays removed, reinit only (2026-04-06)
+**Status:** Fix v3 confirmed working — no delays needed, reinit only (2026-04-06)
 
 ---
 
@@ -122,11 +122,15 @@ The fix works:
 ## Remaining Questions
 
 1. **Should the audio device monitor be re-enabled?** — Separate from this issue
-2. ~~**Can we reduce the sleep to 0.5s?**~~ — Testing with no sleeps at all in v3
 
-## Fix v3 — Delays Removed (2026-04-06)
+## Fix v3 — Delays Removed, Confirmed Working (2026-04-06)
 
-Removed all four `time.sleep(1)` calls from both reinit paths. The `sd._terminate()` → `sd._initialize()` cycle remains. Goal: determine if PortAudio reinit alone is sufficient without artificial delays. If the impacted user's test fails, we restore the sleeps.
+Removed all four `time.sleep(1)` calls from both reinit paths. The `sd._terminate()` → `sd._initialize()` cycle alone is sufficient — no artificial delays needed. User testing confirmed successful.
+
+### Final PR candidate:
+- Stripped all `[AUDIO-DIAG]` diagnostic logging
+- Removed `describe_device()` utility (only used by diagnostics)
+- Kept: re-entry guard, both reinit paths, improved error messages, device name tracking
 
 ## Key Files
 
