@@ -771,9 +771,7 @@ class AudioInputSource:
                     sd._initialize()
                     time.sleep(1)
                 except Exception as reinit_err:
-                    _LOGGER.warning(
-                        "PortAudio reinit failed: %s", reinit_err
-                    )
+                    _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
                     return
                 # Retry the same device after reinit
                 retry_desc = self.describe_device(device_idx)
