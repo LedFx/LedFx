@@ -3,77 +3,120 @@
 **Branch:** `audio_fallback`
 **PR:** [#1761 — Fix: audio fallback hardening](https://github.com/LedFx/LedFx/pull/1761)
 **Date:** 2026-04-06
-**Status:** Fix applied, awaiting user validation
+**Status:** Fix v2 applied, awaiting user validation
 
 ---
 
 ## Problem Summary
 
-On startup, when the user's config has an audio device that is unavailable (e.g. Oculus WDM-KS device [28]), the fallback to the default WASAPI Loopback device [17] also fails — even though manually selecting device [17] after startup works perfectly.
+On startup, the WASAPI Loopback audio device [17] fails to start — even though manually selecting the same device from the UI after startup works perfectly. PortAudio's internal state appears poisoned at application startup, likely by problematic WDM-KS devices (Oculus, Bluetooth) interfering during initial device enumeration.
 
 ## Affected User Environment
 
 - Windows, 42 audio devices enumerated
-- Configured device: `[28] Windows WDM-KS: Input (OCULUSVAD Wave Speaker Headphone)` — not always available
-- Default/fallback device: `[17] Windows WASAPI: Speakers (Realtek High Definition Audio) [Loopback]`
-- Multiple virtuals with active audio effects in config (at least one: `equalizer2d` on `panel`)
+- Includes problematic WDM-KS devices: OCULUSVAD, Bluetooth HF Audio (Galaxy Tab E, iPhone, Dads iPhone)
+- Configured/default device: `[17] Windows WASAPI: Speakers (Realtek High Definition Audio) [Loopback]`
+- Multiple virtuals with active audio effects in config (at least: `equalizer2d` on `panel`)
+
+## Log Evidence
+
+### Log 1 (2026-04-06 16:02) — Original code, configured=[28] WDM-KS
+
+1. Device [28] (WDM-KS OCULUSVAD) fails: `PortAudioError -9996: Invalid device`
+2. Fallback to [17] (WASAPI Loopback): `InputStream()` succeeds, `.start()` fails with `bits=8,align=2`
+3. `bits=8` = wrong format (should be float32=bits=32) → WDM-KS poisoned PortAudio state
+4. Repeats per virtual, all fail identically
+
+### Log 2 (2026-04-06 20:10) — After reinit fix, configured=[17] WASAPI Loopback
+
+**Critical new finding**: User has since changed config to device [17] directly. No WDM-KS device [28] is involved at all.
+
+1. Device [17] is tried as first/only device (configured == default == 17)
+2. `InputStream()` succeeds ("Audio source opened") but `.start()` fails
+3. Error: `'GetNameFromCategory: usbTerminalGUID = 7D1E' [Windows WDM-KS error -9999]`
+4. A WASAPI device is failing with a **WDM-KS** error — PortAudio is already poisoned at startup
+5. Our fallback reinit code was never reached (early-exit: `device_idx == default_device`)
+6. Repeats per virtual, all fail identically, no reinit ever attempted
 
 ## Root Cause Analysis
 
-### The failure sequence (per virtual with an audio effect):
+PortAudio's initial `_initialize()` enumerates all system devices. On this user's machine, problematic WDM-KS devices (Oculus virtual audio, Bluetooth HF devices) poison the internal state during this enumeration. The `usbTerminalGUID = 7D1E` error string confirms WDM-KS is leaking into WASAPI operations.
 
-1. `activate()` tries configured device [28] (WDM-KS)
-2. **Fails** with `PortAudioError -9996: Invalid device`
-3. Falls back to device [17] (WASAPI Loopback)
-4. `InputStream()` constructor **succeeds** — "Audio source opened" is logged
-5. `.start()` **fails** with: `'Failed to create capture pin: sr=44100,ch=2,bits=8,align=2'`
-6. `deactivate()` is called, config unchanged
-7. Next virtual's effect repeats the same cycle
-
-### Key evidence — PortAudio state poisoning:
-
-The `.start()` error message contains `bits=8,align=2` — these are **wrong format parameters**. The WASAPI Loopback device should use float32 (bits=32). The `bits=8` value strongly suggests that the failed WDM-KS device open left PortAudio's internal state corrupted, and the subsequent WASAPI stream inherited those poisoned parameters.
-
-This explains why manual selection works: by the time the user manually picks device [17] through the UI, PortAudio has been through a clean reinit cycle (via `update_config()` → `deactivate()` → `activate()`).
+**Why manual selection works**: By the time a user interacts with the UI, the `update_config()` path calls `deactivate()` → `activate()`. The deactivate/activate cycle, combined with the time delay, allows PortAudio to recover. The key insight is that the state is poisoned from PortAudio's very first initialization, not from a prior failed device open.
 
 ### Why it repeats for each virtual:
 
-Each virtual with an active audio effect calls `set_effect()` → `AudioReactiveEffect.activate()` → `subscribe()` → `AudioInputSource.activate()`. Since the stream is not active after the failure, each virtual triggers a fresh attempt. **This is expected and correct behavior** — each virtual legitimately tries to start audio if it's not running. The problem is solely that each attempt hits the same poisoned-state bug.
+Each virtual with an audio effect calls `subscribe()` → `activate()`. Since the stream is not active after the failure, each virtual triggers a fresh attempt. **This is expected and correct behavior** — each virtual legitimately tries to start audio if it's not running.
 
-## Fix Applied
+## Fix Applied (v2)
 
 **File:** `ledfx/effects/audio.py`, in `_activate_inner()`
 
-Added `sd._terminate()` / `sd._initialize()` between the primary device failure and the fallback attempt. This clears PortAudio's internal state so the fallback device gets a clean environment, matching what happens during manual device selection.
+Two PortAudio reinit points added:
 
+### 1. When configured == default device fails (NEW — addresses Log 2)
 ```python
-# After primary device PortAudioError, before fallback:
-sd._terminate()
-sd._initialize()
+if device_idx == default_device:
+    self.deactivate()
+    sd._terminate()
+    time.sleep(1)
+    sd._initialize()
+    time.sleep(1)
+    # Retry same device after reinit
+    open_audio_stream(device_idx)
 ```
+
+### 2. Between primary failure and fallback attempt (addresses Log 1)
+```python
+# configured != default, configured fails, try fallback after reinit
+sd._terminate()
+time.sleep(1)
+sd._initialize()
+time.sleep(1)
+open_audio_stream(default_device)
+```
+
+## Startup vs Manual Selection — Path Comparison
+
+### Startup path (fails):
+
+1. `virtuals.create_from_config()` → `set_effect()` → `AudioReactiveEffect.activate()`
+2. Creates `AudioAnalysisSource(ledfx, config)` → `__init__` → `update_config(config)`
+3. `update_config`: `_callbacks` is empty, so **`activate()` is NOT called**
+4. `AudioAnalysisSource.__init__` calls `subscribe()` 6 times for analysis functions
+5. First `subscribe()` sees `_callbacks > 0`, `_audio_stream_active == False` → calls `activate()`
+6. `activate()` tries device → fails (PortAudio poisoned from init) → `deactivate()`
+7. Each subsequent `subscribe()` and virtual's effect repeats the same cycle
+
+### Manual API path (works):
+
+1. `PUT /api/audio/devices` with `audio_device=17`
+2. Calls `self._ledfx.audio.update_config(new_config)`
+3. `update_config()`: **`deactivate()` is called first** — cleans up state
+4. Time has passed since startup — WDM-KS resources released
+5. `activate()` tries device [17] → succeeds from clean state
+
+### Critical differences:
+
+1. **PortAudio state at startup is poisoned from initial enumeration** — WDM-KS devices interfere during `sd._initialize()`. Manual path runs later when state has recovered.
+2. **`deactivate()` before `activate()`**: `update_config()` always calls `deactivate()` first. Startup's first `subscribe()` → `activate()` has no prior `deactivate()`.
+3. **Timing**: Manual selection happens seconds/minutes after startup, giving PortAudio/WDM-KS time to fully release resources.
 
 ## What Was NOT Changed
 
-- No retry cap or consecutive failure limiting — the repeated attempts per-virtual are correct behavior, not a retry storm
-- No delays added — the issue is state corruption, not timing
+- No retry cap or consecutive failure limiting — repeated per-virtual attempts are correct behavior
 - Audio device monitor remains disabled for diagnostics (separate investigation)
 
 ## Remaining Questions
 
-1. **Does the reinit fix actually resolve the user's startup failure?** — Needs user testing
-2. **Should we also reinit after the OSError path?** — Currently only the PortAudioError path gets reinit before fallback. OSError just deactivates without fallback.
-3. **Is there a scenario where `sd._terminate()` / `sd._initialize()` could cause issues if another thread is using sounddevice?** — The `_activating` re-entry guard and the fact that only one stream can be active at a time should protect against this, but worth monitoring.
-4. **Should the audio device monitor be re-enabled?** — Currently disabled with `return` at top of `_start_audio_device_monitor()`. Separate from this issue.
-
-## How to Reproduce (approximate)
-
-1. Configure an audio device that will fail to open (e.g. a virtual/Bluetooth device that's sometimes unavailable)
-2. Have multiple virtuals with audio-reactive effects in config
-3. Start LedFx — all virtuals fail to start audio
-4. Manually select the WASAPI Loopback device via UI — it works
+1. **Does the reinit+retry fix resolve the user's failure?** — Needs user testing
+2. **Is `time.sleep(1)` sufficient, or does WDM-KS need more time?** — May need tuning
+3. **Thread safety**: `sd._terminate()/_initialize()` while `_activating` guard is held should be safe since only one stream can be active at a time
+4. **Should the audio device monitor be re-enabled?** — Separate from this issue
 
 ## Key Files
 
 - `ledfx/effects/audio.py` — `AudioInputSource._activate_inner()` contains the fix
-- `ledfx/virtuals.py` — `create_from_config()` restores effects at startup, triggering audio activation
-- `ledfx/core.py` — `async_start()` orchestrates the startup sequence
+- `ledfx/virtuals.py` — `create_from_config()` restores effects at startup
+- `ledfx/core.py` — `async_start()` orchestrates startup
+- `ledfx/api/audio_devices.py` — Manual device selection API (the path that works)

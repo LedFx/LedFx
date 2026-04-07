@@ -749,12 +749,60 @@ class AudioInputSource:
                 e,
             )
             if device_idx == default_device:
+                # The configured device IS the default — no different
+                # fallback to try.  However, PortAudio's internal state
+                # may already be poisoned at startup (e.g. a WDM-KS
+                # device interfered during initial enumeration).
+                # Reinitialize PortAudio and retry once before giving up.
                 _LOGGER.warning(
-                    "Default audio device [%s] failed: %s - please retry or select a different device.",
+                    "Default audio device [%s] failed: %s. "
+                    "Reinitializing PortAudio and retrying...",
                     device_idx,
                     e,
                 )
                 self.deactivate()
+                _LOGGER.info(
+                    "[AUDIO-DIAG] Reinitializing PortAudio before "
+                    "retry (clearing potentially poisoned state)"
+                )
+                try:
+                    sd._terminate()
+                    time.sleep(1)
+                    sd._initialize()
+                    time.sleep(1)
+                except Exception as reinit_err:
+                    _LOGGER.warning(
+                        "PortAudio reinit failed: %s", reinit_err
+                    )
+                    return
+                # Retry the same device after reinit
+                retry_desc = self.describe_device(device_idx)
+                _LOGGER.info(
+                    "[AUDIO-DIAG] Retrying device after reinit: %s",
+                    retry_desc,
+                )
+                try:
+                    open_audio_stream(device_idx)
+                    update_device_tracking(device_idx)
+                    _LOGGER.info(
+                        "[AUDIO-DIAG] Device opened successfully "
+                        "after reinit: %s",
+                        retry_desc,
+                    )
+                except (sd.PortAudioError, OSError) as e2:
+                    _LOGGER.info(
+                        "[AUDIO-DIAG] Device STILL FAILED after "
+                        "reinit: device=%s, error=%s",
+                        retry_desc,
+                        e2,
+                    )
+                    _LOGGER.warning(
+                        "Audio device [%s] failed after PortAudio "
+                        "reinit: %s - please select a different device.",
+                        device_idx,
+                        e2,
+                    )
+                    self.deactivate()
             else:
                 fallback_desc = self.describe_device(default_device)
                 _LOGGER.info(
