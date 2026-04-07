@@ -654,18 +654,14 @@ class AudioInputSource:
                     sd._terminate()
                     sd._initialize()
                 except Exception as reinit_err:
-                    _LOGGER.warning(
-                        "PortAudio reinit failed: %s", reinit_err
-                    )
+                    _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
                     return False
             try:
                 open_audio_stream(dev_idx)
                 update_device_tracking(dev_idx)
                 return True
             except (sd.PortAudioError, OSError) as err:
-                _LOGGER.warning(
-                    "Audio device [%s] failed: %s", dev_idx, err
-                )
+                _LOGGER.warning("Audio device [%s] failed: %s", dev_idx, err)
                 return False
 
         # Audio device startup sequence:
@@ -675,7 +671,9 @@ class AudioInputSource:
         if try_open_device(device_idx):
             return
 
-        _LOGGER.info("Reinitializing PortAudio and retrying device [%s]...", device_idx)
+        _LOGGER.info(
+            "Reinitializing PortAudio and retrying device [%s]...", device_idx
+        )
         if try_open_device(device_idx, reinit=True):
             _LOGGER.info(
                 "Audio device [%s] opened successfully after PortAudio reinit.",
@@ -683,9 +681,7 @@ class AudioInputSource:
             )
             return
 
-        _LOGGER.info(
-            "Falling back to default device [%s]...", default_device
-        )
+        _LOGGER.info("Falling back to default device [%s]...", default_device)
         if try_open_device(default_device, reinit=True):
             return
 
