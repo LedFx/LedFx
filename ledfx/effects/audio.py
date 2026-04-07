@@ -642,79 +642,57 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._audio_stream_active = True
 
-        try:
-            open_audio_stream(device_idx)
-            # Save device index and name for recovery after device list changes
-            update_device_tracking(device_idx)
-        except OSError as e:
-            _LOGGER.warning(
-                "Unable to open audio device [%s]: %s - please retry.",
-                device_idx,
-                e,
-            )
-            self.deactivate()
-        except sd.PortAudioError as e:
-            if device_idx == default_device:
-                # The configured device IS the default — no different
-                # fallback to try.  However, PortAudio's internal state
-                # may be poisoned at startup (e.g. a WDM-KS device
-                # interfered during initial enumeration).
-                # Reinitialize PortAudio and retry once before giving up.
-                _LOGGER.warning(
-                    "Default audio device [%s] failed: %s. "
-                    "Reinitializing PortAudio and retrying...",
-                    device_idx,
-                    e,
-                )
+        def try_open_device(dev_idx, reinit=False):
+            """
+            Attempt to open an audio device, optionally reinitializing
+            PortAudio first (clears poisoned state from WDM-KS devices).
+            Returns True on success, False on failure.
+            """
+            if reinit:
                 self.deactivate()
                 try:
                     sd._terminate()
                     sd._initialize()
                 except Exception as reinit_err:
-                    _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
-                    return
-                try:
-                    open_audio_stream(device_idx)
-                    update_device_tracking(device_idx)
-                    _LOGGER.info(
-                        "Audio device [%s] opened successfully after PortAudio reinit.",
-                        device_idx,
-                    )
-                except (sd.PortAudioError, OSError) as e2:
                     _LOGGER.warning(
-                        "Audio device [%s] failed after PortAudio "
-                        "reinit: %s - please select a different device.",
-                        device_idx,
-                        e2,
+                        "PortAudio reinit failed: %s", reinit_err
                     )
-                    self.deactivate()
-            else:
+                    return False
+            try:
+                open_audio_stream(dev_idx)
+                update_device_tracking(dev_idx)
+                return True
+            except (sd.PortAudioError, OSError) as err:
                 _LOGGER.warning(
-                    "Audio device [%s] failed: %s. "
-                    "Falling back to default device [%s].",
-                    device_idx,
-                    e,
-                    default_device,
+                    "Audio device [%s] failed: %s", dev_idx, err
                 )
-                # Reinitialize PortAudio before fallback attempt.
-                # A failed device open can poison PortAudio's internal
-                # state (e.g. WDM-KS failure leaves wrong format params),
-                # causing the fallback device to fail from a dirty state.
-                try:
-                    sd._terminate()
-                    sd._initialize()
-                except Exception as reinit_err:
-                    _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
-                try:
-                    open_audio_stream(default_device)
-                    update_device_tracking(default_device)
-                except (sd.PortAudioError, OSError) as e2:
-                    _LOGGER.warning(
-                        "Fallback audio device [%s] also failed: %s - please retry or select a different device.",
-                        default_device,
-                        e2,
-                    )
-                    self.deactivate()
+                return False
+
+        # Audio device startup sequence:
+        # PortAudio's internal state may be poisoned at startup
+        # (e.g. WDM-KS devices interfere during initial enumeration).
+        # Recovery: try configured → reinit + retry configured → reinit + fallback
+        if try_open_device(device_idx):
+            return
+
+        _LOGGER.info("Reinitializing PortAudio and retrying device [%s]...", device_idx)
+        if try_open_device(device_idx, reinit=True):
+            _LOGGER.info(
+                "Audio device [%s] opened successfully after PortAudio reinit.",
+                device_idx,
+            )
+            return
+
+        _LOGGER.info(
+            "Falling back to default device [%s]...", default_device
+        )
+        if try_open_device(default_device, reinit=True):
+            return
+
+        _LOGGER.warning(
+            "All audio devices failed - please retry or select a different device."
+        )
+        self.deactivate()
 
     def deactivate(self):
         # Stop the stream outside the lock to avoid deadlock with audio callback

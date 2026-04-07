@@ -3,7 +3,7 @@
 **Branch:** `audio_fallback`
 **PR:** [#1761 — Fix: audio fallback hardening](https://github.com/LedFx/LedFx/pull/1761)
 **Date:** 2026-04-06
-**Status:** Fix v3 confirmed working — no delays needed, reinit only (2026-04-06)
+**Status:** Fix v5 — unified three-step retry with `try_open_device()` helper (2026-04-06)
 
 ---
 
@@ -64,12 +64,18 @@ if device_idx == default_device:
     open_audio_stream(device_idx)
 ```
 
-### 2. Between primary failure and fallback attempt (addresses Log 1)
+### 2. When configured != default device fails (addresses Log 1)
 ```python
-# configured != default, configured fails, try fallback after reinit
+# configured != default, configured fails:
+# 1. Reinit PortAudio
+# 2. Retry configured device (keeps user on preferred device)
+# 3. Only fall back to default if retry also fails
 sd._terminate()
 sd._initialize()
-open_audio_stream(default_device)
+try:
+    open_audio_stream(device_idx)       # retry configured
+except:
+    open_audio_stream(default_device)   # fallback
 ```
 
 ## Startup vs Manual Selection — Path Comparison
@@ -150,6 +156,68 @@ These files now have zero diff vs main — only `ledfx/effects/audio.py` contain
 - Removed all `time.sleep()` calls (proven unnecessary)
 - Reverted all diagnostic changes in `core.py` and `virtuals.py`  
 - Kept: re-entry guard, both reinit paths, improved error messages, device name tracking
+
+## Fix v4 — Two-Layer Retry Before Fallback (2026-04-06)
+
+### Problem with v3
+
+When `configured != default`, v3 reinitialised PortAudio but then jumped straight to the fallback (default) device without retrying the configured device. Since the root cause is PortAudio state poisoning — not a problem with the configured device itself — the user would always end up on fallback at startup even though their configured device works fine after reinit.
+
+### Solution (v4)
+
+Added a retry of the configured device between reinit and fallback. Also removed the `device_idx == default_device` branch — the behavior is identical regardless: reinit + retry configured, then fall back to default (which is a no-op retry when configured == default, but simplifies the code).
+
+## Fix v5 — Unified Retry with `try_open_device()` Helper (2026-04-06)
+
+### Problem with v4
+
+The retry chain repeated the same `deactivate → sd._terminate → sd._initialize → open_audio_stream → update_device_tracking` pattern three times with deeply nested try/except blocks. The code was correct but hard to follow.
+
+### Solution
+
+Extracted a `try_open_device(dev_idx, reinit=False)` helper inside `_activate_inner()` that encapsulates the full open-or-reinit-and-open cycle. The startup sequence is now a flat, linear chain:
+
+```python
+def try_open_device(dev_idx, reinit=False):
+    """
+    Attempt to open an audio device, optionally reinitializing
+    PortAudio first (clears poisoned state from WDM-KS devices).
+    Returns True on success, False on failure.
+    """
+    if reinit:
+        self.deactivate()
+        sd._terminate()
+        sd._initialize()
+    open_audio_stream(dev_idx)
+    update_device_tracking(dev_idx)
+
+# Three-step recovery:
+if try_open_device(device_idx):               # 1. Try configured
+    return
+if try_open_device(device_idx, reinit=True):  # 2. Reinit + retry configured
+    return
+if try_open_device(default_device, reinit=True):  # 3. Reinit + fallback
+    return
+# All failed — give up
+self.deactivate()
+```
+
+### Key design decisions
+
+1. **No `device_idx == default_device` branch**: When configured == default, step 3 retries the same device a third time after a fresh reinit. This is harmless (negligible cost) and eliminates the branch entirely.
+
+2. **Reinit before fallback (step 3)**: The failed retry in step 2 can re-poison PortAudio state, so the fallback needs its own reinit cycle — exactly the scenario from Log 1.
+
+3. **`deactivate()` inside `try_open_device` when `reinit=True`**: `open_audio_stream` assigns to `_stream` before calling `.start()`. If `.start()` raises, we have a half-constructed stream that must be cleaned up before the next attempt, or it would leak.
+
+4. **`OSError` caught alongside `PortAudioError`**: Some device failures surface as `OSError` rather than `PortAudioError`. Both are recoverable via reinit.
+
+### Result
+
+- Same behavior as v4, dramatically simpler code
+- No branching on `device_idx == default_device`
+- Each step is a single function call
+- 773 tests pass
 
 ## Key Files
 
