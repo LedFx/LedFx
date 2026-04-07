@@ -55,44 +55,70 @@ class AudioInputSource:
 
         If an audio stream is active, it will be gracefully stopped before refreshing.
 
+        Serialized with activate() via _activating guard to prevent
+        sd._terminate()/_initialize() from running concurrently with
+        open_audio_stream().
+
         Returns:
             bool: True if an audio stream was active before refresh (and should be reactivated),
                   False otherwise
         """
-        # Check if there's an active stream that needs to be stopped
-        # Use class lock to safely cache and clear the stream reference
-        stream_to_close = None
-        with AudioInputSource._class_lock:
-            was_active = AudioInputSource._audio_stream_active
-
-            if was_active:
-                _LOGGER.info(
-                    "Stopping audio stream before device list refresh..."
+        # Wait for any in-progress activation to complete before touching
+        # PortAudio.  Setting _activating = True also blocks concurrent
+        # activate() calls while the refresh is running.
+        deadline = time.monotonic() + 10
+        while True:
+            with AudioInputSource._class_lock:
+                if not AudioInputSource._activating:
+                    AudioInputSource._activating = True
+                    break
+            if time.monotonic() > deadline:
+                _LOGGER.warning(
+                    "Timed out waiting for activation to complete before device list refresh"
                 )
-                # Cache and clear inside lock (atomic operation)
-                stream_to_close = AudioInputSource._stream
-                AudioInputSource._stream = None
-                AudioInputSource._audio_stream_active = False
-
-        # Close outside lock to avoid deadlock with audio callbacks
-        if stream_to_close:
-            try:
-                stream_to_close.stop()
-                stream_to_close.close()
-            except Exception as e:
-                _LOGGER.warning("Error closing stream during refresh: %s", e)
+                return False
+            time.sleep(0.05)
 
         try:
-            # Force PortAudio to rescan devices by terminating and reinitializing
-            sd._terminate()
-            sd._initialize()
-            # Clear the device list cache
-            AudioInputSource._device_list_cache = None
-            _LOGGER.info("Audio device list refreshed")
-        except Exception as e:
-            _LOGGER.warning("Failed to refresh audio device list: %s", e)
+            # Check if there's an active stream that needs to be stopped
+            # Use class lock to safely cache and clear the stream reference
+            stream_to_close = None
+            with AudioInputSource._class_lock:
+                was_active = AudioInputSource._audio_stream_active
 
-        return was_active
+                if was_active:
+                    _LOGGER.info(
+                        "Stopping audio stream before device list refresh..."
+                    )
+                    # Cache and clear inside lock (atomic operation)
+                    stream_to_close = AudioInputSource._stream
+                    AudioInputSource._stream = None
+                    AudioInputSource._audio_stream_active = False
+
+            # Close outside lock to avoid deadlock with audio callbacks
+            if stream_to_close:
+                try:
+                    stream_to_close.stop()
+                    stream_to_close.close()
+                except Exception as e:
+                    _LOGGER.warning(
+                        "Error closing stream during refresh: %s", e
+                    )
+
+            try:
+                # Force PortAudio to rescan devices by terminating and reinitializing
+                sd._terminate()
+                sd._initialize()
+                # Clear the device list cache
+                AudioInputSource._device_list_cache = None
+                _LOGGER.info("Audio device list refreshed")
+            except Exception as e:
+                _LOGGER.warning("Failed to refresh audio device list: %s", e)
+
+            return was_active
+        finally:
+            with AudioInputSource._class_lock:
+                AudioInputSource._activating = False
 
     def _update_device_config(self, device_idx):
         """
