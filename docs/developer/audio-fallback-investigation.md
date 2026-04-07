@@ -3,7 +3,7 @@
 **Branch:** `audio_fallback`
 **PR:** [#1761 — Fix: audio fallback hardening](https://github.com/LedFx/LedFx/pull/1761)
 **Date:** 2026-04-06
-**Status:** Fix v2 applied, awaiting user validation
+**Status:** Fix v3 testing — delays removed, reinit only (2026-04-06)
 
 ---
 
@@ -107,12 +107,26 @@ open_audio_stream(default_device)
 - No retry cap or consecutive failure limiting — repeated per-virtual attempts are correct behavior
 - Audio device monitor remains disabled for diagnostics (separate investigation)
 
+## Confirmed Results (Log 3: 2026-04-06 20:43)
+
+The fix works:
+
+1. **20:43:46.538** — Device [17] fails on first attempt: `usbTerminalGUID = 7D1E` (same poisoned state)
+2. **20:43:46.540** — Reinit triggered: `sd._terminate()` → 1s sleep → `sd._initialize()` → 1s sleep
+3. **20:43:48.610** — Retry succeeds: "Device opened successfully after reinit"
+4. **All subsequent virtuals** (panel-mask, panel-background, panel-foreground, ceiling) restore effects with no further audio failures
+5. Total startup delay from the reinit: ~2 seconds (acceptable)
+
+**Key**: `time.sleep(1)` after each of `_terminate()` and `_initialize()` is sufficient.
+
 ## Remaining Questions
 
-1. **Does the reinit+retry fix resolve the user's failure?** — Needs user testing
-2. **Is `time.sleep(1)` sufficient, or does WDM-KS need more time?** — May need tuning
-3. **Thread safety**: `sd._terminate()/_initialize()` while `_activating` guard is held should be safe since only one stream can be active at a time
-4. **Should the audio device monitor be re-enabled?** — Separate from this issue
+1. **Should the audio device monitor be re-enabled?** — Separate from this issue
+2. ~~**Can we reduce the sleep to 0.5s?**~~ — Testing with no sleeps at all in v3
+
+## Fix v3 — Delays Removed (2026-04-06)
+
+Removed all four `time.sleep(1)` calls from both reinit paths. The `sd._terminate()` → `sd._initialize()` cycle remains. Goal: determine if PortAudio reinit alone is sufficient without artificial delays. If the impacted user's test fails, we restore the sleeps.
 
 ## Key Files
 

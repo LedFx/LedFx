@@ -767,9 +767,7 @@ class AudioInputSource:
                 )
                 try:
                     sd._terminate()
-                    time.sleep(1)
                     sd._initialize()
-                    time.sleep(1)
                 except Exception as reinit_err:
                     _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
                     return
@@ -833,9 +831,7 @@ class AudioInputSource:
                 )
                 try:
                     sd._terminate()
-                    time.sleep(1)
                     sd._initialize()
-                    time.sleep(1)
                 except Exception as reinit_err:
                     _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
                 try:
