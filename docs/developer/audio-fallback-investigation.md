@@ -59,9 +59,7 @@ Two PortAudio reinit points added:
 if device_idx == default_device:
     self.deactivate()
     sd._terminate()
-    time.sleep(1)
     sd._initialize()
-    time.sleep(1)
     # Retry same device after reinit
     open_audio_stream(device_idx)
 ```
@@ -70,9 +68,7 @@ if device_idx == default_device:
 ```python
 # configured != default, configured fails, try fallback after reinit
 sd._terminate()
-time.sleep(1)
 sd._initialize()
-time.sleep(1)
 open_audio_stream(default_device)
 ```
 
@@ -105,19 +101,19 @@ open_audio_stream(default_device)
 ## What Was NOT Changed
 
 - No retry cap or consecutive failure limiting — repeated per-virtual attempts are correct behavior
-- Audio device monitor remains disabled for diagnostics (separate investigation)
+- `core.py` and `virtuals.py` — zero diff vs main (all diagnostic changes reverted)
+- Audio device monitor — re-enabled (was temporarily disabled for diagnostics)
 
 ## Confirmed Results (Log 3: 2026-04-06 20:43)
 
 The fix works:
 
 1. **20:43:46.538** — Device [17] fails on first attempt: `usbTerminalGUID = 7D1E` (same poisoned state)
-2. **20:43:46.540** — Reinit triggered: `sd._terminate()` → 1s sleep → `sd._initialize()` → 1s sleep
+2. **20:43:46.540** — Reinit triggered: `sd._terminate()` → `sd._initialize()`
 3. **20:43:48.610** — Retry succeeds: "Device opened successfully after reinit"
 4. **All subsequent virtuals** (panel-mask, panel-background, panel-foreground, ceiling) restore effects with no further audio failures
-5. Total startup delay from the reinit: ~2 seconds (acceptable)
 
-**Key**: `time.sleep(1)` after each of `_terminate()` and `_initialize()` is sufficient.
+**Key**: `sd._terminate()` → `sd._initialize()` alone is sufficient — no `time.sleep()` calls needed.
 
 ## Remaining Questions
 
@@ -127,9 +123,32 @@ The fix works:
 
 Removed all four `time.sleep(1)` calls from both reinit paths. The `sd._terminate()` → `sd._initialize()` cycle alone is sufficient — no artificial delays needed. User testing confirmed successful.
 
+### Sleep calls — proven unnecessary
+
+The initial v2 fix included `time.sleep(1)` after both `sd._terminate()` and `sd._initialize()` (4 calls total across both reinit paths). Testing proved these are not required:
+
+- The PortAudio reinit (`_terminate` → `_initialize`) synchronously resets internal state
+- No asynchronous OS-level cleanup requires waiting
+- Removing all sleeps had no effect on fix reliability
+- All 773 tests pass without any sleep calls
+
+### Diagnostic code — reverted
+
+All `[AUDIO-DIAG]` diagnostic logging and temporary changes in `core.py` and `virtuals.py` have been reverted:
+
+- Removed `_audio_startup_phase` and `_startup_mono` tracking attributes from `LedFxCore.__init__`
+- Re-enabled the audio device monitor in `_start_audio_device_monitor()` (was disabled with early `return`)
+- Removed `[AUDIO-DIAG]` log from `_on_audio_devices_changed()`
+- Removed startup phase completion log after `create_from_config()`
+- Removed `[AUDIO-DIAG]` effect restore logging from `virtuals.py`
+
+These files now have zero diff vs main — only `ledfx/effects/audio.py` contains the actual fix.
+
 ### Final PR candidate:
 - Stripped all `[AUDIO-DIAG]` diagnostic logging
 - Removed `describe_device()` utility (only used by diagnostics)
+- Removed all `time.sleep()` calls (proven unnecessary)
+- Reverted all diagnostic changes in `core.py` and `virtuals.py`  
 - Kept: re-entry guard, both reinit paths, improved error messages, device name tracking
 
 ## Key Files
