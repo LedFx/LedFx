@@ -154,7 +154,7 @@ These files now have zero diff vs main — only `ledfx/effects/audio.py` contain
 - Stripped all `[AUDIO-DIAG]` diagnostic logging
 - Removed `describe_device()` utility (only used by diagnostics)
 - Removed all `time.sleep()` calls (proven unnecessary)
-- Reverted all diagnostic changes in `core.py` and `virtuals.py`  
+- Reverted all diagnostic changes in `core.py` and `virtuals.py`
 - Kept: re-entry guard, both reinit paths, improved error messages, device name tracking
 
 ## Fix v4 — Two-Layer Retry Before Fallback (2026-04-06)
