@@ -157,7 +157,7 @@ def _resolve_device_from_name(self):
     """
     Resolve the audio device by name from config.
     Called at startup/config-update to handle index drift.
-    
+
     Resolution order:
     1. Name match at saved index (fast path, no drift)
     2. Name match at different index (drift detected, update index)
@@ -166,13 +166,13 @@ def _resolve_device_from_name(self):
     """
     saved_name = self._config.get("audio_device_name", "")
     saved_idx = self._config.get("audio_device")
-    
+
     if not saved_name:
         # No name stored (legacy config or first run) — use index as-is
         return
-    
+
     devices = self.input_devices()
-    
+
     # Fast path: saved index exists and name matches
     if saved_idx in devices and devices[saved_idx] == saved_name:
         _LOGGER.debug(
@@ -180,10 +180,10 @@ def _resolve_device_from_name(self):
             saved_name, saved_idx
         )
         return
-    
+
     # Name-based search (index has drifted)
     found_idx = self.get_device_index_by_name(saved_name)
-    
+
     if found_idx != -1:
         _LOGGER.info(
             "Audio device '%s' moved from index %s to %s (enumeration changed)",
@@ -198,7 +198,7 @@ def _resolve_device_from_name(self):
                 config_dir=self._ledfx.config_dir,
             )
         return
-    
+
     # Device not found by name at all
     _LOGGER.warning(
         "Saved audio device '%s' not found in current device list. "
