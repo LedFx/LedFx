@@ -68,160 +68,52 @@ Add a new method or extend `device_index_validator()` with this resolution order
 1. If audio_device_name is set in config:
    a. If audio_device index is valid AND its name matches audio_device_name → use index (fast path)
    b. Else, search all input devices for audio_device_name using get_device_index_by_name()
-      - If found → use the new index, update audio_device in config
-      - If not found → fall through to step 2
-2. If audio_device index is valid (but no name match) → use index (legacy/fallback)
-3. Else → use default_device_index() (existing fallback logic)
+      - If found → use the new index, update audio_device in config, persist
+      - If not found → reset audio_device to default_device_index(), clear
+        audio_device_name and runtime tracking (_last_device_name, _last_active),
+        persist
+2. If audio_device_name is empty (legacy config or first run) → use audio_device index as-is
+3. Downstream validator / _activate_inner() handles any remaining invalid indices
 ```
 
-### 3. Files to Modify
+### 3. Files Modified
 
 #### `ledfx/effects/audio.py`
 
-**a. `AUDIO_CONFIG_SCHEMA` (line ~379)**
-Add `audio_device_name` as an optional string field:
-```python
-vol.Optional("audio_device_name", default=""): str,
-```
-
-**b. `device_index_validator()` (line ~243)**
-Expand to accept the full config dict (or create a new startup resolver) so it can read `audio_device_name` and perform name-based resolution before falling back to index validation.
-
-Currently:
-```python
-@staticmethod
-def device_index_validator(val):
-    if val in AudioInputSource.valid_device_indexes():
-        return val
-    else:
-        return AudioInputSource.default_device_index()
-```
-
-This validator only sees the integer value. The name-based resolution needs access to both `audio_device` and `audio_device_name`. Options:
-
-- **Option A (Recommended):** Add a class method `resolve_device_at_startup(config) -> int` that implements the resolution logic above. Call it from `update_config()` or `__init__()` after schema validation, before `activate()`. Keep the existing validator as a simple range check.
-
-- **Option B:** Use a voluptuous `All()` chain or custom validator that can access sibling config keys. This is more complex with voluptuous.
-
-**c. `_update_device_config()` (line ~126)**
-When updating the device index, also update the device name:
-```python
-def _update_device_config(self, device_idx):
-    self._config["audio_device"] = device_idx
-    # Also persist the device name for cross-session recovery
-    devices = self.input_devices()
-    if device_idx in devices:
-        self._config["audio_device_name"] = devices[device_idx]
-    # ... existing save logic
-```
-
-**d. `update_device_tracking()` inner function (line ~586)**
-Already sets `_last_device_name` at runtime. No change needed unless we want to also sync to config here (but `_update_device_config` covers this).
-
-**e. `update_config()` (line ~418)**
-After schema validation and before `activate()`, call the new startup resolver:
-```python
-def update_config(self, config):
-    if AudioInputSource._audio_stream_active:
-        self.deactivate()
-    self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
-    # Resolve device by name if available (handles index drift across restarts)
-    self._resolve_device_from_name()
-    # ... rest of method
-```
+- **`AUDIO_CONFIG_SCHEMA`** — Added `audio_device_name` as an optional string field (default `""`).
+- **`_resolve_device_from_name()`** — New method implementing the resolution algorithm from §2. Called from `update_config()` after schema validation, before `activate()`.
+- **`_update_device_config()`** — Updated to persist both `audio_device` (index) and `audio_device_name` (string) together, then save to disk.
+- **`update_device_tracking()`** (inner function in `_activate_inner()`) — Unchanged; still sets `_last_device_name` at runtime.
+- **`persist_device_name_if_needed()`** (inner function in `_activate_inner()`) — Post-activation hook that syncs both config keys (`audio_device`, `audio_device_name`) to match the actually-opened device. Handles legacy upgrade (first activation after upgrade auto-populates name) and fallback-open scenarios (configured device fails, default opens instead).
+- **`update_config()`** — Calls `_resolve_device_from_name()` after schema validation, before `activate()`.
+- **`_persist_config()`** — Helper that syncs `self._config` to central config and writes to disk. Used by all persistence paths.
 
 #### `ledfx/api/audio_devices.py`
 
-**a. `put()` handler (line ~40)**
-When the user selects a device via the API, persist the name alongside the index:
-```python
-new_config["audio_device"] = int(index)
-# Persist device name for cross-session recovery
-devices = AudioInputSource.input_devices()
-if index in devices:
-    new_config["audio_device_name"] = devices[index]
-```
-
-**b. `get()` handler**
-Optionally include `audio_device_name` in the response for UI display/debugging.
+- **PUT handler** — Persists `audio_device_name` alongside `audio_device` when the user selects a device via the API.
+- **GET handler** — Returns `active_device_name` in the response alongside `active_device_index`.
 
 #### `ledfx/config.py`
 
-**Config migration (line ~629)**
-The existing migration already handles legacy configs without `audio_device`. No new migration is strictly required since `audio_device_name` defaults to `""`, but consider adding a migration that populates `audio_device_name` if `audio_device` is set but `audio_device_name` is missing (best-effort: look up the name at migration time).
+No new migration required. `audio_device_name` defaults to `""` via the schema, so legacy configs load without error.
 
-### 4. New Method: `_resolve_device_from_name()`
+### 4. `_resolve_device_from_name()` Algorithm
 
-```python
-def _resolve_device_from_name(self):
-    """
-    Resolve the audio device by name from config.
-    Called at startup/config-update to handle index drift.
+See `ledfx/effects/audio.py` for the definitive implementation.
 
-    Resolution order:
-    1. Name match at saved index (fast path, no drift)
-    2. Name match at different index (drift detected, update index)
-    3. Saved index still valid but name doesn't match (use index, warn)
-    4. Default device (nothing valid)
-    """
-    saved_name = self._config.get("audio_device_name", "")
-    saved_idx = self._config.get("audio_device")
+Called from `update_config()` after schema validation, before `activate()`.
 
-    if not saved_name:
-        # No name stored (legacy config or first run) — use index as-is
-        return
+**Resolution order:**
 
-    devices = self.input_devices()
-
-    # Fast path: saved index exists and name matches
-    if saved_idx in devices and devices[saved_idx] == saved_name:
-        _LOGGER.debug(
-            "Audio device '%s' confirmed at index %s",
-            saved_name, saved_idx
-        )
-        return
-
-    # Name-based search (index has drifted)
-    found_idx = self.get_device_index_by_name(saved_name)
-
-    if found_idx != -1:
-        _LOGGER.info(
-            "Audio device '%s' moved from index %s to %s (enumeration changed)",
-            saved_name, saved_idx, found_idx
-        )
-        self._config["audio_device"] = found_idx
-        # Persist the corrected index
-        if hasattr(self, "_ledfx") and self._ledfx:
-            self._ledfx.config["audio"] = self._config
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-        return
-
-    # Device not found by name at all
-    _LOGGER.warning(
-        "Saved audio device '%s' not found in current device list. "
-        "Falling back to index %s if valid, else default.",
-        saved_name, saved_idx
-    )
-    # Clear the stale name so we don't keep warning
-    self._config["audio_device_name"] = ""
-    # Persist the cleared name so the stale value doesn't reappear on restart
-    if hasattr(self, "_ledfx") and self._ledfx:
-        self._ledfx.config["audio"] = self._config
-        try:
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-        except Exception as e:
-            _LOGGER.warning(
-                "Failed to persist cleared audio_device_name: %s. "
-                "Stale name may reappear on next startup.",
-                e,
-            )
-```
+1. If `audio_device_name` is empty → return immediately (legacy/first-run path)
+2. If the saved index exists in the current device list **and** its name matches → return (fast path, no drift)
+3. Search all devices by name via `get_device_index_by_name()` (handles exact + partial/truncated matching):
+   - If found → update `audio_device` to the new index, persist
+4. Device not found at all:
+   - Reset `audio_device` to `default_device_index()`
+   - Clear `audio_device_name`
+   - Clear runtime tracking (`_last_device_name`, `_last_active`) so hotplug won't attempt recovery to the gone device
+   - Persist
 
 ### 5. Edge Cases
 
@@ -248,39 +140,28 @@ This is a **non-breaking, additive change**. Users upgrading from any prior vers
 5. Existing `device_index_validator` handles index `17` as before — **no change in behavior**
 6. Device activates at index `17` (taken at face value)
 7. `_activate_inner()` calls `update_device_tracking()` → sets `_last_device_name` at runtime
-8. **Key step:** `_update_device_config()` (or post-activation hook) writes the device name back:
-   ```json
-   {"audio": {"audio_device": 17, "audio_device_name": "Windows WASAPI: Speakers (Realtek) [Loopback]"}}
-   ```
+8. **Key step:** `persist_device_name_if_needed()` detects the name is missing and writes both keys back to config (e.g. `audio_device: 17` + `audio_device_name: "Windows WASAPI: Speakers (Realtek) [Loopback]"`)
 9. Config is saved to disk — **config is now upgraded for all future sessions**
 10. From the next restart onward, name-based resolution is active
 
 #### Critical Design Constraint
 
-The name must be persisted on the **first successful activation** after upgrade, not only on user-initiated device changes via the API. This means `_update_device_config()` or `update_device_tracking()` must write `audio_device_name` to config and save on every activation where the name is missing or has changed. Without this, a user who never touches the audio settings would never get their config upgraded.
+The name must be persisted on the **first successful activation** after upgrade, not only on user-initiated device changes via the API. The `persist_device_name_if_needed()` inner function in `_activate_inner()` handles this — it runs after every successful device open and syncs both config keys if the actual device differs from what's in config. Without this, a user who never touches the audio settings would never get their config upgraded.
 
-#### Implementation Detail
+#### `persist_device_name_if_needed()` Algorithm
 
-Add to the end of `_activate_inner()`, after `update_device_tracking()` succeeds:
+See `ledfx/effects/audio.py` `_activate_inner()` for the definitive implementation.
 
-```python
-# Ensure device name is persisted for cross-session recovery
-# This also handles seamless upgrade from legacy configs (index-only)
-with AudioInputSource._class_lock:
-    current_name = AudioInputSource._last_device_name
-if current_name and self._config.get("audio_device_name", "") != current_name:
-    self._config["audio_device_name"] = current_name
-    if hasattr(self, "_ledfx") and self._ledfx:
-        self._ledfx.config["audio"] = self._config
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
-        _LOGGER.info(
-            "Persisted audio device name '%s' for cross-session recovery",
-            current_name,
-        )
-```
+Called after each successful `try_open_device()` in the startup sequence.
+
+1. Read `_last_device_name` and `_last_active` (the actually-opened device) under class lock
+2. If either is unset → return (nothing to persist)
+3. Compare against current config values for `audio_device_name` and `audio_device`
+4. If either differs → update **both** config keys to match the actual device, then persist
+5. This handles three cases:
+   - **Legacy upgrade:** config had no name, now it gets one
+   - **Fallback open:** configured device failed, default opened — config updated to reflect reality
+   - **Normal confirmation:** config already matches, no write needed
 
 #### Summary
 
@@ -296,44 +177,14 @@ All tests should live in `tests/test_audio_device_persistence.py`. Tests mock `A
 
 #### 7.1 Mock Fixtures
 
-```python
-# Standard device list — the "before" state
-DEVICES_BEFORE = {
-    0: "Windows WASAPI: Microphone (Realtek High Definition Audio)",
-    5: "Windows WASAPI: Stereo Mix (Realtek High Definition Audio)",
-    17: "Windows WASAPI: Speakers (Realtek High Definition Audio) [Loopback]",
-    22: "Windows WASAPI: Headset (Bluetooth)",
-}
+See `tests/test_audio_device_persistence.py` for the definitive fixture definitions.
 
-# After a USB device is plugged in — indices shift
-DEVICES_AFTER_USB_ADDED = {
-    0: "Windows WASAPI: Microphone (Realtek High Definition Audio)",
-    3: "Windows WASAPI: USB Audio Interface",
-    5: "Windows WASAPI: Stereo Mix (Realtek High Definition Audio)",
-    18: "Windows WASAPI: Speakers (Realtek High Definition Audio) [Loopback]",
-    23: "Windows WASAPI: Headset (Bluetooth)",
-}
-
-# After device is removed entirely
-DEVICES_AFTER_REMOVAL = {
-    0: "Windows WASAPI: Microphone (Realtek High Definition Audio)",
-    5: "Windows WASAPI: Stereo Mix (Realtek High Definition Audio)",
-    22: "Windows WASAPI: Headset (Bluetooth)",
-}
-
-# Truncated names (PortAudio sometimes truncates long names)
-DEVICES_TRUNCATED = {
-    0: "Windows WASAPI: Microphone (Realtek High Def",
-    17: "Windows WASAPI: Speakers (Realtek High Def",
-}
-
-# Multiple similar names
-DEVICES_SIMILAR_NAMES = {
-    0: "Windows WASAPI: Microphone",
-    1: "Windows WASAPI: Microphone (Realtek)",
-    2: "Windows WASAPI: Microphone (Realtek High Definition Audio)",
-}
-```
+Tests use mock device dictionaries keyed by index with `"{hostapi}: {name}"` string values, simulating:
+- **DEVICES_BEFORE** — Standard device list (baseline state)
+- **DEVICES_AFTER_USB_ADDED** — USB device inserted, indices shifted upward
+- **DEVICES_AFTER_REMOVAL** — Target device removed entirely
+- **DEVICES_TRUNCATED** — PortAudio-truncated long device names
+- **DEVICES_SIMILAR_NAMES** — Multiple devices with overlapping name prefixes
 
 #### 7.2 Unit Tests — `_resolve_device_from_name()`
 
@@ -343,13 +194,13 @@ These test the core resolution logic in isolation.
 |---|---|---|---|---|
 | 1 | `test_resolve_name_matches_at_saved_index` | `idx=17, name="...Speakers...Loopback"` | `DEVICES_BEFORE` | Index stays `17`, no config save |
 | 2 | `test_resolve_name_found_at_different_index` | `idx=17, name="...Speakers...Loopback"` | `DEVICES_AFTER_USB_ADDED` | Index updated to `18`, config saved |
-| 3 | `test_resolve_name_not_found_device_removed` | `idx=17, name="...Speakers...Loopback"` | `DEVICES_AFTER_REMOVAL` | Falls to default, name cleared from config |
+| 3 | `test_resolve_name_not_found_device_removed` | `idx=17, name="...Speakers...Loopback"` | `DEVICES_AFTER_REMOVAL` | Index reset to default, name cleared, runtime tracking (`_last_device_name`, `_last_active`) cleared |
 | 4 | `test_resolve_empty_name_skips_resolution` | `idx=17, name=""` | `DEVICES_BEFORE` | Index stays `17`, no name search performed |
 | 5 | `test_resolve_no_name_key_skips_resolution` | `idx=17` (no name key) | `DEVICES_BEFORE` | Index stays `17` (schema default `""` applied) |
 | 6 | `test_resolve_partial_match_truncated_name` | `idx=17, name="...Speakers (Realtek High Def"` | `DEVICES_BEFORE` | Partial match finds index `17` via `get_device_index_by_name` |
 | 7 | `test_resolve_prefers_exact_over_partial` | `idx=2, name="...Microphone (Realtek)"` | `DEVICES_SIMILAR_NAMES` | Exact match at `1`, not partial at `2` |
 | 8 | `test_resolve_saved_index_invalid_name_found` | `idx=99, name="...Speakers...Loopback"` | `DEVICES_BEFORE` | Name search finds `17`, updates index |
-| 9 | `test_resolve_saved_index_invalid_name_not_found` | `idx=99, name="Nonexistent Device"` | `DEVICES_BEFORE` | Falls to default device |
+| 9 | `test_resolve_saved_index_invalid_name_not_found` | `idx=99, name="Nonexistent Device"` | `DEVICES_BEFORE` | Index reset to default, name cleared |
 | 10 | `test_resolve_index_valid_but_wrong_device` | `idx=17, name="...Speakers...Loopback"` | `{17: "...Microphone...", 18: "...Speakers...Loopback"}` | Name mismatch at `17`, found at `18`, updates index |
 
 #### 7.3 Unit Tests — Legacy Upgrade Path
@@ -361,7 +212,7 @@ These verify that upgrading from index-only configs works seamlessly.
 | 11 | `test_legacy_config_no_name_field` | Config `{"audio_device": 17}` loaded through schema | `audio_device_name` defaults to `""`, index `17` used as-is |
 | 12 | `test_legacy_config_empty_audio_dict` | Config `{}` loaded through schema | Default device index chosen, no name resolution attempted |
 | 13 | `test_legacy_upgrade_name_persisted_on_activation` | Config `{"audio_device": 17}`, activate succeeds | After activation, config contains `audio_device_name` matching device at index `17` |
-| 14 | `test_legacy_upgrade_name_not_persisted_on_activation_failure` | Config `{"audio_device": 17}`, activate fails | `audio_device_name` remains `""` — don't persist a name for a device we couldn't open |
+| 14 | `test_legacy_upgrade_name_not_persisted_for_invalid_device` | Config `{"audio_device": 17}`, device not in device list | `audio_device_name` remains `""` — don't persist a name for a device we can't identify |
 | 15 | `test_legacy_upgrade_second_startup_uses_name` | Simulate: first boot persists name, second boot with shifted indices | Second boot resolves by name to new index |
 
 #### 7.4 Unit Tests — API Endpoint
@@ -450,18 +301,18 @@ These ensure the new code doesn't break existing behavior.
 
 ---
 
-## Appendix: Current Code References
+## Appendix: Code References
 
-| Component | File | Key Lines |
+| Component | File | Symbol |
 |---|---|---|
-| Config schema | `ledfx/effects/audio.py` | ~379 (`AUDIO_CONFIG_SCHEMA`) |
-| Index validator | `ledfx/effects/audio.py` | ~243 (`device_index_validator`) |
-| Runtime name tracking | `ledfx/effects/audio.py` | ~45 (`_last_device_name`), ~586 (`update_device_tracking`) |
-| Device list change handler | `ledfx/effects/audio.py` | ~140 (`handle_device_list_change`) |
-| Name-based search | `ledfx/effects/audio.py` | ~771 (`get_device_index_by_name`) |
-| Config update + save | `ledfx/effects/audio.py` | ~126 (`_update_device_config`) |
-| API device selection | `ledfx/api/audio_devices.py` | ~40 (`put`) |
-| Audio config in core schema | `ledfx/config.py` | ~145 |
-| Audio init in core startup | `ledfx/core.py` | ~500 |
-| Input device enumeration | `ledfx/effects/audio.py` | ~365 (`input_devices`) |
-| Device activation | `ledfx/effects/audio.py` | ~456 (`_activate_inner`) |
+| Config schema | `ledfx/effects/audio.py` | `AUDIO_CONFIG_SCHEMA` |
+| Startup resolver | `ledfx/effects/audio.py` | `_resolve_device_from_name()` |
+| Index validator | `ledfx/effects/audio.py` | `device_index_validator()` |
+| Runtime name tracking | `ledfx/effects/audio.py` | `_last_device_name`, `update_device_tracking()` |
+| Post-activation persistence | `ledfx/effects/audio.py` | `persist_device_name_if_needed()` (inner in `_activate_inner`) |
+| Device list change handler | `ledfx/effects/audio.py` | `handle_device_list_change()` |
+| Name-based search | `ledfx/effects/audio.py` | `get_device_index_by_name()` |
+| Config update + save | `ledfx/effects/audio.py` | `_update_device_config()`, `_persist_config()` |
+| API device selection | `ledfx/api/audio_devices.py` | `put()`, `get()` |
+| Input device enumeration | `ledfx/effects/audio.py` | `input_devices()` |
+| Device activation | `ledfx/effects/audio.py` | `_activate_inner()` |
