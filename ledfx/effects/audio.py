@@ -770,20 +770,31 @@ class AudioInputSource:
 
         def persist_device_name_if_needed():
             """
-            Ensure device name is persisted for cross-session recovery.
-            Also handles seamless upgrade from legacy configs (index-only).
+            Ensure device index and name are persisted for cross-session
+            recovery.  Also handles seamless upgrade from legacy configs
+            (index-only) and fallback-open scenarios where the actual
+            device differs from the configured one.
             """
             with AudioInputSource._class_lock:
                 current_name = AudioInputSource._last_device_name
-            if (
-                current_name
-                and self._config.get("audio_device_name", "") != current_name
-            ):
+                current_idx = AudioInputSource._last_active
+
+            if not current_name or current_idx is None:
+                return
+
+            name_changed = (
+                self._config.get("audio_device_name", "") != current_name
+            )
+            idx_changed = self._config.get("audio_device") != current_idx
+
+            if name_changed or idx_changed:
+                self._config["audio_device"] = current_idx
                 self._config["audio_device_name"] = current_name
                 if self._persist_config():
                     _LOGGER.info(
-                        "Persisted audio device name '%s' for cross-session recovery",
+                        "Persisted audio device '%s' (index %s) for cross-session recovery",
                         current_name,
+                        current_idx,
                     )
 
         # Audio device startup sequence:
