@@ -128,15 +128,26 @@ class TestResolveDeviceFromName:
     def test_resolve_name_not_found_device_removed(
         self, mock_default, mock_devices
     ):
-        """#3: Device removed — name cleared, falls through to index/default logic."""
+        """#3: Device removed — reset to default, name cleared, runtime tracking cleared."""
         config = {"audio_device": 17, "audio_device_name": LOOPBACK_NAME}
         ais = make_ais(config=config)
-        ais._resolve_device_from_name()
+        # Seed runtime tracking to verify it gets cleared
+        AudioInputSource._last_device_name = LOOPBACK_NAME
+        AudioInputSource._last_active = 17
+        try:
+            ais._resolve_device_from_name()
 
-        # Name should be cleared
-        assert ais._config["audio_device_name"] == ""
-        # Index unchanged by resolver — existing validator handles fallback
-        assert ais._config["audio_device"] == 17
+            # Name should be cleared
+            assert ais._config["audio_device_name"] == ""
+            # Index reset to default so we don't open the wrong device
+            assert ais._config["audio_device"] == 0
+            # Runtime tracking cleared so hotplug won't recover to old device
+            assert AudioInputSource._last_device_name is None
+            assert AudioInputSource._last_active is None
+        finally:
+            # Restore class state for other tests
+            AudioInputSource._last_device_name = None
+            AudioInputSource._last_active = None
 
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_BEFORE
@@ -204,11 +215,14 @@ class TestResolveDeviceFromName:
         assert ais._config["audio_device"] == 17
         mock_save.assert_called_once()
 
+    @patch.object(AudioInputSource, "default_device_index", return_value=0)
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_BEFORE
     )
-    def test_resolve_saved_index_invalid_name_not_found(self, mock_devices):
-        """#9: Index 99 invalid AND name not found — name cleared."""
+    def test_resolve_saved_index_invalid_name_not_found(
+        self, mock_devices, mock_default
+    ):
+        """#9: Index 99 invalid AND name not found — reset to default, name cleared."""
         config = {
             "audio_device": 99,
             "audio_device_name": "Nonexistent Device",
@@ -217,6 +231,7 @@ class TestResolveDeviceFromName:
         ais._resolve_device_from_name()
 
         assert ais._config["audio_device_name"] == ""
+        assert ais._config["audio_device"] == 0
 
     @patch("ledfx.effects.audio.save_config")
     @patch.object(

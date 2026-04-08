@@ -480,16 +480,21 @@ class AudioInputSource:
             self._persist_config()
             return
 
-        # Device not found by name at all
+        # Device not found by name at all — reset to default so we don't
+        # silently open a different device that now occupies the stale index.
+        default_idx = self.default_device_index()
         _LOGGER.warning(
             "Saved audio device '%s' not found in current device list. "
-            "Falling back to index %s if valid, else default.",
+            "Resetting to default device (index %s).",
             saved_name,
-            saved_idx,
+            default_idx,
         )
-        # Clear the stale name so we don't keep warning
+        self._config["audio_device"] = default_idx
         self._config["audio_device_name"] = ""
-        # Persist the cleared name so the stale value doesn't reappear on restart
+        # Clear runtime tracking so hotplug won't try to recover the old device
+        with AudioInputSource._class_lock:
+            AudioInputSource._last_device_name = None
+            AudioInputSource._last_active = None
         self._persist_config()
 
     def update_config(self, config):
