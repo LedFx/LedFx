@@ -1,7 +1,7 @@
 # Audio Device Persistence Strategy
 
 **Date:** 2026-04-07
-**Status:** Strategy — not yet implemented
+**Status:** Strategy — implemented
 **Scope:** `ledfx/effects/audio.py`, `ledfx/api/audio_devices.py`, `ledfx/config.py`
 
 ---
@@ -207,6 +207,20 @@ def _resolve_device_from_name(self):
     )
     # Clear the stale name so we don't keep warning
     self._config["audio_device_name"] = ""
+    # Persist the cleared name so the stale value doesn't reappear on restart
+    if hasattr(self, "_ledfx") and self._ledfx:
+        self._ledfx.config["audio"] = self._config
+        try:
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+        except Exception as e:
+            _LOGGER.warning(
+                "Failed to persist cleared audio_device_name: %s. "
+                "Stale name may reappear on next startup.",
+                e,
+            )
 ```
 
 ### 5. Edge Cases
@@ -391,7 +405,7 @@ These validate the name matching logic that underpins resolution.
 | 27 | `test_no_match_returns_negative_one` | Name doesn't match anything | Returns `-1` |
 | 28 | `test_empty_string_returns_negative_one` | Empty string passed | Returns `-1` (no false matches) |
 | 29 | `test_case_sensitive_matching` | Name differs only in case | Verify current behavior (case-sensitive) |
-| 30 | `test_partial_match_avoids_false_positive` | `"Microphone"` should not match `"Microphone (Realtek)"` when stored name is shorter | Only matches when stored name is substring of device name, not reverse |
+| 30 | `test_partial_match_avoids_false_positive` | Stored `"Microphone"` has exact match at index 0 plus longer partial matches at indices 1, 2 | Exact match at index 0 is returned, not a longer partial match (e.g., `"Microphone (Realtek)"`) |
 
 #### 7.8 Regression Guard Tests
 

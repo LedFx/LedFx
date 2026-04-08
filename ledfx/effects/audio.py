@@ -120,6 +120,25 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._activating = False
 
+    def _persist_config(self):
+        """
+        Sync audio config to central config and persist to disk.
+        No-op when _ledfx is not available (e.g. in tests).
+        Returns True on success, False on failure or unavailable.
+        """
+        if not (hasattr(self, "_ledfx") and self._ledfx):
+            return False
+        self._ledfx.config["audio"] = self._config
+        try:
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+            return True
+        except Exception as e:
+            _LOGGER.warning("Failed to persist audio config: %s", e)
+            return False
+
     def _update_device_config(self, device_idx):
         """
         Update device index and name in both local and central configs.
@@ -134,14 +153,8 @@ class AudioInputSource:
             self._config["audio_device_name"] = devices[device_idx]
         else:
             self._config["audio_device_name"] = ""
-        # Sync the entire audio config to central config (matches update_config pattern)
-        if hasattr(self, "_ledfx") and self._ledfx:
-            self._ledfx.config["audio"] = self._config
-            # Persist to disk so recovered device survives restarts
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+        # Persist to disk so recovered device survives restarts
+        self._persist_config()
 
     def handle_device_list_change(self):
         """
@@ -464,12 +477,7 @@ class AudioInputSource:
             )
             self._config["audio_device"] = found_idx
             # Persist the corrected index
-            if hasattr(self, "_ledfx") and self._ledfx:
-                self._ledfx.config["audio"] = self._config
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
+            self._persist_config()
             return
 
         # Device not found by name at all
@@ -481,6 +489,8 @@ class AudioInputSource:
         )
         # Clear the stale name so we don't keep warning
         self._config["audio_device_name"] = ""
+        # Persist the cleared name so the stale value doesn't reappear on restart
+        self._persist_config()
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
@@ -770,12 +780,7 @@ class AudioInputSource:
                 and self._config.get("audio_device_name", "") != current_name
             ):
                 self._config["audio_device_name"] = current_name
-                if hasattr(self, "_ledfx") and self._ledfx:
-                    self._ledfx.config["audio"] = self._config
-                    save_config(
-                        config=self._ledfx.config,
-                        config_dir=self._ledfx.config_dir,
-                    )
+                if self._persist_config():
                     _LOGGER.info(
                         "Persisted audio device name '%s' for cross-session recovery",
                         current_name,
