@@ -765,7 +765,10 @@ class AudioInputSource:
             """
             with AudioInputSource._class_lock:
                 current_name = AudioInputSource._last_device_name
-            if current_name and self._config.get("audio_device_name", "") != current_name:
+            if (
+                current_name
+                and self._config.get("audio_device_name", "") != current_name
+            ):
                 self._config["audio_device_name"] = current_name
                 if hasattr(self, "_ledfx") and self._ledfx:
                     self._ledfx.config["audio"] = self._config
