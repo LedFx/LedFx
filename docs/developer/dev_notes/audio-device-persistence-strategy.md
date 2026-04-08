@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-07
 **Status:** Strategy — implemented
-**Scope:** `ledfx/effects/audio.py`, `ledfx/api/audio_devices.py`, `ledfx/config.py`
+**Scope:** `ledfx/effects/audio.py`, `ledfx/api/audio_devices.py`, `ledfx/api/config.py`, `ledfx/config.py`
 
 ---
 
@@ -93,9 +93,36 @@ Add a new method or extend `device_index_validator()` with this resolution order
 - **PUT handler** — Persists `audio_device_name` alongside `audio_device` when the user selects a device via the API.
 - **GET handler** — Returns `active_device_name` in the response alongside `active_device_index`.
 
+#### `ledfx/api/config.py`
+
+- **`update_config()`** — When the incoming payload contains `audio_device`, the stale `audio_device_name` is cleared from the existing config **before** the merge. This prevents `_resolve_device_from_name()` from name-matching back to the old device and overriding the user's selection. See §3.1 below.
+
 #### `ledfx/config.py`
 
 No new migration required. `audio_device_name` defaults to `""` via the schema, so legacy configs load without error.
+
+### 3.1 Config Merge Hazard — `ledfx/api/config.py`
+
+> **Bug found 2026-04-08.** The original implementation missed this path entirely.
+
+The frontend changes audio devices via `PUT /api/config {"audio": {"audio_device": 4}}`, which is handled by `ConfigEndpoint.update_config()` in `ledfx/api/config.py`. This method does a **partial merge**:
+
+```python
+self._ledfx.config["audio"].update(audio_config)
+```
+
+`.update()` only overwrites keys present in the incoming payload. When the frontend sends `{"audio_device": 4}` (no `audio_device_name`), the stale `audio_device_name` from the prior device selection survives the merge. The merged config is then passed to `AudioInputSource.update_config()`, which calls `_resolve_device_from_name()`. That method sees the stale name, searches by name, finds the **old** device, and overrides the user's new index selection.
+
+**Fix:** Before the merge, if the incoming payload contains `audio_device`, explicitly clear `audio_device_name` in the existing config:
+
+```python
+if "audio_device" in audio_config:
+    self._ledfx.config["audio"]["audio_device_name"] = ""
+```
+
+This causes `_resolve_device_from_name()` to take the "no name stored" path and use the index as-is. The name is then correctly populated by `persist_device_name_if_needed()` after the new device opens.
+
+**Key lesson:** Any code path that can write `audio_device` without simultaneously writing `audio_device_name` must clear the stale name. The dedicated audio devices API (`ledfx/api/audio_devices.py`) writes both together, but the general config API merges partial payloads — a distinction the original strategy failed to account for.
 
 ### 4. `_resolve_device_from_name()` Algorithm
 
@@ -217,11 +244,12 @@ These verify that upgrading from index-only configs works seamlessly.
 
 #### 7.4 Unit Tests — API Endpoint
 
-These verify the REST API correctly persists both fields.
+These verify the REST API correctly persists both fields. Tests must exercise the actual `ConfigEndpoint.update_config()` merge path against pre-existing config state, not just construct new dicts in isolation.
 
 | # | Test Name | Scenario | Expected Result |
 |---|---|---|---|
-| 16 | `test_api_put_persists_name_and_index` | PUT `{"audio_device": 5}` | Config saved with both `audio_device: 5` and `audio_device_name: "..."` |
+| 16 | `test_api_put_persists_name_and_index` | PUT `{"audio_device": 5}` via audio devices API | Config saved with both `audio_device: 5` and `audio_device_name: "..."` |
+| 16b | `test_api_put_device_change_clears_stale_name` | PUT `{"audio": {"audio_device": 5}}` via general config API, existing config has `audio_device: 17` + `audio_device_name: "Loopback"` | Stale name cleared before merge; `update_config()` receives `audio_device: 5` with `audio_device_name: ""` so `_resolve_device_from_name()` does not override the user's selection |
 | 17 | `test_api_put_invalid_index_rejected` | PUT `{"audio_device": 999}` | Error response, config unchanged |
 | 18 | `test_api_get_returns_name` | GET with config containing name | Response includes `active_device_index` and `active_device_name` |
 
@@ -296,6 +324,8 @@ These ensure the new code doesn't break existing behavior.
 | 7 | Update API GET to return name | `ledfx/api/audio_devices.py` | [x] |
 | 8 | Write unit tests (37 cases from §7) | `tests/test_audio_device_persistence.py` | [x] |
 | 9 | Run tests and verify | — | [x] |
+| 10 | Fix config merge hazard — clear stale name on API device change | `ledfx/api/config.py` | [x] |
+| 11 | Add regression test for config merge hazard (#16b) | `tests/test_audio_device_persistence.py` | [x] |
 
 > **Session recovery:** If a session times out, read this document to restore context. The table above tracks progress. Resume from the first unchecked item.
 
@@ -314,5 +344,6 @@ These ensure the new code doesn't break existing behavior.
 | Name-based search | `ledfx/effects/audio.py` | `get_device_index_by_name()` |
 | Config update + save | `ledfx/effects/audio.py` | `_update_device_config()`, `_persist_config()` |
 | API device selection | `ledfx/api/audio_devices.py` | `put()`, `get()` |
+| General config merge (stale name fix) | `ledfx/api/config.py` | `update_config()` |
 | Input device enumeration | `ledfx/effects/audio.py` | `input_devices()` |
 | Device activation | `ledfx/effects/audio.py` | `_activate_inner()` |

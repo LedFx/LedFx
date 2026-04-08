@@ -396,6 +396,68 @@ class TestAudioDevicesApi:
 
         assert index not in valid_indexes
 
+    @patch("ledfx.effects.audio.save_config")
+    @patch.object(
+        AudioInputSource, "input_devices", return_value=DEVICES_BEFORE
+    )
+    @patch.object(
+        AudioInputSource,
+        "valid_device_indexes",
+        return_value=tuple(DEVICES_BEFORE.keys()),
+    )
+    @patch.object(AudioInputSource, "default_device_index", return_value=0)
+    def test_api_put_device_change_clears_stale_name(
+        self, mock_default, mock_valid, mock_devices, mock_save
+    ):
+        """PUT with new audio_device must not name-match back to old device.
+
+        Regression test: when config already has audio_device=17 with
+        audio_device_name pointing to loopback, and the frontend sends
+        audio_device=5, the merge used to leave the stale name in place.
+        _resolve_device_from_name() would then find the old device by name
+        and override the user's selection back to 17.
+        """
+        from ledfx.api.config import ConfigEndpoint
+
+        # Existing config: device 17 (loopback) with its name persisted
+        existing_audio = {
+            "audio_device": 17,
+            "audio_device_name": LOOPBACK_NAME,
+            "min_volume": 0.2,
+            "sample_rate": 60,
+            "mic_rate": 44100,
+            "fft_size": 8192,
+            "delay_ms": 0,
+        }
+
+        mock_ledfx = make_mock_ledfx(dict(existing_audio))
+        mock_ledfx.config["melbanks"] = {}
+        mock_ledfx.config["wled_preferences"] = {}
+
+        # Wire up a mock AudioInputSource that records the config it receives
+        mock_ais = make_ais(config=dict(existing_audio), ledfx=mock_ledfx)
+        received_configs = []
+        original_update = AudioInputSource.update_config
+
+        def capture_update(self_ais, cfg):
+            received_configs.append(dict(cfg))
+
+        mock_ais.update_config = lambda cfg: capture_update(mock_ais, cfg)
+        mock_ledfx.audio = mock_ais
+
+        endpoint = object.__new__(ConfigEndpoint)
+        endpoint._ledfx = mock_ledfx
+
+        # Frontend sends only audio_device=5 (user picks Stereo Mix)
+        endpoint.update_config({"audio": {"audio_device": 5}})
+
+        # The merged config passed to update_config must have the new index
+        # and a cleared name so _resolve_device_from_name() won't override it
+        assert len(received_configs) == 1
+        merged = received_configs[0]
+        assert merged["audio_device"] == 5
+        assert merged["audio_device_name"] == ""
+
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_BEFORE
     )
@@ -613,8 +675,8 @@ class TestGetDeviceIndexByName:
         ais = make_ais()
         # Uppercase version should not exact-match
         result = ais.get_device_index_by_name(LOOPBACK_NAME.upper())
-        # No exact match expected; partial match depends on case
-        assert result == -1 or isinstance(result, int)
+        # No exact match expected; case-sensitive matching means no match
+        assert result == -1
 
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_SIMILAR_NAMES
