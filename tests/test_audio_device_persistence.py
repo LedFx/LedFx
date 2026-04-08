@@ -5,9 +5,7 @@ Strategy doc: docs/developer/dev_notes/audio-device-persistence-strategy.md
 """
 
 import logging
-from unittest.mock import MagicMock, call, patch
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from ledfx.effects.audio import AudioInputSource
 
