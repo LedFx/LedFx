@@ -415,15 +415,24 @@ These ensure the new code doesn't break existing behavior.
 - **Fixture for mock ledfx:** Create a simple mock with `config` dict and `config_dir` string to satisfy `_update_device_config()` requirements.
 - **No real audio in CI:** All tests must pass without any audio hardware. Never call `sd.query_devices()` in tests.
 
-### 8. Implementation Order
+### 8. Implementation Order & Progress
 
-1. Add `audio_device_name` to `AUDIO_CONFIG_SCHEMA`
-2. Add `_resolve_device_from_name()` method to `AudioInputSource`
-3. Call resolver from `update_config()` before `activate()`
-4. Update `_update_device_config()` to persist name
-5. Update `audio_devices.py` PUT handler to persist name
-6. Write tests
-7. Manual verification with real device enumeration changes
+**Branch:** `audio_name_2`
+**PR:** [#1770 — Feat: Audio device persist by name](https://github.com/LedFx/LedFx/pull/1770)
+
+| # | Task | File(s) | Status |
+|---|---|---|---|
+| 1 | Add `audio_device_name` to `AUDIO_CONFIG_SCHEMA` | `ledfx/effects/audio.py` | [x] |
+| 2 | Add `_resolve_device_from_name()` method | `ledfx/effects/audio.py` | [x] |
+| 3 | Call resolver from `update_config()` before `activate()` | `ledfx/effects/audio.py` | [x] |
+| 4 | Update `_update_device_config()` to persist name | `ledfx/effects/audio.py` | [x] |
+| 5 | Auto-persist name in `_activate_inner()` (legacy upgrade path) | `ledfx/effects/audio.py` | [x] |
+| 6 | Update API PUT to persist name | `ledfx/api/audio_devices.py` | [x] |
+| 7 | Update API GET to return name | `ledfx/api/audio_devices.py` | [x] |
+| 8 | Write unit tests (37 cases from §7) | `tests/test_audio_device_persistence.py` | [x] |
+| 9 | Run tests and verify | — | [x] |
+
+> **Session recovery:** If a session times out, read this document to restore context. The table above tracks progress. Resume from the first unchecked item.
 
 ---
 

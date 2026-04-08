@@ -30,6 +30,9 @@ class AudioDevicesEndpoint(RestEndpoint):
 
         response = {}
         response["active_device_index"] = audio_config["audio_device"]
+        response["active_device_name"] = audio_config.get(
+            "audio_device_name", ""
+        )
         response["devices"] = (
             AudioInputSource.input_devices()
         )  # dict(enumerate(input_devices))
@@ -67,6 +70,10 @@ class AudioDevicesEndpoint(RestEndpoint):
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})
         new_config["audio_device"] = int(index)
+        # Persist device name for cross-session recovery
+        devices = AudioInputSource.input_devices()
+        if index in devices:
+            new_config["audio_device_name"] = devices[index]
         self._ledfx.config["audio"] = new_config
 
         save_config(

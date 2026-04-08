@@ -122,12 +122,18 @@ class AudioInputSource:
 
     def _update_device_config(self, device_idx):
         """
-        Update device index in both local and central configs.
+        Update device index and name in both local and central configs.
 
         Args:
             device_idx: The device index to set, or None to clear
         """
         self._config["audio_device"] = device_idx
+        # Also persist the device name for cross-session recovery
+        devices = self.input_devices()
+        if device_idx is not None and device_idx in devices:
+            self._config["audio_device_name"] = devices[device_idx]
+        else:
+            self._config["audio_device_name"] = ""
         # Sync the entire audio config to central config (matches update_config pattern)
         if hasattr(self, "_ledfx") and self._ledfx:
             self._ledfx.config["audio"] = self._config
@@ -391,6 +397,7 @@ class AudioInputSource:
                 vol.Optional(
                     "audio_device", default=default_device_index
                 ): AudioInputSource.device_index_validator,
+                vol.Optional("audio_device_name", default=""): str,
                 vol.Optional(
                     "delay_ms",
                     default=0,
@@ -416,11 +423,72 @@ class AudioInputSource:
 
         self._ledfx.events.add_listener(shutdown_event, Event.LEDFX_SHUTDOWN)
 
+    def _resolve_device_from_name(self):
+        """
+        Resolve the audio device by name from config.
+        Called at startup/config-update to handle index drift across restarts.
+
+        Resolution order:
+        1. Name match at saved index (fast path, no drift)
+        2. Name match at different index (drift detected, update index)
+        3. No name stored (legacy config) — use index as-is
+        4. Name not found — fall through to existing index/default logic
+        """
+        saved_name = self._config.get("audio_device_name", "")
+        saved_idx = self._config.get("audio_device")
+
+        if not saved_name:
+            # No name stored (legacy config or first run) — use index as-is
+            return
+
+        devices = self.input_devices()
+
+        # Fast path: saved index exists and name matches
+        if saved_idx in devices and devices[saved_idx] == saved_name:
+            _LOGGER.debug(
+                "Audio device '%s' confirmed at index %s",
+                saved_name,
+                saved_idx,
+            )
+            return
+
+        # Name-based search (index has drifted)
+        found_idx = self.get_device_index_by_name(saved_name)
+
+        if found_idx != -1:
+            _LOGGER.info(
+                "Audio device '%s' moved from index %s to %s (enumeration changed)",
+                saved_name,
+                saved_idx,
+                found_idx,
+            )
+            self._config["audio_device"] = found_idx
+            # Persist the corrected index
+            if hasattr(self, "_ledfx") and self._ledfx:
+                self._ledfx.config["audio"] = self._config
+                save_config(
+                    config=self._ledfx.config,
+                    config_dir=self._ledfx.config_dir,
+                )
+            return
+
+        # Device not found by name at all
+        _LOGGER.warning(
+            "Saved audio device '%s' not found in current device list. "
+            "Falling back to index %s if valid, else default.",
+            saved_name,
+            saved_idx,
+        )
+        # Clear the stale name so we don't keep warning
+        self._config["audio_device_name"] = ""
+
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
         if AudioInputSource._audio_stream_active:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+        # Resolve device by name if available (handles index drift across restarts)
+        self._resolve_device_from_name()
 
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
@@ -690,11 +758,32 @@ class AudioInputSource:
                 _LOGGER.warning("Audio device [%s] failed: %s", dev_idx, err)
                 return False
 
+        def persist_device_name_if_needed():
+            """
+            Ensure device name is persisted for cross-session recovery.
+            Also handles seamless upgrade from legacy configs (index-only).
+            """
+            with AudioInputSource._class_lock:
+                current_name = AudioInputSource._last_device_name
+            if current_name and self._config.get("audio_device_name", "") != current_name:
+                self._config["audio_device_name"] = current_name
+                if hasattr(self, "_ledfx") and self._ledfx:
+                    self._ledfx.config["audio"] = self._config
+                    save_config(
+                        config=self._ledfx.config,
+                        config_dir=self._ledfx.config_dir,
+                    )
+                    _LOGGER.info(
+                        "Persisted audio device name '%s' for cross-session recovery",
+                        current_name,
+                    )
+
         # Audio device startup sequence:
         # PortAudio's internal state may be poisoned at startup
         # (e.g. WDM-KS devices interfere during initial enumeration).
         # Recovery: try configured → reinit + retry configured → reinit + fallback
         if try_open_device(device_idx):
+            persist_device_name_if_needed()
             return
 
         _LOGGER.info(
@@ -705,10 +794,12 @@ class AudioInputSource:
                 "Audio device [%s] opened successfully after PortAudio reinit.",
                 device_idx,
             )
+            persist_device_name_if_needed()
             return
 
         _LOGGER.info("Falling back to default device [%s]...", default_device)
         if try_open_device(default_device, reinit=True):
+            persist_device_name_if_needed()
             return
 
         _LOGGER.warning(
