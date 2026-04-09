@@ -8,7 +8,7 @@ This section contains a limited set of detailed guides for developers working wi
 gradient_extraction
 melbanks
 websocket_client_examples
-client_sync_migration_guide
+dev_notes/client_sync_migration_guide
 ```
 
 ## Related Documentation
