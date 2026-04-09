@@ -602,7 +602,7 @@ class LedFxCore:
                 )
             else:
                 _LOGGER.warning(
-                    "startup_playlist_id: %s not found.",
+                    "startup_playlist_id: %s could not be started.",
                     pid,
                 )
 
