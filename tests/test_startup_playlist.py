@@ -98,9 +98,7 @@ class TestStartupPlaylistActivation:
         # Remove playlists attribute so hasattr check triggers
         del core.playlists
 
-        with patch(
-            "ledfx.core.PlaylistManager", autospec=True
-        ) as MockPM:
+        with patch("ledfx.core.PlaylistManager", autospec=True) as MockPM:
             mock_manager = MockPM.return_value
             mock_manager.start = AsyncMock(return_value=True)
 
