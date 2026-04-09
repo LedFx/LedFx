@@ -258,9 +258,10 @@ class AudioInputSource:
     @staticmethod
     def device_index_validator(val):
         """
-        Validates device index in case the saved setting is no longer valid
+        Validates device index in case the saved setting is no longer valid.
+        Accepts None (schema default) and resolves to the default device.
         """
-        if val in AudioInputSource.valid_device_indexes():
+        if val is not None and val in AudioInputSource.valid_device_indexes():
             return val
         else:
             return AudioInputSource.default_device_index()
@@ -396,7 +397,6 @@ class AudioInputSource:
     @staticmethod
     @property
     def AUDIO_CONFIG_SCHEMA():
-        default_device_index = AudioInputSource.default_device_index()
         AudioInputSource.valid_device_indexes()
         AudioInputSource.input_devices()
         return vol.Schema(
@@ -408,7 +408,7 @@ class AudioInputSource:
                     vol.Coerce(float), vol.Range(min=0.0, max=1.0)
                 ),
                 vol.Optional(
-                    "audio_device", default=default_device_index
+                    "audio_device", default=None
                 ): AudioInputSource.device_index_validator,
                 vol.Optional("audio_device_name", default=""): str,
                 vol.Optional(
@@ -555,8 +555,8 @@ class AudioInputSource:
         input_devices = self.query_devices()
 
         hostapis = self.query_hostapis()
-        default_device = self.default_device_index()
-        if default_device is None:
+        valid_device_indexes = self.valid_device_indexes()
+        if not valid_device_indexes:
             # There are no valid audio input devices, so we can't activate the audio source.
             # We should never get here, as we check for devices on start-up.
             # This likely just captures if a device is removed after start-up.
@@ -565,7 +565,6 @@ class AudioInputSource:
             )
             self.deactivate()
             return
-        valid_device_indexes = self.valid_device_indexes()
         _LOGGER.debug("********************************************")
         _LOGGER.debug("Valid audio input devices:")
         for index in valid_device_indexes:
@@ -581,37 +580,33 @@ class AudioInputSource:
             )
         _LOGGER.debug("********************************************")
         device_idx = self._config["audio_device"]
-        _LOGGER.debug(
-            "Audio device selection: configured=%s, default=%s",
-            device_idx,
-            default_device,
-        )
 
-        if device_idx > max(valid_device_indexes):
-            _LOGGER.warning(
-                "Audio device index %s out of range (max valid: %s). "
-                "Falling back to default device index %s",
-                device_idx,
-                max(valid_device_indexes),
-                default_device,
-            )
-            device_idx = default_device
-
-        elif device_idx not in valid_device_indexes:
-            # Get device name safely (input_devices is a tuple, not dict)
-            try:
-                device_name = input_devices[device_idx].get(
-                    "name", f"index {device_idx}"
+        if device_idx not in valid_device_indexes:
+            # Configured device is invalid — resolve the default now
+            default_device = self.default_device_index()
+            if device_idx is not None and device_idx > max(valid_device_indexes):
+                _LOGGER.warning(
+                    "Audio device index %s out of range (max valid: %s). "
+                    "Falling back to default device index %s",
+                    device_idx,
+                    max(valid_device_indexes),
+                    default_device,
                 )
-            except (IndexError, KeyError):
-                device_name = f"index {device_idx}"
-            _LOGGER.warning(
-                "Audio device [%s] '%s' not in valid devices. "
-                "Falling back to default device index %s",
-                device_idx,
-                device_name,
-                default_device,
-            )
+            else:
+                # Get device name safely (input_devices is a tuple, not dict)
+                try:
+                    device_name = input_devices[device_idx].get(
+                        "name", f"index {device_idx}"
+                    )
+                except (IndexError, KeyError, TypeError):
+                    device_name = f"index {device_idx}"
+                _LOGGER.warning(
+                    "Audio device [%s] '%s' not in valid devices. "
+                    "Falling back to default device index %s",
+                    device_idx,
+                    device_name,
+                    default_device,
+                )
             device_idx = default_device
 
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
@@ -821,8 +816,11 @@ class AudioInputSource:
             persist_device_name_if_needed()
             return
 
-        _LOGGER.info("Falling back to default device [%s]...", default_device)
-        if try_open_device(default_device, reinit=True):
+        fallback_device = self.default_device_index()
+        _LOGGER.info("Falling back to default device [%s]...", fallback_device)
+        if fallback_device is not None and try_open_device(
+            fallback_device, reinit=True
+        ):
             persist_device_name_if_needed()
             return
 
