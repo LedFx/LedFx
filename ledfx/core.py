@@ -41,6 +41,7 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.mdns_manager import ZeroConfRunner
+from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.tools.ts_generator import generate_typescript_types
@@ -580,6 +581,21 @@ class LedFxCore:
                 _LOGGER.warning(
                     "startup_scene_id: %s not found.",
                     self.config["startup_scene_id"],
+                )
+
+        if self.config["startup_playlist_id"] != "":
+            if not hasattr(self, "playlists"):
+                self.playlists = PlaylistManager(self)
+            pid = self.config["startup_playlist_id"]
+            if await self.playlists.start(pid):
+                _LOGGER.info(
+                    "startup_playlist_id: %s started.",
+                    pid,
+                )
+            else:
+                _LOGGER.warning(
+                    "startup_playlist_id: %s not found.",
+                    pid,
                 )
 
         if pause_all:

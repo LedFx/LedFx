@@ -56,6 +56,7 @@ PERMITTED_KEYS = {
         "flush_on_deactivate",
         "ui_brightness_boost",
         "startup_scene_id",
+        "startup_playlist_id",
         "lifx_broadcast_address",
         "lifx_discovery_timeout",
     ),
