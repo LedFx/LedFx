@@ -41,6 +41,7 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.mdns_manager import ZeroConfRunner
+from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.tools.ts_generator import generate_typescript_types
@@ -582,9 +583,28 @@ class LedFxCore:
                     self.config["startup_scene_id"],
                 )
 
+        await self._handle_startup_playlist()
+
         if pause_all:
             # pause at the virtuals level
             self.virtuals.pause_all()
+
+    async def _handle_startup_playlist(self):
+        """Activate the configured startup playlist, if any."""
+        if self.config["startup_playlist_id"] != "":
+            if not hasattr(self, "playlists"):
+                self.playlists = PlaylistManager(self)
+            pid = self.config["startup_playlist_id"]
+            if await self.playlists.start(pid):
+                _LOGGER.info(
+                    "startup_playlist_id: %s started.",
+                    pid,
+                )
+            else:
+                _LOGGER.warning(
+                    "startup_playlist_id: %s could not be started.",
+                    pid,
+                )
 
     def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)

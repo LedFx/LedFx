@@ -1151,7 +1151,7 @@ wheels = [
 
 [[package]]
 name = "ledfx"
-version = "2.1.6"
+version = "2.1.7"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -2779,8 +2779,8 @@ name = "python-mbedtls"
 version = "2.9.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "certifi" },
-    { name = "typing-extensions" },
+    { name = "certifi", marker = "python_full_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/88/b7/b926727e3433ca2072e61572a36229ac21ebd46b0dca320d1c09f6fcd108/python-mbedtls-2.9.2.tar.gz", hash = "sha256:f541ccd23da2722724fd026c707a652883c497fe67340a8f1adb6ac73c487b31", size = 105334, upload-time = "2024-02-18T10:49:20.438Z" }
 wheels = [
