@@ -584,7 +584,9 @@ class AudioInputSource:
         if device_idx not in valid_device_indexes:
             # Configured device is invalid — resolve the default now
             default_device = self.default_device_index()
-            if device_idx is not None and device_idx > max(valid_device_indexes):
+            if device_idx is not None and device_idx > max(
+                valid_device_indexes
+            ):
                 _LOGGER.warning(
                     "Audio device index %s out of range (max valid: %s). "
                     "Falling back to default device index %s",
