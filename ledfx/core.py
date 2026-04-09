@@ -583,6 +583,14 @@ class LedFxCore:
                     self.config["startup_scene_id"],
                 )
 
+        await self._handle_startup_playlist()
+
+        if pause_all:
+            # pause at the virtuals level
+            self.virtuals.pause_all()
+
+    async def _handle_startup_playlist(self):
+        """Activate the configured startup playlist, if any."""
         if self.config["startup_playlist_id"] != "":
             if not hasattr(self, "playlists"):
                 self.playlists = PlaylistManager(self)
@@ -597,10 +605,6 @@ class LedFxCore:
                     "startup_playlist_id: %s not found.",
                     pid,
                 )
-
-        if pause_all:
-            # pause at the virtuals level
-            self.virtuals.pause_all()
 
     def stop(self, exit_code):
         async_fire_and_forget(self.async_stop(exit_code), self.loop)

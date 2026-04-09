@@ -1,11 +1,12 @@
 """Tests for startup_playlist_id configuration and activation logic."""
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ledfx.config import CORE_CONFIG_SCHEMA
+from ledfx.api.utils import PERMITTED_KEYS
+from ledfx.config import CORE_CONFIG_KEYS_NO_RESTART, CORE_CONFIG_SCHEMA
+from ledfx.core import LedFxCore
 
 
 class TestStartupPlaylistConfig:
@@ -20,22 +21,19 @@ class TestStartupPlaylistConfig:
         assert config["startup_playlist_id"] == "my-playlist"
 
     def test_present_in_no_restart_keys(self):
-        from ledfx.config import CORE_CONFIG_KEYS_NO_RESTART
-
         assert "startup_playlist_id" in CORE_CONFIG_KEYS_NO_RESTART
 
     def test_present_in_api_permitted_keys(self):
-        from ledfx.api.utils import PERMITTED_KEYS
-
         assert "startup_playlist_id" in PERMITTED_KEYS["core"]
 
 
 class TestStartupPlaylistActivation:
-    """Test startup playlist activation logic in core startup flow."""
+    """Test startup playlist activation logic via LedFxCore._handle_startup_playlist."""
 
     @pytest.fixture
-    def mock_core(self):
-        core = MagicMock()
+    def core(self):
+        """Create a minimal LedFxCore-like object with _handle_startup_playlist."""
+        core = MagicMock(spec=LedFxCore)
         core.config = {
             "startup_scene_id": "",
             "startup_playlist_id": "test-playlist",
@@ -60,45 +58,53 @@ class TestStartupPlaylistActivation:
         }
         core.config_dir = ""
         core.events = MagicMock()
+        # Bind the real helper so the production logic is exercised
+        core._handle_startup_playlist = (
+            LedFxCore._handle_startup_playlist.__get__(core, LedFxCore)
+        )
         return core
 
     @pytest.mark.asyncio
-    async def test_startup_playlist_starts_when_configured(self, mock_core):
-        from ledfx.playlists import PlaylistManager
+    async def test_startup_playlist_starts_when_configured(self, core):
+        core.playlists = MagicMock()
+        core.playlists.start = AsyncMock(return_value=True)
 
-        manager = PlaylistManager(mock_core)
-        manager.start = AsyncMock(return_value=True)
+        await core._handle_startup_playlist()
 
-        # Simulate the core.py startup logic
-        pid = mock_core.config["startup_playlist_id"]
-        assert pid != ""
-        result = await manager.start(pid)
-        assert result is True
-        manager.start.assert_called_once_with("test-playlist")
+        core.playlists.start.assert_called_once_with("test-playlist")
 
     @pytest.mark.asyncio
-    async def test_startup_playlist_skipped_when_empty(self, mock_core):
-        mock_core.config["startup_playlist_id"] = ""
+    async def test_startup_playlist_skipped_when_empty(self, core):
+        core.config["startup_playlist_id"] = ""
+        core.playlists = MagicMock()
+        core.playlists.start = AsyncMock(return_value=True)
 
-        from ledfx.playlists import PlaylistManager
+        await core._handle_startup_playlist()
 
-        manager = PlaylistManager(mock_core)
-        manager.start = AsyncMock(return_value=True)
-
-        pid = mock_core.config["startup_playlist_id"]
-        # Should not start when empty string
-        assert pid == ""
-        manager.start.assert_not_called()
+        core.playlists.start.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_startup_playlist_warns_when_not_found(self, mock_core):
-        mock_core.config["startup_playlist_id"] = "nonexistent"
+    async def test_startup_playlist_warns_when_not_found(self, core):
+        core.config["startup_playlist_id"] = "nonexistent"
+        core.playlists = MagicMock()
+        core.playlists.start = AsyncMock(return_value=False)
 
-        from ledfx.playlists import PlaylistManager
+        await core._handle_startup_playlist()
 
-        manager = PlaylistManager(mock_core)
-        manager.start = AsyncMock(return_value=False)
+        core.playlists.start.assert_called_once_with("nonexistent")
 
-        pid = mock_core.config["startup_playlist_id"]
-        result = await manager.start(pid)
-        assert result is False
+    @pytest.mark.asyncio
+    async def test_creates_playlist_manager_if_missing(self, core):
+        # Remove playlists attribute so hasattr check triggers
+        del core.playlists
+
+        with patch(
+            "ledfx.core.PlaylistManager", autospec=True
+        ) as MockPM:
+            mock_manager = MockPM.return_value
+            mock_manager.start = AsyncMock(return_value=True)
+
+            await core._handle_startup_playlist()
+
+            MockPM.assert_called_once_with(core)
+            mock_manager.start.assert_called_once_with("test-playlist")
