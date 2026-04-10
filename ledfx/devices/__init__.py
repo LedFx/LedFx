@@ -837,6 +837,8 @@ class Devices(RegistryLoader):
                 if "ip_address" in existing_device.config.keys() and (
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
+                    or resolved_dest
+                    == getattr(existing_device, "_destination", None)
                 ):
                     self.run_device_ip_tests(
                         device_type, device_config, existing_device
@@ -1001,6 +1003,7 @@ class Devices(RegistryLoader):
             ValueError: if the devices cannot coexist due to a hard failure
         """
         for test in [
+            self.is_wled_duplicate,
             self.is_universe_separated,
             self.is_openrgb_id_separated,
             self.is_osc_port_path_separated,
@@ -1029,6 +1032,22 @@ class Devices(RegistryLoader):
         ):
             if result:
                 return
+
+        # No test explicitly approved coexistence - reject by default
+        msg = f"Ignoring {new_config.get('ip_address', 'unknown')}: Shares IP with existing device {pre_device.name} and no coexistence rule matched"
+        _LOGGER.info(msg)
+        raise ValueError(msg)
+
+    def is_wled_duplicate(self, new_type, new_config, pre_device):
+        """
+        Check if the new WLED device is a duplicate of an existing WLED device
+        on the same IP address.
+        """
+        if new_type == "wled" and pre_device.type == "wled":
+            msg = f"Ignoring {new_config['ip_address']}: WLED device already exists as {pre_device.name}"
+            _LOGGER.info(msg)
+            raise ValueError(msg)
+        return False
 
     def is_universe_separated(self, new_type, new_config, pre_device):
         """
