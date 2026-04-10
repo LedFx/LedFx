@@ -29,6 +29,15 @@ MIN_MIDI = 21
 MAX_MIDI = 108
 
 
+def _stream_stop_worker(stream):
+    """Target for the timeout thread in _close_stream.
+    Calls stream.stop() which may block indefinitely on some drivers."""
+    try:
+        stream.stop()
+    except Exception:
+        pass  # Caller will fall back to abort()
+
+
 class AudioInputSource:
     _audio_stream_active = False
     _audio = None
@@ -46,6 +55,81 @@ class AudioInputSource:
     _device_list_cache = None  # Cache for device list
     _class_lock = threading.Lock()  # Class-level lock for shared state
     _activating = False  # Re-entry guard for activate()
+
+    # Timeout for graceful stream stop before falling back to abort
+    _STREAM_STOP_TIMEOUT_S = 3.0
+
+    @staticmethod
+    def _close_stream(stream, context=""):
+        """
+        Defensively close a PortAudio stream with timeout-guarded stop()
+        and abort() fallback.
+
+        Some Windows WASAPI drivers hang in Pa_StopStream when the device
+        is being unplugged.  This helper prevents the caller from blocking
+        indefinitely and ensures PortAudio is left in a safe state for a
+        subsequent _terminate()/_initialize() cycle.
+
+        Args:
+            stream: The sounddevice InputStream (or WebAudioStream / SendspinAudioStream)
+                    to close. May be None (no-op).
+            context: Short label for log messages (e.g. "refresh", "deactivate").
+        """
+        if stream is None:
+            return
+
+        prefix = f"[{context}] " if context else ""
+
+        # 1. Attempt graceful stop with a timeout
+        stop_ok = False
+        stop_thread = threading.Thread(
+            target=_stream_stop_worker,
+            args=(stream,),
+            daemon=True,
+        )
+        _LOGGER.debug("%sRequesting stream stop...", prefix)
+        stop_thread.start()
+        stop_thread.join(timeout=AudioInputSource._STREAM_STOP_TIMEOUT_S)
+
+        if stop_thread.is_alive():
+            _LOGGER.warning(
+                "%sstream.stop() did not return within %.1fs — "
+                "attempting abort()",
+                prefix,
+                AudioInputSource._STREAM_STOP_TIMEOUT_S,
+            )
+            # 2. abort() is Pa_AbortStream — immediate, does not wait for
+            #    the callback to finish.
+            try:
+                if hasattr(stream, "abort"):
+                    stream.abort()
+                    _LOGGER.info("%sStream aborted successfully", prefix)
+                    stop_ok = True
+                else:
+                    _LOGGER.warning(
+                        "%sStream has no abort() method; "
+                        "proceeding to close()",
+                        prefix,
+                    )
+            except Exception as e:
+                _LOGGER.warning("%sstream.abort() failed: %s", prefix, e)
+        else:
+            _LOGGER.debug("%sStream stopped gracefully", prefix)
+            stop_ok = True
+
+        # 3. close() releases the PortAudio stream handle.
+        try:
+            stream.close()
+            _LOGGER.debug("%sStream closed", prefix)
+        except Exception as e:
+            _LOGGER.warning("%sstream.close() failed: %s", prefix, e)
+
+        if not stop_ok:
+            _LOGGER.warning(
+                "%sStream may not have stopped cleanly — "
+                "PortAudio reinit recommended",
+                prefix,
+            )
 
     @staticmethod
     def refresh_device_list():
@@ -97,14 +181,11 @@ class AudioInputSource:
 
             # Close outside lock to avoid deadlock with audio callbacks
             if stream_to_close:
-                try:
-                    stream_to_close.stop()
-                    stream_to_close.close()
-                except Exception as e:
-                    _LOGGER.warning(
-                        "Error closing stream during refresh: %s", e
-                    )
+                AudioInputSource._close_stream(
+                    stream_to_close, context="refresh"
+                )
 
+            _LOGGER.debug("Cycling PortAudio for device rescan...")
             try:
                 # Force PortAudio to rescan devices by terminating and reinitializing
                 sd._terminate()
@@ -842,10 +923,11 @@ class AudioInputSource:
                 AudioInputSource._stream = None
             AudioInputSource._audio_stream_active = False
 
-        # Stop/close outside the lock
+        # Stop/close outside the lock — uses timeout + abort() fallback
         if stream_to_close:
-            stream_to_close.stop()
-            stream_to_close.close()
+            AudioInputSource._close_stream(
+                stream_to_close, context="deactivate"
+            )
             _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
