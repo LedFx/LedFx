@@ -58,7 +58,9 @@ class AudioInputSource:
 
     # Hotplug refresh coalescing state (all guarded by _class_lock)
     _refresh_in_progress = False  # True while a refresh cycle is executing
-    _refresh_pending = False  # True if another refresh should run after current
+    _refresh_pending = (
+        False  # True if another refresh should run after current
+    )
     _refresh_generation = 0  # Monotonic counter: identifies each refresh cycle
 
     # Stream identity / callback staleness detection (guarded by _class_lock)
@@ -153,7 +155,9 @@ class AudioInputSource:
                 if hasattr(stream, "abort"):
                     stream.abort()
                     _LOGGER.info(
-                        "%sStream id=%s aborted successfully", prefix, stream_id
+                        "%sStream id=%s aborted successfully",
+                        prefix,
+                        stream_id,
                     )
                     stop_ok = True
                 else:
@@ -167,7 +171,9 @@ class AudioInputSource:
                     "%sstream.abort() id=%s failed: %s", prefix, stream_id, e
                 )
         else:
-            _LOGGER.debug("%sStream id=%s stopped gracefully", prefix, stream_id)
+            _LOGGER.debug(
+                "%sStream id=%s stopped gracefully", prefix, stream_id
+            )
             stop_ok = True
 
         # 3. close() releases the PortAudio stream handle.
@@ -206,7 +212,9 @@ class AudioInputSource:
             bool: True if an audio stream was active before refresh (and should be reactivated),
                   False otherwise
         """
-        gen_tag = f"Audio refresh {gen}: " if gen is not None else "Audio refresh: "
+        gen_tag = (
+            f"Audio refresh {gen}: " if gen is not None else "Audio refresh: "
+        )
 
         # Wait for any in-progress activation to complete before touching
         # PortAudio.  Setting _activating = True also blocks concurrent
@@ -265,9 +273,13 @@ class AudioInputSource:
                 sd._initialize()
                 # Clear the device list cache
                 AudioInputSource._device_list_cache = None
-                _LOGGER.info("%sPortAudio reinitialized, device list refreshed", gen_tag)
+                _LOGGER.info(
+                    "%sPortAudio reinitialized, device list refreshed", gen_tag
+                )
             except Exception as e:
-                _LOGGER.warning("%sFailed to refresh audio device list: %s", gen_tag, e)
+                _LOGGER.warning(
+                    "%sFailed to refresh audio device list: %s", gen_tag, e
+                )
 
             return was_active
         finally:

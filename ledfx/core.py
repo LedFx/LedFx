@@ -214,7 +214,9 @@ class LedFxCore:
         # Fire LedFx event for any listeners (e.g., websocket notifications)
         self.events.fire_event(AudioDeviceListChangedEvent())
 
-        _LOGGER.debug("Audio device list event dispatched to websocket listeners")
+        _LOGGER.debug(
+            "Audio device list event dispatched to websocket listeners"
+        )
 
     def _load_sendspin_servers(self):
         """Load Sendspin server configurations from config into the audio system."""

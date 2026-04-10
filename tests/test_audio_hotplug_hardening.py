@@ -273,7 +273,9 @@ class TestCallbackGenerationGuard(unittest.TestCase):
 
         self.ais._audio_sample_callback(dummy_data, out_len, None, None)
 
-        self.assertEqual(len(processed), 1, "Frame from current gen should be processed")
+        self.assertEqual(
+            len(processed), 1, "Frame from current gen should be processed"
+        )
 
     def test_stale_generation_discards_frame(self):
         """
@@ -300,7 +302,9 @@ class TestCallbackGenerationGuard(unittest.TestCase):
 
         self.ais._audio_sample_callback(dummy_data, out_len, None, None)
 
-        self.assertEqual(len(processed), 0, "Stale callback must not process data")
+        self.assertEqual(
+            len(processed), 0, "Stale callback must not process data"
+        )
         self.ais._invoke_callbacks.assert_not_called()
 
 
@@ -339,6 +343,7 @@ class TestMalformedFrameRateLimit(unittest.TestCase):
         exactly one debug log, not 10.
         """
         import numpy as np
+
         from ledfx.effects.melbank import MIC_RATE
 
         # Wrong size — will be malformed after resampler returns different length
@@ -424,7 +429,11 @@ class TestCloseStreamFallback(unittest.TestCase):
         AudioInputSource._STREAM_STOP_TIMEOUT_S = 0.1
         try:
             AudioInputSource._close_stream(
-                stream, context="test", gen=7, device_name="WedgeDev", device_idx=2
+                stream,
+                context="test",
+                gen=7,
+                device_name="WedgeDev",
+                device_idx=2,
             )
         finally:
             AudioInputSource._STREAM_STOP_TIMEOUT_S = orig_timeout
@@ -476,7 +485,11 @@ class TestCloseStreamFallback(unittest.TestCase):
         try:
             with patch("ledfx.effects.audio._LOGGER") as mock_logger:
                 AudioInputSource._close_stream(
-                    stream, context="test", gen=42, device_name="Dev", device_idx=3
+                    stream,
+                    context="test",
+                    gen=42,
+                    device_name="Dev",
+                    device_idx=3,
                 )
                 warning_messages = [
                     str(c) for c in mock_logger.warning.call_args_list
@@ -541,7 +554,9 @@ class TestRefreshRerunOnce(unittest.TestCase):
         # Allow the follow-up thread (gen=2) to finish
         time.sleep(0.3)
 
-        self.assertEqual(gens_executed, [1, 2], f"Expected [1, 2], got {gens_executed}")
+        self.assertEqual(
+            gens_executed, [1, 2], f"Expected [1, 2], got {gens_executed}"
+        )
 
 
 if __name__ == "__main__":
