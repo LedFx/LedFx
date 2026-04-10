@@ -837,7 +837,8 @@ class Devices(RegistryLoader):
                 if "ip_address" in existing_device.config.keys() and (
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
-                    or resolved_dest == getattr(existing_device, "_destination", None)
+                    or resolved_dest
+                    == getattr(existing_device, "_destination", None)
                 ):
                     self.run_device_ip_tests(
                         device_type, device_config, existing_device
