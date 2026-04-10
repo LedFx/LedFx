@@ -7,6 +7,7 @@ from tests.conftest import all_effects, audio_configs
 from tests.test_definitions.coexistance import coexistance_tests
 from tests.test_definitions.devices import device_tests
 from tests.test_definitions.effects import effect_tests
+from tests.test_definitions.lifx import lifx_tests
 from tests.test_definitions.log import log_api_tests
 from tests.test_definitions.preset_delete import preset_delete_tests
 from tests.test_definitions.proof_of_life import proof_of_life_tests
@@ -40,6 +41,7 @@ test_groups = [
     ("coexistance_tests", coexistance_tests),
     ("log_api_tests", log_api_tests),
     ("preset_delete_tests", preset_delete_tests),
+    ("lifx_tests", lifx_tests),
 ]
 
 # Define a list of all test cases
