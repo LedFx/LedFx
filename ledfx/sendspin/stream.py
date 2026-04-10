@@ -139,7 +139,9 @@ class SendspinAudioStream:
                 audio_float32 = self._convert_to_float32_mono(
                     chunk_data, audio_format
                 )
-                self._schedule_mono_samples(audio_float32, play_time_us, sample_rate)
+                self._schedule_mono_samples(
+                    audio_float32, play_time_us, sample_rate
+                )
 
         except Exception as e:
             _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
@@ -309,7 +311,8 @@ class SendspinAudioStream:
                 decoder.process(codec_header)
             except Exception as e:
                 _LOGGER.warning(
-                    "pyFLAC: ignoring error while processing stream header: %s", e
+                    "pyFLAC: ignoring error while processing stream header: %s",
+                    e,
                 )
 
         _LOGGER.info(
@@ -371,7 +374,9 @@ class SendspinAudioStream:
             else:
                 mono = audio.flatten().astype(np.float32) / scale
 
-            self._schedule_mono_samples(mono, current_play_time_us, sample_rate)
+            self._schedule_mono_samples(
+                mono, current_play_time_us, sample_rate
+            )
             self._flac_pending_samples_emitted += num_samples
 
         except Exception as e:
