@@ -2,6 +2,7 @@ import logging
 import queue
 import threading
 import time
+import weakref
 from collections import deque
 from functools import cached_property, lru_cache
 
@@ -29,13 +30,28 @@ MIN_MIDI = 21
 MAX_MIDI = 108
 
 
-def _stream_stop_worker(stream):
+def _stream_stop_worker(stream_ref, stop_result):
     """Target for the timeout thread in _close_stream.
-    Calls stream.stop() which may block indefinitely on some drivers."""
+    Accepts a weakref to the stream so that a hung thread does not keep a
+    strong reference to the stream object after _close_stream returns.
+    Dereferences the weakref at entry; if the stream has already been
+    collected (e.g. close() raced ahead), marks stop as succeeded and
+    returns immediately.  Records any exception into
+    stop_result["stop_error"] so _close_stream can detect failures even
+    when stop() returns promptly."""
+    stream = stream_ref()
+    if stream is None:
+        # Stream was already collected — nothing to stop.
+        stop_result["stopped"] = True
+        return
     try:
         stream.stop()
-    except Exception:
-        pass  # Caller will fall back to abort()
+        stop_result["stopped"] = True
+    except Exception as exc:
+        stop_result["stopped"] = False
+        stop_result["stop_error"] = exc
+    finally:
+        stream = None  # Drop strong ref so GC is not blocked by this thread
 
 
 class AudioInputSource:
@@ -71,6 +87,8 @@ class AudioInputSource:
 
     # Timeout for graceful stream stop before falling back to abort
     _STREAM_STOP_TIMEOUT_S = 3.0
+    # Additional timeout after abort()+close() for the stop thread to exit
+    _STREAM_ABORT_TIMEOUT_S = 1.0
 
     @staticmethod
     def _close_stream(
@@ -130,9 +148,11 @@ class AudioInputSource:
         #    (seen on some Windows WASAPI loopback drivers during unplug)
         #    does not keep the caller blocked.
         stop_ok = False
+        stop_result = {"stopped": False, "stop_error": None}
+        stream_ref = weakref.ref(stream)
         stop_thread = threading.Thread(
             target=_stream_stop_worker,
-            args=(stream,),
+            args=(stream_ref, stop_result),
             daemon=True,
         )
         stop_thread.start()
@@ -147,6 +167,16 @@ class AudioInputSource:
                 stream_id,
                 device_hint,
             )
+        elif stop_result["stop_error"] is not None:
+            _LOGGER.warning(
+                "%sstream.stop() raised an exception (id=%s%s): %s — "
+                "attempting abort()",
+                prefix,
+                stream_id,
+                device_hint,
+                stop_result["stop_error"],
+            )
+        if stop_thread.is_alive() or stop_result["stop_error"] is not None:
             # 2. abort() is Pa_AbortStream — immediate, does not wait for
             #    the callback to finish.  After abort(), any still-running
             #    stop() in the worker thread should eventually return (or
@@ -176,6 +206,7 @@ class AudioInputSource:
             )
             stop_ok = True
 
+
         # 3. close() releases the PortAudio stream handle.
         try:
             stream.close()
@@ -183,6 +214,21 @@ class AudioInputSource:
         except Exception as e:
             _LOGGER.warning(
                 "%sstream.close() id=%s failed: %s", prefix, stream_id, e
+            )
+
+        # 4. Second bounded join: after abort()+close() the stop thread
+        #    should unblock promptly.  If it is still alive after this
+        #    extra wait, log a persistent-hang warning and proceed — do
+        #    not spawn further fire-and-forget threads for this close path.
+        stop_thread.join(timeout=AudioInputSource._STREAM_ABORT_TIMEOUT_S)
+        if stop_thread.is_alive():
+            _LOGGER.warning(
+                "%sStop thread for stream id=%s%s is still alive after "
+                "abort()+close() — the thread will be reclaimed by the OS "
+                "at process exit; proceeding",
+                prefix,
+                stream_id,
+                device_hint,
             )
 
         if not stop_ok:
