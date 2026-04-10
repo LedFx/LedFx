@@ -79,10 +79,25 @@ This assumes an apt based system such as ubuntu. If your system uses another pac
 
     ```console
     $ sudo apt install libatlas3-base \
-          libavformat58 \
           portaudio19-dev \
           pulseaudio \
-          cmake \
+          cmake
+    ```
+
+2. The libavformat dependancy either need the specific lib according to your OS and release version or just install ffmpeg
+
+    ```console
+    $ apt-cache search libavformat
+    ```
+
+    Look for the relevant lib of the format libavformatXX, for example
+
+    libavformat60 - FFmpeg library with (de)muxers for multimedia containers - runtime files
+
+    Install that specific generation
+
+    ```console
+    $ sudo apt install libavformatXX
     ```
 
 ### macOS Specific Steps {#macos-dev}
