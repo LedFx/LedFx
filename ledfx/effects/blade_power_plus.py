@@ -55,8 +55,6 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
 
     def on_activate(self, pixel_count):
         self.bar = 0
-        self.hsv_array[:, 0] = np.linspace(0, 1, self.pixel_count)
-        self.hsv_array[:, 1] = 1
 
     def config_updated(self, config):
         self.power_func = self.POWER_FUNCS_MAPPING[
@@ -70,6 +68,8 @@ class BladePowerPlus(AudioReactiveEffect, HSVEffect):
         )
 
     def render_hsv(self):
+        self.hsv_array[:, 0] = np.linspace(0, 1, self.pixel_count)
+        self.hsv_array[:, 1] = 1
         # Must be zeroed every cycle to clear the previous frame
         bar_idx = int(self.bar * self.pixel_count)
         self.hsv_array[:, 2] *= self._config["decay"] / 2 + 0.45
