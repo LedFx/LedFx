@@ -206,7 +206,6 @@ class AudioInputSource:
             )
             stop_ok = True
 
-
         # 3. close() releases the PortAudio stream handle.
         try:
             stream.close()
