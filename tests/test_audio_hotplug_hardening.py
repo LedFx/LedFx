@@ -13,15 +13,15 @@ What is NOT tested (acceptable limitations):
 - Windows WASAPI loopback hang simulation requires a real or mock PortAudio driver
 """
 
-import numpy as np
 import threading
 import time
 import unittest
 from unittest.mock import MagicMock, patch
 
+import numpy as np
+
 from ledfx.effects.audio import AudioInputSource
 from ledfx.effects.melbank import MIC_RATE
-
 
 # ---------------------------------------------------------------------------
 # Helpers
