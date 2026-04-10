@@ -13,13 +13,15 @@ What is NOT tested (acceptable limitations):
 - Windows WASAPI loopback hang simulation requires a real or mock PortAudio driver
 """
 
+import numpy as np
 import threading
 import time
-import types
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from ledfx.effects.audio import AudioInputSource
+from ledfx.effects.melbank import MIC_RATE
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -227,7 +229,6 @@ class TestCallbackGenerationGuard(unittest.TestCase):
         _reset_class_state()
         self.ais = make_ais_bare()
         # Minimal attributes needed by _audio_sample_callback
-        import numpy as np
 
         self.ais._config = {
             "sample_rate": 60,
@@ -245,7 +246,6 @@ class TestCallbackGenerationGuard(unittest.TestCase):
         A callback from the current stream generation must be forwarded to
         pre_process_audio() / _invoke_callbacks().
         """
-        import numpy as np
 
         # Align generations
         AudioInputSource._stream_generation = 3
@@ -261,7 +261,6 @@ class TestCallbackGenerationGuard(unittest.TestCase):
         self.ais._invoke_callbacks = MagicMock()
 
         # Expected sample count for sample_rate=60, MIC_RATE=44100
-        from ledfx.effects.melbank import MIC_RATE
 
         out_len = MIC_RATE // 60  # = 735
         dummy_data = np.zeros(out_len, dtype=np.float32).tobytes()
@@ -280,7 +279,6 @@ class TestCallbackGenerationGuard(unittest.TestCase):
         A callback whose _callback_stream_gen is behind the current
         _stream_generation must be silently discarded.
         """
-        import numpy as np
 
         AudioInputSource._stream_generation = 5
         self.ais._callback_stream_gen = 3  # stale
@@ -292,8 +290,6 @@ class TestCallbackGenerationGuard(unittest.TestCase):
 
         self.ais.pre_process_audio = fake_pre_process
         self.ais._invoke_callbacks = MagicMock()
-
-        from ledfx.effects.melbank import MIC_RATE
 
         out_len = MIC_RATE // 60
         dummy_data = np.zeros(out_len, dtype=np.float32).tobytes()
@@ -318,7 +314,6 @@ class TestMalformedFrameRateLimit(unittest.TestCase):
     def setUp(self):
         _reset_class_state()
         self.ais = make_ais_bare()
-        import numpy as np
 
         self.ais._config = {
             "sample_rate": 60,
@@ -338,8 +333,6 @@ class TestMalformedFrameRateLimit(unittest.TestCase):
         Sending 10 malformed frames in the same generation should produce
         exactly one debug log, not 10.
         """
-        import numpy as np
-        from ledfx.effects.melbank import MIC_RATE
 
         # Wrong size — will be malformed after resampler returns different length
         out_len = MIC_RATE // 60  # expected
