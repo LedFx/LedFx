@@ -120,22 +120,41 @@ class AudioInputSource:
             with AudioInputSource._class_lock:
                 AudioInputSource._activating = False
 
+    def _persist_config(self):
+        """
+        Sync audio config to central config and persist to disk.
+        No-op when _ledfx is not available (e.g. in tests).
+        Returns True on success, False on failure or unavailable.
+        """
+        if not (hasattr(self, "_ledfx") and self._ledfx):
+            return False
+        self._ledfx.config["audio"] = self._config
+        try:
+            save_config(
+                config=self._ledfx.config,
+                config_dir=self._ledfx.config_dir,
+            )
+            return True
+        except Exception as e:
+            _LOGGER.warning("Failed to persist audio config: %s", e)
+            return False
+
     def _update_device_config(self, device_idx):
         """
-        Update device index in both local and central configs.
+        Update device index and name in both local and central configs.
 
         Args:
             device_idx: The device index to set, or None to clear
         """
         self._config["audio_device"] = device_idx
-        # Sync the entire audio config to central config (matches update_config pattern)
-        if hasattr(self, "_ledfx") and self._ledfx:
-            self._ledfx.config["audio"] = self._config
-            # Persist to disk so recovered device survives restarts
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+        # Also persist the device name for cross-session recovery
+        devices = self.input_devices()
+        if device_idx is not None and device_idx in devices:
+            self._config["audio_device_name"] = devices[device_idx]
+        else:
+            self._config["audio_device_name"] = ""
+        # Persist to disk so recovered device survives restarts
+        self._persist_config()
 
     def handle_device_list_change(self):
         """
@@ -239,9 +258,10 @@ class AudioInputSource:
     @staticmethod
     def device_index_validator(val):
         """
-        Validates device index in case the saved setting is no longer valid
+        Validates device index in case the saved setting is no longer valid.
+        Accepts None (schema default) and resolves to the default device.
         """
-        if val in AudioInputSource.valid_device_indexes():
+        if val is not None and val in AudioInputSource.valid_device_indexes():
             return val
         else:
             return AudioInputSource.default_device_index()
@@ -377,7 +397,6 @@ class AudioInputSource:
     @staticmethod
     @property
     def AUDIO_CONFIG_SCHEMA():
-        default_device_index = AudioInputSource.default_device_index()
         AudioInputSource.valid_device_indexes()
         AudioInputSource.input_devices()
         return vol.Schema(
@@ -389,8 +408,9 @@ class AudioInputSource:
                     vol.Coerce(float), vol.Range(min=0.0, max=1.0)
                 ),
                 vol.Optional(
-                    "audio_device", default=default_device_index
+                    "audio_device", default=None
                 ): AudioInputSource.device_index_validator,
+                vol.Optional("audio_device_name", default=""): str,
                 vol.Optional(
                     "delay_ms",
                     default=0,
@@ -416,11 +436,74 @@ class AudioInputSource:
 
         self._ledfx.events.add_listener(shutdown_event, Event.LEDFX_SHUTDOWN)
 
+    def _resolve_device_from_name(self):
+        """
+        Resolve the audio device by name from config.
+        Called at startup/config-update to handle index drift across restarts.
+
+        Resolution order:
+        1. Name match at saved index (fast path, no drift)
+        2. Name match at different index (drift detected, update index)
+        3. No name stored (legacy config) — use index as-is
+        4. Name not found — fall through to existing index/default logic
+        """
+        saved_name = self._config.get("audio_device_name", "")
+        saved_idx = self._config.get("audio_device")
+
+        if not saved_name:
+            # No name stored (legacy config or first run) — use index as-is
+            return
+
+        devices = self.input_devices()
+
+        # Fast path: saved index exists and name matches
+        if saved_idx in devices and devices[saved_idx] == saved_name:
+            _LOGGER.debug(
+                "Audio device '%s' confirmed at index %s",
+                saved_name,
+                saved_idx,
+            )
+            return
+
+        # Name-based search (index has drifted)
+        found_idx = self.get_device_index_by_name(saved_name)
+
+        if found_idx != -1:
+            _LOGGER.info(
+                "Audio device '%s' moved from index %s to %s (enumeration changed)",
+                saved_name,
+                saved_idx,
+                found_idx,
+            )
+            self._config["audio_device"] = found_idx
+            # Persist the corrected index
+            self._persist_config()
+            return
+
+        # Device not found by name at all — reset to default so we don't
+        # silently open a different device that now occupies the stale index.
+        default_idx = self.default_device_index()
+        _LOGGER.warning(
+            "Saved audio device '%s' not found in current device list. "
+            "Resetting to default device (index %s).",
+            saved_name,
+            default_idx,
+        )
+        self._config["audio_device"] = default_idx
+        self._config["audio_device_name"] = ""
+        # Clear runtime tracking so hotplug won't try to recover the old device
+        with AudioInputSource._class_lock:
+            AudioInputSource._last_device_name = None
+            AudioInputSource._last_active = None
+        self._persist_config()
+
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
         if AudioInputSource._audio_stream_active:
             self.deactivate()
         self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+        # Resolve device by name if available (handles index drift across restarts)
+        self._resolve_device_from_name()
 
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
@@ -472,8 +555,8 @@ class AudioInputSource:
         input_devices = self.query_devices()
 
         hostapis = self.query_hostapis()
-        default_device = self.default_device_index()
-        if default_device is None:
+        valid_device_indexes = self.valid_device_indexes()
+        if not valid_device_indexes:
             # There are no valid audio input devices, so we can't activate the audio source.
             # We should never get here, as we check for devices on start-up.
             # This likely just captures if a device is removed after start-up.
@@ -482,7 +565,6 @@ class AudioInputSource:
             )
             self.deactivate()
             return
-        valid_device_indexes = self.valid_device_indexes()
         _LOGGER.debug("********************************************")
         _LOGGER.debug("Valid audio input devices:")
         for index in valid_device_indexes:
@@ -498,37 +580,35 @@ class AudioInputSource:
             )
         _LOGGER.debug("********************************************")
         device_idx = self._config["audio_device"]
-        _LOGGER.debug(
-            "Audio device selection: configured=%s, default=%s",
-            device_idx,
-            default_device,
-        )
 
-        if device_idx > max(valid_device_indexes):
-            _LOGGER.warning(
-                "Audio device index %s out of range (max valid: %s). "
-                "Falling back to default device index %s",
-                device_idx,
-                max(valid_device_indexes),
-                default_device,
-            )
-            device_idx = default_device
-
-        elif device_idx not in valid_device_indexes:
-            # Get device name safely (input_devices is a tuple, not dict)
-            try:
-                device_name = input_devices[device_idx].get(
-                    "name", f"index {device_idx}"
+        if device_idx not in valid_device_indexes:
+            # Configured device is invalid — resolve the default now
+            default_device = self.default_device_index()
+            if device_idx is not None and device_idx > max(
+                valid_device_indexes
+            ):
+                _LOGGER.warning(
+                    "Audio device index %s out of range (max valid: %s). "
+                    "Falling back to default device index %s",
+                    device_idx,
+                    max(valid_device_indexes),
+                    default_device,
                 )
-            except (IndexError, KeyError):
-                device_name = f"index {device_idx}"
-            _LOGGER.warning(
-                "Audio device [%s] '%s' not in valid devices. "
-                "Falling back to default device index %s",
-                device_idx,
-                device_name,
-                default_device,
-            )
+            else:
+                # Get device name safely (input_devices is a tuple, not dict)
+                try:
+                    device_name = input_devices[device_idx].get(
+                        "name", f"index {device_idx}"
+                    )
+                except (IndexError, KeyError, TypeError):
+                    device_name = f"index {device_idx}"
+                _LOGGER.warning(
+                    "Audio device [%s] '%s' not in valid devices. "
+                    "Falling back to default device index %s",
+                    device_idx,
+                    device_name,
+                    default_device,
+                )
             device_idx = default_device
 
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
@@ -690,11 +770,41 @@ class AudioInputSource:
                 _LOGGER.warning("Audio device [%s] failed: %s", dev_idx, err)
                 return False
 
+        def persist_device_name_if_needed():
+            """
+            Ensure device index and name are persisted for cross-session
+            recovery.  Also handles seamless upgrade from legacy configs
+            (index-only) and fallback-open scenarios where the actual
+            device differs from the configured one.
+            """
+            with AudioInputSource._class_lock:
+                current_name = AudioInputSource._last_device_name
+                current_idx = AudioInputSource._last_active
+
+            if not current_name or current_idx is None:
+                return
+
+            name_changed = (
+                self._config.get("audio_device_name", "") != current_name
+            )
+            idx_changed = self._config.get("audio_device") != current_idx
+
+            if name_changed or idx_changed:
+                self._config["audio_device"] = current_idx
+                self._config["audio_device_name"] = current_name
+                if self._persist_config():
+                    _LOGGER.info(
+                        "Persisted audio device '%s' (index %s) for cross-session recovery",
+                        current_name,
+                        current_idx,
+                    )
+
         # Audio device startup sequence:
         # PortAudio's internal state may be poisoned at startup
         # (e.g. WDM-KS devices interfere during initial enumeration).
         # Recovery: try configured → reinit + retry configured → reinit + fallback
         if try_open_device(device_idx):
+            persist_device_name_if_needed()
             return
 
         _LOGGER.info(
@@ -705,10 +815,15 @@ class AudioInputSource:
                 "Audio device [%s] opened successfully after PortAudio reinit.",
                 device_idx,
             )
+            persist_device_name_if_needed()
             return
 
-        _LOGGER.info("Falling back to default device [%s]...", default_device)
-        if try_open_device(default_device, reinit=True):
+        fallback_device = self.default_device_index()
+        _LOGGER.info("Falling back to default device [%s]...", fallback_device)
+        if fallback_device is not None and try_open_device(
+            fallback_device, reinit=True
+        ):
+            persist_device_name_if_needed()
             return
 
         _LOGGER.warning(

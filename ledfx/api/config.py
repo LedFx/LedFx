@@ -249,6 +249,12 @@ class ConfigEndpoint(RestEndpoint):
             config, CORE_CONFIG_SCHEMA, "core"
         )
 
+        # When user explicitly selects a new device via API, clear the stale
+        # device name so _resolve_device_from_name() uses the index as-is
+        # instead of name-matching back to the old device.
+        if "audio_device" in audio_config:
+            self._ledfx.config["audio"]["audio_device_name"] = ""
+
         self._ledfx.config["audio"].update(audio_config)
         self._ledfx.config["melbanks"].update(melbanks_config)
         self._ledfx.config.update(core_config)
