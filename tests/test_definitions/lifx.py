@@ -19,13 +19,14 @@ _default_lifx_fps = next(
 )
 
 lifx_tests = {
+    # Delete test jig if it still exists (may already be gone from earlier test groups)
     "delete_test_jig": APITestCase(
         execution_order=1,
         method="DELETE",
         api_endpoint="/api/virtuals/ci-test-jig",
         expected_return_code=200,
         expected_response_keys=["status"],
-        expected_response_values=[{"status": "success"}],
+        expected_response_values=[],
         payload_to_send={"name": "CI Test Jig"},
     ),
     "create_lifx_device": APITestCase(
