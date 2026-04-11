@@ -165,7 +165,7 @@ class SendspinAudioStream:
             samples:      Mono float32 numpy array of decoded audio.
             play_time_us: Intended play time (µs) for the first sample in
                           *samples*.  Ignored when leftover samples from the
-                          previous chunk are prepended – in that case the
+                          previous chunk are prepended - in that case the
                           leftover's saved timestamp is used as the base.
             sample_rate:  Sample rate of *samples* in Hz.
         """
@@ -217,7 +217,7 @@ class SendspinAudioStream:
         """
         Convert Sendspin PCM audio to LedFx format (float32 mono).
 
-        FLAC chunks are no longer routed here – they go directly through
+        FLAC chunks are no longer routed here - they go directly through
         the pyFLAC decoder in _audio_chunk_handler.
 
         Args:
@@ -331,7 +331,7 @@ class SendspinAudioStream:
         num_samples: int,
     ) -> None:
         """
-        pyFLAC write callback – called synchronously during process().
+        pyFLAC write callback - called synchronously during process().
 
         ``audio`` is a NumPy array of shape ``(num_samples, num_channels)``
         with dtype ``int16`` (or matching the source bit depth).  Sample
@@ -368,7 +368,7 @@ class SendspinAudioStream:
             # bit depth; divide by 2^(bit_depth-1).
             scale = float(1 << (self._flac_bit_depth - 1))
 
-            # pyFLAC delivers shape (num_samples, num_channels) – row-per-sample.
+            # pyFLAC delivers shape (num_samples, num_channels) - row-per-sample.
             # Average across channels (axis=1) to downmix to mono.
             if num_channels >= 2:
                 mono = np.mean(audio.astype(np.float32), axis=1) / scale
