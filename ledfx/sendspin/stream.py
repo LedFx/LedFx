@@ -311,7 +311,8 @@ class SendspinAudioStream:
                 decoder.process(codec_header)
             except Exception as e:
                 _LOGGER.warning(
-                    "pyFLAC: ignoring error while processing stream header: %s",
+                    "pyFLAC: ignoring %s while processing stream header: %s",
+                    type(e).__name__,
                     e,
                 )
 
@@ -534,8 +535,10 @@ class SendspinAudioStream:
         if self._flac_decoder is not None:
             try:
                 self._flac_decoder.finish()
-            except Exception:
-                pass
+            except Exception as e:
+                _LOGGER.debug(
+                    "FLAC decoder finish failed (%s): %s", type(e).__name__, e
+                )
             self._flac_decoder = None
 
         _LOGGER.info("Sendspin stream closed")
