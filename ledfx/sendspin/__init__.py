@@ -19,8 +19,8 @@ if sys.version_info >= (3, 12):
 
         __all__ = ["SendspinAudioStream"]
         SENDSPIN_AVAILABLE = True
-    except ImportError:
-        # aiosendspin not available
+    except (ImportError, OSError):
+        # aiosendspin not available, or native library (e.g. libFLAC.dll) failed to load
         SENDSPIN_AVAILABLE = False
         __all__ = []
 else:

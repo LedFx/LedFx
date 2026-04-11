@@ -14,11 +14,22 @@ numpy_binaries = collect_dynamic_libs('numpy')
 numpy_datas = collect_data_files('numpy', include_py_files=True)
 numpy_hiddenimports = collect_submodules('numpy')
 
+# Collect pyFLAC native libraries (libFLAC.dylib must be bundled alongside the .so files)
+pyflac_binaries = collect_dynamic_libs('pyflac')
+
 # Collect lifx-async package metadata (required by lifx/__init__.py for importlib.metadata)
 lifx_metadata = copy_metadata('lifx-async')
 
 # Remove the ledfx.env file if it exists
 os.remove("ledfx.env") if os.path.exists("ledfx.env") else None
+
+# Collect ledfx_assets excluding animated_frames source PNGs
+import glob
+ledfx_assets_datas = []
+for filepath in glob.glob(f'{spec_root}/ledfx_assets/**/*', recursive=True):
+    if os.path.isfile(filepath) and 'animated_frames' not in filepath:
+        rel_dir = os.path.relpath(os.path.dirname(filepath), spec_root)
+        ledfx_assets_datas.append((filepath, rel_dir))
 
 # Get environment variables
 github_ref = os.getenv('GITHUB_REF')
@@ -44,8 +55,8 @@ with open('ledfx.env', 'a') as file:
 
 a = Analysis([f'{spec_root}/ledfx/__main__.py'],
              pathex=[f'{spec_root}', f'{spec_root}/ledfx'],
-             binaries=numpy_binaries,
-             datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')] + numpy_datas + lifx_metadata,
+             binaries=numpy_binaries + pyflac_binaries,
+             datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')] + ledfx_assets_datas + numpy_datas + lifx_metadata,
              hiddenimports=hiddenimports + numpy_hiddenimports,
              hookspath=[f'{venv_root}/lib/site-packages/pyupdater/hooks'],
              runtime_hooks=[],

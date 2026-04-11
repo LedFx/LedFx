@@ -43,6 +43,7 @@ dependencies = [
     "samplerate-ledfx>=0.2.3",
     "audio-hotplug>=0.1.0",
     "aiosendspin>=4.0.0; python_version >= '3.12'",
+    "pyflac>=2.2.0; python_version >= '3.12'",
 ]
 name = "LedFx"
 version = "2.1.7"

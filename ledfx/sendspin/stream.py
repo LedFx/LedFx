@@ -15,9 +15,9 @@ import numpy as np
 from ledfx.sendspin.config import BUFFER_CAPACITY
 
 try:
-    import av
-except ImportError:
-    av = None
+    import pyflac
+except (ImportError, OSError):
+    pyflac = None
 
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
@@ -75,9 +75,19 @@ class SendspinAudioStream:
         self._buffer_lock = threading.Lock()
         self._scheduler_task: Optional[asyncio.Task] = None
 
-        # FLAC decoder (persistent across chunks within a stream)
-        self._flac_decoder: Optional["av.AudioCodecContext"] = None
-        self._flac_fmt_logged = False
+        # FLAC decoder (persistent across chunks within a stream).
+        # Recreated on _stream_start_handler; None until first FLAC chunk.
+        self._flac_decoder = None  # pyflac.StreamDecoder instance
+        self._flac_bit_depth: int = 16  # bit depth negotiated with server
+        self._flac_fmt_logged: bool = False
+        # Timing context for the pyFLAC write callback.
+        # These are set immediately before each decoder.process() call so
+        # the callback can stamp every decoded PCM block with the correct
+        # play timestamp, even when one compressed chunk yields multiple
+        # callback invocations.
+        self._flac_pending_play_time_us: int = 0
+        self._flac_pending_sample_rate: int = 48000
+        self._flac_pending_samples_emitted: int = 0
 
         # Leftover samples from previous frame, carried over so every
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
@@ -110,67 +120,105 @@ class SendspinAudioStream:
 
         try:
             play_time_us = self._client.compute_play_time(timestamp)
-            now_us = int(self._loop.time() * 1_000_000)
+            sample_rate = audio_format.pcm_format.sample_rate
 
-            audio_float32 = self._convert_to_float32_mono(
-                chunk_data, audio_format
-            )
-
-            sub_duration_us = int(
-                _SUB_CHUNK_SAMPLES
-                / audio_format.pcm_format.sample_rate
-                * 1_000_000
-            )
-
-            # Prepend any leftover samples from the previous frame and
-            # use the leftover's original timestamp as the base so
-            # carryover samples keep their scheduled play time.
-            if len(self._leftover) > 0:
-                audio_float32 = np.concatenate([self._leftover, audio_float32])
-                base_ts = self._leftover_ts
-                self._leftover = np.array([], dtype=np.float32)
+            if audio_format.codec == AudioCodec.FLAC:
+                # pyFLAC path: decoded PCM is delivered to
+                # _flac_write_callback which calls _schedule_mono_samples
+                # directly.  Set the timing context before process() so the
+                # callback can timestamp each decoded PCM block correctly,
+                # even when one compressed chunk produces multiple blocks.
+                if self._flac_decoder is None:
+                    self._init_flac_decoder(audio_format)
+                self._flac_pending_play_time_us = play_time_us
+                self._flac_pending_sample_rate = sample_rate
+                self._flac_pending_samples_emitted = 0
+                self._flac_decoder.process(chunk_data)
             else:
-                base_ts = play_time_us
-
-            total_samples = len(audio_float32)
-            n_full = total_samples // _SUB_CHUNK_SAMPLES
-            remainder = total_samples % _SUB_CHUNK_SAMPLES
-
-            # Per-sub-chunk late check: drop only sub-chunks whose
-            # play time is already in the past instead of discarding
-            # the entire packet.
-            if n_full > 0:
-                with self._buffer_lock:
-                    for i in range(n_full):
-                        sub_play = base_ts + i * sub_duration_us
-                        if sub_play < now_us:
-                            continue
-                        start = i * _SUB_CHUNK_SAMPLES
-                        end = start + _SUB_CHUNK_SAMPLES
-                        self._chunk_seq += 1
-                        heapq.heappush(
-                            self._chunk_buffer,
-                            (
-                                sub_play,
-                                self._chunk_seq,
-                                audio_float32[start:end].copy(),
-                            ),
-                        )
-            # Save leftover samples with their scheduled play time
-            if remainder > 0:
-                self._leftover = audio_float32[
-                    n_full * _SUB_CHUNK_SAMPLES :
-                ].copy()
-                self._leftover_ts = base_ts + n_full * sub_duration_us
+                # PCM path: decode synchronously then schedule.
+                audio_float32 = self._convert_to_float32_mono(
+                    chunk_data, audio_format
+                )
+                self._schedule_mono_samples(
+                    audio_float32, play_time_us, sample_rate
+                )
 
         except Exception as e:
             _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
+
+    def _schedule_mono_samples(
+        self,
+        samples: np.ndarray,
+        play_time_us: int,
+        sample_rate: int,
+    ) -> None:
+        """
+        Schedule decoded mono float32 samples into the heap playback buffer.
+
+        Extracted so both the PCM path and the callback-driven FLAC backend
+        (Stage 2) share identical leftover-handling and scheduling logic
+        without duplication.  Keeping the scheduling in one place also means
+        the FLAC backend can be purely callback-driven (pyFLAC fires this
+        from within process()) without any duplicate heap/leftover state.
+
+        Args:
+            samples:      Mono float32 numpy array of decoded audio.
+            play_time_us: Intended play time (µs) for the first sample in
+                          *samples*.  Ignored when leftover samples from the
+                          previous chunk are prepended - in that case the
+                          leftover's saved timestamp is used as the base.
+            sample_rate:  Sample rate of *samples* in Hz.
+        """
+        sub_duration_us = int(_SUB_CHUNK_SAMPLES / sample_rate * 1_000_000)
+        now_us = int(self._loop.time() * 1_000_000)
+
+        # Prepend any leftover samples from the previous frame and use
+        # the leftover's original timestamp as the base so carryover
+        # samples keep their scheduled play time.
+        if len(self._leftover) > 0:
+            samples = np.concatenate([self._leftover, samples])
+            base_ts = self._leftover_ts
+            self._leftover = np.array([], dtype=np.float32)
+        else:
+            base_ts = play_time_us
+
+        total_samples = len(samples)
+        n_full = total_samples // _SUB_CHUNK_SAMPLES
+        remainder = total_samples % _SUB_CHUNK_SAMPLES
+
+        # Per-sub-chunk late check: drop only sub-chunks whose play time
+        # is already in the past instead of discarding the entire packet.
+        if n_full > 0:
+            with self._buffer_lock:
+                for i in range(n_full):
+                    sub_play = base_ts + i * sub_duration_us
+                    if sub_play < now_us:
+                        continue
+                    start = i * _SUB_CHUNK_SAMPLES
+                    end = start + _SUB_CHUNK_SAMPLES
+                    self._chunk_seq += 1
+                    heapq.heappush(
+                        self._chunk_buffer,
+                        (
+                            sub_play,
+                            self._chunk_seq,
+                            samples[start:end].copy(),
+                        ),
+                    )
+
+        # Save leftover samples with their scheduled play time.
+        if remainder > 0:
+            self._leftover = samples[n_full * _SUB_CHUNK_SAMPLES :].copy()
+            self._leftover_ts = base_ts + n_full * sub_duration_us
 
     def _convert_to_float32_mono(
         self, data: bytes, audio_format: AudioFormat
     ) -> np.ndarray:
         """
-        Convert Sendspin audio to LedFx format (float32 mono).
+        Convert Sendspin PCM audio to LedFx format (float32 mono).
+
+        FLAC chunks are no longer routed here - they go directly through
+        the pyFLAC decoder in _audio_chunk_handler.
 
         Args:
             data: Raw audio bytes
@@ -201,9 +249,6 @@ class SendspinAudioStream:
             else:
                 raise ValueError(f"Unsupported bit depth: {bit_depth}")
 
-        elif codec == AudioCodec.FLAC:
-            # FLAC decode handles channel conversion internally
-            return self._decode_flac(data, audio_format)
         else:
             raise ValueError(f"Unsupported codec: {codec}")
 
@@ -217,102 +262,128 @@ class SendspinAudioStream:
 
         return audio_float.astype(np.float32)
 
-    def _init_flac_decoder(self, audio_format: AudioFormat):
-        """Create or reconfigure the persistent FLAC decoder."""
-        if av is None:
+    def _init_flac_decoder(self, audio_format: AudioFormat) -> None:
+        """
+        Create a new persistent pyFLAC StreamDecoder for this stream.
+
+        Feeds the FLAC stream header (STREAMINFO + metadata blocks) to the
+        decoder immediately so subsequent audio-frame process() calls can be
+        decoded without requiring the decoder to resync from scratch.
+        """
+        if pyflac is None:
             raise ImportError(
-                "PyAV (av) is required for FLAC decoding but not installed"
+                "pyFLAC is required for FLAC decoding but is not installed. "
+                "Install it with: uv add 'pyflac>=2.2.0'"
             )
         pcm = audio_format.pcm_format
-        decoder = av.CodecContext.create("flac", "r")
-        decoder.sample_rate = pcm.sample_rate
-        channels = pcm.channels
-        decoder.layout = "stereo" if channels == 2 else "mono"
+        self._flac_bit_depth = pcm.bit_depth
 
+        decoder = pyflac.StreamDecoder(
+            write_callback=self._flac_write_callback,
+        )
+        self._flac_decoder = decoder
+
+        # Prime the decoder with the FLAC stream header (fLaC marker +
+        # STREAMINFO block) that Sendspin sends ahead of audio frames.
         codec_header = audio_format.codec_header
         if codec_header:
-            # codec_header from server is: b"fLaC\x80" + 3-byte len + streaminfo
-            # Strip the fLaC stream marker + block header (8 bytes) to get raw streaminfo
-            if codec_header[:4] == b"fLaC":
-                decoder.extradata = codec_header[8:]
-            else:
-                decoder.extradata = codec_header
+            if codec_header[:4] != b"fLaC":
+                # Reconstruct a minimal valid FLAC stream header from the
+                # raw STREAMINFO bytes supplied by the server.
+                # FLAC metadata block header: 1 byte (type | last-flag) +
+                # 3-byte big-endian block length.
+                hdr_len = len(codec_header)
+                block_hdr = bytes(
+                    [
+                        0x80,  # type=STREAMINFO (0), last-metadata-block flag
+                        (hdr_len >> 16) & 0xFF,
+                        (hdr_len >> 8) & 0xFF,
+                        hdr_len & 0xFF,
+                    ]
+                )
+                codec_header = b"fLaC" + block_hdr + codec_header
+            # Header contains only metadata — no audio expected.
+            # Initialise pending timing state to safe defaults.
+            self._flac_pending_play_time_us = 0
+            self._flac_pending_sample_rate = pcm.sample_rate
+            self._flac_pending_samples_emitted = 0
+            try:
+                decoder.process(codec_header)
+            except Exception as e:
+                _LOGGER.warning(
+                    "pyFLAC: ignoring %s while processing stream header: %s",
+                    type(e).__name__,
+                    e,
+                )
 
-        decoder.open()
-        self._flac_decoder = decoder
         _LOGGER.info(
-            "FLAC decoder initialized: %dHz %dch",
+            "FLAC decoder (pyFLAC) initialized: %dHz %dch %dbit",
             pcm.sample_rate,
-            channels,
+            pcm.channels,
+            pcm.bit_depth,
         )
 
-    def _decode_flac(
-        self, data: bytes, audio_format: AudioFormat
-    ) -> np.ndarray:
+    def _flac_write_callback(
+        self,
+        audio: np.ndarray,
+        sample_rate: int,
+        num_channels: int,
+        num_samples: int,
+    ) -> None:
         """
-        Decode a FLAC frame to float32 mono samples.
+        pyFLAC write callback - called synchronously during process().
 
-        Handles planar/packed formats and channel downmix internally.
-        Returns float32 mono array ready for LedFx.
+        ``audio`` is a NumPy array of shape ``(num_samples, num_channels)``
+        with dtype ``int16`` (or matching the source bit depth).  Sample
+        values are scaled to the source bit depth range
+        (e.g. 16-bit FLAC yields values in ``[-32768, 32767]``).
+
+        Timing: ``_flac_pending_play_time_us`` is the play timestamp of the
+        first sample in the current compressed chunk.  Each callback
+        invocation advances the base timestamp by the number of mono samples
+        already emitted for that chunk so multiple FLAC frames within one
+        compressed chunk are stamped correctly.
         """
-        if self._flac_decoder is None:
-            self._init_flac_decoder(audio_format)
-
-        packet = av.Packet(data)
-        frames = self._flac_decoder.decode(packet)
-
-        parts = []
-        for frame in frames:
-            arr = frame.to_ndarray()
-            fmt = frame.format
-            is_planar = fmt.is_planar
-            channels = frame.layout.nb_channels
-
-            # Log format details on first decoded frame
+        try:
             if not self._flac_fmt_logged:
                 _LOGGER.info(
-                    "FLAC first frame: format=%s planar=%s shape=%s "
-                    "dtype=%s samples=%d rate=%d channels=%d layout=%s",
-                    fmt.name,
-                    is_planar,
-                    arr.shape,
-                    arr.dtype,
-                    frame.samples,
-                    frame.sample_rate,
-                    channels,
-                    frame.layout.name,
+                    "pyFLAC first block: dtype=%s shape=%s rate=%d "
+                    "channels=%d num_samples=%d",
+                    audio.dtype,
+                    audio.shape,
+                    sample_rate,
+                    num_channels,
+                    num_samples,
                 )
                 self._flac_fmt_logged = True
 
-            # Normalise to float32 based on sample format
-            fmt_name = fmt.name
-            if "32" in fmt_name and "flt" not in fmt_name:
-                scale = 2147483648.0
-            elif "flt" in fmt_name:
-                scale = 1.0
-            elif "16" in fmt_name:
-                scale = 32768.0
+            # Advance the base timestamp by however many mono samples have
+            # already been emitted for this compressed chunk.
+            current_play_time_us = self._flac_pending_play_time_us + int(
+                self._flac_pending_samples_emitted / sample_rate * 1_000_000
+            )
+
+            # Normalise to float32 in approximately [-1.0, 1.0].
+            # pyFLAC delivers int32 with values in the range of the source
+            # bit depth; divide by 2^(bit_depth-1).
+            scale = float(1 << (self._flac_bit_depth - 1))
+
+            # pyFLAC delivers shape (num_samples, num_channels) - row-per-sample.
+            # Average across channels (axis=1) to downmix to mono.
+            if num_channels >= 2:
+                mono = np.mean(audio.astype(np.float32), axis=1) / scale
             else:
-                scale = 32768.0
+                mono = audio.flatten().astype(np.float32) / scale
 
-            if is_planar and arr.ndim == 2 and channels >= 2:
-                # Planar: shape is (channels, samples) e.g. (2, 1200)
-                # Average channels to mono
-                mono = np.mean(arr.astype(np.float32), axis=0) / scale
-            elif not is_planar and channels >= 2:
-                # Packed interleaved: shape is (1, channels*samples)
-                flat = arr.flatten().astype(np.float32) / scale
-                mono = np.mean(flat.reshape(-1, channels), axis=1)
-            else:
-                # Mono
-                mono = arr.flatten().astype(np.float32) / scale
+            self._schedule_mono_samples(
+                mono, current_play_time_us, sample_rate
+            )
+            self._flac_pending_samples_emitted += num_samples
 
-            parts.append(mono)
-
-        if not parts:
-            return np.array([], dtype=np.float32)
-
-        return np.concatenate(parts).astype(np.float32)
+        except Exception as e:
+            _LOGGER.error(
+                "Error in pyFLAC write callback: %s", e, exc_info=True
+            )
 
     @staticmethod
     def _unpack_int24(data: bytes) -> np.ndarray:
@@ -357,9 +428,20 @@ class SendspinAudioStream:
         else:
             _LOGGER.info("Sendspin stream started (no player info)")
 
-        # Reset FLAC decoder on new stream (format may have changed)
-        self._flac_decoder = None
+        # Reset pyFLAC decoder on new stream (format may have changed).
+        # Call finish() to free libFLAC resources before discarding the instance.
+        if self._flac_decoder is not None:
+            try:
+                self._flac_decoder.finish()
+            except Exception as e:
+                _LOGGER.warning(
+                    "Error finishing FLAC decoder on stream reset: %s", e
+                )
+            self._flac_decoder = None
         self._flac_fmt_logged = False
+        self._flac_pending_play_time_us = 0
+        self._flac_pending_sample_rate = 48000
+        self._flac_pending_samples_emitted = 0
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0
 
@@ -449,6 +531,16 @@ class SendspinAudioStream:
                 self._loop.call_soon_threadsafe(self._loop.stop)
             self._thread.join(timeout=2.0)
 
+        # Clean up pyFLAC decoder once the stream thread has fully stopped.
+        if self._flac_decoder is not None:
+            try:
+                self._flac_decoder.finish()
+            except Exception as e:
+                _LOGGER.debug(
+                    "FLAC decoder finish failed (%s): %s", type(e).__name__, e
+                )
+            self._flac_decoder = None
+
         _LOGGER.info("Sendspin stream closed")
 
     def _run_client(self):
@@ -500,7 +592,7 @@ class SendspinAudioStream:
             # then fall back to PCM. Server picks the first mutually supported.
             # Request mono since LedFx downmixes to mono anyway.
             supported_formats = []
-            if av is not None:
+            if pyflac is not None:
                 supported_formats.append(
                     SupportedAudioFormat(
                         codec=AudioCodec.FLAC,
