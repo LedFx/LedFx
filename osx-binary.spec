@@ -14,6 +14,9 @@ numpy_binaries = collect_dynamic_libs('numpy')
 numpy_datas = collect_data_files('numpy', include_py_files=True)
 numpy_hiddenimports = collect_submodules('numpy')
 
+# Collect pyFLAC native libraries (libFLAC.dylib must be bundled alongside the .so files)
+pyflac_binaries = collect_dynamic_libs('pyflac')
+
 # Collect lifx-async package metadata (required by lifx/__init__.py for importlib.metadata)
 lifx_metadata = copy_metadata('lifx-async')
 
