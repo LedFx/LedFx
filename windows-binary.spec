@@ -15,6 +15,9 @@ numpy_binaries = collect_dynamic_libs('numpy')
 numpy_datas = collect_data_files('numpy', include_py_files=True)
 numpy_hiddenimports = collect_submodules('numpy')
 
+# Collect pyFLAC native libraries (libFLAC.dll must be bundled alongside the .pyd files)
+pyflac_binaries = collect_dynamic_libs('pyflac')
+
 # Collect lifx-async package metadata (required by lifx/__init__.py for importlib.metadata)
 lifx_metadata = copy_metadata('lifx-async')
 
@@ -44,7 +47,7 @@ with open('ledfx.env', 'a') as file:
     file.write('\n'.join(variables))
 a = Analysis([f'{spec_root}\\ledfx\\__main__.py'],
              pathex=[f'{spec_root}', f'{spec_root}\\ledfx'],
-             binaries=numpy_binaries,
+             binaries=numpy_binaries + pyflac_binaries,
              datas=[(f'{spec_root}/ledfx_frontend', 'ledfx_frontend/'), (f'{spec_root}/ledfx/', 'ledfx/'), (f'{spec_root}/ledfx_assets', 'ledfx_assets/'),(f'{spec_root}/ledfx_assets/tray.png','.'), (f'{spec_root}/ledfx.env','.')] + numpy_datas + lifx_metadata,
              hiddenimports=hiddenimports + numpy_hiddenimports,
              hookspath=[f'{venv_root}\\lib\\site-packages\\pyupdater\\hooks'],
