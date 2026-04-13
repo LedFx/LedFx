@@ -204,11 +204,7 @@ class TestNowPlayingManagerDisabled:
 class TestNowPlayingManagerDedupe:
     @pytest.mark.asyncio
     async def test_duplicate_track_ignored(self):
-        ledfx = _DummyLedFx(
-            config={
-                "now_playing": {"enabled": True}
-            }
-        )
+        ledfx = _DummyLedFx(config={"now_playing": {"enabled": True}})
         mgr = NowPlayingManager(ledfx)
 
         track = NowPlayingTrack(provider="test", title="Song", artist="Artist")
@@ -224,11 +220,7 @@ class TestNowPlayingManagerDedupe:
 
     @pytest.mark.asyncio
     async def test_different_track_triggers_event(self):
-        ledfx = _DummyLedFx(
-            config={
-                "now_playing": {"enabled": True}
-            }
-        )
+        ledfx = _DummyLedFx(config={"now_playing": {"enabled": True}})
         mgr = NowPlayingManager(ledfx)
 
         t1 = NowPlayingTrack(provider="test", title="Song A", artist="Art")
@@ -240,11 +232,7 @@ class TestNowPlayingManagerDedupe:
 
     @pytest.mark.asyncio
     async def test_playing_state_change_triggers_update(self):
-        ledfx = _DummyLedFx(
-            config={
-                "now_playing": {"enabled": True}
-            }
-        )
+        ledfx = _DummyLedFx(config={"now_playing": {"enabled": True}})
         mgr = NowPlayingManager(ledfx)
 
         t1 = NowPlayingTrack(
@@ -480,9 +468,7 @@ class TestProviderSelection:
     @pytest.mark.asyncio
     async def test_manager_selects_provider_by_platform(self):
         """Manager picks the correct provider based on sys.platform."""
-        ledfx = _DummyLedFx(
-            config={"now_playing": {"enabled": True}}
-        )
+        ledfx = _DummyLedFx(config={"now_playing": {"enabled": True}})
         mgr = NowPlayingManager(ledfx)
 
         # Patch sys.platform to win32 and verify WindowsSMTCProvider is selected
@@ -497,17 +483,13 @@ class TestProviderSelection:
                     WindowsSMTCProvider,
                 )
 
-                provider = mgr._create_provider(
-                    ledfx.config["now_playing"]
-                )
+                provider = mgr._create_provider(ledfx.config["now_playing"])
                 assert isinstance(provider, WindowsSMTCProvider)
 
     @pytest.mark.asyncio
     async def test_manager_returns_none_for_unavailable_platform(self):
         """Manager returns None for stubs that report unavailable."""
-        ledfx = _DummyLedFx(
-            config={"now_playing": {"enabled": True}}
-        )
+        ledfx = _DummyLedFx(config={"now_playing": {"enabled": True}})
         mgr = NowPlayingManager(ledfx)
 
         with patch("ledfx.nowplaying.manager.sys") as mock_sys:
@@ -519,9 +501,7 @@ class TestProviderSelection:
     @pytest.mark.asyncio
     async def test_manager_returns_none_for_unknown_platform(self):
         """Manager returns None for unknown platforms."""
-        ledfx = _DummyLedFx(
-            config={"now_playing": {"enabled": True}}
-        )
+        ledfx = _DummyLedFx(config={"now_playing": {"enabled": True}})
         mgr = NowPlayingManager(ledfx)
 
         with patch("ledfx.nowplaying.manager.sys") as mock_sys:
