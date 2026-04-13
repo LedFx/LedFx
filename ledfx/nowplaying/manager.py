@@ -8,7 +8,6 @@ import asyncio
 import hashlib
 import io
 import logging
-import os
 import time
 from collections import OrderedDict
 
@@ -16,7 +15,6 @@ import PIL.Image as Image
 
 from ledfx.events import (
     Event,
-    LedFxShutdownEvent,
     NowPlayingArtUpdatedEvent,
     NowPlayingPaletteUpdatedEvent,
     NowPlayingUpdatedEvent,
@@ -311,6 +309,11 @@ class NowPlayingManager:
             _LOGGER.debug("No gradient extracted from album art")
             return
 
+        # Skip if palette is identical to what's already active
+        if gradient == self.state.active_gradient:
+            _LOGGER.debug("Palette unchanged, skipping application")
+            return
+
         self.state.active_gradient = gradient
         self.state.active_palette_id = f"nowplaying_{sig[:8]}"
 
@@ -362,26 +365,29 @@ class NowPlayingManager:
             effect_id = f"{virtual.id}:{getattr(effect, 'type', 'unknown')}"
 
             # Check if effect supports gradient config
-            if isinstance(effect, GradientEffect):
-                try:
-                    effect.update_config({"gradient": gradient})
-                    affected.append(effect_id)
-                except Exception as e:
-                    _LOGGER.warning(
-                        "Failed to update gradient for %s: %s",
-                        effect_id,
-                        e,
-                    )
-                    skipped.append(effect_id)
-            else:
-                # Check if "gradient" is in the effect's config schema
-                if hasattr(effect, "_config") and "gradient" in effect._config:
-                    try:
-                        effect.update_config({"gradient": gradient})
-                        affected.append(effect_id)
-                    except Exception:
-                        skipped.append(effect_id)
-                else:
-                    skipped.append(effect_id)
+            has_gradient = isinstance(effect, GradientEffect) or (
+                hasattr(effect, "_config") and "gradient" in effect._config
+            )
+
+            if not has_gradient:
+                skipped.append(effect_id)
+                continue
+
+            # Skip if effect already has this exact gradient
+            current = getattr(effect, "_config", {}).get("gradient")
+            if current == gradient:
+                _LOGGER.debug("Gradient already applied to %s", effect_id)
+                continue
+
+            try:
+                effect.update_config({"gradient": gradient})
+                affected.append(effect_id)
+            except Exception as e:
+                _LOGGER.warning(
+                    "Failed to update gradient for %s: %s",
+                    effect_id,
+                    e,
+                )
+                skipped.append(effect_id)
 
         return affected, skipped
