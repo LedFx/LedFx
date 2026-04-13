@@ -681,35 +681,38 @@ This section is intended to be updated during work.
 
 ### New files expected
 
-- [ ] `ledfx/nowplaying/__init__.py`
-- [ ] `ledfx/nowplaying/models.py`
-- [ ] `ledfx/nowplaying/manager.py`
-- [ ] `ledfx/nowplaying/providers/__init__.py`
-- [ ] `ledfx/nowplaying/providers/base.py`
-- [ ] `ledfx/nowplaying/providers/aionowplaying_provider.py`
-- [ ] tests for manager/provider/event behaviour
+- [x] `ledfx/nowplaying/__init__.py`
+- [x] `ledfx/nowplaying/models.py`
+- [x] `ledfx/nowplaying/manager.py`
+- [x] `ledfx/nowplaying/providers/__init__.py`
+- [x] `ledfx/nowplaying/providers/base.py`
+- [x] `ledfx/nowplaying/providers/platform_media_provider.py` (renamed from `aionowplaying_provider.py` — see note below)
+- [x] `ledfx/api/now_playing.py`
+- [x] `tests/test_now_playing.py`
 
-### Existing files likely to change
+**Provider file naming note:** `aionowplaying` turned out to be a media-session *publisher* library (for advertising what your app plays), not a *reader*. The initial provider (`platform_media_provider.py`) reads Windows SMTC sessions directly via `winrt-windows-media-control`. The `aionowplaying` dependency is retained for potential future use.
 
-- [ ] core startup/lifecycle wiring
-- [ ] config schema/default config
-- [ ] event type definitions / event classes
-- [ ] websocket/event broadcasting path if needed
-- [ ] REST API registration
-- [ ] palette/color utility integration point
-- [ ] effect update/config path if needed
-- [ ] dependency declarations / packaging docs
+### Existing files changed
+
+- [x] `ledfx/core.py` — startup/lifecycle wiring (`NowPlayingManager` instantiated in `async_start`)
+- [x] `ledfx/config.py` — `now_playing` section added to `CORE_CONFIG_SCHEMA`
+- [x] `ledfx/events.py` — three new event types and classes added
+- [x] `pyproject.toml` — `aionowplaying` and `winrt-windows-media-control` added as dependencies
+- [ ] websocket/event broadcasting path — not needed; events flow through existing `Events` system
+- [x] REST API registration — auto-discovered via `ledfx/api/now_playing.py`
+- [x] palette/color utility integration — reuses `extract_gradient_metadata` from `ledfx/utilities/gradient_extraction.py`
+- [x] effect update/config path — uses `effect.update_config({"gradient": ...})` via `GradientEffect` check
 
 ### Mandatory implementation checks
 
-- [ ] all direct `aionowplaying` usage isolated to one provider file
-- [ ] manager is fail-soft
-- [ ] repeated identical tracks do not churn art/palette/apply
-- [ ] no unbounded image cache growth
-- [ ] no blocking startup on artwork fetch
-- [ ] no direct provider-to-client coupling
-- [ ] effect updates use existing LedFx mechanisms
-- [ ] event payloads are stable and explicit
+- [x] all platform-specific media reading isolated to one provider file
+- [x] manager is fail-soft
+- [x] repeated identical tracks do not churn art/palette/apply
+- [x] no unbounded image cache growth (bounded `OrderedDict` with configurable max)
+- [x] no blocking startup on artwork fetch (async with timeout)
+- [x] no direct provider-to-client coupling
+- [x] effect updates use existing LedFx mechanisms (`update_config`)
+- [x] event payloads are stable and explicit
 
 ---
 
@@ -719,36 +722,38 @@ Update this section during implementation. Keep it current.
 
 ### Status summary
 
-- Current phase: Not started
-- Branch / PR: Not started
+- Current phase: Phase 6 (tests and hardening) — initial implementation complete
+- Branch / PR: `flac_part_2`
 - Last updated: 2026-04-12
 
 ### Completed
 
-- [ ] strategy agreed
-- [ ] provider contract implemented
-- [ ] manager implemented
-- [ ] `aionowplaying` provider implemented
-- [ ] config added
-- [ ] events added
-- [ ] REST endpoint added
-- [ ] album art fetch/cache added
-- [ ] palette extraction wired
-- [ ] palette apply to running effects wired
-- [ ] tests added
+- [x] strategy agreed
+- [x] provider contract implemented
+- [x] manager implemented
+- [x] `aionowplaying` provider implemented (adapted: uses platform media reading instead of aionowplaying publisher API)
+- [x] config added
+- [x] events added
+- [x] REST endpoint added
+- [x] album art fetch/cache added
+- [x] palette extraction wired
+- [x] palette apply to running effects wired
+- [x] tests added (23 tests, all passing)
 - [ ] docs added
 
 ### In progress
 
-- None yet
+- None
 
 ### Blockers / open questions
 
-- Confirm actual `aionowplaying` API shape and event model against the current released version.
-- Identify exact existing LedFx palette extraction path to reuse.
-- Identify exact existing effect configuration/update path for applying palettes broadly.
-- Decide whether dedicated new event classes are cleaner than extending existing song-related events.
-- Decide whether `GET /api/now-playing` is required in the first PR or can land in the same PR without excess scope.
+- **Resolved:** `aionowplaying` is a publisher library, not a reader. The initial provider uses `winrt-windows-media-control` on Windows to read media sessions directly. `aionowplaying` retained as dependency for future use.
+- **Resolved:** Existing `extract_gradient_metadata()` from `ledfx/utilities/gradient_extraction.py` reused for palette extraction.
+- **Resolved:** `effect.update_config({"gradient": ...})` via `GradientEffect` isinstance check used for palette application.
+- **Resolved:** Dedicated event classes (`NowPlayingUpdatedEvent`, `NowPlayingArtUpdatedEvent`, `NowPlayingPaletteUpdatedEvent`) added — cleaner than extending existing events.
+- **Resolved:** `GET /api/now-playing` included in initial implementation.
+- Linux/macOS provider backends not yet implemented (platform_media_provider.py has stubs).
+- No persistent history of track changes (non-goal for v1).
 
 ### Notes for resuming work
 

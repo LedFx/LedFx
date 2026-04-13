@@ -189,6 +189,20 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             int, vol.Range(min=1, max=120)
         ),
         vol.Optional("sendspin_servers", default={}): dict,
+        vol.Optional(
+            "now_playing",
+            default={
+                "enabled": False,
+                "provider": "platform_media",
+                "generate_palette_from_album_art": False,
+                "apply_palette_to_running_effects": False,
+                "gradient_variant": "led_punchy",
+                "poll_interval_s": 2.0,
+                "art_fetch_timeout_ms": 5000,
+                "art_cache": True,
+                "art_cache_max_items": 64,
+            },
+        ): dict,
     },
     extra=vol.ALLOW_EXTRA,
 )

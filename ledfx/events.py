@@ -45,6 +45,9 @@ class Event:
     PLAYLIST_RESUMED = "playlist_resumed"
     COLORS_UPDATED = "colors_updated"
     SONG_DETECTED = "song_detected"
+    NOW_PLAYING_UPDATED = "now_playing_updated"
+    NOW_PLAYING_ART_UPDATED = "now_playing_art_updated"
+    NOW_PLAYING_PALETTE_UPDATED = "now_playing_palette_updated"
 
     def __init__(self, type: str):
         """
@@ -545,6 +548,79 @@ class EventListener:
                 return True
 
         return False
+
+
+class NowPlayingUpdatedEvent(Event):
+    """Event emitted when now-playing track metadata changes."""
+
+    def __init__(
+        self,
+        provider: str,
+        title: str | None,
+        artist: str | None,
+        album: str | None,
+        art_url: str | None,
+        is_playing: bool | None,
+        duration: float | None,
+        position: float | None,
+        player_name: str | None,
+        track_signature: str,
+        timestamp: float,
+    ):
+        super().__init__(Event.NOW_PLAYING_UPDATED)
+        self.provider = provider
+        self.title = title
+        self.artist = artist
+        self.album = album
+        self.art_url = art_url
+        self.is_playing = is_playing
+        self.duration = duration
+        self.position = position
+        self.player_name = player_name
+        self.track_signature = track_signature
+        self.timestamp = timestamp
+
+
+class NowPlayingArtUpdatedEvent(Event):
+    """Event emitted when album art is resolved for the current track."""
+
+    def __init__(
+        self,
+        provider: str,
+        track_signature: str,
+        art_url: str | None,
+        art_cache_key: str | None,
+        timestamp: float,
+    ):
+        super().__init__(Event.NOW_PLAYING_ART_UPDATED)
+        self.provider = provider
+        self.track_signature = track_signature
+        self.art_url = art_url
+        self.art_cache_key = art_cache_key
+        self.timestamp = timestamp
+
+
+class NowPlayingPaletteUpdatedEvent(Event):
+    """Event emitted when a palette is derived from album art."""
+
+    def __init__(
+        self,
+        provider: str,
+        track_signature: str,
+        gradient: str | None,
+        palette_applied: bool,
+        affected_effects: list[str],
+        skipped_effects: list[str],
+        timestamp: float,
+    ):
+        super().__init__(Event.NOW_PLAYING_PALETTE_UPDATED)
+        self.provider = provider
+        self.track_signature = track_signature
+        self.gradient = gradient
+        self.palette_applied = palette_applied
+        self.affected_effects = affected_effects
+        self.skipped_effects = skipped_effects
+        self.timestamp = timestamp
 
 
 class Events:
