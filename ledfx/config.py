@@ -209,9 +209,9 @@ CORE_CONFIG_SCHEMA = vol.Schema(
                 vol.Optional(
                     "apply_palette_to_running_effects", default=False
                 ): bool,
-                vol.Optional(
-                    "gradient_variant", default="led_punchy"
-                ): vol.In(["led_safe", "led_punchy", "led_max"]),
+                vol.Optional("gradient_variant", default="led_punchy"): vol.In(
+                    ["led_safe", "led_punchy", "led_max"]
+                ),
                 vol.Optional("art_fetch_timeout_ms", default=5000): vol.All(
                     int, vol.Range(min=0)
                 ),
