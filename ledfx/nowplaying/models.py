@@ -57,7 +57,9 @@ class NowPlayingState:
     """Current state of the now-playing subsystem."""
 
     enabled: bool = False
-    status: str = "disabled"  # disabled, idle, starting, running, degraded, error
+    status: str = (
+        "disabled"  # disabled, idle, starting, running, degraded, error
+    )
     provider_name: str | None = None
     active_track: NowPlayingTrack | None = None
     active_art_url: str | None = None
@@ -75,7 +77,9 @@ class NowPlayingState:
             "enabled": self.enabled,
             "status": self.status,
             "provider_name": self.provider_name,
-            "active_track": self.active_track.to_dict() if self.active_track else None,
+            "active_track": (
+                self.active_track.to_dict() if self.active_track else None
+            ),
             "active_art_url": self.active_art_url,
             "active_art_cache_key": self.active_art_cache_key,
             "active_palette_id": self.active_palette_id,

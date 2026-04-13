@@ -15,7 +15,10 @@ class NowPlayingEndpoint(RestEndpoint):
     async def get(self) -> web.Response:
         if not hasattr(self._ledfx, "now_playing"):
             return await self.bare_request_success(
-                {"status": "unavailable", "message": "Now-playing subsystem not initialized"}
+                {
+                    "status": "unavailable",
+                    "message": "Now-playing subsystem not initialized",
+                }
             )
 
         return await self.bare_request_success(

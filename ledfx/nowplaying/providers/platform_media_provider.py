@@ -11,7 +11,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-from typing import Awaitable, Callable
+from typing import Callable
+from collections.abc import Awaitable
 
 from ledfx.nowplaying.models import NowPlayingTrack
 
@@ -96,9 +97,7 @@ class PlatformMediaProvider:
             except asyncio.CancelledError:
                 return
             except Exception:
-                _LOGGER.debug(
-                    "Error reading media session", exc_info=True
-                )
+                _LOGGER.debug("Error reading media session", exc_info=True)
             await asyncio.sleep(self._poll_interval)
 
     async def _read_current_session(self) -> NowPlayingTrack | None:
@@ -107,7 +106,9 @@ class PlatformMediaProvider:
             return None
 
         try:
-            mgr = await GlobalSystemMediaTransportControlsSessionManager.request_async()
+            mgr = (
+                await GlobalSystemMediaTransportControlsSessionManager.request_async()
+            )
             session = mgr.get_current_session()
             if session is None:
                 return None

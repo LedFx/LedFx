@@ -237,8 +237,10 @@ class NowPlayingManager:
                 _LOGGER.debug("Failed to get thumbnail bytes", exc_info=True)
 
         # Fallback: try HTTP fetch if art_url looks like HTTP
-        if art_bytes is None and track.art_url and track.art_url.startswith(
-            ("http://", "https://")
+        if (
+            art_bytes is None
+            and track.art_url
+            and track.art_url.startswith(("http://", "https://"))
         ):
             art_bytes = await self._fetch_art_http(
                 track.art_url, config.get("art_fetch_timeout_ms", 5000) / 1000
@@ -256,9 +258,7 @@ class NowPlayingManager:
 
         return art_bytes
 
-    async def _fetch_art_http(
-        self, url: str, timeout: float
-    ) -> bytes | None:
+    async def _fetch_art_http(self, url: str, timeout: float) -> bytes | None:
         """Fetch album art from an HTTP URL."""
         try:
             import aiohttp

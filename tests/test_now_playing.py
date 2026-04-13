@@ -21,7 +21,6 @@ from ledfx.events import (
 from ledfx.nowplaying.manager import NowPlayingManager
 from ledfx.nowplaying.models import NowPlayingState, NowPlayingTrack
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
@@ -52,7 +51,9 @@ class _DummyGradientEffect:
 
     def __init__(self, etype="bars"):
         self.type = etype
-        self._config = {"gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,0,255) 100%)"}
+        self._config = {
+            "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,0,255) 100%)"
+        }
         self._updated = False
 
     def update_config(self, config):
@@ -89,7 +90,7 @@ class _DummyLedFx:
 def _make_test_image(width=64, height=64) -> bytes:
     """Create a simple test image as bytes."""
     arr = np.zeros((height, width, 3), dtype=np.uint8)
-    arr[:, :width // 3, 0] = 255  # Red
+    arr[:, : width // 3, 0] = 255  # Red
     arr[:, width // 3 : 2 * width // 3, 1] = 255  # Green
     arr[:, 2 * width // 3 :, 2] = 255  # Blue
     img = Image.fromarray(arr)
@@ -122,12 +123,8 @@ class TestNowPlayingTrack:
         assert t1.signature() != t2.signature()
 
     def test_signature_same_for_same_track(self):
-        t1 = NowPlayingTrack(
-            provider="test", title="X", artist="Y", album="Z"
-        )
-        t2 = NowPlayingTrack(
-            provider="test", title="X", artist="Y", album="Z"
-        )
+        t1 = NowPlayingTrack(provider="test", title="X", artist="Y", album="Z")
+        t2 = NowPlayingTrack(provider="test", title="X", artist="Y", album="Z")
         assert t1.signature() == t2.signature()
 
     def test_art_signature_changes_with_url(self):
@@ -208,13 +205,13 @@ class TestNowPlayingManagerDedupe:
     @pytest.mark.asyncio
     async def test_duplicate_track_ignored(self):
         ledfx = _DummyLedFx(
-            config={"now_playing": {"enabled": True, "provider": "platform_media"}}
+            config={
+                "now_playing": {"enabled": True, "provider": "platform_media"}
+            }
         )
         mgr = NowPlayingManager(ledfx)
 
-        track = NowPlayingTrack(
-            provider="test", title="Song", artist="Artist"
-        )
+        track = NowPlayingTrack(provider="test", title="Song", artist="Artist")
 
         # First call should trigger event
         await mgr._on_track_update(track)
@@ -228,7 +225,9 @@ class TestNowPlayingManagerDedupe:
     @pytest.mark.asyncio
     async def test_different_track_triggers_event(self):
         ledfx = _DummyLedFx(
-            config={"now_playing": {"enabled": True, "provider": "platform_media"}}
+            config={
+                "now_playing": {"enabled": True, "provider": "platform_media"}
+            }
         )
         mgr = NowPlayingManager(ledfx)
 
@@ -242,7 +241,9 @@ class TestNowPlayingManagerDedupe:
     @pytest.mark.asyncio
     async def test_playing_state_change_triggers_update(self):
         ledfx = _DummyLedFx(
-            config={"now_playing": {"enabled": True, "provider": "platform_media"}}
+            config={
+                "now_playing": {"enabled": True, "provider": "platform_media"}
+            }
         )
         mgr = NowPlayingManager(ledfx)
 
@@ -299,7 +300,9 @@ class TestNowPlayingManagerGradientApply:
         )
         mgr = NowPlayingManager(ledfx)
 
-        test_gradient = "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,255,0) 100%)"
+        test_gradient = (
+            "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,255,0) 100%)"
+        )
 
         with patch(
             "ledfx.effects.gradient.GradientEffect",

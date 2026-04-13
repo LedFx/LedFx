@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Awaitable, Callable, Protocol
+from typing import Callable, Protocol
+from collections.abc import Awaitable
 
 from ledfx.nowplaying.models import NowPlayingTrack
 
