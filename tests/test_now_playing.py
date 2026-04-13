@@ -5,8 +5,7 @@ from __future__ import annotations
 import asyncio
 import io
 import time
-from collections import OrderedDict
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import numpy as np
 import PIL.Image as Image
