@@ -172,6 +172,7 @@ class NowPlayingManager:
                 self.state.last_art_signature = art_sig
                 self.state.palette_applied = False
                 self.state.active_gradient = None
+                self.state.active_palette_id = None
                 self.state.active_art_cache_key = None
                 self.state.active_art_url = track.art_url
 
@@ -203,6 +204,10 @@ class NowPlayingManager:
 
             elif art_changed:
                 self.state.last_art_signature = art_sig
+                self.state.palette_applied = False
+                self.state.active_gradient = None
+                self.state.active_palette_id = None
+                self.state.active_art_cache_key = None
                 self.state.active_art_url = track.art_url
                 await self._handle_art_and_palette(track, sig, config, now)
 
