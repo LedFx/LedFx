@@ -86,8 +86,6 @@ class NowPlayingManager:
 
     def _create_provider(self, config: dict):
         """Create the appropriate provider for the current platform."""
-        poll_interval = config.get("poll_interval_s", 2.0)
-
         if sys.platform == "win32":
             from ledfx.nowplaying.providers.windows_smtc import (
                 WindowsSMTCProvider,
@@ -102,7 +100,7 @@ class NowPlayingManager:
                     "Windows SMTC provider unavailable: %s", reason
                 )
                 return None
-            return WindowsSMTCProvider(poll_interval=poll_interval)
+            return WindowsSMTCProvider()
 
         elif sys.platform == "linux":
             from ledfx.nowplaying.providers.linux_mpris import (
@@ -116,7 +114,7 @@ class NowPlayingManager:
                 self.state.last_error = reason
                 _LOGGER.warning("Linux MPRIS provider unavailable: %s", reason)
                 return None
-            return LinuxMPRISProvider(poll_interval=poll_interval)
+            return LinuxMPRISProvider()
 
         elif sys.platform == "darwin":
             from ledfx.nowplaying.providers.macos_stub import (
@@ -130,7 +128,7 @@ class NowPlayingManager:
                 self.state.last_error = reason
                 _LOGGER.warning("macOS provider unavailable: %s", reason)
                 return None
-            return MacOSNowPlayingProvider(poll_interval=poll_interval)
+            return MacOSNowPlayingProvider()
 
         else:
             self.state.last_error = f"Unsupported platform: {sys.platform}"

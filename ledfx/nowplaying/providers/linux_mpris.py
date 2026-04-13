@@ -32,8 +32,8 @@ class LinuxMPRISProvider:
 
     PROVIDER_NAME = "linux_mpris"
 
-    def __init__(self, poll_interval: float = 2.0):
-        self._poll_interval = poll_interval
+    def __init__(self):
+        pass
 
     async def start(
         self,

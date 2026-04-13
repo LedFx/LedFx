@@ -13,7 +13,7 @@ class NowPlayingProvider(Protocol):
         self,
         callback: Callable[[NowPlayingTrack], Awaitable[None]],
     ) -> None:
-        """Start the provider, calling *callback* on each track change."""
+        ...
 
     async def stop(self) -> None:
-        """Stop the provider and release resources."""
+        ...

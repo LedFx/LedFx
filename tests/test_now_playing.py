@@ -429,7 +429,7 @@ class TestProviderContract:
             WindowsSMTCProvider,
         )
 
-        provider = WindowsSMTCProvider(poll_interval=1.0)
+        provider = WindowsSMTCProvider()
         assert hasattr(provider, "start")
         assert hasattr(provider, "stop")
         assert callable(provider.start)
@@ -442,7 +442,7 @@ class TestProviderContract:
             LinuxMPRISProvider,
         )
 
-        provider = LinuxMPRISProvider(poll_interval=1.0)
+        provider = LinuxMPRISProvider()
         assert hasattr(provider, "start")
         assert hasattr(provider, "stop")
         assert callable(provider.start)
@@ -455,7 +455,7 @@ class TestProviderContract:
             MacOSNowPlayingProvider,
         )
 
-        provider = MacOSNowPlayingProvider(poll_interval=1.0)
+        provider = MacOSNowPlayingProvider()
         assert hasattr(provider, "start")
         assert hasattr(provider, "stop")
         assert callable(provider.start)

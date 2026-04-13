@@ -2,6 +2,7 @@
 Windows SMTC (System Media Transport Controls) provider.
 
 Uses winrt-windows-media-control to read active media sessions on Windows.
+Event-driven: subscribes to session and media property change events.
 """
 
 from __future__ import annotations
@@ -37,17 +38,21 @@ def unavailable_reason() -> str:
 
 
 class WindowsSMTCProvider:
-    """Reads current media session info via Windows SMTC with polling."""
+    """Reads current media session info via Windows SMTC events."""
 
     PROVIDER_NAME = "windows_smtc"
 
-    def __init__(self, poll_interval: float = 2.0):
-        self._poll_interval = poll_interval
+    def __init__(self):
         self._callback: Callable[[NowPlayingTrack], Awaitable[None]] | None = (
             None
         )
-        self._task: asyncio.Task | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
         self._stopped = False
+        self._manager = None
+        self._current_session = None
+        self._session_changed_token = None
+        self._media_props_token = None
+        self._playback_token = None
 
     async def start(
         self,
@@ -59,34 +64,95 @@ class WindowsSMTCProvider:
             )
         self._callback = callback
         self._stopped = False
-        self._task = asyncio.create_task(self._poll_loop())
-        _LOGGER.info(
-            "Windows SMTC provider started (poll interval: %.1fs)",
-            self._poll_interval,
+        self._loop = asyncio.get_running_loop()
+
+        self._manager = (
+            await GlobalSystemMediaTransportControlsSessionManager.request_async()
         )
+
+        # Subscribe to session changes (e.g. user switches media app)
+        self._session_changed_token = (
+            self._manager.add_current_session_changed(
+                lambda mgr, args: self._schedule_read()
+            )
+        )
+
+        # Attach to the current session immediately
+        await self._attach_current_session()
+
+        # Fire an initial read so the manager gets the current state
+        await self._read_and_notify()
+
+        _LOGGER.info("Windows SMTC provider started (event-driven)")
 
     async def stop(self) -> None:
         self._stopped = True
-        if self._task and not self._task.done():
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-        self._task = None
+        self._detach_session()
+        if self._manager and self._session_changed_token is not None:
+            self._manager.remove_current_session_changed(
+                self._session_changed_token
+            )
+            self._session_changed_token = None
+        self._manager = None
         _LOGGER.info("Windows SMTC provider stopped")
 
-    async def _poll_loop(self) -> None:
-        while not self._stopped:
-            try:
-                track = await self._read_current_session()
-                if track and self._callback:
-                    await self._callback(track)
-            except asyncio.CancelledError:
-                return
-            except Exception:
-                _LOGGER.debug("Error reading media session", exc_info=True)
-            await asyncio.sleep(self._poll_interval)
+    def _schedule_read(self) -> None:
+        """Thread-safe trampoline: schedule a read on the event loop."""
+        if self._stopped or self._loop is None:
+            return
+        self._loop.call_soon_threadsafe(
+            lambda: asyncio.ensure_future(self._on_event_fired())
+        )
+
+    async def _on_event_fired(self) -> None:
+        """Re-attach to the (possibly new) session and read."""
+        if self._stopped:
+            return
+        await self._attach_current_session()
+        await self._read_and_notify()
+
+    async def _attach_current_session(self) -> None:
+        """Subscribe to property/playback changes on the active session."""
+        self._detach_session()
+        if self._manager is None:
+            return
+        session = self._manager.get_current_session()
+        if session is None:
+            self._current_session = None
+            return
+        self._current_session = session
+        self._media_props_token = session.add_media_properties_changed(
+            lambda s, args: self._schedule_read()
+        )
+        self._playback_token = session.add_playback_info_changed(
+            lambda s, args: self._schedule_read()
+        )
+
+    def _detach_session(self) -> None:
+        """Unsubscribe from the previous session's events."""
+        if self._current_session is not None:
+            if self._media_props_token is not None:
+                self._current_session.remove_media_properties_changed(
+                    self._media_props_token
+                )
+                self._media_props_token = None
+            if self._playback_token is not None:
+                self._current_session.remove_playback_info_changed(
+                    self._playback_token
+                )
+                self._playback_token = None
+        self._current_session = None
+
+    async def _read_and_notify(self) -> None:
+        """Read the current session and push to the callback."""
+        if self._stopped or self._callback is None:
+            return
+        try:
+            track = await self._read_current_session()
+            if track:
+                await self._callback(track)
+        except Exception:
+            _LOGGER.debug("Error reading media session", exc_info=True)
 
     async def _read_current_session(self) -> NowPlayingTrack | None:
         """Read current media session from Windows SMTC."""

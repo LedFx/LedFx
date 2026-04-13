@@ -219,11 +219,9 @@ All events carry `provider`, `track_signature`, `timestamp`. Emitted only on mea
 ```json
 "now_playing": {
   "enabled": false,
-  "provider": "platform_media",
   "generate_palette_from_album_art": false,
   "apply_palette_to_running_effects": false,
   "gradient_variant": "led_punchy",
-  "poll_interval_s": 2.0,
   "art_fetch_timeout_ms": 5000,
   "art_cache": true,
   "art_cache_max_items": 64
@@ -601,9 +599,7 @@ Remove provider illusion:
 "now_playing": {
   "enabled": false,
   "generate_palette_from_album_art": false,
-  "apply_palette_to_running_effects": false,
-  "debounce_ms": 1500,
-  "minimum_track_stable_ms": 750
+  "apply_palette_to_running_effects": false
 }
 ```
 
