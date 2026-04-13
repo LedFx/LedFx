@@ -206,7 +206,7 @@ class TestNowPlayingManagerDedupe:
     async def test_duplicate_track_ignored(self):
         ledfx = _DummyLedFx(
             config={
-                "now_playing": {"enabled": True, "provider": "platform_media"}
+                "now_playing": {"enabled": True}
             }
         )
         mgr = NowPlayingManager(ledfx)
@@ -226,7 +226,7 @@ class TestNowPlayingManagerDedupe:
     async def test_different_track_triggers_event(self):
         ledfx = _DummyLedFx(
             config={
-                "now_playing": {"enabled": True, "provider": "platform_media"}
+                "now_playing": {"enabled": True}
             }
         )
         mgr = NowPlayingManager(ledfx)
@@ -242,7 +242,7 @@ class TestNowPlayingManagerDedupe:
     async def test_playing_state_change_triggers_update(self):
         ledfx = _DummyLedFx(
             config={
-                "now_playing": {"enabled": True, "provider": "platform_media"}
+                "now_playing": {"enabled": True}
             }
         )
         mgr = NowPlayingManager(ledfx)
@@ -436,14 +436,117 @@ class TestNowPlayingEvents:
 
 
 class TestProviderContract:
-    def test_provider_has_correct_interface(self):
-        """Verify the platform provider satisfies the protocol."""
-        from ledfx.nowplaying.providers.platform_media_provider import (
-            PlatformMediaProvider,
+    def test_windows_provider_has_correct_interface(self):
+        """Verify the Windows SMTC provider satisfies the protocol."""
+        from ledfx.nowplaying.providers.windows_smtc import (
+            WindowsSMTCProvider,
         )
 
-        provider = PlatformMediaProvider(poll_interval=1.0)
+        provider = WindowsSMTCProvider(poll_interval=1.0)
         assert hasattr(provider, "start")
         assert hasattr(provider, "stop")
         assert callable(provider.start)
         assert callable(provider.stop)
+        assert provider.PROVIDER_NAME == "windows_smtc"
+
+    def test_linux_provider_has_correct_interface(self):
+        """Verify the Linux MPRIS stub satisfies the protocol."""
+        from ledfx.nowplaying.providers.linux_mpris import (
+            LinuxMPRISProvider,
+        )
+
+        provider = LinuxMPRISProvider(poll_interval=1.0)
+        assert hasattr(provider, "start")
+        assert hasattr(provider, "stop")
+        assert callable(provider.start)
+        assert callable(provider.stop)
+        assert provider.PROVIDER_NAME == "linux_mpris"
+
+    def test_macos_provider_has_correct_interface(self):
+        """Verify the macOS stub satisfies the protocol."""
+        from ledfx.nowplaying.providers.macos_stub import (
+            MacOSNowPlayingProvider,
+        )
+
+        provider = MacOSNowPlayingProvider(poll_interval=1.0)
+        assert hasattr(provider, "start")
+        assert hasattr(provider, "stop")
+        assert callable(provider.start)
+        assert callable(provider.stop)
+        assert provider.PROVIDER_NAME == "macos_nowplaying"
+
+
+class TestProviderSelection:
+    @pytest.mark.asyncio
+    async def test_manager_selects_provider_by_platform(self):
+        """Manager picks the correct provider based on sys.platform."""
+        ledfx = _DummyLedFx(
+            config={"now_playing": {"enabled": True}}
+        )
+        mgr = NowPlayingManager(ledfx)
+
+        # Patch sys.platform to win32 and verify WindowsSMTCProvider is selected
+        with patch("ledfx.nowplaying.manager.sys") as mock_sys:
+            mock_sys.platform = "win32"
+            # Also mock the import to check availability
+            with patch(
+                "ledfx.nowplaying.providers.windows_smtc.is_available",
+                return_value=True,
+            ):
+                from ledfx.nowplaying.providers.windows_smtc import (
+                    WindowsSMTCProvider,
+                )
+
+                provider = mgr._create_provider(
+                    ledfx.config["now_playing"]
+                )
+                assert isinstance(provider, WindowsSMTCProvider)
+
+    @pytest.mark.asyncio
+    async def test_manager_returns_none_for_unavailable_platform(self):
+        """Manager returns None for stubs that report unavailable."""
+        ledfx = _DummyLedFx(
+            config={"now_playing": {"enabled": True}}
+        )
+        mgr = NowPlayingManager(ledfx)
+
+        with patch("ledfx.nowplaying.manager.sys") as mock_sys:
+            mock_sys.platform = "linux"
+            provider = mgr._create_provider(ledfx.config["now_playing"])
+            assert provider is None
+            assert mgr.state.last_error is not None
+
+    @pytest.mark.asyncio
+    async def test_manager_returns_none_for_unknown_platform(self):
+        """Manager returns None for unknown platforms."""
+        ledfx = _DummyLedFx(
+            config={"now_playing": {"enabled": True}}
+        )
+        mgr = NowPlayingManager(ledfx)
+
+        with patch("ledfx.nowplaying.manager.sys") as mock_sys:
+            mock_sys.platform = "freebsd"
+            provider = mgr._create_provider(ledfx.config["now_playing"])
+            assert provider is None
+            assert "Unsupported platform" in mgr.state.last_error
+
+    @pytest.mark.asyncio
+    async def test_stub_provider_start_raises_cleanly(self):
+        """Stub providers raise RuntimeError on start, not crash."""
+        from ledfx.nowplaying.providers.linux_mpris import (
+            LinuxMPRISProvider,
+        )
+
+        provider = LinuxMPRISProvider()
+        with pytest.raises(RuntimeError, match="unavailable"):
+            await provider.start(AsyncMock())
+
+    @pytest.mark.asyncio
+    async def test_stub_provider_stop_is_safe(self):
+        """Stub providers can be stopped without error."""
+        from ledfx.nowplaying.providers.macos_stub import (
+            MacOSNowPlayingProvider,
+        )
+
+        provider = MacOSNowPlayingProvider()
+        await provider.stop()  # Should not raise

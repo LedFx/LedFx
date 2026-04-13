@@ -8,6 +8,7 @@ import asyncio
 import hashlib
 import io
 import logging
+import sys
 import time
 from collections import OrderedDict
 
@@ -50,20 +51,18 @@ class NowPlayingManager:
             Event.LEDFX_SHUTDOWN,
         )
 
-        provider_name = config.get("provider", "platform_media")
-        self.state.provider_name = provider_name
-
         try:
-            provider = self._create_provider(provider_name, config)
+            provider = self._create_provider(config)
             if provider is None:
                 self.state.status = "error"
                 return
             self._provider = provider
+            self.state.provider_name = provider.PROVIDER_NAME
             await self._provider.start(self._on_track_update)
             self.state.status = "running"
             _LOGGER.info(
                 "Now-playing subsystem started with provider: %s",
-                provider_name,
+                provider.PROVIDER_NAME,
             )
         except Exception as e:
             self.state.status = "error"
@@ -85,11 +84,13 @@ class NowPlayingManager:
         self.state.status = "disabled" if not self.state.enabled else "idle"
         _LOGGER.info("Now-playing subsystem stopped")
 
-    def _create_provider(self, provider_name: str, config: dict):
-        """Create the appropriate provider instance."""
-        if provider_name == "platform_media":
-            from ledfx.nowplaying.providers.platform_media_provider import (
-                PlatformMediaProvider,
+    def _create_provider(self, config: dict):
+        """Create the appropriate provider for the current platform."""
+        poll_interval = config.get("poll_interval_s", 2.0)
+
+        if sys.platform == "win32":
+            from ledfx.nowplaying.providers.windows_smtc import (
+                WindowsSMTCProvider,
                 is_available,
                 unavailable_reason,
             )
@@ -98,15 +99,48 @@ class NowPlayingManager:
                 reason = unavailable_reason()
                 self.state.last_error = reason
                 _LOGGER.warning(
-                    "Platform media provider unavailable: %s", reason
+                    "Windows SMTC provider unavailable: %s", reason
                 )
                 return None
+            return WindowsSMTCProvider(poll_interval=poll_interval)
 
-            poll_interval = config.get("poll_interval_s", 2.0)
-            return PlatformMediaProvider(poll_interval=poll_interval)
+        elif sys.platform == "linux":
+            from ledfx.nowplaying.providers.linux_mpris import (
+                LinuxMPRISProvider,
+                is_available,
+                unavailable_reason,
+            )
+
+            if not is_available():
+                reason = unavailable_reason()
+                self.state.last_error = reason
+                _LOGGER.warning(
+                    "Linux MPRIS provider unavailable: %s", reason
+                )
+                return None
+            return LinuxMPRISProvider(poll_interval=poll_interval)
+
+        elif sys.platform == "darwin":
+            from ledfx.nowplaying.providers.macos_stub import (
+                MacOSNowPlayingProvider,
+                is_available,
+                unavailable_reason,
+            )
+
+            if not is_available():
+                reason = unavailable_reason()
+                self.state.last_error = reason
+                _LOGGER.warning(
+                    "macOS provider unavailable: %s", reason
+                )
+                return None
+            return MacOSNowPlayingProvider(poll_interval=poll_interval)
+
         else:
-            self.state.last_error = f"Unknown provider: {provider_name}"
-            _LOGGER.warning("Unknown now-playing provider: %s", provider_name)
+            self.state.last_error = f"Unsupported platform: {sys.platform}"
+            _LOGGER.warning(
+                "No now-playing provider for platform: %s", sys.platform
+            )
             return None
 
     async def _on_track_update(self, track: NowPlayingTrack) -> None:

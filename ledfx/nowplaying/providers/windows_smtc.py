@@ -1,16 +1,13 @@
 """
-Platform media session provider using winrt (Windows) with polling.
+Windows SMTC (System Media Transport Controls) provider.
 
-All platform-specific media reading logic is isolated in this single file.
-Uses winrt-windows-media-control on Windows to read active media sessions.
-Linux/macOS support can be added as additional provider files.
+Uses winrt-windows-media-control to read active media sessions on Windows.
 """
 
 from __future__ import annotations
 
 import asyncio
 import logging
-import sys
 from collections.abc import Awaitable
 from typing import Callable
 
@@ -18,40 +15,31 @@ from ledfx.nowplaying.models import NowPlayingTrack
 
 _LOGGER = logging.getLogger(__name__)
 
-_PLATFORM_AVAILABLE = False
+_AVAILABLE = False
 _UNAVAILABLE_REASON = ""
 
-if sys.platform == "win32":
-    try:
-        from winrt.windows.media.control import (
-            GlobalSystemMediaTransportControlsSessionManager,
-        )
+try:
+    from winrt.windows.media.control import (
+        GlobalSystemMediaTransportControlsSessionManager,
+    )
 
-        _PLATFORM_AVAILABLE = True
-    except ImportError:
-        _UNAVAILABLE_REASON = (
-            "winrt-windows-media-control package not installed"
-        )
-elif sys.platform == "linux":
-    _UNAVAILABLE_REASON = "Linux MPRIS2 reading not yet implemented"
-elif sys.platform == "darwin":
-    _UNAVAILABLE_REASON = "macOS media reading not yet implemented"
-else:
-    _UNAVAILABLE_REASON = f"Unsupported platform: {sys.platform}"
+    _AVAILABLE = True
+except ImportError:
+    _UNAVAILABLE_REASON = "winrt-windows-media-control package not installed"
 
 
 def is_available() -> bool:
-    return _PLATFORM_AVAILABLE
+    return _AVAILABLE
 
 
 def unavailable_reason() -> str:
     return _UNAVAILABLE_REASON
 
 
-class PlatformMediaProvider:
-    """Reads current media session info via platform APIs with polling."""
+class WindowsSMTCProvider:
+    """Reads current media session info via Windows SMTC with polling."""
 
-    PROVIDER_NAME = "platform_media"
+    PROVIDER_NAME = "windows_smtc"
 
     def __init__(self, poll_interval: float = 2.0):
         self._poll_interval = poll_interval
@@ -65,15 +53,15 @@ class PlatformMediaProvider:
         self,
         callback: Callable[[NowPlayingTrack], Awaitable[None]],
     ) -> None:
-        if not _PLATFORM_AVAILABLE:
+        if not _AVAILABLE:
             raise RuntimeError(
-                f"Platform media provider unavailable: {_UNAVAILABLE_REASON}"
+                f"Windows SMTC provider unavailable: {_UNAVAILABLE_REASON}"
             )
         self._callback = callback
         self._stopped = False
         self._task = asyncio.create_task(self._poll_loop())
         _LOGGER.info(
-            "Platform media provider started (poll interval: %.1fs)",
+            "Windows SMTC provider started (poll interval: %.1fs)",
             self._poll_interval,
         )
 
@@ -86,7 +74,7 @@ class PlatformMediaProvider:
             except asyncio.CancelledError:
                 pass
         self._task = None
-        _LOGGER.info("Platform media provider stopped")
+        _LOGGER.info("Windows SMTC provider stopped")
 
     async def _poll_loop(self) -> None:
         while not self._stopped:
@@ -102,9 +90,6 @@ class PlatformMediaProvider:
 
     async def _read_current_session(self) -> NowPlayingTrack | None:
         """Read current media session from Windows SMTC."""
-        if sys.platform != "win32":
-            return None
-
         try:
             mgr = (
                 await GlobalSystemMediaTransportControlsSessionManager.request_async()
@@ -164,7 +149,7 @@ class PlatformMediaProvider:
             return None
 
     async def get_thumbnail_bytes(self) -> bytes | None:
-        """Get the raw bytes of the last thumbnail stream. Call after _read_current_session."""
+        """Get the raw bytes of the last thumbnail stream."""
         stream = getattr(self, "_last_thumbnail_stream", None)
         if stream is None:
             return None

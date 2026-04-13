@@ -193,7 +193,6 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             "now_playing",
             default={
                 "enabled": False,
-                "provider": "platform_media",
                 "generate_palette_from_album_art": False,
                 "apply_palette_to_running_effects": False,
                 "gradient_variant": "led_punchy",
