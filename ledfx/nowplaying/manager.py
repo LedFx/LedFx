@@ -114,9 +114,7 @@ class NowPlayingManager:
             if not is_available():
                 reason = unavailable_reason()
                 self.state.last_error = reason
-                _LOGGER.warning(
-                    "Linux MPRIS provider unavailable: %s", reason
-                )
+                _LOGGER.warning("Linux MPRIS provider unavailable: %s", reason)
                 return None
             return LinuxMPRISProvider(poll_interval=poll_interval)
 
@@ -130,9 +128,7 @@ class NowPlayingManager:
             if not is_available():
                 reason = unavailable_reason()
                 self.state.last_error = reason
-                _LOGGER.warning(
-                    "macOS provider unavailable: %s", reason
-                )
+                _LOGGER.warning("macOS provider unavailable: %s", reason)
                 return None
             return MacOSNowPlayingProvider(poll_interval=poll_interval)
 
