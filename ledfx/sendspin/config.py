@@ -4,6 +4,8 @@ import urllib.parse
 
 import voluptuous as vol
 
+from ledfx.sendspin import SENDSPIN_AVAILABLE
+
 # Default Sendspin server configuration
 DEFAULT_SERVER_URL = "ws://192.168.1.12:8927/sendspin"
 DEFAULT_CLIENT_NAME = "LedFx"
@@ -70,3 +72,30 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
         return False, "server_url path contains path-traversal sequence"
 
     return True, ""
+
+
+def is_always_on(device_idx, query_devices, query_hostapis):
+    """Check if the audio device at device_idx is a Sendspin device.
+
+    Args:
+        device_idx: The audio device index to check.
+        query_devices: Callable returning the full device tuple.
+        query_hostapis: Callable returning the host API tuple.
+
+    Returns:
+        True if the device is a Sendspin server.
+    """
+    if not SENDSPIN_AVAILABLE or device_idx is None:
+        return False
+    try:
+        devices = query_devices()
+        hostapis = query_hostapis()
+        if (
+            device_idx < len(devices)
+            and hostapis[devices[device_idx]["hostapi"]]["name"]
+            == "SENDSPIN"
+        ):
+            return True
+    except (IndexError, KeyError):
+        pass
+    return False

@@ -19,6 +19,7 @@ from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, Event
 from ledfx.sendspin import SENDSPIN_AVAILABLE
+from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
 
 # Sendspin server configurations discovered or configured
 SENDSPIN_SERVERS = {}
@@ -511,7 +512,7 @@ class AudioInputSource:
             last_active = AudioInputSource._last_active
 
         # Activate outside the lock to avoid deadlock
-        if len(self._callbacks) != 0:
+        if len(self._callbacks) != 0 or self._should_always_keep_active():
             self.activate()
 
         # Check if device changed and fire event if needed
@@ -848,6 +849,16 @@ class AudioInputSource:
             stream_to_close.close()
             _LOGGER.info("Audio source closed.")
 
+    def _should_always_keep_active(self):
+        """Check if the current audio source should stay active regardless of subscribers."""
+        if not self._ledfx.config.get("sendspin_always_on", False):
+            return False
+        return is_sendspin_always_on(
+            self._config.get("audio_device"),
+            self.query_devices,
+            self.query_hostapis,
+        )
+
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
@@ -864,6 +875,8 @@ class AudioInputSource:
         """Unregisters a callback with the input source"""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
+        if self._should_always_keep_active():
+            return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active
@@ -877,6 +890,8 @@ class AudioInputSource:
         if self._timer is not None:
             self._timer.cancel()
         self._timer = None
+        if self._should_always_keep_active():
+            return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active

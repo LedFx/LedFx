@@ -189,6 +189,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             int, vol.Range(min=1, max=120)
         ),
         vol.Optional("sendspin_servers", default={}): dict,
+        vol.Optional("sendspin_always_on", default=False): bool,
     },
     extra=vol.ALLOW_EXTRA,
 )
