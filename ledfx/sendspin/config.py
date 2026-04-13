@@ -87,6 +87,8 @@ def is_always_on(device_idx, query_devices, query_hostapis):
     """
     if not SENDSPIN_AVAILABLE or device_idx is None:
         return False
+
+
 def is_always_on(device_idx, query_devices, query_hostapis):
     if not isinstance(device_idx, int) or device_idx < 0:
         return False
