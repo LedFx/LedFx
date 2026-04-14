@@ -858,7 +858,11 @@ class AudioInputSource:
         _LOGGER.debug(
             "[SENDSPIN] deactivate: stream_active=%s, stream_type=%s",
             AudioInputSource._audio_stream_active,
-            type(AudioInputSource._stream).__name__ if AudioInputSource._stream else None,
+            (
+                type(AudioInputSource._stream).__name__
+                if AudioInputSource._stream
+                else None
+            ),
         )
         # Stop the stream outside the lock to avoid deadlock with audio callback
         # The audio callback thread may be waiting to complete, and if it needs
@@ -875,7 +879,10 @@ class AudioInputSource:
             stream_to_close.stop()
             stream_to_close.close()
             _LOGGER.info("Audio source closed.")
-            _LOGGER.debug("[SENDSPIN] deactivate: stream closed, type was %s", type(stream_to_close).__name__)
+            _LOGGER.debug(
+                "[SENDSPIN] deactivate: stream closed, type was %s",
+                type(stream_to_close).__name__,
+            )
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
@@ -928,13 +935,17 @@ class AudioInputSource:
             AudioInputSource._audio_stream_active,
         )
         if always_on:
-            _LOGGER.debug("[SENDSPIN] unsubscribe: always-on active, skipping deactivate timer")
+            _LOGGER.debug(
+                "[SENDSPIN] unsubscribe: always-on active, skipping deactivate timer"
+            )
             return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active
         ):
-            _LOGGER.debug("[SENDSPIN] unsubscribe: starting 5s deactivate timer")
+            _LOGGER.debug(
+                "[SENDSPIN] unsubscribe: starting 5s deactivate timer"
+            )
             if self._timer is not None:
                 self._timer.cancel()
             self._timer = threading.Timer(5.0, self.check_and_deactivate)
@@ -952,13 +963,17 @@ class AudioInputSource:
             AudioInputSource._audio_stream_active,
         )
         if always_on:
-            _LOGGER.debug("[SENDSPIN] check_and_deactivate: always-on active, skipping deactivate")
+            _LOGGER.debug(
+                "[SENDSPIN] check_and_deactivate: always-on active, skipping deactivate"
+            )
             return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active
         ):
-            _LOGGER.debug("[SENDSPIN] check_and_deactivate: deactivating audio stream")
+            _LOGGER.debug(
+                "[SENDSPIN] check_and_deactivate: deactivating audio stream"
+            )
             self.deactivate()
 
     def get_device_index_by_name(self, device_name: str):

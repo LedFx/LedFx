@@ -112,7 +112,9 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         )
         return result
     except Exception as exc:
-        _LOGGER.debug("[SENDSPIN] is_always_on: exception %s, returning False", exc)
+        _LOGGER.debug(
+            "[SENDSPIN] is_always_on: exception %s, returning False", exc
+        )
         return False
 
 

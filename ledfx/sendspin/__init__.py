@@ -17,7 +17,9 @@ _LOGGER = logging.getLogger(__name__)
 
 # Only expose Sendspin functionality on Python 3.12+
 if sys.version_info >= (3, 12):
-    _LOGGER.debug("[SENDSPIN] Python %s >= 3.12, attempting import", sys.version_info)
+    _LOGGER.debug(
+        "[SENDSPIN] Python %s >= 3.12, attempting import", sys.version_info
+    )
     try:
         from ledfx.sendspin.stream import SendspinAudioStream  # noqa: F401
 
@@ -28,8 +30,13 @@ if sys.version_info >= (3, 12):
         # aiosendspin not available, or native library (e.g. libFLAC.dll) failed to load
         SENDSPIN_AVAILABLE = False
         __all__ = []
-        _LOGGER.debug("[SENDSPIN] Import failed (%s), SENDSPIN_AVAILABLE=False", _exc)
+        _LOGGER.debug(
+            "[SENDSPIN] Import failed (%s), SENDSPIN_AVAILABLE=False", _exc
+        )
 else:
     SENDSPIN_AVAILABLE = False
     __all__ = []
-    _LOGGER.debug("[SENDSPIN] Python %s < 3.12, SENDSPIN_AVAILABLE=False", sys.version_info)
+    _LOGGER.debug(
+        "[SENDSPIN] Python %s < 3.12, SENDSPIN_AVAILABLE=False",
+        sys.version_info,
+    )
