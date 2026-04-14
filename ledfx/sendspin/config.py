@@ -114,3 +114,42 @@ def is_always_on(device_idx, query_devices, query_hostapis):
     except Exception as exc:
         _LOGGER.debug("[SENDSPIN] is_always_on: exception %s, returning False", exc)
         return False
+
+
+def eager_start(ledfx):
+    """Eagerly start the audio subsystem if sendspin_always_on is enabled
+    and the configured audio device is a Sendspin source.
+
+    Called from core startup after sendspin servers are loaded so the
+    Sendspin audio stream begins immediately, even when no audio-reactive
+    effect is active yet.
+    """
+    if not ledfx.config.get("sendspin_always_on", False):
+        _LOGGER.debug(
+            "[SENDSPIN] eager_start: sendspin_always_on is False, skipping"
+        )
+        return
+
+    audio_config = ledfx.config.get("audio", {})
+    device_idx = audio_config.get("audio_device")
+
+    # Lazy import to break circular dependency:
+    # audio.py → sendspin/config.py → audio.py
+    from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+
+    if not is_always_on(
+        device_idx,
+        AudioInputSource.query_devices,
+        AudioInputSource.query_hostapis,
+    ):
+        _LOGGER.debug(
+            "[SENDSPIN] eager_start: audio_device=%s is not a Sendspin device, skipping",
+            device_idx,
+        )
+        return
+
+    _LOGGER.debug(
+        "[SENDSPIN] eager_start: audio_device=%s is Sendspin, eagerly initializing audio subsystem",
+        device_idx,
+    )
+    ledfx.audio = AudioAnalysisSource(ledfx, audio_config)

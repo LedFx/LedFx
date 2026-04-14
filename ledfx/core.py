@@ -31,6 +31,7 @@ from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.audio import AudioInputSource
+from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -502,6 +503,10 @@ class LedFxCore:
         # virtuals, since virtuals with active effects trigger audio
         # initialization which validates the audio_device index.
         self._load_sendspin_servers()
+
+        # Eagerly start the Sendspin audio stream at boot when configured,
+        # even if no audio-reactive effect is active yet.
+        sendspin_eager_start(self)
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(
