@@ -4,8 +4,6 @@ import urllib.parse
 
 import voluptuous as vol
 
-from ledfx.sendspin import SENDSPIN_AVAILABLE
-
 # Default Sendspin server configuration
 DEFAULT_SERVER_URL = "ws://192.168.1.12:8927/sendspin"
 DEFAULT_CLIENT_NAME = "LedFx"
@@ -85,7 +83,7 @@ def is_always_on(device_idx, query_devices, query_hostapis):
     Returns:
         True if the device is a Sendspin server.
     """
-    if not SENDSPIN_AVAILABLE or device_idx is None:
+    if device_idx is None:
         return False
     try:
         devices = query_devices()
