@@ -85,14 +85,17 @@ def is_always_on(device_idx, query_devices, query_hostapis):
     """
     if device_idx is None:
         return False
+
+
+def is_always_on(device_idx, query_devices, query_hostapis):
+    if not isinstance(device_idx, int) or device_idx < 0:
+        return False
     try:
         devices = query_devices()
         hostapis = query_hostapis()
-        if (
-            device_idx < len(devices)
-            and hostapis[devices[device_idx]["hostapi"]]["name"] == "SENDSPIN"
-        ):
-            return True
-    except (IndexError, KeyError):
-        pass
+        if device_idx >= len(devices):
+            return False
+        return hostapis[devices[device_idx]["hostapi"]]["name"] == "SENDSPIN"
+    except Exception:
+        return False
     return False
