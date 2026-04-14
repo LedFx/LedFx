@@ -1,8 +1,11 @@
 """Sendspin configuration schema and constants."""
 
+import logging
 import urllib.parse
 
 import voluptuous as vol
+
+_LOGGER = logging.getLogger(__name__)
 
 # Default Sendspin server configuration
 DEFAULT_SERVER_URL = "ws://192.168.1.12:8927/sendspin"
@@ -84,12 +87,30 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         True if the device is a Sendspin server.
     """
     if not isinstance(device_idx, int) or device_idx < 0:
+        _LOGGER.debug(
+            "[SENDSPIN] is_always_on: device_idx=%r is not a valid non-negative int, returning False",
+            device_idx,
+        )
         return False
     try:
         devices = query_devices()
         hostapis = query_hostapis()
         if device_idx >= len(devices):
+            _LOGGER.debug(
+                "[SENDSPIN] is_always_on: device_idx=%s >= len(devices)=%s, returning False",
+                device_idx,
+                len(devices),
+            )
             return False
-        return hostapis[devices[device_idx]["hostapi"]]["name"] == "SENDSPIN"
-    except Exception:
+        hostapi_name = hostapis[devices[device_idx]["hostapi"]]["name"]
+        result = hostapi_name == "SENDSPIN"
+        _LOGGER.debug(
+            "[SENDSPIN] is_always_on: device_idx=%s hostapi=%r -> %s",
+            device_idx,
+            hostapi_name,
+            result,
+        )
+        return result
+    except Exception as exc:
+        _LOGGER.debug("[SENDSPIN] is_always_on: exception %s, returning False", exc)
         return False
