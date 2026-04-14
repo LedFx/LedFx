@@ -31,7 +31,6 @@ from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.audio import AudioInputSource
-from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -45,6 +44,7 @@ from ledfx.mdns_manager import ZeroConfRunner
 from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
+from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.tools.ts_generator import generate_typescript_types
 from ledfx.utils import (
     RollingQueueHandler,
