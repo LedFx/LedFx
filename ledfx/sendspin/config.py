@@ -83,11 +83,6 @@ def is_always_on(device_idx, query_devices, query_hostapis):
     Returns:
         True if the device is a Sendspin server.
     """
-    if device_idx is None:
-        return False
-
-
-def is_always_on(device_idx, query_devices, query_hostapis):
     if not isinstance(device_idx, int) or device_idx < 0:
         return False
     try:
@@ -98,4 +93,3 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         return hostapis[devices[device_idx]["hostapi"]]["name"] == "SENDSPIN"
     except Exception:
         return False
-    return False
