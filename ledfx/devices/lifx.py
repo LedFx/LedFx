@@ -630,7 +630,7 @@ class LifxDevice(NetworkedDevice):
             pixels = data.astype(np.dtype("B")).reshape(-1, 3)
             if len(pixels) > 0:
                 r, g, b = pixels[0]
-                color = HSBK.from_rgb(int(r), int(g), int(b)).to_protocol()
+                color = HSBK.from_rgb(r / 255.0, g / 255.0, b / 255.0).to_protocol()
                 packet = packets.Light.SetColor(
                     color=color, duration=self.frame_duration_ms
                 )
