@@ -202,7 +202,7 @@ class Equalizer2d(Twod, GradientEffect):
                 self.volumes[: self.bands]
             ).astype(int)
             self.bar_colors = [tuple(c) for c in colors]
-        elif self.power_gradient not in ("Progressive", "Stretch"):
+        elif self.power_gradient == "Off":
             colors = self.get_gradient_color_vectorized1d(
                 np.arange(self.bands, dtype=np.float32) / self.bands
             ).astype(int)
