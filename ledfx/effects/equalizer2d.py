@@ -95,9 +95,9 @@ class Equalizer2d(Twod, GradientEffect):
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
             vol.Optional(
                 "power_gradient",
-                description="Color bars by power level: Solid picks one gradient color per band power, Progressive shows gradient progression up to band power",
+                description="Color bars by power level: various algorithms",
                 default="Off",
-            ): vol.In(["Off", "Solid", "Progressive"]),
+            ): vol.In(["Off", "Solid", "Progressive", "Stretch"]),
         }
     )
 
@@ -202,7 +202,7 @@ class Equalizer2d(Twod, GradientEffect):
                 self.volumes[: self.bands]
             ).astype(int)
             self.bar_colors = [tuple(c) for c in colors]
-        elif self.power_gradient != "Progressive":
+        elif self.power_gradient not in ("Progressive", "Stretch"):
             colors = self.get_gradient_color_vectorized1d(
                 np.arange(self.bands, dtype=np.float32) / self.bands
             ).astype(int)
@@ -288,7 +288,13 @@ class Equalizer2d(Twod, GradientEffect):
 
     def draw_ring_progressive(self):
         """Draw ring with gradient color progression based on distance from center."""
-        if self.center:
+        stretch = self.power_gradient == "Stretch"
+
+        if stretch:
+            positions = np.zeros(
+                (self.r_height, self.r_width), dtype=np.float32
+            )
+        elif self.center:
             positions = self._ring_dist
         else:
             positions = 1.0 - self._ring_dist
@@ -298,35 +304,50 @@ class Equalizer2d(Twod, GradientEffect):
 
         for i in range(self.bands):
             if self.center:
-                mask_draw.polygon(
-                    [
-                        interpolate_point(
-                            self.p_center,
-                            self.bandsc[i],
-                            self.volumes[i],
-                        ),
-                        interpolate_point(
-                            self.p_center,
-                            self.bandsc[i + 1],
-                            self.volumes[i],
-                        ),
+                poly = [
+                    interpolate_point(
                         self.p_center,
-                    ],
-                    fill=255,
-                )
-            else:
-                mask_draw.polygon(
-                    [
                         self.bandsc[i],
+                        self.volumes[i],
+                    ),
+                    interpolate_point(
+                        self.p_center,
                         self.bandsc[i + 1],
-                        interpolate_point(
-                            self.bandscm[i],
-                            self.p_center,
-                            self.volumes[i],
-                        ),
-                    ],
-                    fill=255,
+                        self.volumes[i],
+                    ),
+                    self.p_center,
+                ]
+            else:
+                poly = [
+                    self.bandsc[i],
+                    self.bandsc[i + 1],
+                    interpolate_point(
+                        self.bandscm[i],
+                        self.p_center,
+                        self.volumes[i],
+                    ),
+                ]
+
+            mask_draw.polygon(poly, fill=255)
+
+            if stretch:
+                temp = Image.new(
+                    "L", (self.r_width, self.r_height), 0
                 )
+                temp_draw = ImageDraw.Draw(temp)
+                temp_draw.polygon(poly, fill=255)
+                band_pixels = np.array(temp) > 0
+                temp.close()
+                vol = max(self.volumes[i], 0.01)
+                if self.center:
+                    band_pos = np.clip(
+                        self._ring_dist / vol, 0, 1
+                    )
+                else:
+                    band_pos = np.clip(
+                        (1.0 - self._ring_dist) / vol, 0, 1
+                    )
+                positions[band_pixels] = band_pos[band_pixels]
 
         color_array = self.get_gradient_color_vectorized2d(positions).astype(
             np.uint8
@@ -450,13 +471,22 @@ class Equalizer2d(Twod, GradientEffect):
             rows = np.arange(bottom, top + 1)
 
             if self.center:
+                if self.power_gradient == "Stretch":
+                    norm = max(volume_scaled // 2, 1)
+                else:
+                    norm = max(self.half_height, 1)
                 grad_positions = np.abs(rows - self.half_height).astype(
                     np.float32
-                ) / max(self.half_height, 1)
+                ) / norm
             else:
+                if self.power_gradient == "Stretch":
+                    norm = max(volume_scaled, 1)
+                else:
+                    norm = max(self.r_height - 1, 1)
                 grad_positions = (self.r_height - 1 - rows).astype(
                     np.float32
-                ) / max(self.r_height - 1, 1)
+                ) / norm
+            grad_positions = np.clip(grad_positions, 0, 1)
 
             positions[rows, band_start : band_end + 1] = grad_positions[
                 :, np.newaxis
@@ -523,11 +553,11 @@ class Equalizer2d(Twod, GradientEffect):
         self.prep_frame_vars()
 
         if self.ring:
-            if self.power_gradient == "Progressive":
+            if self.power_gradient in ("Progressive", "Stretch"):
                 self.draw_ring_progressive()
             else:
                 self.draw_ring()
-        elif self.power_gradient == "Progressive":
+        elif self.power_gradient in ("Progressive", "Stretch"):
             self.draw_normal_progressive()
         else:
             self.draw_normal()
