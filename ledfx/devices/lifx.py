@@ -333,6 +333,8 @@ class LifxDevice(NetworkedDevice):
                 else:
                     self._device = await device_cls.from_ip(ip)
 
+                # CeilingLight.set_power() requires populated state
+                await self._device.refresh_state()
                 await self._device.set_power(True)
                 self._animator = await Animator.for_matrix(self._device)
 
