@@ -333,7 +333,14 @@ class LifxDevice(NetworkedDevice):
                 else:
                     self._device = await device_cls.from_ip(ip)
 
+                # This is usually handled by instantiating CeilingLight via an async context manager
+                # but for performance reasons, we instantiate directly, so we have to manually update
+                # the state before calling set_power.
+                if device_cls is CeilingLight:
+                    await self._device.refresh_state()
+
                 await self._device.set_power(True)
+
                 self._animator = await Animator.for_matrix(self._device)
 
             elif self._lifx_type == "strip":
