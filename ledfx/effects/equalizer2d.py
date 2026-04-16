@@ -213,6 +213,41 @@ class Equalizer2d(Twod, GradientEffect):
             self.spin_value %= 360
             self.calc_ring_segments(self.spin_value)
 
+    def _draw_ring_peaks(self):
+        if not self.peak:
+            return
+        for i in range(self.bands):
+            if self.center:
+                self.m_draw.line(
+                    [
+                        interpolate_point(
+                            self.p_center, self.bandscm[i], self.peaks[i]
+                        ),
+                        interpolate_point(
+                            self.p_center,
+                            self.bandscm[i + 1],
+                            self.peaks[i + 1],
+                        ),
+                    ],
+                    fill=self.peak_color,
+                    width=self.peak_size,
+                )
+            else:
+                self.m_draw.line(
+                    [
+                        interpolate_point(
+                            self.bandscm[i], self.p_center, self.peaks[i]
+                        ),
+                        interpolate_point(
+                            self.bandscm[i + 1],
+                            self.p_center,
+                            self.peaks[i + 1],
+                        ),
+                    ],
+                    fill=self.peak_color,
+                    width=self.peak_size,
+                )
+
     def draw_ring(self):
         for i in range(self.bands):
             if self.center:
@@ -228,22 +263,6 @@ class Equalizer2d(Twod, GradientEffect):
                     ],
                     fill=self.bar_colors[i],
                 )
-
-                if self.peak:
-                    self.m_draw.line(
-                        [
-                            interpolate_point(
-                                self.p_center, self.bandscm[i], self.peaks[i]
-                            ),
-                            interpolate_point(
-                                self.p_center,
-                                self.bandscm[i + 1],
-                                self.peaks[i + 1],
-                            ),
-                        ],
-                        fill=self.peak_color,
-                        width=self.peak_size,
-                    )
             else:
                 self.m_draw.polygon(
                     [
@@ -259,22 +278,7 @@ class Equalizer2d(Twod, GradientEffect):
                         for component in self.bar_colors[i]
                     ),
                 )
-
-                if self.peak:
-                    self.m_draw.line(
-                        [
-                            interpolate_point(
-                                self.bandscm[i], self.p_center, self.peaks[i]
-                            ),
-                            interpolate_point(
-                                self.bandscm[i + 1],
-                                self.p_center,
-                                self.peaks[i + 1],
-                            ),
-                        ],
-                        fill=self.peak_color,
-                        width=self.peak_size,
-                    )
+        self._draw_ring_peaks()
 
     def _calc_ring_dist(self):
         """Pre-compute normalized elliptical distance from center."""
@@ -352,42 +356,44 @@ class Equalizer2d(Twod, GradientEffect):
         color_img.close()
         mask_img.close()
 
-        if self.peak:
-            for i in range(self.bands):
-                if self.center:
-                    self.m_draw.line(
-                        [
-                            interpolate_point(
-                                self.p_center,
-                                self.bandscm[i],
-                                self.peaks[i],
-                            ),
-                            interpolate_point(
-                                self.p_center,
-                                self.bandscm[i + 1],
-                                self.peaks[i + 1],
-                            ),
-                        ],
-                        fill=self.peak_color,
-                        width=self.peak_size,
-                    )
-                else:
-                    self.m_draw.line(
-                        [
-                            interpolate_point(
-                                self.bandscm[i],
-                                self.p_center,
-                                self.peaks[i],
-                            ),
-                            interpolate_point(
-                                self.bandscm[i + 1],
-                                self.p_center,
-                                self.peaks[i + 1],
-                            ),
-                        ],
-                        fill=self.peak_color,
-                        width=self.peak_size,
-                    )
+        self._draw_ring_peaks()
+
+    def _draw_normal_peaks(self):
+        if not self.peak:
+            return
+        for i in range(self.bands):
+            band_start, band_end = self.bandsx[i]
+            if self.center:
+                peak_scaled = int(self.half_height * self.peaks[i])
+                peak_end = int(peak_scaled + self.peak_size // 2)
+                self.m_draw.rectangle(
+                    (
+                        band_start,
+                        self.half_height + peak_scaled,
+                        band_end,
+                        self.half_height + peak_end,
+                    ),
+                    fill=self.peak_color,
+                )
+                self.m_draw.rectangle(
+                    (
+                        band_start,
+                        self.half_height - peak_end,
+                        band_end,
+                        self.half_height - peak_scaled,
+                    ),
+                    fill=self.peak_color,
+                )
+            else:
+                peak_scaled = int((self.r_height - 1) * self.peaks[i])
+                peak_start = (
+                    (self.r_height - 1) - peak_scaled - self.peak_size
+                )
+                peak_end = (self.r_height - 1) - peak_scaled
+                self.m_draw.rectangle(
+                    (band_start, peak_start, band_end, peak_end),
+                    fill=self.peak_color,
+                )
 
     def draw_normal(self):
         for i in range(self.bands):
@@ -406,41 +412,7 @@ class Equalizer2d(Twod, GradientEffect):
                 (band_start, bottom, band_end, top),
                 fill=self.bar_colors[i],
             )
-
-            # Draw the peak marker
-            if self.peak:
-                if self.center:
-                    peak_scaled = int(self.half_height * self.peaks[i])
-                    peak_end = int(peak_scaled + self.peak_size // 2)
-                    self.m_draw.rectangle(
-                        (
-                            band_start,
-                            self.half_height + peak_scaled,
-                            band_end,
-                            self.half_height + peak_end,
-                        ),
-                        fill=self.peak_color,
-                    )
-                    self.m_draw.rectangle(
-                        (
-                            band_start,
-                            self.half_height - peak_end,
-                            band_end,
-                            self.half_height - peak_scaled,
-                        ),
-                        fill=self.peak_color,
-                    )
-                else:
-                    peak_scaled = int((self.r_height - 1) * self.peaks[i])
-                    peak_start = (
-                        (self.r_height - 1) - peak_scaled - self.peak_size
-                    )
-                    peak_end = (self.r_height - 1) - peak_scaled
-
-                    self.m_draw.rectangle(
-                        (band_start, peak_start, band_end, peak_end),
-                        fill=self.peak_color,
-                    )
+        self._draw_normal_peaks()
 
     def draw_normal_progressive(self):
         """Draw bars with gradient color progression based on power level."""
@@ -497,45 +469,7 @@ class Equalizer2d(Twod, GradientEffect):
         color_img.close()
         mask_img.close()
 
-        if self.peak:
-            for i in range(self.bands):
-                band_start, band_end = self.bandsx[i]
-                if self.center:
-                    peak_scaled = int(self.half_height * self.peaks[i])
-                    peak_end = int(peak_scaled + self.peak_size // 2)
-                    self.m_draw.rectangle(
-                        (
-                            band_start,
-                            self.half_height + peak_scaled,
-                            band_end,
-                            self.half_height + peak_end,
-                        ),
-                        fill=self.peak_color,
-                    )
-                    self.m_draw.rectangle(
-                        (
-                            band_start,
-                            self.half_height - peak_end,
-                            band_end,
-                            self.half_height - peak_scaled,
-                        ),
-                        fill=self.peak_color,
-                    )
-                else:
-                    peak_scaled = int((self.r_height - 1) * self.peaks[i])
-                    peak_start = (
-                        (self.r_height - 1) - peak_scaled - self.peak_size
-                    )
-                    peak_end = (self.r_height - 1) - peak_scaled
-                    self.m_draw.rectangle(
-                        (
-                            band_start,
-                            peak_start,
-                            band_end,
-                            peak_end,
-                        ),
-                        fill=self.peak_color,
-                    )
+        self._draw_normal_peaks()
 
     def draw(self):
         # note we are leaving all math in float space until it gets clipped
