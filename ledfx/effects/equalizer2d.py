@@ -331,22 +331,16 @@ class Equalizer2d(Twod, GradientEffect):
             mask_draw.polygon(poly, fill=255)
 
             if stretch:
-                temp = Image.new(
-                    "L", (self.r_width, self.r_height), 0
-                )
+                temp = Image.new("L", (self.r_width, self.r_height), 0)
                 temp_draw = ImageDraw.Draw(temp)
                 temp_draw.polygon(poly, fill=255)
                 band_pixels = np.array(temp) > 0
                 temp.close()
                 vol = max(self.volumes[i], 0.01)
                 if self.center:
-                    band_pos = np.clip(
-                        self._ring_dist / vol, 0, 1
-                    )
+                    band_pos = np.clip(self._ring_dist / vol, 0, 1)
                 else:
-                    band_pos = np.clip(
-                        (1.0 - self._ring_dist) / vol, 0, 1
-                    )
+                    band_pos = np.clip((1.0 - self._ring_dist) / vol, 0, 1)
                 positions[band_pixels] = band_pos[band_pixels]
 
         color_array = self.get_gradient_color_vectorized2d(positions).astype(
@@ -475,9 +469,9 @@ class Equalizer2d(Twod, GradientEffect):
                     norm = max(volume_scaled // 2, 1)
                 else:
                     norm = max(self.half_height, 1)
-                grad_positions = np.abs(rows - self.half_height).astype(
-                    np.float32
-                ) / norm
+                grad_positions = (
+                    np.abs(rows - self.half_height).astype(np.float32) / norm
+                )
             else:
                 if self.power_gradient == "Stretch":
                     norm = max(volume_scaled, 1)
