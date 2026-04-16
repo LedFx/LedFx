@@ -386,9 +386,7 @@ class Equalizer2d(Twod, GradientEffect):
                 )
             else:
                 peak_scaled = int((self.r_height - 1) * self.peaks[i])
-                peak_start = (
-                    (self.r_height - 1) - peak_scaled - self.peak_size
-                )
+                peak_start = (self.r_height - 1) - peak_scaled - self.peak_size
                 peak_end = (self.r_height - 1) - peak_scaled
                 self.m_draw.rectangle(
                     (band_start, peak_start, band_end, peak_end),
