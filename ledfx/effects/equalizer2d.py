@@ -199,16 +199,12 @@ class Equalizer2d(Twod, GradientEffect):
 
         if self.power_gradient == "Solid":
             self.bar_colors = [
-                tuple(
-                    self.get_gradient_color(self.volumes[i]).astype(int)
-                )
+                tuple(self.get_gradient_color(self.volumes[i]).astype(int))
                 for i in range(self.bands)
             ]
         elif self.power_gradient != "Progressive":
             self.bar_colors = [
-                tuple(
-                    self.get_gradient_color(1 / self.bands * i).astype(int)
-                )
+                tuple(self.get_gradient_color(1 / self.bands * i).astype(int))
                 for i in range(self.bands)
             ]
 
@@ -287,9 +283,7 @@ class Equalizer2d(Twod, GradientEffect):
         cy = self.r_height / 2.0
         rx = max(self.r_width / 2.0, 1)
         ry = max(self.r_height / 2.0, 1)
-        dist = np.sqrt(
-            ((x_grid - cx) / rx) ** 2 + ((y_grid - cy) / ry) ** 2
-        )
+        dist = np.sqrt(((x_grid - cx) / rx) ** 2 + ((y_grid - cy) / ry) ** 2)
         return np.clip(dist, 0, 1).astype(np.float32)
 
     def draw_ring_progressive(self):
@@ -336,9 +330,9 @@ class Equalizer2d(Twod, GradientEffect):
 
         mask = np.array(mask_img) > 0
 
-        color_array = self.get_gradient_color_vectorized2d(
-            positions
-        ).astype(np.uint8)
+        color_array = self.get_gradient_color_vectorized2d(positions).astype(
+            np.uint8
+        )
         color_array[~mask] = 0
 
         self.matrix = Image.fromarray(color_array, "RGB")
@@ -436,9 +430,7 @@ class Equalizer2d(Twod, GradientEffect):
 
     def draw_normal_progressive(self):
         """Draw bars with gradient color progression based on power level."""
-        positions = np.zeros(
-            (self.r_height, self.r_width), dtype=np.float32
-        )
+        positions = np.zeros((self.r_height, self.r_width), dtype=np.float32)
         mask = np.zeros((self.r_height, self.r_width), dtype=bool)
 
         for i in range(self.bands):
@@ -448,13 +440,9 @@ class Equalizer2d(Twod, GradientEffect):
             if self.center:
                 half_vol = volume_scaled // 2
                 bottom = max(self.half_height - half_vol, 0)
-                top = min(
-                    self.half_height + half_vol, self.r_height - 1
-                )
+                top = min(self.half_height + half_vol, self.r_height - 1)
             else:
-                bottom = max(
-                    (self.r_height - 1) - volume_scaled, 0
-                )
+                bottom = max((self.r_height - 1) - volume_scaled, 0)
                 top = self.r_height - 1
 
             if top <= bottom:
@@ -463,24 +451,22 @@ class Equalizer2d(Twod, GradientEffect):
             rows = np.arange(bottom, top + 1)
 
             if self.center:
-                grad_positions = (
-                    np.abs(rows - self.half_height).astype(np.float32)
-                    / max(self.half_height, 1)
-                )
+                grad_positions = np.abs(rows - self.half_height).astype(
+                    np.float32
+                ) / max(self.half_height, 1)
             else:
-                grad_positions = (
-                    (self.r_height - 1 - rows).astype(np.float32)
-                    / max(self.r_height - 1, 1)
-                )
+                grad_positions = (self.r_height - 1 - rows).astype(
+                    np.float32
+                ) / max(self.r_height - 1, 1)
 
             positions[rows, band_start : band_end + 1] = grad_positions[
                 :, np.newaxis
             ]
             mask[rows, band_start : band_end + 1] = True
 
-        color_array = self.get_gradient_color_vectorized2d(
-            positions
-        ).astype(np.uint8)
+        color_array = self.get_gradient_color_vectorized2d(positions).astype(
+            np.uint8
+        )
         color_array[~mask] = 0
 
         self.matrix = Image.fromarray(color_array, "RGB")
@@ -490,12 +476,8 @@ class Equalizer2d(Twod, GradientEffect):
             for i in range(self.bands):
                 band_start, band_end = self.bandsx[i]
                 if self.center:
-                    peak_scaled = int(
-                        self.half_height * self.peaks[i]
-                    )
-                    peak_end = int(
-                        peak_scaled + self.peak_size // 2
-                    )
+                    peak_scaled = int(self.half_height * self.peaks[i])
+                    peak_end = int(peak_scaled + self.peak_size // 2)
                     self.m_draw.rectangle(
                         (
                             band_start,
@@ -515,13 +497,9 @@ class Equalizer2d(Twod, GradientEffect):
                         fill=self.peak_color,
                     )
                 else:
-                    peak_scaled = int(
-                        (self.r_height - 1) * self.peaks[i]
-                    )
+                    peak_scaled = int((self.r_height - 1) * self.peaks[i])
                     peak_start = (
-                        (self.r_height - 1)
-                        - peak_scaled
-                        - self.peak_size
+                        (self.r_height - 1) - peak_scaled - self.peak_size
                     )
                     peak_end = (self.r_height - 1) - peak_scaled
                     self.m_draw.rectangle(
