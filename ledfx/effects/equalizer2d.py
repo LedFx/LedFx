@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import voluptuous as vol
+from PIL import Image, ImageDraw
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
@@ -27,6 +28,7 @@ class Equalizer2d(Twod, GradientEffect):
         "spin_multiplier",
         "spin_decay",
         "peak_color",
+        "power_gradient",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -91,6 +93,11 @@ class Equalizer2d(Twod, GradientEffect):
                 description="Decay filter applied to the spin impulse",
                 default=0.1,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
+            vol.Optional(
+                "power_gradient",
+                description="Color bars by power level: Solid picks one gradient color per band power, Progressive shows gradient progression up to band power",
+                default="Off",
+            ): vol.In(["Off", "Solid", "Progressive"]),
         }
     )
 
@@ -120,6 +127,7 @@ class Equalizer2d(Twod, GradientEffect):
             alpha_decay=self._config["spin_decay"], alpha_rise=0.99
         )
         self.peak_color = parse_color(self._config["peak_color"])
+        self.power_gradient = self._config["power_gradient"]
 
     def calc_ring_segments(self, rotation):
         # we want coordinates for self.bands around an oval defined by self.r_width and self.r_height
@@ -165,6 +173,7 @@ class Equalizer2d(Twod, GradientEffect):
         if self.ring:
             self.calc_ring_segments(0)
             self.impulse = 0.0
+            self._ring_dist = self._calc_ring_dist()
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
@@ -188,10 +197,20 @@ class Equalizer2d(Twod, GradientEffect):
         if self.peak:
             self.peaks = self.peaks_filter.update(self.volumes)
 
-        self.gradient_colors = [
-            tuple(self.get_gradient_color(1 / self.bands * i).astype(int))
-            for i in range(self.bands)
-        ]
+        if self.power_gradient == "Solid":
+            self.bar_colors = [
+                tuple(
+                    self.get_gradient_color(self.volumes[i]).astype(int)
+                )
+                for i in range(self.bands)
+            ]
+        elif self.power_gradient != "Progressive":
+            self.bar_colors = [
+                tuple(
+                    self.get_gradient_color(1 / self.bands * i).astype(int)
+                )
+                for i in range(self.bands)
+            ]
 
         if self.ring and self.spin:
             self.spin_value += self.impulse
@@ -211,7 +230,7 @@ class Equalizer2d(Twod, GradientEffect):
                         ),
                         self.p_center,
                     ],
-                    fill=self.gradient_colors[i],
+                    fill=self.bar_colors[i],
                 )
 
                 if self.peak:
@@ -238,10 +257,10 @@ class Equalizer2d(Twod, GradientEffect):
                             self.bandscm[i], self.p_center, self.volumes[i]
                         ),
                     ],
-                    fill=self.gradient_colors[i],
+                    fill=self.bar_colors[i],
                     outline=tuple(
                         max(component - 1, 0)
-                        for component in self.gradient_colors[i]
+                        for component in self.bar_colors[i]
                     ),
                 )
 
@@ -250,6 +269,107 @@ class Equalizer2d(Twod, GradientEffect):
                         [
                             interpolate_point(
                                 self.bandscm[i], self.p_center, self.peaks[i]
+                            ),
+                            interpolate_point(
+                                self.bandscm[i + 1],
+                                self.p_center,
+                                self.peaks[i + 1],
+                            ),
+                        ],
+                        fill=self.peak_color,
+                        width=self.peak_size,
+                    )
+
+    def _calc_ring_dist(self):
+        """Pre-compute normalized elliptical distance from center."""
+        y_grid, x_grid = np.mgrid[0 : self.r_height, 0 : self.r_width]
+        cx = self.r_width / 2.0
+        cy = self.r_height / 2.0
+        rx = max(self.r_width / 2.0, 1)
+        ry = max(self.r_height / 2.0, 1)
+        dist = np.sqrt(
+            ((x_grid - cx) / rx) ** 2 + ((y_grid - cy) / ry) ** 2
+        )
+        return np.clip(dist, 0, 1).astype(np.float32)
+
+    def draw_ring_progressive(self):
+        """Draw ring with gradient color progression based on distance from center."""
+        if self.center:
+            positions = self._ring_dist
+        else:
+            positions = 1.0 - self._ring_dist
+
+        mask_img = Image.new("L", (self.r_width, self.r_height), 0)
+        mask_draw = ImageDraw.Draw(mask_img)
+
+        for i in range(self.bands):
+            if self.center:
+                mask_draw.polygon(
+                    [
+                        interpolate_point(
+                            self.p_center,
+                            self.bandsc[i],
+                            self.volumes[i],
+                        ),
+                        interpolate_point(
+                            self.p_center,
+                            self.bandsc[i + 1],
+                            self.volumes[i],
+                        ),
+                        self.p_center,
+                    ],
+                    fill=255,
+                )
+            else:
+                mask_draw.polygon(
+                    [
+                        self.bandsc[i],
+                        self.bandsc[i + 1],
+                        interpolate_point(
+                            self.bandscm[i],
+                            self.p_center,
+                            self.volumes[i],
+                        ),
+                    ],
+                    fill=255,
+                )
+
+        mask = np.array(mask_img) > 0
+
+        color_array = self.get_gradient_color_vectorized2d(
+            positions
+        ).astype(np.uint8)
+        color_array[~mask] = 0
+
+        self.matrix = Image.fromarray(color_array, "RGB")
+        self.m_draw = ImageDraw.Draw(self.matrix)
+
+        if self.peak:
+            for i in range(self.bands):
+                if self.center:
+                    self.m_draw.line(
+                        [
+                            interpolate_point(
+                                self.p_center,
+                                self.bandscm[i],
+                                self.peaks[i],
+                            ),
+                            interpolate_point(
+                                self.p_center,
+                                self.bandscm[i + 1],
+                                self.peaks[i + 1],
+                            ),
+                        ],
+                        fill=self.peak_color,
+                        width=self.peak_size,
+                    )
+                else:
+                    self.m_draw.line(
+                        [
+                            interpolate_point(
+                                self.bandscm[i],
+                                self.p_center,
+                                self.peaks[i],
                             ),
                             interpolate_point(
                                 self.bandscm[i + 1],
@@ -276,7 +396,7 @@ class Equalizer2d(Twod, GradientEffect):
 
             self.m_draw.rectangle(
                 (band_start, bottom, band_end, top),
-                fill=self.gradient_colors[i],
+                fill=self.bar_colors[i],
             )
 
             # Draw the peak marker
@@ -314,6 +434,106 @@ class Equalizer2d(Twod, GradientEffect):
                         fill=self.peak_color,
                     )
 
+    def draw_normal_progressive(self):
+        """Draw bars with gradient color progression based on power level."""
+        positions = np.zeros(
+            (self.r_height, self.r_width), dtype=np.float32
+        )
+        mask = np.zeros((self.r_height, self.r_width), dtype=bool)
+
+        for i in range(self.bands):
+            band_start, band_end = self.bandsx[i]
+            volume_scaled = int(self.r_height * self.volumes[i])
+
+            if self.center:
+                half_vol = volume_scaled // 2
+                bottom = max(self.half_height - half_vol, 0)
+                top = min(
+                    self.half_height + half_vol, self.r_height - 1
+                )
+            else:
+                bottom = max(
+                    (self.r_height - 1) - volume_scaled, 0
+                )
+                top = self.r_height - 1
+
+            if top <= bottom:
+                continue
+
+            rows = np.arange(bottom, top + 1)
+
+            if self.center:
+                grad_positions = (
+                    np.abs(rows - self.half_height).astype(np.float32)
+                    / max(self.half_height, 1)
+                )
+            else:
+                grad_positions = (
+                    (self.r_height - 1 - rows).astype(np.float32)
+                    / max(self.r_height - 1, 1)
+                )
+
+            positions[rows, band_start : band_end + 1] = grad_positions[
+                :, np.newaxis
+            ]
+            mask[rows, band_start : band_end + 1] = True
+
+        color_array = self.get_gradient_color_vectorized2d(
+            positions
+        ).astype(np.uint8)
+        color_array[~mask] = 0
+
+        self.matrix = Image.fromarray(color_array, "RGB")
+        self.m_draw = ImageDraw.Draw(self.matrix)
+
+        if self.peak:
+            for i in range(self.bands):
+                band_start, band_end = self.bandsx[i]
+                if self.center:
+                    peak_scaled = int(
+                        self.half_height * self.peaks[i]
+                    )
+                    peak_end = int(
+                        peak_scaled + self.peak_size // 2
+                    )
+                    self.m_draw.rectangle(
+                        (
+                            band_start,
+                            self.half_height + peak_scaled,
+                            band_end,
+                            self.half_height + peak_end,
+                        ),
+                        fill=self.peak_color,
+                    )
+                    self.m_draw.rectangle(
+                        (
+                            band_start,
+                            self.half_height - peak_end,
+                            band_end,
+                            self.half_height - peak_scaled,
+                        ),
+                        fill=self.peak_color,
+                    )
+                else:
+                    peak_scaled = int(
+                        (self.r_height - 1) * self.peaks[i]
+                    )
+                    peak_start = (
+                        (self.r_height - 1)
+                        - peak_scaled
+                        - self.peak_size
+                    )
+                    peak_end = (self.r_height - 1) - peak_scaled
+                    self.m_draw.rectangle(
+                        (
+                            band_start,
+                            peak_start,
+                            band_end,
+                            peak_end,
+                        ),
+                        fill=self.peak_color,
+                    )
+
     def draw(self):
         # note we are leaving all math in float space until it gets clipped
         # down to int by Image draw functions
@@ -324,7 +544,12 @@ class Equalizer2d(Twod, GradientEffect):
         self.prep_frame_vars()
 
         if self.ring:
-            self.draw_ring()
+            if self.power_gradient == "Progressive":
+                self.draw_ring_progressive()
+            else:
+                self.draw_ring()
+        elif self.power_gradient == "Progressive":
+            self.draw_normal_progressive()
         else:
             self.draw_normal()
 
