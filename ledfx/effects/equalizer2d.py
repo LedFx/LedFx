@@ -198,15 +198,15 @@ class Equalizer2d(Twod, GradientEffect):
             self.peaks = self.peaks_filter.update(self.volumes)
 
         if self.power_gradient == "Solid":
-            self.bar_colors = [
-                tuple(self.get_gradient_color(self.volumes[i]).astype(int))
-                for i in range(self.bands)
-            ]
+            colors = self.get_gradient_color_vectorized1d(
+                self.volumes[: self.bands]
+            ).astype(int)
+            self.bar_colors = [tuple(c) for c in colors]
         elif self.power_gradient != "Progressive":
-            self.bar_colors = [
-                tuple(self.get_gradient_color(1 / self.bands * i).astype(int))
-                for i in range(self.bands)
-            ]
+            colors = self.get_gradient_color_vectorized1d(
+                np.arange(self.bands, dtype=np.float32) / self.bands
+            ).astype(int)
+            self.bar_colors = [tuple(c) for c in colors]
 
         if self.ring and self.spin:
             self.spin_value += self.impulse
@@ -328,15 +328,13 @@ class Equalizer2d(Twod, GradientEffect):
                     fill=255,
                 )
 
-        mask = np.array(mask_img) > 0
-
         color_array = self.get_gradient_color_vectorized2d(positions).astype(
             np.uint8
         )
-        color_array[~mask] = 0
 
-        self.matrix = Image.fromarray(color_array, "RGB")
-        self.m_draw = ImageDraw.Draw(self.matrix)
+        color_img = Image.fromarray(color_array, "RGB")
+        self.matrix.paste(color_img, mask=mask_img)
+        color_img.close()
 
         if self.peak:
             for i in range(self.bands):
@@ -445,7 +443,7 @@ class Equalizer2d(Twod, GradientEffect):
                 bottom = max((self.r_height - 1) - volume_scaled, 0)
                 top = self.r_height - 1
 
-            if top <= bottom:
+            if top < bottom:
                 continue
 
             rows = np.arange(bottom, top + 1)
@@ -467,10 +465,12 @@ class Equalizer2d(Twod, GradientEffect):
         color_array = self.get_gradient_color_vectorized2d(positions).astype(
             np.uint8
         )
-        color_array[~mask] = 0
 
-        self.matrix = Image.fromarray(color_array, "RGB")
-        self.m_draw = ImageDraw.Draw(self.matrix)
+        color_img = Image.fromarray(color_array, "RGB")
+        mask_img = Image.fromarray((mask.astype(np.uint8) * 255), "L")
+        self.matrix.paste(color_img, mask=mask_img)
+        color_img.close()
+        mask_img.close()
 
         if self.peak:
             for i in range(self.bands):
