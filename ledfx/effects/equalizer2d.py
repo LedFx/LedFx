@@ -335,6 +335,7 @@ class Equalizer2d(Twod, GradientEffect):
         color_img = Image.fromarray(color_array, "RGB")
         self.matrix.paste(color_img, mask=mask_img)
         color_img.close()
+        mask_img.close()
 
         if self.peak:
             for i in range(self.bands):
