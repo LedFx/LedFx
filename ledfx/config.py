@@ -50,6 +50,7 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "startup_playlist_id",
     "lifx_broadcast_address",
     "lifx_discovery_timeout",
+    "sendspin_always_on",
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
