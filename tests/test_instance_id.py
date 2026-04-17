@@ -60,7 +60,7 @@ class TestBackwardCompatibility:
 
     def test_old_config_without_instance_id(self):
         old_config = {
-            "host": "0.0.0.0",
+            "host": "127.0.0.1",
             "port": 8888,
             "sendspin_servers": {"MyServer": {"server_url": "ws://host:1234"}},
         }
