@@ -6,7 +6,6 @@ import pytest
 
 from ledfx.config import CORE_CONFIG_SCHEMA, ensure_instance_id
 
-
 # ---------------------------------------------------------------------------
 # Config bootstrap: ensure_instance_id
 # ---------------------------------------------------------------------------
@@ -116,11 +115,12 @@ class TestSendspinClientId:
         instance_id = str(uuid.uuid4())
         entry_id = "TestEntry"
 
-        with patch(
-            "ledfx.sendspin.stream.SendspinClient", MagicMock()
-        ):
+        with patch("ledfx.sendspin.stream.SendspinClient", MagicMock()):
             stream = SendspinAudioStream(
-                config={"server_url": "ws://localhost:1234", "client_name": "LedFx"},
+                config={
+                    "server_url": "ws://localhost:1234",
+                    "client_name": "LedFx",
+                },
                 callback=lambda *a: None,
                 sendspin_entry_id=entry_id,
                 instance_id=instance_id,
