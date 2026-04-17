@@ -113,7 +113,6 @@ class TestSendspinClientId:
         from ledfx.sendspin.stream import SendspinAudioStream
 
         instance_id = str(uuid.uuid4())
-        entry_id = "TestEntry"
 
         with patch("ledfx.sendspin.stream.SendspinClient", MagicMock()):
             stream = SendspinAudioStream(
@@ -122,9 +121,7 @@ class TestSendspinClientId:
                     "client_name": "LedFx",
                 },
                 callback=lambda *a: None,
-                sendspin_entry_id=entry_id,
                 instance_id=instance_id,
             )
 
         assert stream._instance_id == instance_id
-        assert stream._sendspin_entry_id == entry_id

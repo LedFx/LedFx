@@ -51,19 +51,15 @@ class SendspinAudioStream:
     Args:
         config: Configuration dict with server_url, client_name, etc.
         callback: LedFx's _audio_sample_callback(data, frame_count, time_info, status)
-        sendspin_entry_id: The local Sendspin config entry name (key from
-            ``sendspin_servers`` in LedFx config).  Distinguishes multiple
-            Sendspin connections within the same LedFx installation.
         instance_id: Persistent LedFx installation UUID from top-level config.
-            Combined with *sendspin_entry_id* to form a globally unique,
-            collision-safe ``client_id`` sent to the Sendspin server.
+            Used to form a stable, collision-safe ``client_id`` sent to the
+            Sendspin server.
     """
 
     def __init__(
         self,
         config: dict,
         callback: Callable,
-        sendspin_entry_id: str = "",
         instance_id: str = "",
     ):
         if SendspinClient is None:
@@ -73,7 +69,6 @@ class SendspinAudioStream:
 
         self.config = config
         self.callback = callback
-        self._sendspin_entry_id = sendspin_entry_id
         self._instance_id = instance_id
         self._active = False
         self._client: Optional[SendspinClient] = None
