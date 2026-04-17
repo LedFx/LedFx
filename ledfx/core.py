@@ -159,7 +159,8 @@ class LedFxCore:
         """
         Handles the update of the base configuration where there are specific things that need to be done.
 
-        Currently, only visualisation configuration is handled this way, since they require the creation of new event listeners.
+        Currently handles visualisation configuration (requires new event listeners)
+        and sendspin_always_on toggling (requires audio stream deactivation check).
 
         Args:
             event (Event): The event that triggered the update - this will always be a BaseConfigUpdateEvent.
@@ -170,6 +171,17 @@ class LedFxCore:
                 "Visualisation configuration updated - resetting visualisation event listeners."
             )
             self.setup_visualisation_events()
+
+        if (
+            "sendspin_always_on" in event.config
+            and not event.config["sendspin_always_on"]
+            and hasattr(self, "audio")
+            and self.audio is not None
+        ):
+            _LOGGER.debug(
+                "sendspin_always_on toggled off - checking if audio stream should deactivate."
+            )
+            self.audio.check_and_deactivate()
 
     def dev_enabled(self):
         return self.config["dev_mode"]
