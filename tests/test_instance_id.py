@@ -1,6 +1,8 @@
 """Tests for persistent LedFx instance_id and Sendspin client_id construction."""
 
+import asyncio
 import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -85,26 +87,57 @@ class TestSendspinClientId:
         except ImportError:
             pytest.skip("aiosendspin not available")
 
+    def _run_connect_and_capture(self, instance_id):
+        """Run _connect_and_receive with a mocked SendspinClient, return the mock class."""
+        from ledfx.sendspin.stream import SendspinAudioStream
+
+        mock_client_cls = MagicMock()
+        mock_inst = mock_client_cls.return_value
+        mock_inst.connect = AsyncMock(side_effect=Exception("stop"))
+        mock_inst.add_audio_chunk_listener = MagicMock()
+        mock_inst.add_stream_start_listener = MagicMock()
+        mock_inst.add_stream_clear_listener = MagicMock()
+
+        with patch("ledfx.sendspin.stream.SendspinClient", mock_client_cls):
+            stream = SendspinAudioStream(
+                config={
+                    "server_url": "ws://localhost:1234",
+                    "client_name": "LedFx",
+                },
+                callback=lambda *a: None,
+                instance_id=instance_id,
+            )
+            with pytest.raises(Exception, match="stop"):
+                asyncio.run(stream._connect_and_receive())
+
+        return mock_client_cls
+
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
     def test_client_id_uses_short_instance_id(self):
         instance_id = str(uuid.uuid4())
-
-        client_id = f"ledfx-{instance_id[:8]}"
-        assert client_id == f"ledfx-{instance_id[:8]}"
+        mock_cls = self._run_connect_and_capture(instance_id)
+        client_id = mock_cls.call_args.kwargs["client_id"]
+        assert client_id.startswith(f"ledfx-{instance_id[:8]}")
         assert len(instance_id[:8]) == 8
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
     def test_client_id_deterministic(self):
         instance_id = str(uuid.uuid4())
-        id1 = f"ledfx-{instance_id[:8]}"
-        id2 = f"ledfx-{instance_id[:8]}"
-        assert id1 == id2
+        mock1 = self._run_connect_and_capture(instance_id)
+        mock2 = self._run_connect_and_capture(instance_id)
+        assert (
+            mock1.call_args.kwargs["client_id"]
+            == mock2.call_args.kwargs["client_id"]
+        )
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
     def test_client_id_differs_across_instances(self):
-        id1 = f"ledfx-{str(uuid.uuid4())[:8]}"
-        id2 = f"ledfx-{str(uuid.uuid4())[:8]}"
-        assert id1 != id2
+        mock1 = self._run_connect_and_capture(str(uuid.uuid4()))
+        mock2 = self._run_connect_and_capture(str(uuid.uuid4()))
+        assert (
+            mock1.call_args.kwargs["client_id"]
+            != mock2.call_args.kwargs["client_id"]
+        )
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
     def test_stream_constructor_stores_ids(self):
