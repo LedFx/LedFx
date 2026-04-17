@@ -70,6 +70,8 @@ class SendspinAudioStream:
         self.config = config
         self.callback = callback
         self._instance_id = instance_id
+        if not instance_id:
+            raise ValueError("instance_id must be provided and non-empty")
         self._active = False
         self._client: Optional[SendspinClient] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
