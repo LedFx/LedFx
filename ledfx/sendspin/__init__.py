@@ -30,8 +30,10 @@ if sys.version_info >= (3, 12):
         # aiosendspin not available, or native library (e.g. libFLAC.dll) failed to load
         SENDSPIN_AVAILABLE = False
         __all__ = []
-        _LOGGER.debug(
-            "[SENDSPIN] Import failed (%s), SENDSPIN_AVAILABLE=False", _exc
+        _LOGGER.warning(
+            "[SENDSPIN] Import failed, SENDSPIN_AVAILABLE=False: %s",
+            _exc,
+            exc_info=_exc,
         )
 else:
     SENDSPIN_AVAILABLE = False
