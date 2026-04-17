@@ -5,6 +5,7 @@ import logging
 import os
 import shutil
 import sys
+import uuid
 
 import voluptuous as vol
 from packaging.version import parse as parse_version
@@ -189,11 +190,25 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("lifx_discovery_timeout", default=30): vol.All(
             int, vol.Range(min=1, max=120)
         ),
+        vol.Optional("instance_id", default=""): str,
         vol.Optional("sendspin_servers", default={}): dict,
         vol.Optional("sendspin_always_on", default=False): bool,
     },
     extra=vol.ALLOW_EXTRA,
 )
+
+
+def ensure_instance_id(config):
+    """
+    Ensure the config has a persistent LedFx instance UUID.
+
+    Generates a random UUID if ``instance_id`` is missing or empty and
+    stores it back in *config* so it is saved on the next
+    :func:`save_config` call.  The value is stable across restarts and
+    uniquely identifies this LedFx installation.
+    """
+    if not config.get("instance_id"):
+        config["instance_id"] = str(uuid.uuid4())
 
 
 def load_logger():

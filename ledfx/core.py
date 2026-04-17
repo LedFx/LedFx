@@ -22,6 +22,7 @@ from ledfx.config import (
     VISUALISATION_CONFIG_KEYS,
     Transmission,
     create_backup,
+    ensure_instance_id,
     get_ssl_certs,
     load_config,
     remove_virtuals_active_effects,
@@ -98,6 +99,7 @@ class LedFxCore:
             create_backup(config_dir, "DELETE")
 
         self.config = load_config(config_dir)
+        ensure_instance_id(self.config)
         self.config["hosts"] = get_sorted_physical_ips()
 
         if clear_effects:
