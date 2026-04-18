@@ -5,7 +5,14 @@ import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.audio import AudioReactiveEffect
-from ledfx.utils import Graph, bokeh_available
+from ledfx.utils import Graph
+
+try:
+    import bokeh  # noqa: F401
+
+    bokeh_available = True
+except ImportError:
+    bokeh_available = False
 
 try:
     import psutil

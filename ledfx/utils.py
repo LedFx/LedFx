@@ -64,21 +64,6 @@ from ledfx.utilities.security_utils import (
 
 # from asyncio import coroutines, ensure_future
 
-try:
-    from itertools import cycle
-
-    from bokeh.io import output_file, show
-    from bokeh.layouts import column
-    from bokeh.models import Label
-    from bokeh.palettes import Category10
-    from bokeh.plotting import figure
-
-    from ledfx.config import get_default_config_directory
-
-    bokeh_available = True
-except ImportError:
-    bokeh_available = False
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1346,22 +1331,73 @@ class Graph:
             jitter (bool): If true, will dump the jitter graph
             only_jitter (bool): If true, will only dump the jitter graph
         """
-        if not bokeh_available:
-            _LOGGER.info("Bokeh is disabled dump is disabled")
+        try:
+            from itertools import cycle
+
+            from bokeh.io import output_file, show
+            from bokeh.layouts import column
+            from bokeh.models import Label
+            from bokeh.palettes import Category10
+            from bokeh.plotting import figure
+
+            from ledfx.config import get_default_config_directory
+        except ImportError:
+            _LOGGER.info("Bokeh is not available, dump is disabled")
+            return
+
+        if sub_title:
+            compound = f"{self.title} : {sub_title}"
         else:
-            if sub_title:
-                compound = f"{self.title} : {sub_title}"
-            else:
-                compound = self.title
+            compound = self.title
 
-            _LOGGER.info("Attempting to dump graph %s", compound)
-            TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
-            colors = cycle(Category10[10])
+        _LOGGER.info("Attempting to dump graph %s", compound)
+        TOOLS = "xpan,xwheel_zoom,box_zoom,reset,save,box_select"
+        colors = cycle(Category10[10])
 
-            vals_fig = figure(
-                title=compound,
+        vals_fig = figure(
+            title=compound,
+            x_axis_label="sec since start",
+            y_axis_label=self.y_title,
+            tools=TOOLS,
+            active_scroll="xwheel_zoom",
+            width=1200,
+            height=600,
+        )
+
+        for a_range in self.ranges.values():
+            if len(a_range.list_x()) > 0:
+                vals_fig.line(
+                    a_range.list_x(),
+                    a_range.list_y(),
+                    legend_label=a_range.key,
+                    line_width=2,
+                    color=next(colors),
+                )
+
+        for tag in self.tags:
+            label = Label(
+                x=tag.x,
+                y=tag.y,
+                text=tag.text,
+                text_font_size="12pt",
+                text_color=tag.color,
+                angle=1.57,
+            )
+            vals_fig.add_layout(label)
+
+        if self.y_axis_max is not None:
+            vals_fig.y_range.end = self.y_axis_max
+
+        vals_fig.legend.click_policy = "hide"
+
+        if jitter or only_jitter:
+            jitter_title = f"{compound} jitter"
+
+            jitter_fig = figure(
+                title=jitter_title,
                 x_axis_label="sec since start",
-                y_axis_label=self.y_title,
+                x_range=vals_fig.x_range,
+                y_axis_label="periodic secs",
                 tools=TOOLS,
                 active_scroll="xwheel_zoom",
                 width=1200,
@@ -1369,89 +1405,49 @@ class Graph:
             )
 
             for a_range in self.ranges.values():
-                if len(a_range.list_x()) > 0:
-                    vals_fig.line(
+                # Calculte jitter for range x and prestuff so len is same
+                # don't use numpy due to some side effects
+                x = a_range.list_x()
+                if len(x) > 0:
+                    jitter = [x[i + 1] - x[i] for i in range(len(x) - 1)]
+                    jitter.insert(0, 0.0)
+                    jitter_fig.circle(
                         a_range.list_x(),
-                        a_range.list_y(),
+                        jitter,
                         legend_label=a_range.key,
-                        line_width=2,
+                        size=3,
                         color=next(colors),
                     )
 
             for tag in self.tags:
                 label = Label(
                     x=tag.x,
-                    y=tag.y,
+                    y=0.001,
                     text=tag.text,
                     text_font_size="12pt",
                     text_color=tag.color,
                     angle=1.57,
-                )
-                vals_fig.add_layout(label)
-
-            if self.y_axis_max is not None:
-                vals_fig.y_range.end = self.y_axis_max
-
-            vals_fig.legend.click_policy = "hide"
-
-            if jitter or only_jitter:
-                jitter_title = f"{compound} jitter"
-
-                jitter_fig = figure(
-                    title=jitter_title,
-                    x_axis_label="sec since start",
-                    x_range=vals_fig.x_range,
-                    y_axis_label="periodic secs",
-                    tools=TOOLS,
-                    active_scroll="xwheel_zoom",
-                    width=1200,
-                    height=600,
+                    text_baseline="middle",
                 )
 
-                for a_range in self.ranges.values():
-                    # Calculte jitter for range x and prestuff so len is same
-                    # don't use numpy due to some side effects
-                    x = a_range.list_x()
-                    if len(x) > 0:
-                        jitter = [x[i + 1] - x[i] for i in range(len(x) - 1)]
-                        jitter.insert(0, 0.0)
-                        jitter_fig.circle(
-                            a_range.list_x(),
-                            jitter,
-                            legend_label=a_range.key,
-                            size=3,
-                            color=next(colors),
-                        )
+                jitter_fig.add_layout(label)
 
-                for tag in self.tags:
-                    label = Label(
-                        x=tag.x,
-                        y=0.001,
-                        text=tag.text,
-                        text_font_size="12pt",
-                        text_color=tag.color,
-                        angle=1.57,
-                        text_baseline="middle",
-                    )
+            jitter_fig.legend.click_policy = "hide"
 
-                    jitter_fig.add_layout(label)
+        # work out layour according to requested graphs
+        if only_jitter:
+            p = column(jitter_fig)
+        elif jitter:
+            p = column(vals_fig, jitter_fig)
+        else:
+            p = column(vals_fig)
 
-                jitter_fig.legend.click_policy = "hide"
-
-            # work out layour according to requested graphs
-            if only_jitter:
-                p = column(jitter_fig)
-            elif jitter:
-                p = column(vals_fig, jitter_fig)
-            else:
-                p = column(vals_fig)
-
-            save_as = os.path.join(
-                get_default_config_directory(),
-                f"{re.sub('[^A-Za-z0-9]+', '_', compound)}.html",
-            )
-            output_file(filename=save_as, title=compound)
-            show(p)
+        save_as = os.path.join(
+            get_default_config_directory(),
+            f"{re.sub('[^A-Za-z0-9]+', '_', compound)}.html",
+        )
+        output_file(filename=save_as, title=compound)
+        show(p)
 
 
 def wled_support_DDP(build) -> bool:
