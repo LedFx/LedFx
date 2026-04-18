@@ -64,8 +64,6 @@ from ledfx.utilities.security_utils import (
 
 # from asyncio import coroutines, ensure_future
 
-from itertools import cycle
-
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1334,6 +1332,8 @@ class Graph:
             only_jitter (bool): If true, will only dump the jitter graph
         """
         try:
+            from itertools import cycle
+
             from bokeh.io import output_file, show
             from bokeh.layouts import column
             from bokeh.models import Label
