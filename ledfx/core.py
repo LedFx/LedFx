@@ -41,6 +41,7 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.mdns_manager import ZeroConfRunner
+from ledfx.nowplaying.manager import NowPlayingManager
 from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
@@ -515,6 +516,13 @@ class LedFxCore:
 
         # Start audio device monitor for OS-level device change notifications
         self._start_audio_device_monitor()
+
+        # Start now-playing subsystem (fail-soft)
+        self.now_playing = NowPlayingManager(self)
+        try:
+            await self.now_playing.start()
+        except Exception as e:
+            _LOGGER.warning("Now-playing subsystem failed to start: %s", e)
 
         # Only open the UI once devices and virtuals have been initialized
         if open_ui:

@@ -189,6 +189,38 @@ CORE_CONFIG_SCHEMA = vol.Schema(
             int, vol.Range(min=1, max=120)
         ),
         vol.Optional("sendspin_servers", default={}): dict,
+        vol.Optional(
+            "now_playing",
+            default={
+                "enabled": False,
+                "generate_palette_from_album_art": False,
+                "apply_palette_to_running_effects": False,
+                "gradient_variant": "led_punchy",
+                "art_fetch_timeout_ms": 5000,
+                "art_cache": True,
+                "art_cache_max_items": 64,
+            },
+        ): vol.Schema(
+            {
+                vol.Optional("enabled", default=False): bool,
+                vol.Optional(
+                    "generate_palette_from_album_art", default=False
+                ): bool,
+                vol.Optional(
+                    "apply_palette_to_running_effects", default=False
+                ): bool,
+                vol.Optional("gradient_variant", default="led_punchy"): vol.In(
+                    ["led_safe", "led_punchy", "led_max"]
+                ),
+                vol.Optional("art_fetch_timeout_ms", default=5000): vol.All(
+                    int, vol.Range(min=0)
+                ),
+                vol.Optional("art_cache", default=True): bool,
+                vol.Optional("art_cache_max_items", default=64): vol.All(
+                    int, vol.Range(min=1)
+                ),
+            }
+        ),
     },
     extra=vol.ALLOW_EXTRA,
 )
