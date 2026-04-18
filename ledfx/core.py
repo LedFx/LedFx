@@ -197,8 +197,13 @@ class LedFxCore:
         Callback for audio-hotplug library when device changes detected.
 
         Delegates all audio recovery logic to AudioInputSource.handle_device_list_change()
-        to keep audio lifecycle management in one place.
+        to keep audio lifecycle management in one place.  That method coalesces
+        rapid OS notifications so only one refresh runs at a time.
         """
+        _LOGGER.info(
+            "Audio refresh %d scheduled (system device-change event)",
+            AudioInputSource._refresh_generation + 1,
+        )
         # Let AudioInputSource handle the full lifecycle: stop, refresh, recover, restart
         if hasattr(self, "audio") and self.audio:
             self.audio.handle_device_list_change()
@@ -209,7 +214,9 @@ class LedFxCore:
         # Fire LedFx event for any listeners (e.g., websocket notifications)
         self.events.fire_event(AudioDeviceListChangedEvent())
 
-        _LOGGER.info("Audio device list updated in response to system change")
+        _LOGGER.debug(
+            "Audio device list event dispatched to websocket listeners"
+        )
 
     def _load_sendspin_servers(self):
         """Load Sendspin server configurations from config into the audio system."""

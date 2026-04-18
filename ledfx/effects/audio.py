@@ -2,6 +2,7 @@ import logging
 import queue
 import threading
 import time
+import weakref
 from collections import deque
 from functools import cached_property, lru_cache
 
@@ -29,6 +30,30 @@ MIN_MIDI = 21
 MAX_MIDI = 108
 
 
+def _stream_stop_worker(stream_ref, stop_result):
+    """Target for the timeout thread in _close_stream.
+    Accepts a weakref to the stream so that a hung thread does not keep a
+    strong reference to the stream object after _close_stream returns.
+    Dereferences the weakref at entry; if the stream has already been
+    collected (e.g. close() raced ahead), marks stop as succeeded and
+    returns immediately.  Records any exception into
+    stop_result["stop_error"] so _close_stream can detect failures even
+    when stop() returns promptly."""
+    stream = stream_ref()
+    if stream is None:
+        # Stream was already collected — nothing to stop.
+        stop_result["stopped"] = True
+        return
+    try:
+        stream.stop()
+        stop_result["stopped"] = True
+    except Exception as exc:
+        stop_result["stopped"] = False
+        stop_result["stop_error"] = exc
+    finally:
+        stream = None  # Drop strong ref so GC is not blocked by this thread
+
+
 class AudioInputSource:
     _audio_stream_active = False
     _audio = None
@@ -47,8 +72,174 @@ class AudioInputSource:
     _class_lock = threading.Lock()  # Class-level lock for shared state
     _activating = False  # Re-entry guard for activate()
 
+    # Hotplug refresh coalescing state (all guarded by _class_lock)
+    _refresh_in_progress = False  # True while a refresh cycle is executing
+    _refresh_pending = (
+        False  # True if another refresh should run after current
+    )
+    _refresh_generation = 0  # Monotonic counter: identifies each refresh cycle
+
+    # Stream identity / callback staleness detection (guarded by _class_lock)
+    # Incremented each time a new stream is successfully opened; copied to the
+    # AudioInputSource instance as _callback_stream_gen so callbacks from a
+    # replaced stream can detect they are stale and self-discard.
+    _stream_generation = 0
+
+    # Timeout for graceful stream stop before falling back to abort
+    _STREAM_STOP_TIMEOUT_S = 3.0
+    # Additional timeout after abort()+close() for the stop thread to exit
+    _STREAM_ABORT_TIMEOUT_S = 1.0
+
     @staticmethod
-    def refresh_device_list():
+    def _close_stream(
+        stream, context="", gen=None, device_name="", device_idx=None
+    ):
+        """
+        Defensively close a PortAudio stream with timeout-guarded stop()
+        and abort() fallback.
+
+        Some Windows WASAPI drivers hang in Pa_StopStream when the device
+        is being unplugged.  This helper prevents the caller from blocking
+        indefinitely and ensures PortAudio is left in a safe state for a
+        subsequent _terminate()/_initialize() cycle.
+
+        The stop() call runs in a daemon thread so that, if it wedges, we
+        can still fall through to abort() + close() without blocking the
+        caller.  The daemon thread will be reclaimed by the OS when the
+        process exits.  Rapid hotplug events are coalesced by
+        handle_device_list_change() so that at most one stop thread is
+        in-flight per refresh generation.
+
+        Args:
+            stream:      The sounddevice InputStream (or WebAudioStream /
+                         SendspinAudioStream) to close.  May be None (no-op).
+            context:     Short label for log messages (e.g. "stop", "deactivate").
+            gen:         Refresh generation integer, forwarded to log messages.
+            device_name: Human-readable device name for richer diagnostics.
+            device_idx:  Device index for richer diagnostics.
+        """
+        if stream is None:
+            return
+
+        # Build a rich context prefix once so every log line is consistent.
+        parts = []
+        if gen is not None:
+            parts.append(f"refresh {gen}")
+        if context:
+            parts.append(context)
+        prefix = f"[{' | '.join(parts)}] " if parts else ""
+
+        stream_id = id(stream)
+        device_hint = ""
+        if device_name:
+            device_hint += f" device='{device_name}'"
+        if device_idx is not None:
+            device_hint += f" index={device_idx}"
+
+        _LOGGER.debug(
+            "%sStopping stream id=%s%s",
+            prefix,
+            stream_id,
+            device_hint,
+        )
+
+        # 1. Attempt graceful stop with a timeout.
+        #    The worker is a daemon thread so a permanently wedged stop()
+        #    (seen on some Windows WASAPI loopback drivers during unplug)
+        #    does not keep the caller blocked.
+        stop_ok = False
+        stop_result = {"stopped": False, "stop_error": None}
+        stream_ref = weakref.ref(stream)
+        stop_thread = threading.Thread(
+            target=_stream_stop_worker,
+            args=(stream_ref, stop_result),
+            daemon=True,
+        )
+        stop_thread.start()
+        stop_thread.join(timeout=AudioInputSource._STREAM_STOP_TIMEOUT_S)
+
+        if stop_thread.is_alive():
+            _LOGGER.warning(
+                "%sstream.stop() timed out after %.1fs (id=%s%s) — "
+                "attempting abort()",
+                prefix,
+                AudioInputSource._STREAM_STOP_TIMEOUT_S,
+                stream_id,
+                device_hint,
+            )
+        elif stop_result["stop_error"] is not None:
+            _LOGGER.warning(
+                "%sstream.stop() raised an exception (id=%s%s): %s — "
+                "attempting abort()",
+                prefix,
+                stream_id,
+                device_hint,
+                stop_result["stop_error"],
+            )
+        if stop_thread.is_alive() or stop_result["stop_error"] is not None:
+            # 2. abort() is Pa_AbortStream — immediate, does not wait for
+            #    the callback to finish.  After abort(), any still-running
+            #    stop() in the worker thread should eventually return (or
+            #    throw) and exit, releasing its reference to the stream.
+            try:
+                if hasattr(stream, "abort"):
+                    stream.abort()
+                    _LOGGER.info(
+                        "%sStream id=%s aborted successfully",
+                        prefix,
+                        stream_id,
+                    )
+                    stop_ok = True
+                else:
+                    _LOGGER.warning(
+                        "%sStream id=%s has no abort(); proceeding to close()",
+                        prefix,
+                        stream_id,
+                    )
+            except Exception as e:
+                _LOGGER.warning(
+                    "%sstream.abort() id=%s failed: %s", prefix, stream_id, e
+                )
+        else:
+            _LOGGER.debug(
+                "%sStream id=%s stopped gracefully", prefix, stream_id
+            )
+            stop_ok = True
+
+        # 3. close() releases the PortAudio stream handle.
+        try:
+            stream.close()
+            _LOGGER.debug("%sStream id=%s closed", prefix, stream_id)
+        except Exception as e:
+            _LOGGER.warning(
+                "%sstream.close() id=%s failed: %s", prefix, stream_id, e
+            )
+
+        # 4. Second bounded join: after abort()+close() the stop thread
+        #    should unblock promptly.  If it is still alive after this
+        #    extra wait, log a persistent-hang warning and proceed — do
+        #    not spawn further fire-and-forget threads for this close path.
+        stop_thread.join(timeout=AudioInputSource._STREAM_ABORT_TIMEOUT_S)
+        if stop_thread.is_alive():
+            _LOGGER.warning(
+                "%sStop thread for stream id=%s%s is still alive after "
+                "abort()+close() — the thread will be reclaimed by the OS "
+                "at process exit; proceeding",
+                prefix,
+                stream_id,
+                device_hint,
+            )
+
+        if not stop_ok:
+            _LOGGER.warning(
+                "%sStream id=%s may not have stopped cleanly — "
+                "PortAudio reinit recommended",
+                prefix,
+                stream_id,
+            )
+
+    @staticmethod
+    def refresh_device_list(gen=None):
         """
         Force sounddevice/PortAudio to rescan audio devices.
         This is necessary because PortAudio caches the device list at initialization.
@@ -59,10 +250,17 @@ class AudioInputSource:
         sd._terminate()/_initialize() from running concurrently with
         open_audio_stream().
 
+        Args:
+            gen: Optional refresh generation integer for log tagging.
+
         Returns:
             bool: True if an audio stream was active before refresh (and should be reactivated),
                   False otherwise
         """
+        gen_tag = (
+            f"Audio refresh {gen}: " if gen is not None else "Audio refresh: "
+        )
+
         # Wait for any in-progress activation to complete before touching
         # PortAudio.  Setting _activating = True also blocks concurrent
         # activate() calls while the refresh is running.
@@ -74,46 +272,59 @@ class AudioInputSource:
                     break
             if time.monotonic() > deadline:
                 _LOGGER.warning(
-                    "Timed out waiting for activation to complete before device list refresh"
+                    "%sTimed out waiting for activation to complete before device list refresh",
+                    gen_tag,
                 )
                 return False
             time.sleep(0.05)
 
         try:
-            # Check if there's an active stream that needs to be stopped
-            # Use class lock to safely cache and clear the stream reference
+            # Capture stream reference and device metadata under the lock
+            # so _close_stream() can log rich diagnostics without holding
+            # the lock (which would deadlock against the audio callback).
             stream_to_close = None
+            dev_name = ""
+            dev_idx = None
             with AudioInputSource._class_lock:
                 was_active = AudioInputSource._audio_stream_active
 
                 if was_active:
                     _LOGGER.info(
-                        "Stopping audio stream before device list refresh..."
+                        "%sStopping audio stream before device list refresh...",
+                        gen_tag,
                     )
-                    # Cache and clear inside lock (atomic operation)
                     stream_to_close = AudioInputSource._stream
+                    dev_name = AudioInputSource._last_device_name or ""
+                    dev_idx = AudioInputSource._last_active
                     AudioInputSource._stream = None
                     AudioInputSource._audio_stream_active = False
 
             # Close outside lock to avoid deadlock with audio callbacks
             if stream_to_close:
-                try:
-                    stream_to_close.stop()
-                    stream_to_close.close()
-                except Exception as e:
-                    _LOGGER.warning(
-                        "Error closing stream during refresh: %s", e
-                    )
+                AudioInputSource._close_stream(
+                    stream_to_close,
+                    context="stop",
+                    gen=gen,
+                    device_name=dev_name,
+                    device_idx=dev_idx,
+                )
 
+            _LOGGER.debug("%sCycling PortAudio for device rescan...", gen_tag)
             try:
                 # Force PortAudio to rescan devices by terminating and reinitializing
+                _LOGGER.debug("%sTerminating PortAudio", gen_tag)
                 sd._terminate()
+                _LOGGER.debug("%sInitializing PortAudio", gen_tag)
                 sd._initialize()
                 # Clear the device list cache
                 AudioInputSource._device_list_cache = None
-                _LOGGER.info("Audio device list refreshed")
+                _LOGGER.info(
+                    "%sPortAudio reinitialized, device list refreshed", gen_tag
+                )
             except Exception as e:
-                _LOGGER.warning("Failed to refresh audio device list: %s", e)
+                _LOGGER.warning(
+                    "%sFailed to refresh audio device list: %s", gen_tag, e
+                )
 
             return was_active
         finally:
@@ -160,22 +371,77 @@ class AudioInputSource:
         """
         Handle audio device list changes with automatic stream recovery.
 
-        This method encapsulates the full lifecycle:
-        1. Stop active stream and refresh device list
-        2. Find previously active device by name (indices may have shifted)
-        3. Update config with new device index if changed
-        4. Reactivate stream with correct device
+        Rapid OS-level notifications (e.g. Windows emitting several events
+        for a single unplug/replug) are coalesced here:
 
-        This keeps all audio recovery logic in one place rather than split
-        across core.py and audio.py.
+        * If a refresh is already running, we set _refresh_pending = True
+          and return immediately.  At most one extra refresh will be queued.
+        * Once the running refresh completes, it checks _refresh_pending and
+          spawns a single follow-up thread if needed.
+
+        The actual refresh logic lives in _run_device_refresh() so it can be
+        called both from here and from the follow-up thread.
+        """
+        with AudioInputSource._class_lock:
+            if AudioInputSource._refresh_in_progress:
+                if not AudioInputSource._refresh_pending:
+                    AudioInputSource._refresh_pending = True
+                    _LOGGER.info(
+                        "Audio refresh %d queued (refresh %d is in progress)",
+                        AudioInputSource._refresh_generation + 1,
+                        AudioInputSource._refresh_generation,
+                    )
+                # else: already one queued; silently drop this extra event
+                return
+            AudioInputSource._refresh_generation += 1
+            gen = AudioInputSource._refresh_generation
+            AudioInputSource._refresh_in_progress = True
+
+        _LOGGER.info("Audio refresh %d started", gen)
+        try:
+            self._run_device_refresh(gen)
+        finally:
+            with AudioInputSource._class_lock:
+                AudioInputSource._refresh_in_progress = False
+                should_rerun = AudioInputSource._refresh_pending
+                if should_rerun:
+                    AudioInputSource._refresh_pending = False
+
+            if should_rerun:
+                _LOGGER.info(
+                    "Audio refresh %d complete; launching refresh %d due to queued hotplug event",
+                    gen,
+                    gen + 1,
+                )
+                t = threading.Thread(
+                    target=self.handle_device_list_change,
+                    daemon=True,
+                    name="audio-hotplug-refresh",
+                )
+                t.start()
+            else:
+                _LOGGER.info("Audio refresh %d complete", gen)
+
+    def _run_device_refresh(self, gen):
+        """
+        Execute one full device-change refresh cycle: stop stream, rescan
+        devices, locate the previously-active device by name, update config,
+        and reactivate.
+
+        Called exclusively from handle_device_list_change() under the
+        _refresh_in_progress / _refresh_pending coalescing umbrella.
+
+        Args:
+            gen: Refresh generation number for log tagging.
         """
         # Stop any active stream and refresh the device list
-        was_active = self.refresh_device_list()
+        was_active = self.refresh_device_list(gen=gen)
 
         # If no stream was active, nothing to recover
         if not was_active:
             _LOGGER.debug(
-                "Device list changed but no audio stream was active - no recovery needed"
+                "Audio refresh %d: no stream was active - no recovery needed",
+                gen,
             )
             return
 
@@ -187,21 +453,22 @@ class AudioInputSource:
 
         if not last_device_name:
             _LOGGER.warning(
-                "Cannot recover audio stream: previous device name not tracked"
+                "Audio refresh %d: cannot recover stream - previous device name not tracked",
+                gen,
             )
             # Try to reactivate with current config anyway
             try:
                 self.activate()
             except Exception as e:
                 _LOGGER.error(
-                    "Failed to reactivate audio stream after device change: %s",
-                    e,
+                    "Audio refresh %d: failed to reactivate stream: %s", gen, e
                 )
             return
 
         # Find device at its new index
         _LOGGER.info(
-            "Attempting to recover audio device '%s' (was at index %s)",
+            "Audio refresh %d: recovering device '%s' (was at index %s)",
+            gen,
             last_device_name,
             last_device_idx,
         )
@@ -209,8 +476,9 @@ class AudioInputSource:
 
         if found_idx == -1:
             _LOGGER.warning(
-                "Previously active device '%s' no longer available after device list change. "
-                "Will use default device.",
+                "Audio refresh %d: device '%s' no longer available "
+                "(may have been unplugged). Falling back to default.",
+                gen,
                 last_device_name,
             )
             # Clear the stored device info since it's gone
@@ -221,24 +489,31 @@ class AudioInputSource:
             # Use default device logic (prefers loopback of default output, then default input)
             fallback_idx = AudioInputSource.default_device_index()
             if fallback_idx is not None:
-                _LOGGER.info("Using fallback device at index %s", fallback_idx)
+                _LOGGER.info(
+                    "Audio refresh %d: using fallback device at index %s",
+                    gen,
+                    fallback_idx,
+                )
                 self._update_device_config(fallback_idx)
             else:
-                # No valid devices at all - clear config to trigger validator
-                _LOGGER.warning("No fallback device available")
+                _LOGGER.warning(
+                    "Audio refresh %d: no fallback device available", gen
+                )
                 self._update_device_config(None)
         else:
             current_config_idx = self._config.get("audio_device", -1)
             if found_idx != current_config_idx:
                 _LOGGER.info(
-                    "Device list changed: '%s' moved from index %s to %s",
+                    "Audio refresh %d: '%s' moved from index %s to %s",
+                    gen,
                     last_device_name,
                     current_config_idx,
                     found_idx,
                 )
             else:
                 _LOGGER.info(
-                    "Device list changed: '%s' still at index %s",
+                    "Audio refresh %d: '%s' still at index %s",
+                    gen,
                     last_device_name,
                     found_idx,
                 )
@@ -247,12 +522,17 @@ class AudioInputSource:
             self._update_device_config(found_idx)
 
         # Reactivate the stream with the updated configuration
+        _LOGGER.info(
+            "Audio refresh %d: reopening stream on device='%s' index=%s",
+            gen,
+            last_device_name,
+            found_idx if found_idx != -1 else None,
+        )
         try:
-            _LOGGER.info("Reactivating audio stream after device list refresh")
             self.activate()
         except Exception as e:
             _LOGGER.error(
-                "Failed to reactivate audio stream after device change: %s", e
+                "Audio refresh %d: failed to reactivate stream: %s", gen, e
             )
 
     @staticmethod
@@ -425,6 +705,14 @@ class AudioInputSource:
         self.lock = threading.Lock()
         # We must not inherit legacy _callbacks from prior instances
         self._callbacks = []
+        # Callback-side generation tracking: set to _stream_generation each time
+        # a new stream is opened.  _audio_sample_callback() compares this to the
+        # class-level _stream_generation so that late-firing callbacks from a
+        # replaced stream are silently discarded rather than feeding stale data.
+        self._callback_stream_gen = 0
+        # Rate-limit malformed-frame logging: log once per stream generation so
+        # a bad device during teardown doesn't flood the log.
+        self._malformed_frame_last_gen = None
         self.update_config(config)
 
         def shutdown_event(e):
@@ -746,6 +1034,10 @@ class AudioInputSource:
 
             AudioInputSource._stream.start()
             with AudioInputSource._class_lock:
+                # Bump the stream generation so that any lingering callbacks
+                # from the previous stream detect they are stale and self-discard.
+                AudioInputSource._stream_generation += 1
+                self._callback_stream_gen = AudioInputSource._stream_generation
                 AudioInputSource._audio_stream_active = True
 
         def try_open_device(dev_idx, reinit=False):
@@ -834,18 +1126,27 @@ class AudioInputSource:
     def deactivate(self):
         # Stop the stream outside the lock to avoid deadlock with audio callback
         # The audio callback thread may be waiting to complete, and if it needs
-        # any locks, holding the lock while calling stop() creates a circular wait
+        # any locks, holding the lock while calling stop() creates a circular wait.
+        # Capture device metadata inside the lock for rich diagnostics.
         stream_to_close = None
+        dev_name = ""
+        dev_idx = None
         with AudioInputSource._class_lock:
             if AudioInputSource._stream:
                 stream_to_close = AudioInputSource._stream
                 AudioInputSource._stream = None
+                dev_name = AudioInputSource._last_device_name or ""
+                dev_idx = AudioInputSource._last_active
             AudioInputSource._audio_stream_active = False
 
-        # Stop/close outside the lock
+        # Stop/close outside the lock — uses timeout + abort() fallback
         if stream_to_close:
-            stream_to_close.stop()
-            stream_to_close.close()
+            AudioInputSource._close_stream(
+                stream_to_close,
+                context="deactivate",
+                device_name=dev_name,
+                device_idx=dev_idx,
+            )
             _LOGGER.info("Audio source closed.")
 
     def subscribe(self, callback):
@@ -927,8 +1228,16 @@ class AudioInputSource:
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
-        # time_start = time.time()
-        # self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
+        # Guard: discard callbacks that fire after the stream was replaced.
+        # _callback_stream_gen is set per-instance when the stream is opened;
+        # _stream_generation is the class-level counter.  A mismatch means
+        # this callback fires from a stream that has already been closed/replaced.
+        # This is a read-only check on immutable integers — no lock needed.
+        my_gen = self._callback_stream_gen
+        if my_gen != AudioInputSource._stream_generation:
+            # Stale callback from an old stream generation — silently discard.
+            return
+
         raw_sample = np.frombuffer(in_data, dtype=np.float32)
 
         in_sample_len = len(raw_sample)
@@ -938,19 +1247,23 @@ class AudioInputSource:
             # Simple resampling
             processed_audio_sample = self.resampler.process(
                 raw_sample,
-                # MIC_RATE / self._stream.samplerate
                 out_sample_len / in_sample_len,
-                # end_of_input=True
             )
         else:
             processed_audio_sample = raw_sample
 
         if len(processed_audio_sample) != out_sample_len:
-            _LOGGER.debug(
-                "Discarded malformed audio frame - %s samples, expected %s",
-                len(processed_audio_sample),
-                out_sample_len,
-            )
+            # Rate-limit malformed-frame logging to once per stream generation
+            # so bad hardware during teardown doesn't flood the log.
+            if self._malformed_frame_last_gen != my_gen:
+                self._malformed_frame_last_gen = my_gen
+                _LOGGER.debug(
+                    "Discarded malformed audio frame (gen=%s, got=%s expected=%s); "
+                    "further malformed frames this stream will be silent.",
+                    my_gen,
+                    len(processed_audio_sample),
+                    out_sample_len,
+                )
             return
 
         # handle delaying the audio with the queue
@@ -968,9 +1281,6 @@ class AudioInputSource:
             self.pre_process_audio()
             self._invalidate_caches()
             self._invoke_callbacks()
-
-        # print(f"Core Audio Processing Latency {round(time.time()-time_start, 3)} s")
-        # return self._raw_audio_sample
 
     def _invoke_callbacks(self):
         """Notifies all clients of the new data"""
