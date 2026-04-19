@@ -22,6 +22,7 @@ from ledfx.config import (
     VISUALISATION_CONFIG_KEYS,
     Transmission,
     create_backup,
+    ensure_instance_id,
     get_ssl_certs,
     load_config,
     remove_virtuals_active_effects,
@@ -44,6 +45,7 @@ from ledfx.mdns_manager import ZeroConfRunner
 from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
+from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.tools.ts_generator import generate_typescript_types
 from ledfx.utils import (
     RollingQueueHandler,
@@ -97,6 +99,7 @@ class LedFxCore:
             create_backup(config_dir, "DELETE")
 
         self.config = load_config(config_dir)
+        ensure_instance_id(self.config)
         self.config["hosts"] = get_sorted_physical_ips()
 
         if clear_effects:
@@ -156,7 +159,8 @@ class LedFxCore:
         """
         Handles the update of the base configuration where there are specific things that need to be done.
 
-        Currently, only visualisation configuration is handled this way, since they require the creation of new event listeners.
+        Currently handles visualisation configuration (requires new event listeners)
+        and sendspin_always_on toggling (requires audio stream deactivation check).
 
         Args:
             event (Event): The event that triggered the update - this will always be a BaseConfigUpdateEvent.
@@ -167,6 +171,17 @@ class LedFxCore:
                 "Visualisation configuration updated - resetting visualisation event listeners."
             )
             self.setup_visualisation_events()
+
+        if (
+            "sendspin_always_on" in event.config
+            and not event.config["sendspin_always_on"]
+            and hasattr(self, "audio")
+            and self.audio is not None
+        ):
+            _LOGGER.debug(
+                "sendspin_always_on toggled off - checking if audio stream should deactivate."
+            )
+            self.audio.check_and_deactivate()
 
     def dev_enabled(self):
         return self.config["dev_mode"]
@@ -502,6 +517,13 @@ class LedFxCore:
         # virtuals, since virtuals with active effects trigger audio
         # initialization which validates the audio_device index.
         self._load_sendspin_servers()
+
+        # Eagerly start the Sendspin audio stream at boot when configured,
+        # even if no audio-reactive effect is active yet.
+        try:
+            sendspin_eager_start(self)
+        except Exception as e:
+            _LOGGER.warning("Failed to eagerly start Sendspin audio: %s", e)
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(

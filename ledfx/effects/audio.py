@@ -19,6 +19,7 @@ from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, Event
 from ledfx.sendspin import SENDSPIN_AVAILABLE
+from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
 
 # Sendspin server configurations discovered or configured
 SENDSPIN_SERVERS = {}
@@ -370,7 +371,7 @@ class AudioInputSource:
             sendspin_idx = next(
                 i for i, h in enumerate(hostapis) if h["name"] == "SENDSPIN"
             )
-            devices = devices + tuple(
+            sendspin_devices = tuple(
                 {
                     "hostapi": sendspin_idx,
                     "name": name,
@@ -379,6 +380,7 @@ class AudioInputSource:
                 }
                 for name, config in SENDSPIN_SERVERS.items()
             )
+            devices = devices + sendspin_devices
         return devices
 
     @staticmethod
@@ -511,7 +513,8 @@ class AudioInputSource:
             last_active = AudioInputSource._last_active
 
         # Activate outside the lock to avoid deadlock
-        if len(self._callbacks) != 0:
+        should_always_on = self._should_always_keep_active()
+        if len(self._callbacks) != 0 or should_always_on:
             self.activate()
 
         # Check if device changed and fire event if needed
@@ -716,10 +719,14 @@ class AudioInputSource:
             ):
                 from ledfx.sendspin.stream import SendspinAudioStream
 
+                _LOGGER.debug(
+                    "Opening SendspinAudioStream for '%s'",
+                    device["name"],
+                )
                 AudioInputSource._stream = SendspinAudioStream(
                     device["sendspin_config"],
                     self._audio_sample_callback,
-                    server_id=device["name"],
+                    instance_id=self._ledfx.config.get("instance_id", ""),
                 )
             else:
                 AudioInputSource._stream = self._audio.InputStream(
@@ -848,6 +855,17 @@ class AudioInputSource:
             stream_to_close.close()
             _LOGGER.info("Audio source closed.")
 
+    def _should_always_keep_active(self):
+        """Check if the current audio source should stay active regardless of subscribers."""
+        if not self._ledfx.config.get("sendspin_always_on", False):
+            return False
+        device_idx = self._config.get("audio_device")
+        return is_sendspin_always_on(
+            device_idx,
+            self.query_devices,
+            self.query_hostapis,
+        )
+
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
@@ -864,6 +882,11 @@ class AudioInputSource:
         """Unregisters a callback with the input source"""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
+        if self._should_always_keep_active():
+            _LOGGER.debug(
+                "Sendspin always-on active, skipping deactivate timer"
+            )
+            return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active
@@ -877,6 +900,9 @@ class AudioInputSource:
         if self._timer is not None:
             self._timer.cancel()
         self._timer = None
+        if self._should_always_keep_active():
+            _LOGGER.debug("Sendspin always-on active, skipping deactivate")
+            return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active

@@ -59,6 +59,7 @@ PERMITTED_KEYS = {
         "startup_playlist_id",
         "lifx_broadcast_address",
         "lifx_discovery_timeout",
+        "sendspin_always_on",
     ),
 }
 

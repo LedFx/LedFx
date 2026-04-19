@@ -1,8 +1,11 @@
 """Sendspin configuration schema and constants."""
 
+import logging
 import urllib.parse
 
 import voluptuous as vol
+
+_LOGGER = logging.getLogger(__name__)
 
 # Default Sendspin server configuration
 DEFAULT_SERVER_URL = "ws://192.168.1.12:8927/sendspin"
@@ -70,3 +73,64 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
         return False, "server_url path contains path-traversal sequence"
 
     return True, ""
+
+
+def is_always_on(device_idx, query_devices, query_hostapis):
+    """Check if the audio device at device_idx is a Sendspin device.
+
+    Args:
+        device_idx: The audio device index to check.
+        query_devices: Callable returning the full device tuple.
+        query_hostapis: Callable returning the host API tuple.
+
+    Returns:
+        True if the device is a Sendspin server.
+    """
+    if not isinstance(device_idx, int) or device_idx < 0:
+        return False
+    try:
+        devices = query_devices()
+        hostapis = query_hostapis()
+        if device_idx >= len(devices):
+            return False
+        hostapi_name = hostapis[devices[device_idx]["hostapi"]]["name"]
+        return hostapi_name == "SENDSPIN"
+    except Exception as exc:
+        _LOGGER.debug(
+            "is_always_on: exception checking device %s: %s",
+            device_idx,
+            exc,
+        )
+        return False
+
+
+def eager_start(ledfx):
+    """Eagerly start the audio subsystem if sendspin_always_on is enabled
+    and the configured audio device is a Sendspin source.
+
+    Called from core startup after sendspin servers are loaded so the
+    Sendspin audio stream begins immediately, even when no audio-reactive
+    effect is active yet.
+    """
+    if not ledfx.config.get("sendspin_always_on", False):
+        return
+
+    audio_config = ledfx.config.get("audio", {})
+    device_idx = audio_config.get("audio_device")
+
+    # Lazy import to break circular dependency:
+    # audio.py → sendspin/config.py → audio.py
+    from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+
+    if not is_always_on(
+        device_idx,
+        AudioInputSource.query_devices,
+        AudioInputSource.query_hostapis,
+    ):
+        return
+
+    _LOGGER.info(
+        "Sendspin always-on: eagerly starting audio (device %s)",
+        device_idx,
+    )
+    ledfx.audio = AudioAnalysisSource(ledfx, audio_config)

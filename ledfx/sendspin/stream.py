@@ -51,11 +51,17 @@ class SendspinAudioStream:
     Args:
         config: Configuration dict with server_url, client_name, etc.
         callback: LedFx's _audio_sample_callback(data, frame_count, time_info, status)
-        server_id: Stable identifier for this server config entry, used to
-            generate a persistent client_id across reconnections (spec requirement).
+        instance_id: Persistent LedFx installation UUID from top-level config.
+            Used to form a stable, collision-safe ``client_id`` sent to the
+            Sendspin server.
     """
 
-    def __init__(self, config: dict, callback: Callable, server_id: str = ""):
+    def __init__(
+        self,
+        config: dict,
+        callback: Callable,
+        instance_id: str = "",
+    ):
         if SendspinClient is None:
             raise ImportError(
                 "aiosendspin not available (requires Python 3.12+)"
@@ -63,7 +69,9 @@ class SendspinAudioStream:
 
         self.config = config
         self.callback = callback
-        self._server_id = server_id
+        self._instance_id = instance_id
+        if not instance_id:
+            raise ValueError("instance_id must be provided and non-empty")
         self._active = False
         self._client: Optional[SendspinClient] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
@@ -619,14 +627,10 @@ class SendspinAudioStream:
                 ],
             )
 
-            # Create Sendspin client
-            # client_id must be persistent across reconnections so the server
-            # can associate this client with previous sessions (spec requirement).
-            client_id = (
-                f"ledfx-{self._server_id}"
-                if self._server_id
-                else f"ledfx-{id(self)}"
-            )
+            # Build a collision-safe client_id using the first 8 chars of
+            # the persistent LedFx installation UUID.  Stable across
+            # reconnections and restarts; unique across installations.
+            client_id = f"ledfx-{self._instance_id[:8]}"
             self._client = SendspinClient(
                 client_id=client_id,
                 client_name=client_name,
