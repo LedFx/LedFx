@@ -87,33 +87,19 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         True if the device is a Sendspin server.
     """
     if not isinstance(device_idx, int) or device_idx < 0:
-        _LOGGER.debug(
-            "[SENDSPIN] is_always_on: device_idx=%r is not a valid non-negative int, returning False",
-            device_idx,
-        )
         return False
     try:
         devices = query_devices()
         hostapis = query_hostapis()
         if device_idx >= len(devices):
-            _LOGGER.debug(
-                "[SENDSPIN] is_always_on: device_idx=%s >= len(devices)=%s, returning False",
-                device_idx,
-                len(devices),
-            )
             return False
         hostapi_name = hostapis[devices[device_idx]["hostapi"]]["name"]
-        result = hostapi_name == "SENDSPIN"
-        _LOGGER.debug(
-            "[SENDSPIN] is_always_on: device_idx=%s hostapi=%r -> %s",
-            device_idx,
-            hostapi_name,
-            result,
-        )
-        return result
+        return hostapi_name == "SENDSPIN"
     except Exception as exc:
         _LOGGER.debug(
-            "[SENDSPIN] is_always_on: exception %s, returning False", exc
+            "is_always_on: exception checking device %s: %s",
+            device_idx,
+            exc,
         )
         return False
 
@@ -127,9 +113,6 @@ def eager_start(ledfx):
     effect is active yet.
     """
     if not ledfx.config.get("sendspin_always_on", False):
-        _LOGGER.debug(
-            "[SENDSPIN] eager_start: sendspin_always_on is False, skipping"
-        )
         return
 
     audio_config = ledfx.config.get("audio", {})
@@ -144,14 +127,10 @@ def eager_start(ledfx):
         AudioInputSource.query_devices,
         AudioInputSource.query_hostapis,
     ):
-        _LOGGER.debug(
-            "[SENDSPIN] eager_start: audio_device=%s is not a Sendspin device, skipping",
-            device_idx,
-        )
         return
 
-    _LOGGER.debug(
-        "[SENDSPIN] eager_start: audio_device=%s is Sendspin, eagerly initializing audio subsystem",
+    _LOGGER.info(
+        "Sendspin always-on: eagerly starting audio (device %s)",
         device_idx,
     )
     ledfx.audio = AudioAnalysisSource(ledfx, audio_config)

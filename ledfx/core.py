@@ -523,7 +523,7 @@ class LedFxCore:
         try:
             sendspin_eager_start(self)
         except Exception as e:
-            _LOGGER.error("Failed to eagerly start Sendspin audio: %s", e)
+            _LOGGER.warning("Failed to eagerly start Sendspin audio: %s", e)
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(
