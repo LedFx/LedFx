@@ -1,3 +1,5 @@
+"""Audio-reactive random spotlight effect for 1D LED strips."""
+
 import random
 import time
 
@@ -10,6 +12,8 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
+    """Spawn fading spotlight segments at random positions based on audio activity."""
+
     NAME = "Random Spotlight"
     CATEGORY = "Classic"
     HIDDEN_KEYS = ["flip", "mirror", "gradient_roll"]
@@ -132,6 +136,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     )
 
     def on_activate(self, pixel_count):
+        """Initialize runtime state once the strip pixel count is known."""
         self.active_spots = []
         self.last_spawn_time = 0.0
         self.last_audio_time = time.time()
@@ -149,6 +154,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self._refresh_spot_template()
 
     def config_updated(self, config):
+        """Cache validated config values and rebuild spot templates when needed."""
         self.beat_trigger = self._config["beat_trigger"]
         self.beat_trigger_func = self.BEAT_TRIGGER_MAPPING[self.beat_trigger]
         self.spot_width = int(self._config["spot_width"])
@@ -184,6 +190,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             self._refresh_spot_template()
 
     def _refresh_spot_template(self):
+        """Recompute per-spot geometry and color/intensity profiles."""
         max_width = (
             self.pixel_count if self.pixel_count % 2 else self.pixel_count - 1
         )
@@ -220,10 +227,12 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         )
 
     def _ring_distance(self, pixel_a, pixel_b):
+        """Return shortest wrapped distance between two pixels on a ring."""
         diff = abs(pixel_a - pixel_b)
         return min(diff, self.pixel_count - diff)
 
     def _pick_spot_center(self):
+        """Pick a random spotlight center, preferring spacing from active spots."""
         if self.pixel_count <= 1:
             return 0
 
@@ -243,6 +252,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         return random.randrange(self.pixel_count)
 
     def _spawn_spot(self, now):
+        """Create a new spotlight and cap list size to max_active_spots."""
         while len(self.active_spots) >= self.max_active_spots:
             self.active_spots.pop(0)
 
@@ -255,17 +265,21 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.active_spots.append((self._pick_spot_center(), now, color_anchor))
 
     def _adaptive_boost_detected(self, data):
+        """Return whether adaptive burst triggers are currently active."""
         return data.onset() or data.volume_beat_now()
 
     def _specific_boost_detected(self, data):
+        """Return whether the selected explicit beat trigger fired."""
         return bool(getattr(data, self.beat_trigger_func)())
 
     def _current_boost_detected(self, data):
+        """Dispatch burst detection for adaptive or explicit trigger mode."""
         if self.beat_trigger_func is None:
             return self._adaptive_boost_detected(data)
         return self._specific_boost_detected(data)
 
     def audio_data_updated(self, data):
+        """Update activity model and schedule new spotlight spawns per audio frame."""
         now = time.time()
         dt = max(0.0, min(0.25, now - self.last_audio_time))
         self.last_audio_time = now
@@ -343,6 +357,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.last_spawn_time = now
 
     def _render_spot(self, center, color_anchor, fade_amount):
+        """Blend a single spotlight contribution into the output pixel buffer."""
         indices = (center + self._spot_offsets) % self.pixel_count
 
         if self.use_gradient:
@@ -370,6 +385,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         np.add.at(self.pixels, indices, self._spot_template * fade_amount)
 
     def render(self):
+        """Render active spotlights, apply fade-out, and prune expired entries."""
         self.pixels[:] = 0.0
         if not self.active_spots:
             return
