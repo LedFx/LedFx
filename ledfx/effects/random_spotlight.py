@@ -184,7 +184,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             self._refresh_spot_template()
 
     def _refresh_spot_template(self):
-        max_width = self.pixel_count if self.pixel_count % 2 else self.pixel_count - 1
+        max_width = (
+            self.pixel_count if self.pixel_count % 2 else self.pixel_count - 1
+        )
         max_width = max(max_width, 1)
         effective_width = min(self.spot_width, max_width)
 
@@ -197,10 +199,14 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             distance = np.abs(self._spot_offsets) / float(half_width)
 
         self._spot_center_mix = 1.0 - distance
-        self._spot_intensity = np.power(self._spot_center_mix, self.edge_softness)
+        self._spot_intensity = np.power(
+            self._spot_center_mix, self.edge_softness
+        )
 
         if self.use_gradient:
-            self._spot_template = np.zeros((len(self._spot_offsets), 3), dtype=float)
+            self._spot_template = np.zeros(
+                (len(self._spot_offsets), 3), dtype=float
+            )
             return
 
         color_gradient = (
@@ -209,7 +215,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             + self.center_color[np.newaxis, :]
             * self._spot_center_mix[:, np.newaxis]
         )
-        self._spot_template = color_gradient * self._spot_intensity[:, np.newaxis]
+        self._spot_template = (
+            color_gradient * self._spot_intensity[:, np.newaxis]
+        )
 
     def _ring_distance(self, pixel_a, pixel_b):
         diff = abs(pixel_a - pixel_b)
@@ -263,7 +271,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.last_audio_time = now
 
         if self.use_gradient and self.gradient_speed > 0:
-            self.gradient_phase = (self.gradient_phase + dt * self.gradient_speed) % 1.0
+            self.gradient_phase = (
+                self.gradient_phase + dt * self.gradient_speed
+            ) % 1.0
 
         lows = float(data.lows_power())
         mids = float(data.mids_power())
@@ -287,14 +297,18 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             0.0,
             2.0,
         )
-        activity_level = np.clip(self._activity_filter.update(activity_input), 0, 1)
+        activity_level = np.clip(
+            self._activity_filter.update(activity_input), 0, 1
+        )
 
         dynamic_span = self.max_active_spots - self.min_active_spots
         self.dynamic_spot_cap = self.min_active_spots + int(
             dynamic_span * activity_level
         )
 
-        spawn_rate = self.base_spawn_rate + self.activity_spawn_rate * activity_level
+        spawn_rate = (
+            self.base_spawn_rate + self.activity_spawn_rate * activity_level
+        )
         self.spawn_accumulator += spawn_rate * dt
 
         if self._current_boost_detected(data):
@@ -307,7 +321,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         if now - self.last_spawn_time < self.min_time_between_spots:
             return
 
-        available_capacity = max(0, self.dynamic_spot_cap - len(self.active_spots))
+        available_capacity = max(
+            0, self.dynamic_spot_cap - len(self.active_spots)
+        )
         if available_capacity <= 0:
             return
 
@@ -345,7 +361,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
                 + center_color[np.newaxis, :]
                 * self._spot_center_mix[:, np.newaxis]
             )
-            spot_template = color_gradient * self._spot_intensity[:, np.newaxis]
+            spot_template = (
+                color_gradient * self._spot_intensity[:, np.newaxis]
+            )
             np.add.at(self.pixels, indices, spot_template * fade_amount)
             return
 
