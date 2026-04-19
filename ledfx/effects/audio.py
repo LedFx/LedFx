@@ -901,9 +901,7 @@ class AudioInputSource:
             self._timer.cancel()
         self._timer = None
         if self._should_always_keep_active():
-            _LOGGER.debug(
-                "Sendspin always-on active, skipping deactivate"
-            )
+            _LOGGER.debug("Sendspin always-on active, skipping deactivate")
             return
         if (
             len(self._callbacks) <= self._subscriber_threshold
