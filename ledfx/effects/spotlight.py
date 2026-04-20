@@ -183,7 +183,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         )
         max_width = max(max_width, 1)
 
-        effective_width = int(round(self.pixel_count * self.spot_width / 100.0))
+        effective_width = int(
+            round(self.pixel_count * self.spot_width / 100.0)
+        )
         effective_width = max(1, min(effective_width, max_width))
         if effective_width % 2 == 0:
             if effective_width < max_width:
@@ -235,7 +237,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             return np.empty((0, width, 3), dtype=float)
 
         if not self.use_gradient:
-            return np.repeat(self._spot_template[np.newaxis, :, :], count, axis=0)
+            return np.repeat(
+                self._spot_template[np.newaxis, :, :], count, axis=0
+            )
 
         edge_anchors = np.mod(anchors + self.spot_color_span, 1.0)
         center_colors = self.get_gradient_color_vectorized1d(anchors)
@@ -252,7 +256,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def _rebuild_active_spot_templates(self):
         """Rebuild cached templates for active spotlights after template changes."""
-        self.spot_templates = self._build_templates_from_anchors(self.spot_anchors)
+        self.spot_templates = self._build_templates_from_anchors(
+            self.spot_anchors
+        )
 
     def _drop_oldest_spots(self, count):
         """Drop the oldest spotlight entries to respect the configured cap."""
@@ -440,7 +446,8 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         fade_amounts = fade_amounts[positive_idx]
 
         indices = (
-            self.spot_centers[:, np.newaxis] + self._spot_offsets[np.newaxis, :]
+            self.spot_centers[:, np.newaxis]
+            + self._spot_offsets[np.newaxis, :]
         ) % self.pixel_count
         weighted_templates = (
             self.spot_templates * fade_amounts[:, np.newaxis, np.newaxis]
