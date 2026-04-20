@@ -1,7 +1,7 @@
 """Audio-reactive random spotlight effect for 1D LED strips."""
 
 import random
-import time
+import timeit
 
 import numpy as np
 import voluptuous as vol
@@ -90,7 +90,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     def on_activate(self, pixel_count):
         """Initialize runtime state once the strip pixel count is known."""
         self.last_spawn_time = 0.0
-        self.last_audio_time = time.time()
+        self.last_audio_time = timeit.default_timer()
         self.spawn_accumulator = 0.0
         self.weighted_power = 0.0
         self.dynamic_spot_cap = 1
@@ -394,7 +394,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         """Update activity model and schedule new spotlight spawns per audio frame."""
-        now = time.time()
+        now = timeit.default_timer()
         dt = max(0.0, min(0.25, now - self.last_audio_time))
         self.last_audio_time = now
 
@@ -403,13 +403,22 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
                 self.gradient_phase + dt * self.gradient_speed
             ) % 1.0
 
+        lows = float(data.lows_power())
+        mids = float(data.mids_power())
+        highs = float(data.high_power())
+
+        if np.isnan(lows):
+            lows = 0.0
+        if np.isnan(mids):
+            mids = 0.0
+        if np.isnan(highs):
+            highs = 0.0
+
         weighted_power = float(
-            self.INTERNAL_LOWS_WEIGHT * data.lows_power()
-            + self.INTERNAL_MIDS_WEIGHT * data.mids_power()
-            + self.INTERNAL_HIGHS_WEIGHT * data.high_power()
+            self.INTERNAL_LOWS_WEIGHT * lows
+            + self.INTERNAL_MIDS_WEIGHT * mids
+            + self.INTERNAL_HIGHS_WEIGHT * highs
         )
-        if np.isnan(weighted_power):
-            weighted_power = 0.0
 
         power_delta = max(0.0, weighted_power - self.weighted_power)
         self.weighted_power = weighted_power
@@ -467,7 +476,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         if self.spot_count == 0:
             return
 
-        now = time.time()
+        now = timeit.default_timer()
         while self.spot_count > 0:
             oldest_idx = self.spot_head
             if now - self.spot_born[oldest_idx] < self.fade_time:
