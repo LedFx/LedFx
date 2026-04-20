@@ -302,11 +302,6 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_head = (self.spot_head + count) % self.spot_capacity
         self.spot_count -= count
 
-    def _ring_distance(self, pixel_a, pixel_b):
-        """Return shortest wrapped distance between two pixels on a ring."""
-        diff = abs(pixel_a - pixel_b)
-        return min(diff, self.pixel_count - diff)
-
     def _pick_spot_center(self):
         """Pick a random spotlight center, preferring spacing from active spots."""
         if self.pixel_count <= 1:
@@ -333,21 +328,11 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
         return random.randrange(self.pixel_count)
 
-    def _spawn_spot(self, now):
-        """Create a new spotlight and cap list size to max_active_spots."""
+    def _allocate_spot_entry(self, now, center, color_anchor):
+        """Insert spotlight metadata into the ring buffer and return its index."""
         overflow = self.spot_count - self.max_active_spots + 1
         if overflow > 0:
             self._drop_oldest_spots(overflow)
-
-        color_anchor = 0.0
-        if self.use_gradient:
-            color_anchor = (
-                self.gradient_phase + random.random() * self.spot_color_span
-            ) % 1.0
-
-        center = self._pick_spot_center()
-        new_anchor = np.array([color_anchor], dtype=float)
-        new_template = self._build_templates_from_anchors(new_anchor)[0]
 
         if self.spot_count < self.spot_capacity:
             insert_idx = (
@@ -361,7 +346,47 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_centers[insert_idx] = center
         self.spot_born[insert_idx] = now
         self.spot_anchors[insert_idx] = color_anchor
-        self.spot_templates[insert_idx] = new_template
+        return insert_idx
+
+    def _spawn_spot(self, now):
+        """Create a single spotlight using shared batch-capable primitives."""
+        color_anchor = 0.0
+        if self.use_gradient:
+            color_anchor = (
+                self.gradient_phase + random.random() * self.spot_color_span
+            ) % 1.0
+
+        center = self._pick_spot_center()
+        insert_idx = self._allocate_spot_entry(now, center, color_anchor)
+        self.spot_templates[insert_idx] = self._build_templates_from_anchors(
+            np.array([color_anchor], dtype=float)
+        )[0]
+
+    def _spawn_spots(self, now, count):
+        """Create multiple spotlights and build their templates in one batch."""
+        if count <= 0:
+            return
+
+        anchors = np.empty(count, dtype=float)
+        insert_indices = np.empty(count, dtype=int)
+
+        for i in range(count):
+            color_anchor = 0.0
+            if self.use_gradient:
+                color_anchor = (
+                    self.gradient_phase
+                    + random.random() * self.spot_color_span
+                ) % 1.0
+
+            center = self._pick_spot_center()
+            insert_indices[i] = self._allocate_spot_entry(
+                now, center, color_anchor
+            )
+            anchors[i] = color_anchor
+
+        self.spot_templates[insert_indices] = self._build_templates_from_anchors(
+            anchors
+        )
 
     def _adaptive_boost_detected(self, data):
         """Return whether adaptive burst triggers are currently active."""
@@ -431,8 +456,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             available_capacity,
             self.max_spawns_per_update,
         )
-        for _ in range(to_spawn):
-            self._spawn_spot(now)
+        self._spawn_spots(now, to_spawn)
 
         self.spawn_accumulator -= to_spawn
         self.last_spawn_time = now
