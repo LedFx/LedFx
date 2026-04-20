@@ -133,10 +133,11 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
         if hasattr(self, "pixels") and self.pixels is not None:
             self._refresh_spot_template()
-            self._ensure_spot_storage(len(self._spot_offsets))
+            reallocated = self._ensure_spot_storage(len(self._spot_offsets))
 
             if (
-                hasattr(self, "spot_count")
+                not reallocated
+                and hasattr(self, "spot_count")
                 and self.spot_count > 0
                 and old_template_signature != self._template_signature
             ):
@@ -161,15 +162,10 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         )
         max_width = max(max_width, 1)
 
-        effective_width = int(
-            round(self.pixel_count * self.spot_width / 100.0)
-        )
+        effective_width = round(self.pixel_count * self.spot_width / 100.0)
         effective_width = max(1, min(effective_width, max_width))
-        if effective_width % 2 == 0:
-            if effective_width < max_width:
-                effective_width += 1
-            else:
-                effective_width -= 1
+        if effective_width % 2 == 0 and effective_width < max_width:
+            effective_width += 1
         effective_width = max(1, effective_width)
 
         half_width = effective_width // 2
@@ -223,7 +219,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         )
 
     def _ensure_spot_storage(self, template_width):
-        """Ensure preallocated storage matches current capacity and template width."""
+        """Ensure storage matches capacity/template width and report reallocations."""
         capacity = max(1, int(self.max_active_spots))
         storage_valid = (
             hasattr(self, "spot_capacity")
@@ -232,7 +228,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             and self.spot_templates.shape[1] == template_width
         )
         if storage_valid:
-            return
+            return False
 
         old_centers, old_born, old_anchors = self._get_active_spot_data()
         keep = min(old_centers.size, capacity)
@@ -248,7 +244,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_count = keep
 
         if keep == 0:
-            return
+            return True
 
         self.spot_centers[:keep] = old_centers[-keep:]
         self.spot_born[:keep] = old_born[-keep:]
@@ -256,6 +252,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_templates[:keep] = self._build_templates_from_anchors(
             self.spot_anchors[:keep]
         )
+        return True
 
     def _clear_spots(self):
         """Reset spotlight state arrays while preserving current template width."""
