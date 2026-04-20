@@ -11,7 +11,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
 
-class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
+class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     """Spawn fading spotlight segments at random positions based on audio activity."""
 
     NAME = "Spotlight"
@@ -34,9 +34,6 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     INTERNAL_ACTIVITY_SPAWN_RATE = 14.0
     INTERNAL_PEAK_SPAWN_BOOST = 1.8
     INTERNAL_MAX_SPAWNS_PER_UPDATE = 6
-    INTERNAL_LOWS_WEIGHT = 0.9
-    INTERNAL_MIDS_WEIGHT = 1.0
-    INTERNAL_HIGHS_WEIGHT = 1.3
     INTERNAL_TRANSIENT_SENSITIVITY = 1.2
     INTERNAL_EDGE_SOFTNESS = 1.5
     INTERNAL_FADE_CURVE = 1.4
@@ -102,10 +99,6 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def on_activate(self, pixel_count):
         """Initialize runtime state once the strip pixel count is known."""
-        self.spot_centers = np.empty(0, dtype=int)
-        self.spot_born = np.empty(0, dtype=float)
-        self.spot_anchors = np.empty(0, dtype=float)
-        self.spot_templates = np.empty((0, 1, 3), dtype=float)
         self.last_spawn_time = 0.0
         self.last_audio_time = time.time()
         self.spawn_accumulator = 0.0
@@ -116,7 +109,6 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             alpha_decay=0.25, alpha_rise=0.6
         )
         self._refresh_spot_template()
-        self._template_signature = self._get_template_signature()
         self._clear_spots()
 
     def config_updated(self, config):
@@ -138,9 +130,6 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.activity_spawn_rate = self.INTERNAL_ACTIVITY_SPAWN_RATE
         self.peak_spawn_boost = self.INTERNAL_PEAK_SPAWN_BOOST
         self.max_spawns_per_update = self.INTERNAL_MAX_SPAWNS_PER_UPDATE
-        self.lows_weight = self.INTERNAL_LOWS_WEIGHT
-        self.mids_weight = self.INTERNAL_MIDS_WEIGHT
-        self.highs_weight = self.INTERNAL_HIGHS_WEIGHT
         self.transient_sensitivity = self.INTERNAL_TRANSIENT_SENSITIVITY
         self.use_gradient = self._config["use_gradient"]
         self.gradient_speed = self._config["gradient_speed"]
@@ -156,10 +145,11 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
         if hasattr(self, "pixels") and self.pixels is not None:
             self._refresh_spot_template()
+            self._ensure_spot_storage(len(self._spot_offsets))
 
             if (
-                hasattr(self, "spot_centers")
-                and self.spot_centers.size > 0
+                hasattr(self, "spot_count")
+                and self.spot_count > 0
                 and old_template_signature != self._template_signature
             ):
                 self._rebuild_active_spot_templates()
@@ -221,13 +211,67 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             color_gradient * self._spot_intensity[:, np.newaxis]
         )
 
+    def _get_active_indices(self):
+        """Return ring-buffer indices for active spotlight entries."""
+        if not hasattr(self, "spot_count") or self.spot_count == 0:
+            return np.empty(0, dtype=int)
+        return (
+            self.spot_head + np.arange(self.spot_count, dtype=int)
+        ) % self.spot_capacity
+
+    def _get_active_spot_data(self):
+        """Return active spot arrays in chronological order."""
+        active_idx = self._get_active_indices()
+        if active_idx.size == 0:
+            return (
+                np.empty(0, dtype=int),
+                np.empty(0, dtype=float),
+                np.empty(0, dtype=float),
+            )
+        return (
+            self.spot_centers[active_idx].copy(),
+            self.spot_born[active_idx].copy(),
+            self.spot_anchors[active_idx].copy(),
+        )
+
+    def _ensure_spot_storage(self, template_width):
+        """Ensure preallocated storage matches current capacity and template width."""
+        capacity = max(1, int(self.max_active_spots))
+        storage_valid = (
+            hasattr(self, "spot_capacity")
+            and self.spot_capacity == capacity
+            and hasattr(self, "spot_templates")
+            and self.spot_templates.shape[1] == template_width
+        )
+        if storage_valid:
+            return
+
+        old_centers, old_born, old_anchors = self._get_active_spot_data()
+        keep = min(old_centers.size, capacity)
+
+        self.spot_capacity = capacity
+        self.spot_centers = np.empty(capacity, dtype=int)
+        self.spot_born = np.empty(capacity, dtype=float)
+        self.spot_anchors = np.empty(capacity, dtype=float)
+        self.spot_templates = np.empty((capacity, template_width, 3), dtype=float)
+        self.spot_head = 0
+        self.spot_count = keep
+
+        if keep == 0:
+            return
+
+        self.spot_centers[:keep] = old_centers[-keep:]
+        self.spot_born[:keep] = old_born[-keep:]
+        self.spot_anchors[:keep] = old_anchors[-keep:]
+        self.spot_templates[:keep] = self._build_templates_from_anchors(
+            self.spot_anchors[:keep]
+        )
+
     def _clear_spots(self):
         """Reset spotlight state arrays while preserving current template width."""
-        width = len(self._spot_offsets)
-        self.spot_centers = np.empty(0, dtype=int)
-        self.spot_born = np.empty(0, dtype=float)
-        self.spot_anchors = np.empty(0, dtype=float)
-        self.spot_templates = np.empty((0, width, 3), dtype=float)
+        self._ensure_spot_storage(len(self._spot_offsets))
+        self.spot_head = 0
+        self.spot_count = 0
 
     def _build_templates_from_anchors(self, anchors):
         """Build one template per anchor using vectorized gradient sampling."""
@@ -256,18 +300,20 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def _rebuild_active_spot_templates(self):
         """Rebuild cached templates for active spotlights after template changes."""
-        self.spot_templates = self._build_templates_from_anchors(
-            self.spot_anchors
+        active_idx = self._get_active_indices()
+        if active_idx.size == 0:
+            return
+        self.spot_templates[active_idx] = self._build_templates_from_anchors(
+            self.spot_anchors[active_idx]
         )
 
     def _drop_oldest_spots(self, count):
         """Drop the oldest spotlight entries to respect the configured cap."""
-        if count <= 0:
+        if count <= 0 or self.spot_count == 0:
             return
-        self.spot_centers = self.spot_centers[count:]
-        self.spot_born = self.spot_born[count:]
-        self.spot_anchors = self.spot_anchors[count:]
-        self.spot_templates = self.spot_templates[count:]
+        count = min(count, self.spot_count)
+        self.spot_head = (self.spot_head + count) % self.spot_capacity
+        self.spot_count -= count
 
     def _ring_distance(self, pixel_a, pixel_b):
         """Return shortest wrapped distance between two pixels on a ring."""
@@ -279,24 +325,30 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         if self.pixel_count <= 1:
             return 0
 
-        if self.spot_centers.size == 0:
+        if self.spot_count == 0:
             return random.randrange(self.pixel_count)
 
         min_center_distance = max(1, len(self._spot_offsets) // 2)
 
-        for _ in range(10):
-            candidate = random.randrange(self.pixel_count)
-            if all(
-                self._ring_distance(candidate, center) >= min_center_distance
-                for center in self.spot_centers
-            ):
-                return candidate
+        active_idx = self._get_active_indices()
+        active_centers = self.spot_centers[active_idx]
+
+        for _ in range(2):
+            candidates = np.random.randint(0, self.pixel_count, size=64)
+            diffs = np.abs(
+                candidates[np.newaxis, :] - active_centers[:, np.newaxis]
+            )
+            ring_diffs = np.minimum(diffs, self.pixel_count - diffs)
+            min_distance = np.min(ring_diffs, axis=0)
+            valid = np.flatnonzero(min_distance >= min_center_distance)
+            if valid.size > 0:
+                return int(candidates[valid[0]])
 
         return random.randrange(self.pixel_count)
 
     def _spawn_spot(self, now):
         """Create a new spotlight and cap list size to max_active_spots."""
-        overflow = self.spot_centers.size - self.max_active_spots + 1
+        overflow = self.spot_count - self.max_active_spots + 1
         if overflow > 0:
             self._drop_oldest_spots(overflow)
 
@@ -308,14 +360,19 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
         center = self._pick_spot_center()
         new_anchor = np.array([color_anchor], dtype=float)
-        new_template = self._build_templates_from_anchors(new_anchor)
+        new_template = self._build_templates_from_anchors(new_anchor)[0]
 
-        self.spot_centers = np.append(self.spot_centers, center)
-        self.spot_born = np.append(self.spot_born, now)
-        self.spot_anchors = np.append(self.spot_anchors, color_anchor)
-        self.spot_templates = np.concatenate(
-            (self.spot_templates, new_template), axis=0
-        )
+        if self.spot_count < self.spot_capacity:
+            insert_idx = (self.spot_head + self.spot_count) % self.spot_capacity
+            self.spot_count += 1
+        else:
+            insert_idx = self.spot_head
+            self.spot_head = (self.spot_head + 1) % self.spot_capacity
+
+        self.spot_centers[insert_idx] = center
+        self.spot_born[insert_idx] = now
+        self.spot_anchors[insert_idx] = color_anchor
+        self.spot_templates[insert_idx] = new_template
 
     def _adaptive_boost_detected(self, data):
         """Return whether adaptive burst triggers are currently active."""
@@ -342,19 +399,9 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
                 self.gradient_phase + dt * self.gradient_speed
             ) % 1.0
 
-        lows = float(data.lows_power())
-        mids = float(data.mids_power())
-        highs = float(data.high_power())
-        weight_sum = max(
-            0.001,
-            self.lows_weight + self.mids_weight + self.highs_weight,
-        )
-
-        weighted_power = (
-            lows * self.lows_weight
-            + mids * self.mids_weight
-            + highs * self.highs_weight
-        ) / weight_sum
+        weighted_power = float(data.lows_power())
+        if np.isnan(weighted_power):
+            weighted_power = 0.0
 
         power_delta = max(0.0, weighted_power - self.weighted_power)
         self.weighted_power = weighted_power
@@ -389,7 +436,7 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             return
 
         available_capacity = max(
-            0, self.dynamic_spot_cap - self.spot_centers.size
+            0, self.dynamic_spot_cap - self.spot_count
         )
         if available_capacity <= 0:
             return
@@ -412,45 +459,32 @@ class RandomSpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     def render(self):
         """Render active spotlights in a single batched add pass."""
         self.pixels[:] = 0.0
-        if self.spot_centers.size == 0:
+        if self.spot_count == 0:
             return
 
         now = time.time()
-        ages = now - self.spot_born
-        alive_idx = np.flatnonzero(ages < self.fade_time)
-        if alive_idx.size == 0:
+        while self.spot_count > 0:
+            oldest_idx = self.spot_head
+            if now - self.spot_born[oldest_idx] < self.fade_time:
+                break
+            self._drop_oldest_spots(1)
+
+        if self.spot_count == 0:
             self._clear_spots()
             return
 
-        if alive_idx.size > self.dynamic_spot_cap:
-            alive_idx = alive_idx[-self.dynamic_spot_cap :]
-
-        self.spot_centers = self.spot_centers[alive_idx]
-        self.spot_born = self.spot_born[alive_idx]
-        self.spot_anchors = self.spot_anchors[alive_idx]
-        self.spot_templates = self.spot_templates[alive_idx]
-
-        ages = now - self.spot_born
+        active_idx = self._get_active_indices()
+        ages = now - self.spot_born[active_idx]
         life = np.clip(1.0 - ages / self.fade_time, 0.0, 1.0)
         fade_amounts = np.power(life, self.fade_curve)
 
-        positive_idx = np.flatnonzero(fade_amounts > 0.0)
-        if positive_idx.size == 0:
-            self._clear_spots()
-            return
-
-        self.spot_centers = self.spot_centers[positive_idx]
-        self.spot_born = self.spot_born[positive_idx]
-        self.spot_anchors = self.spot_anchors[positive_idx]
-        self.spot_templates = self.spot_templates[positive_idx]
-        fade_amounts = fade_amounts[positive_idx]
-
         indices = (
-            self.spot_centers[:, np.newaxis]
+            self.spot_centers[active_idx][:, np.newaxis]
             + self._spot_offsets[np.newaxis, :]
         ) % self.pixel_count
         weighted_templates = (
-            self.spot_templates * fade_amounts[:, np.newaxis, np.newaxis]
+            self.spot_templates[active_idx]
+            * fade_amounts[:, np.newaxis, np.newaxis]
         )
 
         np.add.at(
