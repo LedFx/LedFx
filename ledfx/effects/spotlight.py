@@ -384,8 +384,8 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             )
             anchors[i] = color_anchor
 
-        self.spot_templates[insert_indices] = self._build_templates_from_anchors(
-            anchors
+        self.spot_templates[insert_indices] = (
+            self._build_templates_from_anchors(anchors)
         )
 
     def _adaptive_boost_detected(self, data):
