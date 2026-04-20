@@ -407,11 +407,11 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         mids = float(data.mids_power())
         highs = float(data.high_power())
 
-        if np.isnan(lows):
+        if not np.isfinite(lows):
             lows = 0.0
-        if np.isnan(mids):
+        if not np.isfinite(mids):
             mids = 0.0
-        if np.isnan(highs):
+        if not np.isfinite(highs):
             highs = 0.0
 
         weighted_power = float(
@@ -419,8 +419,14 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             + self.INTERNAL_MIDS_WEIGHT * mids
             + self.INTERNAL_HIGHS_WEIGHT * highs
         )
+        if not np.isfinite(weighted_power):
+            weighted_power = 0.0
 
-        power_delta = max(0.0, weighted_power - self.weighted_power)
+        previous_weighted_power = self.weighted_power
+        if not np.isfinite(previous_weighted_power):
+            previous_weighted_power = 0.0
+
+        power_delta = max(0.0, weighted_power - previous_weighted_power)
         self.weighted_power = weighted_power
 
         activity_input = np.clip(
