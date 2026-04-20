@@ -308,7 +308,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             return 0
 
         if self.spot_count == 0:
-            return random.randrange(self.pixel_count)
+            return random.randrange(self.pixel_count)  # noqa: S311
 
         min_center_distance = max(1, len(self._spot_offsets) // 2)
 
@@ -326,7 +326,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             if valid.size > 0:
                 return int(candidates[valid[0]])
 
-        return random.randrange(self.pixel_count)
+        return random.randrange(self.pixel_count)  # noqa: S311
 
     def _allocate_spot_entry(self, now, center, color_anchor):
         """Insert spotlight metadata into the ring buffer and return its index."""
@@ -353,7 +353,8 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         color_anchor = 0.0
         if self.use_gradient:
             color_anchor = (
-                self.gradient_phase + random.random() * self.spot_color_span
+                self.gradient_phase
+                + random.random() * self.spot_color_span  # noqa: S311
             ) % 1.0
 
         center = self._pick_spot_center()
@@ -375,7 +376,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             if self.use_gradient:
                 color_anchor = (
                     self.gradient_phase
-                    + random.random() * self.spot_color_span
+                    + random.random() * self.spot_color_span  # noqa: S311
                 ) % 1.0
 
             center = self._pick_spot_center()
