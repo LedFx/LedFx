@@ -104,7 +104,6 @@ ledfx_presets = {
     "spotlight": {
         "club-smooth": {
             "config": {
-                "beat_trigger": "Adaptive (recommended)",
                 "fade_time": 0.45,
                 "gradient_speed": 0.18,
                 "max_active_spots": 34,
@@ -116,7 +115,6 @@ ledfx_presets = {
         },
         "club-drop-max": {
             "config": {
-                "beat_trigger": "Adaptive (recommended)",
                 "fade_time": 0.2,
                 "gradient_speed": 0.35,
                 "max_active_spots": 96,
@@ -128,7 +126,6 @@ ledfx_presets = {
         },
         "small-spotlights": {
             "config": {
-                "beat_trigger": "Adaptive (recommended)",
                 "fade_time": 0.15,
                 "gradient_speed": 0.12,
                 "max_active_spots": 128,

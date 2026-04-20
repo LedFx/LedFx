@@ -9,7 +9,7 @@ It is designed for perimeter strips (for example, around a room ceiling) where m
 The effect combines:
 
 - adaptive activity tracking with internal tuning defaults
-- optional beat/onset burst triggers
+- adaptive burst detection from onset and volume-beat events
 - multiple simultaneous spotlights with smooth fade-out
 - optional gradient-based color selection with animated color progression
 
@@ -54,7 +54,6 @@ These are available through the normal LedFx preset system.
 
 The following controls are advanced:
 
-- Beat Trigger
 - Max Active Spots
 - Use Gradient
 - Gradient Speed
@@ -69,8 +68,6 @@ The edge softness and fade curve are currently fixed internally.
 For most users, adjusting only these gives good results:
 
 - Spot Width
-- Edge Softness
 - Fade Time
-- Fade Curve
 - Use Gradient
 - Gradient Speed

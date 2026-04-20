@@ -18,7 +18,6 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "Classic"
     HIDDEN_KEYS = ["gradient_roll"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
-        "beat_trigger",
         "max_active_spots",
         "use_gradient",
         "gradient_speed",
@@ -39,21 +38,12 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     INTERNAL_FADE_CURVE = 1.4
     INTERNAL_CENTER_COLOR = "#FFFFFF"
     INTERNAL_EDGE_COLOR = "#4AA3FF"
-
-    BEAT_TRIGGER_MAPPING = {
-        "Adaptive (recommended)": None,
-        "Volume Beat": "volume_beat_now",
-        "Onset": "onset",
-        "BPM Beat": "bpm_beat_now",
-    }
+    INTERNAL_LOWS_WEIGHT = 0.5
+    INTERNAL_MIDS_WEIGHT = 0.3
+    INTERNAL_HIGHS_WEIGHT = 0.2
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Optional(
-                "beat_trigger",
-                description="Source used to add extra spotlight bursts",
-                default="Adaptive (recommended)",
-            ): vol.In(list(BEAT_TRIGGER_MAPPING.keys())),
             vol.Optional(
                 "spot_width",
                 description="Spotlight width relative to strip length (%)",
@@ -115,8 +105,6 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         """Cache validated config values and rebuild spot templates when needed."""
         old_template_signature = getattr(self, "_template_signature", None)
 
-        self.beat_trigger = self._config["beat_trigger"]
-        self.beat_trigger_func = self.BEAT_TRIGGER_MAPPING[self.beat_trigger]
         self.spot_width = self._config["spot_width"]
         self.edge_softness = self.INTERNAL_EDGE_SOFTNESS
         self.fade_time = self._config["fade_time"]
@@ -378,16 +366,6 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         """Return whether adaptive burst triggers are currently active."""
         return data.onset() or data.volume_beat_now()
 
-    def _specific_boost_detected(self, data):
-        """Return whether the selected explicit beat trigger fired."""
-        return bool(getattr(data, self.beat_trigger_func)())
-
-    def _current_boost_detected(self, data):
-        """Dispatch burst detection for adaptive or explicit trigger mode."""
-        if self.beat_trigger_func is None:
-            return self._adaptive_boost_detected(data)
-        return self._specific_boost_detected(data)
-
     def audio_data_updated(self, data):
         """Update activity model and schedule new spotlight spawns per audio frame."""
         now = time.time()
@@ -399,7 +377,11 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
                 self.gradient_phase + dt * self.gradient_speed
             ) % 1.0
 
-        weighted_power = float(data.lows_power())
+        weighted_power = float(
+            self.INTERNAL_LOWS_WEIGHT * data.lows_power()
+            + self.INTERNAL_MIDS_WEIGHT * data.mids_power()
+            + self.INTERNAL_HIGHS_WEIGHT * data.high_power()
+        )
         if np.isnan(weighted_power):
             weighted_power = 0.0
 
@@ -425,7 +407,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         )
         self.spawn_accumulator += spawn_rate * dt
 
-        if self._current_boost_detected(data):
+        if self._adaptive_boost_detected(data):
             self.spawn_accumulator += self.peak_spawn_boost * (
                 1.0 + power_delta * self.transient_sensitivity
             )
