@@ -348,21 +348,6 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_anchors[insert_idx] = color_anchor
         return insert_idx
 
-    def _spawn_spot(self, now):
-        """Create a single spotlight using shared batch-capable primitives."""
-        color_anchor = 0.0
-        if self.use_gradient:
-            color_anchor = (
-                self.gradient_phase
-                + random.random() * self.spot_color_span  # noqa: S311
-            ) % 1.0
-
-        center = self._pick_spot_center()
-        insert_idx = self._allocate_spot_entry(now, center, color_anchor)
-        self.spot_templates[insert_idx] = self._build_templates_from_anchors(
-            np.array([color_anchor], dtype=float)
-        )[0]
-
     def _spawn_spots(self, now, count):
         """Create multiple spotlights and build their templates in one batch."""
         if count <= 0:
