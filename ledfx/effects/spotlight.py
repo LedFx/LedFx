@@ -241,7 +241,9 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_centers = np.empty(capacity, dtype=int)
         self.spot_born = np.empty(capacity, dtype=float)
         self.spot_anchors = np.empty(capacity, dtype=float)
-        self.spot_templates = np.empty((capacity, template_width, 3), dtype=float)
+        self.spot_templates = np.empty(
+            (capacity, template_width, 3), dtype=float
+        )
         self.spot_head = 0
         self.spot_count = keep
 
@@ -351,7 +353,9 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         new_template = self._build_templates_from_anchors(new_anchor)[0]
 
         if self.spot_count < self.spot_capacity:
-            insert_idx = (self.spot_head + self.spot_count) % self.spot_capacity
+            insert_idx = (
+                self.spot_head + self.spot_count
+            ) % self.spot_capacity
             self.spot_count += 1
         else:
             insert_idx = self.spot_head
@@ -417,9 +421,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         if now - self.last_spawn_time < self.min_time_between_spots:
             return
 
-        available_capacity = max(
-            0, self.dynamic_spot_cap - self.spot_count
-        )
+        available_capacity = max(0, self.dynamic_spot_cap - self.spot_count)
         if available_capacity <= 0:
             return
 
