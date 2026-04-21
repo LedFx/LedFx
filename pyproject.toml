@@ -46,7 +46,7 @@ dependencies = [
     "pyflac>=2.2.0; python_version >= '3.12'",
 ]
 name = "LedFx"
-version = "2.1.7"
+version = "2.1.8"
 description = "A network based light effect controller"
 readme = "README.rst"
 
