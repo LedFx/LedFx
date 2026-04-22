@@ -21,7 +21,7 @@ except (ImportError, OSError):
 
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
-    from aiosendspin.models import AudioCodec, PlayerCommand, Roles
+    from aiosendspin.models import AudioCodec, Roles
     from aiosendspin.models.player import (
         ClientHelloPlayerSupport,
         SupportedAudioFormat,
@@ -621,10 +621,7 @@ class SendspinAudioStream:
             player_support = ClientHelloPlayerSupport(
                 supported_formats=supported_formats,
                 buffer_capacity=buffer_capacity,
-                supported_commands=[
-                    PlayerCommand.VOLUME,
-                    PlayerCommand.MUTE,
-                ],
+                supported_commands=[],
             )
 
             # Build a collision-safe client_id using the first 8 chars of
