@@ -1008,6 +1008,7 @@ class Devices(RegistryLoader):
             self.is_openrgb_id_separated,
             self.is_osc_port_path_separated,
             self.is_ddp_destination_separated,
+            self.is_hue_group_separated,
             self.is_general_port_separated,
         ]:
             yield test(new_type, new_config, pre_device)
@@ -1105,6 +1106,18 @@ class Devices(RegistryLoader):
                     msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
                     _LOGGER.info(msg)
                     raise ValueError(msg)
+            return True
+        return False
+
+    def is_hue_group_separated(self, new_type, new_config, pre_device):
+        """
+        Check if the new Hue device is group_name separated from the pre-existing Hue device
+        """
+        if new_type == "hue" and pre_device.type == "hue":
+            if new_config["group_name"] == pre_device.config["group_name"]:
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and group_name with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
             return True
         return False
 
