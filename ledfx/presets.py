@@ -101,6 +101,47 @@ ledfx_presets = {
             "name": "STORM",
         },
     },
+    "spotlight": {
+        "club-smooth": {
+            "config": {
+                "center_color": "#FFFFFF",
+                "edge_color": "#4AA3FF",
+                "fade_time": 0.45,
+                "gradient_speed": 0.18,
+                "max_active_spots": 34,
+                "spot_color_span": 0.1,
+                "spot_width": 8.0,
+                "use_gradient": True,
+            },
+            "name": "Club Smooth",
+        },
+        "club-drop-max": {
+            "config": {
+                "center_color": "#FFFFFF",
+                "edge_color": "#4AA3FF",
+                "fade_time": 0.2,
+                "gradient_speed": 0.35,
+                "max_active_spots": 96,
+                "spot_color_span": 0.18,
+                "spot_width": 4.0,
+                "use_gradient": True,
+            },
+            "name": "Club Drop Max",
+        },
+        "small-spotlights": {
+            "config": {
+                "center_color": "#FFFFFF",
+                "edge_color": "#4AA3FF",
+                "fade_time": 0.15,
+                "gradient_speed": 0.12,
+                "max_active_spots": 128,
+                "spot_color_span": 0.08,
+                "spot_width": 2.0,
+                "use_gradient": True,
+            },
+            "name": "Small Spotlights",
+        },
+    },
     "number": {
         "clock": {
             "config": {

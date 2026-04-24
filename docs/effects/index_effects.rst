@@ -32,3 +32,4 @@ Effects
    :maxdepth: 2
 
    simple/filter
+   simple/spotlight
