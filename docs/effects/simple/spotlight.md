@@ -23,7 +23,7 @@ The general idea is to have a base spawn rate of spots, even when no music is pl
 
 Relative spotlight width in percent of strip length. Lower values create narrow, punchy highlights
 
-[Narrow width](/_static/effects/simple/spotlight/narrow_width.png)
+![Narrow width](/_static/effects/simple/spotlight/narrow_width.png)
 
 While higher values create wider wash-like beams
 
