@@ -31,7 +31,7 @@ While higher values create wider wash-like beams
 
 ### Fade Time
 
-How long each spotlight remains visible before fading out completely. It is measured in seconds. If you set it to higher values, it will take longer for the spots to fade and therefor fill the maximum amount of active spots (Advanced Settings > Max active Spots).
+How long each spotlight remains visible before fading out completely. It is measured in seconds. If you set it to higher values, it will take longer for the spots to fade and therefore fill the maximum amount of active spots (Advanced Settings > Max active Spots).
 
 
 ## Presets
@@ -51,7 +51,7 @@ These are available through the normal LedFx preset system.
 
 ### Max Active Spots
 
-This number controls how many spots you can have at the same time. It is limited to 128, which is already a lot and might be to much on low end devices. Here is an example for max 4 active spots
+This number controls how many spots you can have at the same time. It is limited to 128, which is already a lot and might be too much on low end devices. Here is an example for max 4 active spots
 
 ![Low amount of spots](/_static/effects/simple/spotlight/less_active_spots.png)
 
@@ -73,15 +73,15 @@ When disabled, the effect falls back to selectable center/edge colors. This migh
 
 ### Gradient Speed
 
-Speed of color progression through the gradient over time. High values will make the spotlights change colors much faster and you will get the effect that during the same time spots on your LED strip have different colors (the next spawned spots will have a different colort while other spots are fading out). You can see it pretty good on the screenshot for the Use Gradient option.
+Speed of color progression through the gradient over time. High values will make the spotlights change colors much faster and you will get the effect that during the same time spots on your LED strip have different colors (the next spawned spots will have a different color while other spots are fading out). You can see it pretty good on the screenshot for the Use Gradient option.
 
-The Graident Speed is the amount the hue value changes during spawn cycles.
+The Gradient Speed is the amount the hue value changes during spawn cycles.
 
 This option only makes sense if you enable Use Gradient.
 
 ### Spot Color Span
 
-Offset in gradient space between center and edge colors for each spotlight. When a new spot is spawned, the center color is choosen based on the Gradient and the Gradient Speed. After that the edge color is just an offset from the center color. I prefer smaller values for this option, otherwise you get quite odd looking color gradients for each spot. But maybe you like it
+Offset in gradient space between center and edge colors for each spotlight. When a new spot is spawned, the center color is chosen based on the Gradient and the Gradient Speed. After that the edge color is just an offset from the center color. I prefer smaller values for this option, otherwise you get quite odd looking color gradients for each spot. But maybe you like it
 
 ![High Spot Color Span](/_static/effects/simple/spotlight/high_spot_color_span.png)
 
