@@ -13,7 +13,7 @@ The effect combines:
 - multiple simultaneous spotlights with smooth fade-out
 - optional gradient-based color selection with animated color progression
 
-I had the idea to this effect when I was watching a concert on my television with Hyperion/Ambilight enabled and wanted to recreate the effect of the spotlights on the stage spreading outside of my television. And then I had more and more ideas :joy:
+I had the idea to this effect when I was watching a concert on my television with Hyperion/Ambilight enabled and wanted to recreate the effect of the spotlights on the stage spreading outside of my television. And then I had more and more ideas...
 
 The general idea is to have a base spawn rate of spots, even when no music is playing, and, based on activity of the music, increase the spawn rate of new spots. But each spot decays over time.
 
@@ -21,11 +21,12 @@ The general idea is to have a base spawn rate of spots, even when no music is pl
 
 ### Spot Width
 
-Relative spotlight width in percent of strip length.
+Relative spotlight width in percent of strip length. Lower values create narrow, punchy highlights
 
-- lower values create narrow, punchy highlights
-![Narrow width](/_static/effects/simple/spotlight/narrow_width.png)
-- higher values create wider wash-like beams
+[Narrow width](/_static/effects/simple/spotlight/narrow_width.png)
+
+While higher values create wider wash-like beams
+
 ![Higher value for width](/_static/effects/simple/spotlight/wider_width.png)
 
 ### Fade Time
@@ -51,17 +52,23 @@ These are available through the normal LedFx preset system.
 ### Max Active Spots
 
 This number controls how many spots you can have at the same time. It is limited to 128, which is already a lot and might be to much on low end devices. Here is an example for max 4 active spots
+
 ![Low amount of spots](/_static/effects/simple/spotlight/less_active_spots.png)
-and here for max 128 active spots (it is hard to make a screenshot at the right moment in time, so trust me, 128 can be a lot :joy:)
+
+and here for max 128 active spots (it is hard to make a screenshot at the right moment in time, so trust me, 128 can be a lot)
+
 ![High amount of spots](/_static/effects/simple/spotlight/more_active_spots.png)
+
 For both screenshots I had to set the spot width to 2% to make it more visible.
 
 ### Use Gradient
 
 When enabled, spotlight colors are sampled from the selected gradient. I highly suggest this option. It can be further controlled with the Options Gradient Speed and Spot Color Span. For this screenshot I set the Gradient Speed to a higher value to see the different colors in the screenshot.
+
 ![Use Gradient True](/_static/effects/simple/spotlight/use_gradient_true.png)
 
 When disabled, the effect falls back to selectable center/edge colors. This might be useful if you have a corporate event and want to only have the brand colors. This option is hard to show in a screenshot, I had to increase the Spot Width and select a bright yellow as edge color with white as center color to make it visible on the screenshot. Less bright colors look good in reality, but not on the screenshot.
+
 ![Use Gradient False](/_static/effects/simple/spotlight/use_gradient_false.png)
 
 ### Gradient Speed
@@ -74,7 +81,8 @@ This option only makes sense if you enable Use Gradient.
 
 ### Spot Color Span
 
-Offset in gradient space between center and edge colors for each spotlight. When a new spot is spawned, the center color is choosen based on the Gradient and the Gradient Speed. After that the edge color is just an offset from the center color. I prefer smaller values for this option, otherwise you get quite odd looking color gradients for each spot. But maybe you like it :smiley:
+Offset in gradient space between center and edge colors for each spotlight. When a new spot is spawned, the center color is choosen based on the Gradient and the Gradient Speed. After that the edge color is just an offset from the center color. I prefer smaller values for this option, otherwise you get quite odd looking color gradients for each spot. But maybe you like it
+
 ![High Spot Color Span](/_static/effects/simple/spotlight/high_spot_color_span.png)
 
 This option only makes sense if you enable Use Gradient.
