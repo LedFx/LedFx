@@ -73,7 +73,7 @@ When disabled, the effect falls back to selectable center/edge colors. This migh
 
 ### Gradient Speed
 
-Speed of color progression through the gradient over time. High values will make the spotlights change colors much faster and you will get the effect that during the same time spots on your LED strip have different colors (the next spawned spots will have a different colort while other spots are fading out). You can see it pretty good on the screenshot for the Use Gradient option. 
+Speed of color progression through the gradient over time. High values will make the spotlights change colors much faster and you will get the effect that during the same time spots on your LED strip have different colors (the next spawned spots will have a different colort while other spots are fading out). You can see it pretty good on the screenshot for the Use Gradient option.
 
 The Graident Speed is the amount the hue value changes during spawn cycles.
 
