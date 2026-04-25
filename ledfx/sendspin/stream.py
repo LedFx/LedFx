@@ -393,6 +393,29 @@ class SendspinAudioStream:
                 "Error in pyFLAC write callback: %s", e, exc_info=True
             )
 
+    def _finish_flac_decoder(self, reason: str) -> None:
+        """Finish and discard the pyFLAC decoder if one is active.
+
+        Calls ``finish()`` to release libFLAC resources, logs any error
+        without propagating, and resets all FLAC-related bookkeeping so the
+        next FLAC chunk triggers a fresh ``_init_flac_decoder()``.
+
+        Safe to call when no decoder exists (returns immediately).
+        """
+        if self._flac_decoder is None:
+            return
+        try:
+            self._flac_decoder.finish()
+        except Exception as e:
+            _LOGGER.warning(
+                "FLAC decoder finish (%s) failed: %s", reason, e
+            )
+        self._flac_decoder = None
+        self._flac_fmt_logged = False
+        self._flac_pending_play_time_us = 0
+        self._flac_pending_sample_rate = 48000
+        self._flac_pending_samples_emitted = 0
+
     @staticmethod
     def _unpack_int24(data: bytes) -> np.ndarray:
         """
@@ -437,24 +460,19 @@ class SendspinAudioStream:
             _LOGGER.info("Sendspin stream started (no player info)")
 
         # Reset pyFLAC decoder on new stream (format may have changed).
-        # Call finish() to free libFLAC resources before discarding the instance.
-        if self._flac_decoder is not None:
-            try:
-                self._flac_decoder.finish()
-            except Exception as e:
-                _LOGGER.warning(
-                    "Error finishing FLAC decoder on stream reset: %s", e
-                )
-            self._flac_decoder = None
-        self._flac_fmt_logged = False
-        self._flac_pending_play_time_us = 0
-        self._flac_pending_sample_rate = 48000
-        self._flac_pending_samples_emitted = 0
+        self._finish_flac_decoder("stream start")
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0
 
     def _stream_clear_handler(self, roles):
-        """Called on stream/clear (e.g. seek). Flush the playback buffer."""
+        """Called on stream/clear (e.g. seek). Flush the playback buffer.
+
+        Also finishes the FLAC decoder so a subsequent audio chunk triggers
+        a fresh ``_init_flac_decoder()`` with the new stream header.
+        Without this the decoder can accumulate stale internal state across
+        seeks/discontinuities, eventually causing decode failures.
+        """
+        self._finish_flac_decoder("stream clear")
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0
         with self._buffer_lock:
@@ -540,14 +558,7 @@ class SendspinAudioStream:
             self._thread.join(timeout=2.0)
 
         # Clean up pyFLAC decoder once the stream thread has fully stopped.
-        if self._flac_decoder is not None:
-            try:
-                self._flac_decoder.finish()
-            except Exception as e:
-                _LOGGER.debug(
-                    "FLAC decoder finish failed (%s): %s", type(e).__name__, e
-                )
-            self._flac_decoder = None
+        self._finish_flac_decoder("close")
 
         _LOGGER.info("Sendspin stream closed")
 
