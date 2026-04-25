@@ -407,9 +407,7 @@ class SendspinAudioStream:
         try:
             self._flac_decoder.finish()
         except Exception as e:
-            _LOGGER.warning(
-                "FLAC decoder finish (%s) failed: %s", reason, e
-            )
+            _LOGGER.warning("FLAC decoder finish (%s) failed: %s", reason, e)
         self._flac_decoder = None
         self._flac_fmt_logged = False
         self._flac_pending_play_time_us = 0
