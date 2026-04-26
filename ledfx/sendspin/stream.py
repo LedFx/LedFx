@@ -377,8 +377,7 @@ class SendspinAudioStream:
                 )
 
         _LOGGER.warning(
-            "[FLAC-DBG] Decoder initialized: %dHz %dch %dbit "
-            "(header=%s)",
+            "[FLAC-DBG] Decoder initialized: %dHz %dch %dbit " "(header=%s)",
             pcm.sample_rate,
             pcm.channels,
             pcm.bit_depth,
@@ -733,8 +732,7 @@ class SendspinAudioStream:
             await self._client.connect(server_url)
 
             _LOGGER.warning(
-                "[FLAC-DBG] Connected to Sendspin server "
-                "(pyflac=%s)",
+                "[FLAC-DBG] Connected to Sendspin server " "(pyflac=%s)",
                 "available" if pyflac is not None else "NOT available",
             )
 
