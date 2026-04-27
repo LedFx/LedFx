@@ -43,11 +43,10 @@ _LOGGER = logging.getLogger(__name__)
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
 
-
 class SendspinAudioStream:
     # Heartbeat/watchdog constants
     _HEARTBEAT_INTERVAL = 10.0  # seconds between heartbeat logs
-    _WATCHDOG_TIMEOUT = 15.0    # seconds without audio before auto-reconnect
+    _WATCHDOG_TIMEOUT = 15.0  # seconds without audio before auto-reconnect
 
     """
     Audio stream that receives Sendspin audio chunks and feeds LedFx.
@@ -762,7 +761,9 @@ class SendspinAudioStream:
                 )
                 # Instead of setting a flag, directly cancel the current connect task to force reconnect
                 if self._reconnect_task and not self._reconnect_task.done():
-                    self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
+                    self._loop.call_soon_threadsafe(
+                        self._reconnect_task.cancel
+                    )
                 # Reset timer so we don't spam
                 self._last_audio_chunk_time = now
             else:
