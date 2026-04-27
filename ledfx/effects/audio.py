@@ -9,6 +9,7 @@ import aubio
 import numpy as np
 import samplerate
 import sounddevice as sd
+import traceback
 import voluptuous as vol
 
 import ledfx.api.websocket
@@ -873,8 +874,6 @@ class AudioInputSource:
         self.deactivate()
 
     def deactivate(self):
-        import traceback
-
         # Log every deactivation with caller context for debugging
         caller = "".join(traceback.format_stack(limit=4)[:-1]).strip()
         _LOGGER.info(
