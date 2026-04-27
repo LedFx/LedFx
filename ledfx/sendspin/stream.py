@@ -43,7 +43,12 @@ _LOGGER = logging.getLogger(__name__)
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
 
+
 class SendspinAudioStream:
+    # Heartbeat/watchdog constants
+    _HEARTBEAT_INTERVAL = 10.0  # seconds between heartbeat logs
+    _WATCHDOG_TIMEOUT = 15.0    # seconds without audio before auto-reconnect
+
     """
     Audio stream that receives Sendspin audio chunks and feeds LedFx.
 
@@ -75,31 +80,31 @@ class SendspinAudioStream:
         if not instance_id:
             raise ValueError("instance_id must be provided and non-empty")
         self._active = False
-        self._client: Optional[SendspinClient] = None
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self._thread: Optional[threading.Thread] = None
-        self._stop_event: Optional[asyncio.Event] = None
-        self._reconnect_task: Optional[asyncio.Task] = None
+        self._client = None  # SendspinClient instance or None
+        self._loop = None  # asyncio event loop or None
+        self._thread = None  # background thread or None
+        self._stop_event = None  # asyncio.Event or None
+        self._reconnect_task = None  # asyncio.Task or None
 
         # Timestamp-sorted playback buffer: heap of (play_time_us, seq, audio)
-        self._chunk_buffer: list[tuple[int, int, np.ndarray]] = []
+        self._chunk_buffer = []  # list of (play_time_us, seq, audio)
         self._chunk_seq = 0
         self._buffer_lock = threading.Lock()
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self._scheduler_task = None  # asyncio.Task or None
 
         # FLAC decoder (persistent across chunks within a stream).
         # Recreated on _stream_start_handler; None until first FLAC chunk.
         self._flac_decoder = None  # pyflac.StreamDecoder instance
-        self._flac_bit_depth: int = 16  # bit depth negotiated with server
-        self._flac_fmt_logged: bool = False
+        self._flac_bit_depth = 16  # bit depth negotiated with server
+        self._flac_fmt_logged = False
         # Timing context for the pyFLAC write callback.
         # These are set immediately before each decoder.process() call so
         # the callback can stamp every decoded PCM block with the correct
         # play timestamp, even when one compressed chunk yields multiple
         # callback invocations.
-        self._flac_pending_play_time_us: int = 0
-        self._flac_pending_sample_rate: int = 48000
-        self._flac_pending_samples_emitted: int = 0
+        self._flac_pending_play_time_us = 0  # type: int
+        self._flac_pending_sample_rate = 48000  # type: int
+        self._flac_pending_samples_emitted = 0  # type: int
 
         # Leftover samples from previous frame, carried over so every
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
@@ -107,12 +112,16 @@ class SendspinAudioStream:
         self._leftover_ts = 0  # play-time (us) of leftover samples
 
         # --- FLAC investigation: packets-per-second teleplot counter ---
-        self._pps_count: int = 0
-        self._pps_last_report: float = time.monotonic()
+        self._pps_count = 0  # type: int
+        self._pps_last_report = time.monotonic()  # type: float
         # Total FLAC chunks decoded since last lifecycle reset.
-        self._flac_chunks_decoded: int = 0
+        self._flac_chunks_decoded = 0  # type: int
         # Total FLAC decode errors since last lifecycle reset.
-        self._flac_decode_errors: int = 0
+        self._flac_decode_errors = 0  # type: int
+
+        # Heartbeat/watchdog state
+        self._last_audio_chunk_time = time.monotonic()  # type: float
+        self._heartbeat_task = None  # type: Optional[asyncio.Task]
 
         _LOGGER.info(
             "Sendspin stream initialized for server: %s (id=%s)",
@@ -120,9 +129,7 @@ class SendspinAudioStream:
             id(self),
         )
 
-    def _audio_chunk_handler(
-        self, timestamp: int, chunk_data: bytes, audio_format: AudioFormat
-    ):
+    def _audio_chunk_handler(self, timestamp, chunk_data, audio_format):
         """
         Called by aiosendspin when an audio chunk arrives.
 
@@ -148,6 +155,9 @@ class SendspinAudioStream:
             Teleplot.send(f"sendspin_pps:{pps:.1f}")
             self._pps_count = 0
             self._pps_last_report = now_mono
+
+        # Heartbeat/watchdog: update last audio chunk time
+        self._last_audio_chunk_time = now_mono
 
         try:
             play_time_us = self._client.compute_play_time(timestamp)
@@ -260,9 +270,7 @@ class SendspinAudioStream:
             self._leftover = samples[n_full * _SUB_CHUNK_SAMPLES :].copy()
             self._leftover_ts = base_ts + n_full * sub_duration_us
 
-    def _convert_to_float32_mono(
-        self, data: bytes, audio_format: AudioFormat
-    ) -> np.ndarray:
+    def _convert_to_float32_mono(self, data, audio_format):
         """
         Convert Sendspin PCM audio to LedFx format (float32 mono).
 
@@ -311,7 +319,7 @@ class SendspinAudioStream:
 
         return audio_float.astype(np.float32)
 
-    def _init_flac_decoder(self, audio_format: AudioFormat) -> None:
+    def _init_flac_decoder(self, audio_format):
         """
         Create a new persistent pyFLAC StreamDecoder for this stream.
 
@@ -631,6 +639,10 @@ class SendspinAudioStream:
         if self._reconnect_task and self._loop and self._loop.is_running():
             self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
 
+        # Cancel heartbeat task if running
+        if self._heartbeat_task and self._loop and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._heartbeat_task.cancel)
+
     def close(self):
         """Clean shutdown of the stream.
 
@@ -676,6 +688,7 @@ class SendspinAudioStream:
         # Ensure no stale client/loop references survive.
         self._client = None
         self._loop = None
+        self._heartbeat_task = None
 
         _LOGGER.warning("[FLAC-DBG] Sendspin stream closed (id=%s)", id(self))
 
@@ -696,6 +709,10 @@ class SendspinAudioStream:
             # Wrap _reconnect_loop in a task so stop() can cancel it.
             self._reconnect_task = self._loop.create_task(
                 self._reconnect_loop()
+            )
+            # Start heartbeat/watchdog task
+            self._heartbeat_task = self._loop.create_task(
+                self._heartbeat_watchdog_loop()
             )
             self._loop.run_until_complete(self._reconnect_task)
         except asyncio.CancelledError:
@@ -728,18 +745,40 @@ class SendspinAudioStream:
                     pass
             self._loop.close()
             self._reconnect_task = None
+            self._heartbeat_task = None
             _LOGGER.debug("Sendspin event loop closed (id=%s)", id(self))
+
+    async def _heartbeat_watchdog_loop(self):
+        """Periodically log heartbeat and check for audio chunk receipt."""
+        self._force_reconnect = False
+        while self._active:
+            now = time.monotonic()
+            since_last = now - self._last_audio_chunk_time
+            if since_last > self._WATCHDOG_TIMEOUT:
+                _LOGGER.error(
+                    "[FLAC-DBG] Sendspin watchdog: No audio received for %.1fs (id=%s). Triggering reconnect.",
+                    since_last,
+                    id(self),
+                )
+                # Instead of setting a flag, directly cancel the current connect task to force reconnect
+                if self._reconnect_task and not self._reconnect_task.done():
+                    self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
+                # Reset timer so we don't spam
+                self._last_audio_chunk_time = now
+            else:
+                _LOGGER.info(
+                    "[FLAC-DBG] Sendspin heartbeat: last audio %.1fs ago (id=%s)",
+                    since_last,
+                    id(self),
+                )
+            await asyncio.sleep(self._HEARTBEAT_INTERVAL)
 
     async def _create_stop_event(self):
         """Create an asyncio.Event inside the event loop context."""
         return asyncio.Event()
 
     async def _reconnect_loop(self):
-        """Reconnect to Sendspin server with exponential backoff.
-
-        Respects cancellation from stop() — CancelledError propagates
-        cleanly without leaving stale connector/session state.
-        """
+        """Reconnect to Sendspin server with exponential backoff and watchdog support."""
         backoff = 1.0
         max_backoff = 30.0
         attempt = 0
@@ -750,13 +789,23 @@ class SendspinAudioStream:
                 backoff = 1.0  # reset on clean exit
                 attempt = 0
             except asyncio.CancelledError:
-                _LOGGER.info(
-                    "[FLAC-DBG] Reconnect loop cancelled "
-                    "(attempt=%d, active=%s)",
-                    attempt,
-                    self._active,
-                )
-                raise  # Propagate so _run_client sees CancelledError
+                # Only exit if self._active is False (i.e., explicit stop/close)
+                if not self._active:
+                    _LOGGER.info(
+                        "[FLAC-DBG] Reconnect loop cancelled (attempt=%d, active=%s)",
+                        attempt,
+                        self._active,
+                    )
+                    raise  # Propagate so _run_client sees CancelledError
+                else:
+                    # Watchdog or internal reconnect: just continue loop
+                    _LOGGER.warning(
+                        "[FLAC-DBG] Reconnect task cancelled by watchdog or reconnect (attempt=%d, id=%s), restarting connect.",
+                        attempt,
+                        id(self),
+                    )
+                    await asyncio.sleep(0.5)
+                    continue
             except Exception as e:
                 if not self._active:
                     break
@@ -782,7 +831,10 @@ class SendspinAudioStream:
                 except asyncio.TimeoutError:
                     pass  # Normal: backoff elapsed, retry
                 except asyncio.CancelledError:
-                    raise
+                    if not self._active:
+                        raise
+                    # Otherwise, treat as reconnect
+                    continue
                 backoff = min(backoff * 2, max_backoff)
 
     async def _connect_and_receive(self):
