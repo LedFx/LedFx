@@ -2,6 +2,7 @@ import logging
 import queue
 import threading
 import time
+import traceback
 from collections import deque
 from functools import cached_property, lru_cache
 
@@ -9,7 +10,6 @@ import aubio
 import numpy as np
 import samplerate
 import sounddevice as sd
-import traceback
 import voluptuous as vol
 
 import ledfx.api.websocket
