@@ -78,6 +78,8 @@ class SendspinAudioStream:
         self._client: Optional[SendspinClient] = None
         self._loop: Optional[asyncio.AbstractEventLoop] = None
         self._thread: Optional[threading.Thread] = None
+        self._stop_event: Optional[asyncio.Event] = None
+        self._reconnect_task: Optional[asyncio.Task] = None
 
         # Timestamp-sorted playback buffer: heap of (play_time_us, seq, audio)
         self._chunk_buffer: list[tuple[int, int, np.ndarray]] = []
@@ -113,8 +115,9 @@ class SendspinAudioStream:
         self._flac_decode_errors: int = 0
 
         _LOGGER.info(
-            "Sendspin stream initialized for server: %s",
+            "Sendspin stream initialized for server: %s (id=%s)",
             config.get("server_url", "unknown"),
+            id(self),
         )
 
     def _audio_chunk_handler(
@@ -579,8 +582,14 @@ class SendspinAudioStream:
             _LOGGER.warning("Sendspin stream already active")
             return
 
-        _LOGGER.warning("[FLAC-DBG] Starting Sendspin stream...")
+        _LOGGER.warning(
+            "[FLAC-DBG] Starting Sendspin stream (id=%s, thread=%s)...",
+            id(self),
+            threading.current_thread().name,
+        )
         self._active = True
+        self._stop_event: Optional[asyncio.Event] = None
+        self._reconnect_task: Optional[asyncio.Task] = None
 
         # Start background thread with asyncio event loop
         self._thread = threading.Thread(
@@ -589,83 +598,194 @@ class SendspinAudioStream:
         self._thread.start()
 
     def stop(self):
-        """Stop receiving audio."""
+        """Stop receiving audio.
+
+        Idempotent — safe to call multiple times or when not active.
+        Signals the background event loop to cancel the reconnect task
+        gracefully rather than relying on force-stopping the loop.
+        """
         if not self._active:
+            _LOGGER.debug(
+                "stop() called but stream not active (id=%s)", id(self)
+            )
             return
 
         _LOGGER.warning(
             "[FLAC-DBG] Stopping Sendspin stream "
-            "(chunks_decoded=%d, decode_errors=%d, decoder=%s)",
+            "(id=%s, chunks_decoded=%d, decode_errors=%d, decoder=%s, "
+            "thread=%s, loop_running=%s)",
+            id(self),
             self._flac_chunks_decoded,
             self._flac_decode_errors,
             "alive" if self._flac_decoder is not None else "None",
+            threading.current_thread().name,
+            self._loop.is_running() if self._loop else "no-loop",
         )
         self._active = False
 
-        if self._client and self._loop:
-            # Schedule disconnect in the event loop
-            asyncio.run_coroutine_threadsafe(
-                self._client.disconnect(), self._loop
-            )
+        # Signal the stop event so sleeping coroutines wake immediately.
+        if self._stop_event and self._loop and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._stop_event.set)
+
+        # Cancel the reconnect task so blocked connect() / sleep() are
+        # interrupted via CancelledError rather than waiting for timeout.
+        if self._reconnect_task and self._loop and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
 
     def close(self):
-        """Clean shutdown of the stream."""
+        """Clean shutdown of the stream.
+
+        Idempotent — safe to call multiple times or after stop().
+        Waits for the background thread to exit gracefully.  Only
+        force-stops the event loop as a last resort, and never reuses
+        client/session state after a forced shutdown.
+        """
         self.stop()
 
-        # Give the thread up to 5 s to finish the scheduled disconnect cleanly
-        # before force-stopping the loop.  Calling loop.stop() immediately would
-        # abort the run_coroutine_threadsafe(disconnect()) future before it
-        # completes and produce "event loop stopped before Future completed".
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=5.0)
+        if not self._thread or not self._thread.is_alive():
+            self._finish_flac_decoder("close")
+            _LOGGER.warning("[FLAC-DBG] Sendspin stream closed (thread already gone)")
+            return
 
-        if self._thread and self._thread.is_alive():
-            # Thread did not finish in time; force-stop the loop so the thread
-            # can exit and then wait briefly for cleanup.
+        # Wait for the thread to exit.  The reconnect_task cancellation
+        # from stop() should cause _run_client → run_until_complete to
+        # finish promptly.
+        self._thread.join(timeout=7.0)
+
+        if self._thread.is_alive():
+            # Thread did not finish — force-stop the loop.
             _LOGGER.warning(
-                "Sendspin thread did not exit within 5 s; force-stopping event loop"
+                "Sendspin thread did not exit within 7 s; "
+                "force-stopping event loop (id=%s)",
+                id(self),
             )
             if self._loop and self._loop.is_running():
                 self._loop.call_soon_threadsafe(self._loop.stop)
-            self._thread.join(timeout=2.0)
+            self._thread.join(timeout=3.0)
+            if self._thread.is_alive():
+                _LOGGER.error(
+                    "Sendspin thread still alive after force-stop (id=%s). "
+                    "Abandoning thread.",
+                    id(self),
+                )
 
         # Clean up pyFLAC decoder once the stream thread has fully stopped.
         self._finish_flac_decoder("close")
 
-        _LOGGER.warning("[FLAC-DBG] Sendspin stream closed")
+        # Ensure no stale client/loop references survive.
+        self._client = None
+        self._loop = None
+
+        _LOGGER.warning("[FLAC-DBG] Sendspin stream closed (id=%s)", id(self))
 
     def _run_client(self):
-        """Background thread running asyncio event loop with reconnect."""
+        """Background thread running asyncio event loop with reconnect.
+
+        Creates a dedicated event loop, runs the reconnect task, and
+        ensures clean shutdown even if stop() cancels the task mid-flight.
+        """
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
         try:
-            self._loop.run_until_complete(self._reconnect_loop())
+            # Create a stop event that stop() can signal from another thread.
+            self._stop_event = self._loop.run_until_complete(
+                self._create_stop_event()
+            )
+            # Wrap _reconnect_loop in a task so stop() can cancel it.
+            self._reconnect_task = self._loop.create_task(
+                self._reconnect_loop()
+            )
+            self._loop.run_until_complete(self._reconnect_task)
+        except asyncio.CancelledError:
+            _LOGGER.info(
+                "Sendspin reconnect task cancelled (id=%s)", id(self)
+            )
         except Exception as e:
-            _LOGGER.error("Sendspin client error: %s", e, exc_info=True)
+            if self._active:
+                _LOGGER.error(
+                    "Sendspin client error (id=%s): %s",
+                    id(self),
+                    e,
+                    exc_info=True,
+                )
+            else:
+                _LOGGER.info(
+                    "Sendspin client exiting during shutdown (id=%s): %s",
+                    id(self),
+                    e,
+                )
         finally:
+            # Cancel any remaining tasks before closing the loop.
+            pending = asyncio.all_tasks(self._loop)
+            for task in pending:
+                task.cancel()
+            if pending:
+                try:
+                    self._loop.run_until_complete(
+                        asyncio.gather(*pending, return_exceptions=True)
+                    )
+                except Exception:
+                    pass
             self._loop.close()
+            self._reconnect_task = None
+            _LOGGER.debug(
+                "Sendspin event loop closed (id=%s)", id(self)
+            )
+
+    async def _create_stop_event(self):
+        """Create an asyncio.Event inside the event loop context."""
+        return asyncio.Event()
 
     async def _reconnect_loop(self):
-        """Reconnect to Sendspin server with exponential backoff."""
+        """Reconnect to Sendspin server with exponential backoff.
+
+        Respects cancellation from stop() — CancelledError propagates
+        cleanly without leaving stale connector/session state.
+        """
         backoff = 1.0
         max_backoff = 30.0
+        attempt = 0
         while self._active:
+            attempt += 1
             try:
                 await self._connect_and_receive()
                 backoff = 1.0  # reset on clean exit
+                attempt = 0
+            except asyncio.CancelledError:
+                _LOGGER.info(
+                    "[FLAC-DBG] Reconnect loop cancelled "
+                    "(attempt=%d, active=%s)",
+                    attempt,
+                    self._active,
+                )
+                raise  # Propagate so _run_client sees CancelledError
             except Exception as e:
                 if not self._active:
                     break
                 _LOGGER.warning(
-                    "[FLAC-DBG] Connection lost, retrying in %.0fs "
-                    "(decoder=%s, chunks_decoded=%d): %s",
+                    "[FLAC-DBG] Connection lost (attempt=%d), "
+                    "retrying in %.0fs (decoder=%s, "
+                    "chunks_decoded=%d, exc_type=%s): %s",
+                    attempt,
                     backoff,
                     "alive" if self._flac_decoder is not None else "None",
                     self._flac_chunks_decoded,
+                    type(e).__name__,
                     e,
                 )
-                await asyncio.sleep(backoff)
+                # Use stop_event.wait with timeout so stop() can wake us
+                # immediately instead of waiting the full backoff period.
+                try:
+                    await asyncio.wait_for(
+                        self._stop_event.wait(), timeout=backoff
+                    )
+                    # If we get here, stop_event was set → exit
+                    break
+                except asyncio.TimeoutError:
+                    pass  # Normal: backoff elapsed, retry
+                except asyncio.CancelledError:
+                    raise
                 backoff = min(backoff * 2, max_backoff)
 
     async def _connect_and_receive(self):
@@ -675,10 +795,16 @@ class SendspinAudioStream:
         sample_rate = self.config.get("sample_rate", 48000)
         buffer_capacity = BUFFER_CAPACITY
 
+        # Ensure stop_event exists (needed when called from _run_client
+        # but also when called directly in tests).
+        if self._stop_event is None:
+            self._stop_event = asyncio.Event()
+
         _LOGGER.warning(
-            "[FLAC-DBG] Connecting to Sendspin server: %s as '%s'",
+            "[FLAC-DBG] Connecting to Sendspin server: %s as '%s' (id=%s)",
             server_url,
             client_name,
+            id(self),
         )
 
         try:
@@ -734,8 +860,9 @@ class SendspinAudioStream:
 
             _LOGGER.warning(
                 "[FLAC-DBG] Connected to Sendspin server "
-                "(pyflac=%s)",
+                "(pyflac=%s, id=%s)",
                 "available" if pyflac is not None else "NOT available",
+                id(self),
             )
 
             # Start the playback scheduler that drains the buffer at the
@@ -744,16 +871,31 @@ class SendspinAudioStream:
                 self._playback_scheduler()
             )
 
-            # Keep connection alive
+            # Keep connection alive — use stop_event so stop() wakes us
+            # immediately instead of waiting up to 0.1s.
             while self._active:
-                await asyncio.sleep(0.1)
+                try:
+                    await asyncio.wait_for(
+                        self._stop_event.wait(), timeout=0.1
+                    )
+                    break  # stop_event set
+                except asyncio.TimeoutError:
+                    pass
 
+        except asyncio.CancelledError:
+            _LOGGER.info(
+                "[FLAC-DBG] _connect_and_receive cancelled (id=%s)", id(self)
+            )
+            raise
         except Exception as e:
             _LOGGER.warning(
                 "[FLAC-DBG] Connection attempt failed "
-                "(decoder=%s, chunks_decoded=%d): %s",
+                "(decoder=%s, chunks_decoded=%d, id=%s, "
+                "exc_type=%s): %s",
                 "alive" if self._flac_decoder is not None else "None",
                 self._flac_chunks_decoded,
+                id(self),
+                type(e).__name__,
                 e,
             )
             raise
@@ -772,6 +914,8 @@ class SendspinAudioStream:
             if self._client:
                 try:
                     await self._client.disconnect()
+                except asyncio.CancelledError:
+                    pass
                 except Exception as e:
                     _LOGGER.warning(
                         "Sendspin disconnect failed during teardown: %s",
