@@ -643,7 +643,9 @@ class SendspinAudioStream:
 
         if not self._thread or not self._thread.is_alive():
             self._finish_flac_decoder("close")
-            _LOGGER.warning("[FLAC-DBG] Sendspin stream closed (thread already gone)")
+            _LOGGER.warning(
+                "[FLAC-DBG] Sendspin stream closed (thread already gone)"
+            )
             return
 
         # Wait for the thread to exit.  The reconnect_task cancellation
@@ -697,9 +699,7 @@ class SendspinAudioStream:
             )
             self._loop.run_until_complete(self._reconnect_task)
         except asyncio.CancelledError:
-            _LOGGER.info(
-                "Sendspin reconnect task cancelled (id=%s)", id(self)
-            )
+            _LOGGER.info("Sendspin reconnect task cancelled (id=%s)", id(self))
         except Exception as e:
             if self._active:
                 _LOGGER.error(
@@ -728,9 +728,7 @@ class SendspinAudioStream:
                     pass
             self._loop.close()
             self._reconnect_task = None
-            _LOGGER.debug(
-                "Sendspin event loop closed (id=%s)", id(self)
-            )
+            _LOGGER.debug("Sendspin event loop closed (id=%s)", id(self))
 
     async def _create_stop_event(self):
         """Create an asyncio.Event inside the event loop context."""

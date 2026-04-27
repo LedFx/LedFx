@@ -506,7 +506,11 @@ class AudioInputSource:
         # Determine if the audio device is actually changing.  For Sendspin
         # always-on, avoid a destructive deactivate/reactivate cycle when
         # only non-device settings changed (e.g. sample_rate, delay_ms).
-        old_device = self._config.get("audio_device") if hasattr(self, "_config") else None
+        old_device = (
+            self._config.get("audio_device")
+            if hasattr(self, "_config")
+            else None
+        )
         new_device = new_config.get("audio_device")
         device_changing = old_device != new_device
 
@@ -900,10 +904,16 @@ class AudioInputSource:
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
-        sendspin_always_on = self._ledfx.config.get("sendspin_always_on", False)
+        sendspin_always_on = self._ledfx.config.get(
+            "sendspin_always_on", False
+        )
         if not sendspin_always_on:
             return False
-        device_idx = self._config.get("audio_device") if hasattr(self, "_config") else None
+        device_idx = (
+            self._config.get("audio_device")
+            if hasattr(self, "_config")
+            else None
+        )
         result = is_sendspin_always_on(
             device_idx,
             self.query_devices,
