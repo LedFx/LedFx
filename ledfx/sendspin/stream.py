@@ -8,11 +8,13 @@ import asyncio
 import heapq
 import logging
 import threading
+import time
 from typing import Callable, Optional
 
 import numpy as np
 
 from ledfx.sendspin.config import BUFFER_CAPACITY
+from ledfx.utils import Teleplot
 
 try:
     import pyflac
@@ -41,6 +43,9 @@ _LOGGER = logging.getLogger(__name__)
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
 
+# TODO(FLAC-DBG): Downgrade all [FLAC-DBG] _LOGGER.warning calls to
+# _LOGGER.debug / _LOGGER.info before tagging a release.
+# See: https://github.com/LedFx/LedFx/pull/1801
 class SendspinAudioStream:
     """
     Audio stream that receives Sendspin audio chunks and feeds LedFx.
@@ -55,6 +60,11 @@ class SendspinAudioStream:
             Used to form a stable, collision-safe ``client_id`` sent to the
             Sendspin server.
     """
+
+    # Heartbeat/watchdog constants
+    _HEARTBEAT_INTERVAL = 10.0  # seconds between heartbeat logs
+    _WATCHDOG_TIMEOUT = 15.0  # seconds without audio before auto-reconnect
+    DEFAULT_SAMPLE_RATE = 48000
 
     def __init__(
         self,
@@ -73,43 +83,56 @@ class SendspinAudioStream:
         if not instance_id:
             raise ValueError("instance_id must be provided and non-empty")
         self._active = False
-        self._client: Optional[SendspinClient] = None
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
-        self._thread: Optional[threading.Thread] = None
+        self._client = None  # SendspinClient instance or None
+        self._loop = None  # asyncio event loop or None
+        self._thread = None  # background thread or None
+        self._stop_event = None  # asyncio.Event or None
+        self._reconnect_task = None  # asyncio.Task or None
 
         # Timestamp-sorted playback buffer: heap of (play_time_us, seq, audio)
-        self._chunk_buffer: list[tuple[int, int, np.ndarray]] = []
+        self._chunk_buffer = []  # list of (play_time_us, seq, audio)
         self._chunk_seq = 0
         self._buffer_lock = threading.Lock()
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self._scheduler_task = None  # asyncio.Task or None
 
         # FLAC decoder (persistent across chunks within a stream).
         # Recreated on _stream_start_handler; None until first FLAC chunk.
         self._flac_decoder = None  # pyflac.StreamDecoder instance
-        self._flac_bit_depth: int = 16  # bit depth negotiated with server
-        self._flac_fmt_logged: bool = False
+        self._flac_bit_depth = 16  # bit depth negotiated with server
+        self._flac_fmt_logged = False
         # Timing context for the pyFLAC write callback.
         # These are set immediately before each decoder.process() call so
         # the callback can stamp every decoded PCM block with the correct
         # play timestamp, even when one compressed chunk yields multiple
         # callback invocations.
-        self._flac_pending_play_time_us: int = 0
-        self._flac_pending_sample_rate: int = 48000
-        self._flac_pending_samples_emitted: int = 0
+        self._flac_pending_play_time_us = 0  # type: int
+        self._flac_pending_sample_rate = self.DEFAULT_SAMPLE_RATE  # type: int
+        self._flac_pending_samples_emitted = 0  # type: int
 
         # Leftover samples from previous frame, carried over so every
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0  # play-time (us) of leftover samples
 
+        # --- FLAC investigation: packets-per-second teleplot counter ---
+        self._pps_count = 0  # type: int
+        self._pps_last_report = time.monotonic()  # type: float
+        # Total FLAC chunks decoded since last lifecycle reset.
+        self._flac_chunks_decoded = 0  # type: int
+        # Total FLAC decode errors since last lifecycle reset.
+        self._flac_decode_errors = 0  # type: int
+
+        # Heartbeat/watchdog state
+        self._last_audio_chunk_time = time.monotonic()  # type: float
+        self._heartbeat_task = None  # type: Optional[asyncio.Task]
+
         _LOGGER.info(
-            "Sendspin stream initialized for server: %s",
+            "Sendspin stream initialized for server: %s (id=%s)",
             config.get("server_url", "unknown"),
+            id(self),
         )
 
-    def _audio_chunk_handler(
-        self, timestamp: int, chunk_data: bytes, audio_format: AudioFormat
-    ):
+    def _audio_chunk_handler(self, timestamp, chunk_data, audio_format):
         """
         Called by aiosendspin when an audio chunk arrives.
 
@@ -126,6 +149,19 @@ class SendspinAudioStream:
         if not self._active or self._client is None:
             return
 
+        # --- FLAC investigation: packets-per-second teleplot ---
+        self._pps_count += 1
+        now_mono = time.monotonic()
+        elapsed = now_mono - self._pps_last_report
+        if elapsed >= 1.0:
+            pps = self._pps_count / elapsed
+            Teleplot.send(f"sendspin_pps:{pps:.1f}")
+            self._pps_count = 0
+            self._pps_last_report = now_mono
+
+        # Heartbeat/watchdog: update last audio chunk time
+        self._last_audio_chunk_time = now_mono
+
         try:
             play_time_us = self._client.compute_play_time(timestamp)
             sample_rate = audio_format.pcm_format.sample_rate
@@ -137,11 +173,32 @@ class SendspinAudioStream:
                 # callback can timestamp each decoded PCM block correctly,
                 # even when one compressed chunk produces multiple blocks.
                 if self._flac_decoder is None:
+                    _LOGGER.warning(
+                        "[FLAC-DBG] Lazy-initialising FLAC decoder on first chunk "
+                        "(codec=%s rate=%d bit_depth=%d channels=%d)",
+                        audio_format.codec,
+                        audio_format.pcm_format.sample_rate,
+                        audio_format.pcm_format.bit_depth,
+                        audio_format.pcm_format.channels,
+                    )
                     self._init_flac_decoder(audio_format)
                 self._flac_pending_play_time_us = play_time_us
                 self._flac_pending_sample_rate = sample_rate
                 self._flac_pending_samples_emitted = 0
-                self._flac_decoder.process(chunk_data)
+                try:
+                    self._flac_decoder.process(chunk_data)
+                    self._flac_chunks_decoded += 1
+                except Exception as e:
+                    self._flac_decode_errors += 1
+                    _LOGGER.warning(
+                        "[FLAC-DBG] Error processing FLAC audio chunk (#%d errs, "
+                        "#%d decoded so far, decoder=%s): %s",
+                        self._flac_decode_errors,
+                        self._flac_chunks_decoded,
+                        "alive" if self._flac_decoder is not None else "None",
+                        e,
+                        exc_info=True,
+                    )
             else:
                 # PCM path: decode synchronously then schedule.
                 audio_float32 = self._convert_to_float32_mono(
@@ -150,9 +207,16 @@ class SendspinAudioStream:
                 self._schedule_mono_samples(
                     audio_float32, play_time_us, sample_rate
                 )
-
         except Exception as e:
-            _LOGGER.error("Error processing audio chunk: %s", e, exc_info=True)
+            _LOGGER.warning(
+                "Error processing audio chunk (codec=%s, flac_decoded=%d, flac_errors=%d, decoder=%s): %s",
+                getattr(audio_format, "codec", "unknown"),
+                self._flac_chunks_decoded,
+                self._flac_decode_errors,
+                "alive" if self._flac_decoder is not None else "None",
+                e,
+                exc_info=True,
+            )
 
     def _schedule_mono_samples(
         self,
@@ -219,9 +283,7 @@ class SendspinAudioStream:
             self._leftover = samples[n_full * _SUB_CHUNK_SAMPLES :].copy()
             self._leftover_ts = base_ts + n_full * sub_duration_us
 
-    def _convert_to_float32_mono(
-        self, data: bytes, audio_format: AudioFormat
-    ) -> np.ndarray:
+    def _convert_to_float32_mono(self, data, audio_format):
         """
         Convert Sendspin PCM audio to LedFx format (float32 mono).
 
@@ -270,7 +332,7 @@ class SendspinAudioStream:
 
         return audio_float.astype(np.float32)
 
-    def _init_flac_decoder(self, audio_format: AudioFormat) -> None:
+    def _init_flac_decoder(self, audio_format):
         """
         Create a new persistent pyFLAC StreamDecoder for this stream.
 
@@ -286,10 +348,18 @@ class SendspinAudioStream:
         pcm = audio_format.pcm_format
         self._flac_bit_depth = pcm.bit_depth
 
+        _LOGGER.warning(
+            "[FLAC-DBG] Creating new pyFLAC StreamDecoder "
+            "(bit_depth=%d, pyflac=%s)",
+            self._flac_bit_depth,
+            getattr(pyflac, "__version__", "unknown"),
+        )
         decoder = pyflac.StreamDecoder(
             write_callback=self._flac_write_callback,
         )
         self._flac_decoder = decoder
+        self._flac_chunks_decoded = 0
+        self._flac_decode_errors = 0
 
         # Prime the decoder with the FLAC stream header (fLaC marker +
         # STREAMINFO block) that Sendspin sends ahead of audio frames.
@@ -317,18 +387,25 @@ class SendspinAudioStream:
             self._flac_pending_samples_emitted = 0
             try:
                 decoder.process(codec_header)
+                _LOGGER.warning(
+                    "[FLAC-DBG] Stream header processed OK (%d bytes)",
+                    len(codec_header),
+                )
             except Exception as e:
                 _LOGGER.warning(
-                    "pyFLAC: ignoring %s while processing stream header: %s",
+                    "[FLAC-DBG] pyFLAC: ignoring %s while processing "
+                    "stream header (%d bytes): %s",
                     type(e).__name__,
+                    len(codec_header),
                     e,
                 )
 
-        _LOGGER.info(
-            "FLAC decoder (pyFLAC) initialized: %dHz %dch %dbit",
+        _LOGGER.warning(
+            "[FLAC-DBG] Decoder initialized: %dHz %dch %dbit " "(header=%s)",
             pcm.sample_rate,
             pcm.channels,
             pcm.bit_depth,
+            "present" if audio_format.codec_header else "absent",
         )
 
     def _flac_write_callback(
@@ -393,6 +470,37 @@ class SendspinAudioStream:
                 "Error in pyFLAC write callback: %s", e, exc_info=True
             )
 
+    def _finish_flac_decoder(self, reason: str) -> None:
+        """Finish and discard the pyFLAC decoder if one is active.
+
+        Calls ``finish()`` to release libFLAC resources, logs any error
+        without propagating, and resets all FLAC-related bookkeeping so the
+        next FLAC chunk triggers a fresh ``_init_flac_decoder()``.
+
+        Safe to call when no decoder exists (returns immediately).
+        """
+        if self._flac_decoder is None:
+            return
+        _LOGGER.warning(
+            "[FLAC-DBG] Finishing decoder (reason=%s, "
+            "chunks_decoded=%d, decode_errors=%d)",
+            reason,
+            self._flac_chunks_decoded,
+            self._flac_decode_errors,
+        )
+        try:
+            self._flac_decoder.finish()
+            _LOGGER.warning("[FLAC-DBG] Decoder finish() succeeded")
+        except Exception as e:
+            _LOGGER.warning(
+                "[FLAC-DBG] Decoder finish(%s) failed: %s", reason, e
+            )
+        self._flac_decoder = None
+        self._flac_fmt_logged = False
+        self._flac_pending_play_time_us = 0
+        self._flac_pending_sample_rate = self.DEFAULT_SAMPLE_RATE
+        self._flac_pending_samples_emitted = 0
+
     @staticmethod
     def _unpack_int24(data: bytes) -> np.ndarray:
         """
@@ -426,41 +534,40 @@ class SendspinAudioStream:
         """
         player = stream_start_msg.payload.player
         if player:
-            _LOGGER.info(
-                "Sendspin stream started: %s %dHz %dbit %dch",
+            _LOGGER.warning(
+                "[FLAC-DBG] Stream started: %s %dHz %dbit %dch",
                 player.codec.value,
                 player.sample_rate,
                 player.bit_depth,
                 player.channels,
             )
         else:
-            _LOGGER.info("Sendspin stream started (no player info)")
+            _LOGGER.warning("[FLAC-DBG] Stream started (no player info)")
 
         # Reset pyFLAC decoder on new stream (format may have changed).
-        # Call finish() to free libFLAC resources before discarding the instance.
-        if self._flac_decoder is not None:
-            try:
-                self._flac_decoder.finish()
-            except Exception as e:
-                _LOGGER.warning(
-                    "Error finishing FLAC decoder on stream reset: %s", e
-                )
-            self._flac_decoder = None
-        self._flac_fmt_logged = False
-        self._flac_pending_play_time_us = 0
-        self._flac_pending_sample_rate = 48000
-        self._flac_pending_samples_emitted = 0
+        self._finish_flac_decoder("stream start")
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0
 
     def _stream_clear_handler(self, roles):
-        """Called on stream/clear (e.g. seek). Flush the playback buffer."""
+        """Called on stream/clear (e.g. seek). Flush the playback buffer.
+
+        Also finishes the FLAC decoder so a subsequent audio chunk triggers
+        a fresh ``_init_flac_decoder()`` with the new stream header.
+        Without this the decoder can accumulate stale internal state across
+        seeks/discontinuities, eventually causing decode failures.
+        """
+        self._finish_flac_decoder("stream clear")
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0
         with self._buffer_lock:
+            buf_len = len(self._chunk_buffer)
             self._chunk_buffer.clear()
-        _LOGGER.debug(
-            "Playback buffer cleared (stream/clear, roles=%s)", roles
+        _LOGGER.warning(
+            "[FLAC-DBG] Playback buffer cleared (stream/clear, "
+            "roles=%s, discarded_chunks=%d)",
+            roles,
+            buf_len,
         )
 
     async def _playback_scheduler(self):
@@ -495,8 +602,14 @@ class SendspinAudioStream:
             _LOGGER.warning("Sendspin stream already active")
             return
 
-        _LOGGER.info("Starting Sendspin stream...")
+        _LOGGER.warning(
+            "[FLAC-DBG] Starting Sendspin stream (id=%s, thread=%s)...",
+            id(self),
+            threading.current_thread().name,
+        )
         self._active = True
+        self._stop_event: Optional[asyncio.Event] = None
+        self._reconnect_task: Optional[asyncio.Task] = None
 
         # Start background thread with asyncio event loop
         self._thread = threading.Thread(
@@ -505,94 +618,264 @@ class SendspinAudioStream:
         self._thread.start()
 
     def stop(self):
-        """Stop receiving audio."""
+        """Stop receiving audio.
+
+        Idempotent — safe to call multiple times or when not active.
+        Signals the background event loop to cancel the reconnect task
+        gracefully rather than relying on force-stopping the loop.
+        """
         if not self._active:
+            _LOGGER.debug(
+                "stop() called but stream not active (id=%s)", id(self)
+            )
             return
 
-        _LOGGER.info("Stopping Sendspin stream...")
+        _LOGGER.warning(
+            "[FLAC-DBG] Stopping Sendspin stream "
+            "(id=%s, chunks_decoded=%d, decode_errors=%d, decoder=%s, "
+            "thread=%s, loop_running=%s)",
+            id(self),
+            self._flac_chunks_decoded,
+            self._flac_decode_errors,
+            "alive" if self._flac_decoder is not None else "None",
+            threading.current_thread().name,
+            self._loop.is_running() if self._loop else "no-loop",
+        )
         self._active = False
 
-        if self._client and self._loop:
-            # Schedule disconnect in the event loop
-            asyncio.run_coroutine_threadsafe(
-                self._client.disconnect(), self._loop
-            )
+        # Signal the stop event so sleeping coroutines wake immediately.
+        if self._stop_event and self._loop and self._loop.is_running():
+            try:
+                self._loop.call_soon_threadsafe(self._stop_event.set)
+            except Exception as exc:
+                _LOGGER.debug("Exception in stop_event.set: %r", exc)
+
+        # Cancel the reconnect task so blocked connect() / sleep() are
+        # interrupted via CancelledError rather than waiting for timeout.
+        if self._reconnect_task and self._loop and self._loop.is_running():
+            try:
+                self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
+            except Exception as exc:
+                _LOGGER.debug("Exception in reconnect_task.cancel: %r", exc)
+
+        # Cancel heartbeat task if running
+        if self._heartbeat_task and self._loop and self._loop.is_running():
+            try:
+                self._loop.call_soon_threadsafe(self._heartbeat_task.cancel)
+            except Exception as exc:
+                _LOGGER.debug("Exception in heartbeat_task.cancel: %r", exc)
 
     def close(self):
-        """Clean shutdown of the stream."""
+        """Clean shutdown of the stream.
+
+        Idempotent — safe to call multiple times or after stop().
+        Waits for the background thread to exit gracefully.  Only
+        force-stops the event loop as a last resort, and never reuses
+        client/session state after a forced shutdown.
+        """
         self.stop()
 
-        # Give the thread up to 5 s to finish the scheduled disconnect cleanly
-        # before force-stopping the loop.  Calling loop.stop() immediately would
-        # abort the run_coroutine_threadsafe(disconnect()) future before it
-        # completes and produce "event loop stopped before Future completed".
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=5.0)
-
-        if self._thread and self._thread.is_alive():
-            # Thread did not finish in time; force-stop the loop so the thread
-            # can exit and then wait briefly for cleanup.
+        if not self._thread or not self._thread.is_alive():
+            self._finish_flac_decoder("close")
             _LOGGER.warning(
-                "Sendspin thread did not exit within 5 s; force-stopping event loop"
+                "[FLAC-DBG] Sendspin stream closed (thread already gone)"
+            )
+            return
+
+        # Wait for the thread to exit.  The reconnect_task cancellation
+        # from stop() should cause _run_client → run_until_complete to
+        # finish promptly.
+        self._thread.join(timeout=7.0)
+
+        if self._thread.is_alive():
+            # Thread did not finish — force-stop the loop.
+            _LOGGER.warning(
+                "Sendspin thread did not exit within 7 s; "
+                "force-stopping event loop (id=%s)",
+                id(self),
             )
             if self._loop and self._loop.is_running():
                 self._loop.call_soon_threadsafe(self._loop.stop)
-            self._thread.join(timeout=2.0)
+            self._thread.join(timeout=3.0)
+            if self._thread.is_alive():
+                _LOGGER.error(
+                    "Sendspin thread still alive after force-stop (id=%s). "
+                    "Abandoning thread.",
+                    id(self),
+                )
 
         # Clean up pyFLAC decoder once the stream thread has fully stopped.
-        if self._flac_decoder is not None:
-            try:
-                self._flac_decoder.finish()
-            except Exception as e:
-                _LOGGER.debug(
-                    "FLAC decoder finish failed (%s): %s", type(e).__name__, e
-                )
-            self._flac_decoder = None
+        self._finish_flac_decoder("close")
 
-        _LOGGER.info("Sendspin stream closed")
+        # Ensure no stale client/loop references survive.
+        self._client = None
+        self._loop = None
+        self._heartbeat_task = None
+
+        _LOGGER.warning("[FLAC-DBG] Sendspin stream closed (id=%s)", id(self))
 
     def _run_client(self):
-        """Background thread running asyncio event loop with reconnect."""
+        """Background thread running asyncio event loop with reconnect.
+
+        Creates a dedicated event loop, runs the reconnect task, and
+        ensures clean shutdown even if stop() cancels the task mid-flight.
+        """
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
 
         try:
-            self._loop.run_until_complete(self._reconnect_loop())
+            # Create a stop event that stop() can signal from another thread.
+            self._stop_event = self._loop.run_until_complete(
+                self._create_stop_event()
+            )
+            # Wrap _reconnect_loop in a task so stop() can cancel it.
+            self._reconnect_task = self._loop.create_task(
+                self._reconnect_loop()
+            )
+            # Start heartbeat/watchdog task
+            self._heartbeat_task = self._loop.create_task(
+                self._heartbeat_watchdog_loop()
+            )
+            self._loop.run_until_complete(self._reconnect_task)
+        except asyncio.CancelledError:
+            _LOGGER.info("Sendspin reconnect task cancelled (id=%s)", id(self))
         except Exception as e:
-            _LOGGER.error("Sendspin client error: %s", e, exc_info=True)
+            if self._active:
+                _LOGGER.error(
+                    "Sendspin client error (id=%s): %s",
+                    id(self),
+                    e,
+                    exc_info=True,
+                )
+            else:
+                _LOGGER.info(
+                    "Sendspin client exiting during shutdown (id=%s): %s",
+                    id(self),
+                    e,
+                )
         finally:
+            # Cancel any remaining tasks before closing the loop.
+            pending = asyncio.all_tasks(self._loop)
+            for task in pending:
+                task.cancel()
+            if pending:
+                try:
+                    self._loop.run_until_complete(
+                        asyncio.gather(*pending, return_exceptions=True)
+                    )
+                except Exception:
+                    pass
             self._loop.close()
+            self._reconnect_task = None
+            self._heartbeat_task = None
+            _LOGGER.debug("Sendspin event loop closed (id=%s)", id(self))
+
+    async def _heartbeat_watchdog_loop(self):
+        """Periodically log heartbeat and check for audio chunk receipt."""
+        while self._active:
+            now = time.monotonic()
+            since_last = now - self._last_audio_chunk_time
+            if since_last > self._WATCHDOG_TIMEOUT:
+                _LOGGER.error(
+                    "[FLAC-DBG] Sendspin watchdog: No audio received for %.1fs (id=%s). Triggering reconnect.",
+                    since_last,
+                    id(self),
+                )
+                # Instead of setting a flag, directly cancel the current connect task to force reconnect
+                if self._reconnect_task and not self._reconnect_task.done():
+                    # Direct cancel (watchdog runs in event loop thread)
+                    self._reconnect_task.cancel()
+                # Reset timer so we don't spam
+                self._last_audio_chunk_time = now
+            else:
+                _LOGGER.info(
+                    "[FLAC-DBG] Sendspin heartbeat: last audio %.1fs ago (id=%s)",
+                    since_last,
+                    id(self),
+                )
+            await asyncio.sleep(self._HEARTBEAT_INTERVAL)
+
+    async def _create_stop_event(self):
+        """Create an asyncio.Event inside the event loop context."""
+        return asyncio.Event()
 
     async def _reconnect_loop(self):
-        """Reconnect to Sendspin server with exponential backoff."""
+        """Reconnect to Sendspin server with exponential backoff and watchdog support."""
         backoff = 1.0
         max_backoff = 30.0
+        attempt = 0
         while self._active:
+            attempt += 1
             try:
                 await self._connect_and_receive()
                 backoff = 1.0  # reset on clean exit
+                attempt = 0
+            except asyncio.CancelledError:
+                # Only exit if self._active is False (i.e., explicit stop/close)
+                if not self._active:
+                    _LOGGER.info(
+                        "[FLAC-DBG] Reconnect loop cancelled (attempt=%d, active=%s)",
+                        attempt,
+                        self._active,
+                    )
+                    raise  # Propagate so _run_client sees CancelledError
+                else:
+                    # Watchdog or internal reconnect: just continue loop
+                    _LOGGER.warning(
+                        "[FLAC-DBG] Reconnect task cancelled by watchdog or reconnect (attempt=%d, id=%s), restarting connect.",
+                        attempt,
+                        id(self),
+                    )
+                    await asyncio.sleep(0.5)
+                    continue
             except Exception as e:
                 if not self._active:
                     break
                 _LOGGER.warning(
-                    "Sendspin connection lost, retrying in %.0fs: %s",
+                    "[FLAC-DBG] Connection lost (attempt=%d), "
+                    "retrying in %.0fs (decoder=%s, "
+                    "chunks_decoded=%d, exc_type=%s): %s",
+                    attempt,
                     backoff,
+                    "alive" if self._flac_decoder is not None else "None",
+                    self._flac_chunks_decoded,
+                    type(e).__name__,
                     e,
                 )
-                await asyncio.sleep(backoff)
+                # Use stop_event.wait with timeout so stop() can wake us
+                # immediately instead of waiting the full backoff period.
+                try:
+                    await asyncio.wait_for(
+                        self._stop_event.wait(), timeout=backoff
+                    )
+                    # If we get here, stop_event was set → exit
+                    break
+                except asyncio.TimeoutError:
+                    pass  # Normal: backoff elapsed, retry
+                except asyncio.CancelledError:
+                    if not self._active:
+                        raise
+                    # Otherwise, treat as reconnect
+                    continue
                 backoff = min(backoff * 2, max_backoff)
 
     async def _connect_and_receive(self):
         """Connect to Sendspin server and start receiving audio."""
         server_url = self.config.get("server_url")
         client_name = self.config.get("client_name", "LedFx")
-        sample_rate = self.config.get("sample_rate", 48000)
+        sample_rate = self.config.get("sample_rate", self.DEFAULT_SAMPLE_RATE)
         buffer_capacity = BUFFER_CAPACITY
 
-        _LOGGER.info(
-            "Connecting to Sendspin server: %s as '%s'",
+        # Ensure stop_event exists (needed when called from _run_client
+        # but also when called directly in tests).
+        if self._stop_event is None:
+            self._stop_event = asyncio.Event()
+
+        _LOGGER.warning(
+            "[FLAC-DBG] Connecting to Sendspin server: %s as '%s' (id=%s)",
             server_url,
             client_name,
+            id(self),
         )
 
         try:
@@ -646,7 +929,12 @@ class SendspinAudioStream:
             # Connect to server
             await self._client.connect(server_url)
 
-            _LOGGER.info("Connected to Sendspin server successfully")
+            _LOGGER.warning(
+                "[FLAC-DBG] Connected to Sendspin server "
+                "(pyflac=%s, id=%s)",
+                "available" if pyflac is not None else "NOT available",
+                id(self),
+            )
 
             # Start the playback scheduler that drains the buffer at the
             # correct timestamps.
@@ -654,12 +942,33 @@ class SendspinAudioStream:
                 self._playback_scheduler()
             )
 
-            # Keep connection alive
+            # Keep connection alive — use stop_event so stop() wakes us
+            # immediately instead of waiting up to 0.1s.
             while self._active:
-                await asyncio.sleep(0.1)
+                try:
+                    await asyncio.wait_for(
+                        self._stop_event.wait(), timeout=0.1
+                    )
+                    break  # stop_event set
+                except asyncio.TimeoutError:
+                    pass
 
+        except asyncio.CancelledError:
+            _LOGGER.info(
+                "[FLAC-DBG] _connect_and_receive cancelled (id=%s)", id(self)
+            )
+            raise
         except Exception as e:
-            _LOGGER.warning("Sendspin connection attempt failed: %s", e)
+            _LOGGER.warning(
+                "[FLAC-DBG] Connection attempt failed "
+                "(decoder=%s, chunks_decoded=%d, id=%s, "
+                "exc_type=%s): %s",
+                "alive" if self._flac_decoder is not None else "None",
+                self._flac_chunks_decoded,
+                id(self),
+                type(e).__name__,
+                e,
+            )
             raise
         finally:
             if self._scheduler_task and not self._scheduler_task.done():
@@ -676,6 +985,8 @@ class SendspinAudioStream:
             if self._client:
                 try:
                     await self._client.disconnect()
+                except asyncio.CancelledError:
+                    pass
                 except Exception as e:
                     _LOGGER.warning(
                         "Sendspin disconnect failed during teardown: %s",
