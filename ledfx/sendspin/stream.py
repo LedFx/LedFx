@@ -22,8 +22,11 @@ except (ImportError, OSError):
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
     from aiosendspin.models import AudioCodec, Roles
+    from aiosendspin.models.core import ServerCommandPayload
     from aiosendspin.models.player import (
         ClientHelloPlayerSupport,
+        PlayerCommand,
+        PlayerStateType,
         SupportedAudioFormat,
     )
 except ImportError:
@@ -101,6 +104,17 @@ class SendspinAudioStream:
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0  # play-time (us) of leftover samples
+
+        # --- Music Assistant volume/mute compatibility state ---
+        # LedFx is a raw audio consumer: it auto-levels and normalizes
+        # audio internally, so volume must NEVER be used as a gain
+        # multiplier.  These fields exist solely for Music Assistant
+        # compatibility.  Only mute=True or volume=0 produces actual
+        # silence (by gating audio delivery); all other volume values
+        # (1-100) are tracked/reported but do not affect processing.
+        self._ma_volume: int = 100
+        self._ma_muted: bool = False
+        self._effective_silenced: bool = False
 
         _LOGGER.info(
             "Sendspin stream initialized for server: %s",
@@ -463,6 +477,54 @@ class SendspinAudioStream:
             "Playback buffer cleared (stream/clear, roles=%s)", roles
         )
 
+    # ------------------------------------------------------------------
+    # Music Assistant volume / mute handling
+    # ------------------------------------------------------------------
+
+    def _recompute_effective_silenced(self) -> None:
+        """Update the silence gate based on current MA volume/mute state."""
+        self._effective_silenced = self._ma_muted or self._ma_volume <= 0
+
+    def _server_command_handler(
+        self, payload: "ServerCommandPayload"
+    ) -> None:
+        """Handle volume/mute commands from the Sendspin server (Music Assistant).
+
+        LedFx is a raw audio consumer — volume is maintained purely for
+        Music Assistant compatibility.  Only mute=True or volume=0
+        triggers actual silence; other volume values are tracked/reported
+        but never used as a gain multiplier.
+        """
+        cmd = payload.player
+        if cmd is None:
+            return
+
+        if cmd.command == PlayerCommand.VOLUME:
+            self._ma_volume = max(0, min(100, cmd.volume))
+            _LOGGER.debug("MA volume set to %d", self._ma_volume)
+        elif cmd.command == PlayerCommand.MUTE:
+            self._ma_muted = cmd.mute
+            _LOGGER.debug("MA mute set to %s", self._ma_muted)
+
+        self._recompute_effective_silenced()
+        self._report_player_state()
+
+    def _report_player_state(self) -> None:
+        """Report current player state (volume/mute) to the Sendspin server."""
+        if self._client is None or self._loop is None:
+            return
+        try:
+            asyncio.run_coroutine_threadsafe(
+                self._client.send_player_state(
+                    state=PlayerStateType.SYNCHRONIZED,
+                    volume=self._ma_volume,
+                    muted=self._ma_muted,
+                ),
+                self._loop,
+            )
+        except Exception as e:
+            _LOGGER.warning("Failed to report player state: %s", e)
+
     async def _playback_scheduler(self):
         """Release buffered chunks to LedFx at their scheduled play time."""
         while self._active:
@@ -476,6 +538,9 @@ class SendspinAudioStream:
 
             if chunk is not None:
                 try:
+                    if self._effective_silenced:
+                        # Feed silence so effects decay naturally
+                        chunk = np.zeros_like(chunk)
                     self.callback(chunk, len(chunk), None, None)
                 except Exception as e:
                     _LOGGER.error(
@@ -621,7 +686,10 @@ class SendspinAudioStream:
             player_support = ClientHelloPlayerSupport(
                 supported_formats=supported_formats,
                 buffer_capacity=buffer_capacity,
-                supported_commands=[],
+                supported_commands=[
+                    PlayerCommand.VOLUME,
+                    PlayerCommand.MUTE,
+                ],
             )
 
             # Build a collision-safe client_id using the first 8 chars of
@@ -639,11 +707,17 @@ class SendspinAudioStream:
             self._client.add_audio_chunk_listener(self._audio_chunk_handler)
             self._client.add_stream_start_listener(self._stream_start_handler)
             self._client.add_stream_clear_listener(self._stream_clear_handler)
+            self._client.add_server_command_listener(
+                self._server_command_handler
+            )
 
             # Connect to server
             await self._client.connect(server_url)
 
             _LOGGER.info("Connected to Sendspin server successfully")
+
+            # Report initial player state so MA knows our volume/mute
+            self._report_player_state()
 
             # Start the playback scheduler that drains the buffer at the
             # correct timestamps.
