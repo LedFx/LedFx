@@ -147,8 +147,14 @@ class TestPcmPathNoDecoderCleanup:
         """When no decoder exists, stream/start just resets leftover state."""
         assert stream._flac_decoder is None
 
+        # Set up leftover state to verify it is cleared
+        stream._leftover = np.ones(25, dtype=np.float32)
+        stream._leftover_ts = 12345
+
         msg = MagicMock()
         msg.payload.player = None
         stream._stream_start_handler(msg)
 
         assert stream._flac_decoder is None
+        assert len(stream._leftover) == 0
+        assert stream._leftover_ts == 0

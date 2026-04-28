@@ -43,11 +43,11 @@ _LOGGER = logging.getLogger(__name__)
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
 
-class SendspinAudioStream:
-    # Heartbeat/watchdog constants
-    _HEARTBEAT_INTERVAL = 10.0  # seconds between heartbeat logs
-    _WATCHDOG_TIMEOUT = 15.0  # seconds without audio before auto-reconnect
 
+# TODO(FLAC-DBG): Downgrade all [FLAC-DBG] _LOGGER.warning calls to
+# _LOGGER.debug / _LOGGER.info before tagging a release.
+# See: https://github.com/LedFx/LedFx/pull/1801
+class SendspinAudioStream:
     """
     Audio stream that receives Sendspin audio chunks and feeds LedFx.
 
@@ -61,6 +61,10 @@ class SendspinAudioStream:
             Used to form a stable, collision-safe ``client_id`` sent to the
             Sendspin server.
     """
+    # Heartbeat/watchdog constants
+    _HEARTBEAT_INTERVAL = 10.0  # seconds between heartbeat logs
+    _WATCHDOG_TIMEOUT = 15.0  # seconds without audio before auto-reconnect
+    DEFAULT_SAMPLE_RATE = 48000
 
     def __init__(
         self,
@@ -102,7 +106,7 @@ class SendspinAudioStream:
         # play timestamp, even when one compressed chunk yields multiple
         # callback invocations.
         self._flac_pending_play_time_us = 0  # type: int
-        self._flac_pending_sample_rate = 48000  # type: int
+        self._flac_pending_sample_rate = self.DEFAULT_SAMPLE_RATE  # type: int
         self._flac_pending_samples_emitted = 0  # type: int
 
         # Leftover samples from previous frame, carried over so every
@@ -181,8 +185,20 @@ class SendspinAudioStream:
                 self._flac_pending_play_time_us = play_time_us
                 self._flac_pending_sample_rate = sample_rate
                 self._flac_pending_samples_emitted = 0
-                self._flac_decoder.process(chunk_data)
-                self._flac_chunks_decoded += 1
+                try:
+                    self._flac_decoder.process(chunk_data)
+                    self._flac_chunks_decoded += 1
+                except Exception as e:
+                    self._flac_decode_errors += 1
+                    _LOGGER.warning(
+                        "[FLAC-DBG] Error processing FLAC audio chunk (#%d errs, "
+                        "#%d decoded so far, decoder=%s): %s",
+                        self._flac_decode_errors,
+                        self._flac_chunks_decoded,
+                        "alive" if self._flac_decoder is not None else "None",
+                        e,
+                        exc_info=True,
+                    )
             else:
                 # PCM path: decode synchronously then schedule.
                 audio_float32 = self._convert_to_float32_mono(
@@ -191,14 +207,12 @@ class SendspinAudioStream:
                 self._schedule_mono_samples(
                     audio_float32, play_time_us, sample_rate
                 )
-
         except Exception as e:
-            self._flac_decode_errors += 1
             _LOGGER.warning(
-                "[FLAC-DBG] Error processing audio chunk (#%d errs, "
-                "#%d decoded so far, decoder=%s): %s",
-                self._flac_decode_errors,
+                "Error processing audio chunk (codec=%s, flac_decoded=%d, flac_errors=%d, decoder=%s): %s",
+                getattr(audio_format, "codec", "unknown"),
                 self._flac_chunks_decoded,
+                self._flac_decode_errors,
                 "alive" if self._flac_decoder is not None else "None",
                 e,
                 exc_info=True,
@@ -484,7 +498,7 @@ class SendspinAudioStream:
         self._flac_decoder = None
         self._flac_fmt_logged = False
         self._flac_pending_play_time_us = 0
-        self._flac_pending_sample_rate = 48000
+        self._flac_pending_sample_rate = self.DEFAULT_SAMPLE_RATE
         self._flac_pending_samples_emitted = 0
 
     @staticmethod
@@ -631,16 +645,25 @@ class SendspinAudioStream:
 
         # Signal the stop event so sleeping coroutines wake immediately.
         if self._stop_event and self._loop and self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._stop_event.set)
+            try:
+                self._loop.call_soon_threadsafe(self._stop_event.set)
+            except Exception as exc:
+                _LOGGER.debug("Exception in stop_event.set: %r", exc)
 
         # Cancel the reconnect task so blocked connect() / sleep() are
         # interrupted via CancelledError rather than waiting for timeout.
         if self._reconnect_task and self._loop and self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
+            try:
+                self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
+            except Exception as exc:
+                _LOGGER.debug("Exception in reconnect_task.cancel: %r", exc)
 
         # Cancel heartbeat task if running
         if self._heartbeat_task and self._loop and self._loop.is_running():
-            self._loop.call_soon_threadsafe(self._heartbeat_task.cancel)
+            try:
+                self._loop.call_soon_threadsafe(self._heartbeat_task.cancel)
+            except Exception as exc:
+                _LOGGER.debug("Exception in heartbeat_task.cancel: %r", exc)
 
     def close(self):
         """Clean shutdown of the stream.
@@ -749,7 +772,6 @@ class SendspinAudioStream:
 
     async def _heartbeat_watchdog_loop(self):
         """Periodically log heartbeat and check for audio chunk receipt."""
-        self._force_reconnect = False
         while self._active:
             now = time.monotonic()
             since_last = now - self._last_audio_chunk_time
@@ -761,9 +783,8 @@ class SendspinAudioStream:
                 )
                 # Instead of setting a flag, directly cancel the current connect task to force reconnect
                 if self._reconnect_task and not self._reconnect_task.done():
-                    self._loop.call_soon_threadsafe(
-                        self._reconnect_task.cancel
-                    )
+                    # Direct cancel (watchdog runs in event loop thread)
+                    self._reconnect_task.cancel()
                 # Reset timer so we don't spam
                 self._last_audio_chunk_time = now
             else:
@@ -842,7 +863,7 @@ class SendspinAudioStream:
         """Connect to Sendspin server and start receiving audio."""
         server_url = self.config.get("server_url")
         client_name = self.config.get("client_name", "LedFx")
-        sample_rate = self.config.get("sample_rate", 48000)
+        sample_rate = self.config.get("sample_rate", self.DEFAULT_SAMPLE_RATE)
         buffer_capacity = BUFFER_CAPACITY
 
         # Ensure stop_event exists (needed when called from _run_client
