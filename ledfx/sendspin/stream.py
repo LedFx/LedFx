@@ -43,7 +43,6 @@ _LOGGER = logging.getLogger(__name__)
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
 
-
 # TODO(FLAC-DBG): Downgrade all [FLAC-DBG] _LOGGER.warning calls to
 # _LOGGER.debug / _LOGGER.info before tagging a release.
 # See: https://github.com/LedFx/LedFx/pull/1801
@@ -61,6 +60,7 @@ class SendspinAudioStream:
             Used to form a stable, collision-safe ``client_id`` sent to the
             Sendspin server.
     """
+
     # Heartbeat/watchdog constants
     _HEARTBEAT_INTERVAL = 10.0  # seconds between heartbeat logs
     _WATCHDOG_TIMEOUT = 15.0  # seconds without audio before auto-reconnect
