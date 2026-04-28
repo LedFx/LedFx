@@ -31,9 +31,7 @@ def mock_aiosendspin():
 @pytest.fixture
 def stream():
     """Create a SendspinAudioStream instance with mocked dependencies."""
-    with patch(
-        "ledfx.sendspin.stream.SendspinClient"
-    ) as mock_client_cls:
+    with patch("ledfx.sendspin.stream.SendspinClient") as mock_client_cls:
         mock_client_cls.return_value = MagicMock()
         from ledfx.sendspin.stream import SendspinAudioStream
 
@@ -242,7 +240,9 @@ class TestSilenceGate:
         # Verify callback received zeros
         stream.callback.assert_called_once()
         delivered = stream.callback.call_args[0][0]
-        np.testing.assert_array_equal(delivered, np.zeros(800, dtype=np.float32))
+        np.testing.assert_array_equal(
+            delivered, np.zeros(800, dtype=np.float32)
+        )
 
     @pytest.mark.asyncio
     async def test_not_silenced_passes_audio(self, stream):
