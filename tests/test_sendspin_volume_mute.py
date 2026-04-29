@@ -7,7 +7,6 @@ Verifies the "fake state + silence gate" model:
 """
 
 import sys
-
 from unittest.mock import MagicMock, patch
 
 import numpy as np
