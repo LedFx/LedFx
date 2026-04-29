@@ -485,9 +485,7 @@ class SendspinAudioStream:
         """Update the silence gate based on current MA volume/mute state."""
         self._effective_silenced = self._ma_muted or self._ma_volume <= 0
 
-    def _server_command_handler(
-        self, payload: "ServerCommandPayload"
-    ) -> None:
+    def _server_command_handler(self, payload: "ServerCommandPayload") -> None:
         """Handle volume/mute commands from the Sendspin server (Music Assistant).
 
         LedFx is a raw audio consumer — volume is maintained purely for
