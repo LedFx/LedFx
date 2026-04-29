@@ -525,6 +525,13 @@ class SendspinAudioStream:
         except Exception as e:
             _LOGGER.warning("Failed to report player state: %s", e)
 
+    def _deliver_chunk(self, chunk: np.ndarray) -> None:
+        """Apply silence gate and deliver a chunk to LedFx's callback."""
+        if self._effective_silenced:
+            # Feed silence so effects decay naturally
+            chunk = np.zeros_like(chunk)
+        self.callback(chunk, len(chunk), None, None)
+
     async def _playback_scheduler(self):
         """Release buffered chunks to LedFx at their scheduled play time."""
         while self._active:
@@ -538,10 +545,7 @@ class SendspinAudioStream:
 
             if chunk is not None:
                 try:
-                    if self._effective_silenced:
-                        # Feed silence so effects decay naturally
-                        chunk = np.zeros_like(chunk)
-                    self.callback(chunk, len(chunk), None, None)
+                    self._deliver_chunk(chunk)
                 except Exception as e:
                     _LOGGER.error(
                         "Error in LedFx audio callback: %s", e, exc_info=True

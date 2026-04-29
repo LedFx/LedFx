@@ -6,26 +6,17 @@ Verifies the "fake state + silence gate" model:
 - volume values 1-100 do NOT affect audio processing
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import sys
+
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
 
-
-@pytest.fixture
-def mock_aiosendspin():
-    """Patch aiosendspin imports so tests run without Python 3.12+."""
-    with patch.dict(
-        "sys.modules",
-        {
-            "aiosendspin": MagicMock(),
-            "aiosendspin.client": MagicMock(),
-            "aiosendspin.models": MagicMock(),
-            "aiosendspin.models.core": MagicMock(),
-            "aiosendspin.models.player": MagicMock(),
-        },
-    ):
-        yield
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 12),
+    reason="sendspin requires Python 3.12+",
+)
 
 
 @pytest.fixture
@@ -205,75 +196,26 @@ class TestServerCommandHandler:
 
 
 class TestSilenceGate:
-    """Test that the silence gate in _playback_scheduler feeds zeros."""
+    """Test that the silence gate in _deliver_chunk feeds zeros."""
 
-    @pytest.mark.asyncio
-    async def test_silenced_feeds_zeros(self, stream):
+    def test_silenced_feeds_zeros(self, stream):
         """When silenced, callback receives zeros instead of real audio."""
-        import asyncio
-
-        stream._active = True
-        stream._loop = asyncio.get_event_loop()
         stream._effective_silenced = True
-
-        # Pre-load buffer with real audio
         real_audio = np.ones(800, dtype=np.float32) * 0.5
-        now_us = int(stream._loop.time() * 1_000_000)
-        stream._chunk_buffer = [(now_us - 1000, 1, real_audio)]
 
-        # Run one iteration of the scheduler
-        stream._active = False  # Will exit after processing one chunk
-        # Manually execute the scheduler logic inline
-        chunk = None
-        with stream._buffer_lock:
-            if stream._chunk_buffer:
-                play_time_us = stream._chunk_buffer[0][0]
-                check_us = int(stream._loop.time() * 1_000_000)
-                if play_time_us <= check_us:
-                    import heapq
+        stream._deliver_chunk(real_audio)
 
-                    _, _, chunk = heapq.heappop(stream._chunk_buffer)
-
-        if chunk is not None:
-            if stream._effective_silenced:
-                chunk = np.zeros_like(chunk)
-            stream.callback(chunk, len(chunk), None, None)
-
-        # Verify callback received zeros
         stream.callback.assert_called_once()
         delivered = stream.callback.call_args[0][0]
         np.testing.assert_array_equal(delivered, np.zeros(800, dtype=np.float32))
 
-    @pytest.mark.asyncio
-    async def test_not_silenced_passes_audio(self, stream):
+    def test_not_silenced_passes_audio(self, stream):
         """When not silenced, callback receives the real audio."""
-        import asyncio
-
-        stream._active = True
-        stream._loop = asyncio.get_event_loop()
         stream._effective_silenced = False
-
         real_audio = np.ones(800, dtype=np.float32) * 0.5
-        now_us = int(stream._loop.time() * 1_000_000)
-        stream._chunk_buffer = [(now_us - 1000, 1, real_audio)]
 
-        # Process one chunk
-        chunk = None
-        with stream._buffer_lock:
-            if stream._chunk_buffer:
-                import heapq
+        stream._deliver_chunk(real_audio)
 
-                play_time_us = stream._chunk_buffer[0][0]
-                check_us = int(stream._loop.time() * 1_000_000)
-                if play_time_us <= check_us:
-                    _, _, chunk = heapq.heappop(stream._chunk_buffer)
-
-        if chunk is not None:
-            if stream._effective_silenced:
-                chunk = np.zeros_like(chunk)
-            stream.callback(chunk, len(chunk), None, None)
-
-        # Verify callback received the original audio
         stream.callback.assert_called_once()
         delivered = stream.callback.call_args[0][0]
         np.testing.assert_array_equal(delivered, real_audio)
