@@ -501,9 +501,35 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
+        new_config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+
+        # Determine if the audio device is actually changing.  For Sendspin
+        # always-on, avoid a destructive deactivate/reactivate cycle when
+        # only non-pipeline settings changed (e.g. min_volume).
+        has_old_config = hasattr(self, "_config")
+        old_device = (
+            self._config.get("audio_device") if has_old_config else None
+        )
+        new_device = new_config.get("audio_device")
+        device_changing = old_device != new_device
+
+        # Pipeline-affecting keys require rebuilding internal audio objects
+        # (delay_queue, _raw_audio_sample, _phase_vocoder, etc.) even when
+        # the audio stream should stay active.
+        _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size")
+        pipeline_changing = has_old_config and any(
+            self._config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS
+        )
+
         if AudioInputSource._audio_stream_active:
-            self.deactivate()
-        self._config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+            if (
+                device_changing
+                or pipeline_changing
+                or not self._should_always_keep_active()
+            ):
+                self.deactivate()
+
+        self._config = new_config
         # Resolve device by name if available (handles index drift across restarts)
         self._resolve_device_from_name()
 
@@ -515,7 +541,8 @@ class AudioInputSource:
         # Activate outside the lock to avoid deadlock
         should_always_on = self._should_always_keep_active()
         if len(self._callbacks) != 0 or should_always_on:
-            self.activate()
+            if not AudioInputSource._audio_stream_active:
+                self.activate()
 
         # Check if device changed and fire event if needed
         with AudioInputSource._class_lock:
@@ -857,14 +884,22 @@ class AudioInputSource:
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
-        if not self._ledfx.config.get("sendspin_always_on", False):
+        sendspin_always_on = self._ledfx.config.get(
+            "sendspin_always_on", False
+        )
+        if not sendspin_always_on:
             return False
-        device_idx = self._config.get("audio_device")
-        return is_sendspin_always_on(
+        device_idx = (
+            self._config.get("audio_device")
+            if hasattr(self, "_config")
+            else None
+        )
+        result = is_sendspin_always_on(
             device_idx,
             self.query_devices,
             self.query_hostapis,
         )
+        return result
 
     def subscribe(self, callback):
         """Registers a callback with the input source"""
