@@ -5,7 +5,11 @@ import time
 import pytest
 
 from ledfx.events import Event
-from ledfx.nowplaying.models import ArtworkReference, NowPlayingState, TrackMetadata
+from ledfx.nowplaying.models import (
+    ArtworkReference,
+    NowPlayingState,
+    TrackMetadata,
+)
 from ledfx.nowplaying.service import NowPlayingService
 
 
@@ -98,7 +102,9 @@ class TestArtworkReference:
         d = art.to_dict()
         assert d["url"] == "https://example.com/art.jpg"
         assert d["width"] == 500
-        assert d["gradients"]["led_punchy"]["gradient"] == "linear-gradient(...)"
+        assert (
+            d["gradients"]["led_punchy"]["gradient"] == "linear-gradient(...)"
+        )
 
 
 # ------------------------------------------------------------------
@@ -229,7 +235,9 @@ class TestNowPlayingServiceSetArtworkUrl:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        service.set_artwork_url("sendspin", "https://example.com/art.jpg", artwork_hash="h1")
+        service.set_artwork_url(
+            "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
+        )
         result = service.set_artwork_url(
             "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
         )
@@ -239,7 +247,9 @@ class TestNowPlayingServiceSetArtworkUrl:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        service.set_artwork_url("sendspin", "https://example.com/art1.jpg", artwork_hash="h1")
+        service.set_artwork_url(
+            "sendspin", "https://example.com/art1.jpg", artwork_hash="h1"
+        )
         result = service.set_artwork_url(
             "sendspin", "https://example.com/art2.jpg", artwork_hash="h2"
         )
@@ -249,7 +259,9 @@ class TestNowPlayingServiceSetArtworkUrl:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        result = service.set_artwork_url("spotify", "https://example.com/art.jpg")
+        result = service.set_artwork_url(
+            "spotify", "https://example.com/art.jpg"
+        )
         assert result is False
         assert service.get_current().artwork is None
 
@@ -282,7 +294,9 @@ class TestNowPlayingServiceSetArtworkBytes:
         service.set_metadata("sendspin", meta)
 
         data = b"image_data"
-        service.set_artwork_bytes("sendspin", data, "image/jpeg", artwork_hash="custom_hash")
+        service.set_artwork_bytes(
+            "sendspin", data, "image/jpeg", artwork_hash="custom_hash"
+        )
 
         state = service.get_current()
         assert state.artwork.hash == "custom_hash"
@@ -336,12 +350,16 @@ class TestNowPlayingServiceEvents:
     """Verify correct events are fired by the service."""
 
     def test_metadata_changed_event_fired(self, service, ledfx):
-        meta = TrackMetadata(source_id="sendspin", title="Song", artist="Artist")
+        meta = TrackMetadata(
+            source_id="sendspin", title="Song", artist="Artist"
+        )
         service.set_metadata("sendspin", meta)
 
         events = ledfx.events.fired
         metadata_events = [
-            e for e in events if e.event_type == Event.NOW_PLAYING_METADATA_CHANGED
+            e
+            for e in events
+            if e.event_type == Event.NOW_PLAYING_METADATA_CHANGED
         ]
         assert len(metadata_events) == 1
         assert metadata_events[0].source_id == "sendspin"
@@ -353,7 +371,9 @@ class TestNowPlayingServiceEvents:
 
         events = ledfx.events.fired
         track_events = [
-            e for e in events if e.event_type == Event.NOW_PLAYING_TRACK_CHANGED
+            e
+            for e in events
+            if e.event_type == Event.NOW_PLAYING_TRACK_CHANGED
         ]
         assert len(track_events) == 1
         assert track_events[0].title == "Song 1"
@@ -383,7 +403,9 @@ class TestNowPlayingServiceEvents:
         ]
         assert len(track_events) == 0
 
-    def test_metadata_event_still_fires_on_position_update(self, service, ledfx):
+    def test_metadata_event_still_fires_on_position_update(
+        self, service, ledfx
+    ):
         meta = TrackMetadata(
             source_id="sendspin", title="Song", artist="A", track_id="t1"
         )
@@ -439,7 +461,9 @@ class TestNowPlayingServiceEvents:
         ]
         assert len(artwork_events) == 1
         assert artwork_events[0].source_id == "sendspin"
-        assert artwork_events[0].artwork["url"] == "https://example.com/art.jpg"
+        assert (
+            artwork_events[0].artwork["url"] == "https://example.com/art.jpg"
+        )
 
     def test_artwork_changed_event_on_bytes(self, service, ledfx):
         meta = TrackMetadata(source_id="sendspin", title="Song")

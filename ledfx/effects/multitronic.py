@@ -1,17 +1,16 @@
 import logging
+from random import randrange
 
 import numpy as np
 import voluptuous as vol
 
 from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
-from random import randrange
-
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class  Multitronic(Twod):
+class Multitronic(Twod):
     NAME = "Multitronic"
     CATEGORY = "Matrix"
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
@@ -28,7 +27,7 @@ class  Multitronic(Twod):
                 "bar_width",
                 description="Bar width ratio to display axis",
                 default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),           
+            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
             vol.Optional(
                 "bar_gap_ratio",
                 description="ratio of the bar to gap rendered according to BAR WIDTH",
@@ -62,24 +61,24 @@ class  Multitronic(Twod):
         super().config_updated(config)
         # copy over your configs here into variables
         self.static = self._config["static_layout"]
-        self.speed=self._config["speed"]
-        self.anger=self._config["anger"]
-        self.bar_width=self._config["bar_width"]
-        self.bar_gap_ratio=self._config["bar_gap_ratio"]
-        self.gradient_steps=self._config["gradient_steps"]
-        self.gradient_bins = self.gradient.get_gradient_colors_vectorized1d(np.linspace(0, 1, self.gradient_steps))
+        self.speed = self._config["speed"]
+        self.anger = self._config["anger"]
+        self.bar_width = self._config["bar_width"]
+        self.bar_gap_ratio = self._config["bar_gap_ratio"]
+        self.gradient_steps = self._config["gradient_steps"]
+        self.gradient_bins = self.gradient.get_gradient_colors_vectorized1d(
+            np.linspace(0, 1, self.gradient_steps)
+        )
 
     def get_rand_color(self):
         # get a random gradient color from the gradient using gradent steps as resolution of extraction.
         return self.gradient_bins[randrange(self.gradient_steps)]
-    
+
     def do_once(self):
         super().do_once()
 
-        self.bar_w = max(1,int(self.matrix.width * self.bar_width))
-        self.bar_h = max(1,int(self.matrix.height * self.bar_width))
-        
-
+        self.bar_w = max(1, int(self.matrix.width * self.bar_width))
+        self.bar_h = max(1, int(self.matrix.height * self.bar_width))
 
     def audio_data_updated(self, data):
         # Grab your audio input here, such as bar oscillator

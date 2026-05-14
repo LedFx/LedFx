@@ -534,7 +534,13 @@ class ColorsUpdatedEvent(Event):
 class NowPlayingTrackChangedEvent(Event):
     """Event emitted when the current track changes."""
 
-    def __init__(self, source_id: str, title: str | None, artist: str | None, album: str | None):
+    def __init__(
+        self,
+        source_id: str,
+        title: str | None,
+        artist: str | None,
+        album: str | None,
+    ):
         super().__init__(Event.NOW_PLAYING_TRACK_CHANGED)
         self.source_id = source_id
         self.title = title

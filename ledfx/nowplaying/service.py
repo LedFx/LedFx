@@ -14,7 +14,11 @@ from ledfx.events import (
     NowPlayingMetadataChangedEvent,
     NowPlayingTrackChangedEvent,
 )
-from ledfx.nowplaying.models import ArtworkReference, NowPlayingState, TrackMetadata
+from ledfx.nowplaying.models import (
+    ArtworkReference,
+    NowPlayingState,
+    TrackMetadata,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -124,7 +128,9 @@ class NowPlayingService:
 
         _LOGGER.info("Artwork URL updated from %s", source_id)
         self._fire_event(
-            NowPlayingArtworkChangedEvent(source_id, self._state.artwork.to_dict())
+            NowPlayingArtworkChangedEvent(
+                source_id, self._state.artwork.to_dict()
+            )
         )
         return True
 
@@ -174,9 +180,13 @@ class NowPlayingService:
         )
         self._state.updated_at = time.time()
 
-        _LOGGER.info("Artwork bytes updated from %s (hash: %s)", source_id, artwork_hash)
+        _LOGGER.info(
+            "Artwork bytes updated from %s (hash: %s)", source_id, artwork_hash
+        )
         self._fire_event(
-            NowPlayingArtworkChangedEvent(source_id, self._state.artwork.to_dict())
+            NowPlayingArtworkChangedEvent(
+                source_id, self._state.artwork.to_dict()
+            )
         )
         return True
 
@@ -189,7 +199,9 @@ class NowPlayingService:
             source_id: Provider identifier to clear.
         """
         if self._state.active_source_id == source_id:
-            _LOGGER.info("Clearing Now Playing state for active source: %s", source_id)
+            _LOGGER.info(
+                "Clearing Now Playing state for active source: %s", source_id
+            )
             self._state = NowPlayingState()
             self._fire_event(NowPlayingClearedEvent(source_id))
         else:
