@@ -13,7 +13,8 @@ from typing import Callable, Optional
 
 import numpy as np
 
-from ledfx.sendspin.config import BUFFER_CAPACITY
+from ledfx.consts import PROJECT_VERSION
+from ledfx.sendspin.config import BUFFER_CAPACITY, MANUFACTURER, PRODUCT_NAME
 
 try:
     import pyflac
@@ -23,6 +24,7 @@ except (ImportError, OSError):
 try:
     from aiosendspin.client import AudioFormat, SendspinClient
     from aiosendspin.models import AudioCodec, PlayerCommand, Roles
+    from aiosendspin.models.core import DeviceInfo
     from aiosendspin.models.player import (
         ClientHelloPlayerSupport,
         SupportedAudioFormat,
@@ -31,6 +33,7 @@ except ImportError:
     # Python < 3.12 or aiosendspin not available
     SendspinClient = None
     AudioFormat = None
+    DeviceInfo = None
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -868,6 +871,11 @@ class SendspinAudioStream:
                 client_id=client_id,
                 client_name=client_name,
                 roles=[Roles.PLAYER],
+                device_info=DeviceInfo(
+                    product_name=PRODUCT_NAME,
+                    manufacturer=MANUFACTURER,
+                    software_version=PROJECT_VERSION,
+                ),
                 player_support=player_support,
             )
 
