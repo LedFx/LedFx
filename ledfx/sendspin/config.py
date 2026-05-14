@@ -11,6 +11,10 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_SERVER_URL = "ws://192.168.1.12:8927/sendspin"
 DEFAULT_CLIENT_NAME = "LedFx"
 
+# Device identification sent in the Sendspin client/hello handshake
+PRODUCT_NAME = "LedFx"
+MANUFACTURER = "LedFx Developers"
+
 # Buffer capacity advertised to the Sendspin server during ClientHello.
 # The server sends audio up to this many bytes ahead of the current play
 # position.  ~2 seconds at 48 kHz / 16-bit / stereo (192 000 B/s) gives
