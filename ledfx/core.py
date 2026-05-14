@@ -42,6 +42,7 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.mdns_manager import ZeroConfRunner
+from ledfx.nowplaying import NowPlayingService
 from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
@@ -483,6 +484,9 @@ class LedFxCore:
             max_size_mb=cache_config.get("max_size_mb", 500),
             max_items=cache_config.get("max_items", 500),
         )
+
+        # Initialize Now Playing Service
+        self.now_playing = NowPlayingService(self)
 
         self.devices = Devices(self)
         self.effects = Effects(self)

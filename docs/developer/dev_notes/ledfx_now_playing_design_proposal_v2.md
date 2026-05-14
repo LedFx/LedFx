@@ -1285,12 +1285,18 @@ Key decisions:
 ## Current Implementation State
 
 ```text
-ledfx/nowplaying/           ← directory exists, no Python files yet
-ledfx/nowplaying/providers/ ← empty directory (only __pycache__)
+ledfx/nowplaying/__init__.py  ← module init, exports NowPlayingService
+ledfx/nowplaying/models.py   ← TrackMetadata, ArtworkReference, NowPlayingState
+ledfx/nowplaying/service.py  ← NowPlayingService with set/get/clear API + event firing
+ledfx/nowplaying/providers/  ← empty, ready for Phase 4
+ledfx/api/now_playing.py     ← GET /api/now-playing endpoint
+ledfx/core.py               ← registers service as self.now_playing
+ledfx/events.py             ← 5 NowPlaying event types + subclasses (Phase 3)
 ledfx/sendspin/             ← audio stream integration exists (stream.py, config.py)
-ledfx/events.py             ← existing event system with fire_event/add_listener
 ledfx/libraries/cache.py   ← ImageCache with auto gradient extraction on put()
 ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_safe/punchy/max
+tests/test_now_playing_service.py  ← 35 tests (models, service, events)
+tests/test_api_now_playing.py      ← 4 API integration tests
 ```
 
 ---
@@ -1299,26 +1305,26 @@ ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_s
 
 **Goal**: Establish the service module, dataclasses, and internal state management.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 1.1 Create `ledfx/nowplaying/__init__.py` with module docstring and exports
-- [ ] 1.2 Create `ledfx/nowplaying/models.py` with dataclasses:
+- [x] 1.1 Create `ledfx/nowplaying/__init__.py` with module docstring and exports
+- [x] 1.2 Create `ledfx/nowplaying/models.py` with dataclasses:
   - `TrackMetadata`
   - `ArtworkReference`
   - `NowPlayingState`
-- [ ] 1.3 Create `ledfx/nowplaying/service.py` with `NowPlayingService` class:
+- [x] 1.3 Create `ledfx/nowplaying/service.py` with `NowPlayingService` class:
   - `__init__(self, ledfx)` — store core ref, initialize empty state
   - `set_metadata(source_id, metadata)` — normalize and detect changes
   - `set_artwork_url(source_id, url, content_type, artwork_hash)` — store ref
   - `set_artwork_bytes(source_id, data, content_type, artwork_hash)` — store ref
   - `clear(source_id)` — clear provider state
   - `get_current()` → `NowPlayingState`
-- [ ] 1.4 Register service on `LedFxCore` (add to `core.py` startup)
-- [ ] 1.5 Write unit tests `tests/test_now_playing_service.py`:
+- [x] 1.4 Register service on `LedFxCore` (add to `core.py` startup)
+- [x] 1.5 Write unit tests `tests/test_now_playing_service.py` (24 service tests, all passing):
   - metadata set/get round-trip
-  - track change detection (same metadata → no event, new title → event)
+  - track change detection (same metadata → no change, new title → change)
   - clear resets state
   - source_id filtering (only active source updates state)
 
@@ -1326,7 +1332,7 @@ ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_s
 
 - Service is a plain class, not a `BaseRegistry` subclass (no discovery needed)
 - No config schema yet — purely in-memory state
-- No events fired yet — just state management
+- Events fired via Phase 3 (metadata, track, artwork, cleared)
 - No async required yet — setters are synchronous
 
 ### File Inventory After Phase 1
@@ -1344,17 +1350,19 @@ tests/test_now_playing_service.py
 
 **Goal**: Expose current Now Playing state via API for debugging and frontend integration.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 2.1 Create `ledfx/api/now_playing.py` with `GET /api/now-playing`
+- [x] 2.1 Create `ledfx/api/now_playing.py` with `GET /api/now-playing`
   - Returns serialized `NowPlayingState`
   - Uses `bare_request_success()` helper
-- [ ] 2.2 Write integration test `tests/test_api_now_playing.py`
+- [x] 2.2 Write integration test `tests/test_api_now_playing.py` (4 tests passing)
   - GET with no state returns empty/null fields
   - GET after set_metadata returns expected data
-- [ ] 2.3 Verify endpoint auto-registers via RegistryLoader
+  - GET with artwork URL
+  - GET after clear
+- [x] 2.3 Verified endpoint auto-registers via RegistryLoader (`RestEndpoint._registry['now_playing']`)
 
 ### Dependencies
 
@@ -1366,22 +1374,28 @@ tests/test_now_playing_service.py
 
 **Goal**: Fire LedFx events on state changes so other systems can react.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 3.1 Add event type constants to `ledfx/events.py`:
+- [x] 3.1 Add event type constants to `ledfx/events.py`:
   - `NOW_PLAYING_TRACK_CHANGED`
   - `NOW_PLAYING_METADATA_CHANGED`
   - `NOW_PLAYING_ARTWORK_CHANGED`
   - `NOW_PLAYING_GRADIENT_CHANGED`
   - `NOW_PLAYING_CLEARED`
-- [ ] 3.2 Create `NowPlayingEvent` subclass in `events.py`
-- [ ] 3.3 Update `NowPlayingService.set_metadata()` to fire events:
+- [x] 3.2 Create Now Playing event subclasses in `events.py`:
+  - `NowPlayingTrackChangedEvent`
+  - `NowPlayingMetadataChangedEvent`
+  - `NowPlayingArtworkChangedEvent`
+  - `NowPlayingGradientChangedEvent`
+  - `NowPlayingClearedEvent`
+- [x] 3.3 Update `NowPlayingService.set_metadata()` to fire events:
   - `NOW_PLAYING_METADATA_CHANGED` on any metadata update
   - `NOW_PLAYING_TRACK_CHANGED` when title/artist/album changes
-- [ ] 3.4 Update `NowPlayingService.clear()` to fire `NOW_PLAYING_CLEARED`
-- [ ] 3.5 Write event tests in `tests/test_now_playing_service.py`
+- [x] 3.4 Update `NowPlayingService.set_artwork_url()` and `set_artwork_bytes()` to fire `NOW_PLAYING_ARTWORK_CHANGED`
+- [x] 3.5 Update `NowPlayingService.clear()` to fire `NOW_PLAYING_CLEARED`
+- [x] 3.6 Write event tests in `tests/test_now_playing_service.py` (11 event tests, all passing)
 
 ### Dependencies
 
@@ -1705,8 +1719,8 @@ ImageCache.put(url, image_data, content_type, metadata)
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Service Skeleton | `[ ]` Not started |
-| 2 | REST Debug Endpoint | `[ ]` Not started |
+| 1 | Service Skeleton | `[x]` Complete |
+| 2 | REST Debug Endpoint | `[x]` Complete |
 | 3 | Now Playing Events | `[ ]` Not started |
 | 4 | Sendspin Metadata Provider | `[ ]` Not started |
 | 5 | Sendspin Artwork + Image Cache | `[ ]` Not started |
