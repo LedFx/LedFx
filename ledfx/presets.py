@@ -23,9 +23,9 @@ ledfx_presets = {
                 "rotate": 0,
                 "scroll_time": 1.0,
                 "size": 1,
-                "test": False
+                "test": False,
             },
-            "name": "PIPE"
+            "name": "PIPE",
         }
     },
     "imagespin": {
@@ -52,9 +52,9 @@ ledfx_presets = {
                 "pattern": False,
                 "rotate": 0,
                 "spin": False,
-                "test": True
+                "test": True,
             },
-            "name": "ARTWORK"
+            "name": "ARTWORK",
         }
     },
     "smoke2d": {
