@@ -10,7 +10,6 @@ from ledfx.nowplaying.providers.sendspin import (
     SendspinNowPlayingProvider,
 )
 
-
 # ------------------------------------------------------------------
 # Stubs mimicking aiosendspin models
 # ------------------------------------------------------------------
@@ -94,13 +93,13 @@ def provider(ledfx):
 @pytest.fixture(autouse=True)
 def _patch_aiosendspin_types(monkeypatch):
     """Patch the aiosendspin imports used inside the provider."""
-    import ledfx.nowplaying.providers.sendspin as mod
-
     # The provider does lazy imports inside on_metadata; patch them
     # at the module level via monkeypatch on the import mechanism
     import sys
     from types import ModuleType
     from unittest.mock import patch
+
+    import ledfx.nowplaying.providers.sendspin as mod
 
     # Create fake modules
     metadata_mod = ModuleType("aiosendspin.models.metadata")
@@ -109,7 +108,9 @@ def _patch_aiosendspin_types(monkeypatch):
     types_mod = ModuleType("aiosendspin.models.types")
     types_mod.UndefinedField = _UndefinedField
 
-    monkeypatch.setitem(sys.modules, "aiosendspin.models.metadata", metadata_mod)
+    monkeypatch.setitem(
+        sys.modules, "aiosendspin.models.metadata", metadata_mod
+    )
     monkeypatch.setitem(sys.modules, "aiosendspin.models.types", types_mod)
 
 
@@ -195,7 +196,9 @@ class TestSendspinProviderMetadata:
         # Message 2: only artist
         provider.on_metadata(
             _ServerStatePayload(
-                metadata=_SessionUpdateMetadata(timestamp=2000, artist="Artist")
+                metadata=_SessionUpdateMetadata(
+                    timestamp=2000, artist="Artist"
+                )
             )
         )
         state = ledfx.now_playing.get_current()
@@ -230,9 +233,7 @@ class TestSendspinProviderMetadata:
         # Explicitly clear artist
         provider.on_metadata(
             _ServerStatePayload(
-                metadata=_SessionUpdateMetadata(
-                    timestamp=2000, artist=None
-                )
+                metadata=_SessionUpdateMetadata(timestamp=2000, artist=None)
             )
         )
         state = ledfx.now_playing.get_current()
