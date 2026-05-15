@@ -359,7 +359,7 @@ class TestNowPlayingServiceSetArtworkBytes:
         service.set_artwork_bytes("sendspin", data, "image/png")
 
         artwork_path = os.path.join(
-            ledfx.config_dir, "cache", "images", "now_playing.png"
+            ledfx.config_dir, "assets", "now_playing", "now_playing.png"
         )
         assert os.path.exists(artwork_path)
         with open(artwork_path, "rb") as f:
@@ -373,7 +373,7 @@ class TestNowPlayingServiceSetArtworkBytes:
         png_data = _make_test_png()
         service.set_artwork_bytes("sendspin", png_data, "image/png")
         png_path = os.path.join(
-            ledfx.config_dir, "cache", "images", "now_playing.png"
+            ledfx.config_dir, "assets", "now_playing", "now_playing.png"
         )
         assert os.path.exists(png_path)
 
@@ -381,7 +381,7 @@ class TestNowPlayingServiceSetArtworkBytes:
         jpeg_data = _make_test_jpeg()
         service.set_artwork_bytes("sendspin", jpeg_data, "image/jpeg")
         jpg_path = os.path.join(
-            ledfx.config_dir, "cache", "images", "now_playing.jpg"
+            ledfx.config_dir, "assets", "now_playing", "now_playing.jpg"
         )
         assert os.path.exists(jpg_path)
         # Old PNG file should have been removed

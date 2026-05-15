@@ -5,16 +5,20 @@ Receives normalized metadata from providers and exposes a single
 source of truth for the rest of LedFx.
 """
 
-import glob
 import hashlib
 import io
 import logging
-import os
 import time
 import urllib.request
 
 from PIL import Image
 
+from ledfx.assets import (
+    delete_asset,
+    get_asset_path,
+    list_assets,
+    save_asset,
+)
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
     NowPlayingClearedEvent,
@@ -26,7 +30,6 @@ from ledfx.nowplaying.models import (
     NowPlayingState,
     TrackMetadata,
 )
-from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.security_utils import (
     DOWNLOAD_TIMEOUT,
     MAX_IMAGE_SIZE_BYTES,
@@ -48,6 +51,8 @@ _EXTENSION_MAP = {
     "image/tiff": ".tiff",
 }
 
+# Subdirectory within assets for now-playing artwork
+_NOW_PLAYING_ASSET_DIR = "now_playing"
 # Fixed base filename for the single artwork file
 _ARTWORK_FILENAME = "now_playing"
 
@@ -314,35 +319,30 @@ class NowPlayingService:
     # Artwork storage helpers
     # ------------------------------------------------------------------
 
-    def _get_artwork_dir(self) -> str:
-        """Return the directory for the now-playing artwork file.
+    def _get_artwork_relative_path(self, content_type: str) -> str:
+        """Return the relative asset path for the now-playing artwork file."""
+        extension = _EXTENSION_MAP.get(content_type, ".jpg")
+        return f"{_NOW_PLAYING_ASSET_DIR}/{_ARTWORK_FILENAME}{extension}"
 
-        Creates the directory if it does not exist.
-        """
+    def _remove_old_artwork(self) -> None:
+        """Delete any existing now_playing.* asset files."""
         config_dir = getattr(self._ledfx, "config_dir", None)
         if not config_dir:
-            return None
-        artwork_dir = os.path.join(config_dir, "cache", "images")
-        os.makedirs(artwork_dir, exist_ok=True)
-        return artwork_dir
+            return
+        # Try all known extensions
+        for ext in _EXTENSION_MAP.values():
+            rel_path = f"{_NOW_PLAYING_ASSET_DIR}/{_ARTWORK_FILENAME}{ext}"
+            exists, _, _ = get_asset_path(config_dir, rel_path)
+            if exists:
+                delete_asset(config_dir, rel_path)
 
-    def _remove_old_artwork(self, artwork_dir: str) -> None:
-        """Delete any existing ``now_playing.*`` files."""
-        for old_file in glob.glob(
-            os.path.join(artwork_dir, f"{_ARTWORK_FILENAME}.*")
-        ):
-            try:
-                os.remove(old_file)
-            except OSError as exc:
-                _LOGGER.warning(
-                    "Failed to remove old artwork %s: %s", old_file, exc
-                )
+    def _store_artwork(
+        self, data: bytes, content_type: str
+    ) -> tuple:
+        """Save artwork bytes via the asset management system.
 
-    def _store_artwork(self, data: bytes, content_type: str) -> tuple:
-        """Save artwork bytes to disk and extract gradients.
-
-        Writes the image as ``now_playing.{ext}`` in the cache/images
-        directory, replacing any previous artwork file.
+        Uses save_asset() for secure, validated, atomic writes with
+        proper metadata alignment and gradient extraction.
 
         Args:
             data: Raw image bytes.
@@ -352,24 +352,22 @@ class NowPlayingService:
             Tuple of (artwork_path, gradients_dict, width, height).
             artwork_path is ``None`` when config_dir is unavailable.
         """
-        artwork_dir = self._get_artwork_dir()
-        if artwork_dir is None:
+        config_dir = getattr(self._ledfx, "config_dir", None)
+        if not config_dir:
             return None, None, None, None
 
-        extension = _EXTENSION_MAP.get(content_type, ".jpg")
-        artwork_path = os.path.join(
-            artwork_dir, f"{_ARTWORK_FILENAME}{extension}"
-        )
+        relative_path = self._get_artwork_relative_path(content_type)
 
         # Remove any previous now_playing.* files (handles extension changes)
-        self._remove_old_artwork(artwork_dir)
+        self._remove_old_artwork()
 
-        try:
-            with open(artwork_path, "wb") as fh:
-                fh.write(data)
-        except OSError as exc:
+        # Use the asset system for validated, atomic write
+        success, absolute_path, error = save_asset(
+            config_dir, relative_path, data, allow_overwrite=True
+        )
+        if not success:
             _LOGGER.error(
-                "Failed to write artwork file %s: %s", artwork_path, exc
+                "Failed to save artwork via asset system: %s", error
             )
             return None, None, None, None
 
@@ -381,14 +379,22 @@ class NowPlayingService:
         except Exception as exc:
             _LOGGER.warning("Could not read image dimensions: %s", exc)
 
-        # Extract gradients via existing pipeline
+        # Get gradients from the asset metadata (triggers extraction via list)
         gradients = None
         try:
-            gradients = extract_gradient_metadata(artwork_path)
+            assets = list_assets(config_dir)
+            for asset in assets:
+                if asset["path"] == relative_path.replace("\\", "/"):
+                    gradients = asset.get("gradients")
+                    if width is None:
+                        width = asset.get("width")
+                    if height is None:
+                        height = asset.get("height")
+                    break
         except Exception as exc:
-            _LOGGER.warning("Gradient extraction failed: %s", exc)
+            _LOGGER.warning("Failed to get asset metadata/gradients: %s", exc)
 
-        return artwork_path, gradients, width, height
+        return absolute_path, gradients, width, height
 
     def _download_image(self, url: str) -> tuple:
         """Download an image from *url* with security validation.
@@ -402,29 +408,20 @@ class NowPlayingService:
 
         is_safe, error_msg = validate_url_safety(url, allow_private=True)
         if not is_safe:
-            _LOGGER.warning(
-                "URL blocked for security: %s - %s", url, error_msg
-            )
+            _LOGGER.warning("URL blocked for security: %s - %s", url, error_msg)
             return None, None
 
         try:
             req = build_browser_request(url)
             with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
                 content_length = resp.headers.get("Content-Length")
-                if (
-                    content_length
-                    and int(content_length) > MAX_IMAGE_SIZE_BYTES
-                ):
-                    _LOGGER.warning(
-                        "Artwork too large: %s bytes", content_length
-                    )
+                if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.warning("Artwork too large: %s bytes", content_length)
                     return None, None
 
                 data = resp.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning(
-                        "Artwork exceeded size limit during download"
-                    )
+                    _LOGGER.warning("Artwork exceeded size limit during download")
                     return None, None
 
                 content_type = resp.headers.get("Content-Type", "image/jpeg")
@@ -434,14 +431,10 @@ class NowPlayingService:
                 try:
                     img = Image.open(io.BytesIO(data))
                     if not validate_pil_image(img):
-                        _LOGGER.warning(
-                            "Downloaded image failed validation: %s", url
-                        )
+                        _LOGGER.warning("Downloaded image failed validation: %s", url)
                         return None, None
                 except Exception:
-                    _LOGGER.warning(
-                        "Downloaded data is not a valid image: %s", url
-                    )
+                    _LOGGER.warning("Downloaded data is not a valid image: %s", url)
                     return None, None
 
                 return data, content_type

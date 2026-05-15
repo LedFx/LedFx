@@ -1,9 +1,11 @@
 """Unit tests for the Sendspin Now Playing provider."""
 
+import io
 from dataclasses import dataclass, field
-from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import pytest
+from PIL import Image
 
 from ledfx.nowplaying.providers.sendspin import (
     SOURCE_ID,
@@ -97,9 +99,6 @@ def _patch_aiosendspin_types(monkeypatch):
     # at the module level via monkeypatch on the import mechanism
     import sys
     from types import ModuleType
-    from unittest.mock import patch
-
-    import ledfx.nowplaying.providers.sendspin as mod
 
     # Create fake modules
     metadata_mod = ModuleType("aiosendspin.models.metadata")
@@ -285,32 +284,51 @@ class TestSendspinProviderMetadata:
         assert state.metadata is None
 
     def test_artwork_url_forwarded(self, provider, ledfx):
-        payload = _ServerStatePayload(
-            metadata=_SessionUpdateMetadata(
-                timestamp=1000,
-                title="Song",
-                artwork_url="https://example.com/art.jpg",
+        # Create a valid test PNG for download mock
+        buf = io.BytesIO()
+        Image.new("RGB", (4, 4), color="red").save(buf, format="PNG")
+        test_png = buf.getvalue()
+
+        with patch.object(
+            ledfx.now_playing,
+            "_download_image",
+            return_value=(test_png, "image/png"),
+        ):
+            payload = _ServerStatePayload(
+                metadata=_SessionUpdateMetadata(
+                    timestamp=1000,
+                    title="Song",
+                    artwork_url="https://example.com/art.jpg",
+                )
             )
-        )
-        provider.on_metadata(payload)
+            provider.on_metadata(payload)
 
         state = ledfx.now_playing.get_current()
         assert state.artwork is not None
         assert state.artwork.url == "https://example.com/art.jpg"
 
     def test_same_artwork_url_not_re_sent(self, provider, ledfx):
-        payload = _ServerStatePayload(
-            metadata=_SessionUpdateMetadata(
-                timestamp=1000,
-                title="Song",
-                artwork_url="https://example.com/art.jpg",
-            )
-        )
-        provider.on_metadata(payload)
-        ledfx.events.fired.clear()
+        buf = io.BytesIO()
+        Image.new("RGB", (4, 4), color="red").save(buf, format="PNG")
+        test_png = buf.getvalue()
 
-        # Same metadata again
-        provider.on_metadata(payload)
+        with patch.object(
+            ledfx.now_playing,
+            "_download_image",
+            return_value=(test_png, "image/png"),
+        ):
+            payload = _ServerStatePayload(
+                metadata=_SessionUpdateMetadata(
+                    timestamp=1000,
+                    title="Song",
+                    artwork_url="https://example.com/art.jpg",
+                )
+            )
+            provider.on_metadata(payload)
+            ledfx.events.fired.clear()
+
+            # Same metadata again
+            provider.on_metadata(payload)
 
         from ledfx.events import Event
 
@@ -322,24 +340,33 @@ class TestSendspinProviderMetadata:
         assert len(artwork_events) == 0
 
     def test_different_artwork_url_sent(self, provider, ledfx):
-        payload1 = _ServerStatePayload(
-            metadata=_SessionUpdateMetadata(
-                timestamp=1000,
-                title="Song",
-                artwork_url="https://example.com/art1.jpg",
-            )
-        )
-        provider.on_metadata(payload1)
-        ledfx.events.fired.clear()
+        buf = io.BytesIO()
+        Image.new("RGB", (4, 4), color="red").save(buf, format="PNG")
+        test_png = buf.getvalue()
 
-        payload2 = _ServerStatePayload(
-            metadata=_SessionUpdateMetadata(
-                timestamp=2000,
-                title="Song",
-                artwork_url="https://example.com/art2.jpg",
+        with patch.object(
+            ledfx.now_playing,
+            "_download_image",
+            return_value=(test_png, "image/png"),
+        ):
+            payload1 = _ServerStatePayload(
+                metadata=_SessionUpdateMetadata(
+                    timestamp=1000,
+                    title="Song",
+                    artwork_url="https://example.com/art1.jpg",
+                )
             )
-        )
-        provider.on_metadata(payload2)
+            provider.on_metadata(payload1)
+            ledfx.events.fired.clear()
+
+            payload2 = _ServerStatePayload(
+                metadata=_SessionUpdateMetadata(
+                    timestamp=2000,
+                    title="Song",
+                    artwork_url="https://example.com/art2.jpg",
+                )
+            )
+            provider.on_metadata(payload2)
 
         state = ledfx.now_playing.get_current()
         assert state.artwork.url == "https://example.com/art2.jpg"
