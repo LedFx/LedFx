@@ -85,7 +85,7 @@ Asset Storage
     - invalidates when files change
 ```
 
-The Now Playing Service should reuse this model.
+The Now Playing Service uses the Asset Storage path via `save_asset()` and `list_assets()`.
 
 ---
 
@@ -100,9 +100,9 @@ Provider artwork
     ↓
 Now Playing Service
     ↓
-Image cache / asset-compatible storage path
+save_asset() → assets/now_playing/now_playing.{ext}
     ↓
-Existing gradient extraction
+list_assets() → .asset_metadata_cache.json with gradients
     ↓
 Current track gradient alias
 ```
@@ -385,18 +385,22 @@ Preferred flow:
 ```text
 artwork_url
     ↓
-Image cache fetch/store
+download with security validation
     ↓
-ImageCache.put()
+save_asset(config_dir, "now_playing/now_playing.{ext}", data, allow_overwrite=True)
     ↓
-extract_gradient_metadata()
-    ↓
-cache metadata includes gradients
+list_assets() → asset metadata cache with gradients
     ↓
 Now Playing reads selected variant
 ```
 
-This aligns directly with LedFx's current image cache architecture.
+This uses LedFx's asset management system which provides:
+- path traversal protection
+- content validation (extension, MIME, PIL format)
+- size limits
+- atomic writes
+- metadata caching with gradient extraction
+- thumbnail cache invalidation
 
 ---
 
@@ -407,30 +411,14 @@ Preferred flow:
 ```text
 artwork bytes
     ↓
-synthetic now-playing cache URL
+save_asset(config_dir, "now_playing/now_playing.{ext}", data, allow_overwrite=True)
     ↓
-ImageCache.put()
-    ↓
-extract_gradient_metadata()
-    ↓
-cache metadata includes gradients
+list_assets() → asset metadata cache with gradients
     ↓
 Now Playing reads selected variant
 ```
 
-Suggested synthetic URL format:
-
-```text
-now-playing://<source_id>/<artwork_hash>
-```
-
-or:
-
-```text
-album-art://<source_id>/<track_id-or-hash>
-```
-
-The important point is that the cache key must be stable for the same artwork and different for changed artwork.
+Artwork is stored at a fixed path `assets/now_playing/now_playing.{ext}` and overwritten on each change. The asset system handles extension changes by deleting old files first.
 
 ---
 
@@ -983,21 +971,21 @@ Deliverables:
 
 ---
 
-## Phase 4 - Sendspin Artwork Provider Using Existing Image Cache
+## Phase 4 - Sendspin Artwork Provider Using Asset System
 
 Implement:
 
 - Sendspin artwork URL handling if available
 - Sendspin artwork byte handling if needed
-- stable synthetic cache key for byte-based artwork
-- image cache integration
+- artwork storage via `save_asset()` at `assets/now_playing/now_playing.{ext}`
+- gradient extraction via `list_assets()` metadata cache
 - no custom gradient extraction path
 
 Deliverables:
 
-- artwork cached
+- artwork stored as managed asset
 - width/height/content type available
-- existing gradient metadata produced by `ImageCache.put()`
+- gradient metadata produced by asset metadata cache (`list_assets`)
 
 ---
 
@@ -1196,30 +1184,16 @@ or:
 asset persisted
 ```
 
-Initial answer:
-
-```text
-cache only
-```
+**Resolved**: Asset persisted at `assets/now_playing/now_playing.{ext}`.
 
 Rationale:
 
-- now playing artwork is transient
-- existing image cache already supports metadata and gradients
-- avoids filling user assets with temporary album art
-
----
-
-## Synthetic Cache URL Format
-
-Candidate formats:
-
-```text
-now-playing://sendspin/<artwork_hash>
-album-art://sendspin/<track_id>
-```
-
-Need to verify best fit with existing cache assumptions.
+- uses the existing asset management system (`save_asset`/`list_assets`)
+- gets security validation, atomic writes, and metadata caching for free
+- gradient extraction is handled by `list_assets` metadata cache
+- single fixed path avoids accumulation (overwritten each time)
+- no synthetic cache URL needed — uses standard asset path
+- metadata alignment across the system is maintained
 
 ---
 
@@ -1288,6 +1262,7 @@ Key decisions:
 ledfx/nowplaying/__init__.py  ← module init, exports NowPlayingService
 ledfx/nowplaying/models.py   ← TrackMetadata, ArtworkReference, NowPlayingState
 ledfx/nowplaying/service.py  ← NowPlayingService with set/get/clear API + event firing
+                                Uses save_asset/list_assets/delete_asset for artwork storage
 ledfx/nowplaying/providers/__init__.py ← providers package
 ledfx/nowplaying/providers/sendspin.py ← SendspinNowPlayingProvider (Phase 4)
 ledfx/api/now_playing.py     ← GET /api/now-playing endpoint
@@ -1295,6 +1270,7 @@ ledfx/core.py               ← registers service as self.now_playing
 ledfx/events.py             ← 5 NowPlaying event types + subclasses (Phase 3)
 ledfx/sendspin/stream.py    ← wired with metadata listener + METADATA role (Phase 4)
 ledfx/effects/audio.py      ← passes ledfx to SendspinAudioStream (Phase 4)
+ledfx/assets.py             ← save_asset/list_assets/delete_asset (artwork storage + gradients)
 ledfx/libraries/cache.py   ← ImageCache with auto gradient extraction on put()
 ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_safe/punchy/max
 ledfx/utilities/security_utils.py ← URL validation, image validation, download helpers
