@@ -1297,8 +1297,9 @@ ledfx/sendspin/stream.py    ← wired with metadata listener + METADATA role (Ph
 ledfx/effects/audio.py      ← passes ledfx to SendspinAudioStream (Phase 4)
 ledfx/libraries/cache.py   ← ImageCache with auto gradient extraction on put()
 ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_safe/punchy/max
-tests/test_now_playing_service.py  ← 35 tests (models, service, events)
-tests/test_api_now_playing.py      ← 4 API integration tests
+ledfx/utilities/security_utils.py ← URL validation, image validation, download helpers
+tests/test_now_playing_service.py  ← 38 tests (models, service, events, artwork URL/bytes, file write/overwrite, gradients)
+tests/test_api_now_playing.py      ← 4 API integration tests (including artwork URL with mocked download)
 tests/test_now_playing_sendspin.py ← 11 provider tests
 ```
 
@@ -1458,42 +1459,49 @@ tests/test_now_playing_service.py
 
 ---
 
-## Phase 5 — Sendspin Artwork Provider + Image Cache Integration
+## Phase 5 — Sendspin Artwork Provider + Gradient Extraction
 
-**Goal**: Route Sendspin artwork through the existing ImageCache pipeline for gradient extraction.
+**Goal**: Download/store Sendspin artwork, extract gradients, expose via API.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 5.1 Determine how Sendspin provides artwork (URL vs bytes)
-- [ ] 5.2 Implement `set_artwork_url()` path:
-  - Download image via `http_manager` or `aiohttp`
-  - Store via `ImageCache.put()`
-  - Read back gradient metadata from cache entry
-  - Update `ArtworkReference` with cache_key and gradients
-- [ ] 5.3 Implement `set_artwork_bytes()` path:
-  - Generate stable synthetic cache key: `now-playing://sendspin/<artwork_hash>`
-  - Store via `ImageCache.put()`
-  - Read back gradient metadata
+- [x] 5.1 Determine how Sendspin provides artwork (URL vs bytes)
+  - Sendspin provides artwork as a URL (`artwork_url` field in metadata)
+- [x] 5.2 Implement `set_artwork_url()` path:
+  - Download image via `urllib.request` with security validation (`validate_url_safety`, `build_browser_request`, size limits)
+  - Save as single `now_playing.{ext}` file in `config_dir/cache/images/` (overwriting previous)
+  - Validate with PIL (`validate_pil_image`)
+  - Extract gradients via `extract_gradient_metadata()` directly
+  - Update `ArtworkReference` with path, dimensions, and gradients
+- [x] 5.3 Implement `set_artwork_bytes()` path:
+  - Compute SHA-256 hash for change detection
+  - Save as `now_playing.{ext}` in same location
+  - Validate and extract gradients identically to URL path
   - Update `ArtworkReference`
-- [ ] 5.4 Fire `NOW_PLAYING_ARTWORK_CHANGED` event
-- [ ] 5.5 Add artwork fields to `GET /api/now-playing` response
-- [ ] 5.6 Write tests with mock images
+- [x] 5.4 Fire `NOW_PLAYING_ARTWORK_CHANGED` event (with artwork dict payload)
+- [x] 5.5 Artwork fields already exposed via `GET /api/now-playing` (ArtworkReference.to_dict())
+- [x] 5.6 Tests written:
+  - Artwork URL: mocked `_download_image`, verifies ArtworkReference populated with gradients
+  - Artwork bytes: real PNG/JPEG via Pillow, verifies file write and gradient extraction
+  - File write/overwrite tests: confirms single-file replacement behavior
+  - Duplicate detection: same URL/hash returns False
+  - Download failure: returns False gracefully
+  - Event firing: artwork changed events verified
+  - API test: GET /api/now-playing with artwork URL (mocked download)
 
-### Key Integration Points
+### Implementation Notes
 
-```python
-# In ledfx/libraries/cache.py, existing flow:
-ImageCache.put(url, image_data, content_type, metadata)
-    → calls extract_gradient_metadata(pil_image)
-    → stores result in cache metadata
-```
+Instead of routing through `ImageCache.put()`, the service stores artwork directly as a single file and calls `extract_gradient_metadata()` itself. This avoids coupling to the cache's URL-keyed storage model and keeps the now-playing artwork as a simple overwritten file (transient, not accumulating).
+
+The `_update_current_gradient()` helper selects the configured variant (default: `led_punchy`) from extracted gradients and stores it in `state.current_gradient`.
 
 ### Dependencies
 
 - Phase 1, Phase 3, Phase 4 complete
-- ImageCache API understood
+- `ledfx/utilities/gradient_extraction.py` provides `extract_gradient_metadata()`
+- `ledfx/utilities/security_utils.py` provides URL/image validation
 
 ---
 
@@ -1730,7 +1738,7 @@ ImageCache.put(url, image_data, content_type, metadata)
 |---|----------|----------|-----------|
 | 1 | Source priority with multiple providers | Single active provider (first: Sendspin) | Keep initial implementation simple |
 | 2 | Artwork storage | Cache only (not assets) | Transient data, avoid filling user assets |
-| 3 | Synthetic cache URL format | TBD — verify against ImageCache assumptions | Need to check `_generate_cache_key()` behavior |
+| 3 | Synthetic cache URL format | Not used — single `now_playing.{ext}` file approach instead | Simpler than cache-keyed storage; artwork is transient, only one file needed |
 | 4 | `system/current_track` persistence | No — runtime alias only | Effects reference by name, value resolved dynamically |
 | 5 | Fallback effect restore contract | TBD — Phase 9 | Need to handle edge cases (manual override, etc.) |
 | 6 | BaseRegistry vs plain class | Plain class for service | No auto-discovery needed for singleton service |
@@ -1743,9 +1751,9 @@ ImageCache.put(url, image_data, content_type, metadata)
 |-------|-------------|--------|
 | 1 | Service Skeleton | `[x]` Complete |
 | 2 | REST Debug Endpoint | `[x]` Complete |
-| 3 | Now Playing Events | `[ ]` Not started |
-| 4 | Sendspin Metadata Provider | `[ ]` Not started |
-| 5 | Sendspin Artwork + Image Cache | `[ ]` Not started |
+| 3 | Now Playing Events | `[x]` Complete |
+| 4 | Sendspin Metadata Provider | `[x]` Complete |
+| 5 | Sendspin Artwork + Gradient Extraction | `[x]` Complete |
 | 6 | Current Track Gradient Alias | `[ ]` Not started |
 | 7 | Effect Gradient Picker Support | `[ ]` Not started |
 | 8 | Now Playing Configuration | `[ ]` Not started |
