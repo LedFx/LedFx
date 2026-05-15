@@ -334,11 +334,11 @@ class NowPlayingService:
             try:
                 os.remove(old_file)
             except OSError as exc:
-                _LOGGER.warning("Failed to remove old artwork %s: %s", old_file, exc)
+                _LOGGER.warning(
+                    "Failed to remove old artwork %s: %s", old_file, exc
+                )
 
-    def _store_artwork(
-        self, data: bytes, content_type: str
-    ) -> tuple:
+    def _store_artwork(self, data: bytes, content_type: str) -> tuple:
         """Save artwork bytes to disk and extract gradients.
 
         Writes the image as ``now_playing.{ext}`` in the cache/images
@@ -368,7 +368,9 @@ class NowPlayingService:
             with open(artwork_path, "wb") as fh:
                 fh.write(data)
         except OSError as exc:
-            _LOGGER.error("Failed to write artwork file %s: %s", artwork_path, exc)
+            _LOGGER.error(
+                "Failed to write artwork file %s: %s", artwork_path, exc
+            )
             return None, None, None, None
 
         # Extract image dimensions
@@ -400,20 +402,29 @@ class NowPlayingService:
 
         is_safe, error_msg = validate_url_safety(url, allow_private=True)
         if not is_safe:
-            _LOGGER.warning("URL blocked for security: %s - %s", url, error_msg)
+            _LOGGER.warning(
+                "URL blocked for security: %s - %s", url, error_msg
+            )
             return None, None
 
         try:
             req = build_browser_request(url)
             with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
                 content_length = resp.headers.get("Content-Length")
-                if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning("Artwork too large: %s bytes", content_length)
+                if (
+                    content_length
+                    and int(content_length) > MAX_IMAGE_SIZE_BYTES
+                ):
+                    _LOGGER.warning(
+                        "Artwork too large: %s bytes", content_length
+                    )
                     return None, None
 
                 data = resp.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning("Artwork exceeded size limit during download")
+                    _LOGGER.warning(
+                        "Artwork exceeded size limit during download"
+                    )
                     return None, None
 
                 content_type = resp.headers.get("Content-Type", "image/jpeg")
@@ -423,10 +434,14 @@ class NowPlayingService:
                 try:
                     img = Image.open(io.BytesIO(data))
                     if not validate_pil_image(img):
-                        _LOGGER.warning("Downloaded image failed validation: %s", url)
+                        _LOGGER.warning(
+                            "Downloaded image failed validation: %s", url
+                        )
                         return None, None
                 except Exception:
-                    _LOGGER.warning("Downloaded data is not a valid image: %s", url)
+                    _LOGGER.warning(
+                        "Downloaded data is not a valid image: %s", url
+                    )
                     return None, None
 
                 return data, content_type
