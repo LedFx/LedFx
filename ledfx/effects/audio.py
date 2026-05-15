@@ -754,6 +754,7 @@ class AudioInputSource:
                     device["sendspin_config"],
                     self._audio_sample_callback,
                     instance_id=self._ledfx.config.get("instance_id", ""),
+                    ledfx=self._ledfx,
                 )
             else:
                 AudioInputSource._stream = self._audio.InputStream(

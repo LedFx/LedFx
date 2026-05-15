@@ -80,9 +80,10 @@ class NowPlayingService:
 
         if track_changed:
             _LOGGER.info(
-                "Track changed: %s - %s",
-                metadata.artist or "Unknown",
-                metadata.title or "Unknown",
+                "Track changed: %s - %s - %s",
+                metadata.artist or "Unknown artist",
+                metadata.title or "Unknown title",
+                metadata.album or "Unknown album",
             )
             self._fire_event(
                 NowPlayingTrackChangedEvent(

@@ -14,6 +14,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from ledfx.consts import PROJECT_VERSION
+from ledfx.nowplaying.providers.sendspin import SendspinNowPlayingProvider
 from ledfx.sendspin.config import BUFFER_CAPACITY, MANUFACTURER, PRODUCT_NAME
 
 try:
@@ -70,6 +71,7 @@ class SendspinAudioStream:
         config: dict,
         callback: Callable,
         instance_id: str = "",
+        ledfx=None,
     ):
         if SendspinClient is None:
             raise ImportError(
@@ -79,8 +81,14 @@ class SendspinAudioStream:
         self.config = config
         self.callback = callback
         self._instance_id = instance_id
+        self._ledfx = ledfx
         if not instance_id:
             raise ValueError("instance_id must be provided and non-empty")
+
+        # Now Playing provider (bridges metadata to NowPlayingService)
+        self._now_playing_provider = (
+            SendspinNowPlayingProvider(ledfx) if ledfx is not None else None
+        )
         self._active = False
         self._client = None  # SendspinClient instance or None
         self._loop = None  # asyncio event loop or None
@@ -672,6 +680,10 @@ class SendspinAudioStream:
         self._loop = None
         self._heartbeat_task = None
 
+        # Clear Now Playing state when stream is fully closed
+        if self._now_playing_provider is not None:
+            self._now_playing_provider.clear()
+
         _LOGGER.info("Sendspin stream closed (id=%s)", id(self))
 
     def _run_client(self):
@@ -870,7 +882,7 @@ class SendspinAudioStream:
             self._client = SendspinClient(
                 client_id=client_id,
                 client_name=client_name,
-                roles=[Roles.PLAYER],
+                roles=[Roles.PLAYER, Roles.METADATA],
                 device_info=DeviceInfo(
                     product_name=PRODUCT_NAME,
                     manufacturer=MANUFACTURER,
@@ -883,6 +895,10 @@ class SendspinAudioStream:
             self._client.add_audio_chunk_listener(self._audio_chunk_handler)
             self._client.add_stream_start_listener(self._stream_start_handler)
             self._client.add_stream_clear_listener(self._stream_clear_handler)
+            if self._now_playing_provider is not None:
+                self._client.add_metadata_listener(
+                    self._now_playing_provider.on_metadata
+                )
 
             # Connect to server
             await self._client.connect(server_url)

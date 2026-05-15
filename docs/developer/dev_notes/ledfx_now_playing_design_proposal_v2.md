@@ -1288,15 +1288,18 @@ Key decisions:
 ledfx/nowplaying/__init__.py  ← module init, exports NowPlayingService
 ledfx/nowplaying/models.py   ← TrackMetadata, ArtworkReference, NowPlayingState
 ledfx/nowplaying/service.py  ← NowPlayingService with set/get/clear API + event firing
-ledfx/nowplaying/providers/  ← empty, ready for Phase 4
+ledfx/nowplaying/providers/__init__.py ← providers package
+ledfx/nowplaying/providers/sendspin.py ← SendspinNowPlayingProvider (Phase 4)
 ledfx/api/now_playing.py     ← GET /api/now-playing endpoint
 ledfx/core.py               ← registers service as self.now_playing
 ledfx/events.py             ← 5 NowPlaying event types + subclasses (Phase 3)
-ledfx/sendspin/             ← audio stream integration exists (stream.py, config.py)
+ledfx/sendspin/stream.py    ← wired with metadata listener + METADATA role (Phase 4)
+ledfx/effects/audio.py      ← passes ledfx to SendspinAudioStream (Phase 4)
 ledfx/libraries/cache.py   ← ImageCache with auto gradient extraction on put()
 ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_safe/punchy/max
 tests/test_now_playing_service.py  ← 35 tests (models, service, events)
 tests/test_api_now_playing.py      ← 4 API integration tests
+tests/test_now_playing_sendspin.py ← 11 provider tests
 ```
 
 ---
@@ -1407,27 +1410,46 @@ tests/test_now_playing_service.py
 
 **Goal**: Wire Sendspin's existing stream metadata into the Now Playing Service.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 4.1 Identify where Sendspin currently receives track metadata
-  - Check `aiosendspin` client callbacks for metadata/properties messages
-  - Check `SendspinAudioStream` for any existing metadata handling
-- [ ] 4.2 Create `ledfx/nowplaying/providers/__init__.py`
-- [ ] 4.3 Create `ledfx/nowplaying/providers/sendspin.py`:
+- [x] 4.1 Identify where Sendspin currently receives track metadata
+  - aiosendspin v4.4.0 exposes `add_metadata_listener(callback)` on `SendspinClient`
+  - Callback receives `ServerStatePayload` with `.metadata: SessionUpdateMetadata`
+  - Fields: title, artist, album, album_artist, artwork_url, year, track, progress
+  - Progress contains track_progress (ms), track_duration (ms), playback_speed (×1000)
+  - Requires `Roles.METADATA` in client roles
+- [x] 4.2 Create `ledfx/nowplaying/providers/__init__.py`
+- [x] 4.3 Create `ledfx/nowplaying/providers/sendspin.py`:
   - `SendspinNowPlayingProvider` class
-  - Receives metadata from Sendspin stream
-  - Normalizes into `TrackMetadata`
+  - Receives `ServerStatePayload` from metadata listener
+  - Handles `UndefinedField` sentinel (field not sent vs explicitly null)
+  - Normalizes into `TrackMetadata` (ms→seconds conversion for progress)
   - Calls `ledfx.now_playing.set_metadata("sendspin", metadata)`
-- [ ] 4.4 Hook provider initialization into Sendspin stream startup
-- [ ] 4.5 Write test `tests/test_now_playing_sendspin.py`
+  - Calls `ledfx.now_playing.set_artwork_url("sendspin", url)` on artwork changes
+  - Tracks last artwork URL to avoid redundant updates
+- [x] 4.4 Hook provider into `SendspinAudioStream`:
+  - Added `ledfx` parameter to constructor
+  - Added `Roles.METADATA` to client roles
+  - Registered `add_metadata_listener()` in `_connect_and_receive()`
+  - Provider cleared on `close()`
+  - Passed `ledfx` from `AudioInputSource` in `effects/audio.py`
+- [x] 4.5 Write tests `tests/test_now_playing_sendspin.py` (11 tests, all passing):
+  - Metadata forwarding (title, artist, album)
+  - UndefinedField handling
+  - Progress ms→seconds conversion
+  - Zero duration → None
+  - None metadata ignored
+  - Artwork URL forwarding and deduplication
+  - Clear resets state
+  - Graceful handling when ledfx.now_playing missing
 
-### Key Questions to Resolve
+### Key Answers
 
-- Does `aiosendspin` expose track metadata callbacks?
-- What fields are available from Sendspin metadata messages?
-- Is metadata received via the same WebSocket as audio, or separately?
+- aiosendspin exposes `add_metadata_listener(callback: MetadataCallback)` → `ServerStatePayload`
+- Metadata delivered via same WebSocket as audio (server/state messages)
+- Artwork is URL-only (no binary), provided as `artwork_url` field
 
 ### Dependencies
 
