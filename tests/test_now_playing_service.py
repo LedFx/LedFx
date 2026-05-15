@@ -1,8 +1,12 @@
-"""Unit tests for the Now Playing Service (Phase 1 + Phase 3 events)."""
+"""Unit tests for the Now Playing Service (Phase 1 + Phase 3 events + Phase 5 artwork)."""
 
+import io
+import os
 import time
+from unittest.mock import patch
 
 import pytest
+from PIL import Image
 
 from ledfx.events import Event
 from ledfx.nowplaying.models import (
@@ -26,14 +30,31 @@ class _DummyEvents:
 class _DummyLedFx:
     """Minimal LedFx core stub for testing."""
 
-    def __init__(self):
+    def __init__(self, config_dir=None):
         self.config = {}
         self.events = _DummyEvents()
+        self.config_dir = config_dir
+
+
+def _make_test_png(width=4, height=4):
+    """Create minimal valid PNG bytes for testing."""
+    img = Image.new("RGB", (width, height), color=(255, 0, 0))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _make_test_jpeg(width=4, height=4):
+    """Create minimal valid JPEG bytes for testing."""
+    img = Image.new("RGB", (width, height), color=(0, 255, 0))
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    return buf.getvalue()
 
 
 @pytest.fixture
-def ledfx():
-    return _DummyLedFx()
+def ledfx(tmp_path):
+    return _DummyLedFx(config_dir=str(tmp_path))
 
 
 @pytest.fixture
@@ -214,45 +235,58 @@ class TestNowPlayingServiceSetMetadata:
 
 class TestNowPlayingServiceSetArtworkUrl:
     def test_artwork_url_stored(self, service):
-        # Activate the source first
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        result = service.set_artwork_url(
-            "sendspin",
-            "https://example.com/art.jpg",
-            content_type="image/jpeg",
-            artwork_hash="hash1",
-        )
+        png_data = _make_test_png()
+        with patch.object(
+            service, "_download_image", return_value=(png_data, "image/png")
+        ):
+            result = service.set_artwork_url(
+                "sendspin",
+                "https://example.com/art.png",
+                content_type="image/png",
+                artwork_hash="hash1",
+            )
         assert result is True
 
         state = service.get_current()
-        assert state.artwork.url == "https://example.com/art.jpg"
+        assert state.artwork.url == "https://example.com/art.png"
         assert state.artwork.hash == "hash1"
-        assert state.artwork.content_type == "image/jpeg"
+        assert state.artwork.content_type == "image/png"
+        assert state.artwork.width == 4
+        assert state.artwork.height == 4
 
     def test_same_artwork_url_no_change(self, service):
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        service.set_artwork_url(
-            "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
-        )
-        result = service.set_artwork_url(
-            "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
-        )
+        png_data = _make_test_png()
+        with patch.object(
+            service, "_download_image", return_value=(png_data, "image/png")
+        ):
+            service.set_artwork_url(
+                "sendspin", "https://example.com/art.png", artwork_hash="h1"
+            )
+            result = service.set_artwork_url(
+                "sendspin", "https://example.com/art.png", artwork_hash="h1"
+            )
         assert result is False
 
     def test_different_artwork_url_is_change(self, service):
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        service.set_artwork_url(
-            "sendspin", "https://example.com/art1.jpg", artwork_hash="h1"
-        )
-        result = service.set_artwork_url(
-            "sendspin", "https://example.com/art2.jpg", artwork_hash="h2"
-        )
+        png_data = _make_test_png()
+        with patch.object(
+            service, "_download_image", return_value=(png_data, "image/png")
+        ):
+            service.set_artwork_url(
+                "sendspin", "https://example.com/art1.png", artwork_hash="h1"
+            )
+            result = service.set_artwork_url(
+                "sendspin", "https://example.com/art2.png", artwork_hash="h2"
+            )
         assert result is True
 
     def test_inactive_source_rejected(self, service):
@@ -260,8 +294,21 @@ class TestNowPlayingServiceSetArtworkUrl:
         service.set_metadata("sendspin", meta)
 
         result = service.set_artwork_url(
-            "spotify", "https://example.com/art.jpg"
+            "spotify", "https://example.com/art.png"
         )
+        assert result is False
+        assert service.get_current().artwork is None
+
+    def test_download_failure_returns_false(self, service):
+        meta = TrackMetadata(source_id="sendspin", title="Song")
+        service.set_metadata("sendspin", meta)
+
+        with patch.object(
+            service, "_download_image", return_value=(None, None)
+        ):
+            result = service.set_artwork_url(
+                "sendspin", "https://example.com/art.png"
+            )
         assert result is False
         assert service.get_current().artwork is None
 
@@ -271,36 +318,74 @@ class TestNowPlayingServiceSetArtworkBytes:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        data = b"\x89PNG\r\n\x1a\n" + b"\x00" * 100
+        data = _make_test_png()
         result = service.set_artwork_bytes("sendspin", data, "image/png")
         assert result is True
 
         state = service.get_current()
-        assert state.artwork.cache_key.startswith("now-playing://sendspin/")
+        assert state.artwork.cache_key is not None
+        assert "now_playing" in state.artwork.cache_key
         assert state.artwork.content_type == "image/png"
         assert state.artwork.hash is not None
+        assert state.artwork.width == 4
+        assert state.artwork.height == 4
 
     def test_same_bytes_no_change(self, service):
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        data = b"image_data_here"
-        service.set_artwork_bytes("sendspin", data, "image/jpeg")
-        result = service.set_artwork_bytes("sendspin", data, "image/jpeg")
+        data = _make_test_png()
+        service.set_artwork_bytes("sendspin", data, "image/png")
+        result = service.set_artwork_bytes("sendspin", data, "image/png")
         assert result is False
 
     def test_explicit_hash_used(self, service):
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        data = b"image_data"
+        data = _make_test_png()
         service.set_artwork_bytes(
-            "sendspin", data, "image/jpeg", artwork_hash="custom_hash"
+            "sendspin", data, "image/png", artwork_hash="custom_hash"
         )
 
         state = service.get_current()
         assert state.artwork.hash == "custom_hash"
-        assert "custom_hash" in state.artwork.cache_key
+
+    def test_artwork_file_written_to_disk(self, service, ledfx):
+        meta = TrackMetadata(source_id="sendspin", title="Song")
+        service.set_metadata("sendspin", meta)
+
+        data = _make_test_png()
+        service.set_artwork_bytes("sendspin", data, "image/png")
+
+        artwork_path = os.path.join(
+            ledfx.config_dir, "cache", "images", "now_playing.png"
+        )
+        assert os.path.exists(artwork_path)
+        with open(artwork_path, "rb") as f:
+            assert f.read() == data
+
+    def test_artwork_file_overwritten_on_change(self, service, ledfx):
+        meta = TrackMetadata(source_id="sendspin", title="Song")
+        service.set_metadata("sendspin", meta)
+
+        # First: PNG
+        png_data = _make_test_png()
+        service.set_artwork_bytes("sendspin", png_data, "image/png")
+        png_path = os.path.join(
+            ledfx.config_dir, "cache", "images", "now_playing.png"
+        )
+        assert os.path.exists(png_path)
+
+        # Second: JPEG (different extension)
+        jpeg_data = _make_test_jpeg()
+        service.set_artwork_bytes("sendspin", jpeg_data, "image/jpeg")
+        jpg_path = os.path.join(
+            ledfx.config_dir, "cache", "images", "now_playing.jpg"
+        )
+        assert os.path.exists(jpg_path)
+        # Old PNG file should have been removed
+        assert not os.path.exists(png_path)
 
 
 class TestNowPlayingServiceClear:
@@ -450,9 +535,13 @@ class TestNowPlayingServiceEvents:
         service.set_metadata("sendspin", meta)
         ledfx.events.fired.clear()
 
-        service.set_artwork_url(
-            "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
-        )
+        png_data = _make_test_png()
+        with patch.object(
+            service, "_download_image", return_value=(png_data, "image/png")
+        ):
+            service.set_artwork_url(
+                "sendspin", "https://example.com/art.png", artwork_hash="h1"
+            )
 
         artwork_events = [
             e
@@ -462,7 +551,7 @@ class TestNowPlayingServiceEvents:
         assert len(artwork_events) == 1
         assert artwork_events[0].source_id == "sendspin"
         assert (
-            artwork_events[0].artwork["url"] == "https://example.com/art.jpg"
+            artwork_events[0].artwork["url"] == "https://example.com/art.png"
         )
 
     def test_artwork_changed_event_on_bytes(self, service, ledfx):
@@ -470,7 +559,7 @@ class TestNowPlayingServiceEvents:
         service.set_metadata("sendspin", meta)
         ledfx.events.fired.clear()
 
-        data = b"\x89PNG" + b"\x00" * 50
+        data = _make_test_png()
         service.set_artwork_bytes("sendspin", data, "image/png")
 
         artwork_events = [
@@ -485,15 +574,19 @@ class TestNowPlayingServiceEvents:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        service.set_artwork_url(
-            "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
-        )
-        ledfx.events.fired.clear()
+        png_data = _make_test_png()
+        with patch.object(
+            service, "_download_image", return_value=(png_data, "image/png")
+        ):
+            service.set_artwork_url(
+                "sendspin", "https://example.com/art.png", artwork_hash="h1"
+            )
+            ledfx.events.fired.clear()
 
-        # Same artwork again
-        service.set_artwork_url(
-            "sendspin", "https://example.com/art.jpg", artwork_hash="h1"
-        )
+            # Same artwork again
+            service.set_artwork_url(
+                "sendspin", "https://example.com/art.png", artwork_hash="h1"
+            )
 
         artwork_events = [
             e

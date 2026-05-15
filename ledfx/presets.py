@@ -1,4 +1,62 @@
 ledfx_presets = {
+    "bleep": {
+        "pipe": {
+            "config": {
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "blur": 0.0,
+                "brightness": 1.0,
+                "diag": False,
+                "draw": "Fill",
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "frequency_range": "Lows (beat+bass)",
+                "grad_power": True,
+                "gradient": "linear-gradient(90deg, #0000ff 0.00%,#00ffff 33.00%,#800080 66.00%,#ff00b2 99.00%)",
+                "gradient_roll": 0.0,
+                "mirror": False,
+                "mirror_effect": True,
+                "points": 64,
+                "rotate": 0,
+                "scroll_time": 1.0,
+                "size": 1,
+                "test": False
+            },
+            "name": "PIPE"
+        }
+    },
+    "imagespin": {
+        "artwork": {
+            "config": {
+                "advanced": False,
+                "background_brightness": 1.0,
+                "background_color": "#000000",
+                "background_mode": "additive",
+                "bilinear": True,
+                "blur": 0.0,
+                "brightness": 1.0,
+                "clip": False,
+                "diag": False,
+                "dump": False,
+                "flip": False,
+                "flip_horizontal": False,
+                "flip_vertical": False,
+                "frequency_range": "Lows (beat+bass)",
+                "image_source": "builtin://TVTestPattern.png",
+                "min_size": 0.3,
+                "mirror": False,
+                "multiplier": 0.5,
+                "pattern": False,
+                "rotate": 0,
+                "spin": False,
+                "test": True
+            },
+            "name": "ARTWORK"
+        }
+    },
     "smoke2d": {
         "ash": {
             "config": {

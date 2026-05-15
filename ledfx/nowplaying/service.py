@@ -5,8 +5,15 @@ Receives normalized metadata from providers and exposes a single
 source of truth for the rest of LedFx.
 """
 
+import glob
+import hashlib
+import io
 import logging
+import os
 import time
+import urllib.request
+
+from PIL import Image
 
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
@@ -19,8 +26,30 @@ from ledfx.nowplaying.models import (
     NowPlayingState,
     TrackMetadata,
 )
+from ledfx.utilities.gradient_extraction import extract_gradient_metadata
+from ledfx.utilities.security_utils import (
+    DOWNLOAD_TIMEOUT,
+    MAX_IMAGE_SIZE_BYTES,
+    build_browser_request,
+    is_allowed_image_extension,
+    validate_pil_image,
+    validate_url_safety,
+)
 
 _LOGGER = logging.getLogger(__name__)
+
+# Content-type to file extension mapping
+_EXTENSION_MAP = {
+    "image/gif": ".gif",
+    "image/png": ".png",
+    "image/jpeg": ".jpg",
+    "image/webp": ".webp",
+    "image/bmp": ".bmp",
+    "image/tiff": ".tiff",
+}
+
+# Fixed base filename for the single artwork file
+_ARTWORK_FILENAME = "now_playing"
 
 
 class NowPlayingService:
@@ -100,7 +129,11 @@ class NowPlayingService:
         content_type: str = None,
         artwork_hash: str = None,
     ) -> bool:
-        """Set artwork reference from a URL.
+        """Set artwork from a URL, download it, and extract gradients.
+
+        Downloads the image, saves it as a single ``now_playing.{ext}``
+        file (overwriting any previous artwork), and runs gradient
+        extraction via the existing pipeline.
 
         Args:
             source_id: Provider identifier.
@@ -119,13 +152,36 @@ class NowPlayingService:
         if current and current.url == url and current.hash == artwork_hash:
             return False
 
+        # Download the image
+        data, detected_content_type = self._download_image(url)
+        if data is None:
+            _LOGGER.warning("Failed to download artwork from %s", url)
+            return False
+
+        if content_type is None:
+            content_type = detected_content_type
+
+        # Compute hash from downloaded bytes if not provided
+        if artwork_hash is None:
+            artwork_hash = hashlib.sha256(data).hexdigest()[:16]
+
+        # Save to disk and extract gradients
+        artwork_path, gradients, width, height = self._store_artwork(
+            data, content_type
+        )
+
         self._state.artwork = ArtworkReference(
             source_id=source_id,
             url=url,
+            cache_key=artwork_path,
             content_type=content_type,
             hash=artwork_hash,
+            width=width,
+            height=height,
+            gradients=gradients,
         )
         self._state.updated_at = time.time()
+        self._update_current_gradient()
 
         _LOGGER.info("Artwork URL updated from %s", source_id)
         self._fire_event(
@@ -144,8 +200,8 @@ class NowPlayingService:
     ) -> bool:
         """Set artwork from raw image bytes.
 
-        The bytes will be routed through the image cache pipeline
-        in a later phase. For now, store the reference.
+        Saves the bytes as a single ``now_playing.{ext}`` file
+        (overwriting any previous artwork) and runs gradient extraction.
 
         Args:
             source_id: Provider identifier.
@@ -156,8 +212,6 @@ class NowPlayingService:
         Returns:
             True if artwork changed, False otherwise.
         """
-        import hashlib
-
         if source_id != self._state.active_source_id:
             return False
 
@@ -169,17 +223,23 @@ class NowPlayingService:
         if current and current.hash == artwork_hash:
             return False
 
-        # Synthetic cache key for byte-based artwork
-        cache_key = f"now-playing://{source_id}/{artwork_hash}"
+        # Save to disk and extract gradients
+        artwork_path, gradients, width, height = self._store_artwork(
+            data, content_type
+        )
 
         self._state.artwork = ArtworkReference(
             source_id=source_id,
             url=None,
-            cache_key=cache_key,
+            cache_key=artwork_path,
             content_type=content_type,
             hash=artwork_hash,
+            width=width,
+            height=height,
+            gradients=gradients,
         )
         self._state.updated_at = time.time()
+        self._update_current_gradient()
 
         _LOGGER.info(
             "Artwork bytes updated from %s (hash: %s)", source_id, artwork_hash
@@ -249,3 +309,142 @@ class NowPlayingService:
         """
         if hasattr(self._ledfx, "events"):
             self._ledfx.events.fire_event(event)
+
+    # ------------------------------------------------------------------
+    # Artwork storage helpers
+    # ------------------------------------------------------------------
+
+    def _get_artwork_dir(self) -> str:
+        """Return the directory for the now-playing artwork file.
+
+        Creates the directory if it does not exist.
+        """
+        config_dir = getattr(self._ledfx, "config_dir", None)
+        if not config_dir:
+            return None
+        artwork_dir = os.path.join(config_dir, "cache", "images")
+        os.makedirs(artwork_dir, exist_ok=True)
+        return artwork_dir
+
+    def _remove_old_artwork(self, artwork_dir: str) -> None:
+        """Delete any existing ``now_playing.*`` files."""
+        for old_file in glob.glob(
+            os.path.join(artwork_dir, f"{_ARTWORK_FILENAME}.*")
+        ):
+            try:
+                os.remove(old_file)
+            except OSError as exc:
+                _LOGGER.warning("Failed to remove old artwork %s: %s", old_file, exc)
+
+    def _store_artwork(
+        self, data: bytes, content_type: str
+    ) -> tuple:
+        """Save artwork bytes to disk and extract gradients.
+
+        Writes the image as ``now_playing.{ext}`` in the cache/images
+        directory, replacing any previous artwork file.
+
+        Args:
+            data: Raw image bytes.
+            content_type: MIME type of the image.
+
+        Returns:
+            Tuple of (artwork_path, gradients_dict, width, height).
+            artwork_path is ``None`` when config_dir is unavailable.
+        """
+        artwork_dir = self._get_artwork_dir()
+        if artwork_dir is None:
+            return None, None, None, None
+
+        extension = _EXTENSION_MAP.get(content_type, ".jpg")
+        artwork_path = os.path.join(
+            artwork_dir, f"{_ARTWORK_FILENAME}{extension}"
+        )
+
+        # Remove any previous now_playing.* files (handles extension changes)
+        self._remove_old_artwork(artwork_dir)
+
+        try:
+            with open(artwork_path, "wb") as fh:
+                fh.write(data)
+        except OSError as exc:
+            _LOGGER.error("Failed to write artwork file %s: %s", artwork_path, exc)
+            return None, None, None, None
+
+        # Extract image dimensions
+        width, height = None, None
+        try:
+            with Image.open(io.BytesIO(data)) as img:
+                width, height = img.size
+        except Exception as exc:
+            _LOGGER.warning("Could not read image dimensions: %s", exc)
+
+        # Extract gradients via existing pipeline
+        gradients = None
+        try:
+            gradients = extract_gradient_metadata(artwork_path)
+        except Exception as exc:
+            _LOGGER.warning("Gradient extraction failed: %s", exc)
+
+        return artwork_path, gradients, width, height
+
+    def _download_image(self, url: str) -> tuple:
+        """Download an image from *url* with security validation.
+
+        Returns:
+            Tuple of (data_bytes, content_type) or (None, None) on failure.
+        """
+        if not is_allowed_image_extension(url):
+            _LOGGER.warning("URL has invalid image extension: %s", url)
+            return None, None
+
+        is_safe, error_msg = validate_url_safety(url, allow_private=True)
+        if not is_safe:
+            _LOGGER.warning("URL blocked for security: %s - %s", url, error_msg)
+            return None, None
+
+        try:
+            req = build_browser_request(url)
+            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
+                content_length = resp.headers.get("Content-Length")
+                if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.warning("Artwork too large: %s bytes", content_length)
+                    return None, None
+
+                data = resp.read(MAX_IMAGE_SIZE_BYTES + 1)
+                if len(data) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.warning("Artwork exceeded size limit during download")
+                    return None, None
+
+                content_type = resp.headers.get("Content-Type", "image/jpeg")
+                content_type = content_type.split(";")[0].strip().lower()
+
+                # Validate the downloaded image
+                try:
+                    img = Image.open(io.BytesIO(data))
+                    if not validate_pil_image(img):
+                        _LOGGER.warning("Downloaded image failed validation: %s", url)
+                        return None, None
+                except Exception:
+                    _LOGGER.warning("Downloaded data is not a valid image: %s", url)
+                    return None, None
+
+                return data, content_type
+        except Exception as exc:
+            _LOGGER.warning("Failed to download artwork from %s: %s", url, exc)
+            return None, None
+
+    def _update_current_gradient(self) -> None:
+        """Resolve ``current_gradient`` from artwork gradients and the
+        selected variant."""
+        artwork = self._state.artwork
+        if not artwork or not artwork.gradients:
+            self._state.current_gradient = None
+            return
+
+        variant = self._state.selected_gradient_variant
+        variant_data = artwork.gradients.get(variant)
+        if variant_data and "gradient" in variant_data:
+            self._state.current_gradient = variant_data["gradient"]
+        else:
+            self._state.current_gradient = None

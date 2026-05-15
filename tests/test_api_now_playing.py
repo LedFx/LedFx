@@ -1,25 +1,36 @@
 """Unit tests for the Now Playing REST API endpoint (Phase 2)."""
 
+import io
 import json
+from unittest.mock import patch
 
 import pytest
+from PIL import Image
 
 from ledfx.api.now_playing import NowPlayingEndpoint
 from ledfx.nowplaying.models import TrackMetadata
 from ledfx.nowplaying.service import NowPlayingService
 
 
+def _make_test_png():
+    img = Image.new("RGB", (4, 4), color=(255, 0, 0))
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return buf.getvalue()
+
+
 class _DummyLedFx:
     """Minimal LedFx core stub with Now Playing service."""
 
-    def __init__(self):
+    def __init__(self, config_dir):
         self.config = {}
+        self.config_dir = config_dir
         self.now_playing = NowPlayingService(self)
 
 
 @pytest.fixture
-def ledfx():
-    return _DummyLedFx()
+def ledfx(tmp_path):
+    return _DummyLedFx(config_dir=str(tmp_path))
 
 
 @pytest.fixture
@@ -71,19 +82,28 @@ async def test_get_with_artwork_url(endpoint, ledfx):
     """GET after set_artwork_url includes artwork reference."""
     meta = TrackMetadata(source_id="sendspin", title="Song")
     ledfx.now_playing.set_metadata("sendspin", meta)
-    ledfx.now_playing.set_artwork_url(
-        "sendspin",
-        "https://example.com/art.jpg",
-        content_type="image/jpeg",
-        artwork_hash="abc123",
-    )
+
+    png_data = _make_test_png()
+    with patch.object(
+        ledfx.now_playing,
+        "_download_image",
+        return_value=(png_data, "image/png"),
+    ):
+        ledfx.now_playing.set_artwork_url(
+            "sendspin",
+            "https://example.com/art.png",
+            content_type="image/png",
+            artwork_hash="abc123",
+        )
 
     response = await endpoint.get()
     data = json.loads(response.body.decode())
 
-    assert data["artwork"]["url"] == "https://example.com/art.jpg"
-    assert data["artwork"]["content_type"] == "image/jpeg"
+    assert data["artwork"]["url"] == "https://example.com/art.png"
+    assert data["artwork"]["content_type"] == "image/png"
     assert data["artwork"]["hash"] == "abc123"
+    assert data["artwork"]["width"] == 4
+    assert data["artwork"]["height"] == 4
 
 
 @pytest.mark.asyncio

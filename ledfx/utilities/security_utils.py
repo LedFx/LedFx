@@ -71,13 +71,10 @@ DOWNLOAD_TIMEOUT = 30  # seconds
 # =============================================================================
 
 # Blocked IP ranges for SSRF protection
-BLOCKED_IP_NETWORKS = [
+# Networks always blocked regardless of context
+ALWAYS_BLOCKED_IP_NETWORKS = [
     # IPv4 Loopback
     ipaddress.ip_network("127.0.0.0/8"),
-    # IPv4 Private networks
-    ipaddress.ip_network("10.0.0.0/8"),
-    ipaddress.ip_network("172.16.0.0/12"),
-    ipaddress.ip_network("192.168.0.0/16"),
     # IPv4 Link-local
     ipaddress.ip_network("169.254.0.0/16"),
     # IPv4 Reserved ranges
@@ -89,14 +86,24 @@ BLOCKED_IP_NETWORKS = [
     ipaddress.ip_network("::1/128"),
     # IPv6 Unspecified
     ipaddress.ip_network("::/128"),
-    # IPv6 Private/ULA
-    ipaddress.ip_network("fc00::/7"),
-    ipaddress.ip_network("fd00::/8"),
     # IPv6 Link-local
     ipaddress.ip_network("fe80::/10"),
     # IPv6 Multicast
     ipaddress.ip_network("ff00::/8"),
 ]
+
+# Private networks blocked by default but allowed with allow_private=True
+PRIVATE_IP_NETWORKS = [
+    # IPv4 Private networks
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+    # IPv6 Private/ULA
+    ipaddress.ip_network("fc00::/7"),
+    ipaddress.ip_network("fd00::/8"),
+]
+
+BLOCKED_IP_NETWORKS = ALWAYS_BLOCKED_IP_NETWORKS + PRIVATE_IP_NETWORKS
 
 # Cloud metadata endpoints (commonly targeted in SSRF attacks)
 BLOCKED_HOSTNAMES = [
@@ -270,12 +277,17 @@ def is_blocked_ip(ip_str: str) -> bool:
         return True
 
 
-def validate_url_safety(url: str) -> tuple[bool, str]:
+def validate_url_safety(
+    url: str, allow_private: bool = False
+) -> tuple[bool, str]:
     """
     Validate URL for SSRF protection by checking scheme, hostname, and resolved IP.
 
     Args:
         url: URL to validate
+        allow_private: If True, allow private/LAN IP addresses (e.g. for
+            fetching artwork from local media servers like Music Assistant).
+            Loopback, link-local, and other dangerous ranges remain blocked.
 
     Returns:
         tuple: (is_safe, error_message)
@@ -306,13 +318,26 @@ def validate_url_safety(url: str) -> tuple[bool, str]:
         except socket.gaierror as e:
             return False, f"Failed to resolve hostname '{hostname}': {e}"
 
+        # Select which networks to block based on context
+        blocked_networks = (
+            ALWAYS_BLOCKED_IP_NETWORKS
+            if allow_private
+            else BLOCKED_IP_NETWORKS
+        )
+
         # Check all resolved IPs
         for family, socktype, proto, canonname, sockaddr in addr_info:
             ip_str = sockaddr[0]
-
-            # Check if IP is blocked
-            if is_blocked_ip(ip_str):
-                return False, f"URL resolves to blocked IP address: {ip_str}"
+            try:
+                ip = ipaddress.ip_address(ip_str)
+                for network in blocked_networks:
+                    if ip in network:
+                        return (
+                            False,
+                            f"URL resolves to blocked IP address: {ip_str}",
+                        )
+            except ValueError:
+                return False, f"Invalid IP address resolved: {ip_str}"
 
         return True, ""
 
