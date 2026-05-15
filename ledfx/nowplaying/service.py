@@ -14,14 +14,12 @@ import urllib.request
 from PIL import Image
 
 from ledfx.assets import (
-    delete_asset,
-    get_asset_path,
-    list_assets,
     save_asset,
 )
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
     NowPlayingClearedEvent,
+    NowPlayingGradientChangedEvent,
     NowPlayingMetadataChangedEvent,
     NowPlayingTrackChangedEvent,
 )
@@ -30,6 +28,7 @@ from ledfx.nowplaying.models import (
     NowPlayingState,
     TrackMetadata,
 )
+from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.security_utils import (
     DOWNLOAD_TIMEOUT,
     MAX_IMAGE_SIZE_BYTES,
@@ -324,23 +323,13 @@ class NowPlayingService:
         extension = _EXTENSION_MAP.get(content_type, ".jpg")
         return f"{_NOW_PLAYING_ASSET_DIR}/{_ARTWORK_FILENAME}{extension}"
 
-    def _remove_old_artwork(self) -> None:
-        """Delete any existing now_playing.* asset files."""
-        config_dir = getattr(self._ledfx, "config_dir", None)
-        if not config_dir:
-            return
-        # Try all known extensions
-        for ext in _EXTENSION_MAP.values():
-            rel_path = f"{_NOW_PLAYING_ASSET_DIR}/{_ARTWORK_FILENAME}{ext}"
-            exists, _, _ = get_asset_path(config_dir, rel_path)
-            if exists:
-                delete_asset(config_dir, rel_path)
-
-    def _store_artwork(self, data: bytes, content_type: str) -> tuple:
+    def _store_artwork(
+        self, data: bytes, content_type: str
+    ) -> tuple:
         """Save artwork bytes via the asset management system.
 
-        Uses save_asset() for secure, validated, atomic writes with
-        proper metadata alignment and gradient extraction.
+        Uses save_asset() with allow_overwrite=True for secure, validated,
+        atomic writes. Extracts gradients directly from the saved file.
 
         Args:
             data: Raw image bytes.
@@ -356,15 +345,14 @@ class NowPlayingService:
 
         relative_path = self._get_artwork_relative_path(content_type)
 
-        # Remove any previous now_playing.* files (handles extension changes)
-        self._remove_old_artwork()
-
-        # Use the asset system for validated, atomic write
+        # Use the asset system for validated, atomic write (overwrites in place)
         success, absolute_path, error = save_asset(
             config_dir, relative_path, data, allow_overwrite=True
         )
         if not success:
-            _LOGGER.error("Failed to save artwork via asset system: %s", error)
+            _LOGGER.error(
+                "Failed to save artwork via asset system: %s", error
+            )
             return None, None, None, None
 
         # Extract image dimensions
@@ -375,20 +363,12 @@ class NowPlayingService:
         except Exception as exc:
             _LOGGER.warning("Could not read image dimensions: %s", exc)
 
-        # Get gradients from the asset metadata (triggers extraction via list)
+        # Extract gradients directly from the saved file
         gradients = None
         try:
-            assets = list_assets(config_dir)
-            for asset in assets:
-                if asset["path"] == relative_path.replace("\\", "/"):
-                    gradients = asset.get("gradients")
-                    if width is None:
-                        width = asset.get("width")
-                    if height is None:
-                        height = asset.get("height")
-                    break
+            gradients = extract_gradient_metadata(absolute_path)
         except Exception as exc:
-            _LOGGER.warning("Failed to get asset metadata/gradients: %s", exc)
+            _LOGGER.warning("Gradient extraction failed: %s", exc)
 
         return absolute_path, gradients, width, height
 
@@ -404,29 +384,20 @@ class NowPlayingService:
 
         is_safe, error_msg = validate_url_safety(url, allow_private=True)
         if not is_safe:
-            _LOGGER.warning(
-                "URL blocked for security: %s - %s", url, error_msg
-            )
+            _LOGGER.warning("URL blocked for security: %s - %s", url, error_msg)
             return None, None
 
         try:
             req = build_browser_request(url)
             with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
                 content_length = resp.headers.get("Content-Length")
-                if (
-                    content_length
-                    and int(content_length) > MAX_IMAGE_SIZE_BYTES
-                ):
-                    _LOGGER.warning(
-                        "Artwork too large: %s bytes", content_length
-                    )
+                if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.warning("Artwork too large: %s bytes", content_length)
                     return None, None
 
                 data = resp.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning(
-                        "Artwork exceeded size limit during download"
-                    )
+                    _LOGGER.warning("Artwork exceeded size limit during download")
                     return None, None
 
                 content_type = resp.headers.get("Content-Type", "image/jpeg")
@@ -436,14 +407,10 @@ class NowPlayingService:
                 try:
                     img = Image.open(io.BytesIO(data))
                     if not validate_pil_image(img):
-                        _LOGGER.warning(
-                            "Downloaded image failed validation: %s", url
-                        )
+                        _LOGGER.warning("Downloaded image failed validation: %s", url)
                         return None, None
                 except Exception:
-                    _LOGGER.warning(
-                        "Downloaded data is not a valid image: %s", url
-                    )
+                    _LOGGER.warning("Downloaded data is not a valid image: %s", url)
                     return None, None
 
                 return data, content_type
@@ -453,15 +420,26 @@ class NowPlayingService:
 
     def _update_current_gradient(self) -> None:
         """Resolve ``current_gradient`` from artwork gradients and the
-        selected variant."""
+        selected variant. Fires NowPlayingGradientChangedEvent on change."""
         artwork = self._state.artwork
+        old_gradient = self._state.current_gradient
+
         if not artwork or not artwork.gradients:
             self._state.current_gradient = None
-            return
-
-        variant = self._state.selected_gradient_variant
-        variant_data = artwork.gradients.get(variant)
-        if variant_data and "gradient" in variant_data:
-            self._state.current_gradient = variant_data["gradient"]
         else:
-            self._state.current_gradient = None
+            variant = self._state.selected_gradient_variant
+            variant_data = artwork.gradients.get(variant)
+            if variant_data and "gradient" in variant_data:
+                self._state.current_gradient = variant_data["gradient"]
+            else:
+                self._state.current_gradient = None
+
+        if self._state.current_gradient != old_gradient:
+            source_id = self._state.active_source_id or "unknown"
+            self._fire_event(
+                NowPlayingGradientChangedEvent(
+                    source_id,
+                    self._state.current_gradient,
+                    self._state.selected_gradient_variant,
+                )
+            )

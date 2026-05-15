@@ -1447,37 +1447,38 @@ tests/test_now_playing_service.py
   - Sendspin provides artwork as a URL (`artwork_url` field in metadata)
 - [x] 5.2 Implement `set_artwork_url()` path:
   - Download image via `urllib.request` with security validation (`validate_url_safety`, `build_browser_request`, size limits)
-  - Save as single `now_playing.{ext}` file in `config_dir/cache/images/` (overwriting previous)
-  - Validate with PIL (`validate_pil_image`)
-  - Extract gradients via `extract_gradient_metadata()` directly
+  - Store via `save_asset()` at `assets/now_playing/now_playing.{ext}` (overwriting previous)
+  - Asset system handles: path validation, content validation (PIL), size limits, atomic write
+  - Retrieve gradients via `list_assets()` metadata cache
   - Update `ArtworkReference` with path, dimensions, and gradients
 - [x] 5.3 Implement `set_artwork_bytes()` path:
   - Compute SHA-256 hash for change detection
-  - Save as `now_playing.{ext}` in same location
-  - Validate and extract gradients identically to URL path
+  - Store via `save_asset()` at same location
+  - Retrieve gradients identically to URL path
   - Update `ArtworkReference`
 - [x] 5.4 Fire `NOW_PLAYING_ARTWORK_CHANGED` event (with artwork dict payload)
-- [x] 5.5 Artwork fields already exposed via `GET /api/now-playing` (ArtworkReference.to_dict())
-- [x] 5.6 Tests written:
+- [x] 5.5 Fire `NOW_PLAYING_GRADIENT_CHANGED` event when gradient resolves to a new value
+- [x] 5.6 Artwork fields already exposed via `GET /api/now-playing` (ArtworkReference.to_dict())
+- [x] 5.7 Tests written:
   - Artwork URL: mocked `_download_image`, verifies ArtworkReference populated with gradients
   - Artwork bytes: real PNG/JPEG via Pillow, verifies file write and gradient extraction
   - File write/overwrite tests: confirms single-file replacement behavior
   - Duplicate detection: same URL/hash returns False
   - Download failure: returns False gracefully
-  - Event firing: artwork changed events verified
+  - Event firing: artwork changed + gradient changed events verified
   - API test: GET /api/now-playing with artwork URL (mocked download)
 
 ### Implementation Notes
 
-Instead of routing through `ImageCache.put()`, the service stores artwork directly as a single file and calls `extract_gradient_metadata()` itself. This avoids coupling to the cache's URL-keyed storage model and keeps the now-playing artwork as a simple overwritten file (transient, not accumulating).
+The service uses `save_asset()` from the asset management system for secure, validated, atomic writes. Gradients are retrieved via `list_assets()` which maintains a metadata cache (`.asset_metadata_cache.json`) with modification-time-based invalidation. Old artwork files are cleaned up via `delete_asset()` when the extension changes.
 
-The `_update_current_gradient()` helper selects the configured variant (default: `led_punchy`) from extracted gradients and stores it in `state.current_gradient`.
+The `_update_current_gradient()` helper selects the configured variant (default: `led_punchy`) from extracted gradients, stores it in `state.current_gradient`, and fires `NowPlayingGradientChangedEvent` when the value changes.
 
 ### Dependencies
 
 - Phase 1, Phase 3, Phase 4 complete
-- `ledfx/utilities/gradient_extraction.py` provides `extract_gradient_metadata()`
-- `ledfx/utilities/security_utils.py` provides URL/image validation
+- `ledfx/assets.py` provides `save_asset()`, `list_assets()`, `delete_asset()`, `get_asset_path()`
+- `ledfx/utilities/security_utils.py` provides URL/image validation and download helpers
 
 ---
 

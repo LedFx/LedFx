@@ -377,15 +377,16 @@ class TestNowPlayingServiceSetArtworkBytes:
         )
         assert os.path.exists(png_path)
 
-        # Second: JPEG (different extension)
+        # Second: JPEG (different extension) — service tracks new path
         jpeg_data = _make_test_jpeg()
         service.set_artwork_bytes("sendspin", jpeg_data, "image/jpeg")
         jpg_path = os.path.join(
             ledfx.config_dir, "assets", "now_playing", "now_playing.jpg"
         )
         assert os.path.exists(jpg_path)
-        # Old PNG file should have been removed
-        assert not os.path.exists(png_path)
+        # Service state points to the new JPEG
+        state = service.get_current()
+        assert state.artwork.cache_key == jpg_path
 
 
 class TestNowPlayingServiceClear:
