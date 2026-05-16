@@ -104,7 +104,7 @@ save_asset() → assets/now_playing/now_playing.{ext}
     ↓
 list_assets() → .asset_metadata_cache.json with gradients
     ↓
-Current track gradient alias
+Gradient applied to target virtuals via apply_global code path
 ```
 
 ---
@@ -422,21 +422,21 @@ Artwork is stored at a fixed path `assets/now_playing/now_playing.{ext}` and ove
 
 ---
 
-## Current Track Gradient Alias
+## Gradient Application via Globals API
 
-The dynamic gradient should be exposed as a system gradient alias:
+Instead of exposing a `system/current_track` gradient alias that effects must individually select, the Now Playing Service applies the current track gradient directly to target virtuals using the same code path as the `apply_global` action on `PUT /api/effects`.
 
-```text
-system/current_track
-```
+This approach:
 
-This should not be a separate static gradient persisted like a user-created gradient.
-
-It is a runtime alias that resolves to the current selected gradient variant from the current artwork metadata.
+- avoids changes to gradient pickers or effect schemas
+- reuses the existing, tested `apply_global` logic (key filtering, HIDDEN_KEYS, color group sampling, config persistence)
+- gives the user a simple virtual list picker: "apply Now Playing gradients to these virtuals"
+- supports an "all virtuals" option naturally (omit or empty list = all)
+- keeps effects completely provider-agnostic — they receive a normal gradient update, not a special alias
 
 ---
 
-## Gradient Variant Selection
+## Gradient Application Configuration
 
 Now Playing configuration should include:
 
@@ -445,10 +445,14 @@ Now Playing configuration should include:
   "gradient": {
     "enabled": true,
     "variant": "led_punchy",
-    "name": "system/current_track"
+    "virtual_ids": []
   }
 }
 ```
+
+- `enabled`: whether to apply gradients on track change
+- `variant`: which extracted variant to use (`led_safe`, `led_punchy`, `led_max`)
+- `virtual_ids`: list of virtual ids to target. Empty list means all virtuals (same semantics as the globals API `virtuals` field)
 
 Supported variants:
 
@@ -473,9 +477,13 @@ retrieve existing extracted gradients
     ↓
 select configured variant
     ↓
-update system/current_track alias
+store resolved gradient string in state.current_gradient
     ↓
 emit now_playing_gradient_changed
+    ↓
+if gradient.enabled:
+    apply gradient to target virtuals via apply_global code path
+    (gradient + color group sampling, per the globals API behavior)
 ```
 
 ---
@@ -607,7 +615,6 @@ Example response:
     }
   },
   "current_gradient": {
-    "name": "system/current_track",
     "variant": "led_punchy",
     "gradient": "linear-gradient(...)"
   }
@@ -688,13 +695,16 @@ ledfx.now_playing.set_artwork_bytes("sendspin", bytes, content_type, ...)
 
 ## Effect Gradient Consumption
 
-Effects that already support gradients should be able to select:
+Effects do not need to know about Now Playing at all.
 
-```text
-system/current_track
-```
+When the Now Playing gradient is applied, it flows through the same `apply_global` code path used by the frontend's global configuration controls. Each effect receives a normal gradient + color group update — identical to what happens when a user manually applies a global gradient.
 
-This lets existing effects become album-art themed without knowing anything about album art.
+This means:
+
+- no `system/current_track` alias needed
+- no gradient picker changes needed
+- no effect schema changes needed
+- effects remain completely provider-agnostic
 
 ---
 
@@ -723,7 +733,10 @@ Suggested sections:
 ```text
 Now Playing
 ├─ Metadata Sources
-├─ Current Track Gradient
+├─ Gradient Application
+│   ├─ Enabled
+│   ├─ Variant (led_safe / led_punchy / led_max)
+│   └─ Target Virtuals (list picker, empty = all)
 ├─ Track Text Display Targets
 └─ Album Artwork Display Targets
 ```
@@ -862,8 +875,8 @@ artwork changes update displayed image
 
     "gradient": {
       "enabled": true,
-      "name": "system/current_track",
-      "variant": "led_punchy"
+      "variant": "led_punchy",
+      "virtual_ids": []
     },
 
     "track_text": {
@@ -907,7 +920,7 @@ refresh album art display
 
 now_playing_gradient_changed
     ↓
-route system/current_track gradient to selected effects
+apply gradient to target virtuals via apply_global code path
 ```
 
 The Now Playing Service provides the state and events.
@@ -955,74 +968,7 @@ Deliverables:
 
 ---
 
-## Phase 3 - Sendspin Metadata Provider
-
-Implement:
-
-- Sendspin metadata ingestion
-- metadata normalization
-- calls to `set_metadata("sendspin", metadata)`
-
-Deliverables:
-
-- title/artist/album visible through `/api/now-playing`
-- track changes detected
-- no artwork or gradients required yet
-
----
-
-## Phase 4 - Sendspin Artwork Provider Using Asset System
-
-Implement:
-
-- Sendspin artwork URL handling if available
-- Sendspin artwork byte handling if needed
-- artwork storage via `save_asset()` at `assets/now_playing/now_playing.{ext}`
-- gradient extraction via `list_assets()` metadata cache
-- no custom gradient extraction path
-
-Deliverables:
-
-- artwork stored as managed asset
-- width/height/content type available
-- gradient metadata produced by asset metadata cache (`list_assets`)
-
----
-
-## Phase 5 - Current Track Gradient Alias
-
-Implement:
-
-```text
-system/current_track
-```
-
-as a runtime alias to the selected gradient variant in current artwork metadata.
-
-Deliverables:
-
-- selected variant resolved from cached gradient metadata
-- alias updates on artwork change
-- `now_playing_gradient_changed` emitted
-- no per-frame extraction
-
----
-
-## Phase 6 - Effect Gradient Picker Support
-
-Implement:
-
-- expose `system/current_track` in gradient picker
-- allow existing gradient-aware effects to select it
-
-Deliverables:
-
-- existing effects can use album-art-derived gradients
-- no provider-specific effect changes
-
----
-
-## Phase 7 - Now Playing Events
+## Phase 3 - Now Playing Events
 
 Implement normalized events:
 
@@ -1042,14 +988,69 @@ Deliverables:
 
 ---
 
-## Phase 8 - Now Playing Configuration UI
+## Phase 4 - Sendspin Metadata Provider
+
+Implement:
+
+- Sendspin metadata ingestion
+- metadata normalization
+- calls to `set_metadata("sendspin", metadata)`
+
+Deliverables:
+
+- title/artist/album visible through `/api/now-playing`
+- track changes detected
+- no artwork or gradients required yet
+
+---
+
+## Phase 5 - Sendspin Artwork Provider Using Asset System
+
+Implement:
+
+- Sendspin artwork URL handling if available
+- Sendspin artwork byte handling if needed
+- artwork storage via `save_asset()` at `assets/now_playing/now_playing.{ext}`
+- gradient extraction via `list_assets()` metadata cache
+- no custom gradient extraction path
+
+Deliverables:
+
+- artwork stored as managed asset
+- width/height/content type available
+- gradient metadata produced by asset metadata cache (`list_assets`)
+
+---
+
+## Phase 6 - Gradient Application via Globals API
+
+Implement:
+
+- gradient application to target virtuals on artwork/gradient change
+- reuse `apply_global` code path from `EffectsEndpoint`
+- virtual list picker in Now Playing config (empty = all virtuals)
+
+Deliverables:
+
+- selected variant applied as normal gradient + color updates to target virtuals
+- uses same key filtering, HIDDEN_KEYS, color group sampling as globals API
+- no gradient alias, no gradient picker changes, no effect schema changes
+- `now_playing_gradient_changed` emitted
+- no per-frame extraction
+
+---
+
+## Phase 7 - Now Playing Configuration
 
 Implement service configuration dialog:
 
 ```text
 Now Playing
 ├─ Sources
-├─ Gradient
+├─ Gradient Application
+│   ├─ Enabled
+│   ├─ Variant (led_safe / led_punchy / led_max)
+│   └─ Target Virtuals (list picker, empty = all)
 ├─ Track Text Display Targets
 └─ Album Artwork Display Targets
 ```
@@ -1058,13 +1059,14 @@ Deliverables:
 
 - gradient enable/disable
 - gradient variant picker
+- gradient target virtual list picker (empty = all virtuals)
 - track text mode/duration/virtual picker
 - album art mode/duration/virtual picker
 - virtual picker filters to matrix virtuals only
 
 ---
 
-## Phase 9 - Track Text Temporary Display
+## Phase 8 - Track Text Temporary Display
 
 Implement:
 
@@ -1079,7 +1081,7 @@ Deliverables:
 
 ---
 
-## Phase 10 - Album Artwork Temporary Display
+## Phase 9 - Album Artwork Temporary Display
 
 Implement:
 
@@ -1094,7 +1096,7 @@ Deliverables:
 
 ---
 
-## Phase 11 - Continuous Display Modes
+## Phase 10 - Continuous Display Modes
 
 Implement:
 
@@ -1108,7 +1110,7 @@ Deliverables:
 
 ---
 
-## Phase 12 - yzflow Integration
+## Phase 11 - yzflow Integration
 
 Implement:
 
@@ -1124,7 +1126,7 @@ Deliverables:
 
 ---
 
-## Phase 13 - Additional Providers
+## Phase 12 - Additional Providers
 
 Add providers incrementally.
 
@@ -1199,7 +1201,7 @@ Rationale:
 
 ## Current Track Gradient Persistence
 
-Should `system/current_track` be serialized?
+Should the current gradient be serialized?
 
 Initial answer:
 
@@ -1207,7 +1209,7 @@ Initial answer:
 No.
 ```
 
-It should be a runtime alias. Effects may reference it by name, but the actual gradient value is resolved dynamically.
+The resolved gradient string is kept in memory (`state.current_gradient`) and applied to target virtuals on each artwork change. The per-virtual effect configs are persisted normally through the existing `save_config` path (same as when a user applies a global gradient manually).
 
 ---
 
@@ -1234,7 +1236,10 @@ Key decisions:
 - Sendspin is the first provider, not the owner of the feature
 - album art enters the existing image cache / gradient extraction path
 - gradients are extracted once and cached
-- `system/current_track` is a runtime alias to an existing extracted gradient variant
+- gradients are applied to target virtuals via the existing `apply_global` code path (same as the frontend global configuration controls)
+- no `system/current_track` alias needed — effects receive normal gradient updates
+- no gradient picker changes needed — users configure target virtuals in Now Playing config
+- users can select specific virtuals or all virtuals for gradient application
 - track text and album art display routing is centralized in Now Playing config
 - display target pickers only show matrix virtuals
 - effects remain provider-agnostic
@@ -1482,53 +1487,55 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ---
 
-## Phase 6 — Current Track Gradient Alias
+## Phase 6 — Gradient Application via Globals API
 
-**Goal**: Expose `system/current_track` as a runtime gradient alias usable by effects.
+**Goal**: On artwork/gradient change, apply the extracted gradient to target virtuals using the same code path as the `apply_global` action.
 
 **Status**: `[ ]` Not started
 
 ### Tasks
 
-- [ ] 6.1 Research how effects currently resolve gradient names
-  - Check `ledfx/color.py` and effect gradient handling
-- [ ] 6.2 Implement gradient alias registry or hook:
-  - `system/current_track` resolves to the selected variant gradient string
-  - Returns empty/fallback if no artwork loaded
-- [ ] 6.3 Update `NowPlayingService` to maintain `current_gradient`:
-  - On artwork change: read `selected_gradient_variant` from state
-  - Look up that variant in artwork gradients dict
-  - Update the alias value
-  - Fire `NOW_PLAYING_GRADIENT_CHANGED`
-- [ ] 6.4 Add gradient variant config to Now Playing config schema
-- [ ] 6.5 Write tests for alias resolution
+- [ ] 6.1 Extract the core `apply_global` logic from `EffectsEndpoint._apply_global()` into a reusable function (e.g., `ledfx/effects/globals.py` or a utility):
+  - Accepts: ledfx core ref, gradient string, optional virtual_ids list
+  - Performs: gradient resolution, color group sampling, per-effect key filtering, HIDDEN_KEYS check, config update, config persistence
+  - Returns: (updated_count, skipped_count)
+- [ ] 6.2 Refactor `EffectsEndpoint._apply_global()` to delegate to the extracted function
+- [ ] 6.3 Add `_apply_gradient_to_virtuals()` helper on `NowPlayingService`:
+  - Reads `state.current_gradient` (resolved gradient string)
+  - Reads `gradient.virtual_ids` from config (empty = all virtuals)
+  - Calls the extracted apply_global function
+  - Logs result (updated/skipped counts)
+- [ ] 6.4 Wire `_apply_gradient_to_virtuals()` to fire on `NOW_PLAYING_GRADIENT_CHANGED`:
+  - Only when `gradient.enabled` is True in config
+  - Called after `_update_current_gradient()` resolves a new gradient value
+- [ ] 6.5 Write tests:
+  - Gradient application calls the globals code path with correct gradient and virtual_ids
+  - Empty virtual_ids applies to all
+  - Specific virtual_ids restricts application
+  - Disabled gradient config skips application
+  - Verify EffectsEndpoint still works identically after refactor
+
+### Design Notes
+
+The existing `_apply_global` method on `EffectsEndpoint` already handles:
+- Gradient validation and resolution via `resolve_gradient()`
+- Color group sampling via `get_color_at_position()` (Low=0.0, Mid=0.5, High=1.0)
+- Per-effect schema key filtering (only updates keys the effect supports)
+- HIDDEN_KEYS exclusion
+- `update_config()` + `update_effect_config()` per virtual
+- Config persistence via `save_config()`
+
+The Now Playing Service reuses all of this, just triggered by artwork changes instead of a REST request.
 
 ### Dependencies
 
 - Phase 5 complete
+- Phase 7 (config) provides `gradient.enabled` and `gradient.virtual_ids`
+  (can default to enabled=True, virtual_ids=[] for initial implementation)
 
 ---
 
-## Phase 7 — Effect Gradient Picker Support
-
-**Goal**: Make `system/current_track` selectable in the frontend gradient picker.
-
-**Status**: `[ ]` Not started
-
-### Tasks
-
-- [ ] 7.1 Expose system gradients in gradient list API
-- [ ] 7.2 Frontend: show `system/current_track` in gradient picker dropdown
-- [ ] 7.3 Verify existing effects render correctly with the alias
-
-### Dependencies
-
-- Phase 6 complete
-- Frontend changes required
-
----
-
-## Phase 8 — Now Playing Configuration + Persistence
+## Phase 7 — Now Playing Configuration + Persistence
 
 **Goal**: Add configurable settings for the Now Playing Service to LedFx config.
 
@@ -1536,20 +1543,21 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ### Tasks
 
-- [ ] 8.1 Define config schema (Voluptuous):
+- [ ] 7.1 Define config schema (Voluptuous):
   - `enabled: bool`
   - `sources: dict`
   - `gradient.enabled: bool`
   - `gradient.variant: str` (led_safe | led_punchy | led_max)
+  - `gradient.virtual_ids: list` (empty = all virtuals)
   - `track_text.mode: str` (off | temporary | continuous)
   - `track_text.duration: int`
   - `track_text.virtual_ids: list`
   - `album_art.mode: str`
   - `album_art.duration: int`
   - `album_art.virtual_ids: list`
-- [ ] 8.2 Load/save config via LedFx config system
-- [ ] 8.3 Add `PUT /api/now-playing/config` endpoint
-- [ ] 8.4 Write config validation tests
+- [ ] 7.2 Load/save config via LedFx config system
+- [ ] 7.3 Add `PUT /api/now-playing/config` endpoint
+- [ ] 7.4 Write config validation tests
 
 ### Dependencies
 
@@ -1557,7 +1565,7 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ---
 
-## Phase 9 — Track Text Temporary Display
+## Phase 8 — Track Text Temporary Display
 
 **Goal**: On track change, temporarily show "Artist - Title" on target matrix virtuals.
 
@@ -1565,26 +1573,26 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ### Tasks
 
-- [ ] 9.1 Implement effect save/restore mechanism for virtuals
-- [ ] 9.2 On `NOW_PLAYING_TRACK_CHANGED`:
+- [ ] 8.1 Implement effect save/restore mechanism for virtuals
+- [ ] 8.2 On `NOW_PLAYING_TRACK_CHANGED`:
   - Save current effect on configured virtual_ids
   - Apply text fallback effect with formatted track info
   - Schedule restoration after `duration` seconds
-- [ ] 9.3 Handle edge cases:
+- [ ] 8.3 Handle edge cases:
   - Track changes during display (reset timer)
   - Virtual stopped/disabled during display
   - User manually changes effect during display (cancel restore)
-- [ ] 9.4 Filter virtual picker to matrix-capable only (rows > 1)
-- [ ] 9.5 Write tests
+- [ ] 8.4 Filter virtual picker to matrix-capable only (rows > 1)
+- [ ] 8.5 Write tests
 
 ### Dependencies
 
-- Phase 3, Phase 8 complete
+- Phase 3, Phase 7 complete
 - Text effect must support programmatic text setting
 
 ---
 
-## Phase 10 — Album Artwork Temporary Display
+## Phase 9 — Album Artwork Temporary Display
 
 **Goal**: On artwork change, temporarily show album art on target matrix virtuals.
 
@@ -1592,20 +1600,20 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ### Tasks
 
-- [ ] 10.1 On `NOW_PLAYING_ARTWORK_CHANGED`:
+- [ ] 9.1 On `NOW_PLAYING_ARTWORK_CHANGED`:
   - Save current effect on configured virtual_ids
   - Apply image fallback effect with current artwork
   - Schedule restoration after `duration` seconds
-- [ ] 10.2 Handle same edge cases as Phase 9
-- [ ] 10.3 Write tests
+- [ ] 9.2 Handle same edge cases as Phase 8
+- [ ] 9.3 Write tests
 
 ### Dependencies
 
-- Phase 5, Phase 9 complete (reuses save/restore mechanism)
+- Phase 5, Phase 8 complete (reuses save/restore mechanism)
 
 ---
 
-## Phase 11 — Continuous Display Modes
+## Phase 10 — Continuous Display Modes
 
 **Goal**: Dedicated virtuals that permanently show track text or album art.
 
@@ -1613,18 +1621,18 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ### Tasks
 
-- [ ] 11.1 Continuous text mode: lock virtual to text effect, update on metadata change
-- [ ] 11.2 Continuous art mode: lock virtual to image effect, update on artwork change
-- [ ] 11.3 Handle virtual unlock (user disables continuous mode)
-- [ ] 11.4 Write tests
+- [ ] 10.1 Continuous text mode: lock virtual to text effect, update on metadata change
+- [ ] 10.2 Continuous art mode: lock virtual to image effect, update on artwork change
+- [ ] 10.3 Handle virtual unlock (user disables continuous mode)
+- [ ] 10.4 Write tests
 
 ### Dependencies
 
-- Phase 9, Phase 10 complete
+- Phase 8, Phase 9 complete
 
 ---
 
-## Phase 12 — yzflow Integration
+## Phase 11 — yzflow Integration
 
 **Goal**: Allow yzflow to orchestrate Now Playing events and routing.
 
@@ -1632,19 +1640,19 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ### Tasks
 
-- [ ] 12.1 Expose Now Playing events as yzflow triggers
-- [ ] 12.2 Expose gradient routing as yzflow actions
-- [ ] 12.3 Expose display triggers as yzflow actions
-- [ ] 12.4 Document yzflow integration patterns
+- [ ] 11.1 Expose Now Playing events as yzflow triggers
+- [ ] 11.2 Expose gradient routing as yzflow actions
+- [ ] 11.3 Expose display triggers as yzflow actions
+- [ ] 11.4 Document yzflow integration patterns
 
 ### Dependencies
 
-- Phases 1–11 complete
+- Phases 1–10 complete
 - yzflow system available
 
 ---
 
-## Phase 13 — Additional Providers
+## Phase 12 — Additional Providers
 
 **Goal**: Add providers beyond Sendspin incrementally.
 
@@ -1695,7 +1703,7 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 | `ledfx/events.py` | Event constants + NowPlayingEvent class |
 | `ledfx/libraries/cache.py` | `ImageCache.put()` for artwork → gradient |
 | `ledfx/utilities/gradient_extraction.py` | `extract_gradient_metadata()` (called by cache) |
-| `ledfx/color.py` | Gradient resolution for `system/current_track` |
+| `ledfx/color.py` | Gradient resolution via `resolve_gradient()` (used by apply_global) |
 | `ledfx/sendspin/stream.py` | Metadata source hookup |
 
 ### Design Constraints
@@ -1716,8 +1724,8 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 | 1 | Source priority with multiple providers | Single active provider (first: Sendspin) | Keep initial implementation simple |
 | 2 | Artwork storage | Cache only (not assets) | Transient data, avoid filling user assets |
 | 3 | Synthetic cache URL format | Not used — single `now_playing.{ext}` file approach instead | Simpler than cache-keyed storage; artwork is transient, only one file needed |
-| 4 | `system/current_track` persistence | No — runtime alias only | Effects reference by name, value resolved dynamically |
-| 5 | Fallback effect restore contract | TBD — Phase 9 | Need to handle edge cases (manual override, etc.) |
+| 4 | Gradient application strategy | Via globals API code path, not alias | Reuses existing apply_global logic; no gradient picker or effect schema changes needed |
+| 5 | Fallback effect restore contract | TBD — Phase 8 | Need to handle edge cases (manual override, etc.) |
 | 6 | BaseRegistry vs plain class | Plain class for service | No auto-discovery needed for singleton service |
 
 ---
@@ -1731,11 +1739,10 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 | 3 | Now Playing Events | `[x]` Complete |
 | 4 | Sendspin Metadata Provider | `[x]` Complete |
 | 5 | Sendspin Artwork + Gradient Extraction | `[x]` Complete |
-| 6 | Current Track Gradient Alias | `[ ]` Not started |
-| 7 | Effect Gradient Picker Support | `[ ]` Not started |
-| 8 | Now Playing Configuration | `[ ]` Not started |
-| 9 | Track Text Temporary Display | `[ ]` Not started |
-| 10 | Album Artwork Temporary Display | `[ ]` Not started |
-| 11 | Continuous Display Modes | `[ ]` Not started |
-| 12 | yzflow Integration | `[ ]` Not started |
-| 13 | Additional Providers | `[ ]` Not started |
+| 6 | Gradient Application via Globals API | `[ ]` Not started |
+| 7 | Now Playing Configuration | `[ ]` Not started |
+| 8 | Track Text Temporary Display | `[ ]` Not started |
+| 9 | Album Artwork Temporary Display | `[ ]` Not started |
+| 10 | Continuous Display Modes | `[ ]` Not started |
+| 11 | yzflow Integration | `[ ]` Not started |
+| 12 | Additional Providers | `[ ]` Not started |
