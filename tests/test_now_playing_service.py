@@ -738,17 +738,23 @@ class TestApplyGradientToVirtuals:
     def test_no_virtuals_attribute_returns_zero(self, service):
         """Service without virtuals on ledfx returns 0."""
         # _DummyLedFx has no virtuals attribute
-        service._state.current_gradient = "linear-gradient(90deg, #ff0000, #0000ff)"
+        service._state.current_gradient = (
+            "linear-gradient(90deg, #ff0000, #0000ff)"
+        )
         assert service.apply_gradient_to_virtuals() == 0
 
-    def test_applies_gradient_to_single_effect(self, service_v, ledfx_with_virtuals):
+    def test_applies_gradient_to_single_effect(
+        self, service_v, ledfx_with_virtuals
+    ):
         # Set up a virtual with an effect that accepts 'gradient'
         eff = _make_mock_effect(["gradient", "color", "color_high"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
         # Set a valid gradient
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 1
@@ -758,7 +764,9 @@ class TestApplyGradientToVirtuals:
         call_args = eff.update_config.call_args[0][0]
         assert "gradient" in call_args
 
-    def test_applies_to_multiple_virtuals(self, service_v, ledfx_with_virtuals):
+    def test_applies_to_multiple_virtuals(
+        self, service_v, ledfx_with_virtuals
+    ):
         eff1 = _make_mock_effect(["gradient", "color"])
         eff2 = _make_mock_effect(["gradient", "color_high"])
         v1 = _make_mock_virtual("v1", eff1)
@@ -766,7 +774,9 @@ class TestApplyGradientToVirtuals:
         ledfx_with_virtuals._virtuals["v1"] = v1
         ledfx_with_virtuals._virtuals["v2"] = v2
 
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 2
@@ -776,16 +786,22 @@ class TestApplyGradientToVirtuals:
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 0
 
-    def test_skips_virtual_without_effect(self, service_v, ledfx_with_virtuals):
+    def test_skips_virtual_without_effect(
+        self, service_v, ledfx_with_virtuals
+    ):
         v1 = _make_mock_virtual("v1", None)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 0
@@ -799,7 +815,9 @@ class TestApplyGradientToVirtuals:
         ledfx_with_virtuals._virtuals["v2"] = v2
 
         service_v.gradient_virtual_ids = ["v1"]
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 1
@@ -815,17 +833,23 @@ class TestApplyGradientToVirtuals:
         ledfx_with_virtuals._virtuals["v2"] = v2
 
         service_v.gradient_virtual_ids = []
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 2
 
     def test_hidden_keys_skipped(self, service_v, ledfx_with_virtuals):
-        eff = _make_mock_effect(["gradient", "color"], hidden_keys=["gradient"])
+        eff = _make_mock_effect(
+            ["gradient", "color"], hidden_keys=["gradient"]
+        )
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         # Effect should still update if color key is in schema
@@ -833,13 +857,17 @@ class TestApplyGradientToVirtuals:
         assert "gradient" not in call_args
         assert "color" in call_args
 
-    def test_effect_without_gradient_in_schema_gets_colors_only(self, service_v, ledfx_with_virtuals):
+    def test_effect_without_gradient_in_schema_gets_colors_only(
+        self, service_v, ledfx_with_virtuals
+    ):
         # Effect only has color keys, no gradient key
         eff = _make_mock_effect(["color", "color_high"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         result = service_v.apply_gradient_to_virtuals()
         assert result == 1
@@ -852,15 +880,21 @@ class TestApplyGradientToVirtuals:
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         with patch("ledfx.nowplaying.service.save_config") as mock_save:
             service_v.apply_gradient_to_virtuals()
             mock_save.assert_called_once()
 
-    def test_no_config_save_when_nothing_updated(self, service_v, ledfx_with_virtuals):
+    def test_no_config_save_when_nothing_updated(
+        self, service_v, ledfx_with_virtuals
+    ):
         # No virtuals, no updates
-        service_v._state.current_gradient = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        service_v._state.current_gradient = (
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+        )
 
         with patch("ledfx.nowplaying.service.save_config") as mock_save:
             service_v.apply_gradient_to_virtuals()
@@ -870,7 +904,9 @@ class TestApplyGradientToVirtuals:
 class TestGradientAutoApplication:
     """Tests verifying gradient is auto-applied when artwork changes."""
 
-    def test_gradient_applied_on_artwork_bytes(self, service_v, ledfx_with_virtuals):
+    def test_gradient_applied_on_artwork_bytes(
+        self, service_v, ledfx_with_virtuals
+    ):
         eff = _make_mock_effect(["gradient", "color"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
@@ -896,7 +932,9 @@ class TestGradientAutoApplication:
         call_args = eff.update_config.call_args[0][0]
         assert "gradient" in call_args
 
-    def test_gradient_not_applied_when_disabled(self, service_v, ledfx_with_virtuals):
+    def test_gradient_not_applied_when_disabled(
+        self, service_v, ledfx_with_virtuals
+    ):
         eff = _make_mock_effect(["gradient", "color"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
@@ -920,7 +958,9 @@ class TestGradientAutoApplication:
         # Effect should NOT have been updated
         eff.update_config.assert_not_called()
 
-    def test_gradient_event_still_fires_when_disabled(self, service_v, ledfx_with_virtuals):
+    def test_gradient_event_still_fires_when_disabled(
+        self, service_v, ledfx_with_virtuals
+    ):
         """Gradient changed event fires even when application is disabled."""
         service_v.gradient_enabled = False
 

@@ -20,7 +20,6 @@ from ledfx.color import (
     build_gradient_config,
 )
 from ledfx.config import save_config
-from ledfx.virtuals import apply_config_to_active_effects
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
     NowPlayingClearedEvent,
@@ -42,6 +41,7 @@ from ledfx.utilities.security_utils import (
     validate_pil_image,
     validate_url_safety,
 )
+from ledfx.virtuals import apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -342,7 +342,11 @@ class NowPlayingService:
             return 0
 
         # Determine target virtuals
-        target_ids = set(self._gradient_virtual_ids) if self._gradient_virtual_ids else None
+        target_ids = (
+            set(self._gradient_virtual_ids)
+            if self._gradient_virtual_ids
+            else None
+        )
 
         updated, _skipped = apply_config_to_active_effects(
             virtuals.values(),
@@ -362,9 +366,7 @@ class NowPlayingService:
                         "Failed to save config after gradient apply: %s", exc
                     )
 
-        _LOGGER.info(
-            "Applied Now Playing gradient to %d effect(s)", updated
-        )
+        _LOGGER.info("Applied Now Playing gradient to %d effect(s)", updated)
         return updated
 
     # ------------------------------------------------------------------
