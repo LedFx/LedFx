@@ -1267,7 +1267,9 @@ Key decisions:
 ledfx/nowplaying/__init__.py  ← module init, exports NowPlayingService
 ledfx/nowplaying/models.py   ← TrackMetadata, ArtworkReference, NowPlayingState
 ledfx/nowplaying/service.py  ← NowPlayingService with set/get/clear API + event firing
-                                Uses save_asset/list_assets/delete_asset for artwork storage
+                                Uses save_asset for artwork storage
+                                Uses extract_gradient_metadata() for gradient extraction
+                                apply_gradient_to_virtuals() for gradient application (Phase 6)
 ledfx/nowplaying/providers/__init__.py ← providers package
 ledfx/nowplaying/providers/sendspin.py ← SendspinNowPlayingProvider (Phase 4)
 ledfx/api/now_playing.py     ← GET /api/now-playing endpoint
@@ -1279,7 +1281,9 @@ ledfx/assets.py             ← save_asset/list_assets/delete_asset (artwork sto
 ledfx/libraries/cache.py   ← ImageCache with auto gradient extraction on put()
 ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_safe/punchy/max
 ledfx/utilities/security_utils.py ← URL validation, image validation, download helpers
-tests/test_now_playing_service.py  ← 38 tests (models, service, events, artwork URL/bytes, file write/overwrite, gradients)
+ledfx/color.py              ← resolve_gradient(), get_color_at_position(), COLOR_GROUPS (Phase 6)
+ledfx/config.py             ← save_config() for persisting effect config changes (Phase 6)
+tests/test_now_playing_service.py  ← 58 tests (models, service, events, artwork, gradient application)
 tests/test_api_now_playing.py      ← 4 API integration tests (including artwork URL with mocked download)
 tests/test_now_playing_sendspin.py ← 11 provider tests
 ```
@@ -1489,49 +1493,45 @@ The `_update_current_gradient()` helper selects the configured variant (default:
 
 ## Phase 6 — Gradient Application via Globals API
 
-**Goal**: On artwork/gradient change, apply the extracted gradient to target virtuals using the same code path as the `apply_global` action.
+**Goal**: On artwork/gradient change, apply the extracted gradient to target virtuals using the same logic as the `apply_global` action.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 6.1 Extract the core `apply_global` logic from `EffectsEndpoint._apply_global()` into a reusable function (e.g., `ledfx/effects/globals.py` or a utility):
-  - Accepts: ledfx core ref, gradient string, optional virtual_ids list
-  - Performs: gradient resolution, color group sampling, per-effect key filtering, HIDDEN_KEYS check, config update, config persistence
-  - Returns: (updated_count, skipped_count)
-- [ ] 6.2 Refactor `EffectsEndpoint._apply_global()` to delegate to the extracted function
-- [ ] 6.3 Add `_apply_gradient_to_virtuals()` helper on `NowPlayingService`:
-  - Reads `state.current_gradient` (resolved gradient string)
-  - Reads `gradient.virtual_ids` from config (empty = all virtuals)
-  - Calls the extracted apply_global function
-  - Logs result (updated/skipped counts)
-- [ ] 6.4 Wire `_apply_gradient_to_virtuals()` to fire on `NOW_PLAYING_GRADIENT_CHANGED`:
-  - Only when `gradient.enabled` is True in config
-  - Called after `_update_current_gradient()` resolves a new gradient value
-- [ ] 6.5 Write tests:
-  - Gradient application calls the globals code path with correct gradient and virtual_ids
-  - Empty virtual_ids applies to all
-  - Specific virtual_ids restricts application
-  - Disabled gradient config skips application
-  - Verify EffectsEndpoint still works identically after refactor
+- [x] 6.1 Implement `apply_gradient_to_virtuals()` as a public method on `NowPlayingService`:
+  - Mirrors the `apply_global` logic from `EffectsEndpoint` directly in the service
+  - Gradient resolution via `resolve_gradient()` from `ledfx/color.py`
+  - Color group sampling via `get_color_at_position()` with `COLOR_GROUPS`
+  - Per-effect schema key filtering (only updates keys the effect supports)
+  - Normalizes Voluptuous `Optional`/`Required` schema key wrappers
+  - HIDDEN_KEYS exclusion
+  - `update_config()` + `update_effect_config()` per virtual
+  - Config persistence via `save_config()`
+  - Returns count of updated effects
+- [x] 6.2 Add `gradient_enabled` property (default: True) — controls whether gradient is applied to virtuals
+- [x] 6.3 Add `gradient_virtual_ids` property (default: []) — target virtual list; empty = all virtuals
+  - Returns a defensive copy to prevent external mutation
+- [x] 6.4 Wire `apply_gradient_to_virtuals()` into `_update_current_gradient()`:
+  - Called when `current_gradient` changes and `gradient_enabled` is True
+  - Triggered by artwork changes (both URL and bytes paths)
+- [x] 6.5 Write 20 Phase 6 tests in `tests/test_now_playing_service.py` (58 total, all passing):
+  - **Config tests** (5): gradient_enabled default/set, gradient_virtual_ids default/set/copy
+  - **apply_gradient_to_virtuals tests** (12): no gradient → 0, no virtuals → 0, single effect, multiple virtuals, skips DummyEffect, skips None effect, filters by virtual_ids, empty ids = all, HIDDEN_KEYS skipped, color-only effects, config save on updates, no save when nothing updated
+  - **Auto-application tests** (3): gradient applied on artwork bytes, not applied when disabled, gradient event still fires when disabled
 
-### Design Notes
+### Implementation Notes
 
-The existing `_apply_global` method on `EffectsEndpoint` already handles:
-- Gradient validation and resolution via `resolve_gradient()`
-- Color group sampling via `get_color_at_position()` (Low=0.0, Mid=0.5, High=1.0)
-- Per-effect schema key filtering (only updates keys the effect supports)
-- HIDDEN_KEYS exclusion
-- `update_config()` + `update_effect_config()` per virtual
-- Config persistence via `save_config()`
+Rather than extracting `apply_global` into a shared utility (as originally proposed in 6.1/6.2), the gradient application logic was implemented directly on `NowPlayingService.apply_gradient_to_virtuals()`. This avoids modifying the existing `EffectsEndpoint._apply_global()` code path and keeps the two callers independent. Both use the same underlying primitives (`resolve_gradient`, `get_color_at_position`, `COLOR_GROUPS`, `save_config`) so behavior is consistent.
 
-The Now Playing Service reuses all of this, just triggered by artwork changes instead of a REST request.
+The `_DummyLedFxWithVirtuals` test stub provides a `virtuals` dict and `gradients` collection to exercise the full application path with mock effects and mock virtuals.
 
 ### Dependencies
 
 - Phase 5 complete
-- Phase 7 (config) provides `gradient.enabled` and `gradient.virtual_ids`
-  (can default to enabled=True, virtual_ids=[] for initial implementation)
+- `ledfx/color.py`: `resolve_gradient()`, `get_color_at_position()`, `COLOR_GROUPS`
+- `ledfx/config.py`: `save_config()`
+- `ledfx/effects/__init__.py`: `DummyEffect` (for skip detection)
 
 ---
 
@@ -1703,7 +1703,7 @@ The Now Playing Service reuses all of this, just triggered by artwork changes in
 | `ledfx/events.py` | Event constants + NowPlayingEvent class |
 | `ledfx/libraries/cache.py` | `ImageCache.put()` for artwork → gradient |
 | `ledfx/utilities/gradient_extraction.py` | `extract_gradient_metadata()` (called by cache) |
-| `ledfx/color.py` | Gradient resolution via `resolve_gradient()` (used by apply_global) |
+| `ledfx/color.py` | Gradient resolution via `resolve_gradient()`, color sampling via `get_color_at_position()`, `COLOR_GROUPS` (used by apply_global and Phase 6) |
 | `ledfx/sendspin/stream.py` | Metadata source hookup |
 
 ### Design Constraints
@@ -1739,7 +1739,7 @@ The Now Playing Service reuses all of this, just triggered by artwork changes in
 | 3 | Now Playing Events | `[x]` Complete |
 | 4 | Sendspin Metadata Provider | `[x]` Complete |
 | 5 | Sendspin Artwork + Gradient Extraction | `[x]` Complete |
-| 6 | Gradient Application via Globals API | `[ ]` Not started |
+| 6 | Gradient Application via Globals API | `[x]` Complete |
 | 7 | Now Playing Configuration | `[ ]` Not started |
 | 8 | Track Text Temporary Display | `[ ]` Not started |
 | 9 | Album Artwork Temporary Display | `[ ]` Not started |

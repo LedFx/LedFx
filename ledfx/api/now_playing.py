@@ -21,5 +21,12 @@ class NowPlayingEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """Get current Now Playing state."""
-        state = self._ledfx.now_playing.get_current()
-        return await self.bare_request_success(state.to_dict())
+        np_service = self._ledfx.now_playing
+        state = np_service.get_current()
+        response = state.to_dict()
+        response["gradient_config"] = {
+            "enabled": np_service.gradient_enabled,
+            "variant": state.selected_gradient_variant,
+            "virtual_ids": np_service.gradient_virtual_ids,
+        }
+        return await self.bare_request_success(response)

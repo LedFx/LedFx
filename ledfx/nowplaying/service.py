@@ -16,6 +16,11 @@ from PIL import Image
 from ledfx.assets import (
     save_asset,
 )
+from ledfx.color import (
+    build_gradient_config,
+)
+from ledfx.config import save_config
+from ledfx.virtuals import apply_config_to_active_effects
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
     NowPlayingClearedEvent,
@@ -67,6 +72,8 @@ class NowPlayingService:
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._state = NowPlayingState()
+        self._gradient_enabled = True
+        self._gradient_virtual_ids: list[str] = []
         _LOGGER.info("Now Playing Service initialized")
 
     # ------------------------------------------------------------------
@@ -284,6 +291,82 @@ class NowPlayingService:
         """
         return self._state
 
+    @property
+    def gradient_enabled(self) -> bool:
+        """Whether gradient application to virtuals is enabled."""
+        return self._gradient_enabled
+
+    @gradient_enabled.setter
+    def gradient_enabled(self, value: bool) -> None:
+        self._gradient_enabled = bool(value)
+
+    @property
+    def gradient_virtual_ids(self) -> list[str]:
+        """Virtual IDs to target. Empty list means all virtuals."""
+        return list(self._gradient_virtual_ids)
+
+    @gradient_virtual_ids.setter
+    def gradient_virtual_ids(self, value: list[str]) -> None:
+        self._gradient_virtual_ids = list(value)
+
+    def apply_gradient_to_virtuals(self) -> int:
+        """Apply the current gradient + color group updates to target virtuals.
+
+        Uses :func:`~ledfx.color.build_gradient_config` for gradient
+        resolution / color-group sampling and
+        :func:`~ledfx.virtuals.apply_config_to_active_effects` for the
+        per-effect update loop.
+
+        Returns:
+            The number of effects successfully updated.
+        """
+        gradient_str = self._state.current_gradient
+        if not gradient_str:
+            return 0
+
+        virtuals = getattr(self._ledfx, "virtuals", None)
+        if virtuals is None:
+            return 0
+
+        gradients_collection = getattr(self._ledfx, "gradients", None)
+        if gradients_collection is None:
+            return 0
+
+        # Resolve the gradient and sample color groups
+        try:
+            config_updates = build_gradient_config(
+                gradient_str, gradients_collection
+            )
+        except Exception as exc:
+            _LOGGER.warning("Failed to resolve gradient: %s", exc)
+            return 0
+
+        # Determine target virtuals
+        target_ids = set(self._gradient_virtual_ids) if self._gradient_virtual_ids else None
+
+        updated, _skipped = apply_config_to_active_effects(
+            virtuals.values(),
+            config_updates,
+            target_ids=target_ids,
+        )
+
+        # Persist configuration changes
+        if updated > 0:
+            config_dir = getattr(self._ledfx, "config_dir", None)
+            config = getattr(self._ledfx, "config", None)
+            if config is not None and config_dir:
+                try:
+                    save_config(config=config, config_dir=config_dir)
+                except Exception as exc:
+                    _LOGGER.warning(
+                        "Failed to save config after gradient apply: %s", exc
+                    )
+
+        _LOGGER.info(
+            "Applied Now Playing gradient to %d effect(s)", updated
+        )
+        return updated
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
@@ -452,3 +535,7 @@ class NowPlayingService:
                     self._state.selected_gradient_variant,
                 )
             )
+
+            # Apply gradient to target virtuals if enabled
+            if self._gradient_enabled and self._state.current_gradient:
+                self.apply_gradient_to_virtuals()
