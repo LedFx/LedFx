@@ -86,7 +86,6 @@ class Imagespin(Twod):
         self.album_art = self.config["album_art"]
         self.init = True
 
-
     def audio_data_updated(self, data):
         # Get filtered bar power
         self.bar = (

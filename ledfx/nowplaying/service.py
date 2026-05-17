@@ -664,9 +664,7 @@ class NowPlayingService:
                     exc,
                 )
 
-        _LOGGER.info(
-            "Applied Now Playing album art to %d virtual(s)", updated
-        )
+        _LOGGER.info("Applied Now Playing album art to %d virtual(s)", updated)
         return updated
 
     # ------------------------------------------------------------------

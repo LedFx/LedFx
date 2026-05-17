@@ -1257,7 +1257,9 @@ def service_aa(ledfx_album_art):
     # activate source so set_artwork_* calls are accepted
     from ledfx.nowplaying.models import TrackMetadata
 
-    svc.set_metadata("sendspin", TrackMetadata(source_id="sendspin", title="T"))
+    svc.set_metadata(
+        "sendspin", TrackMetadata(source_id="sendspin", title="T")
+    )
     return svc
 
 
@@ -1315,13 +1317,15 @@ class TestApplyAlbumArtToVirtuals:
 
         assert service._apply_album_art_to_virtuals() == 0
 
-    def test_no_effects_attr_returns_zero(self, service_v, ledfx_with_virtuals):
+    def test_no_effects_attr_returns_zero(
+        self, service_v, ledfx_with_virtuals
+    ):
         """ledfx with virtuals but no effects registry returns 0."""
         service_v._config["album_art"]["enabled"] = True
         service_v._config["album_art"]["virtual_ids"] = ["v1"]
         _set_artwork_on_service(service_v)
-        ledfx_with_virtuals._virtuals["v1"] = _make_mock_virtual_with_set_effect(
-            "v1"
+        ledfx_with_virtuals._virtuals["v1"] = (
+            _make_mock_virtual_with_set_effect("v1")
         )
         # _DummyLedFxWithVirtuals has no effects attribute
         assert service_v._apply_album_art_to_virtuals() == 0
