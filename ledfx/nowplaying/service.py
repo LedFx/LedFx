@@ -322,7 +322,10 @@ class NowPlayingService:
             _LOGGER.info(
                 "Clearing Now Playing state for active source: %s", source_id
             )
-            self._state = NowPlayingState()
+            prev_variant = self._state.selected_gradient_variant
+            self._state = NowPlayingState(
+                selected_gradient_variant=prev_variant
+            )
             self._fire_event(NowPlayingClearedEvent(source_id))
         else:
             _LOGGER.debug(

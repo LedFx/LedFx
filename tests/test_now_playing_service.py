@@ -1003,7 +1003,7 @@ class TestNowPlayingConfigSchema:
         assert result["gradient"]["variant"] == "led_punchy"
         assert result["gradient"]["virtual_ids"] == []
         assert result["track_text"]["enabled"] is True
-        assert result["track_text"]["duration"] == 8
+        assert result["track_text"]["duration"] == 60
         assert result["track_text"]["virtual_ids"] == []
         assert result["track_text"]["preset"] == ""
         assert result["album_art"]["enabled"] is True

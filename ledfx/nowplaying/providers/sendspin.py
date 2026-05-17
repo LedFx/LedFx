@@ -130,6 +130,7 @@ class SendspinNowPlayingProvider:
         elif self._artwork_url is None and self._last_artwork_url is not None:
             # Artwork cleared by server
             self._last_artwork_url = None
+            now_playing.set_artwork_url(SOURCE_ID, None)
 
     def clear(self) -> None:
         """Clear Now Playing state and reset accumulated state."""
