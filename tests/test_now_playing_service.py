@@ -1022,7 +1022,9 @@ class TestNowPlayingConfigSchema:
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"enabled": "not_a_bool"}})
+            NOW_PLAYING_CONFIG_SCHEMA(
+                {"track_text": {"enabled": "not_a_bool"}}
+            )
 
     def test_duration_out_of_range(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
