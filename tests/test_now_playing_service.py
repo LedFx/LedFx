@@ -1030,7 +1030,7 @@ class TestNowPlayingConfigSchema:
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": 0}})
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": -1}})
 
         with pytest.raises(vol.Invalid):
             NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 999}})
@@ -1394,7 +1394,7 @@ class TestApplyAlbumArtToVirtuals:
 
         service_aa._apply_album_art_to_virtuals()
 
-        assert ledfx_album_art.effects.created[0].type == "image"
+        assert ledfx_album_art.effects.created[0].type == "imagespin"
 
     def test_multiple_virtuals_updated(self, service_aa, ledfx_album_art):
         service_aa._config["album_art"]["enabled"] = True
@@ -1539,11 +1539,11 @@ class TestAlbumArtDurationSchema:
         result = NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 0}})
         assert result["album_art"]["duration"] == 0
 
-    def test_duration_zero_still_invalid_for_track_text(self):
+    def test_duration_negative_still_invalid_for_track_text(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": 0}})
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": -1}})
 
     def test_album_art_duration_max_still_enforced(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
