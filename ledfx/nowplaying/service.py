@@ -418,9 +418,7 @@ class NowPlayingService:
             try:
                 save_config(config=config, config_dir=config_dir)
             except Exception as exc:
-                _LOGGER.warning(
-                    "Failed to save now_playing config: %s", exc
-                )
+                _LOGGER.warning("Failed to save now_playing config: %s", exc)
 
     def apply_gradient_to_virtuals(self) -> int:
         """Apply the current gradient + color group updates to target virtuals.
