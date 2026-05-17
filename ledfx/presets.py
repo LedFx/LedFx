@@ -53,6 +53,7 @@ ledfx_presets = {
                 "rotate": 0,
                 "spin": False,
                 "test": True,
+                "album_art": True,
             },
             "name": "ARTWORK",
         }

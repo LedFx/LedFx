@@ -63,7 +63,7 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Optional("enabled", default=True): bool,
                 vol.Optional("duration", default=8): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=60)
+                    vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
                 vol.Optional("virtual_ids", default=[]): [str],
                 vol.Optional("preset", default=""): str,
@@ -73,7 +73,7 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Optional("enabled", default=True): bool,
                 vol.Optional("duration", default=10): vol.All(
-                    vol.Coerce(int), vol.Range(min=1, max=60)
+                    vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
                 vol.Optional("virtual_ids", default=[]): [str],
             }
@@ -175,6 +175,7 @@ class NowPlayingService:
                     source_id, metadata.title, metadata.artist, metadata.album
                 )
             )
+            self._apply_track_text_to_virtuals()
 
         return track_changed
 
@@ -238,6 +239,7 @@ class NowPlayingService:
         )
         self._state.updated_at = time.time()
         self._update_current_gradient()
+        self._apply_album_art_to_virtuals()
 
         _LOGGER.info("Artwork URL updated from %s", source_id)
         self._fire_event(
@@ -296,6 +298,7 @@ class NowPlayingService:
         )
         self._state.updated_at = time.time()
         self._update_current_gradient()
+        self._apply_album_art_to_virtuals()
 
         _LOGGER.info(
             "Artwork bytes updated from %s (hash: %s)", source_id, artwork_hash
@@ -473,6 +476,197 @@ class NowPlayingService:
                     )
 
         _LOGGER.info("Applied Now Playing gradient to %d effect(s)", updated)
+        return updated
+
+    def _apply_track_text_to_virtuals(self) -> int:
+        """Apply current track info as a Texter effect on target virtuals.
+
+        Uses :meth:`~ledfx.virtuals.Virtual.set_effect` with the ``fallback``
+        parameter for temporary display.  When ``track_text.duration`` is 0,
+        the effect is applied permanently (no restore timer).
+
+        Gate conditions (all must hold):
+
+        * ``track_text.enabled`` is ``True``
+        * ``track_text.virtual_ids`` is non-empty
+        * ``self._state.metadata`` is set
+        * ``self._ledfx.virtuals`` and ``self._ledfx.effects`` are available
+
+        Returns:
+            Number of virtuals successfully updated.
+        """
+        track_text_cfg = self._config["track_text"]
+
+        if not track_text_cfg["enabled"]:
+            return 0
+
+        virtual_ids = track_text_cfg["virtual_ids"]
+        if not virtual_ids:
+            return 0
+
+        metadata = self._state.metadata
+        if not metadata:
+            return 0
+
+        virtuals = getattr(self._ledfx, "virtuals", None)
+        if virtuals is None:
+            return 0
+
+        effects_registry = getattr(self._ledfx, "effects", None)
+        if effects_registry is None:
+            return 0
+
+        # Build display string from non-empty metadata fields: Artist - Album - Title
+        parts = [
+            metadata.artist or "",
+            metadata.album or "",
+            metadata.title or "",
+        ]
+        text = " - ".join(p for p in parts if p)
+        if not text:
+            text = "Now Playing"
+
+        duration = track_text_cfg["duration"]
+        preset_name = track_text_cfg.get("preset", "")
+
+        # Resolve preset config: ledfx_presets first, then user_presets
+        effect_config = {}
+        if preset_name:
+            cfg = getattr(self._ledfx, "config", {})
+            preset_config = (
+                cfg.get("ledfx_presets", {})
+                .get("texter2d", {})
+                .get(preset_name, {})
+                .get("config", {})
+            )
+            if not preset_config:
+                preset_config = (
+                    cfg.get("user_presets", {})
+                    .get("texter2d", {})
+                    .get(preset_name, {})
+                    .get("config", {})
+                )
+            effect_config = dict(preset_config)
+
+        effect_config["text"] = text
+        updated = 0
+
+        for virtual_id in virtual_ids:
+            virtual = virtuals.get(virtual_id)
+            if virtual is None:
+                _LOGGER.warning(
+                    "Now Playing track text: virtual %r not found, skipping",
+                    virtual_id,
+                )
+                continue
+
+            try:
+                effect = effects_registry.create(
+                    ledfx=self._ledfx,
+                    type="texter2d",
+                    config=effect_config,
+                )
+                if duration == 0:
+                    virtual.set_effect(effect)
+                else:
+                    virtual.set_effect(effect, fallback=float(duration))
+                updated += 1
+            except Exception as exc:
+                _LOGGER.warning(
+                    "Now Playing track text: failed to set effect on virtual %r: %s",
+                    virtual_id,
+                    exc,
+                )
+
+        _LOGGER.info(
+            "Applied Now Playing track text to %d virtual(s)", updated
+        )
+        return updated
+
+    def _apply_album_art_to_virtuals(self) -> int:
+        """Apply current album artwork as an Image effect on target virtuals.
+
+        Uses :meth:`~ledfx.virtuals.Virtual.set_effect` with the ``fallback``
+        parameter for temporary display.  When ``album_art.duration`` is 0,
+        the effect is applied permanently (no restore timer).
+
+        Gate conditions (all must hold):
+
+        * ``album_art.enabled`` is ``True``
+        * ``album_art.virtual_ids`` is non-empty
+        * ``self._state.artwork.cache_key`` is set
+        * ``self._ledfx.virtuals`` and ``self._ledfx.effects`` are available
+
+        Returns:
+            Number of virtuals successfully updated.
+        """
+        album_art_cfg = self._config["album_art"]
+
+        if not album_art_cfg["enabled"]:
+            return 0
+
+        virtual_ids = album_art_cfg["virtual_ids"]
+        if not virtual_ids:
+            return 0
+
+        artwork = self._state.artwork
+        if not artwork or not artwork.cache_key:
+            return 0
+
+        virtuals = getattr(self._ledfx, "virtuals", None)
+        if virtuals is None:
+            return 0
+
+        effects_registry = getattr(self._ledfx, "effects", None)
+        if effects_registry is None:
+            return 0
+
+        duration = album_art_cfg["duration"]
+
+        # Start from the built-in "artwork" preset so settings like bilinear
+        # and test are pre-configured, then override image_source with the
+        # actual artwork path.
+        ledfx_presets = getattr(self._ledfx, "config", {}).get(
+            "ledfx_presets", {}
+        )
+        preset_config = (
+            ledfx_presets.get("imagespin", {})
+            .get("artwork", {})
+            .get("config", {})
+        )
+        effect_config = {**preset_config, "image_source": artwork.cache_key}
+        updated = 0
+
+        for virtual_id in virtual_ids:
+            virtual = virtuals.get(virtual_id)
+            if virtual is None:
+                _LOGGER.warning(
+                    "Now Playing album art: virtual %r not found, skipping",
+                    virtual_id,
+                )
+                continue
+
+            try:
+                effect = effects_registry.create(
+                    ledfx=self._ledfx,
+                    type="imagespin",
+                    config=effect_config,
+                )
+                if duration == 0:
+                    virtual.set_effect(effect)
+                else:
+                    virtual.set_effect(effect, fallback=float(duration))
+                updated += 1
+            except Exception as exc:
+                _LOGGER.warning(
+                    "Now Playing album art: failed to set effect on virtual %r: %s",
+                    virtual_id,
+                    exc,
+                )
+
+        _LOGGER.info(
+            "Applied Now Playing album art to %d virtual(s)", updated
+        )
         return updated
 
     # ------------------------------------------------------------------

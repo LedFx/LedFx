@@ -1593,26 +1593,25 @@ The `enabled`/`sources` top-level fields from the original design were deferred 
 
 **Goal**: On track change, temporarily show "Artist - Title" on target matrix virtuals.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 8.1 Implement effect save/restore mechanism for virtuals
-- [ ] 8.2 On `NOW_PLAYING_TRACK_CHANGED`:
+- [x] 8.1 Implement effect save/restore mechanism for virtuals
+- [x] 8.2 On `NOW_PLAYING_TRACK_CHANGED`:
   - Save current effect on configured virtual_ids
   - Apply text fallback effect with formatted track info
   - Schedule restoration after `duration` seconds
-- [ ] 8.3 Handle edge cases:
-  - Track changes during display (reset timer)
-  - Virtual stopped/disabled during display
-  - User manually changes effect during display (cancel restore)
-- [ ] 8.4 Filter virtual picker to matrix-capable only (rows > 1)
-- [ ] 8.5 Write tests
+- [x] 8.3 Handle same edge cases as Phase 9 (virtual missing = skip, exception = warn)
+- [x] 8.4 Write tests
 
-### Dependencies
+### Implementation Notes
 
-- Phase 3, Phase 7 complete
-- Text effect must support programmatic text setting
+- Effect type: `texter2d`, text key: `text`
+- Display string: non-empty parts of `artist - album - title` joined with ` - `; falls back to `"Now Playing"` if all are empty
+- Preset lookup: `ledfx_presets["texter2d"][preset_name]` first, then `user_presets["texter2d"][preset_name]`; preset config merged with `text` override
+- `duration = 0` applies effect permanently (no fallback restore)
+- `track_text.duration` schema updated to `min=0` to match `album_art` behaviour
 
 ---
 
@@ -1620,16 +1619,16 @@ The `enabled`/`sources` top-level fields from the original design were deferred 
 
 **Goal**: On artwork change, temporarily show album art on target matrix virtuals.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 9.1 On `NOW_PLAYING_ARTWORK_CHANGED`:
+- [x] 9.1 On `NOW_PLAYING_ARTWORK_CHANGED`:
   - Save current effect on configured virtual_ids
   - Apply image fallback effect with current artwork
   - Schedule restoration after `duration` seconds
-- [ ] 9.2 Handle same edge cases as Phase 8
-- [ ] 9.3 Write tests
+- [x] 9.2 Handle same edge cases as Phase 8
+- [x] 9.3 Write tests
 
 ### Dependencies
 
@@ -1641,14 +1640,9 @@ The `enabled`/`sources` top-level fields from the original design were deferred 
 
 **Goal**: Dedicated virtuals that permanently show track text or album art.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete — superseded by `duration = 0`
 
-### Tasks
-
-- [ ] 10.1 Continuous text mode: lock virtual to text effect, update on metadata change
-- [ ] 10.2 Continuous art mode: lock virtual to image effect, update on artwork change
-- [ ] 10.3 Handle virtual unlock (user disables continuous mode)
-- [ ] 10.4 Write tests
+**Resolution**: Continuous display is handled by setting `album_art.duration` or `track_text.duration` to `0`. A duration of `0` applies the effect permanently with no restore timer, achieving the same outcome without a dedicated continuous mode.
 
 ### Dependencies
 
@@ -1767,8 +1761,8 @@ The `enabled`/`sources` top-level fields from the original design were deferred 
 | 5 | Sendspin Artwork + Gradient Extraction | `[x]` Complete |
 | 6 | Gradient Application via Globals API | `[x]` Complete |
 | 7 | Now Playing Configuration | `[x]` Complete |
-| 8 | Track Text Temporary Display | `[ ]` Not started |
-| 9 | Album Artwork Temporary Display | `[ ]` Not started |
+| 8 | Track Text Temporary Display | `[x]` Complete |
+| 9 | Album Artwork Temporary Display | `[x]` Complete |
 | 10 | Continuous Display Modes | `[ ]` Not started |
 | 11 | yzflow Integration | `[ ]` Not started |
 | 12 | Additional Providers | `[ ]` Not started |

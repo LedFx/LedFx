@@ -1210,3 +1210,339 @@ class TestUpdateConfig:
         assert cfg["gradient"]["enabled"] is False
         assert cfg["track_text"]["enabled"] is False
         assert cfg["track_text"]["duration"] == 5
+
+
+# ------------------------------------------------------------------
+# Phase 9: Album artwork temporary display tests
+# ------------------------------------------------------------------
+
+
+def _make_mock_virtual_with_set_effect(vid):
+    """Create a mock virtual with a trackable set_effect method."""
+    virtual = MagicMock()
+    virtual.id = vid
+    return virtual
+
+
+class _DummyEffectsRegistry:
+    """Minimal effects registry that returns a mock effect from create()."""
+
+    def __init__(self):
+        self.created = []
+
+    def create(self, ledfx, type, config):
+        effect = MagicMock()
+        effect.type = type
+        effect.config = config
+        self.created.append(effect)
+        return effect
+
+
+class _DummyLedFxWithAlbumArt(_DummyLedFxWithVirtuals):
+    """Stub with both virtuals and effects, for album art tests."""
+
+    def __init__(self, config_dir=None):
+        super().__init__(config_dir)
+        self.effects = _DummyEffectsRegistry()
+
+
+@pytest.fixture
+def ledfx_album_art(tmp_path):
+    return _DummyLedFxWithAlbumArt(config_dir=str(tmp_path))
+
+
+@pytest.fixture
+def service_aa(ledfx_album_art):
+    svc = NowPlayingService(ledfx_album_art)
+    # activate source so set_artwork_* calls are accepted
+    from ledfx.nowplaying.models import TrackMetadata
+
+    svc.set_metadata("sendspin", TrackMetadata(source_id="sendspin", title="T"))
+    return svc
+
+
+def _set_artwork_on_service(svc, cache_key="/tmp/now_playing.jpg"):
+    """Directly set an ArtworkReference with a cache_key on the service."""
+    svc._state.artwork = ArtworkReference(
+        source_id="sendspin",
+        cache_key=cache_key,
+        content_type="image/jpeg",
+    )
+
+
+class TestApplyAlbumArtToVirtuals:
+    """Tests for NowPlayingService._apply_album_art_to_virtuals()."""
+
+    def test_disabled_returns_zero(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = False
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        _set_artwork_on_service(service_aa)
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        assert service_aa._apply_album_art_to_virtuals() == 0
+        v1.set_effect.assert_not_called()
+
+    def test_empty_virtual_ids_returns_zero(self, service_aa, ledfx_album_art):
+        # album_art.virtual_ids defaults to []
+        _set_artwork_on_service(service_aa)
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        assert service_aa._apply_album_art_to_virtuals() == 0
+        v1.set_effect.assert_not_called()
+
+    def test_no_artwork_returns_zero(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        # artwork is None
+        service_aa._state.artwork = None
+
+        assert service_aa._apply_album_art_to_virtuals() == 0
+
+    def test_no_cache_key_returns_zero(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        service_aa._state.artwork = ArtworkReference(
+            source_id="sendspin", cache_key=None
+        )
+
+        assert service_aa._apply_album_art_to_virtuals() == 0
+
+    def test_no_virtuals_attr_returns_zero(self, service, ledfx):
+        """_DummyLedFx has no virtuals attribute — should return 0."""
+        service._config["album_art"]["enabled"] = True
+        service._config["album_art"]["virtual_ids"] = ["v1"]
+        _set_artwork_on_service(service)
+
+        assert service._apply_album_art_to_virtuals() == 0
+
+    def test_no_effects_attr_returns_zero(self, service_v, ledfx_with_virtuals):
+        """ledfx with virtuals but no effects registry returns 0."""
+        service_v._config["album_art"]["enabled"] = True
+        service_v._config["album_art"]["virtual_ids"] = ["v1"]
+        _set_artwork_on_service(service_v)
+        ledfx_with_virtuals._virtuals["v1"] = _make_mock_virtual_with_set_effect(
+            "v1"
+        )
+        # _DummyLedFxWithVirtuals has no effects attribute
+        assert service_v._apply_album_art_to_virtuals() == 0
+
+    def test_temporary_mode_uses_fallback(self, service_aa, ledfx_album_art):
+        """duration > 0 → set_effect(effect, fallback=duration)."""
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        service_aa._config["album_art"]["duration"] = 8
+        _set_artwork_on_service(service_aa, "/tmp/art.jpg")
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        result = service_aa._apply_album_art_to_virtuals()
+
+        assert result == 1
+        v1.set_effect.assert_called_once()
+        call_args, call_kwargs = v1.set_effect.call_args
+        assert call_kwargs.get("fallback") == 8.0 or (
+            len(call_args) > 1 and call_args[1] == 8.0
+        )
+
+    def test_permanent_mode_no_fallback(self, service_aa, ledfx_album_art):
+        """duration == 0 → set_effect(effect) with no fallback argument."""
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        service_aa._config["album_art"]["duration"] = 0
+        _set_artwork_on_service(service_aa, "/tmp/art.jpg")
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        result = service_aa._apply_album_art_to_virtuals()
+
+        assert result == 1
+        v1.set_effect.assert_called_once()
+        call_args, call_kwargs = v1.set_effect.call_args
+        # No fallback keyword
+        assert "fallback" not in call_kwargs
+        # Only the effect positional arg
+        assert len(call_args) == 1
+
+    def test_image_source_config_uses_cache_key(
+        self, service_aa, ledfx_album_art
+    ):
+        """Effect is created with image_source set to artwork.cache_key."""
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        cache_key = "/config/assets/now_playing/now_playing.jpg"
+        _set_artwork_on_service(service_aa, cache_key)
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        service_aa._apply_album_art_to_virtuals()
+
+        assert len(ledfx_album_art.effects.created) == 1
+        created = ledfx_album_art.effects.created[0]
+        assert created.config["image_source"] == cache_key
+
+    def test_created_effect_type_is_image(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        _set_artwork_on_service(service_aa)
+        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect(
+            "v1"
+        )
+
+        service_aa._apply_album_art_to_virtuals()
+
+        assert ledfx_album_art.effects.created[0].type == "image"
+
+    def test_multiple_virtuals_updated(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1", "v2"]
+        _set_artwork_on_service(service_aa)
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        v2 = _make_mock_virtual_with_set_effect("v2")
+        ledfx_album_art._virtuals["v1"] = v1
+        ledfx_album_art._virtuals["v2"] = v2
+
+        result = service_aa._apply_album_art_to_virtuals()
+
+        assert result == 2
+        v1.set_effect.assert_called_once()
+        v2.set_effect.assert_called_once()
+
+    def test_missing_virtual_skipped(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1", "missing"]
+        _set_artwork_on_service(service_aa)
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+        # "missing" is not in virtuals dict
+
+        result = service_aa._apply_album_art_to_virtuals()
+
+        assert result == 1
+        v1.set_effect.assert_called_once()
+
+    def test_effect_creation_error_skips_virtual(
+        self, service_aa, ledfx_album_art
+    ):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        _set_artwork_on_service(service_aa)
+        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect(
+            "v1"
+        )
+
+        ledfx_album_art.effects.create = MagicMock(
+            side_effect=Exception("creation failure")
+        )
+
+        result = service_aa._apply_album_art_to_virtuals()
+
+        assert result == 0  # graceful skip
+
+    def test_set_effect_error_skips_virtual(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        _set_artwork_on_service(service_aa)
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        v1.set_effect.side_effect = Exception("set_effect failure")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        result = service_aa._apply_album_art_to_virtuals()
+
+        assert result == 0  # graceful skip
+
+
+class TestAlbumArtAutoApplication:
+    """Tests that _apply_album_art_to_virtuals is triggered by artwork changes."""
+
+    def test_called_on_set_artwork_bytes(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        data = _make_test_png()
+        with patch(
+            "ledfx.nowplaying.service.extract_gradient_metadata",
+            return_value={},
+        ):
+            with patch("ledfx.nowplaying.service.save_config"):
+                service_aa.set_artwork_bytes("sendspin", data, "image/png")
+
+        v1.set_effect.assert_called_once()
+
+    def test_called_on_set_artwork_url(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = True
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        png_data = _make_test_png()
+        with patch.object(
+            service_aa, "_download_image", return_value=(png_data, "image/png")
+        ):
+            with patch(
+                "ledfx.nowplaying.service.extract_gradient_metadata",
+                return_value={},
+            ):
+                with patch("ledfx.nowplaying.service.save_config"):
+                    service_aa.set_artwork_url(
+                        "sendspin", "https://example.com/art.png"
+                    )
+
+        v1.set_effect.assert_called_once()
+
+    def test_not_called_when_disabled(self, service_aa, ledfx_album_art):
+        service_aa._config["album_art"]["enabled"] = False
+        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        data = _make_test_png()
+        with patch(
+            "ledfx.nowplaying.service.extract_gradient_metadata",
+            return_value={},
+        ):
+            with patch("ledfx.nowplaying.service.save_config"):
+                service_aa.set_artwork_bytes("sendspin", data, "image/png")
+
+        v1.set_effect.assert_not_called()
+
+    def test_not_called_when_virtual_ids_empty(
+        self, service_aa, ledfx_album_art
+    ):
+        service_aa._config["album_art"]["enabled"] = True
+        # virtual_ids is [] by default
+        v1 = _make_mock_virtual_with_set_effect("v1")
+        ledfx_album_art._virtuals["v1"] = v1
+
+        data = _make_test_png()
+        with patch(
+            "ledfx.nowplaying.service.extract_gradient_metadata",
+            return_value={},
+        ):
+            with patch("ledfx.nowplaying.service.save_config"):
+                service_aa.set_artwork_bytes("sendspin", data, "image/png")
+
+        v1.set_effect.assert_not_called()
+
+
+class TestAlbumArtDurationSchema:
+    """Tests that the duration=0 schema change works correctly."""
+
+    def test_duration_zero_accepted_for_album_art(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        result = NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 0}})
+        assert result["album_art"]["duration"] == 0
+
+    def test_duration_zero_still_invalid_for_track_text(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        with pytest.raises(vol.Invalid):
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": 0}})
+
+    def test_album_art_duration_max_still_enforced(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        with pytest.raises(vol.Invalid):
+            NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 61}})
