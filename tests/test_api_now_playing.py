@@ -163,7 +163,7 @@ async def test_put_track_text_config(endpoint, ledfx):
     request = _make_request(
         {
             "track_text": {
-                "mode": "temporary",
+                "enabled": True,
                 "duration": 5,
                 "virtual_ids": ["m1"],
             }
@@ -174,7 +174,7 @@ async def test_put_track_text_config(endpoint, ledfx):
 
     assert response.status == 200
     body = json.loads(response.body.decode())
-    assert body["data"]["track_text"]["mode"] == "temporary"
+    assert body["data"]["track_text"]["enabled"] is True
     assert body["data"]["track_text"]["duration"] == 5
     assert body["data"]["track_text"]["virtual_ids"] == ["m1"]
 
@@ -183,14 +183,14 @@ async def test_put_track_text_config(endpoint, ledfx):
 async def test_put_album_art_config(endpoint, ledfx):
     """PUT updates album_art configuration."""
     request = _make_request(
-        {"album_art": {"mode": "continuous", "virtual_ids": ["m2"]}}
+        {"album_art": {"enabled": True, "virtual_ids": ["m2"]}}
     )
     with patch("ledfx.nowplaying.service.save_config"):
         response = await endpoint.put(request)
 
     assert response.status == 200
     body = json.loads(response.body.decode())
-    assert body["data"]["album_art"]["mode"] == "continuous"
+    assert body["data"]["album_art"]["enabled"] is True
     assert body["data"]["album_art"]["virtual_ids"] == ["m2"]
 
 

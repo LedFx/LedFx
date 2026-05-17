@@ -1002,14 +1002,13 @@ class TestNowPlayingConfigSchema:
         assert result["gradient"]["enabled"] is True
         assert result["gradient"]["variant"] == "led_punchy"
         assert result["gradient"]["virtual_ids"] == []
-        assert result["track_text"]["mode"] == "off"
+        assert result["track_text"]["enabled"] is True
         assert result["track_text"]["duration"] == 8
         assert result["track_text"]["virtual_ids"] == []
-        assert result["track_text"]["fallback_effect"] == "text"
-        assert result["album_art"]["mode"] == "off"
+        assert result["track_text"]["preset"] == ""
+        assert result["album_art"]["enabled"] is True
         assert result["album_art"]["duration"] == 10
         assert result["album_art"]["virtual_ids"] == []
-        assert result["album_art"]["fallback_effect"] == "image"
 
     def test_invalid_variant_rejected(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
@@ -1019,11 +1018,11 @@ class TestNowPlayingConfigSchema:
                 {"gradient": {"variant": "not_a_variant"}}
             )
 
-    def test_invalid_mode_rejected(self):
+    def test_invalid_enabled_rejected(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"mode": "invalid_mode"}})
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"enabled": "not_a_bool"}})
 
     def test_duration_out_of_range(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
@@ -1041,12 +1040,12 @@ class TestNowPlayingConfigSchema:
             result = NOW_PLAYING_CONFIG_SCHEMA({"gradient": {"variant": v}})
             assert result["gradient"]["variant"] == v
 
-    def test_all_modes_accepted(self):
+    def test_enabled_flag_accepted(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
-        for m in ("off", "temporary", "continuous"):
-            result = NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"mode": m}})
-            assert result["track_text"]["mode"] == m
+        for v in (True, False):
+            result = NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"enabled": v}})
+            assert result["track_text"]["enabled"] is v
 
 
 class TestServiceConfigFromInit:
@@ -1057,8 +1056,8 @@ class TestServiceConfigFromInit:
         assert cfg["gradient"]["enabled"] is True
         assert cfg["gradient"]["variant"] == "led_punchy"
         assert cfg["gradient"]["virtual_ids"] == []
-        assert cfg["track_text"]["mode"] == "off"
-        assert cfg["album_art"]["mode"] == "off"
+        assert cfg["track_text"]["enabled"] is True
+        assert cfg["album_art"]["enabled"] is True
 
     def test_persisted_config_loaded(self, tmp_path):
         ldfx = _DummyLedFx(config_dir=str(tmp_path))
@@ -1070,10 +1069,10 @@ class TestServiceConfigFromInit:
                     "virtual_ids": ["v1", "v2"],
                 },
                 "track_text": {
-                    "mode": "temporary",
+                    "enabled": False,
                     "duration": 5,
                     "virtual_ids": ["matrix1"],
-                    "fallback_effect": "scroll_text",
+                    "preset": "scroll_text",
                 },
             }
         }
@@ -1082,11 +1081,11 @@ class TestServiceConfigFromInit:
         assert svc.gradient_enabled is False
         assert svc.gradient_virtual_ids == ["v1", "v2"]
         assert svc.config["gradient"]["variant"] == "led_max"
-        assert svc.config["track_text"]["mode"] == "temporary"
+        assert svc.config["track_text"]["enabled"] is False
         assert svc.config["track_text"]["duration"] == 5
         assert svc.config["track_text"]["virtual_ids"] == ["matrix1"]
         # album_art should be defaults since not specified
-        assert svc.config["album_art"]["mode"] == "off"
+        assert svc.config["album_art"]["enabled"] is True
 
     def test_variant_applied_to_state(self, tmp_path):
         ldfx = _DummyLedFx(config_dir=str(tmp_path))
@@ -1114,20 +1113,19 @@ class TestUpdateConfig:
     def test_partial_update_track_text(self, service, ledfx):
         with patch("ledfx.nowplaying.service.save_config"):
             result = service.update_config(
-                {"track_text": {"mode": "temporary", "duration": 12}}
+                {"track_text": {"enabled": False, "duration": 12}}
             )
-        assert result["track_text"]["mode"] == "temporary"
+        assert result["track_text"]["enabled"] is False
         assert result["track_text"]["duration"] == 12
-        assert result["track_text"]["fallback_effect"] == "text"
+        assert result["track_text"]["preset"] == ""
 
     def test_partial_update_album_art(self, service, ledfx):
         with patch("ledfx.nowplaying.service.save_config"):
             result = service.update_config(
-                {"album_art": {"mode": "continuous", "virtual_ids": ["m1"]}}
+                {"album_art": {"enabled": False, "virtual_ids": ["m1"]}}
             )
-        assert result["album_art"]["mode"] == "continuous"
+        assert result["album_art"]["enabled"] is False
         assert result["album_art"]["virtual_ids"] == ["m1"]
-        assert result["album_art"]["fallback_effect"] == "image"
 
     def test_full_update(self, service, ledfx):
         new_cfg = {
@@ -1137,16 +1135,15 @@ class TestUpdateConfig:
                 "virtual_ids": ["v1"],
             },
             "track_text": {
-                "mode": "temporary",
+                "enabled": False,
                 "duration": 6,
                 "virtual_ids": ["m1"],
-                "fallback_effect": "marquee",
+                "preset": "marquee",
             },
             "album_art": {
-                "mode": "continuous",
+                "enabled": True,
                 "duration": 15,
                 "virtual_ids": ["m2"],
-                "fallback_effect": "cover",
             },
         }
         with patch("ledfx.nowplaying.service.save_config"):
@@ -1203,11 +1200,11 @@ class TestUpdateConfig:
         """Updating gradient section preserves track_text and album_art."""
         with patch("ledfx.nowplaying.service.save_config"):
             service.update_config(
-                {"track_text": {"mode": "temporary", "duration": 5}}
+                {"track_text": {"enabled": False, "duration": 5}}
             )
             service.update_config({"gradient": {"enabled": False}})
 
         cfg = service.config
         assert cfg["gradient"]["enabled"] is False
-        assert cfg["track_text"]["mode"] == "temporary"
+        assert cfg["track_text"]["enabled"] is False
         assert cfg["track_text"]["duration"] == 5
