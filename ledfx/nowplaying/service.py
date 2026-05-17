@@ -48,10 +48,6 @@ _LOGGER = logging.getLogger(__name__)
 
 # Valid gradient variant names
 GRADIENT_VARIANTS = ("led_safe", "led_punchy", "led_max")
-
-# Valid track-text / album-art display modes
-DISPLAY_MODES = ("off", "temporary", "continuous")
-
 NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("gradient", default={}): vol.Schema(
@@ -65,22 +61,21 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
         ),
         vol.Optional("track_text", default={}): vol.Schema(
             {
-                vol.Optional("mode", default="off"): vol.In(DISPLAY_MODES),
+                vol.Optional("enabled", default=True): bool,
                 vol.Optional("duration", default=8): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=60)
                 ),
                 vol.Optional("virtual_ids", default=[]): [str],
-                vol.Optional("fallback_effect", default="text"): str,
+                vol.Optional("preset", default=""): str,
             }
         ),
         vol.Optional("album_art", default={}): vol.Schema(
             {
-                vol.Optional("mode", default="off"): vol.In(DISPLAY_MODES),
+                vol.Optional("enabled", default=True): bool,
                 vol.Optional("duration", default=10): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=60)
                 ),
                 vol.Optional("virtual_ids", default=[]): [str],
-                vol.Optional("fallback_effect", default="image"): str,
             }
         ),
     }

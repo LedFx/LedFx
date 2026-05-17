@@ -139,16 +139,15 @@ Each variant contains a `gradient` field with a CSS `linear-gradient(...)` strin
     "virtual_ids": []
   },
   "track_text": {
-    "mode": "off",
+    "enabled": false,
     "duration": 8,
     "virtual_ids": [],
-    "fallback_effect": "text"
+    "preset": ""
   },
   "album_art": {
-    "mode": "off",
+    "enabled": false,
     "duration": 10,
     "virtual_ids": [],
-    "fallback_effect": "image"
   }
 }
 ```
@@ -165,19 +164,18 @@ Each variant contains a `gradient` field with a CSS `linear-gradient(...)` strin
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `mode` | string | `"off"` | Display mode. One of: `off`, `temporary`, `continuous`. |
-| `duration` | int | `8` | Duration in seconds for temporary text display (1–60). |
+| `enabled` | bool | `false` | Whether to switch the target virtual to the text effect on each track change. |
+| `duration` | int | `8` | Duration in seconds before restoring the previous effect (0–60). A value of `0` means the effect change is permanent (no fallback restore). |
 | `virtual_ids` | array of strings | `[]` | Target matrix virtual IDs for text display. |
-| `fallback_effect` | string | `"text"` | Effect type to use for text display. |
+| `preset` | string | `""` | Preset name to apply when switching to the text effect. Empty string uses the effect's default configuration. Can be a built-in LedFx preset or a user-defined preset for the texter effect |
 
 #### Album Art Configuration
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
-| `mode` | string | `"off"` | Display mode. One of: `off`, `temporary`, `continuous`. |
-| `duration` | int | `10` | Duration in seconds for temporary art display (1–60). |
+| `enabled` | bool | `false` | Whether to switch the target virtual to the image effect on each artwork change. |
+| `duration` | int | `10` | Duration in seconds before restoring the previous effect (0–60). A value of `0` means the effect change is permanent (no fallback restore). |
 | `virtual_ids` | array of strings | `[]` | Target matrix virtual IDs for art display. |
-| `fallback_effect` | string | `"image"` | Effect type to use for artwork display. |
 
 ---
 
@@ -241,16 +239,15 @@ When a track is playing:
       "virtual_ids": []
     },
     "track_text": {
-      "mode": "off",
+      "enabled": false,
       "duration": 8,
       "virtual_ids": [],
-      "fallback_effect": "text"
+      "preset":""
     },
     "album_art": {
-      "mode": "off",
+      "enabled": false,
       "duration": 10,
       "virtual_ids": [],
-      "fallback_effect": "image"
     }
   }
 }
@@ -272,16 +269,15 @@ When no track is playing (idle state):
       "virtual_ids": []
     },
     "track_text": {
-      "mode": "off",
+      "enabled": false,
       "duration": 8,
       "virtual_ids": [],
-      "fallback_effect": "text"
+      "preset":""
     },
     "album_art": {
-      "mode": "off",
+      "enabled": false,
       "duration": 10,
       "virtual_ids": [],
-      "fallback_effect": "image"
     }
   }
 }
@@ -316,16 +312,15 @@ Full update (all sections):
     "virtual_ids": ["wled-living-room", "wled-bedroom"]
   },
   "track_text": {
-    "mode": "temporary",
+    "enabled": true,
     "duration": 5,
     "virtual_ids": ["matrix-panel"],
-    "fallback_effect": "text"
+    "preset":""
   },
   "album_art": {
-    "mode": "off",
+    "enabled": false,
     "duration": 10,
     "virtual_ids": [],
-    "fallback_effect": "image"
   }
 }
 ```
@@ -344,16 +339,15 @@ Full update (all sections):
         "virtual_ids": ["wled-living-room", "wled-bedroom"]
       },
       "track_text": {
-        "mode": "temporary",
+        "enabled": true,
         "duration": 5,
         "virtual_ids": ["matrix-panel"],
-        "fallback_effect": "text"
+        "preset":""
       },
       "album_art": {
-        "mode": "off",
+        "enabled": false,
         "duration": 10,
         "virtual_ids": [],
-        "fallback_effect": "image"
       }
     }
   }
@@ -377,7 +371,7 @@ Full update (all sections):
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "value must be at least 1 for dictionary value @ data['track_text']['duration']"
+    "reason": "value must be at most 60 for dictionary value @ data['track_text']['duration']"
   }
 }
 ```
@@ -501,16 +495,17 @@ curl -X PUT http://localhost:8888/api/now-playing \
   -d '{"gradient": {"variant": "led_max"}}'
 ```
 
-### Configure Temporary Track Text Display
+### Enable Track Text Display
 
 ```bash
 curl -X PUT http://localhost:8888/api/now-playing \
   -H "Content-Type: application/json" \
   -d '{
     "track_text": {
-      "mode": "temporary",
+      "enabled": true,
       "duration": 5,
       "virtual_ids": ["matrix-panel"]
+      "preset":""
     }
   }'
 ```
