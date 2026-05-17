@@ -85,6 +85,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
         self.returning = False
         self.bar = 0
         self.set_values()
+        self.power = 0
 
     def config_updated(self, config):
         self.background_color = np.array(
@@ -98,6 +99,9 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
         )
         self.color_scan = self.color_scan_cache
         self.set_values()
+        self.color_intensity = self._config["color_intensity"]
+        self.use_grad = self._config["use_grad"]
+        self.multiplier = self._config["multiplier"]
 
     def set_values(self):
         if hasattr(self, "pixels"):  # protect against calling too early
@@ -126,15 +130,15 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
 
     def audio_data_updated(self, data):
         self.power = getattr(data, self.power_func)() * 2
-        self.bar = self.power * self._config["multiplier"]
+        self.bar = self.power * self.multiplier
 
-        if self._config["use_grad"]:
+        if self.use_grad:
             gradient_pos = (self.scan_pos / self.pixel_count) % 1
             self.color_scan = self.get_gradient_color(gradient_pos)
         else:
             self.color_scan = self.color_scan_cache
 
-        if self._config["color_intensity"]:
+        if self.color_intensity:
             self.color_scan = self.color_scan * min(1.0, self.power)
 
     def render(self):
@@ -195,3 +199,6 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
                 if mid_flow > 0:
                     start_flow = max(0, start_pos - self.pixel_count)
                     self.pixels[start_flow:mid_flow] = self.color_scan
+
+        if self.full_grad and self.color_intensity:
+            self.pixels *= min(1.0, self.power)

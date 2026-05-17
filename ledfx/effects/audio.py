@@ -644,7 +644,9 @@ class AudioInputSource:
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
         # depending on the coeffs type, we need to use different pre_emphasis values to make em work better. allegedly.
-        selected_coeff = self._ledfx.config["melbanks"]["coeffs_type"]
+        selected_coeff = self._ledfx.config.get("melbanks", {}).get(
+            "coeffs_type", "matt_mel"
+        )
         if selected_coeff == "matt_mel":
             _LOGGER.debug("Using matt_mel settings for pre-emphasis.")
             self.pre_emphasis.set_biquad(
