@@ -1023,9 +1023,7 @@ class TestNowPlayingConfigSchema:
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA(
-                {"track_text": {"mode": "invalid_mode"}}
-            )
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"mode": "invalid_mode"}})
 
     def test_duration_out_of_range(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
@@ -1040,18 +1038,14 @@ class TestNowPlayingConfigSchema:
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         for v in ("led_safe", "led_punchy", "led_max"):
-            result = NOW_PLAYING_CONFIG_SCHEMA(
-                {"gradient": {"variant": v}}
-            )
+            result = NOW_PLAYING_CONFIG_SCHEMA({"gradient": {"variant": v}})
             assert result["gradient"]["variant"] == v
 
     def test_all_modes_accepted(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         for m in ("off", "temporary", "continuous"):
-            result = NOW_PLAYING_CONFIG_SCHEMA(
-                {"track_text": {"mode": m}}
-            )
+            result = NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"mode": m}})
             assert result["track_text"]["mode"] == m
 
 
@@ -1110,9 +1104,7 @@ class TestUpdateConfig:
 
     def test_partial_update_gradient(self, service, ledfx):
         with patch("ledfx.nowplaying.service.save_config"):
-            result = service.update_config(
-                {"gradient": {"enabled": False}}
-            )
+            result = service.update_config({"gradient": {"enabled": False}})
         assert result["gradient"]["enabled"] is False
         # Other gradient fields retain defaults
         assert result["gradient"]["variant"] == "led_punchy"
@@ -1202,13 +1194,9 @@ class TestUpdateConfig:
 
     def test_variant_change_no_re_resolve_when_unchanged(self, service, ledfx):
         """No re-resolve when variant doesn't change."""
-        with patch.object(
-            service, "_update_current_gradient"
-        ) as mock_update:
+        with patch.object(service, "_update_current_gradient") as mock_update:
             with patch("ledfx.nowplaying.service.save_config"):
-                service.update_config(
-                    {"gradient": {"variant": "led_punchy"}}
-                )
+                service.update_config({"gradient": {"variant": "led_punchy"}})
             mock_update.assert_not_called()
 
     def test_update_preserves_unrelated_sections(self, service, ledfx):
