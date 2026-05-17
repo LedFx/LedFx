@@ -62,7 +62,7 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("track_text", default={}): vol.Schema(
             {
                 vol.Optional("enabled", default=True): bool,
-                vol.Optional("duration", default=8): vol.All(
+                vol.Optional("duration", default=60): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
                 vol.Optional("virtual_ids", default=[]): [str],
