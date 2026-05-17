@@ -1270,9 +1270,11 @@ ledfx/nowplaying/service.py  ← NowPlayingService with set/get/clear API + even
                                 Uses save_asset for artwork storage
                                 Uses extract_gradient_metadata() for gradient extraction
                                 apply_gradient_to_virtuals() for gradient application (Phase 6)
+                                NOW_PLAYING_CONFIG_SCHEMA + update_config() + _save_config() (Phase 7)
+                                Config loaded from ledfx.config["now_playing"] on init
 ledfx/nowplaying/providers/__init__.py ← providers package
 ledfx/nowplaying/providers/sendspin.py ← SendspinNowPlayingProvider (Phase 4)
-ledfx/api/now_playing.py     ← GET /api/now-playing endpoint
+ledfx/api/now_playing.py     ← GET + PUT /api/now-playing endpoint
 ledfx/core.py               ← registers service as self.now_playing
 ledfx/events.py             ← 5 NowPlaying event types + subclasses (Phase 3)
 ledfx/sendspin/stream.py    ← wired with metadata listener + METADATA role (Phase 4)
@@ -1283,8 +1285,8 @@ ledfx/utilities/gradient_extraction.py ← extract_gradient_metadata() → led_s
 ledfx/utilities/security_utils.py ← URL validation, image validation, download helpers
 ledfx/color.py              ← resolve_gradient(), get_color_at_position(), COLOR_GROUPS (Phase 6)
 ledfx/config.py             ← save_config() for persisting effect config changes (Phase 6)
-tests/test_now_playing_service.py  ← 58 tests (models, service, events, artwork, gradient application)
-tests/test_api_now_playing.py      ← 4 API integration tests (including artwork URL with mocked download)
+tests/test_now_playing_service.py  ← 76+ tests (models, service, events, artwork, gradient application, config schema, config loading, config updates)
+tests/test_api_now_playing.py      ← 11 API integration tests (GET state, PUT config, validation errors)
 tests/test_now_playing_sendspin.py ← 11 provider tests
 ```
 
@@ -1539,25 +1541,47 @@ The `_DummyLedFxWithVirtuals` test stub provides a `virtuals` dict and `gradient
 
 **Goal**: Add configurable settings for the Now Playing Service to LedFx config.
 
-**Status**: `[ ]` Not started
+**Status**: `[x]` Complete
 
 ### Tasks
 
-- [ ] 7.1 Define config schema (Voluptuous):
-  - `enabled: bool`
-  - `sources: dict`
-  - `gradient.enabled: bool`
-  - `gradient.variant: str` (led_safe | led_punchy | led_max)
-  - `gradient.virtual_ids: list` (empty = all virtuals)
-  - `track_text.mode: str` (off | temporary | continuous)
-  - `track_text.duration: int`
-  - `track_text.virtual_ids: list`
-  - `album_art.mode: str`
-  - `album_art.duration: int`
-  - `album_art.virtual_ids: list`
-- [ ] 7.2 Load/save config via LedFx config system
-- [ ] 7.3 Add `PUT /api/now-playing/config` endpoint
-- [ ] 7.4 Write config validation tests
+- [x] 7.1 Define config schema (`NOW_PLAYING_CONFIG_SCHEMA` in `service.py`):
+  - `gradient.enabled: bool` (default: True)
+  - `gradient.variant: str` (led_safe | led_punchy | led_max, default: led_punchy)
+  - `gradient.virtual_ids: list[str]` (empty = all virtuals)
+  - `track_text.mode: str` (off | temporary | continuous, default: off)
+  - `track_text.duration: int` (1–60, default: 8)
+  - `track_text.virtual_ids: list[str]`
+  - `track_text.fallback_effect: str` (default: "text")
+  - `album_art.mode: str` (off | temporary | continuous, default: off)
+  - `album_art.duration: int` (1–60, default: 10)
+  - `album_art.virtual_ids: list[str]`
+  - `album_art.fallback_effect: str` (default: "image")
+- [x] 7.2 Load/save config via LedFx config system:
+  - Config loaded from `ledfx.config["now_playing"]` on service init
+  - Validated through Voluptuous schema with defaults for missing keys
+  - `_save_config()` persists to `config.json` via `save_config()`
+  - Gradient settings (`enabled`, `virtual_ids`, `variant`) applied to service properties on load
+- [x] 7.3 Add `PUT /api/now-playing` endpoint (on same `NowPlayingEndpoint` class):
+  - Accepts partial or full config dict (gradient, track_text, album_art sections)
+  - Merges with current config, validates via schema
+  - Applies settings and persists to disk
+  - Returns validated complete config
+  - Re-resolves gradient when variant changes
+- [x] 7.4 Write config validation and API tests:
+  - 6 schema validation tests (`TestNowPlayingConfigSchema`)
+  - 3 config loading tests (`TestServiceConfigFromInit`)
+  - 9 `update_config()` method tests (`TestUpdateConfig`)
+  - 7 PUT API tests in `test_api_now_playing.py` (gradient config, track_text config, album_art config, invalid variant, invalid JSON, non-dict body, reflects in GET)
+  - GET endpoint updated to include `config` in response
+
+### Implementation Notes
+
+The `PUT /api/now-playing` endpoint reuses the same `NowPlayingEndpoint` class as the GET endpoint (one class per file rule). Configuration is merged section-by-section: providing `{"gradient": {"enabled": false}}` only updates the gradient section, preserving track_text and album_art. The `update_config()` method on `NowPlayingService` handles validation, application, and persistence in a single call.
+
+When the gradient variant changes, `_update_current_gradient()` is called to re-resolve from cached artwork gradients without re-extracting. This allows instant variant switching.
+
+The `enabled`/`sources` top-level fields from the original design were deferred — the current schema focuses on the three actionable sections (gradient, track_text, album_art) that are needed by Phases 8–10.
 
 ### Dependencies
 
@@ -1703,7 +1727,9 @@ The `_DummyLedFxWithVirtuals` test stub provides a `virtuals` dict and `gradient
 | `ledfx/events.py` | Event constants + NowPlayingEvent class |
 | `ledfx/libraries/cache.py` | `ImageCache.put()` for artwork → gradient |
 | `ledfx/utilities/gradient_extraction.py` | `extract_gradient_metadata()` (called by cache) |
-| `ledfx/color.py` | Gradient resolution via `resolve_gradient()`, color sampling via `get_color_at_position()`, `COLOR_GROUPS` (used by apply_global and Phase 6) |
+| `ledfx/color.py` | Gradient resolution via `resolve_gradient()`, color sampling via `get_color_at_position()`, `COLOR_GROUPS` (used by apply_global and Phase 6), `build_gradient_config()` |
+| `ledfx/virtuals.py` | `apply_config_to_active_effects()` for per-virtual gradient application (Phase 6) |
+| `ledfx/config.py` | `save_config()` for persisting effect and now_playing config changes |
 | `ledfx/sendspin/stream.py` | Metadata source hookup |
 
 ### Design Constraints
@@ -1740,7 +1766,7 @@ The `_DummyLedFxWithVirtuals` test stub provides a `virtuals` dict and `gradient
 | 4 | Sendspin Metadata Provider | `[x]` Complete |
 | 5 | Sendspin Artwork + Gradient Extraction | `[x]` Complete |
 | 6 | Gradient Application via Globals API | `[x]` Complete |
-| 7 | Now Playing Configuration | `[ ]` Not started |
+| 7 | Now Playing Configuration | `[x]` Complete |
 | 8 | Track Text Temporary Display | `[ ]` Not started |
 | 9 | Album Artwork Temporary Display | `[ ]` Not started |
 | 10 | Continuous Display Modes | `[ ]` Not started |

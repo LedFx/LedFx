@@ -11,6 +11,7 @@ import logging
 import time
 import urllib.request
 
+import voluptuous as vol
 from PIL import Image
 
 from ledfx.assets import (
@@ -45,6 +46,46 @@ from ledfx.virtuals import apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
 
+# Valid gradient variant names
+GRADIENT_VARIANTS = ("led_safe", "led_punchy", "led_max")
+
+# Valid track-text / album-art display modes
+DISPLAY_MODES = ("off", "temporary", "continuous")
+
+NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
+    {
+        vol.Optional("gradient", default={}): vol.Schema(
+            {
+                vol.Optional("enabled", default=True): bool,
+                vol.Optional("variant", default="led_punchy"): vol.In(
+                    GRADIENT_VARIANTS
+                ),
+                vol.Optional("virtual_ids", default=[]): [str],
+            }
+        ),
+        vol.Optional("track_text", default={}): vol.Schema(
+            {
+                vol.Optional("mode", default="off"): vol.In(DISPLAY_MODES),
+                vol.Optional("duration", default=8): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=60)
+                ),
+                vol.Optional("virtual_ids", default=[]): [str],
+                vol.Optional("fallback_effect", default="text"): str,
+            }
+        ),
+        vol.Optional("album_art", default={}): vol.Schema(
+            {
+                vol.Optional("mode", default="off"): vol.In(DISPLAY_MODES),
+                vol.Optional("duration", default=10): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=60)
+                ),
+                vol.Optional("virtual_ids", default=[]): [str],
+                vol.Optional("fallback_effect", default="image"): str,
+            }
+        ),
+    }
+)
+
 # Content-type to file extension mapping
 _EXTENSION_MAP = {
     "image/gif": ".gif",
@@ -72,8 +113,17 @@ class NowPlayingService:
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._state = NowPlayingState()
-        self._gradient_enabled = True
-        self._gradient_virtual_ids: list[str] = []
+
+        # Load persisted configuration
+        raw_config = getattr(ledfx, "config", {}).get("now_playing", {})
+        self._config = NOW_PLAYING_CONFIG_SCHEMA(raw_config)
+
+        # Apply gradient settings from config
+        grad_cfg = self._config["gradient"]
+        self._gradient_enabled = grad_cfg["enabled"]
+        self._gradient_virtual_ids: list[str] = list(grad_cfg["virtual_ids"])
+        self._state.selected_gradient_variant = grad_cfg["variant"]
+
         _LOGGER.info("Now Playing Service initialized")
 
     # ------------------------------------------------------------------
@@ -308,6 +358,69 @@ class NowPlayingService:
     @gradient_virtual_ids.setter
     def gradient_virtual_ids(self, value: list[str]) -> None:
         self._gradient_virtual_ids = list(value)
+
+    @property
+    def config(self) -> dict:
+        """Return the current validated configuration dict."""
+        return dict(self._config)
+
+    def update_config(self, new_config: dict) -> dict:
+        """Validate, apply and persist a new configuration.
+
+        Merges *new_config* with the current configuration, validates
+        the result against :data:`NOW_PLAYING_CONFIG_SCHEMA`, applies
+        the settings to the service, and saves to disk.
+
+        Args:
+            new_config: Partial or full configuration dict.
+
+        Returns:
+            The validated, complete configuration dict.
+
+        Raises:
+            vol.Invalid: If validation fails.
+        """
+        # Merge: new values override current, then validate
+        merged = {**self._config}
+        for section in ("gradient", "track_text", "album_art"):
+            if section in new_config:
+                merged[section] = {
+                    **merged.get(section, {}),
+                    **new_config[section],
+                }
+
+        validated = NOW_PLAYING_CONFIG_SCHEMA(merged)
+        self._config = validated
+
+        # Apply gradient settings
+        grad_cfg = validated["gradient"]
+        self._gradient_enabled = grad_cfg["enabled"]
+        self._gradient_virtual_ids = list(grad_cfg["virtual_ids"])
+
+        old_variant = self._state.selected_gradient_variant
+        self._state.selected_gradient_variant = grad_cfg["variant"]
+
+        # Re-resolve gradient if variant changed
+        if grad_cfg["variant"] != old_variant:
+            self._update_current_gradient()
+
+        # Persist to core config
+        self._save_config()
+
+        return dict(validated)
+
+    def _save_config(self) -> None:
+        """Persist the now_playing config section to disk."""
+        config = getattr(self._ledfx, "config", None)
+        config_dir = getattr(self._ledfx, "config_dir", None)
+        if config is not None and config_dir:
+            config["now_playing"] = dict(self._config)
+            try:
+                save_config(config=config, config_dir=config_dir)
+            except Exception as exc:
+                _LOGGER.warning(
+                    "Failed to save now_playing config: %s", exc
+                )
 
     def apply_gradient_to_virtuals(self) -> int:
         """Apply the current gradient + color group updates to target virtuals.

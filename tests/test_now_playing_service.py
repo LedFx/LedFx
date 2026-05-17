@@ -1,4 +1,4 @@
-"""Unit tests for the Now Playing Service (Phase 1 + Phase 3 events + Phase 5 artwork + Phase 6 gradient application)."""
+"""Unit tests for the Now Playing Service (Phase 1 + Phase 3 events + Phase 5 artwork + Phase 6 gradient application + Phase 7 configuration)."""
 
 import io
 import os
@@ -985,3 +985,241 @@ class TestGradientAutoApplication:
             if e.event_type == Event.NOW_PLAYING_GRADIENT_CHANGED
         ]
         assert len(gradient_events) == 1
+
+
+# ------------------------------------------------------------------
+# Phase 7: Configuration persistence tests
+# ------------------------------------------------------------------
+
+
+class TestNowPlayingConfigSchema:
+    """Tests for NOW_PLAYING_CONFIG_SCHEMA validation."""
+
+    def test_default_config_is_valid(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        result = NOW_PLAYING_CONFIG_SCHEMA({})
+        assert result["gradient"]["enabled"] is True
+        assert result["gradient"]["variant"] == "led_punchy"
+        assert result["gradient"]["virtual_ids"] == []
+        assert result["track_text"]["mode"] == "off"
+        assert result["track_text"]["duration"] == 8
+        assert result["track_text"]["virtual_ids"] == []
+        assert result["track_text"]["fallback_effect"] == "text"
+        assert result["album_art"]["mode"] == "off"
+        assert result["album_art"]["duration"] == 10
+        assert result["album_art"]["virtual_ids"] == []
+        assert result["album_art"]["fallback_effect"] == "image"
+
+    def test_invalid_variant_rejected(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        with pytest.raises(vol.Invalid):
+            NOW_PLAYING_CONFIG_SCHEMA(
+                {"gradient": {"variant": "not_a_variant"}}
+            )
+
+    def test_invalid_mode_rejected(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        with pytest.raises(vol.Invalid):
+            NOW_PLAYING_CONFIG_SCHEMA(
+                {"track_text": {"mode": "invalid_mode"}}
+            )
+
+    def test_duration_out_of_range(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        with pytest.raises(vol.Invalid):
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": 0}})
+
+        with pytest.raises(vol.Invalid):
+            NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 999}})
+
+    def test_all_variants_accepted(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        for v in ("led_safe", "led_punchy", "led_max"):
+            result = NOW_PLAYING_CONFIG_SCHEMA(
+                {"gradient": {"variant": v}}
+            )
+            assert result["gradient"]["variant"] == v
+
+    def test_all_modes_accepted(self):
+        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+
+        for m in ("off", "temporary", "continuous"):
+            result = NOW_PLAYING_CONFIG_SCHEMA(
+                {"track_text": {"mode": m}}
+            )
+            assert result["track_text"]["mode"] == m
+
+
+class TestServiceConfigFromInit:
+    """Tests that NowPlayingService loads config on init."""
+
+    def test_default_config_loaded(self, service):
+        cfg = service.config
+        assert cfg["gradient"]["enabled"] is True
+        assert cfg["gradient"]["variant"] == "led_punchy"
+        assert cfg["gradient"]["virtual_ids"] == []
+        assert cfg["track_text"]["mode"] == "off"
+        assert cfg["album_art"]["mode"] == "off"
+
+    def test_persisted_config_loaded(self, tmp_path):
+        ldfx = _DummyLedFx(config_dir=str(tmp_path))
+        ldfx.config = {
+            "now_playing": {
+                "gradient": {
+                    "enabled": False,
+                    "variant": "led_max",
+                    "virtual_ids": ["v1", "v2"],
+                },
+                "track_text": {
+                    "mode": "temporary",
+                    "duration": 5,
+                    "virtual_ids": ["matrix1"],
+                    "fallback_effect": "scroll_text",
+                },
+            }
+        }
+        svc = NowPlayingService(ldfx)
+
+        assert svc.gradient_enabled is False
+        assert svc.gradient_virtual_ids == ["v1", "v2"]
+        assert svc.config["gradient"]["variant"] == "led_max"
+        assert svc.config["track_text"]["mode"] == "temporary"
+        assert svc.config["track_text"]["duration"] == 5
+        assert svc.config["track_text"]["virtual_ids"] == ["matrix1"]
+        # album_art should be defaults since not specified
+        assert svc.config["album_art"]["mode"] == "off"
+
+    def test_variant_applied_to_state(self, tmp_path):
+        ldfx = _DummyLedFx(config_dir=str(tmp_path))
+        ldfx.config = {
+            "now_playing": {
+                "gradient": {"variant": "led_safe"},
+            }
+        }
+        svc = NowPlayingService(ldfx)
+        assert svc.get_current().selected_gradient_variant == "led_safe"
+
+
+class TestUpdateConfig:
+    """Tests for update_config() method."""
+
+    def test_partial_update_gradient(self, service, ledfx):
+        with patch("ledfx.nowplaying.service.save_config"):
+            result = service.update_config(
+                {"gradient": {"enabled": False}}
+            )
+        assert result["gradient"]["enabled"] is False
+        # Other gradient fields retain defaults
+        assert result["gradient"]["variant"] == "led_punchy"
+        assert result["gradient"]["virtual_ids"] == []
+        assert service.gradient_enabled is False
+
+    def test_partial_update_track_text(self, service, ledfx):
+        with patch("ledfx.nowplaying.service.save_config"):
+            result = service.update_config(
+                {"track_text": {"mode": "temporary", "duration": 12}}
+            )
+        assert result["track_text"]["mode"] == "temporary"
+        assert result["track_text"]["duration"] == 12
+        assert result["track_text"]["fallback_effect"] == "text"
+
+    def test_partial_update_album_art(self, service, ledfx):
+        with patch("ledfx.nowplaying.service.save_config"):
+            result = service.update_config(
+                {"album_art": {"mode": "continuous", "virtual_ids": ["m1"]}}
+            )
+        assert result["album_art"]["mode"] == "continuous"
+        assert result["album_art"]["virtual_ids"] == ["m1"]
+        assert result["album_art"]["fallback_effect"] == "image"
+
+    def test_full_update(self, service, ledfx):
+        new_cfg = {
+            "gradient": {
+                "enabled": False,
+                "variant": "led_max",
+                "virtual_ids": ["v1"],
+            },
+            "track_text": {
+                "mode": "temporary",
+                "duration": 6,
+                "virtual_ids": ["m1"],
+                "fallback_effect": "marquee",
+            },
+            "album_art": {
+                "mode": "continuous",
+                "duration": 15,
+                "virtual_ids": ["m2"],
+                "fallback_effect": "cover",
+            },
+        }
+        with patch("ledfx.nowplaying.service.save_config"):
+            result = service.update_config(new_cfg)
+
+        assert result == new_cfg
+        assert service.gradient_enabled is False
+        assert service.gradient_virtual_ids == ["v1"]
+
+    def test_invalid_config_raises(self, service):
+        with pytest.raises(vol.Invalid):
+            service.update_config({"gradient": {"variant": "bad"}})
+
+    def test_config_persisted_to_disk(self, service, ledfx):
+        with patch("ledfx.nowplaying.service.save_config") as mock_save:
+            service.update_config({"gradient": {"enabled": False}})
+            mock_save.assert_called_once()
+
+        assert ledfx.config["now_playing"]["gradient"]["enabled"] is False
+
+    def test_variant_change_re_resolves_gradient(self, service, ledfx):
+        """Changing variant re-resolves gradient from cached artwork."""
+        from ledfx.nowplaying.models import ArtworkReference
+
+        service._state.active_source_id = "test"
+        service._state.artwork = ArtworkReference(
+            source_id="test",
+            gradients={
+                "led_punchy": {
+                    "gradient": "linear-gradient(90deg, rgb(255,0,0) 0%, rgb(0,0,255) 100%)"
+                },
+                "led_max": {
+                    "gradient": "linear-gradient(90deg, rgb(0,255,0) 0%, rgb(255,0,255) 100%)"
+                },
+            },
+        )
+        # Start with led_punchy (default)
+        service._update_current_gradient()
+        assert "255,0,0" in service.get_current().current_gradient
+
+        with patch("ledfx.nowplaying.service.save_config"):
+            service.update_config({"gradient": {"variant": "led_max"}})
+
+        assert "0,255,0" in service.get_current().current_gradient
+
+    def test_variant_change_no_re_resolve_when_unchanged(self, service, ledfx):
+        """No re-resolve when variant doesn't change."""
+        with patch.object(
+            service, "_update_current_gradient"
+        ) as mock_update:
+            with patch("ledfx.nowplaying.service.save_config"):
+                service.update_config(
+                    {"gradient": {"variant": "led_punchy"}}
+                )
+            mock_update.assert_not_called()
+
+    def test_update_preserves_unrelated_sections(self, service, ledfx):
+        """Updating gradient section preserves track_text and album_art."""
+        with patch("ledfx.nowplaying.service.save_config"):
+            service.update_config(
+                {"track_text": {"mode": "temporary", "duration": 5}}
+            )
+            service.update_config({"gradient": {"enabled": False}})
+
+        cfg = service.config
+        assert cfg["gradient"]["enabled"] is False
+        assert cfg["track_text"]["mode"] == "temporary"
+        assert cfg["track_text"]["duration"] == 5

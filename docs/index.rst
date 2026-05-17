@@ -62,6 +62,7 @@
    /apis/websocket_client
    /apis/scenes
    /apis/sendspin_servers
+   /apis/now_playing
    /apis/playlists
    /apis/global
 
