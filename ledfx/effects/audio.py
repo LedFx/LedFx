@@ -511,7 +511,7 @@ class AudioInputSource:
             self._config.get("audio_device") if has_old_config else None
         )
         new_device = new_config.get("audio_device")
-        device_changing = old_device != new_device
+        requested_device_changing = old_device != new_device
 
         # Pipeline-affecting keys require rebuilding internal audio objects
         # (delay_queue, _raw_audio_sample, _phase_vocoder, etc.) even when
@@ -523,7 +523,7 @@ class AudioInputSource:
 
         if AudioInputSource._audio_stream_active:
             if (
-                device_changing
+                requested_device_changing
                 or pipeline_changing
                 or not self._should_always_keep_active()
             ):
@@ -532,6 +532,8 @@ class AudioInputSource:
         self._config = new_config
         # Resolve device by name if available (handles index drift across restarts)
         self._resolve_device_from_name()
+        resolved_device = self._config.get("audio_device")
+        device_changing = has_old_config and old_device != resolved_device
 
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
@@ -546,10 +548,10 @@ class AudioInputSource:
 
         # Check if device changed and fire event if needed
         with AudioInputSource._class_lock:
-            if last_active != AudioInputSource._last_active:
+            if device_changing or last_active != AudioInputSource._last_active:
                 self._ledfx.events.fire_event(
                     AudioDeviceChangeEvent(
-                        self.input_devices()[self._config["audio_device"]]
+                        self.input_devices()[resolved_device]
                     )
                 )
 

@@ -8,6 +8,7 @@ import logging
 from unittest.mock import MagicMock, patch
 
 from ledfx.effects.audio import AudioInputSource
+from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -484,6 +485,40 @@ class TestAudioDevicesApi:
 
         assert response["active_device_index"] == 17
         assert response["active_device_name"] == LOOPBACK_NAME
+
+
+# ===========================================================================
+# §7.4.5 — update_config() event emission
+# ===========================================================================
+
+
+class TestUpdateConfigEvents:
+    """Audio device change event regression tests."""
+
+    @patch.object(
+        AudioInputSource, "input_devices", return_value=DEVICES_BEFORE
+    )
+    def test_inactive_device_change_fires_event(self, mock_devices):
+        """Changing the configured device emits an event even without subscribers."""
+        old_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
+            {"audio_device": 0, "audio_device_name": ""}
+        )
+        ledfx = make_mock_ledfx(dict(old_config))
+        ais = make_ais(config=dict(old_config), ledfx=ledfx)
+        ais._callbacks = []
+
+        AudioInputSource._audio_stream_active = False
+        AudioInputSource._last_active = None
+        try:
+            ais.update_config({"audio_device": 5, "audio_device_name": ""})
+
+            ledfx.events.fire_event.assert_called_once()
+            event = ledfx.events.fire_event.call_args.args[0]
+            assert event.event_type == Event.AUDIO_INPUT_DEVICE_CHANGED
+            assert event.audio_input_device_name == DEVICES_BEFORE[5]
+        finally:
+            AudioInputSource._audio_stream_active = False
+            AudioInputSource._last_active = None
 
 
 # ===========================================================================
