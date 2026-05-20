@@ -1151,7 +1151,7 @@ wheels = [
 
 [[package]]
 name = "ledfx"
-version = "2.1.8"
+version = "2.1.9"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
