@@ -4,7 +4,7 @@ The documentation is written in markdown. Once you are finished
 making changes, you must build the documentation. To build the LedFx
 documentation follow the steps outlined below:
 
-We have now migrated document dependancy management and build to uv
+We have now migrated document dependency management and build to uv
 based.
 
 Building should be the same for all platforms.
@@ -18,19 +18,19 @@ This is most simply built via VScode tasks as per [Docs in VScode](#docs-in-vsco
 
 ::::
 
-The docs dependancies are defined in the `pyproject.toml` file, and managed by the uv framework.
+The docs dependencies are defined in the `pyproject.toml` file, and managed by the uv framework.
 
 See [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/)
 
 Run the following command in the LedFx source directory where pyproject.toml resides.
 
-To install the docs dependancies on top of the dev dependancies:
+To install the docs dependencies on top of the dev dependencies:
 
 ``` console
 uv sync --group docs
 ```
 
-If you only want the docs dependancies then instead use:
+If you only want the docs dependencies then instead use:
 
 ``` console
 uv sync --only-group docs
@@ -49,12 +49,12 @@ The built docs can be checked in the docs/build directory by opening the index.h
 
 Tasks have been added to the .vscode file to make building docs smoother and removing any excuse not to improve them ( hint hint ).
 
-Although there are seperate tasks defined in .vscode/tasks.json for
-dependancy install, build and open in browser, they are configured such
+Although there are separate tasks defined in .vscode/tasks.json for
+dependency install, build and open in browser, they are configured such
 that it should be just a case of launching the task **Build and Open
 Docs**
 
-This should ensure dependancies are in place, build the docs and open
+This should ensure dependencies are in place, build the docs and open
 the index.html in your default browser.
 
 Error detection in the build process to prevent the browser open is not
