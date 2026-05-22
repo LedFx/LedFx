@@ -1,340 +1,76 @@
 # Copilot Instructions for LedFx
 
-## Project Overview
+LedFx is a real-time LED visualization system syncing audio input to networked LED devices (WLED, ESP8266/ESP32, E1.31, etc.).
 
-LedFx is a real-time LED visualization system that synchronizes LED lighting with audio input. It processes audio signals and translates them into colorful light patterns that can be displayed on network-connected LED devices like ESP8266/ESP32, WLED, and other compatible hardware.
+## Commands
 
-### Key Architecture Components
-
-1. **Core System** (`ledfx/core.py`): Main application orchestrator
-2. **Effects** (`ledfx/effects/`): 50+ visual effect implementations
-3. **Devices** (`ledfx/devices/`): Hardware device integrations
-4. **Virtuals** (`ledfx/virtuals.py`): Virtual LED strip abstractions
-5. **Audio Processing**: Real-time audio analysis and FFT
-6. **Web API** (`ledfx/api/`): REST API and WebSocket interface
-7. **Integrations** (`ledfx/integrations/`): External service connections
-
-## Development Environment
-
-- **Python Version**: 3.10-3.13 supported (requires-python = ">=3.10,<3.14")
-- **Build System**: `uv` workspace with `pyproject.toml`
-- **License**: GPL-3.0
-- **Dependencies**: Audio processing (aubio-ledfx, sounddevice), LED control (openrgb-python, sacn), web framework (aiohttp)
-- **Development Tools**: pre-commit hooks (black, flake8, isort, pyupgrade), VS Code integration
-
-### Command Execution
-
-**CRITICAL**: All Python commands MUST be run through `uv run`. Never use bare `python`, `pip`, or `pytest` directly.
+**CRITICAL**: Always use `uv run`. Never use bare `python`, `pip`, or `pytest`.
 
 - Tests: `uv run pytest ...`
 - Scripts: `uv run python ...`
 - Linting: `uv run black ...`, `uv run flake8 ...`
-- Package ops: `uv sync`, `uv add`, NOT `pip install`
+- Packages: `uv sync`, `uv add` (not `pip install`)
 
-Do NOT use `python -m pytest`, `python -m pip`, or activate the venv manually.
+## Key Structure
 
-### Workspace Structure
 ```
-ledfx/                    # Main package
-├── api/                 # REST API endpoints
-├── devices/             # Device drivers (WLED, E1.31, DDP, etc.)
-├── effects/             # Effect implementations (50+ files)
-├── integrations/        # External service integrations
-├── libraries/           # Shared libraries (cache, lifxdev)
-├── tools/               # Development tools (TypeScript generator, etc.)
-├── color.py             # Color manipulation utilities
-├── config.py            # Configuration management
-├── core.py              # Application core
-├── events.py            # Event system
-├── utils.py             # Utility functions and BaseRegistry
-└── virtuals.py          # Virtual LED strip management
+ledfx/
+├── api/          # REST endpoints (one RestEndpoint class per file)
+├── devices/      # Device drivers (WLED, E1.31, DDP, ArtNet, Serial, OpenRGB)
+├── effects/      # 50+ effect implementations
+├── integrations/ # External service integrations
+├── color.py      # Color utilities
+├── core.py       # App orchestrator
+├── utils.py      # BaseRegistry (base for all effects/devices)
+└── virtuals.py   # Virtual LED strip management
 ```
 
-## Effect System Architecture
+## Effect Pattern
 
-### Effect Base Class (`ledfx/effects/__init__.py`)
-All effects inherit from the `Effect` base class (which extends `BaseRegistry` from `utils.py`) which provides:
-- **Pixel Management**: `self.pixels` array for RGB values
-- **Configuration**: Voluptuous schema validation
-- **Rendering**: `render()` method for effect computation
-- **Post-processing**: blur, flip, mirror, brightness, background color
-- **Threading**: Thread-safe with `self.lock`
+All effects inherit from `Effect` (extends `BaseRegistry`). Modify `self.pixels` in `render()`.
 
-### Effect Categories
-1. **Audio Effects**: Spectrum analyzers, beat detection, tempo sync
-2. **2D Effects**: Matrix-based effects for LED panels
-3. **1D Effects**: Linear strip effects
-4. **Temporal Effects**: Time-based animations
-
-### Common Effect Patterns
 ```python
 class MyEffect(Effect):
     NAME = "My Effect"
     CONFIG_SCHEMA = vol.Schema({
         vol.Optional("speed", default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
-        vol.Optional("color", default="#ff0000"): validate_color,
     })
-
     def render(self):
-        # Effect computation here
-        # Modify self.pixels array
-        pass
+        pass  # modify self.pixels
 ```
 
-## Device Integration
+## Device Pattern
 
-### Device Types
-- **WLED**: WiFi LED controllers (DDP/UDP protocols)
-- **E1.31**: DMX over Ethernet (sACN protocol)
-- **ArtNet**: Professional lighting protocol
-- **DDP**: Display Data Protocol
-- **Serial**: Adalight/TPM2 serial devices
-- **OpenRGB**: RGB peripheral control
-- **OSC**: Open Sound Control protocol
+All devices inherit from `BaseRegistry`. Implement `flush()` for data transmission. Base classes: `Device`, `NetworkedDevice`, `UDPDevice`, `SerialDevice`.
 
-### Device Base Classes
-All devices inherit from `BaseRegistry` (from `utils.py`):
-- `Device`: Base device class with CONFIG_SCHEMA
-- `NetworkedDevice`: IP-based devices with address resolution
-- `UDPDevice`: UDP-based network devices
-- `SerialDevice`: Serial port devices
+## REST API Standards
 
-## Virtual LED Strips
+**CRITICAL**: Each file in `ledfx/api/` must have exactly ONE `RestEndpoint` class (RegistryLoader auto-discovery). For multiple related endpoints, create separate files (e.g., `cache_images.py` + `cache_images_refresh.py`).
 
-Virtuals abstract physical LED hardware, allowing:
-- **Segments**: Map virtual pixels to device pixel ranges
-- **Effects**: Apply effects to virtual strips
-- **Mapping**: Span effects across segments or copy per segment
-- **Transitions**: Smooth effect changes
-- **Matrix Support**: 2D LED panel configurations
+**Never use `web.json_response()` directly.** Use helper methods:
+- `await self.request_success(type, message, data=None)` — with snackbar feedback
+- `await self.bare_request_success(data)` — no snackbar
+- `await self.invalid_request(message, type="error")` — returns HTTP 200 with `status:"failed"`
+- `await self.json_decode_error()` — in `except JSONDecodeError`
 
-## Audio Processing Pipeline
+## Code Standards
 
-1. **Audio Input**: Capture from system audio devices
-2. **FFT Analysis**: Real-time frequency domain analysis
-3. **Mel Scale**: Perceptually uniform frequency bins
-4. **Beat Detection**: Onset detection and tempo analysis
-5. **Effect Parameters**: Audio drives effect parameters
+- **Imports**: Always at top of file; no inline/local imports except for circular dependency avoidance.
+- **Paths**: Use `os.path` only — `os.path.join()`, `os.path.exists()`, `os.makedirs()`, `os.remove()`. **Never use `pathlib`.**
+- **Logging**: `_LOGGER.warning()` for client errors; `_LOGGER.error()` for system errors only (avoid Sentry noise).
+- **NumPy**: Vectorized operations for pixel manipulation; protect shared state with `self.lock`.
+- **Formatting**: black + flake8 (E501 relaxed) + isort.
 
-## Configuration System
+## Security Testing
 
-- **JSON Configuration**: User settings stored in JSON
-- **Schema Validation**: Voluptuous for type safety
-- **Runtime Updates**: Hot-reload configuration changes
-- **Presets**: Save/load effect configurations
-- **Scenes**: Coordinate multiple virtual strips
+For input validation tests (paths, URLs), cover: path traversal (`../`, encoded variants, null bytes), URL injection, reserved filenames (CON, PRN, NUL), SSRF (loopback, private networks).
 
-## API Design
+## Debugging Libraries
 
-### REST Endpoints
-Key API endpoints include:
-- `/api/virtuals` - Virtual strip control
-- `/api/effects` - Effect library
-- `/api/devices` - Device management
-- `/api/config` - Configuration management
-- `/api/scenes` - Scene coordination
-- `/api/integrations` - External service connections
-- `/api/cache/images` - Image cache management
-- `/api/assets` - Secure asset storage and management
+**CRITICAL**: Never assume a library is broken. Before concluding a bug exists:
+1. `uv pip show <package>` — check metadata and docs URL
+2. Read README in `.venv/Lib/site-packages/<package>*.dist-info/`
+3. Test the exact documented example first
+4. Compare your data types/shapes to documented API (e.g., float32 vs float64, array axis order)
 
-### REST API Implementation Standards
-
-**CRITICAL**: Each API file in `ledfx/api/` must contain exactly ONE `RestEndpoint` class. The RegistryLoader auto-discovery pattern requires one endpoint class per file for proper registration. If you need multiple related endpoints (e.g., main endpoint + download endpoint), create separate files following the naming pattern seen in cache API (`cache_images.py` + `cache_images_refresh.py`).
-
-**IMPORTANT**: Always use `RestEndpoint` base class helper methods instead of direct `web.json_response()` calls for consistent response formatting and frontend snackbar notifications.
-
-#### Helper Methods
-- **`await self.request_success(type, message, data=None)`** - Operations needing user feedback (type: "success", "info", "warning", "error")
-- **`await self.bare_request_success(data)`** - Operations without snackbar notifications
-- **`await self.invalid_request(message, type="error")`** - Validation errors and failures (returns HTTP 200 with status:"failed" for frontend compatibility)
-- **`await self.json_decode_error()`** - JSON parsing errors (use in try/except with JSONDecodeError)
-
-Do NOT use `web.json_response()` directly.
-
-### WebSocket Events
-- Real-time pixel updates
-- Configuration changes
-- Audio analysis data
-- Device status updates
-
-## Development Guidelines
-
-### Code Style
-- **Black**: Code formatting
-- **flake8**: Linting with E501 line length relaxed
-- **isort**: Import organization
-- **Type Hints**: Use where beneficial
-
-### Import Statement Placement
-
-- Always place all import statements at the top of each Python file, before any module-level code, class, or function definitions. Do not use inline or local imports except for rare cases (e.g., to avoid circular dependencies or for performance-critical code paths).
-
-### Path Handling Standards
-
-**IMPORTANT**: Always use `os.path` module for path operations, NOT `pathlib`. This is the established codebase convention with 20+ uses throughout the project.
-
-Use `os.path.join()` for path construction, `os.path.exists()` for checks, `os.makedirs()` for directory creation, and `os.remove()` for file deletion. Do NOT use pathlib's `Path()` or `/` operator.
-
-### Performance Considerations
-- **NumPy**: Use vectorized operations for pixel manipulation
-- **Threading**: Protect shared state with locks
-- **Caching**: Cache expensive computations
-
-### Error Handling
-- **Graceful Degradation**: Continue operation when devices fail
-- **Logging**: Comprehensive logging with appropriate levels
-  - Use `_LOGGER.warning()` for expected client errors (invalid requests, missing resources)
-  - Reserve `_LOGGER.error()` for actual system errors to avoid Sentry noise
-  - Follow pattern from `scenes.py` and `config.py` for API error handling
-- **Validation**: Validate all user inputs
-- **Recovery**: Attempt reconnection for network devices
-
-## Testing Patterns
-
-- **Effect Testing**: Unit tests for effect rendering
-- **Device Mocking**: Mock network devices for testing
-- **Configuration Validation**: Test schema validation
-- **API Testing**: Integration tests for REST endpoints
-- **Security Testing**: Use big-list-of-naughty-strings patterns for input validation
-
-### Security Testing Guidelines
-
-When testing input validation, especially for file paths and URLs, use patterns from the big-list-of-naughty-strings project to test:
-
-1. **Path Traversal**: `../`, encoded variants, null bytes, mixed separators
-2. **URL Injection**: Protocol injection, IP obfuscation, localhost variants
-3. **Special Filenames**: Reserved names (CON, PRN, NUL), control characters, homoglyphs
-4. **SSRF Protection**: Loopback addresses, private networks, metadata endpoints
-
-## Debugging Methodology
-
-### When Encountering Library/Dependency Errors
-
-**CRITICAL**: Never conclude a library is broken without following this systematic process:
-
-1. **Consult Documentation FIRST**
-   - Check package metadata: `uv pip show <package>`
-   - Read README/METADATA files in `.venv/Lib/site-packages/<package>*.dist-info/`
-   - Look for homepage, documentation URLs, and repository links
-   - Read usage examples in documentation
-
-2. **Test with Documented Examples**
-   - Copy exact examples from documentation and verify they work
-   - Only after documented examples work, adapt to your use case
-   - Compare your usage to examples to identify differences
-
-3. **Verify Your Assumptions**
-   - Check function signatures, expected argument types and shapes
-   - Verify data types (float32 vs float64, array shapes, axis order)
-   - Test with trivial cases before scaling up
-
-4. **Research Before Concluding**
-   - Check project issue tracker for similar problems
-   - Review changelog for version-specific behavior
-   - Search for known limitations or API changes
-
-5. **Only After Exhausting Above**
-   - Consider potential library bugs
-   - Create minimal reproducible examples
-   - File issues with maintainers if confirmed
-
-**NEVER**:
-- Jump to "the library is broken" as first conclusion
-- Make major architectural changes (switching libraries) without investigation
-- Assume error messages mean library failure without reading documentation
-- Skip documentation consultation when encountering unexpected behavior
-
-### Example: Third-Party Library Error
-
-```python
-# ❌ WRONG: Immediately assuming library is broken
-# AssertionError occurred -> "Library has a bug, switch to different library"
-
-# ✅ CORRECT: Systematic debugging
-# 1. Read package documentation/README
-# 2. Check usage examples in docs
-# 3. Test exact documented example
-# 4. Compare your code to documented usage
-# 5. Identify difference (e.g., array shape (N,3) vs (3,N))
-# 6. Fix your code to match documented API
-```
-
-## Common Tasks
-
-### Adding New API Endpoints
-1. Create new file in `ledfx/api/` with ONE `RestEndpoint` class per file
-2. Use `RestEndpoint` helper methods (`request_success`, `bare_request_success`, `invalid_request`)
-3. Never use `web.json_response()` directly
-4. Use `_LOGGER.warning()` for client errors, not `_LOGGER.error()` (avoid Sentry noise)
-5. Follow security patterns: path validation, input sanitization, content validation
-6. Write integration tests in `tests/test_api_*.py`
-7. Document in `docs/apis/*.md`
-
-### Adding New Effects
-1. Create effect class inheriting from `Effect`
-2. Define `CONFIG_SCHEMA` with Voluptuous
-3. Implement `render()` method
-4. Add to effect registry
-5. Write tests
-
-### Adding Device Types
-1. Inherit from appropriate base class
-2. Define device-specific configuration schema
-3. Implement `flush()` method for data transmission
-4. Handle connection/disconnection
-5. Add device discovery if applicable
-
-### Performance Optimization
-- Profile with `cProfile` for CPU bottlenecks
-- Use `numpy` operations instead of Python loops
-- Leverage FastNoiseLite for performance-critical noise generation
-- Cache expensive calculations
-- Optimize network transmission
-
-## Domain Knowledge
-
-### LED Physics
-- **Color Spaces**: RGB, HSV color manipulation
-- **Gamma Correction**: Perceptual brightness correction
-- **Power Management**: Current limiting for LED strips
-
-### Audio DSP
-- **Frequency Analysis**: FFT, mel scale, frequency bins
-- **Beat Detection**: Onset detection algorithms
-- **Audio Latency**: Real-time processing constraints
-
-### Network Protocols
-- **UDP**: Connectionless, low-latency transmission
-- **E1.31**: DMX512 over Ethernet standard
-- **DDP**: High-performance pixel protocol
-- **Multicast**: Efficient network distribution
-
-## Troubleshooting Guide
-
-### Common Issues
-1. **Audio Device Problems**: Check system audio permissions
-2. **Network Device Offline**: Verify IP addresses and network connectivity
-3. **High CPU Usage**: Profile effects and optimize rendering
-4. **Color Accuracy**: Check gamma correction and color calibration
-
-### Debugging Tools
-- **Effect Diagnostics**: Enable `diag` option for detailed logging
-- **Performance Analysis**: Built-in timing and profiling
-- **Network Testing**: Device discovery and ping utilities
-- **Audio Visualization**: Real-time audio analysis display
-
-## Integration Points
-
-### External Services
-- **Spotify**: Music synchronization
-- **Home Assistant**: Smart home integration
-- **MQTT**: IoT messaging protocol
-- **QLC+**: Professional lighting control
-
-### Hardware Compatibility
-- **ESP8266/ESP32**: WiFi microcontrollers
-- **Raspberry Pi**: Single-board computers
-- **Arduino**: Microcontroller platforms
-- **Professional DMX**: Stage lighting equipment
-
-This comprehensive guide should help AI assistants understand LedFx's architecture, development patterns, and domain-specific requirements for LED visualization systems.
+Only after exhausting the above: create a minimal repro and file an issue.
