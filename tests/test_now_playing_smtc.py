@@ -12,7 +12,6 @@ from ledfx.nowplaying.providers.smtc import (
 )
 from ledfx.nowplaying.service import NowPlayingService
 
-
 # ------------------------------------------------------------------
 # WinRT stub helpers
 # ------------------------------------------------------------------
@@ -184,12 +183,15 @@ class TestSMTCInitialize:
         """If winrt is not available, _initialize() silently returns."""
         # Setting an entry to None in sys.modules forces ImportError
         # even when the real package is installed.
-        with patch.dict(sys.modules, {
-            "winrt": None,
-            "winrt.windows": None,
-            "winrt.windows.media": None,
-            "winrt.windows.media.control": None,
-        }):
+        with patch.dict(
+            sys.modules,
+            {
+                "winrt": None,
+                "winrt.windows": None,
+                "winrt.windows.media": None,
+                "winrt.windows.media.control": None,
+            },
+        ):
             await provider._initialize()
         assert provider._manager is None
 
@@ -207,7 +209,9 @@ class TestSMTCInitialize:
         assert provider._manager is manager
         assert provider._manager_token is not None
 
-    async def test_attaches_to_existing_session(self, provider, monkeypatch, ledfx):
+    async def test_attaches_to_existing_session(
+        self, provider, monkeypatch, ledfx
+    ):
         """If a session is already active, initial metadata is fetched."""
         props = _FakeProps(title="Song", artist="Artist", album="Album")
         session = _FakeSession(props=props)
@@ -221,7 +225,9 @@ class TestSMTCInitialize:
         assert state.metadata.title == "Song"
         assert state.metadata.artist == "Artist"
 
-    async def test_no_active_session_at_startup(self, provider, monkeypatch, ledfx):
+    async def test_no_active_session_at_startup(
+        self, provider, monkeypatch, ledfx
+    ):
         """If no session is active at startup, state stays empty."""
         manager = _FakeManager(session=None)
         _inject_winrt_modules(monkeypatch, manager=manager)
@@ -316,7 +322,9 @@ class TestFetchAndPushMetadata:
 
     async def test_basic_metadata_forwarded(self, provider, ledfx):
         """Full title/artist/album are forwarded to NowPlayingService."""
-        props = _FakeProps(title="My Song", artist="My Artist", album="My Album")
+        props = _FakeProps(
+            title="My Song", artist="My Artist", album="My Album"
+        )
         provider._session = _FakeSession(props=props)
 
         await provider._fetch_and_push_metadata()

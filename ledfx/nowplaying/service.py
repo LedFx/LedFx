@@ -28,10 +28,17 @@ from ledfx.events import (
     NowPlayingMetadataChangedEvent,
     NowPlayingTrackChangedEvent,
 )
+from ledfx.nowplaying.album_art.musicbrainz import MusicBrainzArtProvider
+from ledfx.nowplaying.album_art.resolver import AlbumArtResolver
 from ledfx.nowplaying.models import (
     ArtworkReference,
     NowPlayingState,
     TrackMetadata,
+)
+from ledfx.nowplaying.normalise import (
+    normalise_album,
+    normalise_artist,
+    normalise_title,
 )
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.security_utils import (
@@ -42,9 +49,6 @@ from ledfx.utilities.security_utils import (
     validate_pil_image,
     validate_url_safety,
 )
-from ledfx.nowplaying.album_art.musicbrainz import MusicBrainzArtProvider
-from ledfx.nowplaying.album_art.resolver import AlbumArtResolver
-from ledfx.nowplaying.normalise import normalise_album, normalise_artist, normalise_title
 from ledfx.virtuals import apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
@@ -435,9 +439,7 @@ class NowPlayingService:
         self._state.artwork = None
         self._state.updated_at = time.time()
         _LOGGER.info("Artwork cleared by %s", source_id)
-        self._fire_event(
-            NowPlayingArtworkChangedEvent(source_id, {})
-        )
+        self._fire_event(NowPlayingArtworkChangedEvent(source_id, {}))
 
     def clear(self, source_id: str) -> None:
         """Clear state for a provider.

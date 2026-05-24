@@ -843,7 +843,7 @@ class SendspinAudioStream:
             server_url,
             client_name,
             id(self),
-            client_id
+            client_id,
         )
 
         try:

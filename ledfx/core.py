@@ -250,13 +250,16 @@ class LedFxCore:
         # Log what the audio system sees immediately after loading
         try:
             from ledfx.effects.audio import AudioInputSource
+
             valid = AudioInputSource.valid_device_indexes()
             _LOGGER.debug(
                 "_load_sendspin_servers: valid_device_indexes after load = %s",
                 valid,
             )
         except Exception as exc:
-            _LOGGER.debug("_load_sendspin_servers: could not query devices: %s", exc)
+            _LOGGER.debug(
+                "_load_sendspin_servers: could not query devices: %s", exc
+            )
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}

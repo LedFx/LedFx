@@ -11,7 +11,6 @@ Used by:
 
 import re
 
-
 # ---- Compiled patterns --------------------------------------------------
 
 # YouTube auto-generated channel: "Porter Robinson - Topic"
@@ -47,12 +46,12 @@ _TITLE_NOISE_RE = re.compile(
 # pass), then "(Official Video)" is removed on the next iteration.
 _QUALITY_TAG_RE = re.compile(
     r"\s*[\(\[]\s*"
-    r"(?:\d{3,4}[pP]"         # 720p, 1080p, 4320p
-    r"|[248][kK]"             # 4K, 2K, 8K
-    r"|[hH][dD]"              # HD
-    r"|[hH][qQ]"              # HQ
-    r"|[fF][hH][dD]"          # FHD
-    r"|[uU][hH][dD]"          # UHD
+    r"(?:\d{3,4}[pP]"  # 720p, 1080p, 4320p
+    r"|[248][kK]"  # 4K, 2K, 8K
+    r"|[hH][dD]"  # HD
+    r"|[hH][qQ]"  # HQ
+    r"|[fF][hH][dD]"  # FHD
+    r"|[uU][hH][dD]"  # UHD
     r")"
     r"\s*[\)\]]\s*$",
     re.IGNORECASE,
@@ -240,11 +239,10 @@ def normalise_title(title: str | None, artist: str = "") -> str:
             # left part starts with the artist and contains a collab connector.
             left_cmp = _normalise_compare(parts[0])
             artist_cmp = _normalise_compare(artist)
-            suffix = left_cmp[len(artist_cmp):]
-            if (
-                left_cmp.startswith(artist_cmp + " ")
-                and _COLLAB_CONNECTOR_RE.search(suffix)
-            ):
+            suffix = left_cmp[len(artist_cmp) :]
+            if left_cmp.startswith(
+                artist_cmp + " "
+            ) and _COLLAB_CONNECTOR_RE.search(suffix):
                 title = parts[1].strip()
 
     # Strip any residual YouTube channel-suffix token at the front, e.g.
