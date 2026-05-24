@@ -828,6 +828,8 @@ class SendspinAudioStream:
         """Connect to Sendspin server and start receiving audio."""
         server_url = self.config.get("server_url")
         client_name = self.config.get("client_name", "LedFx")
+        # static id across power cycles
+        client_id = f"ledfx-{self._instance_id[:8]}"
         sample_rate = self.config.get("sample_rate", self.DEFAULT_SAMPLE_RATE)
         buffer_capacity = BUFFER_CAPACITY
 
@@ -837,10 +839,11 @@ class SendspinAudioStream:
             self._stop_event = asyncio.Event()
 
         _LOGGER.info(
-            "Connecting to Sendspin server: %s as '%s' (id=%s)",
+            "Connecting to Sendspin server: %s as '%s' (id=%s) %s",
             server_url,
             client_name,
             id(self),
+            client_id
         )
 
         try:
@@ -875,10 +878,6 @@ class SendspinAudioStream:
                 ],
             )
 
-            # Build a collision-safe client_id using the first 8 chars of
-            # the persistent LedFx installation UUID.  Stable across
-            # reconnections and restarts; unique across installations.
-            client_id = f"ledfx-{self._instance_id[:8]}"
             self._client = SendspinClient(
                 client_id=client_id,
                 client_name=client_name,

@@ -42,8 +42,6 @@ class SendspinNowPlayingProvider:
         self._artist = None
         self._album = None
         self._artwork_url = None
-        self._position = None
-        self._duration = None
         _LOGGER.info("Sendspin Now Playing provider initialized")
 
     def on_metadata(self, server_state_payload) -> None:
@@ -88,28 +86,12 @@ class SendspinNowPlayingProvider:
         if artwork_url is not _NOT_SENT:
             self._artwork_url = artwork_url
 
-        # Extract progress info
-        progress = _val(metadata.progress)
-        if progress is not _NOT_SENT and progress is not None:
-            self._position = progress.track_progress / 1000.0  # ms → seconds
-            self._duration = (
-                progress.track_duration / 1000.0
-                if progress.track_duration > 0
-                else None
-            )
-        elif progress is None:
-            # Explicitly cleared
-            self._position = None
-            self._duration = None
-
         # Build TrackMetadata from accumulated state
         track_metadata = TrackMetadata(
             source_id=SOURCE_ID,
             title=self._title,
             artist=self._artist,
             album=self._album,
-            duration=self._duration,
-            position=self._position,
             artwork_url=self._artwork_url,
         )
 
@@ -130,7 +112,7 @@ class SendspinNowPlayingProvider:
         elif self._artwork_url is None and self._last_artwork_url is not None:
             # Artwork cleared by server
             self._last_artwork_url = None
-            now_playing.set_artwork_url(SOURCE_ID, None)
+            now_playing.clear_artwork(SOURCE_ID)
 
     def clear(self) -> None:
         """Clear Now Playing state and reset accumulated state."""
@@ -142,6 +124,4 @@ class SendspinNowPlayingProvider:
         self._artist = None
         self._album = None
         self._artwork_url = None
-        self._position = None
-        self._duration = None
         _LOGGER.info("Sendspin Now Playing provider cleared")

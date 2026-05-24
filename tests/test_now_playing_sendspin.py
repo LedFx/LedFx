@@ -27,13 +27,6 @@ _UNDEFINED = _UndefinedField()
 
 
 @dataclass
-class _Progress:
-    track_progress: int = 0
-    track_duration: int = 0
-    playback_speed: int = 1000
-
-
-@dataclass
 class _SessionUpdateMetadata:
     timestamp: int = 0
     title: object = field(default_factory=lambda: _UNDEFINED)
@@ -239,42 +232,6 @@ class TestSendspinProviderMetadata:
         assert state.metadata.title == "Song"
         assert state.metadata.artist is None
         assert state.metadata.album == "Album"
-
-    def test_progress_converted_to_seconds(self, provider, ledfx):
-        payload = _ServerStatePayload(
-            metadata=_SessionUpdateMetadata(
-                timestamp=1000,
-                title="Song",
-                progress=_Progress(
-                    track_progress=45000,  # 45 seconds in ms
-                    track_duration=180000,  # 3 minutes in ms
-                    playback_speed=1000,
-                ),
-            )
-        )
-        provider.on_metadata(payload)
-
-        state = ledfx.now_playing.get_current()
-        assert state.metadata.position == 45.0
-        assert state.metadata.duration == 180.0
-
-    def test_zero_duration_treated_as_none(self, provider, ledfx):
-        payload = _ServerStatePayload(
-            metadata=_SessionUpdateMetadata(
-                timestamp=1000,
-                title="Live Stream",
-                progress=_Progress(
-                    track_progress=10000,
-                    track_duration=0,  # unknown/live
-                    playback_speed=1000,
-                ),
-            )
-        )
-        provider.on_metadata(payload)
-
-        state = ledfx.now_playing.get_current()
-        assert state.metadata.position == 10.0
-        assert state.metadata.duration is None
 
     def test_none_metadata_ignored(self, provider, ledfx):
         payload = _ServerStatePayload(metadata=None)

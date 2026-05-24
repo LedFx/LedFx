@@ -44,6 +44,8 @@ dependencies = [
     "audio-hotplug>=0.1.0",
     "aiosendspin>=4.0.0; python_version >= '3.12'",
     "pyflac>=2.2.0; python_version >= '3.12'",
+    "winrt-Windows.Foundation>=2.0.0; sys_platform == \"win32\"",
+    "winrt-Windows.Media.Control>=2.0.0; sys_platform == \"win32\"",
 ]
 name = "LedFx"
 version = "2.1.9"

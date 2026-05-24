@@ -90,8 +90,6 @@ class TestTrackMetadata:
             title="Track",
             artist="Artist",
             album="Album",
-            duration=180.0,
-            position=42.0,
             track_id="t1",
             artwork_url="https://example.com/art.jpg",
             artwork_hash="abc123",
@@ -101,7 +99,6 @@ class TestTrackMetadata:
         assert d["source_id"] == "sendspin"
         assert d["title"] == "Track"
         assert d["artist"] == "Artist"
-        assert d["duration"] == 180.0
         assert d["artwork_hash"] == "abc123"
 
 
@@ -193,14 +190,13 @@ class TestNowPlayingServiceSetMetadata:
         )
         service.set_metadata("sendspin", meta)
 
-        # Same track identity
+        # Same track identity — re-sending same metadata is not a track change
         meta2 = TrackMetadata(
             source_id="sendspin",
             title="Song",
             artist="Artist",
             album="Album",
             track_id="t1",
-            position=30.0,  # position changed but track is the same
         )
         result = service.set_metadata("sendspin", meta2)
         assert result is False
@@ -474,15 +470,8 @@ class TestNowPlayingServiceEvents:
         service.set_metadata("sendspin", meta)
         ledfx.events.fired.clear()
 
-        # Same track identity, only position changed
-        meta2 = TrackMetadata(
-            source_id="sendspin",
-            title="Song",
-            artist="A",
-            track_id="t1",
-            position=60.0,
-        )
-        service.set_metadata("sendspin", meta2)
+        # Re-send the same metadata — no track change expected
+        service.set_metadata("sendspin", meta)
 
         track_events = [
             e
@@ -490,31 +479,6 @@ class TestNowPlayingServiceEvents:
             if e.event_type == Event.NOW_PLAYING_TRACK_CHANGED
         ]
         assert len(track_events) == 0
-
-    def test_metadata_event_still_fires_on_position_update(
-        self, service, ledfx
-    ):
-        meta = TrackMetadata(
-            source_id="sendspin", title="Song", artist="A", track_id="t1"
-        )
-        service.set_metadata("sendspin", meta)
-        ledfx.events.fired.clear()
-
-        meta2 = TrackMetadata(
-            source_id="sendspin",
-            title="Song",
-            artist="A",
-            track_id="t1",
-            position=30.0,
-        )
-        service.set_metadata("sendspin", meta2)
-
-        metadata_events = [
-            e
-            for e in ledfx.events.fired
-            if e.event_type == Event.NOW_PLAYING_METADATA_CHANGED
-        ]
-        assert len(metadata_events) == 1
 
     def test_track_changed_event_on_different_track(self, service, ledfx):
         meta1 = TrackMetadata(source_id="sendspin", title="Song 1", artist="A")

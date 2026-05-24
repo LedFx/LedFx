@@ -121,16 +121,30 @@ def eager_start(ledfx):
 
     audio_config = ledfx.config.get("audio", {})
     device_idx = audio_config.get("audio_device")
+    device_name = audio_config.get("audio_device_name", "")
+
+    _LOGGER.debug(
+        "eager_start: audio_device=%s audio_device_name=%r sendspin_always_on=%s",
+        device_idx,
+        device_name,
+        ledfx.config.get("sendspin_always_on"),
+    )
 
     # Lazy import to break circular dependency:
     # audio.py → sendspin/config.py → audio.py
     from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
 
-    if not is_always_on(
+    always_on = is_always_on(
         device_idx,
         AudioInputSource.query_devices,
         AudioInputSource.query_hostapis,
-    ):
+    )
+    _LOGGER.debug(
+        "eager_start: is_always_on(%s) = %s",
+        device_idx,
+        always_on,
+    )
+    if not always_on:
         return
 
     _LOGGER.info(

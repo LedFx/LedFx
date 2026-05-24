@@ -14,9 +14,6 @@ class TrackMetadata:
     artist: Optional[str] = None
     album: Optional[str] = None
 
-    duration: Optional[float] = None
-    position: Optional[float] = None
-
     track_id: Optional[str] = None
 
     artwork_url: Optional[str] = None
@@ -38,8 +35,6 @@ class TrackMetadata:
             "title": self.title,
             "artist": self.artist,
             "album": self.album,
-            "duration": self.duration,
-            "position": self.position,
             "track_id": self.track_id,
             "artwork_url": self.artwork_url,
             "artwork_hash": self.artwork_hash,

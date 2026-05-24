@@ -262,10 +262,24 @@ class AudioInputSource:
         Validates device index in case the saved setting is no longer valid.
         Accepts None (schema default) and resolves to the default device.
         """
-        if val is not None and val in AudioInputSource.valid_device_indexes():
+        valid = AudioInputSource.valid_device_indexes()
+        _LOGGER.debug(
+            "device_index_validator: val=%s valid_indexes=%s",
+            val,
+            valid,
+        )
+        if val is not None and val in valid:
+            _LOGGER.debug("device_index_validator: accepted %s as-is", val)
             return val
         else:
-            return AudioInputSource.default_device_index()
+            default = AudioInputSource.default_device_index()
+            _LOGGER.warning(
+                "device_index_validator: val=%s not in valid indexes — "
+                "falling back to default %s",
+                val,
+                default,
+            )
+            return default
 
     @staticmethod
     def valid_device_indexes():
@@ -501,7 +515,16 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
+        _LOGGER.debug(
+            "update_config: raw audio_device=%s audio_device_name=%r",
+            config.get("audio_device"),
+            config.get("audio_device_name", ""),
+        )
         new_config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+        _LOGGER.debug(
+            "update_config: post-schema audio_device=%s",
+            new_config.get("audio_device"),
+        )
 
         # Determine if the audio device is actually changing.  For Sendspin
         # always-on, avoid a destructive deactivate/reactivate cycle when
@@ -531,7 +554,17 @@ class AudioInputSource:
 
         self._config = new_config
         # Resolve device by name if available (handles index drift across restarts)
+        _LOGGER.debug(
+            "update_config: calling _resolve_device_from_name "
+            "(audio_device=%s audio_device_name=%r)",
+            self._config.get("audio_device"),
+            self._config.get("audio_device_name", ""),
+        )
         self._resolve_device_from_name()
+        _LOGGER.debug(
+            "update_config: after _resolve_device_from_name audio_device=%s",
+            self._config.get("audio_device"),
+        )
 
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
@@ -610,6 +643,13 @@ class AudioInputSource:
             )
         _LOGGER.debug("********************************************")
         device_idx = self._config["audio_device"]
+        _LOGGER.info(
+            "_activate_inner: configured audio_device=%s "
+            "audio_device_name=%r valid_indexes=%s",
+            device_idx,
+            self._config.get("audio_device_name", ""),
+            valid_device_indexes,
+        )
 
         if device_idx not in valid_device_indexes:
             # Configured device is invalid — resolve the default now

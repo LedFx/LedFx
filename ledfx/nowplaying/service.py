@@ -42,9 +42,24 @@ from ledfx.utilities.security_utils import (
     validate_pil_image,
     validate_url_safety,
 )
+from ledfx.nowplaying.album_art.musicbrainz import MusicBrainzArtProvider
+from ledfx.nowplaying.album_art.resolver import AlbumArtResolver
+from ledfx.nowplaying.normalise import normalise_album, normalise_artist, normalise_title
 from ledfx.virtuals import apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
+
+# Sources that supply their own artwork (e.g. via set_artwork_url).
+# The album-art resolver (MusicBrainz etc.) is never invoked for these.
+_SOURCES_WITH_OWN_ARTWORK = {"sendspin"}
+
+# Higher number = higher priority.  A source will pre-empt the current
+# active source if its priority is strictly greater.
+# smtc is a passive system-wide poller; sendspin is an explicit integration.
+_SOURCE_PRIORITY: dict[str, int] = {
+    "sendspin": 10,
+    "smtc": 1,
+}
 
 # Valid gradient variant names
 GRADIENT_VARIANTS = ("led_safe", "led_punchy", "led_max")
@@ -119,6 +134,12 @@ class NowPlayingService:
         self._gradient_virtual_ids: list[str] = list(grad_cfg["virtual_ids"])
         self._state.selected_gradient_variant = grad_cfg["variant"]
 
+        # Album-art resolver (async, non-blocking)
+        self._art_resolver = AlbumArtResolver(
+            providers=[MusicBrainzArtProvider()],
+            service=self,
+        )
+
         _LOGGER.info("Now Playing Service initialized")
 
     # ------------------------------------------------------------------
@@ -141,10 +162,29 @@ class NowPlayingService:
         # Determine if this is a new track
         track_changed = self._detect_track_change(metadata)
 
-        # Activate source on first metadata or if already active
+        # Activate source on first metadata, or if a higher-priority source
+        # pre-empts the current active source.
+        incoming_priority = _SOURCE_PRIORITY.get(source_id, 0)
+        active_priority = _SOURCE_PRIORITY.get(
+            self._state.active_source_id or "", 0
+        )
         if self._state.active_source_id is None:
             self._state.active_source_id = source_id
             _LOGGER.info("Now Playing active source set to: %s", source_id)
+        elif (
+            source_id != self._state.active_source_id
+            and incoming_priority > active_priority
+        ):
+            _LOGGER.info(
+                "Now Playing source pre-empted: %s -> %s (priority %d > %d)",
+                self._state.active_source_id,
+                source_id,
+                incoming_priority,
+                active_priority,
+            )
+            self._state.active_source_id = source_id
+            # Cancel any in-flight resolver work started for the old source.
+            self._art_resolver.cancel_pending()
 
         # Only update state if this provider is the active source
         if source_id != self._state.active_source_id:
@@ -158,10 +198,12 @@ class NowPlayingService:
         self._state.metadata = metadata
         self._state.updated_at = now
 
-        # Fire events
-        self._fire_event(
-            NowPlayingMetadataChangedEvent(source_id, metadata.to_dict())
-        )
+        # Only fire the metadata event when content-carrying fields change;
+        # position-only ticks (progress updates) are not worth broadcasting.
+        if track_changed or self._metadata_content_changed(metadata):
+            self._fire_event(
+                NowPlayingMetadataChangedEvent(source_id, metadata.to_dict())
+            )
 
         if track_changed:
             _LOGGER.info(
@@ -176,6 +218,8 @@ class NowPlayingService:
                 )
             )
             self._apply_track_text_to_virtuals()
+            if source_id not in _SOURCES_WITH_OWN_ARTWORK:
+                self._art_resolver.on_track_changed(metadata)
 
         return track_changed
 
@@ -203,6 +247,11 @@ class NowPlayingService:
         """
         if source_id != self._state.active_source_id:
             return False
+
+        # Source is providing artwork directly — cancel any in-flight
+        # MusicBrainz (or other resolver) lookup for the current track so it
+        # cannot overwrite what the source already knows is correct.
+        self._art_resolver.cancel_pending()
 
         # Detect artwork change
         current = self._state.artwork
@@ -309,6 +358,86 @@ class NowPlayingService:
             )
         )
         return True
+
+    def set_artwork_resolved(
+        self,
+        data: bytes,
+        content_type: str,
+        artwork_hash: str = None,
+    ) -> bool:
+        """Set artwork resolved by the internal album-art resolver.
+
+        Unlike :meth:`set_artwork_bytes`, this method is not gated on
+        ``source_id``.  It is intended solely for use by
+        :class:`~ledfx.nowplaying.album_art.resolver.AlbumArtResolver`.
+
+        If there is no active source, the call is silently ignored.
+
+        Args:
+            data: Raw image bytes.
+            content_type: MIME type of the image.
+            artwork_hash: Optional hash for change detection.
+
+        Returns:
+            True if artwork changed, False otherwise.
+        """
+        if self._state.active_source_id is None:
+            return False
+
+        if artwork_hash is None:
+            artwork_hash = hashlib.sha256(data).hexdigest()[:16]
+
+        current = self._state.artwork
+        if current and current.hash == artwork_hash:
+            return False
+
+        artwork_path, gradients, width, height = self._store_artwork(
+            data, content_type
+        )
+
+        source_id = self._state.active_source_id
+        self._state.artwork = ArtworkReference(
+            source_id=source_id,
+            url=None,
+            cache_key=artwork_path,
+            content_type=content_type,
+            hash=artwork_hash,
+            width=width,
+            height=height,
+            gradients=gradients,
+        )
+        self._state.updated_at = time.time()
+        self._update_current_gradient()
+        self._apply_album_art_to_virtuals()
+
+        _LOGGER.info("Resolved artwork applied (hash: %s)", artwork_hash)
+        self._fire_event(
+            NowPlayingArtworkChangedEvent(
+                source_id, self._state.artwork.to_dict()
+            )
+        )
+        return True
+
+    def clear_artwork(self, source_id: str) -> None:
+        """Clear artwork for the active source without resetting track metadata.
+
+        Called when a source explicitly signals that artwork is no longer
+        available (e.g. Sendspin sets artwork_url to None).
+
+        Args:
+            source_id: Provider identifier.
+        """
+        if self._state.active_source_id != source_id:
+            return
+        if self._state.artwork is None:
+            return
+        self._art_resolver.cancel_pending()
+        self._state.artwork = None
+        self._state.updated_at = time.time()
+        _LOGGER.info("Artwork cleared by %s", source_id)
+        self._fire_event(
+            NowPlayingArtworkChangedEvent(source_id, {})
+        )
 
     def clear(self, source_id: str) -> None:
         """Clear state for a provider.
@@ -519,12 +648,12 @@ class NowPlayingService:
         if effects_registry is None:
             return 0
 
-        # Build display string from non-empty metadata fields: Artist - Album - Title
-        parts = [
-            metadata.artist or "",
-            metadata.album or "",
-            metadata.title or "",
-        ]
+        # Build display string — normalise away YouTube/video noise first
+        artist = normalise_artist(metadata.artist)
+        title = normalise_title(metadata.title, artist)
+        album = normalise_album(metadata.album) or ""
+
+        parts = [artist, album, title]
         text = " - ".join(p for p in parts if p)
         if not text:
             text = "Now Playing"
@@ -673,6 +802,18 @@ class NowPlayingService:
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _metadata_content_changed(self, new_metadata: TrackMetadata) -> bool:
+        """Return True if any content-carrying field (not position) changed."""
+        current = self._state.metadata
+        if current is None:
+            return True
+        return (
+            current.title != new_metadata.title
+            or current.artist != new_metadata.artist
+            or current.album != new_metadata.album
+            or current.artwork_url != new_metadata.artwork_url
+        )
 
     def _detect_track_change(self, new_metadata: TrackMetadata) -> bool:
         """Compare new metadata against current to detect track changes.
