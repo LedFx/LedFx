@@ -76,7 +76,6 @@ async def test_get_with_metadata(endpoint, ledfx):
         title="Test Song",
         artist="Test Artist",
         album="Test Album",
-        duration=200.0,
         track_id="track-1",
     )
     ledfx.now_playing.set_metadata("sendspin", meta)
@@ -89,7 +88,6 @@ async def test_get_with_metadata(endpoint, ledfx):
     assert data["metadata"]["title"] == "Test Song"
     assert data["metadata"]["artist"] == "Test Artist"
     assert data["metadata"]["album"] == "Test Album"
-    assert data["metadata"]["duration"] == 200.0
     assert data["metadata"]["source_id"] == "sendspin"
 
 
