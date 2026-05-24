@@ -74,7 +74,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         # device name so _resolve_device_from_name() uses the index as-is
         # instead of name-matching back to the old device.
         new_config["audio_device_name"] = ""
-        
+
         if self._ledfx.audio:
             self._ledfx.audio.update_config(new_config)
 

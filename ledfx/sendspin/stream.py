@@ -789,7 +789,10 @@ class SendspinAudioStream:
                     self._last_audio_chunk_time = None
                     # Cancel the reconnect task so the loop retries the connection
                     # immediately instead of sleeping through a long backoff.
-                    if self._reconnect_task and not self._reconnect_task.done():
+                    if (
+                        self._reconnect_task
+                        and not self._reconnect_task.done()
+                    ):
                         self._reconnect_task.cancel()
             await asyncio.sleep(self._HEARTBEAT_INTERVAL)
 
