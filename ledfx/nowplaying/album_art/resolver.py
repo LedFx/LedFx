@@ -104,7 +104,9 @@ class AlbumArtResolver:
         """Cancel any in-flight provider lookup (e.g. source supplied artwork)."""
         if self._resolve_task is not None and not self._resolve_task.done():
             self._resolve_task.cancel()
-            _LOGGER.debug("AlbumArtResolver: pending lookup cancelled (source artwork)")
+            _LOGGER.debug(
+                "AlbumArtResolver: pending lookup cancelled (source artwork)"
+            )
         self._resolve_task = None
 
     async def _resolve(self, metadata: TrackMetadata) -> None:
@@ -137,7 +139,8 @@ class AlbumArtResolver:
                         )
                     except Exception as exc:
                         _LOGGER.warning(
-                            "AlbumArtResolver: failed to deliver artwork: %s", exc
+                            "AlbumArtResolver: failed to deliver artwork: %s",
+                            exc,
                         )
                     return
 

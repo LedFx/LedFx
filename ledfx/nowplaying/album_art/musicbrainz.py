@@ -99,7 +99,6 @@ class _ReleaseCandidate:
     reason: str
 
 
-
 def _contains_bad_variant(value: str | None) -> bool:
     """Return True if *value* contains a strong non-canonical variant term."""
     text = _normalise_compare(value)
@@ -118,7 +117,9 @@ def _contains_neutral_variant(value: str | None) -> bool:
     if not text:
         return False
 
-    return any(_normalise_compare(term) in text for term in _NEUTRAL_VARIANT_TERMS)
+    return any(
+        _normalise_compare(term) in text for term in _NEUTRAL_VARIANT_TERMS
+    )
 
 
 def _similarity(left: str | None, right: str | None) -> float:
@@ -164,7 +165,9 @@ def _release_group_types(release: dict) -> set[str]:
     return values
 
 
-def _recording_score(recording: dict, artist: str, title: str) -> tuple[float, list[str]]:
+def _recording_score(
+    recording: dict, artist: str, title: str
+) -> tuple[float, list[str]]:
     """Score a MusicBrainz recording result before release-level scoring."""
     score = float(recording.get("score") or 0)
     reasons = [f"mb_score={score:g}"]
@@ -308,7 +311,9 @@ class MusicBrainzArtProvider(AlbumArtProvider):
             album,
         )
 
-        candidates = await self._search_release_candidates(artist, title, album)
+        candidates = await self._search_release_candidates(
+            artist, title, album
+        )
         if not candidates:
             _LOGGER.debug(
                 "MusicBrainz: no recordings found for artist=%r title=%r",
@@ -363,14 +368,18 @@ class MusicBrainzArtProvider(AlbumArtProvider):
             data = await self._search_recordings(query)
             for recording in data:
                 rid = recording.get("id")
-                if rid and not any(existing.get("id") == rid for existing in recordings):
+                if rid and not any(
+                    existing.get("id") == rid for existing in recordings
+                ):
                     recordings.append(recording)
 
         candidates: list[_ReleaseCandidate] = []
         seen_release_ids: set[str] = set()
 
         for recording in recordings:
-            base_score, base_reasons = _recording_score(recording, artist, title)
+            base_score, base_reasons = _recording_score(
+                recording, artist, title
+            )
             recording_title = recording.get("title") or ""
             recording_id = recording.get("id") or ""
 
@@ -412,7 +421,9 @@ class MusicBrainzArtProvider(AlbumArtProvider):
 
         return candidates
 
-    def _build_queries(self, artist: str, title: str, album: str | None) -> list[str]:
+    def _build_queries(
+        self, artist: str, title: str, album: str | None
+    ) -> list[str]:
         """Build MusicBrainz recording search queries from strict to loose."""
         queries: list[str] = []
 
@@ -469,7 +480,10 @@ class MusicBrainzArtProvider(AlbumArtProvider):
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     url,
-                    headers={"User-Agent": _USER_AGENT, "Accept": "application/json"},
+                    headers={
+                        "User-Agent": _USER_AGENT,
+                        "Accept": "application/json",
+                    },
                     timeout=aiohttp.ClientTimeout(total=_SEARCH_TIMEOUT),
                     allow_redirects=True,
                 ) as resp:
@@ -482,7 +496,9 @@ class MusicBrainzArtProvider(AlbumArtProvider):
                         return []
                     data = await resp.json(content_type=None)
         except Exception as exc:
-            _LOGGER.warning("MusicBrainz search failed for query=%r: %s", query, exc)
+            _LOGGER.warning(
+                "MusicBrainz search failed for query=%r: %s", query, exc
+            )
             return []
 
         return data.get("recordings") or []
@@ -503,5 +519,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
                         return None
                     return await resp.read()
         except Exception as exc:
-            _LOGGER.debug("Cover Art Archive fetch failed for %s: %s", mbid, exc)
+            _LOGGER.debug(
+                "Cover Art Archive fetch failed for %s: %s", mbid, exc
+            )
             return None
