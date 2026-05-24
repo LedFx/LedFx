@@ -1,6 +1,5 @@
 """Unit tests for the SMTC (Windows System Media Transport Controls) Now Playing provider."""
 
-import asyncio
 import sys
 from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, patch
