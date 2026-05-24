@@ -253,9 +253,8 @@ class ConfigEndpoint(RestEndpoint):
         # device name so _resolve_device_from_name() uses the index as-is
         # instead of name-matching back to the old device.
         if "audio_device" in audio_config:
-            self._ledfx.config["audio"]["audio_device_name"] = ""
+            audio_config["audio_device_name"] = ""
 
-        self._ledfx.config["audio"].update(audio_config)
         self._ledfx.config["melbanks"].update(melbanks_config)
         self._ledfx.config.update(core_config)
 
@@ -273,7 +272,7 @@ class ConfigEndpoint(RestEndpoint):
             and self._ledfx.audio is not None
             and audio_config
         ):
-            self._ledfx.audio.update_config(self._ledfx.config["audio"])
+            self._ledfx.audio.update_config(audio_config)
 
         if hasattr(self._ledfx, "audio") and melbanks_config:
             self._ledfx.audio.melbanks.update_config(

@@ -134,21 +134,27 @@ def eager_start(ledfx):
     # audio.py → sendspin/config.py → audio.py
     from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
 
-    always_on = is_always_on(
+    # Check by name first (more reliable than index which can shift when the
+    # number of sounddevice devices changes between sessions).  Fall back to
+    # the index-based check for configs that pre-date name persistence.
+    name_is_sendspin = device_name.startswith("SENDSPIN:")
+    idx_is_sendspin = is_always_on(
         device_idx,
         AudioInputSource.query_devices,
         AudioInputSource.query_hostapis,
     )
     _LOGGER.debug(
-        "eager_start: is_always_on(%s) = %s",
-        device_idx,
-        always_on,
+        "eager_start: name_is_sendspin=%s idx_is_sendspin=%s",
+        name_is_sendspin,
+        idx_is_sendspin,
     )
-    if not always_on:
+
+    if not (name_is_sendspin or idx_is_sendspin):
         return
 
     _LOGGER.info(
-        "Sendspin always-on: eagerly starting audio (device %s)",
+        "Sendspin always-on: eagerly starting audio (device %s, name=%r)",
         device_idx,
+        device_name,
     )
     ledfx.audio = AudioAnalysisSource(ledfx, audio_config)

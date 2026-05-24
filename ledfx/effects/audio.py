@@ -209,6 +209,31 @@ class AudioInputSource:
         found_idx = self.get_device_index_by_name(last_device_name)
 
         if found_idx == -1:
+            # For Sendspin virtual devices, never silently switch to a real
+            # audio device — they may simply be temporarily unreachable rather
+            # than permanently removed.  Notify the frontend instead.
+            if last_device_name and last_device_name.startswith("SENDSPIN:"):
+                _LOGGER.warning(
+                    "Sendspin audio device '%s' not found after device list "
+                    "change. Not falling back to default audio device.",
+                    last_device_name,
+                )
+                from ledfx.events import AudioSourceErrorEvent
+
+                self._ledfx.events.fire_event(
+                    AudioSourceErrorEvent(
+                        error_type="sendspin_device_not_found",
+                        message=(
+                            f"Sendspin audio source "
+                            f"'{last_device_name[len('SENDSPIN:'):].strip()}' "
+                            "is no longer available. Check your Sendspin server "
+                            "or select a different audio source."
+                        ),
+                        device_name=last_device_name,
+                    )
+                )
+                return
+
             _LOGGER.warning(
                 "Previously active device '%s' no longer available after device list change. "
                 "Will use default device.",
@@ -411,6 +436,11 @@ class AudioInputSource:
         }
 
     @staticmethod
+    def get_index_name(index):
+        devices = AudioInputSource.input_devices()
+        return devices.get(index, "")
+
+    @staticmethod
     @property
     def AUDIO_CONFIG_SCHEMA():
         AudioInputSource.valid_device_indexes()
@@ -496,8 +526,35 @@ class AudioInputSource:
             self._persist_config()
             return
 
-        # Device not found by name at all — reset to default so we don't
-        # silently open a different device that now occupies the stale index.
+        # Device not found by name at all.
+        # For Sendspin virtual devices: do NOT fall back to a real audio device.
+        # Silently switching to a microphone/loopback when the user intended
+        # Sendspin is confusing and hard to diagnose.  Report the error and
+        # leave the config unchanged so the user can fix it.
+        if saved_name.startswith("SENDSPIN:"):
+            _LOGGER.warning(
+                "Sendspin audio device '%s' not found in current device list "
+                "(server may be removed or SENDSPIN_SERVERS not yet loaded). "
+                "Not falling back to default audio device.",
+                saved_name,
+            )
+            from ledfx.events import AudioSourceErrorEvent
+
+            self._ledfx.events.fire_event(
+                AudioSourceErrorEvent(
+                    error_type="sendspin_device_not_found",
+                    message=(
+                        f"Sendspin audio source '{saved_name[len('SENDSPIN:'):].strip()}' "
+                        "not found. Check your Sendspin server configuration or "
+                        "select a different audio source."
+                    ),
+                    device_name=saved_name,
+                )
+            )
+            return
+
+        # For regular devices: reset to default so we don't silently open a
+        # different device that now occupies the stale index.
         default_idx = self.default_device_index()
         _LOGGER.warning(
             "Saved audio device '%s' not found in current device list. "
@@ -515,56 +572,37 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, the reactivate"""
-        _LOGGER.debug(
-            "update_config: raw audio_device=%s audio_device_name=%r",
-            config.get("audio_device"),
-            config.get("audio_device_name", ""),
-        )
+        _LOGGER.debug(f"audio.update_config: new1:  {config}")
+
         new_config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
-        _LOGGER.debug(
-            "update_config: post-schema audio_device=%s",
-            new_config.get("audio_device"),
-        )
+        _LOGGER.debug(f"audio.update_config: new2:  {config}")
 
-        # Determine if the audio device is actually changing.  For Sendspin
-        # always-on, avoid a destructive deactivate/reactivate cycle when
-        # only non-pipeline settings changed (e.g. min_volume).
-        has_old_config = hasattr(self, "_config")
-        old_device = (
-            self._config.get("audio_device") if has_old_config else None
-        )
-        new_device = new_config.get("audio_device")
-        device_changing = old_device != new_device
+        device_changing = False
+        pipeline_changing = False
+        # work out if it is new. we can trust old vs new indexs as they should of been fixed by now
+        if hasattr(self, "_config"):
+            old_config = self._config
+            # Pipeline-affecting keys require rebuilding internal audio objects even when the audio stream should stay active.
+            _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size")
+            pipeline_changing = any(old_config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS)
 
-        # Pipeline-affecting keys require rebuilding internal audio objects
-        # (delay_queue, _raw_audio_sample, _phase_vocoder, etc.) even when
-        # the audio stream should stay active.
-        _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size")
-        pipeline_changing = has_old_config and any(
-            self._config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS
-        )
+            if old_config.get("audio_device") != new_config.get("audio_device"):
+                device_changing = True
+        else:
+            old_config = None
 
         if AudioInputSource._audio_stream_active:
             if (
                 device_changing
                 or pipeline_changing
-                or not self._should_always_keep_active()
             ):
                 self.deactivate()
 
         self._config = new_config
         # Resolve device by name if available (handles index drift across restarts)
-        _LOGGER.debug(
-            "update_config: calling _resolve_device_from_name "
-            "(audio_device=%s audio_device_name=%r)",
-            self._config.get("audio_device"),
-            self._config.get("audio_device_name", ""),
-        )
+        _LOGGER.debug(f"audio.update_config: pre:  {self._config}")
         self._resolve_device_from_name()
-        _LOGGER.debug(
-            "update_config: after _resolve_device_from_name audio_device=%s",
-            self._config.get("audio_device"),
-        )
+        _LOGGER.debug(f"audio.update_config: post:  {self._config}")
 
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
@@ -652,6 +690,31 @@ class AudioInputSource:
         )
 
         if device_idx not in valid_device_indexes:
+            configured_name = self._config.get("audio_device_name", "")
+            # For Sendspin virtual devices, never fall back to a real audio
+            # device — notify the frontend so the user can take action.
+            if configured_name.startswith("SENDSPIN:"):
+                _LOGGER.warning(
+                    "Sendspin audio device '%s' (index %s) is not available. "
+                    "Not falling back to default audio device.",
+                    configured_name,
+                    device_idx,
+                )
+                from ledfx.events import AudioSourceErrorEvent
+
+                self._ledfx.events.fire_event(
+                    AudioSourceErrorEvent(
+                        error_type="sendspin_device_unavailable",
+                        message=(
+                            f"Sendspin audio source '{configured_name[len('SENDSPIN:'):].strip()}' "
+                            "is not available. Check your Sendspin server configuration "
+                            "or select a different audio source."
+                        ),
+                        device_name=configured_name,
+                    )
+                )
+                return
+
             # Configured device is invalid — resolve the default now
             default_device = self.default_device_index()
             if device_idx is not None and device_idx > max(

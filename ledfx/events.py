@@ -50,6 +50,7 @@ class Event:
     NOW_PLAYING_ARTWORK_CHANGED = "now_playing_artwork_changed"
     NOW_PLAYING_GRADIENT_CHANGED = "now_playing_gradient_changed"
     NOW_PLAYING_CLEARED = "now_playing_cleared"
+    AUDIO_SOURCE_ERROR = "audio_source_error"
 
     def __init__(self, type: str):
         """
@@ -282,6 +283,21 @@ class AudioDeviceListChangedEvent(Event):
 
     def __init__(self):
         super().__init__(Event.AUDIO_DEVICE_LIST_CHANGED)
+
+
+class AudioSourceErrorEvent(Event):
+    """Event emitted when the configured audio source cannot be opened.
+
+    Used to notify the frontend when a Sendspin (or other virtual) audio device
+    is unavailable so the user can choose to fix it rather than silently falling
+    back to a different device.
+    """
+
+    def __init__(self, error_type: str, message: str, device_name: str = ""):
+        super().__init__(Event.AUDIO_SOURCE_ERROR)
+        self.error_type = error_type
+        self.message = message
+        self.device_name = device_name
 
 
 class GraphUpdateEvent(Event):
