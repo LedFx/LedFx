@@ -618,7 +618,7 @@ class NowPlayingService:
         if audio is None:
             return False
         return getattr(audio, "_audio_stream_active", False)
-    
+
     def _apply_track_text_to_virtuals(self) -> int:
         """Apply current track info as a Texter effect on target virtuals.
 
