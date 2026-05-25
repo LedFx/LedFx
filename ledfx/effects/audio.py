@@ -584,18 +584,19 @@ class AudioInputSource:
             old_config = self._config
             # Pipeline-affecting keys require rebuilding internal audio objects even when the audio stream should stay active.
             _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size")
-            pipeline_changing = any(old_config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS)
+            pipeline_changing = any(
+                old_config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS
+            )
 
-            if old_config.get("audio_device") != new_config.get("audio_device"):
+            if old_config.get("audio_device") != new_config.get(
+                "audio_device"
+            ):
                 device_changing = True
         else:
             old_config = None
 
         if AudioInputSource._audio_stream_active:
-            if (
-                device_changing
-                or pipeline_changing
-            ):
+            if device_changing or pipeline_changing:
                 self.deactivate()
 
         self._config = new_config
