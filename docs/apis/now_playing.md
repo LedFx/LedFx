@@ -147,7 +147,7 @@ Each variant contains a `gradient` field with a CSS `linear-gradient(...)` strin
   "album_art": {
     "enabled": false,
     "duration": 10,
-    "virtual_ids": [],
+    "virtual_ids": []
   }
 }
 ```
@@ -247,7 +247,7 @@ When a track is playing:
     "album_art": {
       "enabled": false,
       "duration": 10,
-      "virtual_ids": [],
+      "virtual_ids": []
     }
   }
 }
@@ -277,7 +277,7 @@ When no track is playing (idle state):
     "album_art": {
       "enabled": false,
       "duration": 10,
-      "virtual_ids": [],
+      "virtual_ids": []
     }
   }
 }
@@ -320,7 +320,7 @@ Full update (all sections):
   "album_art": {
     "enabled": false,
     "duration": 10,
-    "virtual_ids": [],
+    "virtual_ids": []
   }
 }
 ```
@@ -347,7 +347,7 @@ Full update (all sections):
       "album_art": {
         "enabled": false,
         "duration": 10,
-        "virtual_ids": [],
+        "virtual_ids": []
       }
     }
   }
@@ -421,7 +421,7 @@ The PUT endpoint supports section-level partial updates:
 {"gradient": {"enabled": false}}
 ```
 
-This disables gradient application without affecting `track_text` or `album_art` configuration. Within each section, unspecified fields retain their defaults from the schema.
+This disables gradient application without affecting `track_text` or `album_art` configuration. Top-level sections omitted from the request are preserved as-is. Within each section, the update is also a partial-update merge: fields not included in the request retain their **current values** rather than being reset to schema defaults. For example, sending `{"track_text": {"enabled": true}}` merges with the existing `track_text` config, leaving `duration`, `virtual_ids`, and `preset` unchanged.
 
 ### Variant Switching
 

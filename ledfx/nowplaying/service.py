@@ -9,6 +9,7 @@ import hashlib
 import io
 import logging
 import time
+import urllib.parse
 import urllib.request
 
 import voluptuous as vol
@@ -52,6 +53,24 @@ from ledfx.utilities.security_utils import (
 from ledfx.virtuals import apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _sanitize_url(url: str) -> str:
+    """Return a safe-for-logging version of *url*.
+
+    Strips query strings (which may carry access tokens) and removes
+    any userinfo/credentials from the netloc.
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        netloc = parsed.hostname or ""
+        if parsed.port:
+            netloc = f"{netloc}:{parsed.port}"
+        return urllib.parse.urlunparse(
+            (parsed.scheme, netloc, parsed.path, "", "", "")
+        )
+    except Exception:
+        return "<url>"
 
 # Sources that supply their own artwork (e.g. via set_artwork_url).
 # The album-art resolver (MusicBrainz etc.) is never invoked for these.
@@ -265,7 +284,7 @@ class NowPlayingService:
         # Download the image
         data, detected_content_type = self._download_image(url)
         if data is None:
-            _LOGGER.warning("Failed to download artwork from %s", url)
+            _LOGGER.warning("Failed to download artwork from %s", _sanitize_url(url))
             return False
 
         if content_type is None:
@@ -920,13 +939,13 @@ class NowPlayingService:
             Tuple of (data_bytes, content_type) or (None, None) on failure.
         """
         if not is_allowed_image_extension(url):
-            _LOGGER.warning("URL has invalid image extension: %s", url)
+            _LOGGER.warning("URL has invalid image extension: %s", _sanitize_url(url))
             return None, None
 
         is_safe, error_msg = validate_url_safety(url, allow_private=True)
         if not is_safe:
             _LOGGER.warning(
-                "URL blocked for security: %s - %s", url, error_msg
+                "URL blocked for security: %s - %s", _sanitize_url(url), error_msg
             )
             return None, None
 
@@ -958,18 +977,18 @@ class NowPlayingService:
                     img = Image.open(io.BytesIO(data))
                     if not validate_pil_image(img):
                         _LOGGER.warning(
-                            "Downloaded image failed validation: %s", url
+                            "Downloaded image failed validation: %s", _sanitize_url(url)
                         )
                         return None, None
                 except Exception:
                     _LOGGER.warning(
-                        "Downloaded data is not a valid image: %s", url
+                        "Downloaded data is not a valid image: %s", _sanitize_url(url)
                     )
                     return None, None
 
                 return data, content_type
         except Exception as exc:
-            _LOGGER.warning("Failed to download artwork from %s: %s", url, exc)
+            _LOGGER.warning("Failed to download artwork from %s: %s", _sanitize_url(url), exc)
             return None, None
 
     def _update_current_gradient(self) -> None:

@@ -1208,6 +1208,8 @@ class _DummyLedFxWithAlbumArt(_DummyLedFxWithVirtuals):
     def __init__(self, config_dir=None):
         super().__init__(config_dir)
         self.effects = _DummyEffectsRegistry()
+        self.audio = MagicMock()
+        self.audio._audio_stream_active = True
 
 
 @pytest.fixture
