@@ -571,11 +571,8 @@ class AudioInputSource:
         self._persist_config()
 
     def update_config(self, config):
-        """Deactivate the audio, update the config, the reactivate"""
-        _LOGGER.debug(f"audio.update_config: new1:  {config}")
-
+        """Deactivate the audio, update the config, then reactivate"""
         new_config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
-        _LOGGER.debug(f"audio.update_config: new2:  {config}")
 
         device_changing = False
         pipeline_changing = False
@@ -601,9 +598,7 @@ class AudioInputSource:
 
         self._config = new_config
         # Resolve device by name if available (handles index drift across restarts)
-        _LOGGER.debug(f"audio.update_config: pre:  {self._config}")
         self._resolve_device_from_name()
-        _LOGGER.debug(f"audio.update_config: post:  {self._config}")
 
         # cache up last active and lets see if it changes
         # Read _last_active with class lock protection
