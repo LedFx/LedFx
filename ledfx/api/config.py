@@ -249,6 +249,8 @@ class ConfigEndpoint(RestEndpoint):
             config, CORE_CONFIG_SCHEMA, "core"
         )
 
+        # TODO: handle sendspin_always_on it should eager start sendspin or stop sendspin if sendspin is active, and always on changes
+
         # When user explicitly selects a new device via API, clear the stale
         # device name so _resolve_device_from_name() uses the index as-is
         # instead of name-matching back to the old device.

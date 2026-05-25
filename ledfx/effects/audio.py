@@ -579,7 +579,7 @@ class AudioInputSource:
 
         device_changing = False
         pipeline_changing = False
-        # work out if it is new. we can trust old vs new indexs as they should of been fixed by now
+        # work out if it is new. during first start, there will be no self._config
         if hasattr(self, "_config"):
             old_config = self._config
             # Pipeline-affecting keys require rebuilding internal audio objects even when the audio stream should stay active.
@@ -610,8 +610,7 @@ class AudioInputSource:
             last_active = AudioInputSource._last_active
 
         # Activate outside the lock to avoid deadlock
-        should_always_on = self._should_always_keep_active()
-        if len(self._callbacks) != 0 or should_always_on:
+        if len(self._callbacks) != 0 or self._should_always_keep_active():
             if not AudioInputSource._audio_stream_active:
                 self.activate()
 
@@ -1023,11 +1022,6 @@ class AudioInputSource:
         """Unregisters a callback with the input source"""
         if callback in self._callbacks:
             self._callbacks.remove(callback)
-        if self._should_always_keep_active():
-            _LOGGER.debug(
-                "Sendspin always-on active, skipping deactivate timer"
-            )
-            return
         if (
             len(self._callbacks) <= self._subscriber_threshold
             and AudioInputSource._audio_stream_active

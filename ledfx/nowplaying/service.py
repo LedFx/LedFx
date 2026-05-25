@@ -612,6 +612,13 @@ class NowPlayingService:
         _LOGGER.info("Applied Now Playing gradient to %d effect(s)", updated)
         return updated
 
+    def _is_audio_active(self) -> bool:
+        """Return True if the audio stream is active, False otherwise."""
+        audio = getattr(self._ledfx, "audio", None)
+        if audio is None:
+            return False
+        return getattr(audio, "_audio_stream_active", False)
+    
     def _apply_track_text_to_virtuals(self) -> int:
         """Apply current track info as a Texter effect on target virtuals.
 
@@ -625,10 +632,15 @@ class NowPlayingService:
         * ``track_text.virtual_ids`` is non-empty
         * ``self._state.metadata`` is set
         * ``self._ledfx.virtuals`` and ``self._ledfx.effects`` are available
+        * Audio stream is active
 
         Returns:
             Number of virtuals successfully updated.
         """
+
+        if not self._is_audio_active():
+            return 0
+
         track_text_cfg = self._config["track_text"]
 
         if not track_text_cfg["enabled"]:
@@ -730,10 +742,14 @@ class NowPlayingService:
         * ``album_art.virtual_ids`` is non-empty
         * ``self._state.artwork.cache_key`` is set
         * ``self._ledfx.virtuals`` and ``self._ledfx.effects`` are available
+        * Audio stream is active
 
         Returns:
             Number of virtuals successfully updated.
         """
+        if not self._is_audio_active():
+            return 0
+
         album_art_cfg = self._config["album_art"]
 
         if not album_art_cfg["enabled"]:
