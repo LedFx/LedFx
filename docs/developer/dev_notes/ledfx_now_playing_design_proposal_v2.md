@@ -1,4 +1,4 @@
-﻿# LedFx Now Playing Service
+﻿# LedFx Now Playing Service — Implementation Reference
 
 ## Purpose
 
@@ -13,7 +13,7 @@ Provides a single internal source of truth for:
 - temporary or permanent album-art display
 - provider-neutral events
 
-The first provider is **Sendspin**. The architecture is provider-agnostic.
+Two providers are currently implemented: **Sendspin** (explicit integration) and **SMTC** (Windows System Media Transport Controls). The architecture is provider-agnostic.
 
 ---
 
@@ -23,10 +23,17 @@ The first provider is **Sendspin**. The architecture is provider-agnostic.
 ledfx/nowplaying/
     __init__.py                  # exposes NowPlayingService
     models.py                    # TrackMetadata, ArtworkReference, NowPlayingState
+    normalise.py                 # YouTube/channel-name metadata normalisation
     service.py                   # NowPlayingService
+    album_art/
+        __init__.py
+        base.py                  # AlbumArtProvider ABC
+        resolver.py              # AlbumArtResolver (async, non-blocking)
+        musicbrainz.py           # MusicBrainzArtProvider (MusicBrainz + Cover Art Archive)
     providers/
         __init__.py
         sendspin.py              # SendspinNowPlayingProvider
+        smtc.py                  # SMTCNowPlayingProvider (Windows only)
 ```
 
 Supporting changes elsewhere:
@@ -37,8 +44,7 @@ Supporting changes elsewhere:
 | `ledfx/events.py` | 5 new Now Playing event types |
 | `ledfx/color.py` | `build_gradient_config()` helper |
 | `ledfx/virtuals.py` | `apply_config_to_active_effects()` helper |
-| `ledfx/presets.py` | `get_ledfx_presets()` helper |
-| `ledfx/core.py` | instantiates `NowPlayingService` as `ledfx.now_playing` |
+| `ledfx/core.py` | instantiates `NowPlayingService` as `ledfx.now_playing`; creates and starts `SMTCNowPlayingProvider` |
 | `ledfx/sendspin/stream.py` | creates `SendspinNowPlayingProvider` on connect |
 
 ---
@@ -54,15 +60,13 @@ class TrackMetadata:
     title: Optional[str] = None
     artist: Optional[str] = None
     album: Optional[str] = None
-    duration: Optional[float] = None
-    position: Optional[float] = None
     track_id: Optional[str] = None
     artwork_url: Optional[str] = None
     artwork_hash: Optional[str] = None
     updated_at: Optional[float] = None
 ```
 
-`track_identity()` returns `(title, artist, album, track_id)` — used for change detection.
+`duration` and `position` fields are not tracked. `track_identity()` returns `(title, artist, album, track_id)` — used for change detection.
 
 ### ArtworkReference
 
@@ -107,13 +111,13 @@ Persisted under `config["now_playing"]`.
     },
     "track_text": {
         "enabled": True,
-        "duration": 8,                       # seconds; 0 = permanent
+        "duration": 60,                      # seconds (0–60); 0 = permanent
         "virtual_ids": [],
         "preset": "",                        # texter2d preset name
     },
     "album_art": {
         "enabled": True,
-        "duration": 10,                      # seconds; 0 = permanent
+        "duration": 10,                      # seconds (0–60); 0 = permanent
         "virtual_ids": [],
     },
 }
@@ -123,25 +127,62 @@ All sections are optional in `update_config()` — unspecified sections retain t
 
 ---
 
+## Source Priority
+
+Multiple providers may send metadata simultaneously. The service uses a static priority table to determine the active source:
+
+| Source | Priority |
+|---|---|
+| `sendspin` | 10 |
+| `smtc` | 1 |
+
+A new source pre-empts the current active source only if its priority is **strictly greater**. When a higher-priority source takes over, any in-flight album-art resolver work is cancelled.
+
+---
+
 ## Public API (`NowPlayingService`)
 
 ```python
 # Called by providers
-service.set_metadata(source_id, metadata)       -> bool  # True if track changed
-service.set_artwork_url(source_id, url, ...)    -> bool  # True if artwork changed
-service.set_artwork_bytes(source_id, data, ...) -> bool  # True if artwork changed
-service.clear(source_id)                        -> None
+service.set_metadata(source_id, metadata)        -> bool  # True if track changed
+service.set_artwork_url(source_id, url, ...)     -> bool  # True if artwork changed
+service.set_artwork_bytes(source_id, data, ...)  -> bool  # True if artwork changed
+service.set_artwork_resolved(data, ...)          -> bool  # Called by AlbumArtResolver only
+service.clear_artwork(source_id)                 -> None  # Clear artwork, keep track state
+service.clear(source_id)                         -> None  # Clear all state for source
 
 # Called by REST endpoint / core
-service.get_current()                           -> NowPlayingState
-service.update_config(new_config)               -> dict  # raises vol.Invalid
-service.apply_gradient_to_virtuals()            -> int   # count updated
+service.get_current()                            -> NowPlayingState
+service.update_config(new_config)                -> dict  # raises vol.Invalid
+service.apply_gradient_to_virtuals()             -> int   # count updated
 
 # Properties
-service.gradient_enabled                        -> bool
-service.gradient_virtual_ids                    -> list[str]
-service.config                                  -> dict
+service.gradient_enabled                         -> bool
+service.gradient_virtual_ids                     -> list[str]
+service.config                                   -> dict
 ```
+
+---
+
+## Album Art Resolver
+
+For sources that do not supply their own artwork (currently only `smtc`), the service delegates to `AlbumArtResolver` on each track change. The resolver:
+
+1. Normalises the track key (artist, title, album) to avoid duplicate lookups.
+2. Runs an async `MusicBrainzArtProvider` lookup against the MusicBrainz recording search API and Cover Art Archive (no auth required).
+3. Delivers resolved bytes via `service.set_artwork_resolved()`.
+
+Sources listed in `_SOURCES_WITH_OWN_ARTWORK` (currently `{"sendspin"}`) never trigger the resolver. When a source directly calls `set_artwork_url()` or `set_artwork_bytes()`, any in-flight resolver task is cancelled.
+
+---
+
+## Metadata Normalisation (`normalise.py`)
+
+Before displaying track text on LEDs or querying MusicBrainz, metadata is cleaned through shared normalisation helpers that strip YouTube/channel noise:
+
+- Artist: removes `- Topic`, `VEVO`, and channel-suffix words (Official, Music, Records…)
+- Title: strips bracketed suffixes (`[Official Video]`, `(Lyrics)`, quality tags `[4K]`, remaster/version tags), unbracketed video suffixes, and artist-prefix segments YouTube prepends
+- Album: placeholder passthrough (normalise_album returns None for uninformative values)
 
 ---
 
@@ -150,7 +191,7 @@ service.config                                  -> dict
 ```
 Provider calls set_artwork_url() or set_artwork_bytes()
     |
-    v
+    v  (set_artwork_url only)
 Security validation (URL safety, size limit, PIL validation)
     |
     v
@@ -173,7 +214,7 @@ _apply_album_art_to_virtuals()  (if album_art.enabled and virtual_ids set)
 NowPlayingArtworkChangedEvent fired
 ```
 
-A single file is kept (`now_playing.{ext}`). Each track overwrites the previous artwork in-place.
+A single file is kept (`now_playing.{ext}`). Each track overwrites the previous artwork in-place. The same pipeline runs for `set_artwork_resolved()` (resolver-delivered bytes), except there is no source_id gate.
 
 ---
 
@@ -183,14 +224,20 @@ A single file is kept (`now_playing.{ext}`). Each track overwrites the previous 
 Provider calls set_metadata(source_id, metadata)
     |
     v
-_detect_track_change()  -- compares track_identity() tuple
-    |  (if changed)
-    v
-NowPlayingTrackChangedEvent fired
-_apply_track_text_to_virtuals()  (if track_text.enabled and virtual_ids set)
+Source priority check (pre-empt or ignore if lower priority)
     |
     v
-NowPlayingMetadataChangedEvent fired (every call)
+_detect_track_change()  -- compares track_identity() tuple
+    |
+    v
+NowPlayingMetadataChangedEvent fired  (suppressed for position-only ticks)
+    |  (if track changed)
+    v
+NowPlayingTrackChangedEvent fired
+_apply_track_text_to_virtuals()  (if track_text.enabled and virtual_ids set; audio must be active)
+    |  (if source not in _SOURCES_WITH_OWN_ARTWORK)
+    v
+AlbumArtResolver.on_track_changed(metadata)  ->  async MusicBrainz lookup
 ```
 
 ---
@@ -205,7 +252,7 @@ Target scope: `gradient.virtual_ids` if non-empty, otherwise all virtuals.
 
 ### Track Text
 
-Creates a `texter2d` effect using the optional `track_text.preset` as base config, then sets `text` to `"Artist - Album - Title"`. Applied via `virtual.set_effect(effect, fallback=duration)`. If `duration == 0` the effect is permanent.
+Creates a `texter2d` effect using the optional `track_text.preset` as base config, then sets `text` to the normalised `"Artist - Album - Title"` string (see Metadata Normalisation above). Applied via `virtual.set_effect(effect, fallback=duration)`. If `duration == 0` the effect is permanent. Track text is only applied when the audio stream is active.
 
 ### Album Art
 
@@ -213,7 +260,9 @@ Creates an `imagespin` effect seeded from the built-in `artwork` preset, with `i
 
 ---
 
-## Sendspin Provider (`ledfx/nowplaying/providers/sendspin.py`)
+## Providers
+
+### Sendspin (`ledfx/nowplaying/providers/sendspin.py`)
 
 `SendspinNowPlayingProvider` is created by `SendspinAudioStream` and wired to the aiosendspin metadata callback.
 
@@ -221,8 +270,20 @@ Sendspin sends **incremental** updates — `UndefinedField` means "not included 
 
 Key behaviour:
 - State accumulates across incremental updates
-- Artwork URL changes trigger `now_playing.set_artwork_url()`
+- Artwork URL changes trigger `now_playing.set_artwork_url()`; clearing the URL calls `now_playing.clear_artwork()`
 - `clear()` resets all accumulated state and calls `now_playing.clear()`
+
+Sendspin is in `_SOURCES_WITH_OWN_ARTWORK` — the album-art resolver is never invoked for it.
+
+### SMTC (`ledfx/nowplaying/providers/smtc.py`) — Windows only
+
+`SMTCNowPlayingProvider` hooks into the Windows System Media Transport Controls via WinRT to receive passive, system-wide media session changes. It is created and started by `core.py` at startup alongside `NowPlayingService`.
+
+Key behaviour:
+- Subscribes to WinRT `CurrentSessionChanged` and `MediaPropertiesChanged` events
+- Forwards title, artist, album as `TrackMetadata` to the service
+- Does **not** fetch artwork — that is delegated to the album-art resolver (MusicBrainz)
+- Silently no-ops on non-Windows platforms
 
 ---
 
@@ -231,8 +292,8 @@ Key behaviour:
 | Event type | Fired when |
 |---|---|
 | `NOW_PLAYING_TRACK_CHANGED` | Track identity changes |
-| `NOW_PLAYING_METADATA_CHANGED` | Any metadata update |
-| `NOW_PLAYING_ARTWORK_CHANGED` | Artwork stored and gradients extracted |
+| `NOW_PLAYING_METADATA_CHANGED` | Content-carrying metadata changes (suppressed for position-only ticks) |
+| `NOW_PLAYING_ARTWORK_CHANGED` | Artwork stored and gradients extracted (also fired with empty dict on `clear_artwork`) |
 | `NOW_PLAYING_GRADIENT_CHANGED` | `current_gradient` changes value |
 | `NOW_PLAYING_CLEARED` | Active source clears |
 
@@ -274,12 +335,13 @@ Asset writes use `save_asset(..., allow_overwrite=True)` which enforces path con
 
 ---
 
-## Future Providers
+## Adding New Providers
 
 The service is provider-agnostic. Any new provider needs only to:
 
 1. Call `ledfx.now_playing.set_metadata(source_id, TrackMetadata(...))`
-2. Call `ledfx.now_playing.set_artwork_url()` or `set_artwork_bytes()` when artwork changes
+2. Call `ledfx.now_playing.set_artwork_url()` or `set_artwork_bytes()` when artwork changes; or rely on the album-art resolver by omitting from `_SOURCES_WITH_OWN_ARTWORK`
 3. Call `ledfx.now_playing.clear(source_id)` on disconnect
+4. Add a priority entry in `_SOURCE_PRIORITY` in `service.py`
 
-Candidate future providers: Music Assistant, Spotify, Linux MPRIS, Windows media session, browser integrations.
+Candidate future providers: Music Assistant, Spotify, Linux MPRIS, browser integrations.
