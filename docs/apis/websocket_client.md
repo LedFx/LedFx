@@ -6,7 +6,7 @@ This document outlines the enhancement of LedFx's WebSocket connection system to
 
 Please also see the dev guides:
 - [WebSocket Client Examples](../developer/websocket_client_examples.md)
-- [Client Sync Migration Guide](../developer/client_sync_migration_guide.md)
+- [Client Sync Migration Guide](../developer/dev_notes/client_sync_migration_guide.md)
 
 ---
 

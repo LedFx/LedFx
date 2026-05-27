@@ -90,7 +90,7 @@ Generated when an existing client disconnects its websocket to the backend.
 
 Generated when a client broadcasts a message to other clients. See [Client Management (Client Metadata & Broadcasting)](#client-management-client-metadata--broadcasting) below for details on the new client broadcasting system.
 
-> **Note**: The legacy `client_sync` event has been replaced by the more secure and flexible `client_broadcast` event. See [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) for migration instructions.
+> **Note**: The legacy `client_sync` event has been replaced by the more secure and flexible `client_broadcast` event. See [Client Sync Migration Guide](../developer/dev_notes/client_sync_migration_guide.md) for migration instructions.
 
 ### client rest api
 
@@ -142,13 +142,13 @@ Returns metadata for all active websocket clients
 > **📘 For Client Management**: Client metadata management, broadcasting, and related functionality has been moved to its own comprehensive documentation. See:
 > - [WebSocket Client API](websocket_client.md) - Full API specification
 > - [WebSocket Client Examples](../developer/websocket_client_examples.md) - Practical implementation examples
-> - [Client Sync Migration Guide](../developer/client_sync_migration_guide.md) - Migration from legacy sync system
+> - [Client Sync Migration Guide](../developer/dev_notes/client_sync_migration_guide.md) - Migration from legacy sync system
 
 ## Client Management (Client Metadata & Broadcasting)
 
 > **📘 Quick Start**: See [WebSocket Client Examples Guide](../developer/websocket_client_examples.md) for practical implementation examples.
 >
-> **🔄 Migrating from Legacy?** If your code uses the old `POST /api/clients` sync action, see [Client Sync Migration Guide](../developer/client_sync_migration_guide.md).
+> **🔄 Migrating from Legacy?** If your code uses the old `POST /api/clients` sync action, see [Client Sync Migration Guide](../developer/dev_notes/client_sync_migration_guide.md).
 
 LedFx provides a client management system that allows WebSocket clients to:
 - Set persistent metadata (name, type, device ID)

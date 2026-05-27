@@ -23,7 +23,7 @@ The Now Playing Service is **provider-neutral** — it receives normalized metad
 
 The GET response combines the current playback state with the service configuration.
 
-```json
+```text
 {
   "active_source_id": "sendspin",
   "metadata": { ... },

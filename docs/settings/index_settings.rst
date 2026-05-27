@@ -10,3 +10,4 @@ Settings
    general
    directing_audio
    sendspin
+   now_playing

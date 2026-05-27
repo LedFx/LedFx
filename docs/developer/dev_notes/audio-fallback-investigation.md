@@ -1,3 +1,5 @@
+:orphan:
+
 # Audio Fallback Startup Failure Investigation
 
 **Branch:** `audio_fallback`

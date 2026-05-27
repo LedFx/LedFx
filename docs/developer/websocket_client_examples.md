@@ -2,7 +2,7 @@
 
 This document provides practical examples for implementing the WebSocket client management features in LedFx.
 
-> **Migrating from Legacy System?** If you're updating code that uses the old `POST /api/clients` sync action or `client_sync` events, see the [Client Sync Migration Guide](client_sync_migration_guide.md) for step-by-step migration instructions.
+> **Migrating from Legacy System?** If you're updating code that uses the old `POST /api/clients` sync action or `client_sync` events, see the [Client Sync Migration Guide](dev_notes/client_sync_migration_guide.md) for step-by-step migration instructions.
 > **📊 Lifecycle Diagrams**: This document includes Mermaid sequence diagrams throughout to visualize key interaction patterns.
 
 ## Table of Contents

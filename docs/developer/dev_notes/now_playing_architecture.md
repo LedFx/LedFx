@@ -1,4 +1,6 @@
-﻿# LedFx Now Playing Service — Implementation Reference
+﻿:orphan:
+
+# LedFx Now Playing Service — Implementation Reference
 
 ## Purpose
 
