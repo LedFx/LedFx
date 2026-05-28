@@ -17,7 +17,7 @@ from ledfx.config import save_config
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
-from ledfx.events import AudioDeviceChangeEvent, Event
+from ledfx.events import AudioDeviceChangeEvent, AudioSourceErrorEvent, Event
 from ledfx.sendspin import SENDSPIN_AVAILABLE
 from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
 
@@ -218,7 +218,6 @@ class AudioInputSource:
                     "change. Not falling back to default audio device.",
                     last_device_name,
                 )
-                from ledfx.events import AudioSourceErrorEvent
 
                 self._ledfx.events.fire_event(
                     AudioSourceErrorEvent(
@@ -538,7 +537,6 @@ class AudioInputSource:
                 "Not falling back to default audio device.",
                 saved_name,
             )
-            from ledfx.events import AudioSourceErrorEvent
 
             self._ledfx.events.fire_event(
                 AudioSourceErrorEvent(
@@ -695,7 +693,6 @@ class AudioInputSource:
                     configured_name,
                     device_idx,
                 )
-                from ledfx.events import AudioSourceErrorEvent
 
                 self._ledfx.events.fire_event(
                     AudioSourceErrorEvent(

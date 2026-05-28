@@ -269,12 +269,14 @@ class ConfigEndpoint(RestEndpoint):
             else:
                 self._ledfx.config["wled_preferences"][key] = wled_config[key]
 
-        if (
-            hasattr(self._ledfx, "audio")
-            and self._ledfx.audio is not None
-            and audio_config
-        ):
-            self._ledfx.audio.update_config(audio_config)
+        if audio_config:
+            if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
+                self._ledfx.audio.update_config(audio_config)
+            # Merge into persisted config AFTER update_config so that
+            # update_config's old-vs-new comparison sees the unmodified old
+            # values (self._config may be the same object as
+            # self._ledfx.config["audio"] after _persist_config replaces it).
+            self._ledfx.config["audio"].update(audio_config)
 
         if hasattr(self._ledfx, "audio") and melbanks_config:
             self._ledfx.audio.melbanks.update_config(
