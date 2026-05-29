@@ -1,6 +1,6 @@
 # MusicBrainz Cover Art Algorithm
 
-Source: `ledfx/nowplaying/album_art/musicbrainz.py`  
+Source: `ledfx/nowplaying/album_art/musicbrainz.py`
 Normalisation helpers: `ledfx/nowplaying/normalise.py`
 
 Uses publicly available, no-auth APIs:
