@@ -16,7 +16,7 @@ This document provides practical examples for implementing the WebSocket client 
 
 ### Lifecycle: Client Connection & Registration
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Client
     participant WebSocket
@@ -74,7 +74,7 @@ function setClientInfo() {
 
 ### Lifecycle: Name Conflict Resolution
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Client1
     participant Client2
@@ -247,7 +247,7 @@ getConnectedClients().then(clients => {
 
 ### Lifecycle: Broadcasting to All Clients
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Sender
     participant Server
@@ -256,7 +256,7 @@ sequenceDiagram
     participant Client3
 
     Sender->>Server: broadcast {broadcast_type: "scene_sync", target: {mode: "all"}, payload: {...}}
-    Server->>Server: Validate broadcast<br/>Derive sender identity from WebSocket
+    Server->>Server: Validate broadcast Derive sender identity from WebSocket
     Server->>Server: Generate broadcast_id
     Server->>Sender: broadcast_sent {targets_matched: 3, target_uuids: [...]}
 
@@ -266,7 +266,7 @@ sequenceDiagram
         Server->>Client3: client_broadcast event {sender_uuid, sender_name, payload}
     end
 
-    Note over Client1,Client3: Each client filters:<br/>1. Check target_uuids includes them<br/>2. Skip if sender_uuid == own client_id
+    Note over Client1,Client3: Each client filters: 1. Check target_uuids includes them 2. Skip if sender_uuid == own client_id
 ```
 
 ### Broadcasting to All Clients
@@ -297,7 +297,7 @@ broadcastToAll('scene_sync', {
 
 ### Lifecycle: Targeted Broadcasting (By Type)
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Controller
     participant Server
@@ -309,7 +309,7 @@ sequenceDiagram
     Note over Visualiser2: type: "visualiser"
     Note over Mobile: type: "mobile"
 
-    Controller->>Server: broadcast {broadcast_type: "visualiser_control",<br/>target: {mode: "type", value: "visualiser"}}
+    Controller->>Server: broadcast {broadcast_type: "visualiser_control", target: {mode: "type", value: "visualiser"}}
     Server->>Server: Filter clients by type="visualiser"
     Server->>Controller: broadcast_sent {targets_matched: 2}
 
@@ -318,7 +318,7 @@ sequenceDiagram
         Server->>Visualiser2: client_broadcast event
     end
 
-    Note over Mobile: No broadcast received<br/>(type doesn't match)
+    Note over Mobile: No broadcast received (type doesn't match)
 ```
 
 ### Broadcasting to Specific Client Types
@@ -444,7 +444,7 @@ broadcastWithConfirmation('scene_sync', {mode: 'all'}, {scene: 'chill'})
 
 ### Lifecycle: Client List Change Notification
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant ClientA
     participant Server
@@ -464,7 +464,7 @@ sequenceDiagram
         Server->>ClientB: clients_updated event
     end
 
-    Note over ClientA: Refresh client list via<br/>GET /api/clients
+    Note over ClientA: Refresh client list via GET /api/clients
     Note over ClientB: Update UI with new client
 
     ClientA->>Server: GET /api/clients
@@ -473,29 +473,29 @@ sequenceDiagram
 
 ### Lifecycle: Receiving and Filtering Broadcasts
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Sender
     participant Server
     participant Receiver
     participant OtherClient
 
-    Note over Receiver: client_id: "abc-123"<br/>Subscribed to client_broadcast
-    Note over OtherClient: client_id: "xyz-789"<br/>Subscribed to client_broadcast
+    Note over Receiver: client_id: "abc-123" Subscribed to client_broadcast
+    Note over OtherClient: client_id: "xyz-789" Subscribed to client_broadcast
 
     Sender->>Server: broadcast {target: {mode: "uuids", uuids: ["abc-123"]}}
-    Server->>Server: Determine targets<br/>for audit & response
+    Server->>Server: Determine targets for audit & response
 
     par Broadcast to ALL subscribers
         Server->>Receiver: client_broadcast {target_uuids: ["abc-123"]}
         Server->>OtherClient: client_broadcast {target_uuids: ["abc-123"]}
     end
 
-    Receiver->>Receiver: Check: "abc-123" in target_uuids? ✓
-    Receiver->>Receiver: Check: sender_uuid != "abc-123"? ✓
+    Receiver->>Receiver: Check: "abc-123" in target_uuids? yes
+    Receiver->>Receiver: Check: sender_uuid != "abc-123"? yes
     Note over Receiver: Process broadcast payload
 
-    OtherClient->>OtherClient: Check: "xyz-789" in target_uuids? ✗
+    OtherClient->>OtherClient: Check: "xyz-789" in target_uuids? no
     Note over OtherClient: Discard (not in target list)
 
     alt Sender receives their own broadcast
@@ -626,7 +626,7 @@ function handleColorPalette(payload) {
 
 ### Lifecycle: End-to-End Scene Sync (Controller → Visualisers)
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Controller
     participant Server
@@ -648,15 +648,15 @@ sequenceDiagram
     Controller->>Server: POST /api/scenes/party-mode/activate
     Server->>Controller: Scene activated successfully
 
-    Controller->>Server: broadcast {<br/>  broadcast_type: "scene_sync",<br/>  target: {mode: "type", value: "visualiser"},<br/>  payload: {scene_id: "party-mode", action: "activate"}<br/>}
+    Controller->>Server: broadcast {   broadcast_type: "scene_sync",   target: {mode: "type", value: "visualiser"},   payload: {scene_id: "party-mode", action: "activate"} }
 
     Server->>Server: Filter clients by type="visualiser"
     Server->>Server: Derive sender from WebSocket (Controller)
     Server->>Controller: broadcast_sent {targets_matched: 2}
 
     par Notify visualisers
-        Server->>Visualiser1: client_broadcast {<br/>  sender_name: "Scene Controller",<br/>  sender_type: "controller",<br/>  broadcast_type: "scene_sync",<br/>  payload: {scene_id: "party-mode"}<br/>}
-        Server->>Visualiser2: client_broadcast {<br/>  sender_name: "Scene Controller",<br/>  sender_type: "controller",<br/>  broadcast_type: "scene_sync",<br/>  payload: {scene_id: "party-mode"}<br/>}
+        Server->>Visualiser1: client_broadcast {   sender_name: "Scene Controller",   sender_type: "controller",   broadcast_type: "scene_sync",   payload: {scene_id: "party-mode"} }
+        Server->>Visualiser2: client_broadcast {   sender_name: "Scene Controller",   sender_type: "controller",   broadcast_type: "scene_sync",   payload: {scene_id: "party-mode"} }
     end
 
     Visualiser1->>Visualiser1: Check broadcast_type == "scene_sync"
@@ -974,7 +974,7 @@ function connectWithRetry(maxRetries = 5, delay = 1000) {
 
 #### Lifecycle: Reconnection with Exponential Backoff
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     participant Client
     participant WebSocket
@@ -1004,7 +1004,7 @@ sequenceDiagram
     Client->>WebSocket: Reconnect Attempt 3
     WebSocket->>Server: Connected
     Server->>Client: NEW client_id event
-    Note over Client: Store new client_id,<br/>re-register metadata,<br/>re-subscribe to events
+    Note over Client: Store new client_id, re-register metadata, re-subscribe to events
     Note over Client: Connection Restored
 ```
 

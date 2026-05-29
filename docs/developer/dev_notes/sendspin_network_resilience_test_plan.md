@@ -1,5 +1,3 @@
-:orphan:
-
 # Sendspin Network Resilience Test Plan
 
 ## Purpose

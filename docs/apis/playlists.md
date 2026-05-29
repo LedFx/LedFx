@@ -268,32 +268,29 @@ curl -X DELETE http://localhost:8888/api/playlists/evening-cycle
 
 Below is a message sequence chart (Mermaid syntax) for starting and monitoring a playlist called "My Playlist" (shuffle mode, 4 scenes) using REST APIs and WebSocket events.
 
-```{mermaid}
+```mermaid
 sequenceDiagram
-participant Client
-participant Backend
+    participant Client
+    participant Backend
 
-%% Start playlist (REST call)
-Client->>Backend: PUT /api/playlists {id: "My Playlist", action: "start"}
+    Client->>Backend: PUT /api/playlists id=My Playlist action=start
+    Backend-->>Client: playlist_started
 
-%% Playlist started (WebSocket event)
-Backend-->>Client: playlist_started
+    Note over Client: On playlist_started - request state to get scenes order
+    Client->>Backend: PUT /api/playlists action=state
+    Backend->>Client: Playlist state scenes order and index
 
-Note over Client: On playlist_started received<br>request state to get scenes order
-Client->>Backend: PUT /api/playlists {action: "state"}
-Backend->>Client: Playlist state (scenes order, index)
+    loop For each scene advance
+        Backend-->>Client: playlist_advanced index
+        alt If index == 0 new cycle
+            note over Backend: Shuffle mode generates a new scenes order
+            note over Client: Index hitting zero means read scenes order again
+            Client->>Backend: PUT /api/playlists action=state
+            Backend->>Client: Playlist state new scenes order
+        end
+    end
 
-loop For each scene advance
-  Backend-->>Client: playlist_advanced (index)
-  alt If index == 0 (new cycle)
-    note over Backend: Shuffle mode will<br>generate a new scenes order
-    note over Client: Index hitting zero<br>means we should read<br>scenes order again
-    Client->>Backend: PUT /api/playlists {action: "state"}
-    Backend->>Client: Playlist state (new scenes order)
-  end
-end
-
-Backend-->>Client: playlist_stopped
+    Backend-->>Client: playlist_stopped
 ```
 
 ---
