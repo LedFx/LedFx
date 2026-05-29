@@ -45,6 +45,12 @@ class Event:
     PLAYLIST_RESUMED = "playlist_resumed"
     COLORS_UPDATED = "colors_updated"
     SONG_DETECTED = "song_detected"
+    NOW_PLAYING_TRACK_CHANGED = "now_playing_track_changed"
+    NOW_PLAYING_METADATA_CHANGED = "now_playing_metadata_changed"
+    NOW_PLAYING_ARTWORK_CHANGED = "now_playing_artwork_changed"
+    NOW_PLAYING_GRADIENT_CHANGED = "now_playing_gradient_changed"
+    NOW_PLAYING_CLEARED = "now_playing_cleared"
+    AUDIO_SOURCE_ERROR = "audio_source_error"
 
     def __init__(self, type: str):
         """
@@ -277,6 +283,21 @@ class AudioDeviceListChangedEvent(Event):
 
     def __init__(self):
         super().__init__(Event.AUDIO_DEVICE_LIST_CHANGED)
+
+
+class AudioSourceErrorEvent(Event):
+    """Event emitted when the configured audio source cannot be opened.
+
+    Used to notify the frontend when a Sendspin (or other virtual) audio device
+    is unavailable so the user can choose to fix it rather than silently falling
+    back to a different device.
+    """
+
+    def __init__(self, error_type: str, message: str, device_name: str = ""):
+        super().__init__(Event.AUDIO_SOURCE_ERROR)
+        self.error_type = error_type
+        self.message = message
+        self.device_name = device_name
 
 
 class GraphUpdateEvent(Event):
@@ -524,6 +545,59 @@ class ColorsUpdatedEvent(Event):
 
     def __init__(self):
         super().__init__(Event.COLORS_UPDATED)
+
+
+class NowPlayingTrackChangedEvent(Event):
+    """Event emitted when the current track changes."""
+
+    def __init__(
+        self,
+        source_id: str,
+        title: str | None,
+        artist: str | None,
+        album: str | None,
+    ):
+        super().__init__(Event.NOW_PLAYING_TRACK_CHANGED)
+        self.source_id = source_id
+        self.title = title
+        self.artist = artist
+        self.album = album
+
+
+class NowPlayingMetadataChangedEvent(Event):
+    """Event emitted when metadata is updated (including position-only changes)."""
+
+    def __init__(self, source_id: str, metadata: dict):
+        super().__init__(Event.NOW_PLAYING_METADATA_CHANGED)
+        self.source_id = source_id
+        self.metadata = metadata
+
+
+class NowPlayingArtworkChangedEvent(Event):
+    """Event emitted when artwork reference changes."""
+
+    def __init__(self, source_id: str, artwork: dict):
+        super().__init__(Event.NOW_PLAYING_ARTWORK_CHANGED)
+        self.source_id = source_id
+        self.artwork = artwork
+
+
+class NowPlayingGradientChangedEvent(Event):
+    """Event emitted when the current track gradient is updated."""
+
+    def __init__(self, source_id: str, gradient: str | None, variant: str):
+        super().__init__(Event.NOW_PLAYING_GRADIENT_CHANGED)
+        self.source_id = source_id
+        self.gradient = gradient
+        self.variant = variant
+
+
+class NowPlayingClearedEvent(Event):
+    """Event emitted when Now Playing state is cleared."""
+
+    def __init__(self, source_id: str):
+        super().__init__(Event.NOW_PLAYING_CLEARED)
+        self.source_id = source_id
 
 
 class LedFxShutdownEvent(Event):

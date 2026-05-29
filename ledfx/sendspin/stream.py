@@ -14,6 +14,7 @@ from typing import Callable, Optional
 import numpy as np
 
 from ledfx.consts import PROJECT_VERSION
+from ledfx.nowplaying.providers.sendspin import SendspinNowPlayingProvider
 from ledfx.sendspin.config import BUFFER_CAPACITY, MANUFACTURER, PRODUCT_NAME
 
 try:
@@ -70,6 +71,7 @@ class SendspinAudioStream:
         config: dict,
         callback: Callable,
         instance_id: str = "",
+        ledfx=None,
     ):
         if SendspinClient is None:
             raise ImportError(
@@ -79,8 +81,14 @@ class SendspinAudioStream:
         self.config = config
         self.callback = callback
         self._instance_id = instance_id
+        self._ledfx = ledfx
         if not instance_id:
             raise ValueError("instance_id must be provided and non-empty")
+
+        # Now Playing provider (bridges metadata to NowPlayingService)
+        self._now_playing_provider = (
+            SendspinNowPlayingProvider(ledfx) if ledfx is not None else None
+        )
         self._active = False
         self._client = None  # SendspinClient instance or None
         self._loop = None  # asyncio event loop or None
@@ -113,8 +121,12 @@ class SendspinAudioStream:
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0  # play-time (us) of leftover samples
 
-        # Heartbeat/watchdog state
-        self._last_audio_chunk_time = time.monotonic()  # type: float
+        # Heartbeat/watchdog state.
+        # _last_audio_chunk_time is None until the first audio chunk after a
+        # stream_start event.  The watchdog only fires when _expecting_audio is
+        # True so that idle / paused streams do not trigger constant reconnects.
+        self._last_audio_chunk_time = None  # type: Optional[float]
+        self._expecting_audio = False  # type: bool
         self._heartbeat_task = None  # type: Optional[asyncio.Task]
 
         _LOGGER.info(
@@ -140,9 +152,12 @@ class SendspinAudioStream:
         if not self._active or self._client is None:
             return
 
-        # Heartbeat/watchdog: update last audio chunk time
+        # Heartbeat/watchdog: record the time of this chunk so the watchdog
+        # knows audio is still flowing.  Also ensure _expecting_audio stays
+        # True while chunks are arriving (guards against a missed stream_start).
         now_mono = time.monotonic()
         self._last_audio_chunk_time = now_mono
+        self._expecting_audio = True
 
         try:
             play_time_us = self._client.compute_play_time(timestamp)
@@ -514,6 +529,20 @@ class SendspinAudioStream:
         self._leftover = np.array([], dtype=np.float32)
         self._leftover_ts = 0
 
+        # Arm the watchdog: we now expect audio chunks to arrive.
+        self._expecting_audio = True
+        self._last_audio_chunk_time = time.monotonic()
+
+    def _stream_end_handler(self, stream_end_msg):
+        """Called when the stream ends (track stopped / server idle).
+
+        Disarms the watchdog so an idle always-on connection does not
+        repeatedly reconnect just because no audio is playing.
+        """
+        _LOGGER.info("Sendspin stream ended (id=%s)", id(self))
+        self._expecting_audio = False
+        self._last_audio_chunk_time = None
+
     def _stream_clear_handler(self, roles):
         """Called on stream/clear (e.g. seek). Flush the playback buffer.
 
@@ -672,6 +701,10 @@ class SendspinAudioStream:
         self._loop = None
         self._heartbeat_task = None
 
+        # Clear Now Playing state when stream is fully closed
+        if self._now_playing_provider is not None:
+            self._now_playing_provider.clear()
+
         _LOGGER.info("Sendspin stream closed (id=%s)", id(self))
 
     def _run_client(self):
@@ -731,22 +764,36 @@ class SendspinAudioStream:
             _LOGGER.debug("Sendspin event loop closed (id=%s)", id(self))
 
     async def _heartbeat_watchdog_loop(self):
-        """Periodically check for audio chunk receipt and reconnect if stale."""
+        """Periodically check for audio chunk receipt and reconnect if stale.
+
+        Only fires when ``_expecting_audio`` is True (set by ``_stream_start_handler``
+        and cleared by ``_stream_end_handler``).  This prevents constant reconnects
+        when an always-on connection is idle because music is paused or stopped.
+        """
         while self._active:
-            now = time.monotonic()
-            since_last = now - self._last_audio_chunk_time
-            if since_last > self._WATCHDOG_TIMEOUT:
-                _LOGGER.warning(
-                    "Sendspin watchdog: No audio received for %.1fs (id=%s). Triggering reconnect.",
-                    since_last,
-                    id(self),
-                )
-                # Instead of setting a flag, directly cancel the current connect task to force reconnect
-                if self._reconnect_task and not self._reconnect_task.done():
-                    # Direct cancel (watchdog runs in event loop thread)
-                    self._reconnect_task.cancel()
-                # Reset timer so we don't spam
-                self._last_audio_chunk_time = now
+            if (
+                self._expecting_audio
+                and self._last_audio_chunk_time is not None
+            ):
+                now = time.monotonic()
+                since_last = now - self._last_audio_chunk_time
+                if since_last > self._WATCHDOG_TIMEOUT:
+                    _LOGGER.warning(
+                        "Sendspin watchdog: No audio received for %.1fs (id=%s). "
+                        "Triggering reconnect.",
+                        since_last,
+                        id(self),
+                    )
+                    # Disarm until the reconnected stream sends stream_start again.
+                    self._expecting_audio = False
+                    self._last_audio_chunk_time = None
+                    # Cancel the reconnect task so the loop retries the connection
+                    # immediately instead of sleeping through a long backoff.
+                    if (
+                        self._reconnect_task
+                        and not self._reconnect_task.done()
+                    ):
+                        self._reconnect_task.cancel()
             await asyncio.sleep(self._HEARTBEAT_INTERVAL)
 
     async def _create_stop_event(self):
@@ -816,6 +863,8 @@ class SendspinAudioStream:
         """Connect to Sendspin server and start receiving audio."""
         server_url = self.config.get("server_url")
         client_name = self.config.get("client_name", "LedFx")
+        # static id across power cycles
+        client_id = f"ledfx-{self._instance_id[:8]}"
         sample_rate = self.config.get("sample_rate", self.DEFAULT_SAMPLE_RATE)
         buffer_capacity = BUFFER_CAPACITY
 
@@ -825,10 +874,11 @@ class SendspinAudioStream:
             self._stop_event = asyncio.Event()
 
         _LOGGER.info(
-            "Connecting to Sendspin server: %s as '%s' (id=%s)",
+            "Connecting to Sendspin server: %s as '%s' (id=%s) %s",
             server_url,
             client_name,
             id(self),
+            client_id,
         )
 
         try:
@@ -863,14 +913,10 @@ class SendspinAudioStream:
                 ],
             )
 
-            # Build a collision-safe client_id using the first 8 chars of
-            # the persistent LedFx installation UUID.  Stable across
-            # reconnections and restarts; unique across installations.
-            client_id = f"ledfx-{self._instance_id[:8]}"
             self._client = SendspinClient(
                 client_id=client_id,
                 client_name=client_name,
-                roles=[Roles.PLAYER],
+                roles=[Roles.PLAYER, Roles.METADATA],
                 device_info=DeviceInfo(
                     product_name=PRODUCT_NAME,
                     manufacturer=MANUFACTURER,
@@ -882,7 +928,12 @@ class SendspinAudioStream:
             # Register event handlers
             self._client.add_audio_chunk_listener(self._audio_chunk_handler)
             self._client.add_stream_start_listener(self._stream_start_handler)
+            self._client.add_stream_end_listener(self._stream_end_handler)
             self._client.add_stream_clear_listener(self._stream_clear_handler)
+            if self._now_playing_provider is not None:
+                self._client.add_metadata_listener(
+                    self._now_playing_provider.on_metadata
+                )
 
             # Connect to server
             await self._client.connect(server_url)
@@ -932,6 +983,11 @@ class SendspinAudioStream:
 
             with self._buffer_lock:
                 self._chunk_buffer.clear()
+
+            # Disarm the watchdog whenever a connection tears down so that the
+            # reconnect delay (backoff sleep) is not mistaken for "no audio".
+            self._expecting_audio = False
+            self._last_audio_chunk_time = None
 
             if self._client:
                 try:

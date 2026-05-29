@@ -16,7 +16,7 @@ class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
     # image spin supports alpha so allow background color
-    HIDDEN_KEYS = ["speed", "mirror", "flip", "blur"]
+    HIDDEN_KEYS = ["speed", "mirror", "flip", "blur", "album_art"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -59,6 +59,11 @@ class Imagespin(Twod):
             vol.Optional(
                 "image_source", description="Load image from", default=""
             ): str,
+            vol.Optional(
+                "album_art",
+                description="Configuration for Album art display",
+                default=False,
+            ): bool,
         }
     )
 
@@ -78,6 +83,7 @@ class Imagespin(Twod):
         self.resize = (
             Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
         )
+        self.album_art = self.config["album_art"]
         self.init = True
 
     def audio_data_updated(self, data):
@@ -128,10 +134,13 @@ class Imagespin(Twod):
         if self.init:
             self.do_once()
 
-        if self.test:
-            self.draw_test(self.m_draw)
+        if self.album_art:
             size = 1.0
             spin = 1.0
+        elif self.test:
+            size = 1.0
+            spin = 1.0
+            self.draw_test(self.m_draw)
         else:
             size = self.bar + self.min_size
             spin = self.bar

@@ -249,13 +249,14 @@ class ConfigEndpoint(RestEndpoint):
             config, CORE_CONFIG_SCHEMA, "core"
         )
 
+        # TODO: handle sendspin_always_on it should eager start sendspin or stop sendspin if sendspin is active, and always on changes
+
         # When user explicitly selects a new device via API, clear the stale
         # device name so _resolve_device_from_name() uses the index as-is
         # instead of name-matching back to the old device.
         if "audio_device" in audio_config:
-            self._ledfx.config["audio"]["audio_device_name"] = ""
+            audio_config["audio_device_name"] = ""
 
-        self._ledfx.config["audio"].update(audio_config)
         self._ledfx.config["melbanks"].update(melbanks_config)
         self._ledfx.config.update(core_config)
 
@@ -268,12 +269,14 @@ class ConfigEndpoint(RestEndpoint):
             else:
                 self._ledfx.config["wled_preferences"][key] = wled_config[key]
 
-        if (
-            hasattr(self._ledfx, "audio")
-            and self._ledfx.audio is not None
-            and audio_config
-        ):
-            self._ledfx.audio.update_config(self._ledfx.config["audio"])
+        if audio_config:
+            if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
+                self._ledfx.audio.update_config(audio_config)
+            # Merge into persisted config AFTER update_config so that
+            # update_config's old-vs-new comparison sees the unmodified old
+            # values (self._config may be the same object as
+            # self._ledfx.config["audio"] after _persist_config replaces it).
+            self._ledfx.config["audio"].update(audio_config)
 
         if hasattr(self._ledfx, "audio") and melbanks_config:
             self._ledfx.audio.melbanks.update_config(

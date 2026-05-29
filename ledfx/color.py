@@ -418,6 +418,104 @@ def resolve_gradient(
     return config_string, parsed
 
 
+# Color group definitions for applying global color settings to effects.
+# ``value`` is the normalised position on the gradient (0.0–1.0) used for
+# sampling, or ``None`` when sampling is not applicable.
+COLOR_GROUPS = [
+    {
+        "value": 0.0,
+        "keys": [
+            "lows_color",
+            "color_lows",
+            "color_low",
+            "low_band",
+            "color_beat",
+            "color_min",
+            "color",
+        ],
+    },
+    {
+        "value": 0.5,
+        "keys": [
+            "color_mid",
+            "color_mids",
+            "mid_band",
+            "mids_color",
+            "hit_color",
+            "color_scan",
+            "color_bar",
+            "text_color",
+        ],
+    },
+    {
+        "value": 1.0,
+        "keys": [
+            "color_high",
+            "high_band",
+            "high_color",
+            "sparks_color",
+            "strobe_color",
+            "color_max",
+        ],
+    },
+    {
+        "value": None,
+        "keys": [
+            "flash_color",
+            "pixel_color",
+            "color_peak",
+        ],
+    },
+]
+
+
+def build_gradient_config(
+    gradient_input: str,
+    gradients_collection,
+    skip_keys: set | None = None,
+) -> dict:
+    """Resolve a gradient and sample color groups into a config update dict.
+
+    Args:
+        gradient_input: gradient preset name or inline gradient string.
+        gradients_collection: collection exposing get_all() and __getitem__().
+        skip_keys: optional set of config keys to leave untouched
+            (e.g. keys the caller explicitly provided).
+
+    Returns:
+        A dict with ``"gradient"`` and any sampled color-group keys.
+
+    Raises:
+        ValueError: if the gradient cannot be resolved.
+    """
+    config_val, parsed_gradient = resolve_gradient(
+        gradient_input, gradients_collection
+    )
+    config_updates: dict = {"gradient": config_val}
+
+    if parsed_gradient is not None:
+        for group in COLOR_GROUPS:
+            if group["value"] is None:
+                continue
+            try:
+                color_at_pos = get_color_at_position(
+                    parsed_gradient, group["value"]
+                )
+            except Exception as exc:
+                _LOGGER.warning(
+                    "Failed to sample gradient at %s: %s",
+                    group["value"],
+                    exc,
+                )
+                continue
+            for color_key in group["keys"]:
+                if skip_keys and color_key in skip_keys:
+                    continue
+                config_updates[color_key] = color_at_pos
+
+    return config_updates
+
+
 LEDFX_COLORS = {
     "red": "#ff0000",
     "orange-deep": "#ff2800",

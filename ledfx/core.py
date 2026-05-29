@@ -42,6 +42,8 @@ from ledfx.events import (
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.mdns_manager import ZeroConfRunner
+from ledfx.nowplaying import NowPlayingService
+from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
@@ -136,6 +138,7 @@ class LedFxCore:
 
         # Audio device monitor will be started after loop is running
         self.audio_device_monitor = None
+        self._smtc_now_playing = None
 
         if self.config.get("debug_asyncio", False):
             self.loop.set_debug(True)
@@ -243,6 +246,20 @@ class LedFxCore:
 
         if sendspin_config:
             _LOGGER.info("Loaded %d Sendspin server(s)", len(sendspin_config))
+
+        # Log what the audio system sees immediately after loading
+        try:
+            from ledfx.effects.audio import AudioInputSource
+
+            valid = AudioInputSource.valid_device_indexes()
+            _LOGGER.debug(
+                "_load_sendspin_servers: valid_device_indexes after load = %s",
+                valid,
+            )
+        except Exception as exc:
+            _LOGGER.debug(
+                "_load_sendspin_servers: could not query devices: %s", exc
+            )
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
@@ -484,6 +501,13 @@ class LedFxCore:
             max_items=cache_config.get("max_items", 500),
         )
 
+        # Initialize Now Playing Service
+        self.now_playing = NowPlayingService(self)
+
+        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
+        self._smtc_now_playing = SMTCNowPlayingProvider(self)
+        self._smtc_now_playing.start()
+
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
@@ -649,6 +673,12 @@ class LedFxCore:
                     _LOGGER.warning(
                         "Error stopping audio device monitor: %s", e
                     )
+
+            if self._smtc_now_playing is not None:
+                try:
+                    self._smtc_now_playing.stop()
+                except Exception as e:
+                    _LOGGER.warning("Error stopping SMTC provider: %s", e)
 
             _LOGGER.info("Stopping HTTP Server...")
             await self.http.stop()

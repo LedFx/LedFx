@@ -70,18 +70,17 @@ class AudioDevicesEndpoint(RestEndpoint):
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})
         new_config["audio_device"] = int(index)
-        # Persist device name for cross-session recovery
-        devices = AudioInputSource.input_devices()
-        if index in devices:
-            new_config["audio_device_name"] = devices[index]
-        self._ledfx.config["audio"] = new_config
+        # When user explicitly selects a new device via API, clear the stale
+        # device name so _resolve_device_from_name() uses the index as-is
+        # instead of name-matching back to the old device.
+        new_config["audio_device_name"] = ""
+
+        if self._ledfx.audio:
+            self._ledfx.audio.update_config(new_config)
 
         save_config(
             config=self._ledfx.config,
             config_dir=self._ledfx.config_dir,
         )
-
-        if self._ledfx.audio:
-            self._ledfx.audio.update_config(new_config)
 
         return await self.request_success()

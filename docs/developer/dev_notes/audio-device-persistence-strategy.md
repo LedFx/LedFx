@@ -1,3 +1,5 @@
+:orphan:
+
 # Audio Device Persistence Strategy
 
 **Date:** 2026-04-07

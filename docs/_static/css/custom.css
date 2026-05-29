@@ -9,3 +9,9 @@
 div.rst-versions > div.rst-other-versions > div.injected > dl:nth-child(3) {
     display: none;
 }
+
+/* Prevent horizontal scroll bars on tables — allow cells to word-wrap instead */
+.wy-table-responsive table td,
+.wy-table-responsive table th {
+    white-space: normal !important;
+}
