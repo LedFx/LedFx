@@ -8,7 +8,7 @@ The following are generated via AI assisted spelunking, but are then hand curate
 
 ## LedFx runtime flow
 
-```{mermaid}
+```mermaid
 sequenceDiagram
     autonumber
     participant Core as LedFxCore
