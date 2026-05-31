@@ -49,6 +49,7 @@
    /howto/complex_segments
    /howto/reorder
    /howto/alpha
+   /howto/soundswitch_dmx
 
 .. toctree::
    :maxdepth: 2
