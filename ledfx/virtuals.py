@@ -255,6 +255,15 @@ class Virtual:
         # For gradient overrides: 1024-entry LUT sampled by per-pixel hue.
         self._color_override_lut: Optional[np.ndarray] = None
 
+        # DMX wash takeover (fixture mode): when active, the assembled frame is
+        # fully replaced by a solid colour (rgb * dimmer) before flush, so the
+        # virtual behaves like a dumb DMX wash fixture. The running effect is
+        # suppressed (not removed) and is revealed again the moment the takeover
+        # is cleared. Driven externally (e.g. the DMX input integration).
+        self._wash_active: bool = False
+        self._wash_rgb: Optional[np.ndarray] = None  # float array, 3, 0-255
+        self._wash_dimmer: float = 1.0
+
         self._debug_flush_total = 0.0
         self._debug_last_report = time.perf_counter()
         self._debug_flush_frames = 0
@@ -567,7 +576,6 @@ class Virtual:
 
         if self.fallback_active:
             if self.fallback_effect_type is not None:
-
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx,
                     type=self.fallback_effect_type,
@@ -909,9 +917,10 @@ class Virtual:
         else:
             # Fallback: post-process the assembled frame for effects that don't
             # expose a gradient config (e.g. Energy, custom solid-colour effects).
-            self._color_override_frame, self._color_override_lut = (
-                self._build_override_frame()
-            )
+            (
+                self._color_override_frame,
+                self._color_override_lut,
+            ) = self._build_override_frame()
 
     def set_color_override(self, color_or_gradient: str):
         """Activate a persistent colour override on this virtual.
@@ -937,6 +946,37 @@ class Virtual:
             self._color_override_lut = None
             if isinstance(self._active_effect, GradientEffect):
                 self._active_effect.clear_gradient_override()
+
+    def set_dmx_wash(self, rgb, dimmer: float = 1.0):
+        """Take the virtual over as a solid DMX wash fixture.
+
+        While active, the render thread replaces the assembled frame with a
+        solid ``rgb * dimmer`` colour, suppressing (but not removing) the
+        running effect. Intended for external DMX control (e.g. SoundSwitch via
+        the DMX input integration), so an LED run can be programmed alongside
+        real wash fixtures.
+
+        Args:
+            rgb: iterable of 3 values in the 0-255 range (R, G, B).
+            dimmer: master brightness multiplier in the 0.0-1.0 range.
+        """
+        rgb_arr = np.clip(np.asarray(rgb, dtype=float), 0, 255)
+        dimmer = float(np.clip(dimmer, 0.0, 1.0))
+        with self.lock:
+            self._wash_rgb = rgb_arr
+            self._wash_dimmer = dimmer
+            self._wash_active = True
+
+    def clear_dmx_wash(self):
+        """Release the DMX wash takeover; the running effect is visible again."""
+        with self.lock:
+            self._wash_active = False
+            self._wash_rgb = None
+            self._wash_dimmer = 1.0
+
+    @property
+    def wash_active(self) -> bool:
+        return self._wash_active
 
     def _fire_update_event(self, frame=None):
         if frame is None:
@@ -1003,8 +1043,16 @@ class Virtual:
                     # )
                     self.assembled_frame = self.assemble_frame()
                     if self.assembled_frame is not None and not self._paused:
+                        # DMX wash takeover (fixture mode) wins over everything:
+                        # replace the frame with a solid colour × dimmer.
+                        if self._wash_active and self._wash_rgb is not None:
+                            self.assembled_frame = (
+                                np.ones_like(self.assembled_frame)
+                                * self._wash_rgb
+                                * self._wash_dimmer
+                            )
                         # Apply color override as a gel/tint keeping the effect's animation.
-                        if self._color_override_lut is not None:
+                        elif self._color_override_lut is not None:
                             # Gradient override: map each pixel's hue to the gradient LUT,
                             # preserving the effect's per-pixel brightness (animation).
                             self.assembled_frame = _apply_gradient_override(
