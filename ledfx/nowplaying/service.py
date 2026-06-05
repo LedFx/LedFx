@@ -91,7 +91,7 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional("gradient", default={}): vol.Schema(
             {
-                vol.Optional("enabled", default=True): bool,
+                vol.Optional("enabled", default=False): bool,
                 vol.Optional("variant", default="led_punchy"): vol.In(
                     GRADIENT_VARIANTS
                 ),
