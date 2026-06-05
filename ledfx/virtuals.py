@@ -246,9 +246,12 @@ class Virtual:
         # Group segments by device for batch adding
         segments_by_device = {}
         for device_id, start_pixel, end_pixel, _invert in segments:
-            # Skip gap devices - they are placeholders for empty space
+            # Skip gap devices - they are configuration placeholders, never
+            # registered in the device registry (so device will be None)
+            if device_id.startswith("gap-"):
+                continue
             device = self._ledfx.devices.get(device_id)
-            if is_gap_device(device):
+            if device is None or is_gap_device(device):
                 continue
             if device_id not in segments_by_device:
                 segments_by_device[device_id] = []
@@ -277,6 +280,11 @@ class Virtual:
 
         # Get device for validation
         device = self._ledfx.devices.get(device_id)
+
+        # gap- IDs are configuration placeholders that are never registered
+        # as real devices, so skip validation entirely
+        if device_id.startswith("gap-"):
+            return segment
 
         if device is None:
             msg = f"Invalid device id: {device_id}"
@@ -1298,7 +1306,8 @@ class Virtual:
         return list(
             self._ledfx.devices.get(device_id)
             for device_id in {segment[0] for segment in self._segments}
-            if not is_gap_device(self._ledfx.devices.get(device_id))
+            if not device_id.startswith("gap-")
+            and self._ledfx.devices.get(device_id) is not None
         )
 
     @cached_property
