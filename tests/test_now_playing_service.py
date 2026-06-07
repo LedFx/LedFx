@@ -672,7 +672,7 @@ class TestGradientApplicationConfig:
     """Tests for gradient config properties."""
 
     def test_default_gradient_enabled(self, service):
-        assert service.gradient_enabled is True
+        assert service.gradient_enabled is False
 
     def test_set_gradient_enabled(self, service):
         service.gradient_enabled = False
@@ -875,6 +875,8 @@ class TestGradientAutoApplication:
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
+        service_v.gradient_enabled = True
+
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service_v.set_metadata("sendspin", meta)
 
@@ -963,7 +965,7 @@ class TestNowPlayingConfigSchema:
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         result = NOW_PLAYING_CONFIG_SCHEMA({})
-        assert result["gradient"]["enabled"] is True
+        assert result["gradient"]["enabled"] is False
         assert result["gradient"]["variant"] == "led_punchy"
         assert result["gradient"]["virtual_ids"] == []
         assert result["track_text"]["enabled"] is True
@@ -1019,7 +1021,7 @@ class TestServiceConfigFromInit:
 
     def test_default_config_loaded(self, service):
         cfg = service.config
-        assert cfg["gradient"]["enabled"] is True
+        assert cfg["gradient"]["enabled"] is False
         assert cfg["gradient"]["variant"] == "led_punchy"
         assert cfg["gradient"]["virtual_ids"] == []
         assert cfg["track_text"]["enabled"] is True
