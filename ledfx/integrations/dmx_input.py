@@ -22,6 +22,8 @@ integration pattern) as a list of dicts. See ``MAPPING_SCHEMA`` for the shape.
 
 import asyncio
 import logging
+import socket
+import struct
 import time
 
 import voluptuous as vol
@@ -33,7 +35,91 @@ _LOGGER = logging.getLogger(__name__)
 
 ARTNET_ID = b"Art-Net\x00"
 OPCODE_ARTDMX = 0x5000
+OPCODE_ARTPOLL = 0x2000
 ARTNET_MIN_PROTO = 14
+ARTNET_PORT = 6454
+
+
+def _best_local_ip(bind_address: str) -> str:
+    """Return the best routable local IP to advertise in ArtPollReply.
+
+    When bound to 0.0.0.0 we probe the routing table via a throw-away UDP
+    socket so we report the IP that remote hosts can actually reach us on.
+    """
+    if bind_address and bind_address != "0.0.0.0":
+        return bind_address
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "0.0.0.0"
+
+
+def _build_artpollreply(local_ip: str, port: int = ARTNET_PORT) -> bytes:
+    """Build a 239-byte ArtPollReply advertising one DMX output port.
+
+    SoundSwitch (and other Art-Net controllers) broadcast ArtPoll to discover
+    nodes.  Without this reply LedFx is invisible to them and they report
+    "no device found".
+
+    We advertise a single output port on universe 0 (StNode style).  Once
+    SoundSwitch selects this node it sends ArtDMX to our IP regardless of
+    which universe/channel is active, so no multi-universe advertising is
+    needed.
+    """
+    pkt = bytearray(239)
+    pkt[0:8] = ARTNET_ID
+    # OpCode 0x2100 – stored little-endian
+    pkt[8] = 0x00
+    pkt[9] = 0x21
+    # IP address (network byte order / big-endian)
+    try:
+        pkt[10:14] = socket.inet_aton(local_ip)
+    except OSError:
+        pkt[10:14] = bytes(4)
+    # Port – little-endian
+    struct.pack_into("<H", pkt, 14, port)
+    # VersInfo – firmware version big-endian; just use 1
+    struct.pack_into(">H", pkt, 16, 1)
+    # NetSwitch / SubSwitch – universe 0
+    pkt[18] = 0
+    pkt[19] = 0
+    # OemHi / Oem – 0x00 0xFF = unknown/experimental
+    pkt[20] = 0x00
+    pkt[21] = 0xFF
+    # ShortName (18 bytes, null-padded)
+    short = b"LedFx DMX Input"
+    pkt[26 : 26 + len(short)] = short
+    # LongName (64 bytes, null-padded)
+    long_n = b"LedFx Art-Net DMX Input Bridge"
+    pkt[44 : 44 + len(long_n)] = long_n
+    # NodeReport (64 bytes)
+    report = b"#0001 [0000] LedFx DMX Input active"
+    pkt[108 : 108 + len(report)] = report
+    # NumPorts – 1
+    pkt[172] = 0
+    pkt[173] = 1
+    # PortTypes[0] – 0x80 = output port (receives DMX from network → LedFx)
+    pkt[174] = 0x80
+    # GoodOutput[0] – 0x80 = data being transmitted
+    pkt[182] = 0x80
+    # SwOut[0] – universe 0
+    pkt[190] = 0
+    # Style – 0x00 = StNode
+    pkt[200] = 0x00
+    # BindIp – same as our IP
+    try:
+        pkt[207:211] = socket.inet_aton(local_ip)
+    except OSError:
+        pkt[207:211] = bytes(4)
+    # BindIndex – 1
+    pkt[211] = 1
+    # Status2 – 0x08 = DHCP capable (harmless flag)
+    pkt[212] = 0x08
+    return bytes(pkt)
 
 
 def parse_artdmx(data: bytes):
@@ -65,17 +151,32 @@ def parse_artdmx(data: bytes):
 class _ArtNetProtocol(asyncio.DatagramProtocol):
     """Minimal UDP protocol that forwards parsed ArtDMX frames upstream.
 
-    The callback is deliberately tiny: it only stores the latest DMX state so
-    the asyncio loop is never blocked on per-frame work.
+    Also responds to ArtPoll broadcasts so Art-Net controllers (e.g.
+    SoundSwitch) can discover LedFx via the standard node-discovery flow
+    instead of requiring a manually entered IP address.
     """
 
-    def __init__(self, on_dmx):
+    def __init__(self, on_dmx, local_ip: str, port: int = ARTNET_PORT):
         self._on_dmx = on_dmx
+        self._reply = _build_artpollreply(local_ip, port)
+        self._transport = None
+
+    def connection_made(self, transport):
+        self._transport = transport
 
     def datagram_received(self, data, addr):
-        parsed = parse_artdmx(data)
-        if parsed is not None:
-            self._on_dmx(parsed[0], parsed[1])
+        if len(data) < 10 or data[:8] != ARTNET_ID:
+            return
+        opcode = data[8] | (data[9] << 8)
+        if opcode == OPCODE_ARTPOLL:
+            # Reply directly to the controller that asked
+            if self._transport is not None:
+                self._transport.sendto(self._reply, (addr[0], ARTNET_PORT))
+                _LOGGER.debug("DMX Input: ArtPoll from %s → replied", addr[0])
+        elif opcode == OPCODE_ARTDMX:
+            parsed = parse_artdmx(data)
+            if parsed is not None:
+                self._on_dmx(parsed[0], parsed[1])
 
     def error_received(self, exc):
         _LOGGER.debug("Art-Net socket error: %s", exc)
@@ -199,12 +300,13 @@ class DMXInput(Integration):
     async def connect(self):
         bind = self._config["bind_address"]
         port = self._config["port"]
+        local_ip = _best_local_ip(bind)
         try:
             (
                 self._transport,
                 self._protocol,
             ) = await self._ledfx.loop.create_datagram_endpoint(
-                lambda: _ArtNetProtocol(self._on_dmx),
+                lambda: _ArtNetProtocol(self._on_dmx, local_ip, port),
                 local_addr=(bind, port),
                 allow_broadcast=True,
             )
@@ -221,7 +323,8 @@ class DMXInput(Integration):
 
         self._update_task = self._ledfx.loop.create_task(self._update_loop())
         await super().connect(
-            f"DMX Input listening for Art-Net on {bind}:{port}"
+            f"DMX Input listening for Art-Net on {local_ip}:{port} "
+            f"(bind {bind}) — ArtPoll discovery enabled"
         )
 
     async def disconnect(self):
