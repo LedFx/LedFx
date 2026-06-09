@@ -114,9 +114,10 @@ class DMXInput(Integration):
             ): str,
             vol.Required(
                 "bind_address",
-                description="Local address to listen on (use 127.0.0.1 for a "
-                "SoundSwitch Art-Net output unicast to loopback)",
-                default="127.0.0.1",
+                description="Local address to listen on. Use 0.0.0.0 to accept Art-Net "
+                "from any machine on the network (e.g. SoundSwitch on a separate PC). "
+                "Use 127.0.0.1 to accept only from the same machine.",
+                default="0.0.0.0",
             ): str,
             vol.Required(
                 "port",
