@@ -9,6 +9,8 @@ based.
 
 Building should be the same for all platforms.
 
+LedFx documentation builds should be run with Python 3.10 through 3.13 (the supported project range from `pyproject.toml`). Python versions outside this range are explicitly unsupported and may cause non-deterministic failures.
+
 :::: note
 ::: title
 Note

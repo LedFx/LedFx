@@ -8,8 +8,17 @@ that can be used with LedFx.
 
 Here is everything you need to get started with LedFx:
 
-> 1.  A Computer (or Raspberry Pi) with Python \>= 3.10
+> 1.  A Computer (or Raspberry Pi) with Python 3.10 to 3.13
 > 2.  An E1.31 capable device with addressable LEDs connected
+
+:::: warning
+::: title
+Python Version Support
+:::
+
+LedFx supports Python versions 3.10 through 3.13 only (matching `pyproject.toml`).
+Using Python outside this range (e.g., 3.14+) is explicitly unsupported and may cause non-deterministic failures.
+::::
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
 
@@ -34,7 +43,7 @@ $ .\LedFx.exe --open-ui
 
 ## Linux Installation
 
-To install on Linux first ensure you have at least Python 3.10 installed.
+To install on Linux first ensure you have Python 3.10 through 3.13 installed.
 
 1.  Install LedFx and all the dependencies using pipx:
 
@@ -50,7 +59,7 @@ To install on Linux first ensure you have at least Python 3.10 installed.
 
 ## macOS Installation
 
-To install on macOS first ensure you have at least Python 3.10 installed.
+To install on macOS first ensure you have Python 3.10 through 3.13 installed.
 
 1.  Install LedFx and all the dependencies using
     [homebrew](https://docs.brew.sh/Installation) and pip:
@@ -78,8 +87,8 @@ To install on macOS first ensure you have at least Python 3.10 installed.
 
 ## macOS Installation (Apple Silicon)
 
-To install on macOS (Apple Silicon) first ensure you have at least
-Python 3.10 installed.
+To install on macOS (Apple Silicon) first ensure you have Python 3.10 through
+3.13 installed.
 
 1.  Install LedFx and all the dependencies using
     [homebrew](https://docs.brew.sh/Installation) in a [python
@@ -126,7 +135,7 @@ discretion.
   <strong>Note:</strong> To use LedFx on a pi you will need a USB audio card.
 </div>
 <br>
-Verify you have Python 3.10 or greater by running `python3 --version`
+Verify you have Python 3.10 through 3.13 by running `python3 --version`
 
 **1.** Modify /usr/share/alsa/alsa.conf:
 
@@ -331,5 +340,4 @@ ESP8266/ESP32 device that works with LedFx.
 >     >     -   ESP32
 >     >     -   `Configuration Settings </configuring>`{.interpreted-text
 >     >         role="doc"}
-
 

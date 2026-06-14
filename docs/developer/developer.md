@@ -12,13 +12,15 @@ LedFx now uses [aubio-ledfx](https://pypi.org/project/aubio-ledfx/) which is hos
 
 ### Common Steps
 
-1. Install [python](https://www.python.org/downloads/) version 3.10 or above. 3.12 is the current preferred python release for general development.
+1. Install [python](https://www.python.org/downloads/) version 3.10 through 3.13. 3.12 is the current preferred python release for general development.
 :::: note
 ::: title
 Note
 :::
 
 Python 3.13 is supported, but Hue lights integration will currently not be functional due to mbedtls dependency.
+
+Python versions outside this range (e.g., 3.14+) are explicitly unsupported and may cause non-deterministic failures.
 ::::
 2. Install [git](https://git-scm.com/).
 
@@ -400,4 +402,3 @@ It is easy to see even slow leaks by running for large time periods under pressu
 The Teleplot naming convention will be <virtual_id>_MB
 
 ![Everytime I learn something new I forget something else](/_static/developer/memlog_MB.png)
-
