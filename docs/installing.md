@@ -17,7 +17,7 @@ Python Version Support
 :::
 
 LedFx supports Python versions 3.10 through 3.13 only (matching `pyproject.toml`).
-Using Python outside this range (for example 3.14+) is explicitly unsupported and can cause non-deterministic failures.
+Using Python outside this range (e.g., 3.14+) is explicitly unsupported and may cause non-deterministic failures.
 ::::
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
@@ -340,5 +340,4 @@ ESP8266/ESP32 device that works with LedFx.
 >     >     -   ESP32
 >     >     -   `Configuration Settings </configuring>`{.interpreted-text
 >     >         role="doc"}
-
 
