@@ -151,7 +151,9 @@ class LaunchpadDevice(MidiDevice):
                 self._online = True
                 super().activate()
             else:
-                _LOGGER.warning("Launchpad variant not supported or not connected")
+                _LOGGER.warning(
+                    "Launchpad variant not supported or not connected"
+                )
                 self.set_offline()
         else:
             self.set_offline()
@@ -192,7 +194,9 @@ class LaunchpadDevice(MidiDevice):
             if self.lp is None:
                 self.set_class()
             if len(self.lp.segments) == 0:
-                _LOGGER.warning("No segments defined in {self.lp.__class__.__name__}")
+                _LOGGER.warning(
+                    "No segments defined in {self.lp.__class__.__name__}"
+                )
             else:
                 for segment in self.lp.segments:
                     self.sub_v(segment[0], segment[1], segment[2], segment[3])
