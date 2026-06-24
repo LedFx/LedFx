@@ -25,16 +25,16 @@ launchpads = [
         "class": launchpad.LaunchpadMiniMk3(),
     },
     {
-        "name": "Launchpad Pro",
-        "search": "pad pro",
-        "number": 0,
-        "class": launchpad.LaunchpadPro(),
-    },
-    {
         "name": "Launchpad Pro Mk3",
         "search": "promk3",
         "number": 0,
         "class": launchpad.LaunchpadProMk3(),
+    },
+    {
+        "name": "Launchpad Pro",
+        "search": "pad pro",
+        "number": 0,
+        "class": launchpad.LaunchpadPro(),
     },
     {
         "name": "Launchpad X",
