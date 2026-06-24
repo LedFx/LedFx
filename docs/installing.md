@@ -132,7 +132,7 @@ discretion.
 <br>
 <!-- Note Box -->
 <div style="border: 2px solid blue; padding: 10px; background-color: #d1ecf1; color: #0c5460; border-radius: 5px;">
-  <strong>Note:</strong> To use LedFx on a pi you will need a USB audio card.
+  <strong>Note:</strong> To use LedFx on a pi you will need a USB audio card, or a loopback device (software, eg [aloop](https://www.alsa-project.org/wiki/Matrix:Module-aloop))
 </div>
 <br>
 Verify you have Python 3.10 through 3.13 by running `python3 --version`
