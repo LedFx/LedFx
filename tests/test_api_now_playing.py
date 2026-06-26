@@ -64,7 +64,7 @@ async def test_get_empty_state(endpoint):
     assert data["current_gradient"] is None
     # Phase 7: config section present
     assert "config" in data
-    assert data["config"]["gradient"]["enabled"] is True
+    assert data["config"]["gradient"]["enabled"] is False
     assert data["config"]["gradient"]["variant"] == "led_punchy"
 
 
