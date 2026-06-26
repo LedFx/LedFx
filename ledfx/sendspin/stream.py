@@ -861,6 +861,9 @@ class SendspinAudioStream:
                 except asyncio.CancelledError:
                     if not self._active:
                         raise
+                    task = asyncio.current_task()
+                    if task is not None:
+                        task.uncancel()
                     # Otherwise, treat as reconnect
                     continue
                 backoff = min(backoff * 2, max_backoff)
