@@ -811,3 +811,62 @@ class TestRegressionGuards:
         assert (
             ais._config["audio_device_name"] == "SENDSPIN: my-sendspin-server"
         )
+
+
+# ===========================================================================
+# Partial-update merge — update_config() must not reset the device
+# ===========================================================================
+
+
+class TestPartialUpdatePreservesDevice:
+    """A partial audio update (e.g. delay-only) must keep the selected device.
+
+    update_config() re-validates the incoming dict through AUDIO_CONFIG_SCHEMA.
+    When the caller passes only the field they changed (the UI sends
+    ``{"delay_ms": N}``), the schema injects defaults for every absent key:
+    ``audio_device`` falls back to the default device and ``audio_device_name``
+    to ``""``. The name-based restore that runs afterwards can't recover the
+    selection because the name it relied on has already been wiped, so the
+    active device silently switches to the default input.
+
+    update_config() now merges the partial update over the existing config
+    before validation, so untouched keys keep their values.
+    """
+
+    @patch.object(AudioInputSource, "_resolve_device_from_name", autospec=True)
+    @patch.object(
+        AudioInputSource, "_should_always_keep_active", return_value=False
+    )
+    @patch.object(
+        AudioInputSource, "input_devices", return_value=DEVICES_BEFORE
+    )
+    @patch.object(
+        AudioInputSource,
+        "valid_device_indexes",
+        return_value=tuple(DEVICES_BEFORE.keys()),
+    )
+    @patch.object(AudioInputSource, "default_device_index", return_value=0)
+    def test_delay_only_update_keeps_selected_device(
+        self,
+        mock_default,
+        mock_valid,
+        mock_devices,
+        mock_keep_active,
+        mock_resolve,
+    ):
+        """A delay-only update keeps audio_device and audio_device_name."""
+        ais = make_ais(
+            config={
+                "audio_device": 17,
+                "audio_device_name": LOOPBACK_NAME,
+                "delay_ms": 0,
+            },
+            ledfx=make_mock_ledfx(),
+        )
+        ais._callbacks = []
+
+        ais.update_config({"delay_ms": 200})
+
+        assert ais._config["audio_device"] == 17
+        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config["delay_ms"] == 200

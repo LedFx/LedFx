@@ -570,6 +570,15 @@ class AudioInputSource:
 
     def update_config(self, config):
         """Deactivate the audio, update the config, then reactivate"""
+        # Merge the incoming (possibly partial) update over the existing config
+        # before validation. Without this, a partial update such as
+        # {"delay_ms": N} re-validates a bare dict and the schema injects
+        # defaults for every absent key (audio_device -> the default device,
+        # audio_device_name -> ""), silently resetting the active device. The
+        # name-based restore below cannot recover it because the name has
+        # already been cleared.
+        if hasattr(self, "_config") and isinstance(self._config, dict):
+            config = {**self._config, **config}
         new_config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
 
         device_changing = False
