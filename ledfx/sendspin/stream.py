@@ -821,7 +821,13 @@ class SendspinAudioStream:
                     )
                     raise  # Propagate so _run_client sees CancelledError
                 else:
-                    # Watchdog or internal reconnect: just continue loop
+                    # Watchdog or internal reconnect: just continue loop.
+                    # Python 3.12: task.cancel() increments an internal counter
+                    # that re-throws CancelledError into the very next await
+                    # unless we call task.uncancel() to decrement it first.
+                    task = asyncio.current_task()
+                    if task is not None:
+                        task.uncancel()
                     _LOGGER.info(
                         "Reconnect task cancelled by watchdog (attempt=%d, id=%s), restarting connect.",
                         attempt,
@@ -855,6 +861,9 @@ class SendspinAudioStream:
                 except asyncio.CancelledError:
                     if not self._active:
                         raise
+                    task = asyncio.current_task()
+                    if task is not None:
+                        task.uncancel()
                     # Otherwise, treat as reconnect
                     continue
                 backoff = min(backoff * 2, max_backoff)
@@ -925,11 +934,24 @@ class SendspinAudioStream:
                 player_support=player_support,
             )
 
+            # Per-connection event set by the disconnect callback so the
+            # keep-alive loop below exits immediately when the server drops.
+            _disconnect_event = asyncio.Event()
+
+            def _disconnect_handler():
+                _LOGGER.warning(
+                    "Sendspin server disconnected (id=%s), "
+                    "triggering reconnect",
+                    id(self),
+                )
+                _disconnect_event.set()
+
             # Register event handlers
             self._client.add_audio_chunk_listener(self._audio_chunk_handler)
             self._client.add_stream_start_listener(self._stream_start_handler)
             self._client.add_stream_end_listener(self._stream_end_handler)
             self._client.add_stream_clear_listener(self._stream_clear_handler)
+            self._client.add_disconnect_listener(_disconnect_handler)
             if self._now_playing_provider is not None:
                 self._client.add_metadata_listener(
                     self._now_playing_provider.on_metadata
@@ -948,9 +970,11 @@ class SendspinAudioStream:
                 self._playback_scheduler()
             )
 
-            # Keep connection alive — use stop_event so stop() wakes us
-            # immediately instead of waiting up to 0.1s.
+            # Keep connection alive — exit if stop() signals or the server
+            # disconnects (detected via the disconnect callback above).
             while self._active:
+                if _disconnect_event.is_set():
+                    raise ConnectionError("Sendspin server disconnected")
                 try:
                     await asyncio.wait_for(
                         self._stop_event.wait(), timeout=0.1
