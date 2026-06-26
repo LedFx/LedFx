@@ -7,7 +7,9 @@ Strategy doc: docs/developer/dev_notes/audio-device-persistence-strategy.md
 import logging
 from unittest.mock import MagicMock, patch
 
+from ledfx.core import LedFxCore
 from ledfx.effects.audio import AudioInputSource
+from ledfx.events import AudioDeviceListChangedEvent
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -406,16 +408,17 @@ class TestAudioDevicesApi:
         return_value=tuple(DEVICES_BEFORE.keys()),
     )
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
-    def test_api_put_device_change_clears_stale_name(
+    def test_api_put_device_change_replaces_stale_name(
         self, mock_default, mock_valid, mock_devices, mock_save
     ):
-        """PUT with new audio_device must not name-match back to old device.
+        """PUT with new audio_device must replace any stale persisted name.
 
         Regression test: when config already has audio_device=17 with
         audio_device_name pointing to loopback, and the frontend sends
-        audio_device=5, the merge used to leave the stale name in place.
-        _resolve_device_from_name() would then find the old device by name
-        and override the user's selection back to 17.
+        audio_device=5, the merged config passed to update_config() must carry
+        the newly selected device's current name. That preserves cross-session
+        recovery while still preventing the old persisted name from overriding
+        the user's explicit live selection.
         """
         from ledfx.api.config import ConfigEndpoint
 
@@ -452,11 +455,43 @@ class TestAudioDevicesApi:
         endpoint.update_config({"audio": {"audio_device": 5}})
 
         # The merged config passed to update_config must have the new index
-        # and a cleared name so _resolve_device_from_name() won't override it
+        # and the new device's name, not the stale persisted name.
         assert len(received_configs) == 1
         merged = received_configs[0]
         assert merged["audio_device"] == 5
-        assert merged["audio_device_name"] == ""
+        assert (
+            merged["audio_device_name"]
+            == "Windows WASAPI: Stereo Mix (Realtek High Definition Audio)"
+        )
+
+
+class TestSendspinDeviceListEvent:
+    """Sendspin device-list changes should notify the frontend to requery."""
+
+    @patch("ledfx.sendspin.SENDSPIN_AVAILABLE", True)
+    @patch.object(
+        AudioInputSource,
+        "valid_device_indexes",
+        side_effect=[(0, 1, 2), (0, 1, 2, 99)],
+    )
+    def test_load_sendspin_servers_fires_device_list_changed(
+        self, mock_valid
+    ):
+        core = object.__new__(LedFxCore)
+        core.config = {"sendspin_servers": {"demo": {"url": "ws://demo"}}}
+        core.events = MagicMock()
+
+        from ledfx.effects.audio import SENDSPIN_SERVERS
+
+        original_servers = dict(SENDSPIN_SERVERS)
+        try:
+            core._load_sendspin_servers()
+        finally:
+            SENDSPIN_SERVERS.clear()
+            SENDSPIN_SERVERS.update(original_servers)
+
+        fired_event = core.events.fire_event.call_args[0][0]
+        assert isinstance(fired_event, AudioDeviceListChangedEvent)
 
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_BEFORE

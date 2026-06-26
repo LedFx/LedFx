@@ -70,10 +70,13 @@ class AudioDevicesEndpoint(RestEndpoint):
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})
         new_config["audio_device"] = int(index)
-        # When user explicitly selects a new device via API, clear the stale
-        # device name so _resolve_device_from_name() uses the index as-is
-        # instead of name-matching back to the old device.
-        new_config["audio_device_name"] = ""
+        # When user explicitly selects a new device via API, replace any stale
+        # stored name with the current name for that selected index. This keeps
+        # the live selection consistent now and preserves boot-time name-based
+        # recovery if indices drift before the next restart.
+        new_config["audio_device_name"] = AudioInputSource.input_devices().get(
+            int(index), ""
+        )
 
         if self._ledfx.audio:
             self._ledfx.audio.update_config(new_config)

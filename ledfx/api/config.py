@@ -251,11 +251,16 @@ class ConfigEndpoint(RestEndpoint):
 
         # TODO: handle sendspin_always_on it should eager start sendspin or stop sendspin if sendspin is active, and always on changes
 
-        # When user explicitly selects a new device via API, clear the stale
-        # device name so _resolve_device_from_name() uses the index as-is
-        # instead of name-matching back to the old device.
+        # When user explicitly selects a new device via API, replace any stale
+        # stored name with the current name for that selected index. This keeps
+        # the live selection consistent now and preserves boot-time name-based
+        # recovery if indices drift before the next restart.
         if "audio_device" in audio_config:
-            audio_config["audio_device_name"] = ""
+            audio_config["audio_device_name"] = (
+                AudioInputSource.input_devices().get(
+                    audio_config["audio_device"], ""
+                )
+            )
 
         self._ledfx.config["melbanks"].update(melbanks_config)
         self._ledfx.config.update(core_config)
