@@ -236,7 +236,7 @@ class LedFxCore:
         if not SENDSPIN_AVAILABLE:
             return
 
-        from ledfx.effects.audio import AudioInputSource, SENDSPIN_SERVERS
+        from ledfx.effects.audio import SENDSPIN_SERVERS, AudioInputSource
 
         previous_valid = AudioInputSource.valid_device_indexes()
 

@@ -256,10 +256,10 @@ class ConfigEndpoint(RestEndpoint):
         # the live selection consistent now and preserves boot-time name-based
         # recovery if indices drift before the next restart.
         if "audio_device" in audio_config:
-            audio_config["audio_device_name"] = (
-                AudioInputSource.input_devices().get(
-                    audio_config["audio_device"], ""
-                )
+            audio_config[
+                "audio_device_name"
+            ] = AudioInputSource.input_devices().get(
+                audio_config["audio_device"], ""
             )
 
         self._ledfx.config["melbanks"].update(melbanks_config)

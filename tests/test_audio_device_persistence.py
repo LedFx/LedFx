@@ -474,9 +474,7 @@ class TestSendspinDeviceListEvent:
         "valid_device_indexes",
         side_effect=[(0, 1, 2), (0, 1, 2, 99)],
     )
-    def test_load_sendspin_servers_fires_device_list_changed(
-        self, mock_valid
-    ):
+    def test_load_sendspin_servers_fires_device_list_changed(self, mock_valid):
         core = object.__new__(LedFxCore)
         core.config = {"sendspin_servers": {"demo": {"url": "ws://demo"}}}
         core.events = MagicMock()
