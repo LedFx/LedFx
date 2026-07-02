@@ -8,6 +8,7 @@ No API keys or user accounts required.
 """
 
 import logging
+import re
 import urllib.parse
 from dataclasses import dataclass
 from difflib import SequenceMatcher
@@ -86,6 +87,11 @@ _BAD_RELEASE_TYPES = {
     "spokenword",
 }
 
+_VARIOUS_ARTISTS_TERMS = {
+    "various artists",
+    "various",
+}
+
 
 @dataclass(slots=True)
 class _ReleaseCandidate:
@@ -99,14 +105,63 @@ class _ReleaseCandidate:
     reason: str
 
 
+@dataclass(frozen=True, slots=True)
+class _ScoringRules:
+    """Centralized tunables for MusicBrainz scoring heuristics."""
+
+    bad_variant_terms: frozenset[str]
+    neutral_variant_terms: frozenset[str]
+    bad_release_types: frozenset[str]
+    various_artists_terms: frozenset[str]
+
+    # Recording-level scoring
+    title_similarity_weight: float = 45
+    exact_title_bonus: float = 40
+    artist_similarity_weight: float = 35
+    exact_artist_bonus: float = 30
+    video_penalty: float = 70
+    bad_recording_variant_penalty: float = 90
+    neutral_disambiguation_bonus: float = 2
+
+    # Release-level scoring
+    release_title_similarity_weight: float = 20
+    release_title_exact_bonus: float = 30
+    album_similarity_weight: float = 25
+    album_exact_bonus: float = 25
+    bad_release_title_penalty: float = 80
+    release_artist_similarity_weight: float = 55
+    release_artist_exact_bonus: float = 45
+    release_artist_mismatch_threshold: float = 0.45
+    release_artist_mismatch_penalty: float = 70
+    various_artists_penalty: float = 70
+    single_bonus: float = 22
+    album_bonus: float = 12
+    ep_bonus: float = 8
+    bad_release_type_penalty: float = 80
+    official_status_bonus: float = 8
+    non_official_status_penalty: float = 4
+    has_date_bonus: float = 1
+
+
+_SCORING_RULES = _ScoringRules(
+    bad_variant_terms=frozenset(_BAD_VARIANT_TERMS),
+    neutral_variant_terms=frozenset(_NEUTRAL_VARIANT_TERMS),
+    bad_release_types=frozenset(_BAD_RELEASE_TYPES),
+    various_artists_terms=frozenset(_VARIOUS_ARTISTS_TERMS),
+)
+
+
 def _contains_bad_variant(value: str | None) -> bool:
     """Return True if *value* contains a strong non-canonical variant term."""
     text = _normalise_compare(value)
     if not text:
         return False
 
-    for term in _BAD_VARIANT_TERMS:
-        if _normalise_compare(term) in text:
+    for term in _SCORING_RULES.bad_variant_terms:
+        term_text = _normalise_compare(term)
+        if not term_text:
+            continue
+        if re.search(rf"\b{re.escape(term_text)}\b", text):
             return True
     return False
 
@@ -118,7 +173,8 @@ def _contains_neutral_variant(value: str | None) -> bool:
         return False
 
     return any(
-        _normalise_compare(term) in text for term in _NEUTRAL_VARIANT_TERMS
+        _normalise_compare(term) in text
+        for term in _SCORING_RULES.neutral_variant_terms
     )
 
 
@@ -165,6 +221,14 @@ def _release_group_types(release: dict) -> set[str]:
     return values
 
 
+def _looks_like_various_artists(value: str | None) -> bool:
+    """Return True for typical various-artists credit labels."""
+    text = _normalise_compare(value)
+    if not text:
+        return False
+    return any(term in text for term in _SCORING_RULES.various_artists_terms)
+
+
 def _recording_score(
     recording: dict, artist: str, title: str
 ) -> tuple[float, list[str]]:
@@ -174,35 +238,35 @@ def _recording_score(
 
     recording_title = recording.get("title") or ""
     title_similarity = _similarity(recording_title, title)
-    score += title_similarity * 45
+    score += title_similarity * _SCORING_RULES.title_similarity_weight
     reasons.append(f"title_sim={title_similarity:.2f}")
 
     if _normalise_compare(recording_title) == _normalise_compare(title):
-        score += 40
+        score += _SCORING_RULES.exact_title_bonus
         reasons.append("exact_title")
 
     artist_text = _artist_credit_text(recording)
     artist_similarity = _similarity(artist_text, artist)
-    score += artist_similarity * 35
+    score += artist_similarity * _SCORING_RULES.artist_similarity_weight
     reasons.append(f"artist_sim={artist_similarity:.2f}")
 
     if _normalise_compare(artist_text) == _normalise_compare(artist):
-        score += 30
+        score += _SCORING_RULES.exact_artist_bonus
         reasons.append("exact_artist")
 
     if recording.get("video") is True:
-        score -= 70
+        score -= _SCORING_RULES.video_penalty
         reasons.append("video_penalty")
 
     disambiguation = recording.get("disambiguation") or ""
     combined = f"{recording_title} {disambiguation}"
 
     if _contains_bad_variant(combined):
-        score -= 90
+        score -= _SCORING_RULES.bad_recording_variant_penalty
         reasons.append("bad_recording_variant")
 
     if _contains_neutral_variant(disambiguation):
-        score += 2
+        score += _SCORING_RULES.neutral_disambiguation_bonus
         reasons.append("neutral_disambiguation")
 
     return score, reasons
@@ -212,6 +276,7 @@ def _release_score(
     release: dict,
     base_score: float,
     base_reasons: list[str],
+    artist: str,
     title: str,
     album: str | None,
 ) -> tuple[float, str]:
@@ -222,56 +287,85 @@ def _release_score(
     release_title = release.get("title") or ""
 
     release_title_similarity = _similarity(release_title, title)
-    score += release_title_similarity * 20
+    score += (
+        release_title_similarity
+        * _SCORING_RULES.release_title_similarity_weight
+    )
     reasons.append(f"release_title_sim={release_title_similarity:.2f}")
 
     # A single commonly has the same title as the track.
     if _normalise_compare(release_title) == _normalise_compare(title):
-        score += 30
+        score += _SCORING_RULES.release_title_exact_bonus
         reasons.append("release_title_exact")
 
     if album:
         album_similarity = _similarity(release_title, album)
-        score += album_similarity * 25
+        score += album_similarity * _SCORING_RULES.album_similarity_weight
         reasons.append(f"album_sim={album_similarity:.2f}")
         if _normalise_compare(release_title) == _normalise_compare(album):
-            score += 25
+            score += _SCORING_RULES.album_exact_bonus
             reasons.append("album_exact")
 
     if _contains_bad_variant(release_title):
-        score -= 80
+        score -= _SCORING_RULES.bad_release_title_penalty
         reasons.append("bad_release_title_variant")
+
+    # Strongly prefer releases whose credited artist matches the track artist.
+    # For title-only lookups (empty track artist), skip artist-based scoring.
+    release_artist = _artist_credit_text(release)
+    candidate_artist = release_artist
+
+    if candidate_artist and artist:
+        artist_similarity = _similarity(candidate_artist, artist)
+        score += (
+            artist_similarity * _SCORING_RULES.release_artist_similarity_weight
+        )
+        reasons.append(f"release_artist_sim={artist_similarity:.2f}")
+
+        if _normalise_compare(candidate_artist) == _normalise_compare(artist):
+            score += _SCORING_RULES.release_artist_exact_bonus
+            reasons.append("release_artist_exact")
+        elif (
+            artist_similarity
+            < _SCORING_RULES.release_artist_mismatch_threshold
+        ):
+            score -= _SCORING_RULES.release_artist_mismatch_penalty
+            reasons.append("release_artist_mismatch")
+
+        if _looks_like_various_artists(candidate_artist):
+            score -= _SCORING_RULES.various_artists_penalty
+            reasons.append("various_artists")
 
     group_types = _release_group_types(release)
 
     if "single" in group_types:
-        score += 22
+        score += _SCORING_RULES.single_bonus
         reasons.append("single")
     if "album" in group_types:
-        score += 12
+        score += _SCORING_RULES.album_bonus
         reasons.append("album")
     if "ep" in group_types:
-        score += 8
+        score += _SCORING_RULES.ep_bonus
         reasons.append("ep")
 
-    bad_types = group_types.intersection(_BAD_RELEASE_TYPES)
+    bad_types = group_types.intersection(_SCORING_RULES.bad_release_types)
     if bad_types:
-        score -= 80
+        score -= _SCORING_RULES.bad_release_type_penalty
         reasons.append(f"bad_release_type={','.join(sorted(bad_types))}")
 
     # Official releases are preferred over bootlegs/promos when available.
     status = str(release.get("status") or "").lower()
     if status == "official":
-        score += 8
+        score += _SCORING_RULES.official_status_bonus
         reasons.append("official")
     elif status:
-        score -= 4
+        score -= _SCORING_RULES.non_official_status_penalty
         reasons.append(f"status={status}")
 
     # Country/date are not hard requirements, but complete metadata tends to
     # indicate a better release candidate.
     if release.get("date"):
-        score += 1
+        score += _SCORING_RULES.has_date_bonus
 
     return score, ",".join(reasons)
 
@@ -288,6 +382,11 @@ def _dedupe_preserve_order(values: list[str]) -> list[str]:
         result.append(value)
 
     return result
+
+
+def _mb_quote(value: str) -> str:
+    """Escape a string for a quoted MusicBrainz query value."""
+    return value.replace("\\", "\\\\").replace('"', r"\"")
 
 
 # ---- Provider -----------------------------------------------------------
@@ -373,8 +472,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
                 ):
                     recordings.append(recording)
 
-        candidates: list[_ReleaseCandidate] = []
-        seen_release_ids: set[str] = set()
+        candidates_by_release: dict[str, _ReleaseCandidate] = {}
 
         for recording in recordings:
             base_score, base_reasons = _recording_score(
@@ -385,30 +483,33 @@ class MusicBrainzArtProvider(AlbumArtProvider):
 
             for release in recording.get("releases") or []:
                 mbid = release.get("id")
-                if not mbid or mbid in seen_release_ids:
+                if not mbid:
                     continue
-
-                seen_release_ids.add(mbid)
 
                 release_title = release.get("title") or ""
                 score, reason = _release_score(
                     release,
                     base_score,
                     base_reasons,
+                    artist,
                     title,
                     album,
                 )
 
-                candidates.append(
-                    _ReleaseCandidate(
-                        score=score,
-                        mbid=mbid,
-                        recording_title=recording_title,
-                        release_title=release_title,
-                        recording_id=recording_id,
-                        reason=reason,
-                    )
+                candidate = _ReleaseCandidate(
+                    score=score,
+                    mbid=mbid,
+                    recording_title=recording_title,
+                    release_title=release_title,
+                    recording_id=recording_id,
+                    reason=reason,
                 )
+
+                current = candidates_by_release.get(mbid)
+                if current is None or candidate.score > current.score:
+                    candidates_by_release[mbid] = candidate
+
+        candidates = list(candidates_by_release.values())
 
         candidates.sort(key=lambda candidate: candidate.score, reverse=True)
 
@@ -429,20 +530,20 @@ class MusicBrainzArtProvider(AlbumArtProvider):
 
         parts: list[str] = []
         if title:
-            parts.append(f'recording:"{title}"')
+            parts.append(f'recording:"{_mb_quote(title)}"')
         if artist:
-            parts.append(f'artistname:"{artist}"')
+            parts.append(f'artistname:"{_mb_quote(artist)}"')
         if album:
-            parts.append(f'release:"{album}"')
+            parts.append(f'release:"{_mb_quote(album)}"')
         if parts:
             queries.append(" AND ".join(parts))
 
         # Same without album. Album text from SMTC is often absent or noisy.
         parts = []
         if title:
-            parts.append(f'recording:"{title}"')
+            parts.append(f'recording:"{_mb_quote(title)}"')
         if artist:
-            parts.append(f'artistname:"{artist}"')
+            parts.append(f'artistname:"{_mb_quote(artist)}"')
         if parts:
             queries.append(" AND ".join(parts))
 
@@ -451,7 +552,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
         if title:
             parts.append(title)
         if artist:
-            parts.append(f'artistname:"{artist}"')
+            parts.append(f'artistname:"{_mb_quote(artist)}"')
         if parts:
             queries.append(" AND ".join(parts))
 

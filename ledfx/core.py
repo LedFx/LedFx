@@ -43,6 +43,7 @@ from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
 from ledfx.mdns_manager import ZeroConfRunner
 from ledfx.nowplaying import NowPlayingService
+from ledfx.nowplaying.providers.mpris import MPRISNowPlayingProvider
 from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.presets import ledfx_presets
@@ -138,6 +139,7 @@ class LedFxCore:
 
         # Audio device monitor will be started after loop is running
         self.audio_device_monitor = None
+        self._mpris_now_playing = None
         self._smtc_now_playing = None
 
         if self.config.get("debug_asyncio", False):
@@ -511,6 +513,10 @@ class LedFxCore:
         self._smtc_now_playing = SMTCNowPlayingProvider(self)
         self._smtc_now_playing.start()
 
+        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
+        self._mpris_now_playing = MPRISNowPlayingProvider(self)
+        self._mpris_now_playing.start()
+
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
@@ -682,6 +688,12 @@ class LedFxCore:
                     self._smtc_now_playing.stop()
                 except Exception as e:
                     _LOGGER.warning("Error stopping SMTC provider: %s", e)
+
+            if self._mpris_now_playing is not None:
+                try:
+                    self._mpris_now_playing.stop()
+                except Exception as e:
+                    _LOGGER.warning("Error stopping MPRIS provider: %s", e)
 
             _LOGGER.info("Stopping HTTP Server...")
             await self.http.stop()

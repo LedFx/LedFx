@@ -46,6 +46,7 @@ dependencies = [
     "pyflac>=2.2.0; python_version >= '3.12'",
     "winrt-Windows.Foundation>=2.0.0; sys_platform == \"win32\"",
     "winrt-Windows.Media.Control>=2.0.0; sys_platform == \"win32\"",
+    "dbus-fast>=5.0.22,<6.0.0; sys_platform == \"linux\"",
 ]
 name = "LedFx"
 version = "2.1.9"

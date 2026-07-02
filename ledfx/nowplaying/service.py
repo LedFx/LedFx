@@ -82,6 +82,7 @@ _SOURCES_WITH_OWN_ARTWORK = {"sendspin"}
 # smtc is a passive system-wide poller; sendspin is an explicit integration.
 _SOURCE_PRIORITY: dict[str, int] = {
     "sendspin": 10,
+    "mpris": 2,
     "smtc": 1,
 }
 
