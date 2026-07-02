@@ -5,13 +5,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-dbus_fast = pytest.importorskip("dbus_fast")
-MessageType = dbus_fast.MessageType
-
 from ledfx.nowplaying.providers.mpris import (
     SOURCE_ID,
     MPRISNowPlayingProvider,
 )
+
+dbus_fast = pytest.importorskip("dbus_fast")
+MessageType = dbus_fast.MessageType
 
 
 class _Variant:

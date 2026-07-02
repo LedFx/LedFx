@@ -40,6 +40,17 @@ _TITLE_NOISE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# If a bracketed suffix explicitly marks official/video content, treat it as a
+# hard cutoff and remove that block plus anything following it.
+# e.g. "Stand Back (Official Music Video) [HD Remaster]" -> "Stand Back"
+_TITLE_OFFICIAL_VIDEO_CUTOFF_RE = re.compile(
+    r"\s*[\(\[]"
+    r"\s*(?:[^\)\]]*\bofficial\b[^\)\]]*"
+    r"|[^\)\]]*\bvideo\b[^\)\]]*)"
+    r"\s*[\)\]].*$",
+    re.IGNORECASE,
+)
+
 # Quality/resolution tags that YouTube appends — these block other suffix
 # patterns from being reached because they sit at the end of the string.
 # e.g. "Starman (Official Video) [4K]" -> "Starman (Official Video)" (first
@@ -151,6 +162,7 @@ def _strip_title_suffixes(title: str) -> str:
     prev = None
     while prev != title:
         prev = title
+        title = _TITLE_OFFICIAL_VIDEO_CUTOFF_RE.sub("", title).strip()
         title = _QUALITY_TAG_RE.sub("", title).strip()
         title = _TITLE_NOISE_RE.sub("", title).strip()
         title = _TITLE_UNBRACKETED_NOISE_RE.sub("", title).strip()
