@@ -1,6 +1,6 @@
 # Linux Now Playing Provider — Design Reference
 
-Primary implementation: `ledfx/nowplaying/providers/mpris.py`  
+Primary implementation: `ledfx/nowplaying/providers/mpris.py`
 Related architecture note: `docs/developer/dev_notes/now_playing_architecture.md`
 
 ---
@@ -18,8 +18,8 @@ feeds metadata/artwork into the provider-neutral `NowPlayingService`.
 
 ## Runtime Placement
 
-Source ID: `"mpris"`  
-Source priority: `2` in `NowPlayingService` (`sendspin=10`, `mpris=2`, `smtc=1`)  
+Source ID: `"mpris"`
+Source priority: `2` in `NowPlayingService` (`sendspin=10`, `mpris=2`, `smtc=1`)
 Platform guard: provider starts only when `sys.platform == "linux"`
 
 Lifecycle contract:

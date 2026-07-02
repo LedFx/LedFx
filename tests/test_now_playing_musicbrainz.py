@@ -21,7 +21,9 @@ def test_release_artist_exact_match_scores_much_higher_than_mismatch():
     base_reasons = ["seed"]
 
     good_release = _release("Seven Nation Army", "The White Stripes")
-    bad_release = _release("Seven Nation Army", "London Philharmonic Orchestra")
+    bad_release = _release(
+        "Seven Nation Army", "London Philharmonic Orchestra"
+    )
 
     good_score, _ = _release_score(
         good_release,

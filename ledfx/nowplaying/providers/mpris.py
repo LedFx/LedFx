@@ -11,7 +11,9 @@ import sys
 try:
     from dbus_fast import MessageType
     from dbus_fast.message import Message
-except ImportError:  # pragma: no cover - exercised on non-linux/no-dbus-fast envs
+except (
+    ImportError
+):  # pragma: no cover - exercised on non-linux/no-dbus-fast envs
     MessageType = None
     Message = None
 
@@ -120,7 +122,9 @@ class MPRISNowPlayingProvider:
         except asyncio.CancelledError:
             raise
         except Exception as exc:
-            _LOGGER.warning("MPRIS: failed to connect to session D-Bus: %s", exc)
+            _LOGGER.warning(
+                "MPRIS: failed to connect to session D-Bus: %s", exc
+            )
             return
 
         _LOGGER.info("MPRIS: connected to session D-Bus")
