@@ -385,7 +385,7 @@ def _dedupe_preserve_order(values: list[str]) -> list[str]:
 
 def _mb_quote(value: str) -> str:
     """Escape a string for a quoted MusicBrainz query value."""
-    return value.replace("\\", "\\\\").replace('"', r'\"')
+    return value.replace("\\", "\\\\").replace('"', r"\"")
 
 
 # ---- Provider -----------------------------------------------------------

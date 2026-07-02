@@ -106,9 +106,9 @@ def test_build_queries_escapes_embedded_quotes():
     )
 
     assert (
-        'recording:"He said \\\"Hi\\\""'
-        ' AND artistname:"AC/DC \\\"Live\\\""'
-        ' AND release:"Best of \\\"Era\\\""'
+        'recording:"He said \\"Hi\\""'
+        ' AND artistname:"AC/DC \\"Live\\""'
+        ' AND release:"Best of \\"Era\\""'
     ) in queries
 
 
