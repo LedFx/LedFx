@@ -10,11 +10,13 @@ import sys
 
 try:
     from dbus_fast import MessageType
+    from dbus_fast.aio import MessageBus
     from dbus_fast.message import Message
 except (
     ImportError
 ):  # pragma: no cover - exercised on non-linux/no-dbus-fast envs
     MessageType = None
+    MessageBus = None
     Message = None
 
 from ledfx.nowplaying.models import TrackMetadata
@@ -46,6 +48,7 @@ class MPRISNowPlayingProvider:
         self._init_task = None
         self._select_task = None
         self._push_task = None
+        self._select_lock = asyncio.Lock()
         self._name_owner_handler = None
         self._properties_handler = None
         self._active_player_name = None
@@ -111,9 +114,7 @@ class MPRISNowPlayingProvider:
 
     async def _initialize(self):
         """Connect to session D-Bus and set up player discovery hooks."""
-        try:
-            from dbus_fast.aio import MessageBus
-        except ImportError:
+        if MessageBus is None:
             _LOGGER.debug("MPRIS: dbus-fast not installed; provider disabled")
             return
 
@@ -153,6 +154,13 @@ class MPRISNowPlayingProvider:
             signature="s",
             body=[rule],
         )
+
+        if _reply is None:
+            _LOGGER.warning(
+                "MPRIS: failed to register DBus NameOwnerChanged match rule: %s",
+                rule,
+            )
+            return
 
         def _on_message(message):
             if (
@@ -205,6 +213,13 @@ class MPRISNowPlayingProvider:
             body=[rule],
         )
 
+        if _reply is None:
+            _LOGGER.warning(
+                "MPRIS: failed to register DBus PropertiesChanged match rule: %s",
+                rule,
+            )
+            return
+
         def _on_message(message):
             if (
                 message.message_type != MessageType.SIGNAL
@@ -244,39 +259,46 @@ class MPRISNowPlayingProvider:
 
     async def _select_best_player(self):
         """Discover MPRIS players and select the highest-priority one."""
-        names = await self._list_mpris_players()
-        self._known_players = set(names)
+        async with self._select_lock:
+            names = await self._list_mpris_players()
+            self._known_players = set(names)
 
-        if not names:
-            if self._active_player_name is not None:
-                _LOGGER.info("MPRIS: no players found; clearing active source")
-                self._active_player_name = None
-                self.clear()
-            return
+            if not names:
+                if self._active_player_name is not None:
+                    _LOGGER.info(
+                        "MPRIS: no players found; clearing active source"
+                    )
+                    self._active_player_name = None
+                    self.clear()
+                return
 
-        ranked = []
-        for name in names:
-            status = await self._get_playback_status(name)
-            rank = _PLAYBACK_STATUS_RANK.get(status, 0)
-            ranked.append((rank, name, status))
+            ranked = []
+            for name in names:
+                status = await self._get_playback_status(name)
+                rank = _PLAYBACK_STATUS_RANK.get(status, 0)
+                ranked.append((rank, name, status))
 
-        ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
-        _rank, best_name, best_status = ranked[0]
+            ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+            _rank, best_name, best_status = ranked[0]
 
-        if best_name != self._active_player_name:
-            prev = self._active_player_name or "none"
-            _LOGGER.info(
-                "MPRIS active player changed: %s -> %s (%s)",
-                prev,
-                best_name,
-                best_status or "unknown",
-            )
-            self._active_player_name = best_name
-            self._active_player_owner = await self._get_name_owner(best_name)
-            self._schedule_push_metadata()
-        elif self._active_player_owner is None:
-            self._active_player_owner = await self._get_name_owner(best_name)
-            self._schedule_push_metadata()
+            if best_name != self._active_player_name:
+                prev = self._active_player_name or "none"
+                _LOGGER.info(
+                    "MPRIS active player changed: %s -> %s (%s)",
+                    prev,
+                    best_name,
+                    best_status or "unknown",
+                )
+                self._active_player_name = best_name
+                self._active_player_owner = await self._get_name_owner(
+                    best_name
+                )
+                self._schedule_push_metadata()
+            elif self._active_player_owner is None:
+                self._active_player_owner = await self._get_name_owner(
+                    best_name
+                )
+                self._schedule_push_metadata()
 
     async def _list_mpris_players(self):
         """Return all running bus names that implement MPRIS."""
