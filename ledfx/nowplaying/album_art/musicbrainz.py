@@ -86,6 +86,11 @@ _BAD_RELEASE_TYPES = {
     "spokenword",
 }
 
+_VARIOUS_ARTISTS_TERMS = {
+    "various artists",
+    "various",
+}
+
 
 @dataclass(slots=True)
 class _ReleaseCandidate:
@@ -165,6 +170,14 @@ def _release_group_types(release: dict) -> set[str]:
     return values
 
 
+def _looks_like_various_artists(value: str | None) -> bool:
+    """Return True for typical various-artists credit labels."""
+    text = _normalise_compare(value)
+    if not text:
+        return False
+    return any(term in text for term in _VARIOUS_ARTISTS_TERMS)
+
+
 def _recording_score(
     recording: dict, artist: str, title: str
 ) -> tuple[float, list[str]]:
@@ -212,6 +225,7 @@ def _release_score(
     release: dict,
     base_score: float,
     base_reasons: list[str],
+    artist: str,
     title: str,
     album: str | None,
 ) -> tuple[float, str]:
@@ -241,6 +255,28 @@ def _release_score(
     if _contains_bad_variant(release_title):
         score -= 80
         reasons.append("bad_release_title_variant")
+
+    # Strongly prefer releases whose credited artist matches the track artist.
+    group = release.get("release-group") or {}
+    release_artist = _artist_credit_text(release)
+    group_artist = _artist_credit_text(group)
+    candidate_artist = release_artist or group_artist
+
+    if candidate_artist:
+        artist_similarity = _similarity(candidate_artist, artist)
+        score += artist_similarity * 55
+        reasons.append(f"release_artist_sim={artist_similarity:.2f}")
+
+        if _normalise_compare(candidate_artist) == _normalise_compare(artist):
+            score += 45
+            reasons.append("release_artist_exact")
+        elif artist_similarity < 0.45:
+            score -= 70
+            reasons.append("release_artist_mismatch")
+
+        if _looks_like_various_artists(candidate_artist):
+            score -= 70
+            reasons.append("various_artists")
 
     group_types = _release_group_types(release)
 
@@ -395,6 +431,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
                     release,
                     base_score,
                     base_reasons,
+                    artist,
                     title,
                     album,
                 )
