@@ -18,6 +18,7 @@ Reference notes covering architecture decisions, investigations, and implementat
 :maxdepth: 1
 
 dev_notes/now_playing_architecture
+dev_notes/linux_now_playing
 dev_notes/albumart_musicbrainz
 dev_notes/sendspin_network_resilience_test_plan
 dev_notes/audio-device-persistence-strategy
