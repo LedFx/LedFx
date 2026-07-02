@@ -1,9 +1,11 @@
 """Unit tests for the Linux MPRIS Now Playing provider."""
 
 import sys
+import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from dbus_fast import MessageType
+dbus_fast = pytest.importorskip("dbus_fast")
+MessageType = dbus_fast.MessageType
 
 from ledfx.nowplaying.providers.mpris import (
     SOURCE_ID,
