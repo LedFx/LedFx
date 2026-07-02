@@ -311,10 +311,11 @@ def _release_score(
         reasons.append("bad_release_title_variant")
 
     # Strongly prefer releases whose credited artist matches the track artist.
+    # For title-only lookups (empty track artist), skip artist-based scoring.
     release_artist = _artist_credit_text(release)
     candidate_artist = release_artist
 
-    if candidate_artist:
+    if candidate_artist and artist:
         artist_similarity = _similarity(candidate_artist, artist)
         score += (
             artist_similarity * _SCORING_RULES.release_artist_similarity_weight

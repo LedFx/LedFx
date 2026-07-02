@@ -92,6 +92,23 @@ def test_release_score_reason_includes_artist_mismatch_marker():
     assert "release_artist_mismatch" in reason
 
 
+def test_release_score_skips_artist_penalties_when_track_artist_empty():
+    release = _release("Seven Nation Army", "Various Artists")
+    _score, reason = _release_score(
+        release,
+        base_score=100.0,
+        base_reasons=["seed"],
+        artist="",
+        title="Seven Nation Army",
+        album=None,
+    )
+
+    assert "release_artist_sim=" not in reason
+    assert "release_artist_exact" not in reason
+    assert "release_artist_mismatch" not in reason
+    assert "various_artists" not in reason
+
+
 def test_bad_variant_matching_uses_word_boundaries():
     assert _contains_bad_variant("Live at Wembley") is True
     assert _contains_bad_variant("Olive Branch") is False
