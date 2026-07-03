@@ -317,9 +317,9 @@ All mutating operations (`POST`, `PUT`, `DELETE`) immediately update the in-memo
 
 1. The `config.json` `sendspin_servers` key is written.
 2. `SENDSPIN_SERVERS` (from `ledfx.effects.audio`) is updated in-place.
-3. If the currently active audio source is `SENDSPIN {id}`, changing or removing that server causes the audio system to fall back to the default audio device.
+3. If the currently active audio source is `SENDSPIN: {id}`, changing or removing that server reconciles the active Sendspin stream (restart on URL change, stop on removal).
 
-> **Note:** A server appearing in `SENDSPIN_SERVERS` does **not** mean LedFx is actively streaming from it. The connection is only established when the user selects that server as the active audio input device (via `PUT /api/config` with `audio_device = "SENDSPIN living-room"`).
+> **Note:** A server appearing in `SENDSPIN_SERVERS` does **not** mean LedFx is actively streaming from it. The connection is only established when the user selects that server as the active audio input device (device name format: `SENDSPIN: living-room`).
 
 ---
 

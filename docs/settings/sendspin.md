@@ -91,7 +91,7 @@ When activated, LedFx will:
 
 ## Always-On Mode
 
-By default, Sendspin audio (like all other audio sources) only starts when an audio-reactive effect is active. If you want the Sendspin connection to stay active regardless of whether any effects are running, enable the **Sendspin Always On** setting.
+Sendspin Always On is enabled by default. With this setting enabled, the Sendspin connection can stay active regardless of whether any effects are running.
 
 This is a global setting found in the sendspin server management dialog (`sendspin_always_on`).
 
@@ -100,6 +100,8 @@ When enabled:
 - The Sendspin audio stream starts immediately when a Sendspin device is selected, even without active effects.
 - The stream remains active if all effects are removed.
 - On boot, if a Sendspin device was previously selected and this setting is `true`, the stream starts automatically.
+
+When disabled, Sendspin follows normal audio lifecycle behavior and may deactivate when no audio-reactive effects are subscribed.
 
 This is useful for integrations where you want LedFx to be ready to visualize audio the moment playback begins, without requiring an effect to be pre-configured.
 

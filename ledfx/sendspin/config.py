@@ -116,7 +116,7 @@ def eager_start(ledfx):
     Sendspin audio stream begins immediately, even when no audio-reactive
     effect is active yet.
     """
-    if not ledfx.config.get("sendspin_always_on", False):
+    if not ledfx.config.get("sendspin_always_on", True):
         return
 
     audio_config = ledfx.config.get("audio", {})
@@ -157,4 +157,13 @@ def eager_start(ledfx):
         device_idx,
         device_name,
     )
+
+    existing_audio = getattr(ledfx, "audio", None)
+    if existing_audio is not None:
+        # Runtime path: apply current config and allow audio.py to activate
+        # immediately when always-on + Sendspin conditions are met.
+        existing_audio.update_config(audio_config)
+        return
+
+    # Boot-time path: no audio instance exists yet.
     ledfx.audio = AudioAnalysisSource(ledfx, audio_config)

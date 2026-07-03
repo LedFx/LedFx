@@ -249,8 +249,6 @@ class ConfigEndpoint(RestEndpoint):
             config, CORE_CONFIG_SCHEMA, "core"
         )
 
-        # TODO: handle sendspin_always_on it should eager start sendspin or stop sendspin if sendspin is active, and always on changes
-
         # When user explicitly selects a new device via API, replace any stale
         # stored name with the current name for that selected index. This keeps
         # the live selection consistent now and preserves boot-time name-based
@@ -282,6 +280,11 @@ class ConfigEndpoint(RestEndpoint):
             # values (self._config may be the same object as
             # self._ledfx.config["audio"] after _persist_config replaces it).
             self._ledfx.config["audio"].update(audio_config)
+
+            if hasattr(self._ledfx, "reconcile_sendspin_always_on_runtime"):
+                self._ledfx.reconcile_sendspin_always_on_runtime(
+                    "audio_config_updated"
+                )
 
         if hasattr(self._ledfx, "audio") and melbanks_config:
             self._ledfx.audio.melbanks.update_config(

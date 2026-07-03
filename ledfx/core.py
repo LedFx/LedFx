@@ -165,7 +165,7 @@ class LedFxCore:
         Handles the update of the base configuration where there are specific things that need to be done.
 
         Currently handles visualisation configuration (requires new event listeners)
-        and sendspin_always_on toggling (requires audio stream deactivation check).
+        and sendspin_always_on runtime updates (via centralized reconcile logic).
 
         Args:
             event (Event): The event that triggered the update - this will always be a BaseConfigUpdateEvent.
@@ -177,14 +177,34 @@ class LedFxCore:
             )
             self.setup_visualisation_events()
 
-        if (
-            "sendspin_always_on" in event.config
-            and not event.config["sendspin_always_on"]
-            and hasattr(self, "audio")
-            and self.audio is not None
-        ):
+        if "sendspin_always_on" in event.config:
+            self.reconcile_sendspin_always_on_runtime(
+                "base_config_update"
+            )
+
+    def reconcile_sendspin_always_on_runtime(self, trigger: str):
+        """Reconcile runtime Sendspin always-on behavior from current config.
+
+        This centralizes policy decisions so API/config/server hooks only need
+        to signal *when* to re-check, not duplicate *what* to do.
+        """
+        if self.config.get("sendspin_always_on", True):
             _LOGGER.debug(
-                "sendspin_always_on toggled off - checking if audio stream should deactivate."
+                "sendspin reconcile (%s): always-on enabled, checking eager start.",
+                trigger,
+            )
+            try:
+                sendspin_eager_start(self)
+            except Exception as exc:
+                _LOGGER.warning(
+                    "sendspin reconcile (%s) failed: %s", trigger, exc
+                )
+            return
+
+        if hasattr(self, "audio") and self.audio is not None:
+            _LOGGER.debug(
+                "sendspin reconcile (%s): always-on disabled, checking deactivate.",
+                trigger,
             )
             self.audio.check_and_deactivate()
 
@@ -265,6 +285,10 @@ class LedFxCore:
             _LOGGER.debug(
                 "_load_sendspin_servers: could not query devices: %s", exc
             )
+
+        # Runtime path: server changes can alter whether the configured
+        # Sendspin source is currently available.
+        self.reconcile_sendspin_always_on_runtime("sendspin_servers_loaded")
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
@@ -550,13 +574,6 @@ class LedFxCore:
         # virtuals, since virtuals with active effects trigger audio
         # initialization which validates the audio_device index.
         self._load_sendspin_servers()
-
-        # Eagerly start the Sendspin audio stream at boot when configured,
-        # even if no audio-reactive effect is active yet.
-        try:
-            sendspin_eager_start(self)
-        except Exception as e:
-            _LOGGER.warning("Failed to eagerly start Sendspin audio: %s", e)
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(

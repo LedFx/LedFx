@@ -193,7 +193,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         ),
         vol.Optional("instance_id", default=""): str,
         vol.Optional("sendspin_servers", default={}): dict,
-        vol.Optional("sendspin_always_on", default=False): bool,
+        vol.Optional("sendspin_always_on", default=True): bool,
         vol.Optional("now_playing", default={}): dict,
     },
     extra=vol.ALLOW_EXTRA,
