@@ -991,9 +991,7 @@ class AudioInputSource:
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
-        sendspin_always_on = self._ledfx.config.get(
-            "sendspin_always_on", True
-        )
+        sendspin_always_on = self._ledfx.config.get("sendspin_always_on", True)
         if not sendspin_always_on:
             return False
 

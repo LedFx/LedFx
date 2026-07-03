@@ -178,9 +178,7 @@ class LedFxCore:
             self.setup_visualisation_events()
 
         if "sendspin_always_on" in event.config:
-            self.reconcile_sendspin_always_on_runtime(
-                "base_config_update"
-            )
+            self.reconcile_sendspin_always_on_runtime("base_config_update")
 
     def reconcile_sendspin_always_on_runtime(self, trigger: str):
         """Reconcile runtime Sendspin always-on behavior from current config.

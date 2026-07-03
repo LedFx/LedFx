@@ -78,7 +78,11 @@ def test_reconcile_sendspin_always_on_runtime_deactivates_when_disabled():
     core.audio.check_and_deactivate.assert_called_once_with()
 
 
-@patch.object(AudioInputSource, "input_devices", return_value={0: "SENDSPIN: living-room"})
+@patch.object(
+    AudioInputSource,
+    "input_devices",
+    return_value={0: "SENDSPIN: living-room"},
+)
 def test_config_update_audio_triggers_core_sendspin_reconcile(_mock_devices):
     ledfx = SimpleNamespace(
         config={
