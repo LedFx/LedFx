@@ -29,6 +29,7 @@ class Equalizer2d(Twod, GradientEffect):
         "spin_decay",
         "peak_color",
         "power_gradient",
+        "filtered"
     ]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -98,6 +99,11 @@ class Equalizer2d(Twod, GradientEffect):
                 description="Color bars by power level: various algorithms",
                 default="Off",
             ): vol.In(["Off", "Solid", "Progressive", "Stretch"]),
+            vol.Optional(
+                "filtered",
+                description="Enable default melbank pipeline filtering",
+                default=True,
+            ): bool,
         }
     )
 
@@ -119,6 +125,7 @@ class Equalizer2d(Twod, GradientEffect):
         self.peak_decay = self._config["peak_decay"]
         self.ring = self._config["ring"]
         self.spin = self._config["spin"]
+        self.filtered = self._config["filtered"]
         self.power_func = self.POWER_FUNCS_MAPPING[
             self._config["frequency_range"]
         ]
@@ -177,7 +184,7 @@ class Equalizer2d(Twod, GradientEffect):
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
-        self.r = self.melbank(filtered=True, size=self.pixel_count)
+        self.r = self.melbank(filtered=self.filtered, size=self.pixel_count)
         np.clip(self.r, 0, 1, out=self.r)
         self.impulse = self.impulse_filter.update(
             getattr(data, self.power_func)() * self.power_multiplier

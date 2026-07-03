@@ -82,6 +82,9 @@ lets tweak a few more things before you finish.
 ![Tweak the settings](/_static/howto/matrix/matrix10.png)
 
 1)  slide bands to 64 to take full advantage of the resolution available
+2)  tune the boolean filtered switch based on response feel:
+    - filtered on gives a smoother, more isolated transient response
+    - filtered off gives faster, more direct bar movement, if you REALLY need it
 
 ![Post tweaks, everything oriented correctly](/_static/howto/matrix/matrix11.png)
 
