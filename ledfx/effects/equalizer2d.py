@@ -29,7 +29,7 @@ class Equalizer2d(Twod, GradientEffect):
         "spin_decay",
         "peak_color",
         "power_gradient",
-        "filtered"
+        "filtered",
     ]
 
     CONFIG_SCHEMA = vol.Schema(
