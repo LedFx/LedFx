@@ -534,33 +534,14 @@ class SendspinAudioStream:
         self._last_audio_chunk_time = time.monotonic()
 
     def _stream_end_handler(self, stream_end_msg):
-        """Called when the stream ends (track stopped, paused, or server idle).
+        """Called when the stream ends (track stopped / server idle).
 
-        Music Assistant ends the Sendspin stream on pause/seek/stop, so
-        flushing the buffer here stops the visualiser immediately rather than
-        letting buffered audio drain for ~2 seconds.  A subsequent
-        ``stream/start`` (on resume or next track) reloads the buffer with
-        fresh audio via ``_stream_start_handler``.
-
-        Also disarms the watchdog so an idle always-on connection does not
+        Disarms the watchdog so an idle always-on connection does not
         repeatedly reconnect just because no audio is playing.
         """
         _LOGGER.info("Sendspin stream ended (id=%s)", id(self))
         self._expecting_audio = False
         self._last_audio_chunk_time = None
-        # Flush buffered audio so visualisation stops immediately.
-        self._leftover = np.array([], dtype=np.float32)
-        self._leftover_ts = 0
-        with self._buffer_lock:
-            buf_len = len(self._chunk_buffer)
-            self._chunk_buffer.clear()
-        if buf_len:
-            _LOGGER.info(
-                "Playback buffer flushed on stream end "
-                "(discarded_chunks=%d, id=%s)",
-                buf_len,
-                id(self),
-            )
 
     def _stream_clear_handler(self, roles):
         """Called on stream/clear (e.g. seek). Flush the playback buffer.
@@ -582,51 +563,6 @@ class SendspinAudioStream:
             roles,
             buf_len,
         )
-
-    def _metadata_pause_handler(self, server_state_payload) -> None:
-        """Belt-and-suspenders flush when metadata reports playback_speed == 0.
-
-        The primary pause flush happens in ``_stream_end_handler`` because
-        Music Assistant ends the Sendspin stream on pause/seek/stop, which
-        fires before this metadata callback arrives.
-
-        This handler catches any implementation where the stream stays open
-        during pause (e.g., future MA versions or non-MA Sendspin servers)
-        but the server sends ``playback_speed = 0`` in the progress field.
-
-        Unlike ``_stream_clear_handler`` (seek), we do **not** reset the FLAC
-        decoder here because the stream will resume without a new stream_start.
-        """
-        try:
-            from aiosendspin.models.metadata import SessionUpdateMetadata
-            from aiosendspin.models.types import UndefinedField
-        except ImportError:
-            return
-
-        metadata = server_state_payload.metadata
-        if metadata is None or not isinstance(metadata, SessionUpdateMetadata):
-            return
-
-        progress = metadata.progress
-        if isinstance(progress, UndefinedField) or progress is None:
-            return
-
-        playback_speed = getattr(progress, "playback_speed", None)
-        if playback_speed != 0:
-            return
-
-        # playback_speed == 0 → paused: flush buffered audio immediately.
-        self._leftover = np.array([], dtype=np.float32)
-        self._leftover_ts = 0
-        with self._buffer_lock:
-            buf_len = len(self._chunk_buffer)
-            self._chunk_buffer.clear()
-        if buf_len:
-            _LOGGER.info(
-                "Playback paused — flushed %d buffered chunks (id=%s)",
-                buf_len,
-                id(self),
-            )
 
     async def _playback_scheduler(self):
         """Release buffered chunks to LedFx at their scheduled play time."""
@@ -1016,7 +952,6 @@ class SendspinAudioStream:
             self._client.add_stream_end_listener(self._stream_end_handler)
             self._client.add_stream_clear_listener(self._stream_clear_handler)
             self._client.add_disconnect_listener(_disconnect_handler)
-            self._client.add_metadata_listener(self._metadata_pause_handler)
             if self._now_playing_provider is not None:
                 self._client.add_metadata_listener(
                     self._now_playing_provider.on_metadata
