@@ -26,15 +26,19 @@ try:
     from aiosendspin.client import AudioFormat, SendspinClient
     from aiosendspin.models import AudioCodec, PlayerCommand, Roles
     from aiosendspin.models.core import DeviceInfo
+    from aiosendspin.models.metadata import SessionUpdateMetadata
     from aiosendspin.models.player import (
         ClientHelloPlayerSupport,
         SupportedAudioFormat,
     )
+    from aiosendspin.models.types import UndefinedField
 except ImportError:
     # Python < 3.12 or aiosendspin not available
     SendspinClient = None
     AudioFormat = None
     DeviceInfo = None
+    SessionUpdateMetadata = None
+    UndefinedField = None
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -597,10 +601,7 @@ class SendspinAudioStream:
         Unlike ``_stream_clear_handler`` (seek), we do **not** reset the FLAC
         decoder here because the stream will resume without a new stream_start.
         """
-        try:
-            from aiosendspin.models.metadata import SessionUpdateMetadata
-            from aiosendspin.models.types import UndefinedField
-        except ImportError:
+        if SessionUpdateMetadata is None or UndefinedField is None:
             return
 
         metadata = server_state_payload.metadata
