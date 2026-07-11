@@ -195,6 +195,7 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("sendspin_servers", default={}): dict,
         vol.Optional("sendspin_always_on", default=False): bool,
         vol.Optional("now_playing", default={}): dict,
+        vol.Optional("venues", default={}): dict,
     },
     extra=vol.ALLOW_EXTRA,
 )
