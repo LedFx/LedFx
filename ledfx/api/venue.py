@@ -5,6 +5,7 @@ from aiohttp import web
 from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
+from ledfx.integrations.dmx_input import compute_dmx_mapped
 from ledfx.venues import venue_payload
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,7 +22,15 @@ class VenueEndpoint(RestEndpoint):
         cfg = mgr.get(venue_id)
         if cfg is None:
             return await self.invalid_request(f"Venue '{venue_id}' not found")
-        return await self.bare_request_success({"venue": venue_payload(venue_id, cfg)})
+        _, dmx_mapped_venue_ids = compute_dmx_mapped(self._ledfx)
+        return await self.bare_request_success(
+            {
+                "venue": {
+                    **venue_payload(venue_id, cfg),
+                    "dmx_mapped": venue_id in dmx_mapped_venue_ids,
+                }
+            }
+        )
 
     async def put(self, venue_id: str, request: web.Request) -> web.Response:
         """Update venue name, grid dimensions, or manage virtual membership.
