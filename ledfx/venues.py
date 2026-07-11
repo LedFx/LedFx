@@ -64,7 +64,7 @@ class VenueManager:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _find_venue_for_virtual(self, virtual_id: str) -> Optional[str]:
+    def _find_venue_for_virtual(self, virtual_id: str) -> str | None:
         """Return the venue ID that owns *virtual_id*, or None."""
         for vid, cfg in self._venues.items():
             if virtual_id in cfg.get("virtual_ids", []):
@@ -84,7 +84,7 @@ class VenueManager:
     def list_venues(self) -> dict:
         return dict(self._venues)
 
-    def get(self, venue_id: str) -> Optional[dict]:
+    def get(self, venue_id: str) -> dict | None:
         return self._venues.get(venue_id)
 
     def create(self, name: str, rows: int = 4, cols: int = 4) -> dict:
