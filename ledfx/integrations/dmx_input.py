@@ -8,9 +8,13 @@ actions:
     pad (edge-detected with hysteresis).
   * **color**    — an RGB fixture recolors a target virtual live, while the
     effect keeps animating.
-  * **fixture**  — a mode-toggle + dimmer + RGB turn a virtual into a dumb DMX
-    wash fixture (solid color × brightness), so an LED run can be programmed in
-    SoundSwitch alongside real wash fixtures. Toggling off reveals the effect.
+  * **fixture**  — a dimmer + RGB turn a virtual into a dumb DMX wash fixture
+    (solid color × brightness), so an LED run can be programmed in
+    SoundSwitch alongside real wash fixtures. The wash is engaged
+    unconditionally as soon as its universe is receiving data, and tracks
+    live dimmer/RGB continuously (dimmer 0 = solid black, no threshold gate);
+    it is only released back to the running effect when the DMX stream
+    itself goes stale or the mapping is deactivated.
 
 The incoming Art-Net "signal" is just DMX; no reverse engineering of SoundSwitch
 internals is required. SoundSwitch is configured to mirror its USB universe to
@@ -22,6 +26,7 @@ integration pattern) as a list of dicts. See ``MAPPING_SCHEMA`` for the shape.
 
 import asyncio
 import logging
+import os
 import socket
 import struct
 import time
@@ -36,8 +41,17 @@ _LOGGER = logging.getLogger(__name__)
 ARTNET_ID = b"Art-Net\x00"
 OPCODE_ARTDMX = 0x5000
 OPCODE_ARTPOLL = 0x2000
+OPCODE_ARTPOLLREPLY = 0x2100  # other nodes announcing themselves; just noise
 ARTNET_MIN_PROTO = 14
 ARTNET_PORT = 6454
+
+# TEMP DEBUG ONLY — set LEDFX_DMX_TRACE=1 to log every UDP datagram this
+# listener receives (source, opcode, raw bytes) plus per-universe DMX values
+# at ~2Hz, for tracing a SoundSwitch → LedFx Art-Net handshake. Not meant to
+# be committed/merged; strip before opening/updating the PR.
+_TRACE = os.environ.get("LEDFX_DMX_TRACE") == "1"
+_trace_last_log: dict[int, float] = {}
+_trace_last_nomatch_log: dict[int, float] = {}
 
 
 def _best_local_ip(bind_address: str) -> str:
@@ -166,17 +180,54 @@ class _ArtNetProtocol(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         if len(data) < 10 or data[:8] != ARTNET_ID:
+            if _TRACE:
+                _LOGGER.info(
+                    "DMX Input TRACE: non-Art-Net UDP from %s (%d bytes): %s",
+                    addr[0],
+                    len(data),
+                    data[:16].hex(),
+                )
             return
         opcode = data[8] | (data[9] << 8)
+        if _TRACE and opcode not in (
+            OPCODE_ARTPOLL,
+            OPCODE_ARTDMX,
+            OPCODE_ARTPOLLREPLY,
+        ):
+            _LOGGER.info(
+                "DMX Input TRACE: unhandled Art-Net opcode 0x%04x from %s",
+                opcode,
+                addr[0],
+            )
         if opcode == OPCODE_ARTPOLL:
             # Reply directly to the controller that asked
             if self._transport is not None:
                 self._transport.sendto(self._reply, (addr[0], ARTNET_PORT))
-                _LOGGER.debug("DMX Input: ArtPoll from %s → replied", addr[0])
+                _LOGGER.info("DMX Input: ArtPoll from %s → replied", addr[0])
         elif opcode == OPCODE_ARTDMX:
             parsed = parse_artdmx(data)
-            if parsed is not None:
-                self._on_dmx(parsed[0], parsed[1])
+            if parsed is None:
+                if _TRACE:
+                    _LOGGER.info(
+                        "DMX Input TRACE: malformed ArtDMX from %s (%d bytes)",
+                        addr[0],
+                        len(data),
+                    )
+                return
+            universe, dmx = parsed
+            if _TRACE:
+                now = time.monotonic()
+                if now - _trace_last_log.get(universe, 0) > 0.5:
+                    _trace_last_log[universe] = now
+                    _LOGGER.info(
+                        "DMX Input TRACE: ArtDMX from %s universe=%d len=%d "
+                        "first10=%s",
+                        addr[0],
+                        universe,
+                        len(dmx),
+                        list(dmx[:10]),
+                    )
+            self._on_dmx(universe, dmx)
 
     def error_received(self, exc):
         _LOGGER.debug("Art-Net socket error: %s", exc)
@@ -378,6 +429,18 @@ class DMXInput(Integration):
             universe = int(mapping.get("universe", 0))
             dmx = self._latest_dmx.get(universe)
             if dmx is None:
+                if _TRACE and self._latest_dmx:
+                    if now - _trace_last_nomatch_log.get(idx, 0) > 2.0:
+                        _trace_last_nomatch_log[idx] = now
+                        _LOGGER.info(
+                            "DMX Input TRACE: mapping '%s' wants universe %d "
+                            "but only received universe(s) %s so far — check "
+                            "SoundSwitch's universe setting matches the "
+                            "mapping.",
+                            mapping.get("name", idx),
+                            universe,
+                            sorted(self._latest_dmx.keys()),
+                        )
                 continue
 
             # On the first packet for a universe, prime baselines so a channel
@@ -388,12 +451,8 @@ class DMXInput(Integration):
                 continue
 
             # Stale-stream handling: release owned looks if the source stopped.
-            if (
-                stale_timeout > 0
-                and not hold
-                and (now - self._last_packet_time.get(universe, 0))
-                > stale_timeout
-            ):
+            age = now - self._last_packet_time.get(universe, 0)
+            if stale_timeout > 0 and not hold and age > stale_timeout:
                 self._release_mapping(idx, mapping)
                 continue
 
@@ -471,73 +530,54 @@ class DMXInput(Integration):
                 _LOGGER.warning("DMX Input set_color_override: %s", e)
 
     def _process_fixture(self, idx, mapping, dmx):
+        """Drive a virtual as a continuous DMX wash fixture.
+
+        As soon as this mapping's universe is receiving data, the target
+        virtual(s) are engaged as a wash fixture and driven continuously by
+        the live dimmer/RGB values on every packet — a dimmer of 0 naturally
+        renders solid black (rgb * 0). There is no on/off threshold gate:
+        the wash is engaged unconditionally while the DMX stream is live, and
+        only released back to the running effect via the stale-stream
+        timeout (SoundSwitch stops sending entirely) or the mapping being
+        deactivated/removed, handled by ``_release_mapping``. This avoids a
+        bright "flash" of the underlying effect whenever the operator dims a
+        fixture down to (near) zero.
+        """
         state = self._mapping_state.setdefault(idx, {"wash_on": False})
         chans = mapping.get("channels", {})
-        # channels may be a dict {mode,dimmer,r,g,b} or a 5-list in that order
+        # channels may be a dict {dimmer,r,g,b} or a 4-list in that order
+        # (a legacy "mode" key, if still present in old saved mappings, is
+        # ignored — the fixture wash is no longer gated by a threshold).
         if isinstance(chans, dict):
-            mode_ch = int(chans.get("mode", 1))
-            dim_ch = int(chans.get("dimmer", 2))
-            r_ch = int(chans.get("r", 3))
-            g_ch = int(chans.get("g", 4))
-            b_ch = int(chans.get("b", 5))
+            dim_ch = int(chans.get("dimmer", 1))
+            r_ch = int(chans.get("r", 2))
+            g_ch = int(chans.get("g", 3))
+            b_ch = int(chans.get("b", 4))
         else:
-            mode_ch, dim_ch, r_ch, g_ch, b_ch = (
-                list(chans) + [1, 2, 3, 4, 5]
-            )[:5]
-        on_t = int(mapping.get("on_threshold", 128))
-        off_t = int(mapping.get("off_threshold", 96))
-        mode_val = _channel(dmx, mode_ch)
+            dim_ch, r_ch, g_ch, b_ch = (list(chans) + [1, 2, 3, 4])[:4]
 
         targets = list(self._targets(mapping))
-        if state["wash_on"]:
-            if mode_val <= off_t:
-                state["wash_on"] = False
-                for v in targets:
-                    try:
-                        v.clear_dmx_wash()
-                    except Exception as e:
-                        _LOGGER.warning("DMX Input clear_dmx_wash: %s", e)
-                    self._owned_washes.discard(v.id)
-                _LOGGER.info(
-                    "DMX Input: fixture '%s' wash OFF on %d virtual(s)",
-                    mapping.get("name", idx),
-                    len(targets),
-                )
-            else:
-                dimmer = _channel(dmx, dim_ch) / 255.0
-                rgb = (
-                    _channel(dmx, r_ch),
-                    _channel(dmx, g_ch),
-                    _channel(dmx, b_ch),
-                )
-                for v in targets:
-                    try:
-                        v.set_dmx_wash(rgb, dimmer)
-                    except Exception as e:
-                        _LOGGER.warning("DMX Input set_dmx_wash: %s", e)
-        else:
-            if mode_val >= on_t:
-                state["wash_on"] = True
-                dimmer = _channel(dmx, dim_ch) / 255.0
-                rgb = (
-                    _channel(dmx, r_ch),
-                    _channel(dmx, g_ch),
-                    _channel(dmx, b_ch),
-                )
-                for v in targets:
-                    try:
-                        v.set_dmx_wash(rgb, dimmer)
-                        self._owned_washes.add(v.id)
-                    except Exception as e:
-                        _LOGGER.warning("DMX Input set_dmx_wash: %s", e)
-                _LOGGER.info(
-                    "DMX Input: fixture '%s' wash ON rgb=%s dimmer=%.2f on "
-                    "%d virtual(s)",
-                    mapping.get("name", idx),
-                    rgb,
-                    dimmer,
-                    len(targets),
-                )
+        dimmer = _channel(dmx, dim_ch) / 255.0
+        rgb = (
+            _channel(dmx, r_ch),
+            _channel(dmx, g_ch),
+            _channel(dmx, b_ch),
+        )
+
+        if not state["wash_on"]:
+            state["wash_on"] = True
+            _LOGGER.info(
+                "DMX Input: fixture '%s' wash ENGAGED on %d virtual(s)",
+                mapping.get("name", idx),
+                len(targets),
+            )
+
+        for v in targets:
+            try:
+                v.set_dmx_wash(rgb, dimmer)
+                self._owned_washes.add(v.id)
+            except Exception as e:
+                _LOGGER.warning("DMX Input set_dmx_wash: %s", e)
 
     # ------------------------------------------------------------------
     # Helpers
@@ -595,6 +635,10 @@ class DMXInput(Integration):
                 self._owned_color.discard(v.id)
         elif mtype == "fixture" and state.get("wash_on"):
             state["wash_on"] = False
+            _LOGGER.info(
+                "DMX Input: fixture '%s' wash RELEASED (stale/deactivated)",
+                mapping.get("name", idx),
+            )
             for v in self._targets(mapping):
                 try:
                     v.clear_dmx_wash()
