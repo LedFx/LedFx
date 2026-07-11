@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.integrations.dmx_input import compute_dmx_mapped
 from ledfx.venues import VenueManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,7 +25,11 @@ class VenuesEndpoint(RestEndpoint):
         """List all venues."""
         mgr = _ensure_manager(self._ledfx)
         venues = mgr.list_venues()
-        result = [{"id": vid, **cfg} for vid, cfg in venues.items()]
+        _, dmx_mapped_venue_ids = compute_dmx_mapped(self._ledfx)
+        result = [
+            {"id": vid, **cfg, "dmx_mapped": vid in dmx_mapped_venue_ids}
+            for vid, cfg in venues.items()
+        ]
         return await self.bare_request_success({"venues": result})
 
     async def post(self, request: web.Request) -> web.Response:

@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.integrations.dmx_input import compute_dmx_mapped
 from ledfx.venues import VenueManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,8 +27,15 @@ class VenueEndpoint(RestEndpoint):
         cfg = mgr.get(venue_id)
         if cfg is None:
             return await self.invalid_request(f"Venue '{venue_id}' not found")
+        _, dmx_mapped_venue_ids = compute_dmx_mapped(self._ledfx)
         return await self.bare_request_success(
-            {"venue": {"id": venue_id, **cfg}}
+            {
+                "venue": {
+                    "id": venue_id,
+                    **cfg,
+                    "dmx_mapped": venue_id in dmx_mapped_venue_ids,
+                }
+            }
         )
 
     async def put(self, venue_id, request: web.Request) -> web.Response:

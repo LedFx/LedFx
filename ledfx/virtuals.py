@@ -264,6 +264,12 @@ class Virtual:
         self._wash_rgb: Optional[np.ndarray] = None  # float array, 3, 0-255
         self._wash_dimmer: float = 1.0
 
+        # DMX pause (device-level mute): when True, the DMX input integration
+        # must not apply any mapping (wash, color, or venue-trigger override)
+        # to this virtual. Persisted so it survives restarts, mirroring the
+        # "active" key stored in virtual_cfg.
+        self._dmx_paused: bool = False
+
         self._debug_flush_total = 0.0
         self._debug_last_report = time.perf_counter()
         self._debug_flush_frames = 0
@@ -977,6 +983,23 @@ class Virtual:
     @property
     def wash_active(self) -> bool:
         return self._wash_active
+
+    def set_dmx_paused(self, paused: bool):
+        """Mute (or unmute) DMX Input takeover for this virtual.
+
+        While paused, the DMX Input integration must not apply any mapping
+        (fixture wash, color tint, or venue-trigger override) to this
+        virtual. Pausing releases any currently owned wash/color override
+        immediately so the running effect is visible again right away,
+        instead of waiting for the next stale-stream timeout.
+        """
+        self._dmx_paused = bool(paused)
+        if self._dmx_paused:
+            self.clear_dmx_wash()
+            self.clear_color_override()
+
+    def is_dmx_paused(self) -> bool:
+        return self._dmx_paused
 
     def _fire_update_event(self, frame=None):
         if frame is None:
@@ -1869,6 +1892,10 @@ class Virtuals:
             # via the active key if it exists. Let the setter deal with it
             if "active" in virtual_cfg and not virtual_cfg["active"]:
                 new_virtual.active = False
+
+            # Restore persisted DMX Input device-level pause flag.
+            if virtual_cfg.get("dmx_paused"):
+                new_virtual.set_dmx_paused(True)
 
             # global pause is handled differently to virtual pause
             if pause_all:

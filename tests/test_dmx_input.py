@@ -79,6 +79,17 @@ def _make_dmx_input(monkeypatch, virtual, stale_timeout=2.0):
     """
     ledfx = MagicMock()
     ledfx.virtuals.get.return_value = virtual
+    # MagicMock()'s default attributes are truthy, so an un-configured
+    # `is_dmx_paused()` would look "paused" to `_targets` and silently
+    # filter the virtual out. Default every fake virtual to unpaused.
+    virtual.is_dmx_paused.return_value = False
+    # A real (empty) integrations list so `set_paused`'s `_persist()` can
+    # iterate/find this integration's config entry without special-casing
+    # MagicMock defaults; `save_config` itself is stubbed out below.
+    ledfx.config = {"integrations": []}
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.save_config", lambda **kwargs: None
+    )
     config = {
         "name": "test",
         "description": "test",
@@ -167,3 +178,211 @@ def test_fixture_wash_releases_only_on_stale_stream(monkeypatch):
     fake_time[0] += 3.0
     integration._process()
     virtual.clear_dmx_wash.assert_called_once()
+
+
+def _base_config(stale_timeout=2.0):
+    return {
+        "name": "test",
+        "description": "test",
+        "bind_address": "127.0.0.1",
+        "port": 6454,
+        "update_fps": 60,
+        "stale_timeout": stale_timeout,
+        "hold_last_look": False,
+    }
+
+
+def _make_venue_mapped_dmx_input(
+    monkeypatch, virtuals_by_id, venue_id="venue-1"
+):
+    """Build a DMXInput whose single fixture mapping targets a venue (rather
+    than a single virtual_id), with a mocked VenueManager, so venue/device
+    pause precedence can be exercised without real venue persistence."""
+    ledfx = MagicMock()
+    ledfx.virtuals.get.side_effect = lambda vid: virtuals_by_id.get(vid)
+    ledfx.config = {"integrations": []}
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.save_config", lambda **kwargs: None
+    )
+
+    venue_mgr = MagicMock()
+    venue_mgr.get.return_value = {"virtual_ids": list(virtuals_by_id.keys())}
+    venue_mgr.is_paused.return_value = False
+    ledfx.venues = venue_mgr
+
+    for v in virtuals_by_id.values():
+        v.is_dmx_paused.return_value = False
+
+    integration = DMXInput(ledfx, _base_config(), False, [])
+    mapping = {
+        "name": "venue-fixture",
+        "type": "fixture",
+        "universe": 0,
+        "venue_id": venue_id,
+        "channels": {"dimmer": 1, "r": 2, "g": 3, "b": 4},
+    }
+    integration.add_mapping(mapping)
+    return integration, venue_mgr
+
+
+def test_global_pause_releases_wash_immediately_and_resumes(monkeypatch):
+    """Global pause instantly releases an engaged wash (no waiting for the
+    next stale-stream tick), and stops any further reapplication while
+    paused. Unpausing needs no special action — the next `_process()` with
+    live DMX still flowing simply re-engages."""
+    virtual = MagicMock()
+    integration = _make_dmx_input(monkeypatch, virtual)
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()
+    assert virtual.set_dmx_wash.called
+    assert integration.paused is False
+
+    # Pausing releases the wash immediately.
+    integration.set_paused(True)
+    virtual.clear_dmx_wash.assert_called_once()
+    assert integration.paused is True
+
+    # Live DMX keeps flowing (the listener/loop are unaffected by pause),
+    # but nothing gets applied while paused.
+    virtual.set_dmx_wash.reset_mock()
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([128, 100, 100, 100]))
+    integration._process()
+    virtual.set_dmx_wash.assert_not_called()
+
+    # Unpausing needs no special action: the very next tick re-engages.
+    integration.set_paused(False)
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 10, 20, 30]))
+    integration._process()
+    virtual.set_dmx_wash.assert_called_with((10, 20, 30), 1.0)
+
+
+def test_venue_pause_stops_mapped_virtuals_from_receiving_washes(monkeypatch):
+    """A paused venue must stop a venue-targeted mapping from reapplying to
+    any of its member virtuals."""
+    v1, v2 = MagicMock(), MagicMock()
+    integration, venue_mgr = _make_venue_mapped_dmx_input(
+        monkeypatch, {"v1": v1, "v2": v2}
+    )
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()
+    assert v1.set_dmx_wash.called
+    assert v2.set_dmx_wash.called
+
+    # Simulate the venue becoming paused (VenueManager.set_paused itself
+    # clears the color-pad override — see test_venues.py — and reports
+    # is_paused()=True from then on).
+    venue_mgr.is_paused.return_value = True
+    v1.set_dmx_wash.reset_mock()
+    v2.set_dmx_wash.reset_mock()
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([128, 10, 10, 10]))
+    integration._process()
+    v1.set_dmx_wash.assert_not_called()
+    v2.set_dmx_wash.assert_not_called()
+
+
+def test_device_pause_releases_only_that_virtual(monkeypatch):
+    """Pausing one virtual (of two sharing a venue-targeted mapping) must
+    only stop that one from receiving washes, leaving the other engaged."""
+    v1, v2 = MagicMock(), MagicMock()
+    integration, _venue_mgr = _make_venue_mapped_dmx_input(
+        monkeypatch, {"v1": v1, "v2": v2}
+    )
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()
+    assert v1.set_dmx_wash.called
+    assert v2.set_dmx_wash.called
+
+    # Pause v1 at the device level only.
+    v1.is_dmx_paused.return_value = True
+    v1.set_dmx_wash.reset_mock()
+    v2.set_dmx_wash.reset_mock()
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([200, 5, 6, 7]))
+    integration._process()
+    v1.set_dmx_wash.assert_not_called()
+    v2.set_dmx_wash.assert_called_with((5, 6, 7), 200 / 255.0)
+
+
+def test_pause_precedence_global_wins_over_unpaused_venue_and_device(
+    monkeypatch,
+):
+    """Global pause must block dispatch even when the venue and device are
+    both unpaused."""
+    v1 = MagicMock()
+    integration, venue_mgr = _make_venue_mapped_dmx_input(
+        monkeypatch, {"v1": v1}
+    )
+    venue_mgr.is_paused.return_value = False  # venue unpaused
+    v1.is_dmx_paused.return_value = False  # device unpaused
+
+    integration.set_paused(True)  # global pause engaged
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()
+    v1.set_dmx_wash.assert_not_called()
+
+
+def test_pause_precedence_venue_wins_over_unpaused_device(monkeypatch):
+    """A paused venue must block dispatch to a member virtual even when
+    that virtual's own device-level pause flag is False."""
+    v1 = MagicMock()
+    integration, venue_mgr = _make_venue_mapped_dmx_input(
+        monkeypatch, {"v1": v1}
+    )
+    venue_mgr.is_paused.return_value = True  # venue paused
+    v1.is_dmx_paused.return_value = False  # device unpaused
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()
+    v1.set_dmx_wash.assert_not_called()

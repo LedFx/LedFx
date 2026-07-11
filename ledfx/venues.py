@@ -11,6 +11,7 @@ by venue ID.  Each value has the shape:
     {
         "name": str,
         "virtual_ids": [str, ...],          # virtuals belonging to this venue
+        "paused": bool,                     # mute DMX Input takeover for this venue
         "color_pads": {
             "rows": int,                    # grid height
             "cols": int,                    # grid width
@@ -101,6 +102,7 @@ class VenueManager:
         venue_cfg = {
             "name": name,
             "virtual_ids": [],
+            "paused": False,
             "color_pads": {
                 "rows": rows,
                 "cols": cols,
@@ -235,3 +237,30 @@ class VenueManager:
             v = self._ledfx.virtuals.get(vid)
             if v is not None:
                 v.clear_color_override()
+
+    # ------------------------------------------------------------------
+    # DMX pause
+    # ------------------------------------------------------------------
+
+    def set_paused(self, venue_id: str, paused: bool) -> dict:
+        """Mute (or unmute) DMX Input takeover for all virtuals in a venue.
+
+        Pausing also clears any active color-pad override on the venue,
+        since both represent "this venue's manual takeover" from the
+        operator's perspective.
+        """
+        cfg = self._venues.get(venue_id)
+        if cfg is None:
+            raise KeyError(f"Venue '{venue_id}' not found")
+
+        cfg["paused"] = bool(paused)
+        if cfg["paused"]:
+            self.clear_override(venue_id)
+        self._save()
+        return {"id": venue_id, **cfg}
+
+    def is_paused(self, venue_id: str) -> bool:
+        cfg = self._venues.get(venue_id)
+        if cfg is None:
+            return False
+        return bool(cfg.get("paused", False))

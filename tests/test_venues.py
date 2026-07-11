@@ -198,3 +198,39 @@ def test_clear_override_calls_clear_on_all_virtuals(mgr, ledfx):
 def test_clear_override_missing_venue_raises(mgr):
     with pytest.raises(KeyError):
         mgr.clear_override("nope")
+
+
+def test_set_paused_clears_override_and_persists(mgr, ledfx):
+    venue = mgr.create(name="J", rows=1, cols=1)
+    v1 = _add_virtual(ledfx, "v1")
+    mgr.add_virtual(venue["id"], "v1")
+    mgr.activate_override(venue["id"], 0)
+
+    updated = mgr.set_paused(venue["id"], True)
+    assert updated["paused"] is True
+    v1.clear_color_override.assert_called_once()
+    assert mgr.is_paused(venue["id"]) is True
+
+
+def test_set_paused_false_does_not_clear_override(mgr, ledfx):
+    venue = mgr.create(name="K", rows=1, cols=1)
+    v1 = _add_virtual(ledfx, "v1")
+    mgr.add_virtual(venue["id"], "v1")
+    mgr.activate_override(venue["id"], 0)
+    v1.clear_color_override.reset_mock()
+
+    updated = mgr.set_paused(venue["id"], False)
+    assert updated["paused"] is False
+    v1.clear_color_override.assert_not_called()
+    assert mgr.is_paused(venue["id"]) is False
+
+
+def test_set_paused_missing_venue_raises(mgr):
+    with pytest.raises(KeyError):
+        mgr.set_paused("nope", True)
+
+
+def test_is_paused_defaults_false_for_new_venue_and_missing_venue(mgr):
+    venue = mgr.create(name="L")
+    assert mgr.is_paused(venue["id"]) is False
+    assert mgr.is_paused("nope") is False

@@ -319,6 +319,8 @@ virtual_config_tests = {
                         "active": False,
                         "streaming": False,
                         "last_effect": None,
+                        "dmx_mapped": False,
+                        "dmx_paused": False,
                         "effect": {},
                     },
                     "first-virt": {
@@ -346,6 +348,8 @@ virtual_config_tests = {
                         "active": False,
                         "streaming": False,
                         "last_effect": None,
+                        "dmx_mapped": False,
+                        "dmx_paused": False,
                         "effect": {},
                     },
                 }

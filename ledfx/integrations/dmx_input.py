@@ -33,6 +33,7 @@ import time
 
 import voluptuous as vol
 
+from ledfx.config import save_config
 from ledfx.integrations import Integration
 from ledfx.venues import VenueManager
 
@@ -241,6 +242,54 @@ def _channel(dmx: bytes, ch: int) -> int:
     return 0
 
 
+def compute_dmx_mapped(ledfx):
+    """Cross-reference every ``dmx_input`` integration's mappings to find
+    which virtuals and venues are currently targeted by DMX Input.
+
+    Used by the virtuals/venues REST endpoints to compute a ``dmx_mapped``
+    flag per item, so the frontend can only render pause controls where DMX
+    actually applies.
+
+    Returns:
+        (mapped_virtual_ids, mapped_venue_ids): a tuple of sets. A venue is
+        included if any mapping targets it directly by ``venue_id``, or if
+        it owns a virtual targeted directly by ``virtual_id``. A virtual is
+        included if any mapping targets it directly, or targets a venue it
+        belongs to.
+    """
+    mapped_virtual_ids = set()
+    mapped_venue_ids = set()
+
+    integrations = getattr(ledfx, "integrations", None)
+    if integrations is not None:
+        for integration in integrations.values():
+            if getattr(integration, "type", None) != "dmx_input":
+                continue
+            get_mappings = getattr(integration, "get_mappings", None)
+            if get_mappings is None:
+                continue
+            for mapping in get_mappings():
+                vid = mapping.get("virtual_id")
+                if vid:
+                    mapped_virtual_ids.add(vid)
+                venue_id = mapping.get("venue_id")
+                if venue_id:
+                    mapped_venue_ids.add(venue_id)
+
+    # Expand venue-targeted mappings to their member virtuals, and mark a
+    # venue as mapped if it owns a directly-targeted virtual.
+    venues = getattr(ledfx, "venues", None)
+    if venues is not None:
+        for venue_id, cfg in venues.list_venues().items():
+            virtual_ids = cfg.get("virtual_ids", [])
+            if venue_id in mapped_venue_ids:
+                mapped_virtual_ids.update(virtual_ids)
+            elif mapped_virtual_ids.intersection(virtual_ids):
+                mapped_venue_ids.add(venue_id)
+
+    return mapped_virtual_ids, mapped_venue_ids
+
+
 class DMXInput(Integration):
     """Bridge incoming Art-Net DMX onto LedFx venue overrides and virtuals."""
 
@@ -301,8 +350,17 @@ class DMXInput(Integration):
 
         self._ledfx = ledfx
         self._config = config
-        # data is the list of channel mappings
-        self._data = data if isinstance(data, list) else []
+        # `data` is the integration's persisted state. Historically this was
+        # just the list of channel mappings; it is now a dict of
+        # ``{"mappings": [...], "paused": bool}`` so the global pause flag
+        # can survive restarts alongside the mappings. Old-format (bare
+        # list) configs are transparently migrated on load.
+        if isinstance(data, dict):
+            self._data = data.get("mappings", [])
+            self._paused = bool(data.get("paused", False))
+        else:
+            self._data = data if isinstance(data, list) else []
+            self._paused = False
 
         self._transport = None
         self._protocol = None
@@ -326,6 +384,11 @@ class DMXInput(Integration):
     # Mapping management (persisted in self._data)
     # ------------------------------------------------------------------
 
+    @property
+    def data(self):
+        """Persisted state: mapping list plus the global pause flag."""
+        return {"mappings": self._data, "paused": self._paused}
+
     def get_mappings(self):
         return self._data
 
@@ -343,6 +406,40 @@ class DMXInput(Integration):
             str(universe): list(dmx)
             for universe, dmx in self._latest_dmx.items()
         }
+
+    @property
+    def paused(self) -> bool:
+        return self._paused
+
+    def set_paused(self, paused: bool):
+        """Globally mute (or unmute) this integration's DMX takeover.
+
+        The Art-Net UDP listener keeps running and still replies to
+        ArtPoll (so SoundSwitch stays "connected") — pausing only stops
+        mapping dispatch. Pausing releases every mapping's currently owned
+        wash/color override/venue-trigger immediately, so all target
+        virtuals revert right away instead of waiting for the next
+        stale-stream timeout. Unpausing needs no special action: the next
+        DMX tick re-engages mappings naturally.
+        """
+        self._paused = bool(paused)
+        if self._paused:
+            self._release_all()
+        self._persist()
+
+    def _persist(self):
+        """Save this integration's persisted state (mirrors the API's
+        ``_persist`` helper in ``ledfx.api.integration_dmx_input``), so
+        toggling pause is instant and durable without triggering a
+        reconnect (unlike a ``CONFIG_SCHEMA`` change)."""
+        for integration in self._ledfx.config.get("integrations", []):
+            if integration["id"] == self.id:
+                integration["data"] = self.data
+                break
+        save_config(
+            config=self._ledfx.config,
+            config_dir=self._ledfx.config_dir,
+        )
 
     # ------------------------------------------------------------------
     # Connection lifecycle
@@ -418,6 +515,13 @@ class DMXInput(Integration):
             pass
 
     def _process(self):
+        # Global pause: the UDP listener and update loop keep running (so
+        # ArtPoll replies and DMX intake are unaffected and SoundSwitch
+        # stays "connected"), but no mapping is dispatched — nothing is
+        # applied to any virtual/venue while paused.
+        if self._paused:
+            return
+
         now = time.monotonic()
         stale_timeout = self._config.get("stale_timeout", 2.0)
         hold = self._config.get("hold_last_look", False)
@@ -485,22 +589,25 @@ class DMXInput(Integration):
         if venue_id is None or pad_index is None:
             return
 
-        mgr = self._venues()
+        if self._venues().is_paused(venue_id):
+            # Venue paused: stop tracking edges and drop ownership until
+            # unpaused (the venue's own pause already cleared its override).
+            state["triggered"] = False
+            self._venue_override_owner.pop(venue_id, None)
+            return
+
         if state["triggered"]:
             if value <= off_t:
                 state["triggered"] = False
                 # Only clear if we still own this venue's override
                 if self._venue_override_owner.get(venue_id) == idx:
-                    try:
-                        mgr.clear_override(venue_id)
-                    except Exception as e:
-                        _LOGGER.warning("DMX Input clear_override: %s", e)
+                    self._clear_venue_pad(venue_id)
                     self._venue_override_owner.pop(venue_id, None)
         else:
             if value >= on_t:
                 state["triggered"] = True
                 try:
-                    mgr.activate_override(venue_id, int(pad_index))
+                    self._activate_venue_pad(venue_id, int(pad_index))
                     self._venue_override_owner[venue_id] = idx
                     _LOGGER.info(
                         "DMX Input: trigger '%s' activated override pad %s on venue '%s'",
@@ -592,23 +699,64 @@ class DMXInput(Integration):
         """Yield target virtuals for a color/fixture mapping.
 
         A mapping targets either a single ``virtual_id`` or every virtual in a
-        ``venue_id``.
+        ``venue_id``. Applies global -> venue -> device pause precedence:
+        a globally paused integration yields nothing at all, a paused venue
+        yields nothing for venue-targeted mappings, and an individually
+        paused virtual is skipped regardless of how it was targeted. Actual
+        release of any override this virtual currently owns happens the
+        instant the relevant pause flag is set (see ``set_paused`` here,
+        ``VenueManager.set_paused``, and ``Virtual.set_dmx_paused``) — this
+        is only responsible for not re-engaging a paused target.
         """
+        if self._paused:
+            return
+
         vid = mapping.get("virtual_id")
         if vid:
             v = self._ledfx.virtuals.get(vid)
-            if v is not None:
+            if v is not None and not v.is_dmx_paused():
                 yield v
             return
         venue_id = mapping.get("venue_id")
         if venue_id:
+            if self._venues().is_paused(venue_id):
+                return
             cfg = self._venues().get(venue_id)
             if not cfg:
                 return
             for v_id in cfg.get("virtual_ids", []):
                 v = self._ledfx.virtuals.get(v_id)
-                if v is not None:
+                if v is not None and not v.is_dmx_paused():
                     yield v
+
+    def _activate_venue_pad(self, venue_id, pad_index):
+        """Apply a venue color pad, honoring per-device DMX pause.
+
+        Mirrors ``VenueManager.activate_override`` but routes virtual
+        selection through ``_targets`` so a device-paused virtual in the
+        venue is skipped even though the trigger targets the whole venue.
+        """
+        cfg = self._venues().get(venue_id)
+        if not cfg:
+            raise KeyError(f"Venue '{venue_id}' not found")
+
+        pads = cfg["color_pads"]["pads"]
+        if pad_index < 0 or pad_index >= len(pads):
+            raise IndexError(
+                f"Pad index {pad_index} out of range (0-{len(pads) - 1})"
+            )
+
+        pad = pads[pad_index]
+        color_or_gradient = pad.get("gradient") or pad.get("color", "#ffffff")
+
+        for v in self._targets({"venue_id": venue_id}):
+            v.set_color_override(color_or_gradient)
+
+    def _clear_venue_pad(self, venue_id):
+        try:
+            self._venues().clear_override(venue_id)
+        except Exception as e:
+            _LOGGER.warning("DMX Input clear_override: %s", e)
 
     def _release_mapping(self, idx, mapping):
         """Release whatever a single mapping currently owns."""
@@ -620,10 +768,7 @@ class DMXInput(Integration):
             state["triggered"] = False
             venue_id = mapping.get("venue_id")
             if venue_id and self._venue_override_owner.get(venue_id) == idx:
-                try:
-                    self._venues().clear_override(venue_id)
-                except Exception:
-                    pass
+                self._clear_venue_pad(venue_id)
                 self._venue_override_owner.pop(venue_id, None)
         elif mtype == "color" and state.get("last_color") is not None:
             state["last_color"] = None

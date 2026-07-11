@@ -7,11 +7,14 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.config import save_config
 from ledfx.effects import DummyEffect
+from ledfx.integrations.dmx_input import compute_dmx_mapped
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def make_virtual_response(virtual):
+def make_virtual_response(virtual, dmx_mapped_ids=None):
+    if dmx_mapped_ids is None:
+        dmx_mapped_ids, _ = compute_dmx_mapped(virtual._ledfx)
     virtual_response = {
         "config": virtual.config,
         "id": virtual.id,
@@ -22,6 +25,8 @@ def make_virtual_response(virtual):
         "active": virtual.active,
         "streaming": virtual.streaming,
         "last_effect": virtual.virtual_cfg.get("last_effect", None),
+        "dmx_mapped": virtual.id in dmx_mapped_ids,
+        "dmx_paused": virtual.is_dmx_paused(),
         "effect": {},
     }
     # Protect from DummyEffect
