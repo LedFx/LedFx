@@ -462,7 +462,7 @@ class DMXInput(Integration):
         if rgb == state["last_color"]:
             return
         state["last_color"] = rgb
-        hex_color = "#{:02x}{:02x}{:02x}".format(r, g, b)
+        hex_color = f"#{r:02x}{g:02x}{b:02x}"
         for v in self._targets(mapping):
             try:
                 v.set_color_override(hex_color)
