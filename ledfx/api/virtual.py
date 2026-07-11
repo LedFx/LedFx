@@ -172,6 +172,10 @@ class VirtualEndpoint(RestEndpoint):
                 if _device.id != device_id
             ]
 
+        # cleanup this virtual from any venues
+        if hasattr(self._ledfx, "venues"):
+            self._ledfx.venues.cleanup_virtual(virtual_id)
+
         # cleanup this virtual from any scenes
         for scene in self._ledfx.config.scenes.values():
             scene.virtuals.pop(virtual_id, None)
