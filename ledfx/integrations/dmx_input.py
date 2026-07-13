@@ -475,7 +475,14 @@ class DMXInput(Integration):
         )
 
     def _process_trigger(self, idx, mapping, dmx):
-        state = self._mapping_state.setdefault(idx, {"triggered": False})
+        # Use setdefault on the specific key, not just the container: if this
+        # index previously held state for a *different* mapping type (e.g.
+        # the mapping's type was edited in place from "color"/"fixture" to
+        # "trigger" without restarting), the dict already exists but lacks
+        # this handler's key — a plain setdefault(idx, {...}) would silently
+        # leave it missing and this handler would KeyError forever.
+        state = self._mapping_state.setdefault(idx, {})
+        state.setdefault("triggered", False)
         ch = int(mapping.get("channels", [1])[0])
         value = _channel(dmx, ch)
         on_t = int(mapping.get("on_threshold", 128))
@@ -512,7 +519,11 @@ class DMXInput(Integration):
                     _LOGGER.warning("DMX Input activate_override: %s", e)
 
     def _process_color(self, idx, mapping, dmx):
-        state = self._mapping_state.setdefault(idx, {"last_color": None})
+        # See _process_trigger for why we setdefault the key, not just the
+        # container dict — guards against a mapping's type having been
+        # changed in place at runtime.
+        state = self._mapping_state.setdefault(idx, {})
+        state.setdefault("last_color", None)
         chans = mapping.get("channels", [1, 2, 3])
         r = _channel(dmx, int(chans[0]))
         g = _channel(dmx, int(chans[1]))
@@ -543,7 +554,11 @@ class DMXInput(Integration):
         bright "flash" of the underlying effect whenever the operator dims a
         fixture down to (near) zero.
         """
-        state = self._mapping_state.setdefault(idx, {"wash_on": False})
+        state = self._mapping_state.setdefault(idx, {})
+        # See _process_trigger for why we setdefault the key, not just the
+        # container dict — guards against a mapping's type having been
+        # changed in place at runtime.
+        state.setdefault("wash_on", False)
         chans = mapping.get("channels", {})
         # channels may be a dict {dimmer,r,g,b} or a 4-list in that order
         # (a legacy "mode" key, if still present in old saved mappings, is
