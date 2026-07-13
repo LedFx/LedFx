@@ -180,6 +180,66 @@ def test_fixture_wash_releases_only_on_stale_stream(monkeypatch):
     virtual.clear_dmx_wash.assert_called_once()
 
 
+def test_mapping_type_changed_in_place_does_not_crash(monkeypatch):
+    """Regression test: editing a mapping's ``type`` in place (same list
+    index) at runtime — e.g. via the mapping editor UI, without restarting
+    the backend — must not leave stale per-index runtime state that crashes
+    the new type's handler.
+
+    Root cause this guards against: each ``_process_*`` handler used to do
+    ``self._mapping_state.setdefault(idx, {<its own default key>: ...})``.
+    ``setdefault`` only inserts when the *index* is entirely absent from the
+    dict — if a different handler already created an entry at that index
+    (from the mapping's previous type), the new handler's key was never
+    added, and later direct indexing like ``state["wash_on"]`` raised a
+    ``KeyError`` on every processing cycle, silently swallowed by
+    ``_update_loop``'s catch-all and logged as a warning — so the new
+    mapping type appeared to simply do nothing.
+
+    ``_prime_mapping`` seeds all three handlers' keys unconditionally, so
+    this bug only manifests once a mapping's universe has already been
+    "seen" (SoundSwitch has already been streaming for a while) *before*
+    the type edit happens — priming is per-universe, not per-mapping, so an
+    existing (previously-seen) universe never re-primes an edited mapping.
+    That's the realistic, common case: you edit a mapping's type while DMX
+    is already live, not at the very first packet after a cold start.
+    """
+    virtual = MagicMock()
+    integration = _make_dmx_input(monkeypatch, virtual)
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    # Simulate the DMX stream having already been live for a while: universe
+    # 0 is already "seen", so priming will never run again for it.
+    integration._seen_universe.add(0)
+    integration._last_packet_time[0] = fake_time[0]
+
+    # Configure the mapping as "color" and process one packet — since the
+    # universe is already seen, _process_color creates _mapping_state[0]
+    # itself, containing *only* the color handler's key.
+    integration._data[0]["type"] = "color"
+    integration._data[0]["channels"] = [2, 3, 4]
+    integration._on_dmx(0, bytes([0, 10, 20, 30]))
+    integration._process()
+    assert virtual.set_color_override.called
+    assert integration._mapping_state[0] == {"last_color": (10, 20, 30)}
+
+    # Now edit the *same* mapping index's type to "fixture" at runtime,
+    # without restarting/re-priming — this is exactly what the frontend's
+    # mapping editor does when you change a mapping's type via PUT.
+    integration._data[0]["type"] = "fixture"
+    integration._data[0]["channels"] = {"dimmer": 1, "r": 2, "g": 3, "b": 4}
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()  # must not raise / silently no-op
+
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
+
+
 def _base_config(stale_timeout=2.0):
     return {
         "name": "test",
