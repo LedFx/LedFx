@@ -457,6 +457,28 @@ class DMXInput(Integration):
                 continue
 
             mtype = mapping.get("type")
+
+            # If this mapping's type was edited in place at runtime (same
+            # index, e.g. "fixture" -> "color" via the UI), release whatever
+            # the *previous* type owned (wash takeover, color override,
+            # triggered venue pad) before dispatching to the new type's
+            # handler. Without this, e.g. a virtual's DMX wash takeover
+            # (which wins render priority over a color override) would stay
+            # engaged forever with its last stale value, since nothing else
+            # ever calls clear_dmx_wash() for it once the mapping stops
+            # being processed as "fixture" — the LED appears permanently
+            # frozen on the last wash frame even though a new color override
+            # is being applied underneath it.
+            prev_state = self._mapping_state.get(idx)
+            prev_type = prev_state.get("_active_type") if prev_state else None
+            if prev_type is not None and prev_type != mtype:
+                self._release_mapping(idx, mapping, mtype=prev_type)
+            # Record unconditionally (creating the state dict on the very
+            # first cycle if needed) so a type change is detected even if
+            # this is the mapping's first-ever processed cycle immediately
+            # followed by a type edit before the next cycle.
+            self._mapping_state.setdefault(idx, {})["_active_type"] = mtype
+
             if mtype == "trigger":
                 self._process_trigger(idx, mapping, dmx)
             elif mtype == "color":
@@ -470,9 +492,12 @@ class DMXInput(Integration):
 
     def _prime_mapping(self, idx, mapping, dmx):
         """Record an initial 'off' baseline so startup does not auto-fire."""
-        self._mapping_state.setdefault(
+        state = self._mapping_state.setdefault(
             idx, {"triggered": False, "last_color": None, "wash_on": False}
         )
+        # Seed the active type so the first real _process() cycle after
+        # priming has a baseline to detect an in-place type change against.
+        state.setdefault("_active_type", mapping.get("type"))
 
     def _process_trigger(self, idx, mapping, dmx):
         # Use setdefault on the specific key, not just the container: if this
@@ -625,12 +650,21 @@ class DMXInput(Integration):
                 if v is not None:
                     yield v
 
-    def _release_mapping(self, idx, mapping):
-        """Release whatever a single mapping currently owns."""
+    def _release_mapping(self, idx, mapping, mtype=None):
+        """Release whatever a single mapping currently owns.
+
+        Args:
+            mtype: release ownership for this type instead of the mapping's
+                current ``type``. Used when a mapping's type was edited in
+                place at runtime — we must release what the *previous* type
+                owned (e.g. a fixture wash takeover), not what the new type
+                would own, since the new type hasn't engaged anything yet.
+        """
         state = self._mapping_state.get(idx)
         if not state:
             return
-        mtype = mapping.get("type")
+        if mtype is None:
+            mtype = mapping.get("type")
         if mtype == "trigger" and state.get("triggered"):
             state["triggered"] = False
             venue_id = mapping.get("venue_id")

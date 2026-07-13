@@ -214,7 +214,10 @@ def test_mapping_type_changed_in_place_does_not_crash(monkeypatch):
     integration._on_dmx(0, bytes([0, 10, 20, 30]))
     integration._process()
     assert virtual.set_color_override.called
-    assert integration._mapping_state[0] == {"last_color": (10, 20, 30)}
+    assert integration._mapping_state[0] == {
+        "last_color": (10, 20, 30),
+        "_active_type": "color",
+    }
 
     # Now edit the *same* mapping index's type to "fixture" at runtime,
     # without restarting/re-priming — this is exactly what the frontend's
@@ -227,3 +230,58 @@ def test_mapping_type_changed_in_place_does_not_crash(monkeypatch):
     integration._process()  # must not raise / silently no-op
 
     virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
+
+
+def test_mapping_type_changed_fixture_to_color_releases_wash(monkeypatch):
+    """Regression test for the "frozen frame" bug: switching a mapping from
+    "fixture" (wash) to "color" (live RGB) in place at runtime, while DMX is
+    live, must release the old wash takeover — not just start applying the
+    new color override underneath it.
+
+    Root cause this guards against: ``_release_mapping`` was only ever
+    called by ``_process`` on the stale-stream/deactivation path, using
+    ``mapping.get("type")`` — i.e. the mapping's *current* type. Editing a
+    mapping's type in place never went through that path at all, so nothing
+    ever called ``clear_dmx_wash()`` for the virtual's stale fixture-wash
+    takeover. Since ``Virtual.thread_function``'s render loop gives DMX wash
+    render priority over a color override (wash is checked first), the
+    virtual would keep painting the wash's last (now frozen/stale) RGB
+    value forever, even though a brand new color override was also being
+    applied every cycle underneath it — the LED appears completely frozen,
+    with no exception anywhere (this is not a crash, so nothing appears in
+    the log), even though the color override is "correct" from the DMX
+    Input integration's point of view.
+    """
+    virtual = MagicMock()
+    integration = _make_dmx_input(monkeypatch, virtual)
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    # Engage the fixture wash first (mapping starts as "fixture", per
+    # _make_dmx_input's default config).
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
+    virtual.clear_dmx_wash.assert_not_called()
+
+    # Now edit the *same* mapping index's type to "color" at runtime — e.g.
+    # via the mapping editor UI — without going through any stale/removal
+    # path.
+    integration._data[0]["type"] = "color"
+    integration._data[0]["channels"] = [2, 3, 4]
+
+    fake_time[0] += 0.05
+    integration._on_dmx(0, bytes([0, 10, 20, 30]))
+    integration._process()
+
+    # The stale wash takeover must be released so the new color override
+    # actually becomes visible instead of being silently masked by it.
+    virtual.clear_dmx_wash.assert_called_once()
+    virtual.set_color_override.assert_called_with("#0a141e")
