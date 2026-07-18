@@ -504,3 +504,122 @@ def test_pause_precedence_venue_wins_over_unpaused_device(monkeypatch):
     integration._on_dmx(0, bytes([255, 255, 0, 0]))
     integration._process()
     v1.set_dmx_wash.assert_not_called()
+
+
+def test_fixture_wash_default_strobe_probability_renders_every_pulse(
+    monkeypatch,
+):
+    """Default ``strobe_probability`` (1.0, or unset) must render every
+    single strobe pulse exactly like today — no regression for anyone who
+    never touches the new setting."""
+    virtual = MagicMock()
+    integration = _make_dmx_input(monkeypatch, virtual)
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+    # Force every Bernoulli trial to "fail" if it were ever drawn — proves
+    # the strobe_probability==1.0 fast-path skips rolling entirely.
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.random.random", lambda: 0.999
+    )
+
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+
+    for _ in range(5):
+        fake_time[0] += 0.02
+        integration._on_dmx(0, bytes([255, 255, 0, 0]))  # pulse on
+        integration._process()
+        virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
+
+        fake_time[0] += 0.02
+        integration._on_dmx(0, bytes([0, 255, 0, 0]))  # pulse off
+        integration._process()
+        virtual.set_dmx_wash.assert_called_with((255, 0, 0), 0.0)
+
+
+def test_fixture_wash_strobe_probability_suppresses_failed_pulses(
+    monkeypatch,
+):
+    """With strobe_probability < 1.0, a pulse whose single Bernoulli trial
+    "fails" must render fully black (dimmer forced to 0) for that pulse's
+    entire duration, while a pulse that "succeeds" renders normally — and
+    the decision must be drawn once per rising edge, not re-rolled every
+    frame within the same pulse."""
+    virtual = MagicMock()
+    integration = _make_dmx_input(monkeypatch, virtual)
+    integration._data[0]["strobe_probability"] = 0.5
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+
+    # First pulse: rig the trial to "fail" (0.9 >= 0.5).
+    rolls = iter([0.9, 0.1])
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.random.random", lambda: next(rolls)
+    )
+
+    fake_time[0] += 0.02
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))  # rising edge, rolls 0.9
+    integration._process()
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 0.0)
+
+    # Still within the same pulse (dimmer still nonzero) — must stay
+    # suppressed without re-rolling, even though the next roll (0.1) would
+    # have succeeded.
+    fake_time[0] += 0.02
+    integration._on_dmx(0, bytes([200, 255, 0, 0]))
+    integration._process()
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 0.0)
+
+    # Falling edge — pulse ends.
+    fake_time[0] += 0.02
+    integration._on_dmx(0, bytes([0, 255, 0, 0]))
+    integration._process()
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 0.0)
+
+    # Second pulse: rolls 0.1 (succeeds, 0.1 < 0.5) — must render normally.
+    fake_time[0] += 0.02
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))  # rising edge, rolls 0.1
+    integration._process()
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
+
+
+def test_mapping_type_cache_field_round_trips_untouched(monkeypatch):
+    """An arbitrary ``_type_field_cache`` key (used by the frontend mapping
+    editor to remember each type's last-entered field values across type
+    switches, per-mapping) must survive add_mapping/get_mappings untouched,
+    and must never be interpreted by any of the ``_process_*`` handlers —
+    it is pure frontend-managed UI state that happens to round-trip through
+    the backend's unvalidated mapping dicts."""
+    virtual = MagicMock()
+    integration = _make_dmx_input(monkeypatch, virtual)
+    integration._data[0]["_type_field_cache"] = {
+        "color": {"channels": [5, 6, 7]},
+        "trigger": {"on_threshold": 200, "off_threshold": 150},
+    }
+
+    fake_time = [1000.0]
+    monkeypatch.setattr(
+        "ledfx.integrations.dmx_input.time.monotonic", lambda: fake_time[0]
+    )
+
+    integration._on_dmx(0, bytes([0, 0, 0, 0]))
+    integration._process()  # primes
+    fake_time[0] += 0.02
+    integration._on_dmx(0, bytes([255, 255, 0, 0]))
+    integration._process()  # normal fixture-wash processing, unaffected
+
+    mappings = integration.get_mappings()
+    assert mappings[0]["_type_field_cache"] == {
+        "color": {"channels": [5, 6, 7]},
+        "trigger": {"on_threshold": 200, "off_threshold": 150},
+    }
+    virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
