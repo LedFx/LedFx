@@ -27,6 +27,7 @@ integration pattern) as a list of dicts. See ``MAPPING_SCHEMA`` for the shape.
 import asyncio
 import logging
 import os
+import random
 import socket
 import struct
 import time
@@ -578,12 +579,25 @@ class DMXInput(Integration):
         deactivated/removed, handled by ``_release_mapping``. This avoids a
         bright "flash" of the underlying effect whenever the operator dims a
         fixture down to (near) zero.
+
+        Optional ``strobe_probability`` (0.0-1.0, default 1.0): real DMX
+        fixtures each strobe on their own independent onboard oscillator, so
+        multiple real fixtures visibly drift out of sync with each other even
+        when fed identical DMX — whereas LedFx mirrors the incoming dimmer
+        frame-perfectly, looking artificially "locked". Setting this below
+        1.0 draws one Bernoulli trial per detected strobe *pulse* (edge-
+        detected: dimmer rising from 0), forcing that pulse to render black
+        instead of firing with probability ``1 - strobe_probability``. The
+        default of 1.0 renders every pulse (today's exact behaviour, no
+        regression for anyone who leaves the setting untouched).
         """
         state = self._mapping_state.setdefault(idx, {})
         # See _process_trigger for why we setdefault the key, not just the
         # container dict — guards against a mapping's type having been
         # changed in place at runtime.
         state.setdefault("wash_on", False)
+        state.setdefault("strobe_pulse_on", False)
+        state.setdefault("strobe_pulse_render", True)
         chans = mapping.get("channels", {})
         # channels may be a dict {dimmer,r,g,b} or a 4-list in that order
         # (a legacy "mode" key, if still present in old saved mappings, is
@@ -603,6 +617,22 @@ class DMXInput(Integration):
             _channel(dmx, g_ch),
             _channel(dmx, b_ch),
         )
+
+        strobe_probability = float(mapping.get("strobe_probability", 1.0))
+        strobe_probability = max(0.0, min(1.0, strobe_probability))
+        if strobe_probability < 1.0:
+            pulse_on = dimmer > 0.0
+            if pulse_on and not state["strobe_pulse_on"]:
+                # Rising edge of a new strobe pulse — roll once and hold the
+                # decision until the pulse's falling edge, so a single
+                # intended flash isn't chopped into flicker by re-rolling
+                # every frame.
+                state["strobe_pulse_render"] = (
+                    random.random() < strobe_probability
+                )
+            state["strobe_pulse_on"] = pulse_on
+            if pulse_on and not state["strobe_pulse_render"]:
+                dimmer = 0.0
 
         if not state["wash_on"]:
             state["wash_on"] = True
