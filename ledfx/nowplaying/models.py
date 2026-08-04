@@ -19,6 +19,13 @@ class TrackMetadata:
     artwork_url: Optional[str] = None
     artwork_hash: Optional[str] = None
 
+    # Playback timing, best-effort: filled only when a provider already has the
+    # values in hand. Nothing polls for them, so they are a snapshot taken when
+    # the metadata event fired and may be absent entirely.
+    position: Optional[float] = None
+    duration: Optional[float] = None
+    playing: Optional[bool] = None
+
     updated_at: Optional[float] = None
 
     def track_identity(self) -> tuple:
@@ -38,6 +45,9 @@ class TrackMetadata:
             "track_id": self.track_id,
             "artwork_url": self.artwork_url,
             "artwork_hash": self.artwork_hash,
+            "position": self.position,
+            "duration": self.duration,
+            "playing": self.playing,
             "updated_at": self.updated_at,
         }
 
