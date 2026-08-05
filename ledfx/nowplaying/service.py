@@ -8,6 +8,7 @@ source of truth for the rest of LedFx.
 import hashlib
 import io
 import logging
+import os
 import time
 import urllib.parse
 import urllib.request
@@ -102,7 +103,9 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
         ),
         vol.Optional("track_text", default={}): vol.Schema(
             {
-                vol.Optional("enabled", default=True): bool,
+                # Off by default, like every section: enabling Now Playing
+                # should not immediately start pushing to virtuals.
+                vol.Optional("enabled", default=False): bool,
                 vol.Optional("duration", default=60): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
@@ -112,7 +115,7 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
         ),
         vol.Optional("album_art", default={}): vol.Schema(
             {
-                vol.Optional("enabled", default=True): bool,
+                vol.Optional("enabled", default=False): bool,
                 vol.Optional("duration", default=10): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
@@ -560,6 +563,38 @@ class NowPlayingService:
                 source_id,
                 self._state.active_source_id,
             )
+
+    def purge(self) -> None:
+        """Drop everything gathered so far, including artwork on disk.
+
+        Called when the feature is switched off. Clearing the in-memory state
+        is not enough: the cached cover of whatever was last playing would stay
+        in ``.ledfx/assets/now_playing/``, which is precisely what somebody
+        turning a privacy switch off does not expect.
+        """
+        self._art_resolver.cancel_pending()
+        prev_variant = self._state.selected_gradient_variant
+        self._state = NowPlayingState(selected_gradient_variant=prev_variant)
+        self._emitted_position = None
+        self._emitted_timestamp = None
+        self._emitted_playing = None
+
+        config_dir = getattr(self._ledfx, "config_dir", None)
+        if not config_dir:
+            return
+
+        art_dir = os.path.join(config_dir, "assets", _NOW_PLAYING_ASSET_DIR)
+        if not os.path.isdir(art_dir):
+            return
+        for name in os.listdir(art_dir):
+            if not name.startswith(_ARTWORK_FILENAME):
+                continue
+            try:
+                os.remove(os.path.join(art_dir, name))
+            except OSError as exc:
+                _LOGGER.warning(
+                    "Could not remove cached artwork %s: %s", name, exc
+                )
 
     def get_current(self) -> NowPlayingState:
         """Return the current Now Playing state.

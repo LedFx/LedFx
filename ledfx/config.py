@@ -52,6 +52,7 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "lifx_broadcast_address",
     "lifx_discovery_timeout",
     "sendspin_always_on",
+    "now_playing_enabled",
     "now_playing",
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
@@ -194,6 +195,12 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("instance_id", default=""): str,
         vol.Optional("sendspin_servers", default={}): dict,
         vol.Optional("sendspin_always_on", default=True): bool,
+        # Opt-in, and deliberately default False. Enabling it lets LedFx read
+        # the OS media session: the track title can end up rendered on a
+        # matrix, the artist and title are sent to MusicBrainz to look up
+        # cover art, and that art is cached to disk. None of that should
+        # happen to somebody who never asked for it.
+        vol.Optional("now_playing_enabled", default=False): bool,
         vol.Optional("now_playing", default={}): dict,
     },
     extra=vol.ALLOW_EXTRA,

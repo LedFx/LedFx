@@ -180,6 +180,54 @@ class LedFxCore:
         if "sendspin_always_on" in event.config:
             self.reconcile_sendspin_always_on_runtime("base_config_update")
 
+    def reconcile_now_playing_runtime(self, trigger: str):
+        """Start or stop the Now Playing providers from current config.
+
+        Opt-in: with ``now_playing_enabled`` false nothing is started, so no OS
+        media session is read, no cover-art lookup leaves the machine and no
+        artwork is written to disk. Turning it off again stops the providers
+        and clears what was already gathered, including the cached artwork -
+        switching a privacy feature off should not leave the last thumbnail
+        sitting on disk.
+
+        Same shape as the sendspin reconcile: callers only signal *when* to
+        re-check, never *what* to do.
+        """
+        enabled = self.config.get("now_playing_enabled", False)
+        providers = (self._smtc_now_playing, self._mpris_now_playing)
+
+        for provider in providers:
+            if provider is None:
+                continue
+            try:
+                if enabled:
+                    provider.start()
+                else:
+                    provider.stop()
+            except Exception as exc:
+                _LOGGER.warning(
+                    "now_playing reconcile (%s) failed for %s: %s",
+                    trigger,
+                    type(provider).__name__,
+                    exc,
+                )
+
+        if not enabled and getattr(self, "now_playing", None) is not None:
+            try:
+                self.now_playing.purge()
+            except Exception as exc:
+                _LOGGER.warning(
+                    "now_playing reconcile (%s): purge failed: %s",
+                    trigger,
+                    exc,
+                )
+
+        _LOGGER.info(
+            "Now Playing %s (%s)",
+            "enabled" if enabled else "disabled",
+            trigger,
+        )
+
     def reconcile_sendspin_always_on_runtime(self, trigger: str):
         """Reconcile runtime Sendspin always-on behavior from current config.
 
@@ -528,16 +576,14 @@ class LedFxCore:
             max_items=cache_config.get("max_items", 500),
         )
 
-        # Initialize Now Playing Service
+        # Initialize Now Playing Service. The service itself is cheap and stays
+        # up so its REST endpoint can answer - including to turn the feature on.
+        # The *providers* are what read the OS media session, and they only run
+        # when the user has opted in.
         self.now_playing = NowPlayingService(self)
-
-        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
         self._smtc_now_playing = SMTCNowPlayingProvider(self)
-        self._smtc_now_playing.start()
-
-        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
         self._mpris_now_playing = MPRISNowPlayingProvider(self)
-        self._mpris_now_playing.start()
+        self.reconcile_now_playing_runtime("startup")
 
         self.devices = Devices(self)
         self.effects = Effects(self)
