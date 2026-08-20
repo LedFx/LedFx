@@ -8,6 +8,7 @@ source of truth for the rest of LedFx.
 import hashlib
 import io
 import logging
+import os
 import time
 import urllib.parse
 import urllib.request
@@ -28,6 +29,7 @@ from ledfx.events import (
     NowPlayingGradientChangedEvent,
     NowPlayingMetadataChangedEvent,
     NowPlayingTrackChangedEvent,
+    SongDetectedEvent,
 )
 from ledfx.nowplaying.album_art.musicbrainz import MusicBrainzArtProvider
 from ledfx.nowplaying.album_art.resolver import AlbumArtResolver
@@ -101,7 +103,9 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
         ),
         vol.Optional("track_text", default={}): vol.Schema(
             {
-                vol.Optional("enabled", default=True): bool,
+                # Off by default, like every section: enabling Now Playing
+                # should not immediately start pushing to virtuals.
+                vol.Optional("enabled", default=False): bool,
                 vol.Optional("duration", default=60): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
@@ -111,7 +115,7 @@ NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
         ),
         vol.Optional("album_art", default={}): vol.Schema(
             {
-                vol.Optional("enabled", default=True): bool,
+                vol.Optional("enabled", default=False): bool,
                 vol.Optional("duration", default=10): vol.All(
                     vol.Coerce(int), vol.Range(min=0, max=60)
                 ),
@@ -136,6 +140,15 @@ _NOW_PLAYING_ASSET_DIR = "now_playing"
 # Fixed base filename for the single artwork file
 _ARTWORK_FILENAME = "now_playing"
 
+# How far a client's own extrapolation may drift, in seconds, before it is sent
+# a fresh anchor. While playing, some drift is expected and harmless - the
+# threshold only needs to catch a seek, not track the position exactly. While
+# paused the position should not move at all, so a smaller change already means
+# the user scrubbed. Both are deliberately loose: a tighter bound would emit on
+# ordinary jitter and turn an event-driven feed into a de facto poll.
+_POSITION_DRIFT_PLAYING = 2.0
+_POSITION_DRIFT_PAUSED = 1.0
+
 
 class NowPlayingService:
     """Provider-neutral Now Playing state manager.
@@ -148,6 +161,12 @@ class NowPlayingService:
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._state = NowPlayingState()
+
+        # Last timing anchor handed to clients, so we can tell whether one
+        # extrapolating from it would still be right. See _timing_diverged.
+        self._emitted_position: float | None = None
+        self._emitted_timestamp: float | None = None
+        self._emitted_playing: bool | None = None
 
         # Load persisted configuration
         raw_config = getattr(ledfx, "config", {}).get("now_playing", {})
@@ -171,12 +190,22 @@ class NowPlayingService:
     # Public API
     # ------------------------------------------------------------------
 
-    def set_metadata(self, source_id: str, metadata: TrackMetadata) -> bool:
+    def set_metadata(
+        self,
+        source_id: str,
+        metadata: TrackMetadata,
+        has_own_artwork: bool = False,
+    ) -> bool:
         """Update current track metadata from a provider.
 
         Args:
             source_id: Provider identifier (e.g. "sendspin").
             metadata: Normalized track metadata.
+            has_own_artwork: True when the provider is about to supply artwork
+                for this track itself. Suppresses the MusicBrainz lookup, which
+                is a *fallback* - embedded art from the player is always more
+                accurate than a lookup, especially for remixes, live takes and
+                deluxe editions where the release match is a guess.
 
         Returns:
             True if a track change was detected, False otherwise.
@@ -243,10 +272,48 @@ class NowPlayingService:
                 )
             )
             self._apply_track_text_to_virtuals()
-            if source_id not in _SOURCES_WITH_OWN_ARTWORK:
+            self._emit_song_detected()
+            if (
+                not has_own_artwork
+                and source_id not in _SOURCES_WITH_OWN_ARTWORK
+            ):
                 self._art_resolver.on_track_changed(metadata)
+        elif self._timing_diverged(metadata):
+            # Same track, but a client extrapolating from the last anchor would
+            # now be wrong - a seek, a pause, or a resume. Send a correction.
+            self._emit_song_detected()
 
         return track_changed
+
+    def _timing_diverged(self, metadata: TrackMetadata) -> bool:
+        """Whether clients need a fresh timing anchor for the current track.
+
+        Clients advance position themselves from ``(position, timestamp)``, so
+        a track playing straight through needs no updates at all - their own
+        arithmetic stays correct. Only report divergence, which makes the
+        traffic proportional to how wrong they are rather than to song length.
+        """
+        if metadata.position is None:
+            return False
+
+        # First anchor, or playback state flipped (play/pause/stop).
+        if self._emitted_position is None or self._emitted_timestamp is None:
+            return True
+        if bool(metadata.playing) != bool(self._emitted_playing):
+            return True
+
+        if not metadata.playing:
+            # Paused: the client's position is frozen, so any real movement
+            # is a seek.
+            return (
+                abs(metadata.position - self._emitted_position)
+                > _POSITION_DRIFT_PAUSED
+            )
+
+        predicted = self._emitted_position + (
+            time.time() - self._emitted_timestamp
+        )
+        return abs(metadata.position - predicted) > _POSITION_DRIFT_PLAYING
 
     def set_artwork_url(
         self,
@@ -316,6 +383,9 @@ class NowPlayingService:
         self._state.updated_at = time.time()
         self._update_current_gradient()
         self._apply_album_art_to_virtuals()
+        # Artwork often resolves after the track event (MusicBrainz lookup), so
+        # re-emit to deliver the thumbnail the first event could not carry.
+        self._emit_song_detected()
 
         _LOGGER.info("Artwork URL updated from %s", source_id)
         self._fire_event(
@@ -375,6 +445,9 @@ class NowPlayingService:
         self._state.updated_at = time.time()
         self._update_current_gradient()
         self._apply_album_art_to_virtuals()
+        # Artwork often resolves after the track event (MusicBrainz lookup), so
+        # re-emit to deliver the thumbnail the first event could not carry.
+        self._emit_song_detected()
 
         _LOGGER.info(
             "Artwork bytes updated from %s (hash: %s)", source_id, artwork_hash
@@ -436,6 +509,9 @@ class NowPlayingService:
         self._state.updated_at = time.time()
         self._update_current_gradient()
         self._apply_album_art_to_virtuals()
+        # Artwork often resolves after the track event (MusicBrainz lookup), so
+        # re-emit to deliver the thumbnail the first event could not carry.
+        self._emit_song_detected()
 
         _LOGGER.info("Resolved artwork applied (hash: %s)", artwork_hash)
         self._fire_event(
@@ -487,6 +563,38 @@ class NowPlayingService:
                 source_id,
                 self._state.active_source_id,
             )
+
+    def purge(self) -> None:
+        """Drop everything gathered so far, including artwork on disk.
+
+        Called when the feature is switched off. Clearing the in-memory state
+        is not enough: the cached cover of whatever was last playing would stay
+        in ``.ledfx/assets/now_playing/``, which is precisely what somebody
+        turning a privacy switch off does not expect.
+        """
+        self._art_resolver.cancel_pending()
+        prev_variant = self._state.selected_gradient_variant
+        self._state = NowPlayingState(selected_gradient_variant=prev_variant)
+        self._emitted_position = None
+        self._emitted_timestamp = None
+        self._emitted_playing = None
+
+        config_dir = getattr(self._ledfx, "config_dir", None)
+        if not config_dir:
+            return
+
+        art_dir = os.path.join(config_dir, "assets", _NOW_PLAYING_ASSET_DIR)
+        if not os.path.isdir(art_dir):
+            return
+        for name in os.listdir(art_dir):
+            if not name.startswith(_ARTWORK_FILENAME):
+                continue
+            try:
+                os.remove(os.path.join(art_dir, name))
+            except OSError as exc:
+                _LOGGER.warning(
+                    "Could not remove cached artwork %s: %s", name, exc
+                )
 
     def get_current(self) -> NowPlayingState:
         """Return the current Now Playing state.
@@ -881,6 +989,70 @@ class NowPlayingService:
         """
         if hasattr(self._ledfx, "events"):
             self._ledfx.events.fire_event(event)
+
+    def _emit_song_detected(self) -> None:
+        """Re-publish current track info as a SongDetectedEvent.
+
+        The frontend has a long-standing consumer chain hanging off
+        ``song_detected`` (currentTrack, album art, the texter/gradient/image
+        auto-apply hooks). Emitting it here lets the Now Playing providers feed
+        that chain directly, instead of it only ever being driven by the
+        external song-detector process.
+
+        Playback timing is best-effort and passed straight through from whatever
+        the provider already had: nothing polls for it. ``timestamp`` is the
+        moment this snapshot was taken, which is what the frontend extrapolates
+        position from - so a single accurate sample per track carries it until
+        the next event, and goes stale after a seek or pause.
+
+        When a provider supplies nothing, the fields stay ``None`` and the
+        frontend simply never calls ``setPositionData``, leaving
+        position-dependent features inactive rather than driven by fiction.
+        """
+        metadata = self._state.metadata
+        if not metadata or not metadata.title:
+            return
+
+        # cache_key is an absolute filesystem path, but the frontend resolves
+        # thumbnails through /api/assets/download, which is relative to
+        # .ledfx/assets. Send the assets-relative path instead - the artwork
+        # lives in a subdirectory, so a bare filename would not resolve.
+        artwork = self._state.artwork
+        thumbnail = None
+        if artwork and artwork.cache_key:
+            filename = artwork.cache_key.replace("\\", "/").rsplit("/", 1)[-1]
+            thumbnail = f"{_NOW_PLAYING_ASSET_DIR}/{filename}"
+
+        # Only anchor a timestamp when there is actually timing to anchor -
+        # the frontend keys its interpolation off position + timestamp, and a
+        # timestamp without a position anchors nothing.
+        timestamp = time.time() if metadata.position is not None else None
+
+        # Remember what clients were told, so _timing_diverged can judge
+        # whether their extrapolation from it has gone stale.
+        self._emitted_position = metadata.position
+        self._emitted_timestamp = timestamp
+        self._emitted_playing = bool(metadata.playing)
+
+        _LOGGER.debug(
+            "song_detected: %s pos=%s playing=%s art=%s",
+            metadata.title,
+            None if metadata.position is None else round(metadata.position, 1),
+            metadata.playing,
+            bool(thumbnail),
+        )
+        self._fire_event(
+            SongDetectedEvent(
+                title=metadata.title,
+                artist=metadata.artist or "",
+                album=metadata.album or "",
+                thumbnail=thumbnail,
+                position=metadata.position,
+                duration=metadata.duration,
+                playing=bool(metadata.playing),
+                timestamp=timestamp,
+            )
+        )
 
     # ------------------------------------------------------------------
     # Artwork storage helpers

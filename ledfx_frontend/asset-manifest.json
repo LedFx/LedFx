@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.adc4b253.css",
-    "main.js": "/static/js/main.c0cfc76f.js",
+    "main.css": "/static/css/main.b702fc80.css",
+    "main.js": "/static/js/main.449bb5d6.js",
     "static/js/882.6322ae33.chunk.js": "/static/js/882.6322ae33.chunk.js",
     "static/js/429.b62d6362.chunk.js": "/static/js/429.b62d6362.chunk.js",
     "static/js/464.efa9ae26.chunk.js": "/static/js/464.efa9ae26.chunk.js",
@@ -16,6 +16,7 @@
     "static/media/Nunito-Regular.ttf": "/static/media/Nunito-Regular.9d7a6e03c6e3ed49c7ac.ttf",
     "static/media/launchpad.png": "/static/media/launchpad.4a1e671d782cbad8d71e.png",
     "static/media/MaterialIcons-Regular.woff2": "/static/media/MaterialIcons-Regular.f71673ad689fb42ddae1.woff2",
+    "static/media/app-icon.png": "/static/media/app-icon.b3d2950a96323940d694.png",
     "service-worker.js": "/service-worker.js",
     "static/media/mixedContent2.webp": "/static/media/mixedContent2.7aafad8cbef70f792bd9.webp",
     "static/media/blademod.svg": "/static/media/blademod.f939f478785a84b3edcc820eef654556.svg",
@@ -44,7 +45,7 @@
     "static/media/left-snake-flip.svg": "/static/media/left-snake-flip.d11a3dbe8b64be1ca556c4fafe5da660.svg"
   },
   "entrypoints": [
-    "static/css/main.adc4b253.css",
-    "static/js/main.c0cfc76f.js"
+    "static/css/main.b702fc80.css",
+    "static/js/main.449bb5d6.js"
   ]
 }

@@ -400,6 +400,14 @@ class MPRISNowPlayingProvider:
             now_playing.clear(SOURCE_ID)
             return
 
+        # Free timing: both already arrived in the reply above. Duration comes
+        # as microseconds. Position is deliberately NOT read - it needs its own
+        # Get('Position') call, and nothing here polls.
+        duration = None
+        length_us = self._variant_value(metadata.get("mpris:length"))
+        if isinstance(length_us, (int, float)) and length_us > 0:
+            duration = length_us / 1_000_000
+
         now_playing.set_metadata(
             SOURCE_ID,
             TrackMetadata(
@@ -408,6 +416,8 @@ class MPRISNowPlayingProvider:
                 artist=artist,
                 album=album,
                 track_id=track_id,
+                duration=duration,
+                playing=(status == "Playing") if status is not None else None,
             ),
         )
 

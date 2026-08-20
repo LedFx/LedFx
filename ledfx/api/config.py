@@ -291,6 +291,11 @@ class ConfigEndpoint(RestEndpoint):
                 self._ledfx.config["melbanks"]
             )
 
+        if "now_playing_enabled" in config and hasattr(
+            self._ledfx, "reconcile_now_playing_runtime"
+        ):
+            self._ledfx.reconcile_now_playing_runtime("config_updated")
+
         self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
 
     def check_need_restart(self, config):
