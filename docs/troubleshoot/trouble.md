@@ -171,6 +171,14 @@ See the [Dummy Matrix How-To](/howto/dummy_matrix.md) for more details.
 
 Search on youtube or similar for a frequency sweep audio test.
 
+## Sendspin / Music Assistant Compatibility
+
+For current version alignment guidance and known-compatible lines, see:
+
+- [Sendspin settings compatibility notes](/settings/sendspin.md)
+
+If your log shows repeated Sendspin handshake failures, verify both LedFx and server-side `aiosendspin` major lines against that page.
+
 ## Need more help?
 
 Reach out to the LedFx team through Discord. Preferably copy and paste

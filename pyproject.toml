@@ -42,7 +42,7 @@ dependencies = [
     "xled>=0.7.0",
     "samplerate-ledfx>=0.2.3",
     "audio-hotplug>=0.1.0",
-    "aiosendspin>=4.0.0; python_version >= '3.12'",
+    "aiosendspin>=6.0.5,<7.0.0; python_version >= '3.12'",
     "pyflac>=2.2.0; python_version >= '3.12'",
     "winrt-Windows.Foundation>=2.0.0; sys_platform == \"win32\"",
     "winrt-Windows.Media.Control>=2.0.0; sys_platform == \"win32\"",
