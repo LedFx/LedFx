@@ -27,7 +27,7 @@ dependencies = [
     "zeroconf>=0.131.0",
     "pillow>=10.1.0",
     "flux-led>=1.0.4",
-    "lifx-async>=5.1.0",
+    "lifx-async>=6.5.1",
     "python-osc>=1.8.3",
     "pybase64~=1.4.0",
     "mss~=10.1.0",
@@ -65,7 +65,7 @@ dev = [
     "pytest-order<2.0.0,>=1.2.0",
     "pytest-timeout>=2.3.0,<3.0.0",
     "ruff>=0.14.0,<0.15.0",
-    "lifx-emulator-core>=3.1.0",
+    "lifx-emulator-core>=3.8.0",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
