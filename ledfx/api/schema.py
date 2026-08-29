@@ -79,6 +79,7 @@ class SchemaEndpoint(RestEndpoint):
                         "id": effect_type,
                         "name": effect.NAME,
                         "category": effect.CATEGORY,
+                        "uses_melbank_range": effect.USES_MELBANK_RANGE,
                     }
 
                     if effect.HIDDEN_KEYS:

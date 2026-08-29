@@ -13,6 +13,7 @@ from ledfx.effects.math import triangle
 class MeltSparkle(AudioReactiveEffect, HSVEffect):
     NAME = "Melt and Sparkle"
     CATEGORY = "Atmospheric"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {

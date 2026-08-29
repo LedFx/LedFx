@@ -8,6 +8,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 class ScrollAudioEffect(AudioReactiveEffect):
     NAME = "Scroll"
     CATEGORY = "Classic"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {

@@ -8,6 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class EQAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Equalizer"
     CATEGORY = "2D"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {

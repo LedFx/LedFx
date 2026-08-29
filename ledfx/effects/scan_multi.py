@@ -40,6 +40,7 @@ class Scan:
 class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan Multi"
     CATEGORY = "Classic"
+    USES_MELBANK_RANGE = True
     HIDDEN_KEYS = ["gradient_roll"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "input_source",

@@ -19,6 +19,7 @@ class Waterfall(Twod, GradientEffect):
 
     NAME = "Waterfall"
     CATEGORY = "Matrix"
+    USES_MELBANK_RANGE = True
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_mode",
     ]

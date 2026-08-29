@@ -19,6 +19,7 @@ def interpolate_point(p1, p2, t):
 class Equalizer2d(Twod, GradientEffect):
     NAME = "Equalizer2d"
     CATEGORY = "Matrix"
+    USES_MELBANK_RANGE = True
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + [
         "peak_percent",

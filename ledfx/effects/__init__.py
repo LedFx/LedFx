@@ -283,6 +283,7 @@ class Effect(BaseRegistry):
     ADVANCED_KEYS = ["diag"]
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
+    USES_MELBANK_RANGE = False
     _config = None
     _active = False
     _virtual = None

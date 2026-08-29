@@ -23,6 +23,7 @@ class Water(AudioReactiveEffect, HSVEffect):
 
     NAME = "Water"
     CATEGORY = "Atmospheric"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
