@@ -211,16 +211,30 @@ class NanoleafDevice(NetworkedDevice):
         ).json()
 
         _LOGGER.debug("nanoleaf config response: %s", nanoleaf_config)
-        _LOGGER.info("parsing panel layout...")
 
-        panels = [
-            {"x": i["x"], "y": i["y"], "panelId": i["panelId"]}
-            for i in sorted(
-                nanoleaf_config["panelLayout"]["layout"]["positionData"],
-                key=lambda panel: (panel["x"], panel["y"]),
+        if "panelLayout" in nanoleaf_config:
+            _LOGGER.info("parsing panel layout...")
+            panels = [
+                {"x": i["x"], "y": i["y"], "panelId": i["panelId"]}
+                for i in sorted(
+                    nanoleaf_config["panelLayout"]["layout"]["positionData"],
+                    key=lambda panel: (panel["x"], panel["y"]),
+                )
+                if i["panelId"] != 0
+            ]
+        else:
+            # Nanoleaf Matter WiFi Essentials devices (Holiday String Lights,
+            # Essentials Lightstrips, Rope Lights, Floor Lamp, WiFi A19, etc.)
+            # do not expose panelLayout. Fall back to the /length endpoint
+            # to determine pixel count, and address LEDs by simple index.
+            _LOGGER.info(
+                "no panelLayout found, falling back to /length endpoint..."
             )
-            if i["panelId"] != 0
-        ]
+            length_response = requests.get(
+                self.url(self.config["auth_token"]) + "/length"
+            ).json()
+            num_leds = length_response["numLEDs"]
+            panels = [{"x": i, "y": 0, "panelId": i} for i in range(num_leds)]
 
         config = {
             "name": self.config["name"],
