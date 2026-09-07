@@ -230,9 +230,15 @@ class NanoleafDevice(NetworkedDevice):
             _LOGGER.info(
                 "no panelLayout found, falling back to /length endpoint..."
             )
-            length_response = requests.get(
-                self.url(self.config["auth_token"]) + "/length"
-            ).json()
+            try:
+                length_response = requests.get(
+                    self.url(self.config["auth_token"]) + "/length",
+                    timeout=2.0,
+                ).json()
+            except (ConnectTimeout, ReadTimeout) as e:
+                raise ValueError(
+                    f"{self.name} could not fetch Nanoleaf LED length: {e}"
+                ) from e
             num_leds = length_response["numLEDs"]
             panels = [{"x": i, "y": 0, "panelId": i} for i in range(num_leds)]
 
