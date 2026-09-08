@@ -54,6 +54,12 @@ launchpads = [
         "number": 0,
         "class": launchpad.LaunchpadS(),
     },
+    {
+        "name": "Launchpad Mini Mk1",
+        "search": "Launchpad Mini",
+        "number": 0,
+        "class": launchpad.LaunchpadS(),
+    },
 ]
 
 
