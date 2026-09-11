@@ -6,6 +6,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual import make_virtual_response
 from ledfx.config import save_config
+from ledfx.integrations.dmx_input import compute_dmx_mapped
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,8 +26,11 @@ class VirtualsEndpoint(RestEndpoint):
         """
         response = {"status": "success", "virtuals": {}}
         response["paused"] = self._ledfx.virtuals._paused
+        dmx_mapped_ids, _ = compute_dmx_mapped(self._ledfx)
         for virtual in self._ledfx.virtuals.values():
-            response["virtuals"][virtual.id] = make_virtual_response(virtual)
+            response["virtuals"][virtual.id] = make_virtual_response(
+                virtual, dmx_mapped_ids
+            )
 
         return web.json_response(data=response, status=200)
 

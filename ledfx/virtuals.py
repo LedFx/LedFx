@@ -32,6 +32,45 @@ from ledfx.utils import Teleplot, fps_to_sleep_interval, is_gap_device
 _LOGGER = logging.getLogger(__name__)
 
 
+def _apply_gradient_override(
+    frame: np.ndarray, lut: np.ndarray, lut_size: int
+) -> np.ndarray:
+    """Recolour *frame* using a gradient LUT indexed by per-pixel hue.
+
+    The effect's per-pixel **brightness** (HSV value = max RGB channel) is
+    preserved so beats, scrolls, and animations continue to show motion.
+    The *hue* of each pixel is used to select which gradient colour to use,
+    so a scrolling rainbow remaps cleanly to the override gradient palette.
+
+    Args:
+        frame:    N×3 float array (0–255), the assembled effect output.
+        lut:      L×3 float array (0–255), pre-sampled gradient at L positions.
+        lut_size: number of LUT entries (L).
+
+    Returns:
+        N×3 float array with gradient colours scaled by the effect's brightness.
+    """
+    f = frame / 255.0  # (N, 3) in [0, 1]
+    r, g, b = f[:, 0], f[:, 1], f[:, 2]
+    maxc = np.maximum(np.maximum(r, g), b)  # HSV value (brightness)
+    minc = np.minimum(np.minimum(r, g), b)
+    diff = maxc - minc
+
+    hue = np.zeros(len(frame), dtype=float)
+    chromatic = diff > 1e-6
+    mr = chromatic & (r == maxc)
+    mg = chromatic & (g == maxc) & ~mr
+    mb = chromatic & (b == maxc) & ~mr & ~mg
+    hue[mr] = ((g[mr] - b[mr]) / diff[mr]) % 6
+    hue[mg] = (b[mg] - r[mg]) / diff[mg] + 2
+    hue[mb] = (r[mb] - g[mb]) / diff[mb] + 4
+    hue /= 6.0  # normalise to [0, 1]
+
+    indices = np.clip((hue * (lut_size - 1)).astype(int), 0, lut_size - 1)
+    # Scale gradient colour by the effect's per-pixel brightness
+    return lut[indices] * maxc[:, np.newaxis]
+
+
 class Virtual:
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -208,6 +247,28 @@ class Virtual:
         # Precompiled device remap structure for fast pixel mapping
         # Maps virtual indices to device indices per device
         self._device_remap: dict = {}
+
+        # Color override: when set, overpaints assembled_frame before flush.
+        # Effects keep running in the background; override is instant on/off.
+        self._color_override: Optional[str] = None
+        self._color_override_frame: Optional[np.ndarray] = None
+        # For gradient overrides: 1024-entry LUT sampled by per-pixel hue.
+        self._color_override_lut: Optional[np.ndarray] = None
+
+        # DMX wash takeover (fixture mode): when active, the assembled frame is
+        # fully replaced by a solid colour (rgb * dimmer) before flush, so the
+        # virtual behaves like a dumb DMX wash fixture. The running effect is
+        # suppressed (not removed) and is revealed again the moment the takeover
+        # is cleared. Driven externally (e.g. the DMX input integration).
+        self._wash_active: bool = False
+        self._wash_rgb: Optional[np.ndarray] = None  # float array, 3, 0-255
+        self._wash_dimmer: float = 1.0
+
+        # DMX pause (device-level mute): when True, the DMX input integration
+        # must not apply any mapping (wash, color, or venue-trigger override)
+        # to this virtual. Persisted so it survives restarts, mirroring the
+        # "active" key stored in virtual_cfg.
+        self._dmx_paused: bool = False
 
         self._debug_flush_total = 0.0
         self._debug_last_report = time.perf_counter()
@@ -391,6 +452,9 @@ class Virtual:
                 if self.pixel_count != _pixel_count:
                     # chenging segments is a deep edit, just flush any transition
                     self._reactivate_effect()
+                    # Rebuild override frame if pixel count changed
+                    if self._color_override is not None:
+                        self._apply_color_override_to_effect()
 
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
@@ -526,7 +590,6 @@ class Virtual:
 
         if self.fallback_active:
             if self.fallback_effect_type is not None:
-
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx,
                     type=self.fallback_effect_type,
@@ -660,6 +723,9 @@ class Virtual:
                 )
                 return
             self._active_effect.activate(self)
+            # Re-apply any active colour override to the new effect
+            if self._color_override is not None:
+                self._apply_color_override_to_effect()
             self._ledfx.events.fire_event(
                 EffectSetEvent(
                     self._active_effect.name,
@@ -787,6 +853,162 @@ class Virtual:
         self.flush(self.assembled_frame)
         self._fire_update_event()
 
+    _GRADIENT_LUT_SIZE = 1024
+
+    def _build_override_frame(self):
+        """Build override data from the stored color/gradient string.
+
+        Returns:
+            (spatial_frame, gradient_lut) where:
+            - spatial_frame: N×3 float array, gradient sampled at pixel positions.
+              Used for solid colors, and as the static "preview" for gradients.
+            - gradient_lut: 1024×3 float array sampled uniformly 0→1, or None for
+              solid colors. Used at render time: per-pixel hue → LUT index → color.
+        """
+        if self._color_override is None or self.pixel_count == 0:
+            return None, None
+
+        from ledfx.color import RGB, Gradient, parse_gradient
+
+        try:
+            parsed = parse_gradient(self._color_override)
+        except Exception:
+            _LOGGER.warning(
+                "Virtual %s: invalid color override '%s', using white",
+                self.id,
+                self._color_override,
+            )
+            parsed = RGB(255, 255, 255)
+
+        n = self.pixel_count
+
+        if isinstance(parsed, RGB):
+            spatial = np.tile(
+                [parsed.red, parsed.green, parsed.blue], (n, 1)
+            ).astype(float)
+            return spatial, None  # solid colour: no LUT needed
+
+        # Gradient: build spatial frame (for static pad preview) + LUT
+        def _sample_hex(gradient, pos):
+            hex_c = gradient.sample(pos)
+            return (
+                int(hex_c[1:3], 16),
+                int(hex_c[3:5], 16),
+                int(hex_c[5:7], 16),
+            )
+
+        spatial = np.empty((n, 3), dtype=float)
+        for i in range(n):
+            r, g, b = _sample_hex(parsed, i / max(n - 1, 1))
+            spatial[i] = [r, g, b]
+
+        lut_size = self._GRADIENT_LUT_SIZE
+        lut = np.empty((lut_size, 3), dtype=float)
+        for i in range(lut_size):
+            r, g, b = _sample_hex(parsed, i / (lut_size - 1))
+            lut[i] = [r, g, b]
+
+        return spatial, lut
+
+    def _apply_color_override_to_effect(self):
+        """Internal: route override to the effect or to post-processing.
+
+        Called (inside self.lock) whenever the override is activated or the
+        pixel count changes while an override is active.
+        """
+        from ledfx.effects.gradient import GradientEffect
+
+        if self._color_override is None:
+            return
+
+        if isinstance(self._active_effect, GradientEffect):
+            # The effect handles colour natively — inject the override gradient
+            # so animations (roll, modulation, etc.) continue unaffected.
+            self._active_effect.set_gradient_override(self._color_override)
+            # No post-processing needed
+            self._color_override_frame = None
+            self._color_override_lut = None
+        else:
+            # Fallback: post-process the assembled frame for effects that don't
+            # expose a gradient config (e.g. Energy, custom solid-colour effects).
+            (
+                self._color_override_frame,
+                self._color_override_lut,
+            ) = self._build_override_frame()
+
+    def set_color_override(self, color_or_gradient: str):
+        """Activate a persistent colour override on this virtual.
+
+        For GradientEffect-based effects the override is injected directly into
+        the effect's gradient curve, so all animations continue in the new
+        colours (identical to changing the effect's colour via the UI).
+
+        For other effects the assembled frame is post-processed each cycle
+        using a luminance-preserving tint.
+        """
+        with self.lock:
+            self._color_override = color_or_gradient
+            self._apply_color_override_to_effect()
+
+    def clear_color_override(self):
+        """Remove the colour override; the running effect is immediately visible again."""
+        from ledfx.effects.gradient import GradientEffect
+
+        with self.lock:
+            self._color_override = None
+            self._color_override_frame = None
+            self._color_override_lut = None
+            if isinstance(self._active_effect, GradientEffect):
+                self._active_effect.clear_gradient_override()
+
+    def set_dmx_wash(self, rgb, dimmer: float = 1.0):
+        """Take the virtual over as a solid DMX wash fixture.
+
+        While active, the render thread replaces the assembled frame with a
+        solid ``rgb * dimmer`` colour, suppressing (but not removing) the
+        running effect. Intended for external DMX control (e.g. SoundSwitch via
+        the DMX input integration), so an LED run can be programmed alongside
+        real wash fixtures.
+
+        Args:
+            rgb: iterable of 3 values in the 0-255 range (R, G, B).
+            dimmer: master brightness multiplier in the 0.0-1.0 range.
+        """
+        rgb_arr = np.clip(np.asarray(rgb, dtype=float), 0, 255)
+        dimmer = float(np.clip(dimmer, 0.0, 1.0))
+        with self.lock:
+            self._wash_rgb = rgb_arr
+            self._wash_dimmer = dimmer
+            self._wash_active = True
+
+    def clear_dmx_wash(self):
+        """Release the DMX wash takeover; the running effect is visible again."""
+        with self.lock:
+            self._wash_active = False
+            self._wash_rgb = None
+            self._wash_dimmer = 1.0
+
+    @property
+    def wash_active(self) -> bool:
+        return self._wash_active
+
+    def set_dmx_paused(self, paused: bool):
+        """Mute (or unmute) DMX Input takeover for this virtual.
+
+        While paused, the DMX Input integration must not apply any mapping
+        (fixture wash, color tint, or venue-trigger override) to this
+        virtual. Pausing releases any currently owned wash/color override
+        immediately so the running effect is visible again right away,
+        instead of waiting for the next stale-stream timeout.
+        """
+        self._dmx_paused = bool(paused)
+        if self._dmx_paused:
+            self.clear_dmx_wash()
+            self.clear_color_override()
+
+    def is_dmx_paused(self) -> bool:
+        return self._dmx_paused
+
     def _fire_update_event(self, frame=None):
         if frame is None:
             frame = self.assembled_frame
@@ -852,6 +1074,35 @@ class Virtual:
                     # )
                     self.assembled_frame = self.assemble_frame()
                     if self.assembled_frame is not None and not self._paused:
+                        # DMX wash takeover (fixture mode) wins over everything:
+                        # replace the frame with a solid colour × dimmer.
+                        if self._wash_active and self._wash_rgb is not None:
+                            self.assembled_frame = (
+                                np.ones_like(self.assembled_frame)
+                                * self._wash_rgb
+                                * self._wash_dimmer
+                            )
+                        # Apply color override as a gel/tint keeping the effect's animation.
+                        elif self._color_override_lut is not None:
+                            # Gradient override: map each pixel's hue to the gradient LUT,
+                            # preserving the effect's per-pixel brightness (animation).
+                            self.assembled_frame = _apply_gradient_override(
+                                self.assembled_frame,
+                                self._color_override_lut,
+                                self._GRADIENT_LUT_SIZE,
+                            )
+                        elif self._color_override_frame is not None:
+                            # Solid colour override: tint by per-pixel luminance so the
+                            # effect's brightness pattern (beats, pulses) is preserved.
+                            luminance = (
+                                np.max(
+                                    self.assembled_frame, axis=1, keepdims=True
+                                )
+                                / 255.0
+                            )
+                            self.assembled_frame = (
+                                self._color_override_frame * luminance
+                            )
                         if not self._config["preview_only"]:
                             # self._ledfx.thread_executor.submit(self.flush)
                             # await self._ledfx.loop.run_in_executor(
@@ -1650,6 +1901,10 @@ class Virtuals:
             # via the active key if it exists. Let the setter deal with it
             if "active" in virtual_cfg and not virtual_cfg["active"]:
                 new_virtual.active = False
+
+            # Restore persisted DMX Input device-level pause flag.
+            if virtual_cfg.get("dmx_paused"):
+                new_virtual.set_dmx_paused(True)
 
             # global pause is handled differently to virtual pause
             if pause_all:
