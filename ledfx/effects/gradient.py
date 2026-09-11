@@ -36,6 +36,7 @@ class GradientEffect(Effect):
 
     _gradient_curve = None
     _gradient_roll_counter = 0
+    _gradient_override: "Optional[str]" = None  # venue colour override
 
     def _comb(self, N, k):
         N = int(N)
@@ -120,14 +121,33 @@ class GradientEffect(Effect):
         return max(self.pixel_count, 256)
 
     def _assert_gradient(self):
+        gradient_src = (
+            self._gradient_override
+            if self._gradient_override is not None
+            else self._config["gradient"]
+        )
         if (
             self._gradient_curve is None  # Uninitialized gradient
             or len(self._gradient_curve[0])
             != self.gradient_pixel_count  # Incorrect size
         ):
             self._generate_gradient_curve(
-                self._config["gradient"],
+                gradient_src,
                 self.gradient_pixel_count,
+            )
+
+    def set_gradient_override(self, gradient_str: str):
+        """Inject a temporary gradient override; the effect continues animating."""
+        with self.lock:
+            self._gradient_override = gradient_str
+            self._gradient_curve = None  # force rebuild on next frame
+
+    def clear_gradient_override(self):
+        """Restore the original gradient from config."""
+        with self.lock:
+            self._gradient_override = None
+            self._gradient_curve = (
+                None  # force rebuild from config on next frame
             )
 
     def roll_gradient(self):
