@@ -14,10 +14,15 @@ LedFx supports the full range of LIFX products through the [lifx-async](https://
 | **Multizone Strips** | LIFX Z Strip, Beam, Neon, String    | Varies (8-120) | Per-zone color control |
 | **Matrix Devices**   | LIFX Tile, Candle, Path, Spot, Luna | Varies         | Full 2D matrix support |
 | **Ceiling Lights**   | LIFX Ceiling (64 or 128 zones)      | 64-128         | Full 2D matrix support |
+| **Mirror**           | LIFX Mirror                         | 50             | Front and back strips  |
 
 ```{tip}
 The LIFX Candle, Path, and Spot are matrix devices, but with very few actual pixels. For example, the Path and Spot are 2x3. They create nice smooth mixes, but can't really display things like equalizers or text.
 ```
+
+### LIFX Mirror
+
+The LIFX Mirror has two rings of 25 zones each: a front ring facing the room and a back ring facing the wall. LedFx adds the Mirror as a single 50-pixel device (front zones first, then back zones) and also creates two 25-pixel strip virtuals, **`<name>-Front`** and **`<name>-Back`**, so each ring can run its own effect. Each ring is a closed loop around the mirror's capsule-shaped edge, so its first and last pixels sit next to each other.
 
 ## Key Features
 
@@ -140,6 +145,7 @@ When a LIFX device is added, LedFx queries the device to determine its type. If 
 | MultiZoneLight | LIFX Z, Lightstrip, Beam, Neon Flex, String                    |
 | MatrixLight    | LIFX Tile, Candle, Path, Spot, Luna, Tube                      |
 | CeilingLight   | LIFX Ceiling (Round), Ceiling 26" (Capsule)                    |
+| MirrorLight    | LIFX Mirror                                                    |
 
 The detected type, serial number, and device class are saved to configuration for faster subsequent connections.
 

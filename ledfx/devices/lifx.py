@@ -10,6 +10,7 @@ from lifx import (
     LifxError,
     Light,
     MatrixLight,
+    MirrorLight,
     MultiZoneLight,
     find_by_ip,
 )
@@ -20,7 +21,7 @@ from pydantic import Field
 from ledfx.configuration.fields import Fps
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
-from ledfx.utils import AVAILABLE_FPS, async_fire_and_forget
+from ledfx.utils import AVAILABLE_FPS, async_fire_and_forget, generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +37,7 @@ LIFX_TYPE_MAP = {
     "MultiZoneLight": "strip",
     "MatrixLight": "matrix",
     "CeilingLight": "matrix",
+    "MirrorLight": "mirror",
     "Device": "light",  # Fallback
 }
 
@@ -43,6 +45,7 @@ LIFX_TYPE_MAP = {
 LIFX_CLASS_MAP = {
     "MatrixLight": MatrixLight,
     "CeilingLight": CeilingLight,
+    "MirrorLight": MirrorLight,
     "MultiZoneLight": MultiZoneLight,
     "Light": Light,
     "HevLight": HevLight,
@@ -98,8 +101,16 @@ def numpy_rgb_to_hsbk(rgb_array: np.ndarray, kelvin: int = 3500) -> list:
 class LifxDevice(NetworkedDevice):
     """Unified LIFX device with auto-detection.
 
-    Automatically detects device type (bulb, strip, or matrix) on connection
-    and configures itself appropriately. Users only need to provide an IP.
+    Automatically detects device type (bulb, strip, matrix, or mirror) on
+    connection and configures itself appropriately. Users only need to provide
+    an IP.
+
+    The LIFX Mirror reports a 4x13 matrix, but its buffer interleaves two
+    closed rings (front and back) rather than forming a spatial grid. LedFx
+    drives it as a 50-pixel strip in zone order (front zones 0-24, then back
+    zones 25-49) and scatters each frame into the device buffer on flush.
+    When a Mirror is added, a "Front" and a "Back" 25-pixel strip virtual are
+    created so each ring can run its own effect.
     """
 
     class Config(NetworkedDevice.Config):
@@ -133,6 +144,10 @@ class LifxDevice(NetworkedDevice):
         self._matrix_width = 0
         self._matrix_height = 0
         self._perm = None
+
+        # Mirror-specific: buffer position of each zone, in zone order
+        self._mirror_positions = None
+        self._front_zone_count = 0
 
         # Animation module for matrix/strip (high performance)
         self._animator = None
@@ -179,8 +194,22 @@ class LifxDevice(NetworkedDevice):
                 )
 
                 # Get device info based on type
-                # CeilingLight is a subclass of MatrixLight
-                if isinstance(device, MatrixLight):
+                # CeilingLight and MirrorLight are subclasses of MatrixLight
+                if isinstance(device, MirrorLight):
+                    self._lifx_type = "mirror"
+                    self._device_type = "LIFX Mirror"
+                    self._zone_count = device.layout.zone_count
+                    self._config["pixel_count"] = self._zone_count
+                    self._front_zone_count = device.front_zone_count
+                    _LOGGER.info(
+                        "LIFX %s: Mirror with %d zones (front %d, back %d)",
+                        self._config["name"],
+                        self._zone_count,
+                        device.front_zone_count,
+                        device.back_zone_count,
+                    )
+
+                elif isinstance(device, MatrixLight):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
@@ -236,11 +265,26 @@ class LifxDevice(NetworkedDevice):
         except (LifxError, OSError) as e:
             _LOGGER.warning("LIFX %s: Detection failed: %s", self.config.name, e)
 
+    async def add_postamble(self):
+        """Create a strip virtual for each ring of a LIFX Mirror."""
+        if self._lifx_type != "mirror" or self._zone_count < 2:
+            return
+
+        front_count = self._front_zone_count or self._zone_count // 2
+        rings = (
+            ("Front", 0, front_count - 1),
+            ("Back", front_count, self._zone_count - 1),
+        )
+        for name, start, end in rings:
+            if self._ledfx.virtuals.get(generate_id(f"{self.name}-{name}")):
+                continue
+            self.sub_v(name, "mdi:mirror", [[start, end]], 1)
+
     @property
     def pixel_count(self):
         if self._lifx_type == "matrix":
             return self._total_pixels
-        elif self._lifx_type == "strip":
+        elif self._lifx_type in ("strip", "mirror"):
             return self._zone_count
         return self.config.pixel_count
 
@@ -341,6 +385,24 @@ class LifxDevice(NetworkedDevice):
 
                 self._animator = await Animator.for_matrix(self._device)
 
+            elif self._lifx_type == "mirror":
+                if serial:
+                    self._device = MirrorLight(serial=serial, ip=ip)
+                else:
+                    self._device = await MirrorLight.from_ip(ip)
+
+                # set_power() initialises state, which populates the version
+                # needed to look up the component layout
+                await self._device.set_power(True)
+
+                layout = self._device.layout
+                self._zone_count = layout.zone_count
+                self._mirror_positions = np.array(
+                    layout.front_positions + layout.back_positions,
+                    dtype=np.intp,
+                )
+                self._animator = await Animator.for_matrix(self._device)
+
             elif self._lifx_type == "strip":
                 if serial:
                     self._device = MultiZoneLight(serial=serial, ip=ip)
@@ -382,6 +444,7 @@ class LifxDevice(NetworkedDevice):
                     )
                 self._device = None
             self._animator = None
+            self._mirror_positions = None
             self._connected = False
             self._online = False
 
@@ -578,7 +641,7 @@ class LifxDevice(NetworkedDevice):
 
         # Use Animator for matrix/strip (high performance)
         # Keep connection-based for single bulbs
-        if self._lifx_type in ("matrix", "strip"):
+        if self._lifx_type in ("matrix", "strip", "mirror"):
             async_fire_and_forget(
                 self._create_animator(),
                 loop=self._ledfx.loop,
@@ -650,6 +713,15 @@ class LifxDevice(NetworkedDevice):
             # Animation module (synchronous, high performance)
             try:
                 pixels = data.astype(np.dtype("B")).reshape(-1, 3)
+                if self._mirror_positions is not None:
+                    # Scatter zone-ordered pixels into the Mirror's buffer;
+                    # unused buffer positions stay black
+                    positions = self._mirror_positions[: len(pixels)]
+                    canvas = np.zeros(
+                        (self._animator.pixel_count, 3), dtype=np.uint8
+                    )
+                    canvas[positions] = pixels[: len(positions)]
+                    pixels = canvas
                 pixel_count = min(len(pixels), self._animator.pixel_count)
                 hsbk_data = numpy_rgb_to_hsbk(pixels[:pixel_count])
 

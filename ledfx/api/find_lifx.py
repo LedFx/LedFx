@@ -35,6 +35,8 @@ LIFX_CATEGORY_MAP = {
     "MultiZoneLight": "strip",
     "MatrixLight": "matrix",
     "CeilingLight": "matrix",
+    # Mirror's 4x13 buffer is not spatial; LedFx drives it as a 50-zone strip
+    "MirrorLight": "strip",
     "Device": "light",  # Fallback for unknown types
 }
 
