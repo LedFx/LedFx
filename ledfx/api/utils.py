@@ -47,5 +47,6 @@ PERMITTED_KEYS = {
         "allowed_origins",
         "allowed_hosts",
         "allow_null_origin",
+        "snapcast_always_on",
     ),
 }

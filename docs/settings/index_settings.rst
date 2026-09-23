@@ -10,4 +10,5 @@ Settings
    general
    directing_audio
    sendspin
+   snapcast
    now_playing

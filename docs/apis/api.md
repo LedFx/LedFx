@@ -21,7 +21,8 @@ Returns basic information about the LedFx instance as JSON, including a `feature
   "developer_mode": false,
   "config_error": null,
   "features": {
-    "sendspin": true
+    "sendspin": true,
+    "snapcast": true
   }
 }
 ```
@@ -33,6 +34,7 @@ The `features` object provides boolean flags for optional backend capabilities t
 | Feature | Description | Requirement |
 |---------|-------------|-------------|
 | `sendspin` | Sendspin synchronized multi-room audio integration | Python 3.12+ and `aiosendspin` package |
+| `snapcast` | Snapcast client audio source | Always available (FLAC streams need pyFLAC) |
 
 When a feature is `false`, the corresponding API endpoints will return error responses and the frontend should hide the related UI.
 
