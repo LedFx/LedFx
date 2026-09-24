@@ -214,6 +214,18 @@ class SnapcastAudioStream:
                     backoff,
                     exc,
                 )
+            except Exception as exc:
+                # Never let an unexpected error end the client thread: the
+                # audio source would stay "active" but silent for good.
+                _LOGGER.error(
+                    "Unexpected Snapcast client error with %s:%s, "
+                    "reconnecting in %.0fs: %s",
+                    host,
+                    port,
+                    backoff,
+                    exc,
+                    exc_info=True,
+                )
             if not self._active:
                 break
             await asyncio.sleep(backoff)
@@ -423,6 +435,9 @@ class SnapcastAudioStream:
 
     def _decode_pcm(self, data):
         fmt = self._format
+        # Drop any trailing partial frame rather than failing the whole chunk
+        frame_bytes = max(1, fmt.bit_depth // 8) * max(1, fmt.channels)
+        data = data[: len(data) - len(data) % frame_bytes]
         if fmt.bit_depth == 16:
             audio = np.frombuffer(data, dtype="<i2").astype(np.float32)
         elif fmt.bit_depth == 24:
@@ -484,6 +499,10 @@ class SnapcastAudioStream:
     # Playback scheduling
     # ------------------------------------------------------------------
 
+    def _block_size(self):
+        rate = self._format.sample_rate if self._format else None
+        return max(1, (rate or self.DEFAULT_SAMPLE_RATE) // _BLOCKS_PER_SECOND)
+
     def _play_delay(self):
         return (self._buffer_ms - self._latency_ms) / 1000
 
@@ -494,7 +513,7 @@ class SnapcastAudioStream:
         if offset is None or self._format is None:
             return  # clock not synced yet; audio cannot be placed in time
         rate = self._format.sample_rate
-        block = rate // _BLOCKS_PER_SECOND
+        block = self._block_size()
         play_time = server_ts + self._play_delay() - offset
 
         with self._pending_lock:
@@ -533,19 +552,17 @@ class SnapcastAudioStream:
                 last_release = now
                 continue
 
-            if (
-                now - last_release >= self.SILENCE_AFTER
-                and now >= silence_next
-            ):
-                rate = (
-                    self._format.sample_rate
-                    if self._format
-                    else self.DEFAULT_SAMPLE_RATE
-                )
-                self._deliver(
-                    np.zeros(rate // _BLOCKS_PER_SECOND, dtype=np.float32)
-                )
-                silence_next = now + 1 / _BLOCKS_PER_SECOND
+            if now - last_release >= self.SILENCE_AFTER:
+                # Step from the previous block and catch up on any that are
+                # due, so silence keeps a steady 60 Hz even where the timer
+                # is coarse (asyncio.sleep resolves to ~15.6 ms on Windows).
+                if now - silence_next > self.MAX_LATE:
+                    silence_next = now
+                while silence_next <= now:
+                    self._deliver(
+                        np.zeros(self._block_size(), dtype=np.float32)
+                    )
+                    silence_next += 1 / _BLOCKS_PER_SECOND
 
             wait = 0.005
             if next_time is not None:
@@ -561,7 +578,7 @@ class SnapcastAudioStream:
             )
 
     def _report_error(self, error_type, message):
-        _LOGGER.error("Snapcast: %s", message)
+        _LOGGER.warning("Snapcast: %s", message)
         if self._ledfx is not None:
             self._ledfx.events.fire_event(
                 AudioSourceErrorEvent(

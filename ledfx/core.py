@@ -30,7 +30,11 @@ from ledfx.configuration.store import ConfigStore, backup_config_file
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+from ledfx.effects.audio import (
+    SNAPCAST_SERVERS,
+    AudioAnalysisSource,
+    AudioInputSource,
+)
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -299,8 +303,6 @@ class LedFxCore:
 
     def _load_snapcast_servers(self):
         """Load Snapcast server configurations from config into the audio system."""
-        from ledfx.effects.audio import SNAPCAST_SERVERS, AudioInputSource
-
         previous_valid = AudioInputSource.valid_device_indexes()
 
         snapcast_config = self.config.get("snapcast_servers", {})

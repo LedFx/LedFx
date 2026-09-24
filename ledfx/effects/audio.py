@@ -28,6 +28,7 @@ from ledfx.sendspin import SENDSPIN_AVAILABLE
 from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
 from ledfx.snapcast.config import HOSTAPI_NAME as SNAPCAST_HOSTAPI
 from ledfx.snapcast.config import is_always_on as is_snapcast_always_on
+from ledfx.snapcast.stream import SnapcastAudioStream
 
 # Sendspin server configurations discovered or configured
 SENDSPIN_SERVERS = {}
@@ -868,8 +869,6 @@ class AudioInputSource:
                     ledfx=self._ledfx,
                 )
             elif hostapis[device["hostapi"]]["name"] == SNAPCAST_HOSTAPI:
-                from ledfx.snapcast.stream import SnapcastAudioStream
-
                 AudioInputSource._stream = SnapcastAudioStream(
                     device["snapcast_config"],
                     self._audio_sample_callback,
@@ -1011,11 +1010,11 @@ class AudioInputSource:
         if not self._ledfx.config.get("snapcast_always_on", True):
             return False
         config = getattr(self, "_config", {})
-        configured_name = config.get("audio_device_name")
-        if isinstance(configured_name, str) and configured_name.startswith(
-            "SNAPCAST:"
-        ):
-            return True
+        network_source = network_audio_source(config.get("audio_device_name"))
+        if network_source and network_source[0] == "Snapcast":
+            # Only while the selected server is still configured; otherwise
+            # activating would fall back to a local device.
+            return network_source[1] in SNAPCAST_SERVERS
         return is_snapcast_always_on(
             config.get("audio_device"),
             self.query_devices,

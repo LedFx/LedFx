@@ -75,15 +75,29 @@ def eager_start(ledfx):
 
     # Lazy import to break circular dependency:
     # audio.py → snapcast/config.py → audio.py
-    from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+    from ledfx.effects.audio import (
+        SNAPCAST_SERVERS,
+        AudioAnalysisSource,
+        AudioInputSource,
+    )
 
-    if not (
-        device_name.startswith(DEVICE_PREFIX)
-        or is_always_on(
-            device_idx,
-            AudioInputSource.query_devices,
-            AudioInputSource.query_hostapis,
-        )
+    if device_name.startswith(DEVICE_PREFIX):
+        # If the selected server has been removed, starting audio would make
+        # the index validator fall back to a local device and overwrite the
+        # user's selection.  Leave the config alone; activation reports the
+        # missing source instead.
+        server_id = device_name[len(DEVICE_PREFIX) :].strip()
+        if server_id not in SNAPCAST_SERVERS:
+            _LOGGER.info(
+                "Snapcast always-on: selected server %r is not configured, "
+                "not starting audio",
+                server_id,
+            )
+            return
+    elif not is_always_on(
+        device_idx,
+        AudioInputSource.query_devices,
+        AudioInputSource.query_hostapis,
     ):
         return
 

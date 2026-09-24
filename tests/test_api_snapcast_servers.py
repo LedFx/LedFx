@@ -1,12 +1,14 @@
 """Unit tests for Snapcast server management API endpoints and device listing."""
 
 import json
+from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
+from ledfx.api.audio_devices import AudioDevicesEndpoint
 from ledfx.api.snapcast_server import SnapcastServerEndpoint
 from ledfx.api.snapcast_servers import SnapcastServersEndpoint
 from ledfx.effects.audio import (
@@ -14,6 +16,7 @@ from ledfx.effects.audio import (
     AudioInputSource,
     network_audio_source,
 )
+from ledfx.snapcast.config import eager_start as snapcast_eager_start
 
 
 class MockLedFx:
@@ -112,6 +115,9 @@ class TestListAndAdd:
             ({"id": "x", "host": ""}, "empty"),
             ({"id": "x", "host": "tcp://10.0.0.5"}, "not a URL"),
             ({"id": "x", "host": "bad host"}, "invalid characters"),
+            ({"id": "x", "host": "10.0.0.5\x00"}, "invalid characters"),
+            ({"id": "x", "host": "../etc/passwd"}, "invalid characters"),
+            ({"id": "x", "host": "10.0.0.5/x"}, "invalid characters"),
             ({"id": "x", "host": "h", "port": 70000}, "out of range"),
             ({"id": "x", "host": "h", "port": "1704"}, "integer"),
             ({"id": "x", "host": "h", "client_name": " "}, "client_name"),
@@ -247,8 +253,6 @@ class TestSelectDevice:
     async def test_selecting_device_reconciles_always_on(self):
         """PUT /api/audio/devices starts an always-on network source even when
         no effect is using audio yet (ledfx.audio is None)."""
-        from ledfx.api.audio_devices import AudioDevicesEndpoint
-
         ledfx = MagicMock()
         ledfx.audio = None
         ledfx.config = {"audio": {}}
@@ -282,3 +286,51 @@ class TestSelectDevice:
         )
         ledfx.reconcile_snapcast_always_on_runtime.assert_called_once()
         ledfx.reconcile_sendspin_always_on_runtime.assert_called_once()
+
+
+class TestAlwaysOnWithRemovedServer:
+    """Deleting the selected server must not make always-on open a local
+    device (the index validator would fall back to the default device and
+    overwrite the user's selection)."""
+
+    @pytest.fixture(autouse=True)
+    def servers(self):
+        saved = dict(SNAPCAST_SERVERS)
+        SNAPCAST_SERVERS.clear()
+        SNAPCAST_SERVERS["living-room"] = dict(LIVING_ROOM)
+        yield
+        SNAPCAST_SERVERS.clear()
+        SNAPCAST_SERVERS.update(saved)
+
+    @staticmethod
+    def ledfx_with(device_name):
+        return SimpleNamespace(
+            config={
+                "snapcast_always_on": True,
+                "audio": {
+                    "audio_device": 19,
+                    "audio_device_name": device_name,
+                },
+            },
+            audio=MagicMock(),
+        )
+
+    def test_eager_start_skips_removed_server(self):
+        ledfx = self.ledfx_with("SNAPCAST: deleted")
+        snapcast_eager_start(ledfx)
+        ledfx.audio.update_config.assert_not_called()
+
+    def test_eager_start_starts_configured_server(self):
+        ledfx = self.ledfx_with("SNAPCAST: living-room")
+        snapcast_eager_start(ledfx)
+        ledfx.audio.update_config.assert_called_once()
+
+    @pytest.mark.parametrize(
+        "device_name, keep_active",
+        [("SNAPCAST: living-room", True), ("SNAPCAST: deleted", False)],
+    )
+    def test_keep_active_only_while_configured(self, device_name, keep_active):
+        source = AudioInputSource.__new__(AudioInputSource)
+        source._ledfx = SimpleNamespace(config={})
+        source._config = {"audio_device": 19, "audio_device_name": device_name}
+        assert source._should_keep_snapcast_active() is keep_active

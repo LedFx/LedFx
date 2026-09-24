@@ -10,7 +10,7 @@ import struct
 import threading
 import time
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -103,12 +103,14 @@ class FakeSnapserver:
         chunks,
         muted=False,
         drop_connection=False,
+        settings=None,
     ):
         self.codec = codec
         self.codec_header = codec_header
         self.chunks = chunks
         self.muted = muted
         self.drop_connection = drop_connection
+        self.settings = settings
         self.hellos = []
         self.first_chunk_local_time = None
         self._ready = threading.Event()
@@ -176,7 +178,11 @@ class FakeSnapserver:
         if self.drop_connection:
             return
 
-        settings = {"bufferMs": BUFFER_MS, "latency": 0, "muted": self.muted}
+        settings = self.settings or {
+            "bufferMs": BUFFER_MS,
+            "latency": 0,
+            "muted": self.muted,
+        }
         self._send(
             writer, MessageType.SERVER_SETTINGS, protocol.encode_json(settings)
         )
@@ -298,6 +304,44 @@ class TestSnapcastStream:
         # silence keeps flowing at ~60 Hz so effects settle rather than freeze
         assert len(recorder.calls) > 40
         assert all(c[2] == 0 for c in recorder.calls)
+
+    def test_silence_rate_with_coarse_timer(self):
+        """Windows timers resolve asyncio.sleep to ~15.6 ms ticks; silence
+        must still be delivered at ~60 blocks per second."""
+        real_sleep = asyncio.sleep
+        tick = 0.0156
+
+        async def coarse_sleep(delay, *args, **kwargs):
+            ticks = max(1, -(-delay // tick)) if delay > 0 else 0
+            await real_sleep(ticks * tick, *args, **kwargs)
+
+        stream_asyncio = SimpleNamespace(
+            **{n: getattr(asyncio, n) for n in dir(asyncio) if n[0] != "_"}
+        )
+        stream_asyncio.sleep = coarse_sleep
+        chunks = pcm_stream(tone())
+        with FakeSnapserver("pcm", wav_header(), chunks, muted=True) as server:
+            with patch("ledfx.snapcast.stream.asyncio", stream_asyncio):
+                _, recorder = run_stream(server, 1.2)
+        silent = [c for c in recorder.calls if c[2] == 0]
+        span = silent[-1][0] - silent[0][0]
+        assert len(silent) / span == pytest.approx(60, abs=6)
+
+    def test_recovers_from_unexpected_error(self):
+        """A malformed message must not end the client thread."""
+        bad_settings = {"bufferMs": "not a number", "latency": 0}
+        with FakeSnapserver(
+            "pcm", wav_header(), [], settings=bad_settings
+        ) as server:
+            stream, _ = run_stream(server, 1.5)
+        assert len(server.hellos) >= 2
+
+    def test_partial_frame_is_dropped(self):
+        stream = SnapcastAudioStream({"host": "x"}, lambda *a: None)
+        stream._on_codec_header("pcm", wav_header(channels=2))
+        frames = np.array([[16384, 16384]], dtype="<i2").tobytes()
+        mono = stream._decode_pcm(frames + b"\x01\x02\x03")
+        assert mono == pytest.approx([0.5])
 
     def test_unsupported_codec_reports_error(self):
         ledfx = SimpleNamespace(events=MagicMock())
