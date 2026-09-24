@@ -327,13 +327,23 @@ class TestSnapcastStream:
         span = silent[-1][0] - silent[0][0]
         assert len(silent) / span == pytest.approx(60, abs=6)
 
-    def test_recovers_from_unexpected_error(self):
-        """A malformed message must not end the client thread."""
+    def test_reconnects_after_malformed_settings(self):
         bad_settings = {"bufferMs": "not a number", "latency": 0}
         with FakeSnapserver(
             "pcm", wav_header(), [], settings=bad_settings
         ) as server:
-            stream, _ = run_stream(server, 1.5)
+            run_stream(server, 1.5)
+        assert len(server.hellos) >= 2
+
+    def test_recovers_from_unexpected_error(self):
+        """An unexpected exception must not end the client thread."""
+        with FakeSnapserver("pcm", wav_header(), []) as server:
+            with patch.object(
+                SnapcastAudioStream,
+                "_on_codec_header",
+                side_effect=RuntimeError("boom"),
+            ):
+                run_stream(server, 1.5)
         assert len(server.hellos) >= 2
 
     def test_partial_frame_is_dropped(self):
@@ -420,6 +430,15 @@ class TestTiming:
         assert len(stream._pending) == 1
         stream._on_wire_chunk(20.0, block)  # stream jumped 10 s
         assert [t for t, _ in stream._pending] == pytest.approx([21.0])
+
+    @pytest.mark.parametrize(
+        "settings", [{"bufferMs": "abc"}, {"latency": None}]
+    )
+    def test_invalid_settings_are_a_protocol_error(self, settings):
+        stream = self.make_stream()
+        with pytest.raises(protocol.ProtocolError):
+            stream._on_server_settings(settings)
+        assert stream._buffer_ms == 1000
 
     def test_mute_clears_pending_audio(self):
         stream = self.make_stream()

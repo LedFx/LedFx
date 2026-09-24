@@ -131,6 +131,21 @@ class TestListAndAdd:
         assert list(ledfx.config["snapcast_servers"]) == ["living-room"]
         save.assert_not_called()
 
+    @pytest.mark.parametrize(
+        "host",
+        # Hosts are only passed to asyncio.open_connection, never used as a
+        # path or filename, so reserved names, loopback and IPv6 zone ids
+        # (which contain "%") are all legitimate.
+        ["CON", "PRN", "NUL", "127.0.0.1", "fe80::1%eth0"],
+    )
+    async def test_add_accepts_unusual_valid_hosts(self, api, host):
+        client, ledfx, *_ = api
+        data = await send(
+            client, "post", "/api/snapcast/servers", {"id": "x", "host": host}
+        )
+        assert data["status"] == "success"
+        assert ledfx.config["snapcast_servers"]["x"]["host"] == host
+
     async def test_add_duplicate(self, api):
         client, *_ = api
         data = await send(

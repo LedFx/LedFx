@@ -349,8 +349,15 @@ class SnapcastAudioStream:
         self._offset = statistics.median(self._offsets)
 
     def _on_server_settings(self, settings):
-        self._buffer_ms = int(settings.get("bufferMs", self._buffer_ms))
-        self._latency_ms = int(settings.get("latency", self._latency_ms))
+        try:
+            buffer_ms = int(settings.get("bufferMs", self._buffer_ms))
+            latency_ms = int(settings.get("latency", self._latency_ms))
+        except (TypeError, ValueError) as exc:
+            raise protocol.ProtocolError(
+                f"invalid server settings: {exc}"
+            ) from exc
+        self._buffer_ms = buffer_ms
+        self._latency_ms = latency_ms
         muted = bool(settings.get("muted", False))
         if muted and not self._muted:
             self._clear_pending()
