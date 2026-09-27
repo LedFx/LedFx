@@ -71,7 +71,7 @@ build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
     "sphinx<9.1.1; python_version >= \"3.10\"",
     "sphinxcontrib-websupport==2.0.0; python_version >= \"3.10\"",
-    "sphinxcontrib-httpdomain==1.8.1; python_version >= \"3.10\"",
+    "sphinxcontrib-httpdomain==2.0.0; python_version >= \"3.10\"",
     "sphinx-autodoc-typehints==3.0.1; python_version >= \"3.10\"",
     "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
     "sphinx-autobuild; python_version >= \"3.10\"",
