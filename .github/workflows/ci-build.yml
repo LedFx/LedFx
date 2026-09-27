@@ -4,10 +4,6 @@ on:
   pull_request:
     branches:
       - main
-    paths-ignore:
-      - 'frontend/**'
-      - 'docs/**'
-      - 'ledfx_frontend/**'
   schedule:
     - cron: '0 8 * * *'
   workflow_dispatch:
@@ -16,8 +12,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Docs/frontend-only PRs skip the builds here rather than with paths-ignore:
+  # a workflow skipped by paths-ignore never reports, so the required
+  # "CI passed" check would wait forever. Skipped jobs count as passed.
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$PR" ]; then echo "code=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          if echo "$files" | grep -qvE '^(frontend|docs|ledfx_frontend)/'; then
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build-ledfx-linux:
     name: Build LedFx (Ubuntu)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -67,6 +90,8 @@ jobs:
 
   build-ledfx-windows:
     name: Build LedFx (Windows)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: windows-2022   # this is pinned until we understand why the new 2025 latest has audio device issues
     strategy:
       matrix:
@@ -112,6 +137,8 @@ jobs:
 
   build-ledfx-osx:
     name: Build LedFx (OS X)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: macos-15-intel
     strategy:
       matrix:
@@ -155,6 +182,8 @@ jobs:
 
   build-ledfx-osx-m1:
     name: Build LedFx (OS X) (Apple Silicon)
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: macos-latest
     strategy:
       matrix:
@@ -201,6 +230,8 @@ jobs:
           path: ${{ github.workspace }}/debug_config/ledfx.log
 
   build-ledfx-docker:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -254,3 +285,21 @@ jobs:
         with:
           name: ledfx-log-${{ runner.os }}-${{ env.IMAGE_NAME }}-${{ matrix.ARCH }}-docker.log
           path: ${{ github.workspace }}/ledfx.log
+
+  # The one check branch protection requires: the matrix job names change
+  # whenever a Python version is added, this one doesn't.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs:
+      - changes
+      - build-ledfx-linux
+      - build-ledfx-windows
+      - build-ledfx-osx
+      - build-ledfx-osx-m1
+      - build-ledfx-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>LedFx/renovate-config"],
+  "packageRules": [
+    {
+      "description": "Windows CI is pinned to windows-2022 on purpose: windows-2025 has audio device issues (see ci-build.yml). Move it by hand once that is understood.",
+      "matchManagers": ["github-actions"],
+      "matchDepNames": ["windows"],
+      "enabled": false
+    }
+  ]
+}
