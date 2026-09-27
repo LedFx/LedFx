@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13"]
+        python: ["3.11", "3.12", "3.13", "3.14"]
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
@@ -126,7 +126,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.13"] # oldest and newest supported
+        python: ["3.11", "3.14"] # oldest and newest supported
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
@@ -159,7 +159,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.13"] # oldest and newest supported
+        python: ["3.11", "3.14"] # oldest and newest supported
     env:
       UV_PYTHON: ${{ matrix.python }}
       CFLAGS: -Wno-incompatible-function-pointer-types

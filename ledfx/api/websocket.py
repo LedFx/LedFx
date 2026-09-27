@@ -1,5 +1,6 @@
 import asyncio
 import binascii
+import inspect
 import json
 import logging
 import struct
@@ -381,7 +382,7 @@ class WebsocketConnection:
                 if message["type"] in websocket_handlers:
                     # Phase 1: Support async handlers
                     handler = websocket_handlers[message["type"]]
-                    if asyncio.iscoroutinefunction(handler):
+                    if inspect.iscoroutinefunction(handler):
                         await handler(self, message)
                     else:
                         handler(self, message)
