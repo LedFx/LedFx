@@ -1,6 +1,2 @@
-import sys,os
-from typing import List
-
-
-def probe( names:List[str] )->List[str]:
-    return [ "{}!".format(n) for n in names if n!="" ]   
+def probe(names: list[str]) -> list[str]:
+    return [f"{n}!" for n in names if n != ""]
