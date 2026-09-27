@@ -253,9 +253,7 @@ class Device(BaseRegistry):
 
     @cached_property
     def _virtuals_objs(self):
-        return list(  # noqa: C400
-            self._ledfx.virtuals.get(virtual_id) for virtual_id in self.virtuals
-        )
+        return [self._ledfx.virtuals.get(virtual_id) for virtual_id in self.virtuals]
 
     @property
     def active_virtuals(self):
@@ -264,7 +262,7 @@ class Device(BaseRegistry):
         it's a list bc there can be more than one virtual streaming
         to a device.
         """
-        return list(virtual.id for virtual in self._virtuals_objs if virtual.active)  # noqa: C400
+        return [virtual.id for virtual in self._virtuals_objs if virtual.active]
 
     @property
     def online(self):
@@ -275,7 +273,7 @@ class Device(BaseRegistry):
 
     @cached_property
     def virtuals(self):
-        return list(segment[0] for segment in self._segments)  # noqa: C400
+        return [segment[0] for segment in self._segments]
 
     def add_segments_batch(self, virtual_id, segments, force=False):
         """Add multiple segments efficiently with single overlap check.
@@ -471,9 +469,9 @@ class Device(BaseRegistry):
             active = virtual.active
             if active:
                 virtual.deactivate()
-            virtual._segments = list(  # noqa: C400
+            virtual._segments = [
                 segment for segment in virtual._segments if segment[0] != self.id
-            )
+            ]
             # Invalidate cached properties that depend on _segments
             virtual.invalidate_cached_props()
 

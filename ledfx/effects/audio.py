@@ -1693,7 +1693,7 @@ class AudioReactiveEffect(Effect):
         """
         melbank = self.melbank(**kwargs)
         mel_length = len(melbank)
-        splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))  # noqa: C417
+        splits = tuple(int(i * mel_length) for i in [0.2, 0.5])
 
         thirds = np.split(melbank, splits)
 

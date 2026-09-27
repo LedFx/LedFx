@@ -1258,12 +1258,12 @@ class Virtual:
         """
         Return an iterable of the device object of each segment of the virtual
         """
-        return list(  # noqa: C400
+        return [
             self._ledfx.devices.get(device_id)
             for device_id in {segment[0] for segment in self._segments}
             if not device_id.startswith("gap-")
             and self._ledfx.devices.get(device_id) is not None
-        )
+        ]
 
     @cached_property
     def refresh_rate(self):
