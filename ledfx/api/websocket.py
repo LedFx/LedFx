@@ -393,7 +393,7 @@ class WebsocketConnection:
 
                 ws_msg = await socket.receive()
 
-        except (vol.Invalid, ValueError):
+        except vol.Invalid, ValueError:
             _LOGGER.info("Invalid message format.")
             if message is not None:
                 msg_id = message.get("id")
@@ -406,7 +406,7 @@ class WebsocketConnection:
             else:
                 _LOGGER.exception("Unexpected TypeError: %s", e)
 
-        except (asyncio.CancelledError, futures.CancelledError):
+        except asyncio.CancelledError, futures.CancelledError:
             _LOGGER.info("Connection cancelled")
         # Hopefully get rid of the aiohttp connection reset errors
         except ConnectionResetError:

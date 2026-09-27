@@ -734,7 +734,7 @@ class AudioInputSource:
                     device_name = input_devices[device_idx].get(
                         "name", f"index {device_idx}"
                     )
-                except (IndexError, KeyError, TypeError):
+                except IndexError, KeyError, TypeError:
                     device_name = f"index {device_idx}"
                 _LOGGER.warning(
                     "Audio device [%s] '%s' not in valid devices. "

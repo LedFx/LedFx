@@ -377,7 +377,7 @@ class LifxDevice(NetworkedDevice):
             if self._device:
                 try:
                     await self._device.close()
-                except (LifxError, OSError):
+                except LifxError, OSError:
                     _LOGGER.debug(
                         "LIFX %s: Device close failed after animator error",
                         self.name,

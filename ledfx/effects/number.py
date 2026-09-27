@@ -153,7 +153,7 @@ class Number(Texter2d):
             )
             try:
                 formatted = format_str.format(abs(value))
-            except (ValueError, OverflowError):
+            except ValueError, OverflowError:
                 if digits_after > 0:
                     formatted = "#" * (digits_before - 1 + 1 + digits_after)
                 else:
@@ -169,7 +169,7 @@ class Number(Texter2d):
             )
             try:
                 formatted = format_str.format(abs(value))
-            except (ValueError, OverflowError):
+            except ValueError, OverflowError:
                 if digits_after > 0:
                     formatted = "#" * (digits_before + 1 + digits_after)
                 else:

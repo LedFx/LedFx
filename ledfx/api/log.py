@@ -129,7 +129,7 @@ class LogWebsocket:
             else:
                 _LOGGER.exception("Unexpected TypeError: %s", e)
 
-        except (asyncio.CancelledError, futures.CancelledError):
+        except asyncio.CancelledError, futures.CancelledError:
             _LOGGER.info("Logging connection cancelled")
         # Hopefully get rid of the aiohttp connection reset errors
         except ConnectionResetError:
@@ -172,7 +172,7 @@ class LogWebsocket:
             else:
                 _LOGGER.exception("Unexpected TypeError: %s", e)
 
-        except (asyncio.CancelledError, futures.CancelledError):
+        except asyncio.CancelledError, futures.CancelledError:
             _LOGGER.info("Logging connection cancelled")
         # Hopefully get rid of the aiohttp connection reset errors
         except ConnectionResetError:

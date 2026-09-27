@@ -660,7 +660,7 @@ class Events:
             self._listeners[event_type].remove(listener)
             if not self._listeners[event_type]:
                 self._listeners.pop(event_type)
-        except (KeyError, ValueError):
+        except KeyError, ValueError:
             _LOGGER.warning("Failed to remove event listener %s", listener)
 
 

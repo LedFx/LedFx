@@ -19,7 +19,7 @@ from ledfx.sendspin.config import BUFFER_CAPACITY, MANUFACTURER, PRODUCT_NAME
 
 try:
     import pyflac
-except (ImportError, OSError):
+except ImportError, OSError:
     pyflac = None
 
 try:

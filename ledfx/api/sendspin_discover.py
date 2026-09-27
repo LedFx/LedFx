@@ -50,7 +50,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
             timeout = float(
                 request.rel_url.query.get("timeout", _DEFAULT_TIMEOUT)
             )
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             return await self.invalid_request("timeout must be a number")
 
         if not (_MIN_TIMEOUT <= timeout <= _MAX_TIMEOUT):

@@ -465,7 +465,7 @@ def load_config(config_dir: str) -> dict:
                     config_json["configuration_version"]
                 ) == parse_version(CONFIGURATION_VERSION)
                 return CORE_CONFIG_SCHEMA(config_json)
-            except (KeyError, AssertionError):
+            except KeyError, AssertionError:
                 create_backup(config_dir, "VERSION")
                 _LOGGER.warning(
                     "LedFx config version: %s, your config version: %s",
@@ -628,7 +628,7 @@ def migrate_config(old_config):
                         ]
                     schema[new_key](old_config[old_key])
                     new_config[new_key] = old_config[old_key]
-                except (vol.MultipleInvalid, vol.InInvalid, Exception):
+                except vol.MultipleInvalid, vol.InInvalid, Exception:
                     _LOGGER.warning(
                         "Preset for %s with config item %s : %s is invalid. Discarding.",
                         effect_type,

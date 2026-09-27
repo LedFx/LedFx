@@ -81,7 +81,7 @@ class FindLifxEndpoint(RestEndpoint):
 
         try:
             label = await device.get_label()
-        except (LifxError, OSError):
+        except LifxError, OSError:
             label = f"LIFX {device.serial[-6:]}"
 
         device_info = {
@@ -357,7 +357,7 @@ class FindLifxEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Invalid discovery_timeout: must be greater than 0 and at most 300 seconds"
                 )
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             _LOGGER.warning(
                 "Invalid discovery_timeout: non-numeric value: %s",
                 request.query.get("discovery_timeout"),

@@ -53,7 +53,7 @@ def reset_logging():
                     handler.acquire()
                     handler.flush()
                     handler.close()
-                except (OSError, ValueError):
+                except OSError, ValueError:
                     pass
                 finally:
                     handler.release()

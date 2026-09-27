@@ -121,7 +121,7 @@ class ConfigEndpoint(RestEndpoint):
                 assert parse_version(
                     config["configuration_version"]
                 ) == parse_version(CONFIGURATION_VERSION)
-            except (KeyError, AssertionError):
+            except KeyError, AssertionError:
                 _LOGGER.warning(
                     "LedFx config version: %s, import config version: %s",
                     CONFIGURATION_VERSION,
