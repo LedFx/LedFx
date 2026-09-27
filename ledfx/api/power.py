@@ -37,7 +37,7 @@ class InfoEndpoint(RestEndpoint):
         if timeout is None:
             timeout = 0
 
-        if action not in self.exit_codes.keys():  # noqa: SIM118
+        if action not in self.exit_codes:
             return await self.invalid_request(
                 f"Action {action} not in {list(self.exit_codes.keys())}"
             )

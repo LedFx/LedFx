@@ -108,7 +108,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             schema = effect.schema().schema
-            for setting in schema.keys():  # noqa: SIM118
+            for setting in schema:
                 if setting in ignore_settings:
                     continue
                 # Booleans
@@ -157,7 +157,7 @@ class EffectsEndpoint(RestEndpoint):
                 # add color_blend and set to False in your effect to prevent effect recreation on color change
                 # leave as a switch or add to HIDDEN_KEYS
                 if virtual.active_effect.config.get("color_blend", True) and next(
-                    (key for key in effect_config.keys() if "color" in key),  # noqa: SIM118
+                    (key for key in effect_config if "color" in key),
                     None,
                 ):
                     effect = self._ledfx.effects.create(
@@ -240,7 +240,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             schema = effect.schema().schema
-            for setting in schema.keys():  # noqa: SIM118
+            for setting in schema:
                 if setting in ignore_settings:
                     continue
                 # Booleans

@@ -514,7 +514,7 @@ def generate_typescript_types() -> str:
         if isinstance(base_device_schema_object.schema, dict):
             base_schema_dict = base_device_schema_object.schema
             _LOGGER.info("Base schema dict created. Extracting keys...")
-            for k in base_schema_dict.keys():  # noqa: SIM118
+            for k in base_schema_dict:
                 key_name = str(
                     k.schema if isinstance(k, (vol.Required, vol.Optional)) else k
                 )

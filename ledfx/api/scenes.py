@@ -74,7 +74,7 @@ class ScenesEndpoint(RestEndpoint):
                 'Required attribute "id" was not provided'
             )
 
-        if scene_id not in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+        if scene_id not in self._ledfx.config["scenes"]:
             error_message = f"Scene {scene_id} does not exist"
             _LOGGER.warning(error_message)
             return await self.invalid_request()
@@ -120,7 +120,7 @@ class ScenesEndpoint(RestEndpoint):
                 'Required attribute "id" was not provided'
             )
 
-        if scene_id not in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+        if scene_id not in self._ledfx.config["scenes"]:
             return await self.invalid_request(f"Scene {scene_id} does not exist")
 
         scene = self._ledfx.config["scenes"][scene_id]
@@ -197,7 +197,7 @@ class ScenesEndpoint(RestEndpoint):
         if scene_id:
             # ID provided - must be an update
             sanitized_id = generate_id(scene_id)
-            if sanitized_id not in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+            if sanitized_id not in self._ledfx.config["scenes"]:
                 error_message = f"Scene with id '{scene_id}' does not exist. To create a new scene, omit the 'id' field."
                 _LOGGER.warning(error_message)
                 return await self.invalid_request(error_message)
@@ -233,7 +233,7 @@ class ScenesEndpoint(RestEndpoint):
             dupe_id = generate_id(scene_name)
             dupe_index = 1
             scene_id = dupe_id
-            while scene_id in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+            while scene_id in self._ledfx.config["scenes"]:
                 scene_id = f"{dupe_id}-{dupe_index}"
                 dupe_index = dupe_index + 1
 

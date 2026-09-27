@@ -106,7 +106,7 @@ class QLCEndpoint(RestEndpoint):
                 f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
-        if scene_id not in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+        if scene_id not in self._ledfx.config["scenes"]:
             return await self.invalid_request(f"Scene {scene_id} does not exist")
 
         integration.add_trigger(scene_id, song_id, song_name, song_position)

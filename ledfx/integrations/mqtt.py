@@ -90,7 +90,7 @@ class MQTT(Integration):
                 _LOGGER.warning("%s", response)
                 return
             _LOGGER.warning("%s", self._ledfx.config["scenes"].keys())
-            if scene_id not in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+            if scene_id not in self._ledfx.config["scenes"]:
                 response = {
                     "status": "failed",
                     "reason": f'Scene "{scene_id}" does not exist',
@@ -102,7 +102,7 @@ class MQTT(Integration):
 
             for virtual in self._ledfx.virtuals.values():
                 # Check virtual is in scene, make no changes if it isn't
-                if virtual.id not in scene["virtuals"].keys():  # noqa: SIM118
+                if virtual.id not in scene["virtuals"]:
                     _LOGGER.info(
                         "virtual with id %s has no data in scene %s",
                         virtual.id,

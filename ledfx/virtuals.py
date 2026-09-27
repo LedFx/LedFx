@@ -1382,10 +1382,7 @@ class Virtual:
                             ]
                         else:
                             _LOGGER.info("virtual of %s has no transitions", virtual_id)
-            if (
-                "frequency_min" in new_config.keys()  # noqa: SIM118
-                or "frequency_max" in new_config.keys()  # noqa: SIM118
-            ):
+            if "frequency_min" in new_config or "frequency_max" in new_config:
                 # Validate, adjust, and update frequency range
                 self._validate_and_set_frequency_range(_config)
 
@@ -1608,7 +1605,7 @@ class Virtuals:
         # Find the first valid id based on what is already in the registry
         dupe_id = id
         dupe_index = 1
-        while id in self._virtuals.keys():  # noqa: SIM118
+        while id in self._virtuals:
             id = f"{dupe_id}-{dupe_index}"
             dupe_index = dupe_index + 1
 
@@ -1830,7 +1827,7 @@ def apply_config_to_active_effects(
 
         # Normalise schema keys (handle vol.Optional/Required wrappers)
         normalized_keys = set()
-        for schema_key in schema.keys():  # noqa: SIM118
+        for schema_key in schema:
             if hasattr(schema_key, "schema"):
                 normalized_keys.add(schema_key.schema)
             else:

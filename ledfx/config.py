@@ -76,7 +76,7 @@ class Transmission:
     def get_list():
         transmission_dict = vars(Transmission)
         t_list = []
-        for attribute in transmission_dict.keys():  # noqa: SIM118
+        for attribute in transmission_dict:
             if attribute[:2] != "__" and attribute != "get_list":
                 t_list.append(getattr(Transmission, attribute))
         return t_list

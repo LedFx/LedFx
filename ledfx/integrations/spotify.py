@@ -64,14 +64,14 @@ class Spotify(Integration):
     def add_trigger(self, scene_id, song_id, song_name, song_position):
         """Add a trigger to saved triggers"""
         trigger_id = f"{song_id}-{song_position!s}"
-        if scene_id not in self._data.keys():  # noqa: SIM118
+        if scene_id not in self._data:
             self._data[scene_id] = {}
         self._data[scene_id][trigger_id] = [song_id, song_name, song_position]
 
     def delete_trigger(self, trigger_id):
         """Delete a trigger from saved triggers"""
-        for scene_id in self._data.keys():  # noqa: SIM118
-            if trigger_id in self._data[scene_id].keys():  # noqa: SIM118
+        for scene_id in self._data:
+            if trigger_id in self._data[scene_id]:
                 del self._data[scene_id][trigger_id]
 
     async def connect(self, msg=None):

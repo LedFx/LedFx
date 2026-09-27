@@ -63,7 +63,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
             self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
         )
 
-        if effect_id in self._ledfx.config["user_presets"].keys():  # noqa: SIM118
+        if effect_id in self._ledfx.config["user_presets"]:
             custom = self._ledfx.config["user_presets"][effect_id]
         else:
             custom = {}
@@ -131,11 +131,11 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if category == "ledfx_presets" and preset_id == "reset":
             effect_config = generate_default_config(self._ledfx.effects, effect_id)
         else:
-            if effect_id not in self._ledfx.config[category].keys():  # noqa: SIM118
+            if effect_id not in self._ledfx.config[category]:
                 return await self.invalid_request(
                     f"Effect {effect_id} does not exist in category {category}"
                 )
-            if preset_id not in self._ledfx.config[category][effect_id].keys():  # noqa: SIM118
+            if preset_id not in self._ledfx.config[category][effect_id]:
                 return await self.invalid_request(
                     f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
                 )
@@ -206,7 +206,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         effect_id = virtual.active_effect.type
 
         # If no presets for the effect, create a dict to store them
-        if effect_id not in self._ledfx.config["user_presets"].keys():  # noqa: SIM118
+        if effect_id not in self._ledfx.config["user_presets"]:
             self._ledfx.config["user_presets"][effect_id] = {}
 
         # Update the preset if it already exists, else create it
