@@ -62,6 +62,8 @@ dev = [
     "pytest-timeout>=2.3.0,<3.0.0",
     "lifx-emulator-core>=3.8.0",
     "prek>=0.5.3",
+    # Keep in sync with the ruff-pre-commit rev in .pre-commit-config.yaml
+    "ruff==0.16.4",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
