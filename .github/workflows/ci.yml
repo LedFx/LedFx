@@ -511,6 +511,9 @@ jobs:
 
   # Release: tag v<version> only. Each job only downloads tested artifacts and
   # publishes them; one approval of the production environment releases all.
+  # GitHub approves per environment, so that holds only while every production
+  # job has the same needs and reaches the gate together. A job with extra
+  # needs would wait at the gate later and ask for a second approval.
   github-release:
     name: Publish GitHub release
     needs: [plan, ci-passed]
