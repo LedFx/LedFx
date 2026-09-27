@@ -42,7 +42,7 @@ dependencies = [
     "xled>=0.7.0",
     "samplerate-ledfx>=0.2.3",
     "audio-hotplug>=0.1.0",
-    "aiosendspin>=6.0.5,<7.0.0; python_version >= '3.12'",
+    "aiosendspin>=9.1.1,<9.2.0; python_version >= '3.12'",
     "pyflac>=2.2.0; python_version >= '3.12'",
     "winrt-Windows.Foundation>=2.0.0; sys_platform == \"win32\"",
     "winrt-Windows.Media.Control>=2.0.0; sys_platform == \"win32\"",
@@ -122,6 +122,14 @@ timeout = 30
 # A bit slower, but it works for our use case
 link-mode = "copy"
 default-groups = []
+# cryptography 49 dropped x86_64 macOS. Built from source there it links
+# Homebrew's libssl.3.dylib, which clashes with Python's own libssl in the
+# frozen macOS Intel app (ImportError: SSL_get0_group_name). 48.0.1 is the
+# last release with Intel wheels (OpenSSL statically linked). Only LedFx's
+# lock and builds see this; pip installs are unaffected.
+constraint-dependencies = [
+    "cryptography<49; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 
 [tool.ruff.lint]
 select = ["G004"]
