@@ -141,6 +141,17 @@ jobs:
       - name: Install LedFx
         run: uv sync --all-extras --dev
       - uses: LABSN/sound-ci-helpers@d08c889a7bba7d9b1b059f8f76dac4672ea3a9cf # v1.0.4
+      # The LIFX emulator (tests/conftest.py) binds UDP 56700, inside Windows'
+      # dynamic port range. winnat reserves random blocks of that range at
+      # boot; when one covers 56700 the bind fails with WinError 10013.
+      # Reserve the port while winnat is stopped so it can't be taken.
+      - name: Reserve UDP 56700 for the LIFX emulator
+        run: |
+          net stop winnat
+          netsh int ipv4 add excludedportrange protocol=udp startport=56700 numberofports=1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          net start winnat
+          netsh int ipv4 show excludedportrange protocol=udp
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
