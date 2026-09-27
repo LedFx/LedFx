@@ -507,3 +507,92 @@ jobs:
       - name: Fail if any job failed or was cancelled
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
+
+  # Release: tag v<version> only. Each job only downloads tested artifacts and
+  # publishes them; one approval of the production environment releases all.
+  github-release:
+    name: Publish GitHub release
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: release-*
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: LedFx ${{ needs.plan.outputs.version }}
+          files: LedFx-*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+  pypi:
+    name: Publish to PyPI
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write # Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  docker-latest:
+    name: Publish Docker latest
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create release manifests
+        run: |
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            docker buildx imagetools create -t "$image:latest" -t "$image:$VERSION" -t "$image:$GITHUB_SHA" \
+              "$image:edge-amd64-$GITHUB_SHA" "$image:edge-arm64-$GITHUB_SHA"
+          done
+
+  sentry:
+    name: Notify Sentry of release
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6 # commit history for Sentry only; nothing is built
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN_V2 }}
+          SENTRY_ORG: ledfx-org
+          SENTRY_PROJECT: ledfx-v2-rel
+        with:
+          environment: production
+          release: ledfx@${{ needs.plan.outputs.version }}
