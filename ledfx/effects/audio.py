@@ -591,9 +591,10 @@ class AudioInputSource:
         else:
             old_config = None
 
-        if AudioInputSource._audio_stream_active:  # noqa: SIM102
-            if device_changing or pipeline_changing:
-                self.deactivate()
+        if AudioInputSource._audio_stream_active and (
+            device_changing or pipeline_changing
+        ):
+            self.deactivate()
 
         self._config = new_config
         # Resolve device by name if available (handles index drift across restarts)
@@ -605,9 +606,10 @@ class AudioInputSource:
             last_active = AudioInputSource._last_active
 
         # Activate outside the lock to avoid deadlock
-        if len(self._callbacks) != 0 or self._should_always_keep_active():  # noqa: SIM102
-            if not AudioInputSource._audio_stream_active:
-                self.activate()
+        if (
+            len(self._callbacks) != 0 or self._should_always_keep_active()
+        ) and not AudioInputSource._audio_stream_active:
+            self.activate()
 
         # Check if device changed and fire event if needed
         with AudioInputSource._class_lock:
@@ -1045,11 +1047,10 @@ class AudioInputSource:
         for key, value in devices.items():
             # Case 1: Stored name is substring of current device name
             # This handles truncation where stored name is shorter
-            if device_name in value:  # noqa: SIM102
+            if device_name in value and len(value) > best_match_len:
                 # Prefer longer matches to find the most specific device
-                if len(value) > best_match_len:
-                    best_match_idx = key
-                    best_match_len = len(value)
+                best_match_idx = key
+                best_match_len = len(value)
 
         if best_match_idx != -1:
             _LOGGER.debug(

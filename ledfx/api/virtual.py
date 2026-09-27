@@ -73,21 +73,20 @@ class VirtualEndpoint(RestEndpoint):
             )
 
         # Update the virtual's configuration
-        if active:  # noqa: SIM102
-            if not virtual._active_effect or isinstance(
-                virtual.active_effect, DummyEffect
-            ):
-                last_effect = virtual.virtual_cfg.get("last_effect", None)
-                if last_effect:
-                    effect_config = virtual.get_effects_config(last_effect)
-                    if effect_config:
-                        effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx,
-                            type=last_effect,
-                            config=effect_config,
-                        )
-                        virtual.set_effect(effect)
-                        virtual.update_effect_config(effect)
+        if active and (
+            not virtual._active_effect or isinstance(virtual.active_effect, DummyEffect)
+        ):
+            last_effect = virtual.virtual_cfg.get("last_effect", None)
+            if last_effect:
+                effect_config = virtual.get_effects_config(last_effect)
+                if effect_config:
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx,
+                        type=last_effect,
+                        config=effect_config,
+                    )
+                    virtual.set_effect(effect)
+                    virtual.update_effect_config(effect)
         try:
             virtual.active = active
         except ValueError as msg:

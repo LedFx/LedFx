@@ -460,10 +460,9 @@ class LaunchpadPro(LaunchpadBase):
     # Overrides "LaunchpadBase" method
     def Open(self, number=0, name="Pro"):
         retval = super().Open(number=number, name=name)
-        if retval is True:  # noqa: SIM102
+        if retval is True and name.lower() == "pro":
             # avoid sending this to an Mk2
-            if name.lower() == "pro":
-                self.LedSetMode(0)
+            self.LedSetMode(0)
 
         return retval
 

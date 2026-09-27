@@ -172,9 +172,8 @@ class GameOfLifeVisualiser(Twod):
         super().deactivate()
 
     def audio_data_updated(self, data):
-        if self.inject and data.volume_beat_now():  # noqa: SIM102
-            if self.game:
-                self.game.add_random_entity()
+        if self.inject and data.volume_beat_now() and self.game:
+            self.game.add_random_entity()
 
         # if decay is set to minimum, then just run generations at full rate
         if self.decay == 0.01:

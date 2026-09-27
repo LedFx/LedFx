@@ -94,24 +94,23 @@ class EnergyAudioEffect(AudioReactiveEffect):
         self.beat_now = data.volume_beat_now()
 
     def render(self):
-        if self._config["color_cycler"]:  # noqa: SIM102
-            if self.beat_now:
-                # Cycle between 0,1,2 for lows, mids and highs
-                self.color_cycler = (self.color_cycler + 1) % 3
+        if self._config["color_cycler"] and self.beat_now:
+            # Cycle between 0,1,2 for lows, mids and highs
+            self.color_cycler = (self.color_cycler + 1) % 3
 
-                color_raw = self._ledfx.colors.get_all(merged=False)
-                if len(color_raw[1]) > 0:  # if there are user colors, use them
-                    color_list = list(color_raw[1].values())
-                else:
-                    color_list = list(color_raw[0].values())
-                color = parse_color(np.random.choice(color_list))
+            color_raw = self._ledfx.colors.get_all(merged=False)
+            if len(color_raw[1]) > 0:  # if there are user colors, use them
+                color_list = list(color_raw[1].values())
+            else:
+                color_list = list(color_raw[0].values())
+            color = parse_color(np.random.choice(color_list))
 
-                if self.color_cycler == 0:
-                    self.lows_color = color
-                elif self.color_cycler == 1:
-                    self.mids_color = color
-                elif self.color_cycler == 2:
-                    self.high_color = color
+            if self.color_cycler == 0:
+                self.lows_color = color
+            elif self.color_cycler == 1:
+                self.mids_color = color
+            elif self.color_cycler == 2:
+                self.high_color = color
 
         # Build the new energy profile based on the mids, highs and lows setting
         # the colors as red, green, and blue channel respectively
