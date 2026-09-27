@@ -6,7 +6,7 @@ try:
 except ImportError as e:
     print(f"Required package not found: {e}")
     print("Please install required packages: pip install keyboard requests")
-    exit(1)
+    exit(1)  # noqa: PLR1722
 
 # this test script will on the pressing of the space bar send a request to the ledfx server
 # to Fire onshot on a profile across all virtuals
@@ -79,7 +79,7 @@ def send_oneshot(color, ramp, hold, fade, brightness):
             json=payload,
         )
         print(f"Response: {response.status_code} - {response.text}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Post Request failed: {e}")
 
 
@@ -92,7 +92,7 @@ def clear_oneshot():
             json=payload,
         )
         print(f"Response: {response.status_code} - {response.text}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Put Request failed: {e}")
 
 

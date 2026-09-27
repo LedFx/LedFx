@@ -91,9 +91,7 @@ class TestThumbnailCaching:
         with open(cached_path, "rb") as f:
             assert f.read() == sample_thumbnail_data
 
-    def test_get_with_different_params_misses(
-        self, cache, sample_thumbnail_data
-    ):
+    def test_get_with_different_params_misses(self, cache, sample_thumbnail_data):
         """Test cache miss when retrieving with different parameters."""
         url = "asset://test.png"
         params1 = {"size": 128, "dimension": "max", "animated": True}
@@ -288,8 +286,7 @@ class TestThumbnailCaching:
                 # File must be inside cache.cache_dir
                 cache_path = cache._get_cache_path(key, entry["extension"])
                 assert (
-                    os.path.commonpath([cache.cache_dir, cache_path])
-                    == cache.cache_dir
+                    os.path.commonpath([cache.cache_dir, cache_path]) == cache.cache_dir
                 )
             # get() should not return a path outside cache dir
             cached_path = cache.get(url, params)
@@ -306,13 +303,9 @@ class TestThumbnailCaching:
         for url in naughty_filenames:
             # Should not raise
             try:
-                cache.put(
-                    url, sample_thumbnail_data, "image/png", params=params
-                )
-            except Exception as e:
-                pytest.fail(
-                    f"Exception raised for special filename '{url}': {e}"
-                )
+                cache.put(url, sample_thumbnail_data, "image/png", params=params)
+            except Exception as e:  # noqa: BLE001
+                pytest.fail(f"Exception raised for special filename '{url}': {e}")
             # Key should exist in metadata
             key = cache._generate_cache_key(url, params)
             entry = cache.metadata["cache_entries"].get(key)
@@ -320,8 +313,7 @@ class TestThumbnailCaching:
                 # File must be inside cache.cache_dir
                 cache_path = cache._get_cache_path(key, entry["extension"])
                 assert (
-                    os.path.commonpath([cache.cache_dir, cache_path])
-                    == cache.cache_dir
+                    os.path.commonpath([cache.cache_dir, cache_path]) == cache.cache_dir
                 )
 
     def test_get_stats_excludes_thumbnails(self, cache, sample_thumbnail_data):
@@ -352,9 +344,7 @@ class TestThumbnailCaching:
 
         # Should only have 1 entry (the remote image)
         assert stats["total_count"] == 3  # All 3 are in cache
-        assert (
-            len(stats["entries"]) == 1
-        )  # But only 1 is returned by get_stats
+        assert len(stats["entries"]) == 1  # But only 1 is returned by get_stats
 
         # Verify the returned entry is the remote image
         assert stats["entries"][0]["url"] == "https://example.com/image.gif"

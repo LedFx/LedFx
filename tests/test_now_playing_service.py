@@ -122,9 +122,7 @@ class TestArtworkReference:
         d = art.to_dict()
         assert d["url"] == "https://example.com/art.jpg"
         assert d["width"] == 500
-        assert (
-            d["gradients"]["led_punchy"]["gradient"] == "linear-gradient(...)"
-        )
+        assert d["gradients"]["led_punchy"]["gradient"] == "linear-gradient(...)"
 
 
 # ------------------------------------------------------------------
@@ -291,9 +289,7 @@ class TestNowPlayingServiceSetArtworkUrl:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        result = service.set_artwork_url(
-            "spotify", "https://example.com/art.png"
-        )
+        result = service.set_artwork_url("spotify", "https://example.com/art.png")
         assert result is False
         assert service.get_current().artwork is None
 
@@ -301,12 +297,8 @@ class TestNowPlayingServiceSetArtworkUrl:
         meta = TrackMetadata(source_id="sendspin", title="Song")
         service.set_metadata("sendspin", meta)
 
-        with patch.object(
-            service, "_download_image", return_value=(None, None)
-        ):
-            result = service.set_artwork_url(
-                "sendspin", "https://example.com/art.png"
-            )
+        with patch.object(service, "_download_image", return_value=(None, None)):
+            result = service.set_artwork_url("sendspin", "https://example.com/art.png")
         assert result is False
         assert service.get_current().artwork is None
 
@@ -434,16 +426,12 @@ class TestNowPlayingServiceEvents:
     """Verify correct events are fired by the service."""
 
     def test_metadata_changed_event_fired(self, service, ledfx):
-        meta = TrackMetadata(
-            source_id="sendspin", title="Song", artist="Artist"
-        )
+        meta = TrackMetadata(source_id="sendspin", title="Song", artist="Artist")
         service.set_metadata("sendspin", meta)
 
         events = ledfx.events.fired
         metadata_events = [
-            e
-            for e in events
-            if e.event_type == Event.NOW_PLAYING_METADATA_CHANGED
+            e for e in events if e.event_type == Event.NOW_PLAYING_METADATA_CHANGED
         ]
         assert len(metadata_events) == 1
         assert metadata_events[0].source_id == "sendspin"
@@ -455,9 +443,7 @@ class TestNowPlayingServiceEvents:
 
         events = ledfx.events.fired
         track_events = [
-            e
-            for e in events
-            if e.event_type == Event.NOW_PLAYING_TRACK_CHANGED
+            e for e in events if e.event_type == Event.NOW_PLAYING_TRACK_CHANGED
         ]
         assert len(track_events) == 1
         assert track_events[0].title == "Song 1"
@@ -517,9 +503,7 @@ class TestNowPlayingServiceEvents:
         ]
         assert len(artwork_events) == 1
         assert artwork_events[0].source_id == "sendspin"
-        assert (
-            artwork_events[0].artwork["url"] == "https://example.com/art.png"
-        )
+        assert artwork_events[0].artwork["url"] == "https://example.com/art.png"
 
     def test_artwork_changed_event_on_bytes(self, service, ledfx):
         meta = TrackMetadata(source_id="sendspin", title="Song")
@@ -570,9 +554,7 @@ class TestNowPlayingServiceEvents:
         service.clear("sendspin")
 
         cleared_events = [
-            e
-            for e in ledfx.events.fired
-            if e.event_type == Event.NOW_PLAYING_CLEARED
+            e for e in ledfx.events.fired if e.event_type == Event.NOW_PLAYING_CLEARED
         ]
         assert len(cleared_events) == 1
         assert cleared_events[0].source_id == "sendspin"
@@ -585,9 +567,7 @@ class TestNowPlayingServiceEvents:
         service.clear("spotify")
 
         cleared_events = [
-            e
-            for e in ledfx.events.fired
-            if e.event_type == Event.NOW_PLAYING_CLEARED
+            e for e in ledfx.events.fired if e.event_type == Event.NOW_PLAYING_CLEARED
         ]
         assert len(cleared_events) == 0
 
@@ -702,14 +682,10 @@ class TestApplyGradientToVirtuals:
     def test_no_virtuals_attribute_returns_zero(self, service):
         """Service without virtuals on ledfx returns 0."""
         # _DummyLedFx has no virtuals attribute
-        service._state.current_gradient = (
-            "linear-gradient(90deg, #ff0000, #0000ff)"
-        )
+        service._state.current_gradient = "linear-gradient(90deg, #ff0000, #0000ff)"
         assert service.apply_gradient_to_virtuals() == 0
 
-    def test_applies_gradient_to_single_effect(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_applies_gradient_to_single_effect(self, service_v, ledfx_with_virtuals):
         # Set up a virtual with an effect that accepts 'gradient'
         eff = _make_mock_effect(["gradient", "color", "color_high"])
         v1 = _make_mock_virtual("v1", eff)
@@ -728,9 +704,7 @@ class TestApplyGradientToVirtuals:
         call_args = eff.update_config.call_args[0][0]
         assert "gradient" in call_args
 
-    def test_applies_to_multiple_virtuals(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_applies_to_multiple_virtuals(self, service_v, ledfx_with_virtuals):
         eff1 = _make_mock_effect(["gradient", "color"])
         eff2 = _make_mock_effect(["gradient", "color_high"])
         v1 = _make_mock_virtual("v1", eff1)
@@ -757,9 +731,7 @@ class TestApplyGradientToVirtuals:
         result = service_v.apply_gradient_to_virtuals()
         assert result == 0
 
-    def test_skips_virtual_without_effect(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_skips_virtual_without_effect(self, service_v, ledfx_with_virtuals):
         v1 = _make_mock_virtual("v1", None)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
@@ -805,9 +777,7 @@ class TestApplyGradientToVirtuals:
         assert result == 2
 
     def test_hidden_keys_skipped(self, service_v, ledfx_with_virtuals):
-        eff = _make_mock_effect(
-            ["gradient", "color"], hidden_keys=["gradient"]
-        )
+        eff = _make_mock_effect(["gradient", "color"], hidden_keys=["gradient"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
 
@@ -815,7 +785,7 @@ class TestApplyGradientToVirtuals:
             "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
         )
 
-        result = service_v.apply_gradient_to_virtuals()
+        result = service_v.apply_gradient_to_virtuals()  # noqa: F841
         # Effect should still update if color key is in schema
         call_args = eff.update_config.call_args[0][0]
         assert "gradient" not in call_args
@@ -852,9 +822,7 @@ class TestApplyGradientToVirtuals:
             service_v.apply_gradient_to_virtuals()
             mock_save.assert_called_once()
 
-    def test_no_config_save_when_nothing_updated(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_no_config_save_when_nothing_updated(self, service_v, ledfx_with_virtuals):
         # No virtuals, no updates
         service_v._state.current_gradient = (
             "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
@@ -868,9 +836,7 @@ class TestApplyGradientToVirtuals:
 class TestGradientAutoApplication:
     """Tests verifying gradient is auto-applied when artwork changes."""
 
-    def test_gradient_applied_on_artwork_bytes(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_gradient_applied_on_artwork_bytes(self, service_v, ledfx_with_virtuals):
         eff = _make_mock_effect(["gradient", "color"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
@@ -882,7 +848,7 @@ class TestGradientAutoApplication:
 
         data = _make_test_png()
         # Mock gradient extraction to return a valid gradient
-        with patch(
+        with patch(  # noqa: SIM117
             "ledfx.nowplaying.service.extract_gradient_metadata",
             return_value={
                 "led_punchy": {
@@ -898,9 +864,7 @@ class TestGradientAutoApplication:
         call_args = eff.update_config.call_args[0][0]
         assert "gradient" in call_args
 
-    def test_gradient_not_applied_when_disabled(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_gradient_not_applied_when_disabled(self, service_v, ledfx_with_virtuals):
         eff = _make_mock_effect(["gradient", "color"])
         v1 = _make_mock_virtual("v1", eff)
         ledfx_with_virtuals._virtuals["v1"] = v1
@@ -980,17 +944,13 @@ class TestNowPlayingConfigSchema:
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA(
-                {"gradient": {"variant": "not_a_variant"}}
-            )
+            NOW_PLAYING_CONFIG_SCHEMA({"gradient": {"variant": "not_a_variant"}})
 
     def test_invalid_enabled_rejected(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
 
         with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA(
-                {"track_text": {"enabled": "not_a_bool"}}
-            )
+            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"enabled": "not_a_bool"}})
 
     def test_duration_out_of_range(self):
         from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
@@ -1167,9 +1127,7 @@ class TestUpdateConfig:
     def test_update_preserves_unrelated_sections(self, service, ledfx):
         """Updating gradient section preserves track_text and album_art."""
         with patch("ledfx.nowplaying.service.save_config"):
-            service.update_config(
-                {"track_text": {"enabled": False, "duration": 5}}
-            )
+            service.update_config({"track_text": {"enabled": False, "duration": 5}})
             service.update_config({"gradient": {"enabled": False}})
 
         cfg = service.config
@@ -1225,9 +1183,7 @@ def service_aa(ledfx_album_art):
     # activate source so set_artwork_* calls are accepted
     from ledfx.nowplaying.models import TrackMetadata
 
-    svc.set_metadata(
-        "sendspin", TrackMetadata(source_id="sendspin", title="T")
-    )
+    svc.set_metadata("sendspin", TrackMetadata(source_id="sendspin", title="T"))
     return svc
 
 
@@ -1285,16 +1241,12 @@ class TestApplyAlbumArtToVirtuals:
 
         assert service._apply_album_art_to_virtuals() == 0
 
-    def test_no_effects_attr_returns_zero(
-        self, service_v, ledfx_with_virtuals
-    ):
+    def test_no_effects_attr_returns_zero(self, service_v, ledfx_with_virtuals):
         """ledfx with virtuals but no effects registry returns 0."""
         service_v._config["album_art"]["enabled"] = True
         service_v._config["album_art"]["virtual_ids"] = ["v1"]
         _set_artwork_on_service(service_v)
-        ledfx_with_virtuals._virtuals["v1"] = (
-            _make_mock_virtual_with_set_effect("v1")
-        )
+        ledfx_with_virtuals._virtuals["v1"] = _make_mock_virtual_with_set_effect("v1")
         # _DummyLedFxWithVirtuals has no effects attribute
         assert service_v._apply_album_art_to_virtuals() == 0
 
@@ -1335,9 +1287,7 @@ class TestApplyAlbumArtToVirtuals:
         # Only the effect positional arg
         assert len(call_args) == 1
 
-    def test_image_source_config_uses_cache_key(
-        self, service_aa, ledfx_album_art
-    ):
+    def test_image_source_config_uses_cache_key(self, service_aa, ledfx_album_art):
         """Effect is created with image_source set to artwork.cache_key."""
         service_aa._config["album_art"]["enabled"] = True
         service_aa._config["album_art"]["virtual_ids"] = ["v1"]
@@ -1356,9 +1306,7 @@ class TestApplyAlbumArtToVirtuals:
         service_aa._config["album_art"]["enabled"] = True
         service_aa._config["album_art"]["virtual_ids"] = ["v1"]
         _set_artwork_on_service(service_aa)
-        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect(
-            "v1"
-        )
+        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect("v1")
 
         service_aa._apply_album_art_to_virtuals()
 
@@ -1392,15 +1340,11 @@ class TestApplyAlbumArtToVirtuals:
         assert result == 1
         v1.set_effect.assert_called_once()
 
-    def test_effect_creation_error_skips_virtual(
-        self, service_aa, ledfx_album_art
-    ):
+    def test_effect_creation_error_skips_virtual(self, service_aa, ledfx_album_art):
         service_aa._config["album_art"]["enabled"] = True
         service_aa._config["album_art"]["virtual_ids"] = ["v1"]
         _set_artwork_on_service(service_aa)
-        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect(
-            "v1"
-        )
+        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect("v1")
 
         ledfx_album_art.effects.create = MagicMock(
             side_effect=Exception("creation failure")
@@ -1433,12 +1377,14 @@ class TestAlbumArtAutoApplication:
         ledfx_album_art._virtuals["v1"] = v1
 
         data = _make_test_png()
-        with patch(
-            "ledfx.nowplaying.service.extract_gradient_metadata",
-            return_value={},
+        with (
+            patch(
+                "ledfx.nowplaying.service.extract_gradient_metadata",
+                return_value={},
+            ),
+            patch("ledfx.nowplaying.service.save_config"),
         ):
-            with patch("ledfx.nowplaying.service.save_config"):
-                service_aa.set_artwork_bytes("sendspin", data, "image/png")
+            service_aa.set_artwork_bytes("sendspin", data, "image/png")
 
         v1.set_effect.assert_called_once()
 
@@ -1449,17 +1395,17 @@ class TestAlbumArtAutoApplication:
         ledfx_album_art._virtuals["v1"] = v1
 
         png_data = _make_test_png()
-        with patch.object(
-            service_aa, "_download_image", return_value=(png_data, "image/png")
-        ):
-            with patch(
+        with (
+            patch.object(
+                service_aa, "_download_image", return_value=(png_data, "image/png")
+            ),
+            patch(
                 "ledfx.nowplaying.service.extract_gradient_metadata",
                 return_value={},
-            ):
-                with patch("ledfx.nowplaying.service.save_config"):
-                    service_aa.set_artwork_url(
-                        "sendspin", "https://example.com/art.png"
-                    )
+            ),
+            patch("ledfx.nowplaying.service.save_config"),
+        ):
+            service_aa.set_artwork_url("sendspin", "https://example.com/art.png")
 
         v1.set_effect.assert_called_once()
 
@@ -1470,30 +1416,32 @@ class TestAlbumArtAutoApplication:
         ledfx_album_art._virtuals["v1"] = v1
 
         data = _make_test_png()
-        with patch(
-            "ledfx.nowplaying.service.extract_gradient_metadata",
-            return_value={},
+        with (
+            patch(
+                "ledfx.nowplaying.service.extract_gradient_metadata",
+                return_value={},
+            ),
+            patch("ledfx.nowplaying.service.save_config"),
         ):
-            with patch("ledfx.nowplaying.service.save_config"):
-                service_aa.set_artwork_bytes("sendspin", data, "image/png")
+            service_aa.set_artwork_bytes("sendspin", data, "image/png")
 
         v1.set_effect.assert_not_called()
 
-    def test_not_called_when_virtual_ids_empty(
-        self, service_aa, ledfx_album_art
-    ):
+    def test_not_called_when_virtual_ids_empty(self, service_aa, ledfx_album_art):
         service_aa._config["album_art"]["enabled"] = True
         # virtual_ids is [] by default
         v1 = _make_mock_virtual_with_set_effect("v1")
         ledfx_album_art._virtuals["v1"] = v1
 
         data = _make_test_png()
-        with patch(
-            "ledfx.nowplaying.service.extract_gradient_metadata",
-            return_value={},
+        with (
+            patch(
+                "ledfx.nowplaying.service.extract_gradient_metadata",
+                return_value={},
+            ),
+            patch("ledfx.nowplaying.service.save_config"),
         ):
-            with patch("ledfx.nowplaying.service.save_config"):
-                service_aa.set_artwork_bytes("sendspin", data, "image/png")
+            service_aa.set_artwork_bytes("sendspin", data, "image/png")
 
         v1.set_effect.assert_not_called()
 

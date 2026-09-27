@@ -38,19 +38,13 @@ class GetImageEndpoint(RestEndpoint):
         image = open_image(path_url, config_dir=self._ledfx.config_dir)
 
         if not image:
-            return await self.invalid_request(
-                f"Failed to open image from: {path_url}"
-            )
+            return await self.invalid_request(f"Failed to open image from: {path_url}")
 
         with io.BytesIO() as output:
             # we don't care about a bit of loss, so encode to JPEG
             # in example test 5x+ data saving 600kb - > 112 kb
-            image.convert("RGB").save(
-                output, format="JPEG"
-            )  # Convert frame to JPEG
-            encoded_frame = pybase64.b64encode(output.getvalue()).decode(
-                "utf-8"
-            )
+            image.convert("RGB").save(output, format="JPEG")  # Convert frame to JPEG
+            encoded_frame = pybase64.b64encode(output.getvalue()).decode("utf-8")
 
         response = {"status": "success", "image": encoded_frame}
 

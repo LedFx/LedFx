@@ -51,7 +51,7 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
 
     try:
         parsed = urllib.parse.urlparse(url)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return False, "server_url could not be parsed"
 
     if parsed.scheme not in ("ws", "wss"):
@@ -99,7 +99,7 @@ def is_always_on(device_idx, query_devices, query_hostapis):
             return False
         hostapi_name = hostapis[devices[device_idx]["hostapi"]]["name"]
         return hostapi_name == "SENDSPIN"
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001
         _LOGGER.debug(
             "is_always_on: exception checking device %s: %s",
             device_idx,

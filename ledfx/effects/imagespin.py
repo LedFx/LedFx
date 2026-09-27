@@ -16,7 +16,7 @@ class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
     # image spin supports alpha so allow background color
-    HIDDEN_KEYS = ["speed", "mirror", "flip", "blur", "album_art"]
+    HIDDEN_KEYS = ["speed", "mirror", "flip", "blur", "album_art"]  # noqa: RUF012
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
     CONFIG_SCHEMA = vol.Schema(
@@ -76,33 +76,27 @@ class Imagespin(Twod):
 
         self.clip = self._config["clip"]
         self.min_size = self._config["min_size"]
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.do_spin = self._config["spin"]
-        self.resize = (
-            Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
-        )
+        self.resize = Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
         self.album_art = self.config["album_art"]
         self.init = True
 
     def audio_data_updated(self, data):
         # Get filtered bar power
-        self.bar = (
-            getattr(data, self.power_func)() * self._config["multiplier"] * 2
-        )
+        self.bar = getattr(data, self.power_func)() * self._config["multiplier"] * 2
 
     def do_once(self):
         super().do_once()
         if self._config["pattern"]:
-            url_path = f"{os.path.join(LEDFX_ASSETS_PATH, 'test_images', 'TVTestPattern.png')}"
+            url_path = (
+                f"{os.path.join(LEDFX_ASSETS_PATH, 'test_images', 'TVTestPattern.png')}"
+            )
         else:
             url_path = self._config["image_source"]
 
         if url_path != "":
-            self.bass_image = open_gif(
-                url_path, config_dir=self._ledfx.config_dir
-            )
+            self.bass_image = open_gif(url_path, config_dir=self._ledfx.config_dir)
             if self.bass_image:
                 _LOGGER.info("pre scaled %s", self.bass_image.size)
 

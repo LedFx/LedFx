@@ -16,7 +16,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 "align",
                 description="Alignment of bands",
                 default="left",
-            ): vol.In(list(["left", "right", "invert", "center"])),
+            ): vol.In(list(["left", "right", "invert", "center"])),  # noqa: C410
             vol.Optional(
                 "gradient_repeat",
                 description="Repeat the gradient into segments",
@@ -34,9 +34,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
         np.clip(self.r, 0, 1, out=self.r)
 
     def render(self):
-        gradient_repeat = min(
-            self._config["gradient_repeat"], self.pixel_count
-        )
+        gradient_repeat = min(self._config["gradient_repeat"], self.pixel_count)
         r_split = np.array_split(self.r, gradient_repeat)
         for i in range(gradient_repeat):
             band_width = len(r_split[i])
@@ -46,9 +44,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
             if volume:
                 r_split[i][:volume] = 1
             if self._config["align"] == "center":
-                r_split[i] = np.roll(
-                    r_split[i], (band_width - volume) // 2, axis=0
-                )
+                r_split[i] = np.roll(r_split[i], (band_width - volume) // 2, axis=0)
             elif self._config["align"] == "invert":
                 r_split[i] = np.roll(r_split[i], -volume // 2, axis=0)
             elif self._config["align"] == "right":

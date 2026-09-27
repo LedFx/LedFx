@@ -86,9 +86,7 @@ class TestPhase1Infrastructure:
     async def test_name_exists_found(self, websocket_connection):
         """Test _name_exists returns True when name exists"""
         # Pre-populate metadata
-        WebsocketConnection.client_metadata["other-uuid"] = {
-            "name": "ExistingName"
-        }
+        WebsocketConnection.client_metadata["other-uuid"] = {"name": "ExistingName"}
 
         result = await websocket_connection._name_exists("ExistingName")
         assert result is True
@@ -115,9 +113,7 @@ class TestPhase1Infrastructure:
 
         await websocket_connection._update_metadata()
 
-        metadata = WebsocketConnection.client_metadata[
-            websocket_connection.uid
-        ]
+        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
         assert metadata["name"] == "TestClient"
         assert metadata["type"] == "controller"
         assert metadata["device_id"] == "device-123"
@@ -144,18 +140,14 @@ class TestPhase1Infrastructure:
         assert "uuid-2" in result
         # Verify it's a copy (mutating result doesn't affect class storage)
         result["uuid-1"]["name"] = "Modified"
-        assert (
-            WebsocketConnection.client_metadata["uuid-1"]["name"] == "Client1"
-        )
+        assert WebsocketConnection.client_metadata["uuid-1"]["name"] == "Client1"
 
 
 class TestPhase2ClientMetadata:
     """Test Phase 2: Client metadata features"""
 
     @pytest.mark.asyncio
-    async def test_set_client_info_basic(
-        self, websocket_connection, mock_ledfx
-    ):
+    async def test_set_client_info_basic(self, websocket_connection, mock_ledfx):
         """Test set_client_info with valid data"""
         message = {
             "id": 1,
@@ -176,9 +168,7 @@ class TestPhase2ClientMetadata:
         assert websocket_connection.device_id == "dev-1"
 
         # Verify metadata stored
-        metadata = WebsocketConnection.client_metadata[
-            websocket_connection.uid
-        ]
+        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
         assert metadata["name"] == "TestClient"
         assert metadata["type"] == "controller"
 
@@ -206,8 +196,7 @@ class TestPhase2ClientMetadata:
         # Should generate name from UUID
         assert websocket_connection.client_name.startswith("Client-")
         assert (
-            websocket_connection.client_name
-            == f"Client-{websocket_connection.uid[:8]}"
+            websocket_connection.client_name == f"Client-{websocket_connection.uid[:8]}"
         )
 
     @pytest.mark.asyncio
@@ -229,9 +218,7 @@ class TestPhase2ClientMetadata:
     async def test_set_client_info_name_conflict(self, websocket_connection):
         """Test set_client_info handles name conflicts with counter"""
         # Pre-populate with existing name
-        WebsocketConnection.client_metadata["other-uuid"] = {
-            "name": "TestClient"
-        }
+        WebsocketConnection.client_metadata["other-uuid"] = {"name": "TestClient"}
 
         message = {
             "id": 1,
@@ -250,18 +237,12 @@ class TestPhase2ClientMetadata:
         assert response["name_conflict"] is True
 
     @pytest.mark.asyncio
-    async def test_set_client_info_multiple_conflicts(
-        self, websocket_connection
-    ):
+    async def test_set_client_info_multiple_conflicts(self, websocket_connection):
         """Test set_client_info handles multiple name conflicts"""
         # Pre-populate with existing names
         WebsocketConnection.client_metadata["uuid-1"] = {"name": "TestClient"}
-        WebsocketConnection.client_metadata["uuid-2"] = {
-            "name": "TestClient (2)"
-        }
-        WebsocketConnection.client_metadata["uuid-3"] = {
-            "name": "TestClient (3)"
-        }
+        WebsocketConnection.client_metadata["uuid-2"] = {"name": "TestClient (2)"}
+        WebsocketConnection.client_metadata["uuid-3"] = {"name": "TestClient (3)"}
 
         message = {
             "id": 1,
@@ -276,9 +257,7 @@ class TestPhase2ClientMetadata:
         assert websocket_connection.client_name == "TestClient (4)"
 
     @pytest.mark.asyncio
-    async def test_update_client_info_name_only(
-        self, websocket_connection, mock_ledfx
-    ):
+    async def test_update_client_info_name_only(self, websocket_connection, mock_ledfx):
         """Test update_client_info updates name only"""
         # Pre-set initial metadata
         websocket_connection.client_name = "OldName"
@@ -303,14 +282,10 @@ class TestPhase2ClientMetadata:
         mock_ledfx.events.fire_event.assert_called()
 
     @pytest.mark.asyncio
-    async def test_update_client_info_name_conflict(
-        self, websocket_connection
-    ):
+    async def test_update_client_info_name_conflict(self, websocket_connection):
         """Test update_client_info rejects name conflict"""
         # Pre-populate with existing name
-        WebsocketConnection.client_metadata["other-uuid"] = {
-            "name": "TakenName"
-        }
+        WebsocketConnection.client_metadata["other-uuid"] = {"name": "TakenName"}
 
         message = {
             "id": 1,
@@ -347,9 +322,7 @@ class TestPhase2ClientMetadata:
         assert websocket_connection.client_type == "visualiser"
 
         # Verify metadata was persisted
-        metadata = WebsocketConnection.client_metadata[
-            websocket_connection.uid
-        ]
+        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
         assert metadata["type"] == "visualiser"
 
         # Verify response
@@ -381,9 +354,7 @@ class TestPhase2ClientMetadata:
         assert response["type"] == "unknown"
 
     @pytest.mark.asyncio
-    async def test_update_client_info_name_and_type(
-        self, websocket_connection
-    ):
+    async def test_update_client_info_name_and_type(self, websocket_connection):
         """Test that update_client_info can update both name and type"""
         websocket_connection.client_name = "TestClient"
         websocket_connection.client_type = "controller"
@@ -403,9 +374,7 @@ class TestPhase2ClientMetadata:
         assert websocket_connection.client_type == "display"
 
         # Verify metadata was persisted
-        metadata = WebsocketConnection.client_metadata[
-            websocket_connection.uid
-        ]
+        metadata = WebsocketConnection.client_metadata[websocket_connection.uid]
         assert metadata["name"] == "NewName"
         assert metadata["type"] == "display"
 
@@ -425,9 +394,7 @@ class TestPhase2ClientMetadata:
         # Should send error response with "No valid updates" message
         response = websocket_connection.send.call_args[0][0]
         assert response["success"] is False
-        assert "No valid updates" in response.get("error", {}).get(
-            "message", ""
-        )
+        assert "No valid updates" in response.get("error", {}).get("message", "")
 
 
 class TestPhase3Broadcasting:
@@ -463,9 +430,7 @@ class TestPhase3Broadcasting:
         }
 
         target_config = {"mode": "type", "value": "visualiser"}
-        result = websocket_connection._filter_targets(
-            target_config, clients, "uuid-1"
-        )
+        result = websocket_connection._filter_targets(target_config, clients, "uuid-1")
 
         assert len(result) == 2
         assert "uuid-2" in result
@@ -473,9 +438,7 @@ class TestPhase3Broadcasting:
         assert "uuid-1" not in result
 
     @pytest.mark.asyncio
-    async def test_filter_targets_mode_type_missing_value(
-        self, websocket_connection
-    ):
+    async def test_filter_targets_mode_type_missing_value(self, websocket_connection):
         """Test _filter_targets rejects type mode without value (fail-closed)"""
         clients = {"uuid-1": {"name": "Client1", "type": "controller"}}
 
@@ -487,9 +450,7 @@ class TestPhase3Broadcasting:
         assert len(result) == 0  # Fail-closed: return empty list
 
     @pytest.mark.asyncio
-    async def test_filter_targets_mode_type_includes_sender(
-        self, websocket_connection
-    ):
+    async def test_filter_targets_mode_type_includes_sender(self, websocket_connection):
         """Test _filter_targets with mode='type' includes sender if sender matches type"""
         clients = {
             "uuid-sender": {"name": "Sender", "type": "visualiser"},
@@ -527,9 +488,7 @@ class TestPhase3Broadcasting:
         assert "uuid-2" not in result
 
     @pytest.mark.asyncio
-    async def test_filter_targets_mode_names_missing_list(
-        self, websocket_connection
-    ):
+    async def test_filter_targets_mode_names_missing_list(self, websocket_connection):
         """Test _filter_targets rejects names mode without list (fail-closed)"""
         clients = {"uuid-1": {"name": "Client1", "type": "controller"}}
 
@@ -560,9 +519,7 @@ class TestPhase3Broadcasting:
         assert "uuid-999" not in result
 
     @pytest.mark.asyncio
-    async def test_filter_targets_mode_uuids_missing_list(
-        self, websocket_connection
-    ):
+    async def test_filter_targets_mode_uuids_missing_list(self, websocket_connection):
         """Test _filter_targets rejects uuids mode without list (fail-closed)"""
         clients = {"uuid-1": {"name": "Client1", "type": "controller"}}
 
@@ -586,9 +543,7 @@ class TestPhase3Broadcasting:
         assert len(result) == 0  # Fail-closed: return empty list
 
     @pytest.mark.asyncio
-    async def test_filter_targets_mode_names_lenient(
-        self, websocket_connection
-    ):
+    async def test_filter_targets_mode_names_lenient(self, websocket_connection):
         """Test _filter_targets with mode='names' uses lenient filtering"""
         clients = {
             "uuid-1": {"name": "Client1", "type": "controller"},
@@ -697,9 +652,7 @@ class TestPhase3Broadcasting:
         assert "uuid-sender" not in result
 
     @pytest.mark.asyncio
-    async def test_filter_targets_mode_all_sender_only(
-        self, websocket_connection
-    ):
+    async def test_filter_targets_mode_all_sender_only(self, websocket_connection):
         """Test mode='all' returns empty when sender is the only client"""
         clients = {
             "uuid-sender": {"name": "Sender", "type": "controller"},
@@ -714,9 +667,7 @@ class TestPhase3Broadcasting:
         assert len(result) == 0
 
     @pytest.mark.asyncio
-    async def test_broadcast_handler_success(
-        self, websocket_connection, mock_ledfx
-    ):
+    async def test_broadcast_handler_success(self, websocket_connection, mock_ledfx):
         """Test broadcast_handler with valid data"""
         # Set up connection metadata
         websocket_connection.client_name = "Sender"
@@ -760,14 +711,10 @@ class TestPhase3Broadcasting:
         response = websocket_connection.send.call_args[0][0]
         assert response["event_type"] == "broadcast_sent"
         assert "broadcast_id" in response
-        assert (
-            response["targets_matched"] == 1
-        )  # Only target (sender excluded)
+        assert response["targets_matched"] == 1  # Only target (sender excluded)
 
     @pytest.mark.asyncio
-    async def test_broadcast_handler_no_sender_id_field(
-        self, websocket_connection
-    ):
+    async def test_broadcast_handler_no_sender_id_field(self, websocket_connection):
         """Test that broadcast_handler derives sender from connection (security)"""
         websocket_connection.client_name = "RealSender"
         websocket_connection.client_type = "controller"
@@ -799,9 +746,7 @@ class TestPhase3Broadcasting:
         assert event.sender_name == "RealSender"
 
     @pytest.mark.asyncio
-    async def test_broadcast_handler_invalid_schema(
-        self, websocket_connection
-    ):
+    async def test_broadcast_handler_invalid_schema(self, websocket_connection):
         """Test broadcast_handler rejects invalid schema"""
         message = {
             "id": 1,
@@ -822,9 +767,7 @@ class TestPhase3Broadcasting:
         assert "Invalid broadcast data" in error_message
 
     @pytest.mark.asyncio
-    async def test_broadcast_handler_payload_too_large(
-        self, websocket_connection
-    ):
+    async def test_broadcast_handler_payload_too_large(self, websocket_connection):
         """Test broadcast_handler rejects oversized payload"""
         # Create payload larger than MAX_PAYLOAD_SIZE
         large_payload = {"data": "x" * (MAX_PAYLOAD_SIZE + 100)}
@@ -849,9 +792,7 @@ class TestPhase3Broadcasting:
         assert "exceeds maximum" in error_message
 
     @pytest.mark.asyncio
-    async def test_broadcast_handler_no_targets_matched(
-        self, websocket_connection
-    ):
+    async def test_broadcast_handler_no_targets_matched(self, websocket_connection):
         """Test broadcast_handler rejects when no targets match"""
         await websocket_connection._update_metadata()
 
@@ -983,9 +924,7 @@ class TestConcurrency:
             conn.client_type = "controller"
 
         # Update all metadata concurrently
-        await asyncio.gather(
-            *[conn._update_metadata() for conn in connections]
-        )
+        await asyncio.gather(*[conn._update_metadata() for conn in connections])
 
         # Verify all metadata stored correctly
         assert len(WebsocketConnection.client_metadata) == 10
@@ -1003,9 +942,7 @@ class TestConcurrency:
         conn.uid = "test-uuid"
 
         # Pre-populate with a name
-        WebsocketConnection.client_metadata["other-uuid"] = {
-            "name": "ExistingName"
-        }
+        WebsocketConnection.client_metadata["other-uuid"] = {"name": "ExistingName"}
 
         # Check name existence concurrently
         results = await asyncio.gather(

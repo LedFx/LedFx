@@ -1,6 +1,5 @@
 import logging
 from collections import namedtuple
-from typing import Optional
 
 import numpy as np
 from numpy.typing import NDArray
@@ -24,7 +23,7 @@ class Gradient:
         from_string(cls, gradient_str: str) -> Gradient: Parses a gradient from a string.
     """
 
-    __slots__ = "colors", "mode", "angle"
+    __slots__ = "angle", "colors", "mode"
 
     @classmethod
     def from_string(cls, gradient_str: str):
@@ -51,15 +50,10 @@ class Gradient:
         angle = int(angle.strip("deg"))
         # Split each color/position string
         colors = colors.split("%")
-        colors = [
-            color.strip(", ").rsplit(" ", 1)
-            for color in colors
-            if color.strip()
-        ]
+        colors = [color.strip(", ").rsplit(" ", 1) for color in colors if color.strip()]
         # Parse color and position
         colors = [
-            (parse_color(color), float(position) / 100.0)
-            for color, position in colors
+            (parse_color(color), float(position) / 100.0) for color, position in colors
         ]
         # Sort color list by position (0.0->1.0)
         colors.sort(key=lambda tup: tup[1])
@@ -87,25 +81,19 @@ class Gradient:
         first_color, first_pos = stops[0]
         last_color, last_pos = stops[-1]
         if pos <= first_pos:
-            return "#{:02x}{:02x}{:02x}".format(
-                first_color.red,
-                first_color.green,
-                first_color.blue,
+            return (
+                f"#{first_color.red:02x}{first_color.green:02x}{first_color.blue:02x}"
             )
         if pos >= last_pos:
-            return "#{:02x}{:02x}{:02x}".format(
-                last_color.red,
-                last_color.green,
-                last_color.blue,
-            )
+            return f"#{last_color.red:02x}{last_color.green:02x}{last_color.blue:02x}"
 
         # Find containing segment and linearly interpolate
-        for (c1, p1), (c2, p2) in zip(stops, stops[1:]):
+        for (c1, p1), (c2, p2) in zip(stops, stops[1:]):  # noqa: RUF007
             if p1 <= pos <= p2:
                 t = 0.0 if p2 == p1 else (pos - p1) / (p2 - p1)
-                r = int(round(c1.red + (c2.red - c1.red) * t))
-                g = int(round(c1.green + (c2.green - c1.green) * t))
-                b = int(round(c1.blue + (c2.blue - c1.blue) * t))
+                r = int(round(c1.red + (c2.red - c1.red) * t))  # noqa: RUF046
+                g = int(round(c1.green + (c2.green - c1.green) * t))  # noqa: RUF046
+                b = int(round(c1.blue + (c2.blue - c1.blue) * t))  # noqa: RUF046
                 return f"#{r:02x}{g:02x}{b:02x}"
 
         # Fallback
@@ -279,7 +267,7 @@ def parse_color(color: (str, list, tuple)) -> RGB:
             return RGB(*color)
         # Otherwise, it needs to be a string to continue
         if not isinstance(color, str):
-            raise ValueError
+            raise ValueError  # noqa: TRY004
         # Try to find the color in the pre-defined dict
         if color in LEDFX_COLORS:
             color = LEDFX_COLORS[color]
@@ -317,12 +305,11 @@ def parse_gradient(gradient: str):
     for func in Gradient.from_string, parse_color:
         try:
             return func(gradient)
-        except Exception:
+        except Exception:  # noqa: BLE001, S112
             continue
-    else:
-        msg = f"Invalid gradient: {gradient}"
-        _LOGGER.error(msg)
-        raise ValueError(msg)
+    msg = f"Invalid gradient: {gradient}"
+    _LOGGER.error(msg)
+    raise ValueError(msg)
 
 
 def validate_color(color: str) -> str:
@@ -336,7 +323,7 @@ def validate_color(color: str) -> str:
         str: The validated and formatted color string.
 
     """
-    return "#%02x%02x%02x" % parse_color(color)
+    return "#%02x%02x%02x" % parse_color(color)  # noqa: UP031
 
 
 def get_color_at_position(gradient_like, position: float) -> str:
@@ -351,12 +338,12 @@ def get_color_at_position(gradient_like, position: float) -> str:
     # If it is a simple RGB value returned by parse_gradient, handle
     try:
         parsed = parse_gradient(gradient_like)
-    except Exception:
+    except Exception:  # noqa: BLE001
         # If parse fails, assume it's a color string and validate
         return validate_color(gradient_like)
 
     if isinstance(parsed, RGB):
-        return "#%02x%02x%02x" % parsed
+        return "#%02x%02x%02x" % parsed  # noqa: UP031
 
     # Otherwise parsed is a Gradient
     return parsed.sample(position)
@@ -376,9 +363,7 @@ def validate_gradient(gradient: str) -> str:
     return gradient
 
 
-def resolve_gradient(
-    value: str, gradients_collection
-) -> tuple[str, Optional[Gradient]]:
+def resolve_gradient(value: str, gradients_collection) -> tuple[str, Gradient | None]:
     """Resolve a gradient input into a config string and an optional parsed Gradient.
 
     Args:
@@ -408,10 +393,10 @@ def resolve_gradient(
     parsed = None
     try:
         parsed = gradients_collection[trimmed]
-    except Exception:
+    except Exception:  # noqa: BLE001
         try:
             parsed = parse_gradient(trimmed)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Failed to parse gradient %s: %s", trimmed, e)
             parsed = None
 
@@ -488,9 +473,7 @@ def build_gradient_config(
     Raises:
         ValueError: if the gradient cannot be resolved.
     """
-    config_val, parsed_gradient = resolve_gradient(
-        gradient_input, gradients_collection
-    )
+    config_val, parsed_gradient = resolve_gradient(gradient_input, gradients_collection)
     config_updates: dict = {"gradient": config_val}
 
     if parsed_gradient is not None:
@@ -498,10 +481,8 @@ def build_gradient_config(
             if group["value"] is None:
                 continue
             try:
-                color_at_pos = get_color_at_position(
-                    parsed_gradient, group["value"]
-                )
-            except Exception as exc:
+                color_at_pos = get_color_at_position(parsed_gradient, group["value"])
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to sample gradient at %s: %s",
                     group["value"],

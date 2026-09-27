@@ -65,9 +65,7 @@ class CacheRefreshEndpoint(RestEndpoint):
         if all_variants:
             # Clear all variants (useful for asset thumbnails)
             cleared_count = cache.delete_all_for_url(url)
-            return await self.bare_request_success(
-                {"cleared_count": cleared_count}
-            )
+            return await self.bare_request_success({"cleared_count": cleared_count})
 
         # Check if URL is a remote image (http/https)
         if url.startswith(("http://", "https://")):

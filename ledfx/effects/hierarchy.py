@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 class Hierarchy(AudioReactiveEffect):
     NAME = "Hierarchy"
     CATEGORY = "Simple"
-    HIDDEN_KEYS = [
+    HIDDEN_KEYS = [  # noqa: RUF012
         "background_color",
         "background_brightness",
         "blur",

@@ -59,8 +59,8 @@ class TestStartupPlaylistActivation:
         core.config_dir = ""
         core.events = MagicMock()
         # Bind the real helper so the production logic is exercised
-        core._handle_startup_playlist = (
-            LedFxCore._handle_startup_playlist.__get__(core, LedFxCore)
+        core._handle_startup_playlist = LedFxCore._handle_startup_playlist.__get__(
+            core, LedFxCore
         )
         return core
 

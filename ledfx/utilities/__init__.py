@@ -16,12 +16,12 @@ from ledfx.utilities.security_utils import (
 )
 
 __all__ = [
-    "get_image_metadata",
     "ALLOWED_IMAGE_EXTENSIONS",
     "ALLOWED_MIME_TYPES",
     "DOWNLOAD_TIMEOUT",
     "MAX_IMAGE_SIZE_BYTES",
     "build_browser_request",
+    "get_image_metadata",
     "is_allowed_image_extension",
     "resolve_safe_path_in_directory",
     "validate_image_mime_type",

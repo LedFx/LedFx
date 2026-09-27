@@ -91,9 +91,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.color_scan_cache = np.array(
             parse_color(self._config["color_scan"]), dtype=float
         )
@@ -106,9 +104,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
     def set_values(self):
         if hasattr(self, "pixels"):  # protect against calling too early
             self.block = self.pixel_count / self._config["count"]
-            self.step_per_sec = (
-                self.pixel_count / 100.0 * self._config["speed"]
-            )
+            self.step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
 
             self.scan_width_pixels = int(
                 max(1, int(self.block / 100.0 * self._config["scan_width"]))
@@ -176,9 +172,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
                 mid_pos = int(block[1] + self.scan_pos)
                 end_pos = int(block[2] + self.scan_pos)
                 self.pixels[
-                    min(mid_pos, self.pixel_count) : min(
-                        end_pos, self.pixel_count
-                    )
+                    min(mid_pos, self.pixel_count) : min(end_pos, self.pixel_count)
                 ] = self.clear
 
                 end_flow = end_pos - self.pixel_count
@@ -190,9 +184,7 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
                 mid_pos = int(block[1] + self.scan_pos)
 
                 self.pixels[
-                    min(start_pos, self.pixel_count) : min(
-                        mid_pos, self.pixel_count
-                    )
+                    min(start_pos, self.pixel_count) : min(mid_pos, self.pixel_count)
                 ] = self.color_scan
 
                 mid_flow = mid_pos - self.pixel_count

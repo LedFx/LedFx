@@ -122,9 +122,7 @@ async def test_empty_playlist_resolves_to_all_scenes(tmp_path):
     core.config["scenes"] = {"scene1": {}, "scene2": {}, "scene3": {}}
     manager = PlaylistManager(core)
 
-    await manager.create_or_replace(
-        {"id": "empty", "name": "Empty", "items": []}
-    )
+    await manager.create_or_replace({"id": "empty", "name": "Empty", "items": []})
     ok = await manager.start("empty")
     # Should succeed because empty list resolves to all scenes
     assert ok is True
@@ -144,9 +142,7 @@ async def test_empty_playlist_fails_when_no_scenes(tmp_path):
     core.config["scenes"] = {}
     manager = PlaylistManager(core)
 
-    await manager.create_or_replace(
-        {"id": "empty", "name": "Empty", "items": []}
-    )
+    await manager.create_or_replace({"id": "empty", "name": "Empty", "items": []})
     ok = await manager.start("empty")
     # Should fail because no scenes to resolve to
     assert ok is False
@@ -161,9 +157,7 @@ async def test_jitter_bounds(tmp_path):
         "id": "j1",
         "name": "J1",
         "items": [{"scene_id": "s", "duration_ms": 1000}],
-        "timing": {
-            "jitter": {"enabled": True, "factor_min": 0.5, "factor_max": 2.0}
-        },
+        "timing": {"jitter": {"enabled": True, "factor_min": 0.5, "factor_max": 2.0}},
     }
     await manager.create_or_replace(playlist)
     await manager.start("j1")

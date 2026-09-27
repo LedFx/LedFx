@@ -74,9 +74,7 @@ def _run_lifx_emulator():
 def _start_lifx_emulator():
     """Start the LIFX emulator in a background thread."""
     global lifx_emulator_thread
-    lifx_emulator_thread = threading.Thread(
-        target=_run_lifx_emulator, daemon=True
-    )
+    lifx_emulator_thread = threading.Thread(target=_run_lifx_emulator, daemon=True)
     lifx_emulator_thread.start()
     # Wait for emulator to bind to port
     for _ in range(50):  # 5 second timeout
@@ -135,8 +133,8 @@ def pytest_sessionstart(session):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-    except Exception as e:
-        pytest.fail(f"An error occurred while starting LedFx: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        pytest.fail(f"An error occurred while starting LedFx: {e!s}")
 
     time.sleep(
         2
@@ -166,8 +164,8 @@ def pytest_sessionfinish(session, exitstatus):
     # send LedFx a shutdown signal
     try:
         EnvironmentCleanup.shutdown_ledfx()
-    except Exception as e:
-        pytest.fail(f"An error occurred while shutting down LedFx: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        pytest.fail(f"An error occurred while shutting down LedFx: {e!s}")
     # Wait for LedFx to terminate
     while ledfx.poll() is None:
         time.sleep(0.5)

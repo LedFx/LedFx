@@ -16,7 +16,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Spotlight"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]
+    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "max_active_spots",
         "use_gradient",
@@ -95,9 +95,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.weighted_power = 0.0
         self.dynamic_spot_cap = 1
         self.gradient_phase = 0.0
-        self._activity_filter = self.create_filter(
-            alpha_decay=0.25, alpha_rise=0.6
-        )
+        self._activity_filter = self.create_filter(alpha_decay=0.25, alpha_rise=0.6)
         self._refresh_spot_template()
         self._clear_spots()
 
@@ -112,8 +110,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.min_time_between_spots = self.INTERNAL_MIN_TIME_BETWEEN_SPOTS
         self.min_active_spots = self.INTERNAL_MIN_ACTIVE_SPOTS
         self.max_active_spots = self._config["max_active_spots"]
-        if self.min_active_spots > self.max_active_spots:
-            self.min_active_spots = self.max_active_spots
+        self.min_active_spots = min(self.min_active_spots, self.max_active_spots)
         self.base_spawn_rate = self.INTERNAL_BASE_SPAWN_RATE
         self.activity_spawn_rate = self.INTERNAL_ACTIVITY_SPAWN_RATE
         self.peak_spawn_boost = self.INTERNAL_PEAK_SPAWN_BOOST
@@ -125,9 +122,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.center_color = np.array(
             parse_color(self._config["center_color"]), dtype=float
         )
-        self.edge_color = np.array(
-            parse_color(self._config["edge_color"]), dtype=float
-        )
+        self.edge_color = np.array(parse_color(self._config["edge_color"]), dtype=float)
 
         self._template_signature = self._get_template_signature()
 
@@ -157,9 +152,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def _refresh_spot_template(self):
         """Recompute per-spot geometry and color/intensity profiles."""
-        max_width = (
-            self.pixel_count if self.pixel_count % 2 else self.pixel_count - 1
-        )
+        max_width = self.pixel_count if self.pixel_count % 2 else self.pixel_count - 1
         max_width = max(max_width, 1)
 
         effective_width = round(self.pixel_count * self.spot_width / 100.0)
@@ -177,9 +170,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             distance = np.abs(self._spot_offsets) / float(half_width)
 
         self._spot_center_mix = 1.0 - distance
-        self._spot_intensity = np.power(
-            self._spot_center_mix, self.edge_softness
-        )
+        self._spot_intensity = np.power(self._spot_center_mix, self.edge_softness)
 
         if self.use_gradient:
             self._spot_template = None
@@ -188,12 +179,9 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         color_gradient = (
             self.edge_color[np.newaxis, :]
             * (1.0 - self._spot_center_mix)[:, np.newaxis]
-            + self.center_color[np.newaxis, :]
-            * self._spot_center_mix[:, np.newaxis]
+            + self.center_color[np.newaxis, :] * self._spot_center_mix[:, np.newaxis]
         )
-        self._spot_template = (
-            color_gradient * self._spot_intensity[:, np.newaxis]
-        )
+        self._spot_template = color_gradient * self._spot_intensity[:, np.newaxis]
 
     def _get_active_indices(self):
         """Return ring-buffer indices for active spotlight entries."""
@@ -237,9 +225,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.spot_centers = np.empty(capacity, dtype=int)
         self.spot_born = np.empty(capacity, dtype=float)
         self.spot_anchors = np.empty(capacity, dtype=float)
-        self.spot_templates = np.empty(
-            (capacity, template_width, 3), dtype=float
-        )
+        self.spot_templates = np.empty((capacity, template_width, 3), dtype=float)
         self.spot_head = 0
         self.spot_count = keep
 
@@ -268,9 +254,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             return np.empty((0, width, 3), dtype=float)
 
         if not self.use_gradient:
-            return np.repeat(
-                self._spot_template[np.newaxis, :, :], count, axis=0
-            )
+            return np.repeat(self._spot_template[np.newaxis, :, :], count, axis=0)
 
         edge_anchors = np.mod(anchors + self.spot_color_span, 1.0)
         center_colors = self.get_gradient_color_vectorized1d(anchors)
@@ -308,7 +292,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             return 0
 
         if self.spot_count == 0:
-            return random.randrange(self.pixel_count)  # noqa: S311
+            return random.randrange(self.pixel_count)
 
         min_center_distance = max(1, len(self._spot_offsets) // 2)
 
@@ -317,16 +301,14 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
         for _ in range(2):
             candidates = np.random.randint(0, self.pixel_count, size=64)
-            diffs = np.abs(
-                candidates[np.newaxis, :] - active_centers[:, np.newaxis]
-            )
+            diffs = np.abs(candidates[np.newaxis, :] - active_centers[:, np.newaxis])
             ring_diffs = np.minimum(diffs, self.pixel_count - diffs)
             min_distance = np.min(ring_diffs, axis=0)
             valid = np.flatnonzero(min_distance >= min_center_distance)
             if valid.size > 0:
                 return int(candidates[valid[0]])
 
-        return random.randrange(self.pixel_count)  # noqa: S311
+        return random.randrange(self.pixel_count)
 
     def _allocate_spot_entry(self, now, center, color_anchor):
         """Insert spotlight metadata into the ring buffer and return its index."""
@@ -335,9 +317,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             self._drop_oldest_spots(overflow)
 
         if self.spot_count < self.spot_capacity:
-            insert_idx = (
-                self.spot_head + self.spot_count
-            ) % self.spot_capacity
+            insert_idx = (self.spot_head + self.spot_count) % self.spot_capacity
             self.spot_count += 1
         else:
             insert_idx = self.spot_head
@@ -360,18 +340,15 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             color_anchor = 0.0
             if self.use_gradient:
                 color_anchor = (
-                    self.gradient_phase
-                    + random.random() * self.spot_color_span  # noqa: S311
+                    self.gradient_phase + random.random() * self.spot_color_span
                 ) % 1.0
 
             center = self._pick_spot_center()
-            insert_indices[i] = self._allocate_spot_entry(
-                now, center, color_anchor
-            )
+            insert_indices[i] = self._allocate_spot_entry(now, center, color_anchor)
             anchors[i] = color_anchor
 
-        self.spot_templates[insert_indices] = (
-            self._build_templates_from_anchors(anchors)
+        self.spot_templates[insert_indices] = self._build_templates_from_anchors(
+            anchors
         )
 
     def _adaptive_boost_detected(self, data):
@@ -385,9 +362,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         self.last_audio_time = now
 
         if self.use_gradient and self.gradient_speed > 0:
-            self.gradient_phase = (
-                self.gradient_phase + dt * self.gradient_speed
-            ) % 1.0
+            self.gradient_phase = (self.gradient_phase + dt * self.gradient_speed) % 1.0
 
         lows = float(data.lows_power())
         mids = float(data.mids_power())
@@ -420,18 +395,14 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             0.0,
             2.0,
         )
-        activity_level = np.clip(
-            self._activity_filter.update(activity_input), 0, 1
-        )
+        activity_level = np.clip(self._activity_filter.update(activity_input), 0, 1)
 
         dynamic_span = self.max_active_spots - self.min_active_spots
         self.dynamic_spot_cap = self.min_active_spots + int(
             dynamic_span * activity_level
         )
 
-        spawn_rate = (
-            self.base_spawn_rate + self.activity_spawn_rate * activity_level
-        )
+        spawn_rate = self.base_spawn_rate + self.activity_spawn_rate * activity_level
         self.spawn_accumulator += spawn_rate * dt
 
         if self._adaptive_boost_detected(data):
@@ -489,8 +460,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             + self._spot_offsets[np.newaxis, :]
         ) % self.pixel_count
         weighted_templates = (
-            self.spot_templates[active_idx]
-            * fade_amounts[:, np.newaxis, np.newaxis]
+            self.spot_templates[active_idx] * fade_amounts[:, np.newaxis, np.newaxis]
         )
 
         np.add.at(

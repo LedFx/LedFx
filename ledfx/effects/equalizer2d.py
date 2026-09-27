@@ -127,9 +127,7 @@ class Equalizer2d(Twod, GradientEffect):
         self.ring = self._config["ring"]
         self.spin = self._config["spin"]
         self.filtered = self._config["filtered"]
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.power_multiplier = self._config["spin_multiplier"]
         self.impulse_filter = self.create_filter(
             alpha_decay=self._config["spin_decay"], alpha_rise=0.99
@@ -146,9 +144,7 @@ class Equalizer2d(Twod, GradientEffect):
         for i in range(self.bands + 1):
             angle = 2.0 * np.pi * i / self.bands + np.radians(rotation)
             x = (self.r_width) / 2.0 + (self.r_width - 1) / 2.0 * np.cos(angle)
-            y = (self.r_height) / 2.0 + (self.r_height - 1) / 2.0 * np.sin(
-                angle
-            )
+            y = (self.r_height) / 2.0 + (self.r_height - 1) / 2.0 * np.sin(angle)
             self.bandsc.append((x, y))
 
         # calc mid points of bands
@@ -168,9 +164,7 @@ class Equalizer2d(Twod, GradientEffect):
         self.bandsx = []
         for i in range(self.bands):
             start = int((self.r_width / float(self.bands)) * i)
-            end = max(
-                start, int(((self.r_width / float(self.bands)) * (i + 1)) - 1)
-            )
+            end = max(start, int(((self.r_width / float(self.bands)) * (i + 1)) - 1))
             self.bandsx.append([start, end])
         self.peaks_filter = self.create_filter(
             alpha_decay=self.peak_decay, alpha_rise=0.99
@@ -282,8 +276,7 @@ class Equalizer2d(Twod, GradientEffect):
                     ],
                     fill=self.bar_colors[i],
                     outline=tuple(
-                        max(component - 1, 0)
-                        for component in self.bar_colors[i]
+                        max(component - 1, 0) for component in self.bar_colors[i]
                     ),
                 )
         self._draw_ring_peaks()
@@ -303,9 +296,7 @@ class Equalizer2d(Twod, GradientEffect):
         stretch = self.power_gradient == "Stretch"
 
         if stretch:
-            positions = np.zeros(
-                (self.r_height, self.r_width), dtype=np.float32
-            )
+            positions = np.zeros((self.r_height, self.r_width), dtype=np.float32)
         elif self.center:
             positions = self._ring_dist
         else:
@@ -355,9 +346,7 @@ class Equalizer2d(Twod, GradientEffect):
                     band_pos = np.clip((1.0 - self._ring_dist) / vol, 0, 1)
                 positions[band_pixels] = band_pos[band_pixels]
 
-        color_array = self.get_gradient_color_vectorized2d(positions).astype(
-            np.uint8
-        )
+        color_array = self.get_gradient_color_vectorized2d(positions).astype(np.uint8)
 
         color_img = Image.fromarray(color_array, "RGB")
         self.matrix.paste(color_img, mask=mask_img)
@@ -455,19 +444,13 @@ class Equalizer2d(Twod, GradientEffect):
                     norm = max(volume_scaled, 1)
                 else:
                     norm = max(self.r_height - 1, 1)
-                grad_positions = (self.r_height - 1 - rows).astype(
-                    np.float32
-                ) / norm
+                grad_positions = (self.r_height - 1 - rows).astype(np.float32) / norm
             grad_positions = np.clip(grad_positions, 0, 1)
 
-            positions[rows, band_start : band_end + 1] = grad_positions[
-                :, np.newaxis
-            ]
+            positions[rows, band_start : band_end + 1] = grad_positions[:, np.newaxis]
             mask[rows, band_start : band_end + 1] = True
 
-        color_array = self.get_gradient_color_vectorized2d(positions).astype(
-            np.uint8
-        )
+        color_array = self.get_gradient_color_vectorized2d(positions).astype(np.uint8)
 
         color_img = Image.fromarray(color_array, "RGB")
         mask_img = Image.fromarray((mask.astype(np.uint8) * 255), "L")

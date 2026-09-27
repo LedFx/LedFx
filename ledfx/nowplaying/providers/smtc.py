@@ -47,10 +47,8 @@ class SMTCNowPlayingProvider:
             self._init_task = None
         if self._manager is not None and self._manager_token is not None:
             try:
-                self._manager.remove_current_session_changed(
-                    self._manager_token
-                )
-            except Exception:
+                self._manager.remove_current_session_changed(self._manager_token)
+            except Exception:  # noqa: BLE001, S110
                 pass
         self._manager_token = None
         self._manager = None
@@ -101,17 +99,13 @@ class SMTCNowPlayingProvider:
         if self._loop is None:
             return
         session = manager.get_current_session()
-        asyncio.run_coroutine_threadsafe(
-            self._attach_to_session(session), self._loop
-        )
+        asyncio.run_coroutine_threadsafe(self._attach_to_session(session), self._loop)
 
     def _on_media_properties_changed(self, session, args):
         """Fires when track title/artist/album changes."""
         if self._loop is None:
             return
-        asyncio.run_coroutine_threadsafe(
-            self._fetch_and_push_metadata(), self._loop
-        )
+        asyncio.run_coroutine_threadsafe(self._fetch_and_push_metadata(), self._loop)
 
     # ------------------------------------------------------------------
     # Session management
@@ -123,9 +117,7 @@ class SMTCNowPlayingProvider:
             self._maybe_clear()
             return
         self._session = session
-        tok = session.add_media_properties_changed(
-            self._on_media_properties_changed
-        )
+        tok = session.add_media_properties_changed(self._on_media_properties_changed)
         self._session_tokens = [(session.remove_media_properties_changed, tok)]
         await self._fetch_and_push_metadata()
 
@@ -133,7 +125,7 @@ class SMTCNowPlayingProvider:
         for remove_fn, token in self._session_tokens:
             try:
                 remove_fn(token)
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
         self._session_tokens = []
         self._session = None
@@ -147,7 +139,7 @@ class SMTCNowPlayingProvider:
             return
         try:
             props = await self._session.try_get_media_properties_async()
-        except Exception:
+        except Exception:  # noqa: BLE001
             _LOGGER.warning("SMTC: failed to fetch media properties")
             return
 

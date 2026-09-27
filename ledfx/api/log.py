@@ -53,9 +53,7 @@ class LogEndpoint(RestEndpoint):
             sanitized = sanitized[:MAX_LEN]
 
         if not sanitized:
-            return await self.invalid_request(
-                "Text must contain ASCII characters."
-            )
+            return await self.invalid_request("Text must contain ASCII characters.")
 
         peer_ip = request.remote or "unknown"
         now = time.time()
@@ -127,7 +125,7 @@ class LogWebsocket:
             if self._socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: %s", e)
+                _LOGGER.exception("Unexpected TypeError: %s", e)  # noqa: TRY401
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")
@@ -136,7 +134,7 @@ class LogWebsocket:
             _LOGGER.info("Logging connection reset")
 
         except Exception as err:
-            _LOGGER.exception("Unexpected Exception: %s", err)
+            _LOGGER.exception("Unexpected Exception: %s", err)  # noqa: TRY401
 
         _LOGGER.info("Stopping log sender")
 
@@ -170,7 +168,7 @@ class LogWebsocket:
             if socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: %s", e)
+                _LOGGER.exception("Unexpected TypeError: %s", e)  # noqa: TRY401
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")
@@ -179,7 +177,7 @@ class LogWebsocket:
             _LOGGER.info("Logging connection reset")
 
         except Exception as err:
-            _LOGGER.exception("Unexpected Exception: %s", err)
+            _LOGGER.exception("Unexpected Exception: %s", err)  # noqa: TRY401
 
         finally:
             remove_listeners()

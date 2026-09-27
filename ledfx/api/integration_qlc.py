@@ -39,7 +39,7 @@ class QLCEndpoint(RestEndpoint):
 
         # generate dict of {effect_id: effect_name}
         effect_names = []
-        for effect_type, effect in self._ledfx.effects.classes().items():
+        for effect_type, effect in self._ledfx.effects.classes().items():  # noqa: PERF102
             effect_names.append(effect.NAME)
 
         scene_ids = []
@@ -99,7 +99,7 @@ class QLCEndpoint(RestEndpoint):
             missing_attributes.append("event_filter")
         if missing_attributes:
             return await self.invalid_request(
-                f'Required attributes {", ".join(missing_attributes)} were not provided'
+                f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
         if type(event_filter) is not dict:
@@ -157,7 +157,7 @@ class QLCEndpoint(RestEndpoint):
             missing_attributes.append("qlc_payload")
         if missing_attributes:
             return await self.invalid_request(
-                f'Required attributes {", ".join(missing_attributes)} were not provided'
+                f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
         if type(event_filter) is not dict:
@@ -209,7 +209,7 @@ class QLCEndpoint(RestEndpoint):
             missing_attributes.append("event_filter")
         if missing_attributes:
             return await self.invalid_request(
-                f'Required attributes {", ".join(missing_attributes)} were not provided'
+                f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
         if type(event_filter) is not dict:

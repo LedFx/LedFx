@@ -28,8 +28,8 @@ class ColorDeleteEndpoint(RestEndpoint):
                 return await self.request_success(
                     "success", f"Deleted color {color_id}"
                 )
-            except Exception as e:
-                error_message = f"Failed to delete color {color_id}: {str(e)}"
+            except Exception as e:  # noqa: BLE001
+                error_message = f"Failed to delete color {color_id}: {e!s}"
                 _LOGGER.warning(error_message)
                 return await self.invalid_request(error_message)
 
@@ -40,10 +40,8 @@ class ColorDeleteEndpoint(RestEndpoint):
                 return await self.request_success(
                     "success", f"Deleted gradient {color_id}"
                 )
-            except Exception as e:
-                error_message = (
-                    f"Failed to delete gradient {color_id}: {str(e)}"
-                )
+            except Exception as e:  # noqa: BLE001
+                error_message = f"Failed to delete gradient {color_id}: {e!s}"
                 _LOGGER.warning(error_message)
                 return await self.invalid_request(error_message)
 

@@ -78,9 +78,7 @@ class Soap2D(Twod, GradientEffect):
         self.density = self._config["density"]
         self.speed = self._config["speed"]
         self.intensity = self._config["intensity"]
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
 
     # ---------- lifecycle ----------
 
@@ -107,9 +105,7 @@ class Soap2D(Twod, GradientEffect):
 
         if phase_was_none:
             r = np.random.RandomState()
-            self._phase = np.array(
-                [r.rand() * 256, r.rand() * 256], dtype=np.float32
-            )
+            self._phase = np.array([r.rand() * 256, r.rand() * 256], dtype=np.float32)
 
         # Only request seeding if buffers were created/resized or we just initialized noise/phase
         if resized or noise_was_none or phase_was_none:
@@ -283,15 +279,11 @@ class Soap2D(Twod, GradientEffect):
 
         # noise + EMA smoothing
         new_field = self._gen_noise_field01(self._freq)
-        self._noise = self._noise * self.smooth + new_field * (
-            1.0 - self.smooth
-        )
+        self._noise = self._noise * self.smooth + new_field * (1.0 - self.smooth)
 
         # palette wrap like WLED (~3x) to use more of the gradient
         pal_idx = np.mod((1.0 - self._noise) * 3.0, 1.0)
-        palette_rgb = self.get_gradient_color_vectorized2d(pal_idx).astype(
-            np.float32
-        )
+        palette_rgb = self.get_gradient_color_vectorized2d(pal_idx).astype(np.float32)
 
         # seed persistent pixels once from palette so motion has history
         if self._need_seed:

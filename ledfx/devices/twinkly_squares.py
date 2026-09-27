@@ -48,10 +48,8 @@ class TwinklySquaresDevice(NetworkedDevice):
             self.ctrl.set_brightness(100)
             self.ctrl.set_mode("rt")
             info = self.ctrl.get_device_info()
-            _LOGGER.debug(
-                "Twinkly Squares device %s info: %s", self.name, info.data
-            )
-        except Exception as e:
+            _LOGGER.debug("Twinkly Squares device %s info: %s", self.name, info.data)
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning(
                 "Failed to activate Twinkly Squares device %s: %s",
                 self.name,
@@ -63,9 +61,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         self.leds = info["number_of_led"]
         layout = self.ctrl.get_led_layout()
         cords = layout["coordinates"]
-        coords_xy = np.array(
-            [[c["x"], c["y"]] for c in cords], dtype=np.float32
-        )
+        coords_xy = np.array([[c["x"], c["y"]] for c in cords], dtype=np.float32)
 
         # Calculate actual grid dimensions from coordinate distribution
         x01_temp = (coords_xy[:, 0] + 1.0) * 0.5
@@ -139,12 +135,8 @@ class TwinklySquaresDevice(NetworkedDevice):
             y01 = 1.0 - y01
 
         # Determine row,column integer positions
-        cols = np.clip(
-            np.rint(x01 * (width - 1)).astype(np.int32), 0, width - 1
-        )
-        rows = np.clip(
-            np.rint(y01 * (height - 1)).astype(np.int32), 0, height - 1
-        )
+        cols = np.clip(np.rint(x01 * (width - 1)).astype(np.int32), 0, width - 1)
+        rows = np.clip(np.rint(y01 * (height - 1)).astype(np.int32), 0, height - 1)
 
         # Row-major linear index (matching your incoming frame order)
         raster_idx = rows * width + cols
@@ -155,14 +147,10 @@ class TwinklySquaresDevice(NetworkedDevice):
             from collections import Counter
 
             counts = Counter(raster_idx)
-            collisions = {
-                idx: count for idx, count in counts.items() if count > 1
-            }
+            collisions = {idx: count for idx, count in counts.items() if count > 1}
             _LOGGER.warning(
                 "LED layout collision: %s duplicates found", len(collisions)
             )
-            raise ValueError(
-                "LED layout collision – need resolution adjustment"
-            )
+            raise ValueError("LED layout collision – need resolution adjustment")
 
         return raster_idx.astype(np.int64)

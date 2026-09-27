@@ -231,9 +231,7 @@ class TestBuildGradientStops:
 
         # 5 accent colors (6 total - 1 background) with flat color regions
         # Each accent needs 3 stops (bg, start, end), so 5 accents = 16 stops total (3*5 + 1)
-        assert (
-            len(stops) == 16
-        )  # Exact match: uses all accents from extraction
+        assert len(stops) == 16  # Exact match: uses all accents from extraction
 
     def test_empty_colors_returns_empty(self):
         """Handle empty color list."""
@@ -375,10 +373,7 @@ class TestExtractGradientMetadata:
         metadata2 = extract_gradient_metadata(img)
 
         # Gradients should match (ignoring timestamps)
-        assert (
-            metadata1["led_safe"]["gradient"]
-            == metadata2["led_safe"]["gradient"]
-        )
+        assert metadata1["led_safe"]["gradient"] == metadata2["led_safe"]["gradient"]
         assert (
             metadata1["metadata"]["background_color"]
             == metadata2["metadata"]["background_color"]

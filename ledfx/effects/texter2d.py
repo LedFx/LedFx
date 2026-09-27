@@ -98,9 +98,7 @@ class Texter2d(Twod, GradientEffect):
                 "resize_method",
                 description="What aliasing strategy to use when manipulating text elements",
                 default=ResizeMethods.BILINEAR.value,
-            ): vol.In(
-                [resize_method.value for resize_method in ResizeMethods]
-            ),
+            ): vol.In([resize_method.value for resize_method in ResizeMethods]),
             vol.Optional(
                 "text_effect",
                 description="Text effect to apply to configuration",
@@ -150,13 +148,9 @@ class Texter2d(Twod, GradientEffect):
         self.use_gradient = self._config["use_gradient"]
         # putting text_color into a list so that it can be treated the same as a gradient list
         self.text_color = [parse_color(self._config["text_color"])]
-        self.resize_method = RESIZE_METHOD_MAPPING[
-            self._config["resize_method"]
-        ]
+        self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
         self.multiplier = self._config["multiplier"]
-        self.text_effect_funcs = TEXT_EFFECT_MAPPING[
-            self._config["text_effect"]
-        ]
+        self.text_effect_funcs = TEXT_EFFECT_MAPPING[self._config["text_effect"]]
 
         self.lows_impulse_filter = self.create_filter(
             alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
@@ -299,9 +293,7 @@ class Texter2d(Twod, GradientEffect):
                     0.5,
                 )
             if self.alpha:
-                word.pose.alpha = min(
-                    1.0, 0.1 + self.lows_impulse * self.multiplier
-                )
+                word.pose.alpha = min(1.0, 0.1 + self.lows_impulse * self.multiplier)
 
         # _LOGGER.info("%s)", self.sentence.wordblocks[0].pose.y)
 
@@ -350,9 +342,7 @@ class Texter2d(Twod, GradientEffect):
 
             word.pose.size = 0.3 + self.impulses[idx] * self.multiplier
             if self.alpha:
-                word.pose.alpha = min(
-                    1.0, 0.1 + self.impulses[idx] * self.multiplier
-                )
+                word.pose.alpha = min(1.0, 0.1 + self.impulses[idx] * self.multiplier)
             if word.pose.life <= 0:
                 word.pose.life = 10
                 word.pose.d_pos = (-word.pose.d_pos[0], word.pose.d_pos[1])
@@ -375,9 +365,7 @@ class Texter2d(Twod, GradientEffect):
 
     def spokes_init(self):
         self.spoke_spin = 0
-        self.spokes = np.linspace(0, 2 * math.pi, self.sentence.wordcount + 1)[
-            :-1
-        ]
+        self.spokes = np.linspace(0, 2 * math.pi, self.sentence.wordcount + 1)[:-1]
 
         for idx, word in enumerate(self.sentence.wordblocks):
             # random seed angle between 0 and 1 so words dan't artificially line up in spin space
@@ -431,9 +419,7 @@ class Texter2d(Twod, GradientEffect):
         focus_word.pose.x = tween(focus_word.pose.x, 0, transition)
         focus_word.pose.y = tween(focus_word.pose.y, 0, transition)
         focus_word.pose.ang = tween(focus_word.pose.ang, 0, transition)
-        focus_word.pose.d_rotation = tween(
-            focus_word.pose.d_rotation, 0, transition
-        )
+        focus_word.pose.d_rotation = tween(focus_word.pose.d_rotation, 0, transition)
         focus_word.pose.alpha = tween(focus_word.pose.alpha, 1.0, transition)
 
     ############################################################################

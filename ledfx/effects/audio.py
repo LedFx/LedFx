@@ -3,7 +3,7 @@ import queue
 import threading
 import time
 from collections import deque
-from functools import cached_property, lru_cache
+from functools import cache, cached_property, lru_cache
 
 import aubio
 import numpy as np
@@ -34,7 +34,7 @@ class AudioInputSource:
     _audio_stream_active = False
     _audio = None
     _stream = None
-    _callbacks = []
+    _callbacks = []  # noqa: RUF012
     _audioWindowSize = 4
     _processed_audio_sample = None
     _volume = -90
@@ -88,9 +88,7 @@ class AudioInputSource:
                 was_active = AudioInputSource._audio_stream_active
 
                 if was_active:
-                    _LOGGER.info(
-                        "Stopping audio stream before device list refresh..."
-                    )
+                    _LOGGER.info("Stopping audio stream before device list refresh...")
                     # Cache and clear inside lock (atomic operation)
                     stream_to_close = AudioInputSource._stream
                     AudioInputSource._stream = None
@@ -101,10 +99,8 @@ class AudioInputSource:
                 try:
                     stream_to_close.stop()
                     stream_to_close.close()
-                except Exception as e:
-                    _LOGGER.warning(
-                        "Error closing stream during refresh: %s", e
-                    )
+                except Exception as e:  # noqa: BLE001
+                    _LOGGER.warning("Error closing stream during refresh: %s", e)
 
             try:
                 # Force PortAudio to rescan devices by terminating and reinitializing
@@ -113,7 +109,7 @@ class AudioInputSource:
                 # Clear the device list cache
                 AudioInputSource._device_list_cache = None
                 _LOGGER.info("Audio device list refreshed")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning("Failed to refresh audio device list: %s", e)
 
             return was_active
@@ -136,7 +132,7 @@ class AudioInputSource:
                 config_dir=self._ledfx.config_dir,
             )
             return True
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Failed to persist audio config: %s", e)
             return False
 
@@ -193,7 +189,7 @@ class AudioInputSource:
             # Try to reactivate with current config anyway
             try:
                 self.activate()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.error(
                     "Failed to reactivate audio stream after device change: %s",
                     e,
@@ -224,7 +220,7 @@ class AudioInputSource:
                         error_type="sendspin_device_not_found",
                         message=(
                             f"Sendspin audio source "
-                            f"'{last_device_name[len('SENDSPIN:'):].strip()}' "
+                            f"'{last_device_name[len('SENDSPIN:') :].strip()}' "
                             "is no longer available. Check your Sendspin server "
                             "or select a different audio source."
                         ),
@@ -275,7 +271,7 @@ class AudioInputSource:
         try:
             _LOGGER.info("Reactivating audio stream after device list refresh")
             self.activate()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error(
                 "Failed to reactivate audio stream after device change: %s", e
             )
@@ -333,9 +329,7 @@ class AudioInputSource:
         if len(device_list) == 0 or default_output_device_idx == -1:
             _LOGGER.warning("No audio output devices found.")
         else:
-            default_output_device_name = device_list[
-                default_output_device_idx
-            ]["name"]
+            default_output_device_name = device_list[default_output_device_idx]["name"]
 
             # We need to run over the device list looking for the target devices name
             _LOGGER.debug(
@@ -542,7 +536,7 @@ class AudioInputSource:
                 AudioSourceErrorEvent(
                     error_type="sendspin_device_not_found",
                     message=(
-                        f"Sendspin audio source '{saved_name[len('SENDSPIN:'):].strip()}' "
+                        f"Sendspin audio source '{saved_name[len('SENDSPIN:') :].strip()}' "
                         "not found. Check your Sendspin server configuration or "
                         "select a different audio source."
                     ),
@@ -592,14 +586,12 @@ class AudioInputSource:
                 old_config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS
             )
 
-            if old_config.get("audio_device") != new_config.get(
-                "audio_device"
-            ):
+            if old_config.get("audio_device") != new_config.get("audio_device"):
                 device_changing = True
         else:
             old_config = None
 
-        if AudioInputSource._audio_stream_active:
+        if AudioInputSource._audio_stream_active:  # noqa: SIM102
             if device_changing or pipeline_changing:
                 self.deactivate()
 
@@ -613,7 +605,7 @@ class AudioInputSource:
             last_active = AudioInputSource._last_active
 
         # Activate outside the lock to avoid deadlock
-        if len(self._callbacks) != 0 or self._should_always_keep_active():
+        if len(self._callbacks) != 0 or self._should_always_keep_active():  # noqa: SIM102
             if not AudioInputSource._audio_stream_active:
                 self.activate()
 
@@ -648,9 +640,7 @@ class AudioInputSource:
             try:
                 self._audio = sd
             except OSError as Error:
-                _LOGGER.critical(
-                    "Sounddevice error: %s. Shutting down.", Error
-                )
+                _LOGGER.critical("Sounddevice error: %s. Shutting down.", Error)
                 self._ledfx.stop()
 
         # Enumerate all of the input devices and find the one matching the
@@ -707,7 +697,7 @@ class AudioInputSource:
                     AudioSourceErrorEvent(
                         error_type="sendspin_device_unavailable",
                         message=(
-                            f"Sendspin audio source '{configured_name[len('SENDSPIN:'):].strip()}' "
+                            f"Sendspin audio source '{configured_name[len('SENDSPIN:') :].strip()}' "
                             "is not available. Check your Sendspin server configuration "
                             "or select a different audio source."
                         ),
@@ -718,9 +708,7 @@ class AudioInputSource:
 
             # Configured device is invalid — resolve the default now
             default_device = self.default_device_index()
-            if device_idx is not None and device_idx > max(
-                valid_device_indexes
-            ):
+            if device_idx is not None and device_idx > max(valid_device_indexes):
                 _LOGGER.warning(
                     "Audio device index %s out of range (max valid: %s). "
                     "Falling back to default device index %s",
@@ -753,19 +741,13 @@ class AudioInputSource:
         )
         if selected_coeff == "matt_mel":
             _LOGGER.debug("Using matt_mel settings for pre-emphasis.")
-            self.pre_emphasis.set_biquad(
-                0.8268, -1.6536, 0.8268, -1.6536, 0.6536
-            )
+            self.pre_emphasis.set_biquad(0.8268, -1.6536, 0.8268, -1.6536, 0.6536)
         elif selected_coeff == "scott_mel":
             _LOGGER.debug("Using scott_mel settings for pre-emphasis.")
-            self.pre_emphasis.set_biquad(
-                1.3662, -1.9256, 0.5621, -1.9256, 0.9283
-            )
+            self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
         else:
             _LOGGER.debug("Using generic settings for pre-emphasis")
-            self.pre_emphasis.set_biquad(
-                0.85870, -1.71740, 0.85870, -1.71605, 0.71874
-            )
+            self.pre_emphasis.set_biquad(0.85870, -1.71740, 0.85870, -1.71605, 0.71874)
 
         freq_domain_length = (self._config["fft_size"] // 2) + 1
 
@@ -841,14 +823,11 @@ class AudioInputSource:
                 channels = 1
 
             if hostapis[device["hostapi"]]["name"] == "WEB AUDIO":
-                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = (
-                    AudioInputSource._stream
-                ) = WebAudioStream(
-                    device["client"], self._audio_sample_callback
+                ledfx.api.websocket.ACTIVE_AUDIO_STREAM = AudioInputSource._stream = (
+                    WebAudioStream(device["client"], self._audio_sample_callback)
                 )
             elif (
-                SENDSPIN_AVAILABLE
-                and hostapis[device["hostapi"]]["name"] == "SENDSPIN"
+                SENDSPIN_AVAILABLE and hostapis[device["hostapi"]]["name"] == "SENDSPIN"
             ):
                 from ledfx.sendspin.stream import SendspinAudioStream
 
@@ -870,8 +849,7 @@ class AudioInputSource:
                     dtype=np.float32,
                     latency="low",
                     blocksize=int(
-                        device["default_samplerate"]
-                        / self._config["sample_rate"]
+                        device["default_samplerate"] / self._config["sample_rate"]
                     ),
                     # only pass channels if we set it to something other than None
                     **({"channels": channels} if channels is not None else {}),
@@ -900,7 +878,7 @@ class AudioInputSource:
                 try:
                     sd._terminate()
                     sd._initialize()
-                except Exception as reinit_err:
+                except Exception as reinit_err:  # noqa: BLE001
                     _LOGGER.warning("PortAudio reinit failed: %s", reinit_err)
                     return False
             try:
@@ -925,9 +903,7 @@ class AudioInputSource:
             if not current_name or current_idx is None:
                 return
 
-            name_changed = (
-                self._config.get("audio_device_name", "") != current_name
-            )
+            name_changed = self._config.get("audio_device_name", "") != current_name
             idx_changed = self._config.get("audio_device") != current_idx
 
             if name_changed or idx_changed:
@@ -948,9 +924,7 @@ class AudioInputSource:
             persist_device_name_if_needed()
             return
 
-        _LOGGER.info(
-            "Reinitializing PortAudio and retrying device [%s]...", device_idx
-        )
+        _LOGGER.info("Reinitializing PortAudio and retrying device [%s]...", device_idx)
         if try_open_device(device_idx, reinit=True):
             _LOGGER.info(
                 "Audio device [%s] opened successfully after PortAudio reinit.",
@@ -996,19 +970,13 @@ class AudioInputSource:
             return False
 
         configured_name = (
-            self._config.get("audio_device_name")
-            if hasattr(self, "_config")
-            else ""
+            self._config.get("audio_device_name") if hasattr(self, "_config") else ""
         )
-        if isinstance(configured_name, str) and configured_name.startswith(
-            "SENDSPIN:"
-        ):
+        if isinstance(configured_name, str) and configured_name.startswith("SENDSPIN:"):
             return True
 
         device_idx = (
-            self._config.get("audio_device")
-            if hasattr(self, "_config")
-            else None
+            self._config.get("audio_device") if hasattr(self, "_config") else None
         )
         result = is_sendspin_always_on(
             device_idx,
@@ -1020,10 +988,7 @@ class AudioInputSource:
     def subscribe(self, callback):
         """Registers a callback with the input source"""
         self._callbacks.append(callback)
-        if (
-            len(self._callbacks) > 0
-            and not AudioInputSource._audio_stream_active
-        ):
+        if len(self._callbacks) > 0 and not AudioInputSource._audio_stream_active:
             self.activate()
         if self._timer is not None:
             self._timer.cancel()
@@ -1080,7 +1045,7 @@ class AudioInputSource:
         for key, value in devices.items():
             # Case 1: Stored name is substring of current device name
             # This handles truncation where stored name is shorter
-            if device_name in value:
+            if device_name in value:  # noqa: SIM102
                 # Prefer longer matches to find the most specific device
                 if len(value) > best_match_len:
                     best_match_idx = key
@@ -1151,7 +1116,6 @@ class AudioInputSource:
 
     def _invalidate_caches(self):
         """Invalidates the necessary cache"""
-        pass
 
     def pre_process_audio(self):
         """
@@ -1175,14 +1139,10 @@ class AudioInputSource:
 
             # Perform a pre-emphasis to balance the highs and lows
             if self.pre_emphasis:
-                self._processed_audio_sample = self.pre_emphasis(
-                    self._raw_audio_sample
-                )
+                self._processed_audio_sample = self.pre_emphasis(self._raw_audio_sample)
 
             # Pass into the phase vocoder to get a windowed FFT
-            self._frequency_domain = self._phase_vocoder(
-                self._processed_audio_sample
-            )
+            self._frequency_domain = self._phase_vocoder(self._processed_audio_sample)
         else:
             self._frequency_domain = self._frequency_domain_null
 
@@ -1204,7 +1164,7 @@ class AudioInputSource:
 
 class AudioAnalysisSource(AudioInputSource):
     # https://aubio.org/doc/latest/pitch_8h.html
-    PITCH_METHODS = [
+    PITCH_METHODS = [  # noqa: RUF012
         "yinfft",
         "yin",
         "yinfast",
@@ -1215,7 +1175,7 @@ class AudioAnalysisSource(AudioInputSource):
         "specacf",
     ]
     # https://aubio.org/doc/latest/specdesc_8h.html
-    ONSET_METHODS = [
+    ONSET_METHODS = [  # noqa: RUF012
         "energy",
         "hfc",
         "complex",
@@ -1250,7 +1210,7 @@ class AudioAnalysisSource(AudioInputSource):
 
     # some frequency constants
     # beat, bass, mids, high
-    freq_max_mels = [
+    freq_max_mels = [  # noqa: RUF012
         100,
         250,
         3000,
@@ -1315,15 +1275,11 @@ class AudioAnalysisSource(AudioInputSource):
                     (
                         i
                         for i, f in enumerate(
-                            self.melbanks.melbank_processors[
-                                2
-                            ].melbank_frequencies
+                            self.melbanks.melbank_processors[2].melbank_frequencies
                         )
                         if f > freq
                     ),
-                    len(
-                        self.melbanks.melbank_processors[2].melbank_frequencies
-                    ),
+                    len(self.melbanks.melbank_processors[2].melbank_frequencies),
                 )
             )
 
@@ -1362,7 +1318,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.volume_beat_now.cache_clear()
         self.bar_oscillator.cache_clear()
 
-    @lru_cache(maxsize=None)
+    @cache  # noqa: B019
     def pitch(self):
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
@@ -1371,7 +1327,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning("%s", e)
             return 0
 
-    @lru_cache(maxsize=None)
+    @cache  # noqa: B019
     def onset(self):
         try:
             return bool(self._onset(self.audio_sample(raw=True))[0])
@@ -1379,7 +1335,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning("%s", e)
             return 0
 
-    @lru_cache(maxsize=None)
+    @cache  # noqa: B019
     def bpm_beat_now(self):
         """
         Returns True if a beat is expected now based on BPM data
@@ -1390,7 +1346,7 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning("%s", e)
             return False
 
-    @lru_cache(maxsize=None)
+    @cache  # noqa: B019
     def volume_beat_now(self):
         """
         Returns True if a beat is expected now based on volume of the beat freq region
@@ -1407,9 +1363,7 @@ class AudioAnalysisSource(AudioInputSource):
         # calculates the % difference of the first value of the channel to the average for the channel
         if sum(self.beat_power_history) > 0:
             difference = (
-                beat_power
-                * self.beat_power_history_len
-                / sum(self.beat_power_history)
+                beat_power * self.beat_power_history_len / sum(self.beat_power_history)
                 - 1
             )
         else:
@@ -1432,9 +1386,7 @@ class AudioAnalysisSource(AudioInputSource):
 
         melbank = self.melbanks.melbanks[2]
 
-        self.freq_power_raw[0] = np.average(
-            melbank[: self.freq_mel_indexes[0]]
-        )
+        self.freq_power_raw[0] = np.average(melbank[: self.freq_mel_indexes[0]])
         self.freq_power_raw[1] = np.average(
             melbank[self.freq_mel_indexes[0] : self.freq_mel_indexes[1]]
         )
@@ -1488,7 +1440,7 @@ class AudioAnalysisSource(AudioInputSource):
         """
         return self.get_freq_power(3, filtered)
 
-    @lru_cache(maxsize=None)
+    @cache  # noqa: B019
     def bar_oscillator(self):
         """
         Returns a float (0<=x<4) corresponding to the position of the beat
@@ -1549,7 +1501,7 @@ class AudioReactiveEffect(Effect):
 
     # this can be used by inheriting classes for power func selection in schema
     # see magnitude or scan effect for examples
-    POWER_FUNCS_MAPPING = {
+    POWER_FUNCS_MAPPING = {  # noqa: RUF012
         "Beat": "beat_power",
         "Bass": "bass_power",
         "Lows (beat+bass)": "lows_power",
@@ -1605,7 +1557,6 @@ class AudioReactiveEffect(Effect):
         Callback for when the audio data is updated. Should
         be implemented by subclasses
         """
-        pass
 
     def clear_melbank_freq_props(self):
         """
@@ -1688,7 +1639,7 @@ class AudioReactiveEffect(Effect):
             return 1
         return length
 
-    @lru_cache(maxsize=16)
+    @lru_cache(maxsize=16)  # noqa: B019
     def _melbank_interp_linspaces(self, size):
         old = np.linspace(0, 1, self._input_mel_length)
         new = np.linspace(0, 1, size)
@@ -1706,7 +1657,7 @@ class AudioReactiveEffect(Effect):
             # Replace NaN values with 0
             np.nan_to_num(melbank, copy=False)
 
-    @lru_cache(maxsize=None)
+    @cache  # noqa: B019
     def melbank(self, filtered=False, size=0):
         """
         This little bit of code pulls together information from the effect's
@@ -1717,9 +1668,9 @@ class AudioReactiveEffect(Effect):
         filtered, bool : melbank with smoothed attack and decay
         """
         if filtered:
-            melbank = self.audio.melbanks.melbanks_filtered[
-                self._selected_melbank
-            ][self._melbank_min_idx : self._melbank_max_idx]
+            melbank = self.audio.melbanks.melbanks_filtered[self._selected_melbank][
+                self._melbank_min_idx : self._melbank_max_idx
+            ]
         else:
             melbank = self.audio.melbanks.melbanks[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx
@@ -1742,12 +1693,10 @@ class AudioReactiveEffect(Effect):
         """
         melbank = self.melbank(**kwargs)
         mel_length = len(melbank)
-        splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))
+        splits = tuple(map(lambda i: int(i * mel_length), [0.2, 0.5]))  # noqa: C417
 
         thirds = np.split(melbank, splits)
 
         # Ensure each third has at least one element to prevent NaN from max/mean
         # on empty arrays (can happen with very narrow frequency ranges)
-        return tuple(
-            arr if len(arr) > 0 else np.array([0.0]) for arr in thirds
-        )
+        return tuple(arr if len(arr) > 0 else np.array([0.0]) for arr in thirds)

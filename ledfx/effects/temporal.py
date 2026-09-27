@@ -50,8 +50,7 @@ class TemporalEffect(Effect):
             timeToSleep = (sleepInterval / self._config["speed"]) - (
                 time.time() - startTime
             )
-            if timeToSleep < 0.001:
-                timeToSleep = 0.001
+            timeToSleep = max(timeToSleep, 0.001)
             time.sleep(timeToSleep)
 
     def effect_loop(self):
@@ -59,13 +58,10 @@ class TemporalEffect(Effect):
         Triggered periodically based on the effect speed and
         any additional effect modifiers
         """
-        pass
 
     def on_activate(self, pixel_count):
         self._thread_active = True
-        self._thread = Thread(
-            name=f"Effect: {self.name}", target=self.thread_function
-        )
+        self._thread = Thread(name=f"Effect: {self.name}", target=self.thread_function)
         self._thread.start()
 
     def deactivate(self):

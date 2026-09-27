@@ -7,7 +7,7 @@ _LOGGER = logging.getLogger(__name__)
 
 class IterClass(type):
     def __iter__(cls):
-        yield from getattr(cls, "NAMED_FUNCTIONS").keys()
+        yield from cls.NAMED_FUNCTIONS.keys()
 
 
 class Transitions(metaclass=IterClass):
@@ -24,10 +24,10 @@ class Transitions(metaclass=IterClass):
         self.iris_array = np.concatenate([i[::2], i[-1 + len(i) % -2 :: -2]])
 
     def __getitem__(cls, mode):
-        return getattr(cls, "NAMED_FUNCTIONS")[mode]
+        return cls.NAMED_FUNCTIONS[mode]
 
     def __setitem__(cls, mode):
-        raise Exception("Don't you be setting these values cheeky ;)")
+        raise Exception("Don't you be setting these values cheeky ;)")  # noqa: TRY002
 
     def _validate(x1, x2, weight):
         assert np.shape(x1) == np.shape(x2)
@@ -100,7 +100,7 @@ class Transitions(metaclass=IterClass):
         else:
             np.clip(x1, None, 255 * 2 * (weight - 0.5), x1)
 
-    NAMED_FUNCTIONS = {
+    NAMED_FUNCTIONS = {  # noqa: RUF012
         "Add": add,
         "Dissolve": dissolve,
         "Push": push,

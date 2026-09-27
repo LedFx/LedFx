@@ -25,9 +25,7 @@ class EffectsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -47,16 +45,11 @@ class EffectsEndpoint(RestEndpoint):
 
         # clearing specific effect from history
         try:
-            if (
-                virtual.active_effect
-                and virtual.active_effect.type == effect_type
-            ):
+            if virtual.active_effect and virtual.active_effect.type == effect_type:
                 virtual.clear_effect()
                 virtual.virtual_cfg.pop("effect", None)
-        except Exception as e:
-            _LOGGER.error(
-                "Error clearing active effect in effects delete: %s", e
-            )
+        except Exception as e:  # noqa: BLE001
+            _LOGGER.error("Error clearing active effect in effects delete: %s", e)
 
         virtual.virtual_cfg.get("effects", {}).pop(effect_type, None)
 

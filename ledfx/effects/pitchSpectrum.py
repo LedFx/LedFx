@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np  # noqa: N999
 import voluptuous as vol
 
 from ledfx.color import RGB
@@ -47,9 +47,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank
-        self.filtered_melbank = self.melbank(
-            filtered=False, size=self.pixel_count
-        )
+        self.filtered_melbank = self.melbank(filtered=False, size=self.pixel_count)
         midi_value = data.pitch() or 0
 
         if not self.avg_midi:

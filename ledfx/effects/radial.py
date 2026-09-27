@@ -138,9 +138,7 @@ class Radial2d(Twod):
                 self._config["source_virtual"]
             )
 
-        if self.source_virtual and hasattr(
-            self.source_virtual, "assembled_frame"
-        ):
+        if self.source_virtual and hasattr(self.source_virtual, "assembled_frame"):
             pixels_in = self.source_virtual.assembled_frame
 
             # Use precomputed geometry

@@ -6,7 +6,7 @@ try:
 except ImportError as e:
     print(f"Required package not found: {e}")
     print("Please install required packages: pip install keyboard requests")
-    exit(1)
+    exit(1)  # noqa: PLR1722
 # this test script will on the pressing of the space bar send a request to the ledfx server
 # to change the effect of a virtual to my_effect with the fallback value of 20 seconds
 # On release of the space bar it will cancel the effect and fallback to the previous effect
@@ -40,9 +40,7 @@ def on_space_press():
 def on_space_release():
     global was_pressed
     print("Space bar released")
-    response = requests.get(
-        f"http://127.0.0.1:8888/api/virtuals/{my_virtual}/fallback"
-    )
+    response = requests.get(f"http://127.0.0.1:8888/api/virtuals/{my_virtual}/fallback")
     print(f"Response1: {response.status_code} - {response.text}")
     response = requests.get(
         f"http://127.0.0.1:8888/api/virtuals/{my_virtual_2}/fallback"

@@ -31,7 +31,7 @@ class ModulateEffect(Effect):
                 "modulation_effect",
                 default="sine",
                 description="Choose an animation",
-            ): vol.In(list(["sine", "breath"])),
+            ): vol.In(list(["sine", "breath"])),  # noqa: C410
             vol.Optional(
                 "modulation_speed",
                 default=0.5,
@@ -75,9 +75,7 @@ class ModulateEffect(Effect):
                 self._counter = 0
 
             pixels[
-                int(
-                    self._breath_cycle[int(self._counter)] * self.pixel_count
-                ) :,
+                int(self._breath_cycle[int(self._counter)] * self.pixel_count) :,
                 :,
             ] = 0
             return pixels

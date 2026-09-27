@@ -26,7 +26,9 @@ class Spotify(Integration):
     beta = False
 
     NAME = "Spotify"
-    DESCRIPTION = "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
+    DESCRIPTION = (
+        "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
+    )
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -61,15 +63,15 @@ class Spotify(Integration):
 
     def add_trigger(self, scene_id, song_id, song_name, song_position):
         """Add a trigger to saved triggers"""
-        trigger_id = f"{song_id}-{str(song_position)}"
-        if scene_id not in self._data.keys():
+        trigger_id = f"{song_id}-{song_position!s}"
+        if scene_id not in self._data.keys():  # noqa: SIM118
             self._data[scene_id] = {}
         self._data[scene_id][trigger_id] = [song_id, song_name, song_position]
 
     def delete_trigger(self, trigger_id):
         """Delete a trigger from saved triggers"""
-        for scene_id in self._data.keys():
-            if trigger_id in self._data[scene_id].keys():
+        for scene_id in self._data.keys():  # noqa: SIM118
+            if trigger_id in self._data[scene_id].keys():  # noqa: SIM118
                 del self._data[scene_id][trigger_id]
 
     async def connect(self, msg=None):

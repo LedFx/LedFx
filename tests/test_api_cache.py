@@ -14,9 +14,7 @@ from tests.test_utilities.consts import BASE_PORT
 
 # Test URLs - Use 127.0.0.1 instead of localhost to avoid Windows DNS resolution delay
 CACHE_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/cache/images"
-CACHE_REFRESH_API_URL = (
-    f"http://127.0.0.1:{BASE_PORT}/api/cache/images/refresh"
-)
+CACHE_REFRESH_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/cache/images/refresh"
 ASSETS_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets"
 ASSETS_THUMBNAIL_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets/thumbnail"
 
@@ -71,9 +69,7 @@ class TestCacheRefreshAPI:
         assert isinstance(result["refreshed"], bool)
 
         # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "refresh_test.png"}, timeout=5
-        )
+        requests.delete(ASSETS_API_URL, params={"path": "refresh_test.png"}, timeout=5)
 
     def test_refresh_all_variants(self, sample_png_bytes):
         """Test refreshing all cache variants for a URL."""
@@ -224,9 +220,7 @@ class TestCacheDeleteAPI:
         assert "cleared_count" in result
 
         # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "delete_test.png"}, timeout=5
-        )
+        requests.delete(ASSETS_API_URL, params={"path": "delete_test.png"}, timeout=5)
 
     def test_delete_all_variants(self, sample_png_bytes):
         """Test deleting all cache variants via query parameter."""
@@ -329,9 +323,7 @@ class TestCacheDeleteAPI:
         assert "cleared_count" in result
 
         # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "query_bool.png"}, timeout=5
-        )
+        requests.delete(ASSETS_API_URL, params={"path": "query_bool.png"}, timeout=5)
 
     def test_clear_entire_cache(self):
         """Test clearing the entire cache by omitting URL parameter."""
@@ -397,9 +389,7 @@ class TestCacheStatsAPI:
             assert not entry["url"].startswith("asset://")
 
         # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "stats_test.png"}, timeout=5
-        )
+        requests.delete(ASSETS_API_URL, params={"path": "stats_test.png"}, timeout=5)
 
     def test_get_stats_includes_image_metadata(self, sample_png_bytes):
         """Test that cache stats include image metadata fields."""
@@ -447,6 +437,4 @@ class TestCacheStatsAPI:
                 assert isinstance(entry["is_animated"], bool)
 
         # Cleanup
-        requests.delete(
-            ASSETS_API_URL, params={"path": "metadata_test.png"}, timeout=5
-        )
+        requests.delete(ASSETS_API_URL, params={"path": "metadata_test.png"}, timeout=5)

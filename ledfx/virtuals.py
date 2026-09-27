@@ -2,7 +2,6 @@ import logging
 import threading
 import time
 from functools import cached_property
-from typing import Optional
 
 import numpy as np
 import voluptuous as vol
@@ -34,9 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 class Virtual:
     CONFIG_SCHEMA = vol.Schema(
         {
-            vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
+            vol.Required("name", description="Friendly name for the device"): str,
             vol.Required(
                 "mapping",
                 description="Span: Effect spans all segments. Copy: Effect copied on each segment",
@@ -301,12 +298,9 @@ class Virtual:
                 end_pixel,
                 device.pixel_count - 1,
             )
-            if start_pixel < 0:
-                start_pixel = 0
-            if end_pixel < 0:
-                end_pixel = 0
-            if start_pixel > end_pixel:
-                start_pixel = end_pixel
+            start_pixel = max(start_pixel, 0)
+            end_pixel = max(end_pixel, 0)
+            start_pixel = min(start_pixel, end_pixel)
             if start_pixel >= device.pixel_count:
                 start_pixel = device.pixel_count - 1
             if end_pixel >= device.pixel_count:
@@ -418,9 +412,7 @@ class Virtual:
             self._device_remap = {}
             return
 
-        _LOGGER.info(
-            "Virtual %s: compiling device remap for complex segments", self.id
-        )
+        _LOGGER.info("Virtual %s: compiling device remap for complex segments", self.id)
 
         # Group segments by device and build index arrays
         device_buffers = {}  # {device_id: {"src": list, "dst": list}}
@@ -446,9 +438,7 @@ class Virtual:
             )
 
             # Build device indices for this segment
-            device_indices = np.arange(
-                device_start, device_end + 1, dtype=np.int32
-            )
+            device_indices = np.arange(device_start, device_end + 1, dtype=np.int32)
 
             # Handle reverse flag by reversing virtual indices
             if reverse:
@@ -502,9 +492,7 @@ class Virtual:
 
         # Create the effect and add it to the virtual
         try:
-            effect_config = self._ledfx.config[category][effect_id][preset_id][
-                "config"
-            ]
+            effect_config = self._ledfx.config[category][effect_id][preset_id]["config"]
         except KeyError:
             _LOGGER.error("Cannot find preset: %s", preset_info)
             return
@@ -520,7 +508,6 @@ class Virtual:
 
         if self.fallback_active:
             if self.fallback_effect_type is not None:
-
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx,
                     type=self.fallback_effect_type,
@@ -582,7 +569,7 @@ class Virtual:
             _LOGGER.info("%s fallback_fire_set", self.name)
             self.fallback_fire = True
 
-    def set_effect(self, effect, fallback: Optional[float] = None):
+    def set_effect(self, effect, fallback: float | None = None):
         """
         Sets the active effect for the virtual device.
 
@@ -599,7 +586,9 @@ class Virtual:
         """
         with self.lock:
             if not self._devices:
-                error = f"Virtual {self.id}: Cannot activate, no configured device segments"
+                error = (
+                    f"Virtual {self.id}: Cannot activate, no configured device segments"
+                )
                 _LOGGER.warning(error)
                 raise ValueError(error)
 
@@ -611,9 +600,7 @@ class Virtual:
                 elif not self.fallback_active:
                     self.fallback_effect_type = self._active_effect.type
                     self.fallback_config = self._active_effect.config
-                    _LOGGER.info(
-                        "Setting fallback to %s", self.fallback_effect_type
-                    )
+                    _LOGGER.info("Setting fallback to %s", self.fallback_effect_type)
                 # else: don't let new fallbacks override active fallbacks, just bump the timer
                 self.fallback_start(fallback)
 
@@ -629,9 +616,7 @@ class Virtual:
                 self.clear_transition_effect()
 
                 if self._active_effect is None:
-                    self._transition_effect = DummyEffect(
-                        self.effective_pixel_count
-                    )
+                    self._transition_effect = DummyEffect(self.effective_pixel_count)
                 else:
                     self._transition_effect = self._active_effect
             else:
@@ -706,9 +691,7 @@ class Virtual:
                 if self.fallback_suppress_transition
                 else self._config["transition_time"]
             )
-            self.clear_handle = self._ledfx.loop.call_later(
-                delay, self.clear_frame
-            )
+            self.clear_handle = self._ledfx.loop.call_later(delay, self.clear_frame)
 
     def flush_pending_clear_frame(self):
         if self.clear_handle is not None:
@@ -786,9 +769,7 @@ class Virtual:
             frame = self.assembled_frame
 
         self._ledfx.events.fire_event(
-            VirtualUpdateEvent(
-                self.id, self._effective_to_physical_pixels(frame)
-            )
+            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
         )
 
     def set_calibration(self, calibration):
@@ -858,9 +839,7 @@ class Virtual:
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
             run_time = time.perf_counter() - start_time
-            sleep_time = max(
-                0.001, fps_to_sleep_interval(self.refresh_rate) - run_time
-            )
+            sleep_time = max(0.001, fps_to_sleep_interval(self.refresh_rate) - run_time)
             time.sleep(sleep_time)
 
             # use an aggressive check for did we sleep against expected min clk
@@ -917,10 +896,7 @@ class Virtual:
                 else:
                     # calculates how far in we are in the transition
                     # 0 = previous effect and 1 = next effect
-                    weight = (
-                        self.transition_frame_counter
-                        / self.transition_frame_total
-                    )
+                    weight = self.transition_frame_counter / self.transition_frame_total
 
                 # we will pre validate the transition, which will generate a sentry report if it fails and return False
                 if self.transitions.pre_validate(frame, transition_frame):
@@ -928,10 +904,7 @@ class Virtual:
                     self.frame_transitions(
                         self.transitions, frame, transition_frame, weight
                     )
-                if (
-                    self.transition_frame_counter
-                    == self.transition_frame_total
-                ):
+                if self.transition_frame_counter == self.transition_frame_total:
                     self.clear_transition_effect()
 
             np.multiply(frame, self._config["max_brightness"], frame)
@@ -965,9 +938,7 @@ class Virtual:
             name=f"Virtual: {self.id}", target=self.thread_function
         )
         self._thread.start()
-        self._ledfx.events.fire_event(
-            VirtualPauseEvent(self.id, not self._active)
-        )
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, not self._active))
         # self._task = self._ledfx.loop.create_task(self.thread_function())
         # self._task.add_done_callback(lambda task: task.result())
         self._ledfx.virtuals.check_and_deactivate_devices()
@@ -978,9 +949,7 @@ class Virtual:
         if hasattr(self, "_thread"):
             self._thread.join()
         self.deactivate_segments()
-        self._ledfx.events.fire_event(
-            VirtualPauseEvent(self.id, not self._active)
-        )
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, not self._active))
         self._ledfx.virtuals.check_and_deactivate_devices()
 
     # @lru_cache(maxsize=32)
@@ -1069,14 +1038,12 @@ class Virtual:
         for device_id, segments in self._segments_by_device.items():
             data = []
             device = self._ledfx.devices.get(device_id)
-            if device is not None:
+            if device is not None:  # noqa: SIM102
                 if device.is_active():
                     if self._calibration:
                         # Reset color sequence for each device to maintain consistency
                         self._calibration_cache.reset_color_sequence()
-                        self.render_calibration(
-                            data, device, segments, device_id
-                        )
+                        self.render_calibration(data, device, segments, device_id)
                     elif self._config["mapping"] == "span":
                         for (
                             start,
@@ -1099,17 +1066,13 @@ class Virtual:
                             device_end,
                         ) in segments:
                             target_physical_len = device_end - device_start + 1
-                            target_effect_len = (
-                                self._get_effective_pixel_count(
-                                    target_physical_len
-                                )
+                            target_effect_len = self._get_effective_pixel_count(
+                                target_physical_len
                             )
                             # In copy mode, we need to scale the effect and afterwards expand the
                             # pixel groups separately for every segment, because pre-calculating once
                             # and scaling would lead to incorrect pixel group lengths.
-                            seg = interpolate_pixels(
-                                pixels, target_effect_len
-                            )[::step]
+                            seg = interpolate_pixels(pixels, target_effect_len)[::step]
                             seg = self._effective_to_physical_pixels(
                                 seg, target_physical_len
                             )
@@ -1182,9 +1145,7 @@ class Virtual:
             patterns = self._calibration_cache.get_pattern_batch(batch_data)
 
             # Append patterns to data
-            for pattern, (device_start, device_end) in zip(
-                patterns, device_positions
-            ):
+            for pattern, (device_start, device_end) in zip(patterns, device_positions):
                 data.append((pattern, device_start, device_end))
 
         # render the highlight
@@ -1285,7 +1246,7 @@ class Virtual:
                 device_start,
                 device_end,
             )
-            if device_id in segments_by_device.keys():
+            if device_id in segments_by_device:
                 segments_by_device[device_id].append(segment_info)
             else:
                 segments_by_device[device_id] = [segment_info]
@@ -1297,7 +1258,7 @@ class Virtual:
         """
         Return an iterable of the device object of each segment of the virtual
         """
-        return list(
+        return list(  # noqa: C400
             self._ledfx.devices.get(device_id)
             for device_id in {segment[0] for segment in self._segments}
             if not device_id.startswith("gap-")
@@ -1365,9 +1326,7 @@ class Virtual:
             effect config or empty dict {}
         """
         return (
-            self.virtual_cfg.get("effects", {})
-            .get(effect_type, {})
-            .get("config", {})
+            self.virtual_cfg.get("effects", {}).get(effect_type, {}).get("config", {})
         )
 
     @staticmethod
@@ -1403,12 +1362,9 @@ class Virtual:
 
             if (
                 _config["transition_mode"] != self._config["transition_mode"]
-                or _config["transition_time"]
-                != self._config["transition_time"]
+                or _config["transition_time"] != self._config["transition_time"]
             ):
-                self.frame_transitions = self.transitions[
-                    _config["transition_mode"]
-                ]
+                self.frame_transitions = self.transitions[_config["transition_mode"]]
                 if self._ledfx.config["global_transitions"]:
                     for virtual_id in self._ledfx.virtuals:
                         if virtual_id == self.id:
@@ -1425,26 +1381,22 @@ class Virtual:
                                 "transition_mode"
                             ]
                         else:
-                            _LOGGER.info(
-                                "virtual of %s has no transitions", virtual_id
-                            )
+                            _LOGGER.info("virtual of %s has no transitions", virtual_id)
             if (
-                "frequency_min" in new_config.keys()
-                or "frequency_max" in new_config.keys()
+                "frequency_min" in new_config.keys()  # noqa: SIM118
+                or "frequency_max" in new_config.keys()  # noqa: SIM118
             ):
                 # Validate, adjust, and update frequency range
                 self._validate_and_set_frequency_range(_config)
 
                 # Clear cached effect properties so the changes take effect
-                if self._active_effect is not None:
-                    if hasattr(
-                        self._active_effect, "clear_melbank_freq_props"
-                    ):
+                if self._active_effect is not None:  # noqa: SIM102
+                    if hasattr(self._active_effect, "clear_melbank_freq_props"):
                         self._active_effect.clear_melbank_freq_props()
 
             if self._active_effect is not None:
                 # if a virtual level config change impacts a 2d effect layout, then trigger an init
-                if (
+                if (  # noqa: SIM102
                     _config["rows"] != self._config["rows"]
                     or _config["rotate"] != self._config["rotate"]
                 ):
@@ -1460,7 +1412,7 @@ class Virtual:
         if _config["rows"] <= 1:
             _config["rotate"] = 0
 
-        setattr(self, "_config", _config)
+        self._config = _config
 
         old_complex_segments = self.complex_segments
         self.complex_segments = _config.get("complex_segments", False)
@@ -1471,9 +1423,7 @@ class Virtual:
         ):
             self._compile_device_remap()
 
-        self._ledfx.events.fire_event(
-            VirtualConfigUpdateEvent(self.id, self._config)
-        )
+        self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
 
         if reactivate_effect:
             self._reactivate_effect()
@@ -1501,9 +1451,7 @@ class Virtual:
         """Calculates the number of effective pixels for a given number of physical pixels, considering pixel grouping."""
         return int(np.ceil(physical_pixel_count / self.group_size))
 
-    def _effective_to_physical_pixels(
-        self, effective_pixels, pixel_count=None
-    ):
+    def _effective_to_physical_pixels(self, effective_pixels, pixel_count=None):
         """Projects an array of effective pixels into an array of pixels for physical rendering, considering pixel grouping."""
         if self.group_size <= 1:
             return effective_pixels
@@ -1511,9 +1459,9 @@ class Virtual:
         if not pixel_count:
             pixel_count = self.pixel_count
 
-        effective_pixels = np.repeat(
-            effective_pixels, self.group_size, axis=0
-        )[:pixel_count, :]
+        effective_pixels = np.repeat(effective_pixels, self.group_size, axis=0)[
+            :pixel_count, :
+        ]
 
         return effective_pixels
 
@@ -1571,9 +1519,7 @@ class Virtuals:
                 self.fire_all_fallbacks()
                 self.clear_all_effects()
 
-            self._ledfx.events.add_listener(
-                cleanup_effects, Event.LEDFX_SHUTDOWN
-            )
+            self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
 
     def create_from_config(self, config, pause_all=False):
         for virtual_cfg in config:
@@ -1650,9 +1596,7 @@ class Virtuals:
                 new_virtual._paused = True
 
             self._ledfx.events.fire_event(
-                VirtualConfigUpdateEvent(
-                    virtual_cfg["id"], virtual_cfg["config"]
-                )
+                VirtualConfigUpdateEvent(virtual_cfg["id"], virtual_cfg["config"])
             )
 
     def schema(self):
@@ -1664,7 +1608,7 @@ class Virtuals:
         # Find the first valid id based on what is already in the registry
         dupe_id = id
         dupe_index = 1
-        while id in self._virtuals.keys():
+        while id in self._virtuals.keys():  # noqa: SIM118
             id = f"{dupe_id}-{dupe_index}"
             dupe_index = dupe_index + 1
 
@@ -1675,14 +1619,14 @@ class Virtuals:
 
         if _config is not None:
             _config = Virtual.CONFIG_SCHEMA(_config)
-            obj = Virtual(config=_config, *args, **kwargs)
+            obj = Virtual(config=_config, *args, **kwargs)  # noqa: B026
         else:
             obj = Virtual(*args, **kwargs)
 
         # Attach some common properties
-        setattr(obj, "_id", id)
-        setattr(obj, "is_device", _is_device)
-        setattr(obj, "auto_generated", _auto_generated)
+        obj._id = id
+        obj.is_device = _is_device
+        obj.auto_generated = _auto_generated
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj
@@ -1690,9 +1634,7 @@ class Virtuals:
 
     def destroy(self, id):
         if id not in self._virtuals:
-            raise AttributeError(
-                ("Object with id '{}' does not exist.").format(id)
-            )
+            raise AttributeError(f"Object with id '{id}' does not exist.")
         del self._virtuals[id]
 
     def __iter__(self):
@@ -1753,7 +1695,7 @@ class Virtuals:
         else:
             try:
                 self._virtuals.clear()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 self._virtuals = {}
 
         # Reset pause state and any cached flags
@@ -1768,10 +1710,8 @@ class Virtuals:
             self.clear_all_effects()
 
         try:
-            self._ledfx.events.add_listener(
-                cleanup_effects, Event.LEDFX_SHUTDOWN
-            )
-        except Exception:
+            self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
+        except Exception:  # noqa: BLE001, S110
             # Be defensive: don't crash if events shape differs
             pass
 
@@ -1819,9 +1759,7 @@ class Virtuals:
         for virtual_id in self._ledfx.virtuals:
             virtual = self._ledfx.virtuals.get(virtual_id)
 
-            virtual._streaming = (
-                virtual_id in active_devices and not virtual.active
-            )
+            virtual._streaming = virtual_id in active_devices and not virtual.active
 
             _LOGGER.info(
                 "%-29s %-29s%-10s%-10s",
@@ -1886,13 +1824,13 @@ def apply_config_to_active_effects(
         try:
             schema = type(eff).schema().schema
             hidden_keys = getattr(eff, "HIDDEN_KEYS", []) or []
-        except Exception:
+        except Exception:  # noqa: BLE001
             schema = {}
             hidden_keys = []
 
         # Normalise schema keys (handle vol.Optional/Required wrappers)
         normalized_keys = set()
-        for schema_key in schema.keys():
+        for schema_key in schema.keys():  # noqa: SIM118
             if hasattr(schema_key, "schema"):
                 normalized_keys.add(schema_key.schema)
             else:
@@ -1921,7 +1859,7 @@ def apply_config_to_active_effects(
             eff.update_config(effect_config_update)
             virtual.update_effect_config(eff)
             updated += 1
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.warning(
                 "Failed to update config on virtual %s: %s",
                 getattr(virtual, "id", "?"),

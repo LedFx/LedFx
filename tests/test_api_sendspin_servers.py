@@ -66,9 +66,7 @@ class TestGetSendspinServers:
             == "ws://192.168.1.12:8927/sendspin"
         )
 
-    @patch(
-        "ledfx.api.sendspin_servers._sendspin_available", return_value=False
-    )
+    @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=False)
     async def test_get_unavailable(self, _):
         """Returns error when Sendspin is not available."""
         resp = await self.client.get("/api/sendspin/servers")
@@ -182,9 +180,7 @@ class TestPostSendspinServers:
                 headers={"Content-Type": "application/json"},
             )
             data = await resp.json()
-            assert (
-                data["status"] == "failed"
-            ), f"Expected failure for url: {bad_url}"
+            assert data["status"] == "failed", f"Expected failure for url: {bad_url}"
             assert "must be ws or wss" in data["payload"]["reason"]
 
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
@@ -221,14 +217,9 @@ class TestPostSendspinServers:
                 headers={"Content-Type": "application/json"},
             )
             # generate_id("Living Room Server!") => "living-room-server"
-            assert (
-                "living-room-server"
-                in self.mock_ledfx.config["sendspin_servers"]
-            )
+            assert "living-room-server" in self.mock_ledfx.config["sendspin_servers"]
 
-    @patch(
-        "ledfx.api.sendspin_servers._sendspin_available", return_value=False
-    )
+    @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=False)
     async def test_post_unavailable(self, _):
         """Returns error when Sendspin is not available."""
         payload = {
@@ -263,9 +254,7 @@ class TestPutSendspinServer:
         }
         app = web.Application()
         endpoint = SendspinServerEndpoint(self.mock_ledfx)
-        app.router.add_route(
-            "*", "/api/sendspin/servers/{server_id}", endpoint.handler
-        )
+        app.router.add_route("*", "/api/sendspin/servers/{server_id}", endpoint.handler)
         self.client = TestClient(TestServer(app))
         await self.client.start_server()
         yield
@@ -285,9 +274,7 @@ class TestPutSendspinServer:
         data = await resp.json()
         assert data["status"] == "success"
         assert (
-            self.mock_ledfx.config["sendspin_servers"]["living-room"][
-                "server_url"
-            ]
+            self.mock_ledfx.config["sendspin_servers"]["living-room"]["server_url"]
             == "ws://192.168.1.20:8927/sendspin"
         )
         mock_save.assert_called_once()
@@ -353,9 +340,7 @@ class TestDeleteSendspinServer:
         }
         app = web.Application()
         endpoint = SendspinServerEndpoint(self.mock_ledfx)
-        app.router.add_route(
-            "*", "/api/sendspin/servers/{server_id}", endpoint.handler
-        )
+        app.router.add_route("*", "/api/sendspin/servers/{server_id}", endpoint.handler)
         self.client = TestClient(TestServer(app))
         await self.client.start_server()
         yield
@@ -408,12 +393,8 @@ class TestGetSendspinDiscover:
         yield
         await self.client.close()
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=True
-    )
-    @patch.object(
-        SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
+    @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
     async def test_discover_no_servers(self, mock_discover, _):
         """Returns empty list when no servers found."""
         mock_discover.return_value = []
@@ -424,12 +405,8 @@ class TestGetSendspinDiscover:
         assert data["data"]["servers"] == []
         assert "No Sendspin servers" in data["payload"]["reason"]
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=True
-    )
-    @patch.object(
-        SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
+    @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
     async def test_discover_finds_server(self, mock_discover, _):
         """Returns discovered servers with already_configured flag."""
         mock_discover.return_value = [
@@ -450,12 +427,8 @@ class TestGetSendspinDiscover:
         assert servers[0]["already_configured"] is False
         assert "1 server(s) found" in data["payload"]["reason"]
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=True
-    )
-    @patch.object(
-        SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
+    @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
     async def test_discover_already_configured(self, mock_discover, _):
         """Marks already-configured servers with already_configured=True."""
         self.mock_ledfx.config["sendspin_servers"] = {
@@ -476,21 +449,15 @@ class TestGetSendspinDiscover:
         data = await resp.json()
         assert data["data"]["servers"][0]["already_configured"] is True
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=True
-    )
-    @patch.object(
-        SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
+    @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
     async def test_discover_respects_timeout_param(self, mock_discover, _):
         """Passes timeout query param to _discover."""
         mock_discover.return_value = []
         await self.client.get("/api/sendspin/discover?timeout=5.0")
         mock_discover.assert_called_once_with(5.0)
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=True
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
     async def test_discover_timeout_too_large(self, _):
         """Rejects timeout above maximum."""
         resp = await self.client.get("/api/sendspin/discover?timeout=999")
@@ -498,9 +465,7 @@ class TestGetSendspinDiscover:
         assert data["status"] == "failed"
         assert "30.0" in data["payload"]["reason"]
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=True
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
     async def test_discover_invalid_timeout(self, _):
         """Rejects non-numeric timeout."""
         resp = await self.client.get("/api/sendspin/discover?timeout=abc")
@@ -508,9 +473,7 @@ class TestGetSendspinDiscover:
         assert data["status"] == "failed"
         assert "number" in data["payload"]["reason"]
 
-    @patch(
-        "ledfx.api.sendspin_discover._sendspin_available", return_value=False
-    )
+    @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=False)
     async def test_discover_unavailable(self, _):
         """Returns error when Sendspin is not available."""
         resp = await self.client.get("/api/sendspin/discover")

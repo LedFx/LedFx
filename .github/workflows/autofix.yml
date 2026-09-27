@@ -1,0 +1,16 @@
+name: autofix.ci # must be exactly this: autofix.ci identifies the workflow by name
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+# A new push makes the running fix obsolete.
+concurrency:
+  group: autofix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  autofix:
+    uses: LedFx/.github/.github/workflows/autofix.yml@cb0f0bc37c326b5111bc914749b8596255379f49 # main

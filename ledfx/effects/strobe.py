@@ -5,7 +5,7 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
-    MAPPINGS = {
+    MAPPINGS = {  # noqa: RUF012
         "1/1 (.,. )": 1,
         "1/2 (.-. )": 2,
         "1/4 (.o. )": 4,
@@ -16,7 +16,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     NAME = "BPM Strobe"
     CATEGORY = "BPM"
-    HIDDEN_KEYS = ["gradient_roll"]
+    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -39,7 +39,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
                 "strobe_pattern",
                 description="When to fire (*) or skip (.) the strobe (Note that beat 1 is arbitrary)",
                 default="****",
-            ): vol.In(list(["****", "*.*.", ".*.*", "*...", "...*"])),
+            ): vol.In(list(["****", "*.*.", ".*.*", "*...", "...*"])),  # noqa: C410
         }
     )
 
@@ -72,6 +72,4 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         # get_pixels method of the base class, it was effectively applied twice
         # To get the same effect, now with self.brightness at 1, we have to apply
         # strobe_brightness here twice.
-        self.pixels[:] = (
-            self.color * self.strobe_brightness * self.strobe_brightness
-        )
+        self.pixels[:] = self.color * self.strobe_brightness * self.strobe_brightness

@@ -1,37 +1,16 @@
-# See https://pre-commit.com for more information
-# See https://pre-commit.com/hooks.html for more hooks
-
-default_language_version:
-  python: python3
-
+# Run with prek: `uv run prek run --all-files`, or `uv run prek install` for a
+# git hook. `repo: builtin` hooks are prek-only (plain pre-commit can't run them).
+# ledfx_frontend/ is a built bundle: whitespace there can sit inside JS strings.
+exclude: ^ledfx_frontend/
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v6.0.0
+  - repo: builtin
     hooks:
-    - id: check-yaml
-    - id: check-ast
-    - id: trailing-whitespace
-    - id: check-toml
-  - repo: https://github.com/PyCQA/isort
-    rev: 9.0.0b5
-    hooks:
-      - id: isort
-        args: ["--profile=black"]
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 26.5.1 # Replace by any tag/version: https://github.com/psf/black/tags
-    hooks:
-      - id: black
+      - id: check-yaml
+      - id: check-toml
+      - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.4
     hooks:
-      - id: ruff
-        args: ["--select=G004"]
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.21.2
-    hooks:
-      - id: pyupgrade
-        args: [--py39-plus, --keep-percent-format]
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format

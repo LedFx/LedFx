@@ -284,9 +284,7 @@ async def test_post_scene_with_upsert():
         assert data["status"] == "success"
         assert data["scene"]["id"] == scene_id
         assert data["scene"]["config"]["name"] == "Updated Scene"
-        assert (
-            data["scene"]["config"]["virtuals"]["v1"]["action"] == "forceblack"
-        )
+        assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "forceblack"
 
         # Test upsert without name (name should remain unchanged)
         request_data_3 = {
@@ -354,7 +352,7 @@ async def test_post_scene_warns_preset_without_type():
     mock_request = MagicMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):
+    with patch("ledfx.api.scenes.save_config"):  # noqa: SIM117
         with patch("ledfx.api.scenes._LOGGER") as mock_logger:
             response = await endpoint.post(mock_request)
             data = json.loads(response.body.decode())

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Entry point for LedFx.
 
@@ -82,9 +81,7 @@ def setup_logging(loglevel, config_dir):
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(console_loglevel)  # set loglevel
-    console_formatter = logging.Formatter(
-        console_logformat
-    )  # a simple console format
+    console_formatter = logging.Formatter(console_logformat)  # a simple console format
     console_handler.setFormatter(
         console_formatter
     )  # tell the console_handler to use this format
@@ -106,9 +103,7 @@ def setup_logging(loglevel, config_dir):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="A Networked LED Effect Controller"
-    )
+    parser = argparse.ArgumentParser(description="A Networked LED Effect Controller")
 
     parser.add_argument(
         "--version",
@@ -281,7 +276,7 @@ def main():
         # If pystray is imported on a device that can't display it, it explodes. Catch it
         try:
             import pystray
-        except Exception as Error:
+        except Exception as Error:  # noqa: BLE001
             msg = f"Unable to create tray icon. Error: {Error}. Try launching LedFx via --no-tray option."
             _LOGGER.critical(msg)
             # Exit with code 3 to indicate that there was an error creating the tray icon.
@@ -291,9 +286,7 @@ def main():
 
         icon_location = get_icon_path("tray.png")
 
-        icon = pystray.Icon(
-            "LedFx", icon=Image.open(icon_location), title="LedFx"
-        )
+        icon = pystray.Icon("LedFx", icon=Image.open(icon_location), title="LedFx")
     else:
         icon = None
 

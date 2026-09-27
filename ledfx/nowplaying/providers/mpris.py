@@ -12,9 +12,7 @@ try:
     from dbus_fast import MessageType
     from dbus_fast.aio import MessageBus
     from dbus_fast.message import Message
-except (
-    ImportError
-):  # pragma: no cover - exercised on non-linux/no-dbus-fast envs
+except ImportError:  # pragma: no cover - exercised on non-linux/no-dbus-fast envs
     MessageType = None
     MessageBus = None
     Message = None
@@ -82,12 +80,12 @@ class MPRISNowPlayingProvider:
         if self._bus is not None and self._name_owner_handler is not None:
             try:
                 self._bus.remove_message_handler(self._name_owner_handler)
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
         if self._bus is not None and self._properties_handler is not None:
             try:
                 self._bus.remove_message_handler(self._properties_handler)
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
         self._name_owner_handler = None
         self._properties_handler = None
@@ -99,7 +97,7 @@ class MPRISNowPlayingProvider:
         if self._bus is not None:
             try:
                 self._bus.disconnect()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.debug("MPRIS: error while disconnecting bus: %s", exc)
             self._bus = None
 
@@ -122,10 +120,8 @@ class MPRISNowPlayingProvider:
             self._bus = await MessageBus().connect()
         except asyncio.CancelledError:
             raise
-        except Exception as exc:
-            _LOGGER.warning(
-                "MPRIS: failed to connect to session D-Bus: %s", exc
-            )
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning("MPRIS: failed to connect to session D-Bus: %s", exc)
             return
 
         _LOGGER.info("MPRIS: connected to session D-Bus")
@@ -265,9 +261,7 @@ class MPRISNowPlayingProvider:
 
             if not names:
                 if self._active_player_name is not None:
-                    _LOGGER.info(
-                        "MPRIS: no players found; clearing active source"
-                    )
+                    _LOGGER.info("MPRIS: no players found; clearing active source")
                     self._active_player_name = None
                     self.clear()
                 return
@@ -290,14 +284,10 @@ class MPRISNowPlayingProvider:
                     best_status or "unknown",
                 )
                 self._active_player_name = best_name
-                self._active_player_owner = await self._get_name_owner(
-                    best_name
-                )
+                self._active_player_owner = await self._get_name_owner(best_name)
                 self._schedule_push_metadata()
             elif self._active_player_owner is None:
-                self._active_player_owner = await self._get_name_owner(
-                    best_name
-                )
+                self._active_player_owner = await self._get_name_owner(best_name)
                 self._schedule_push_metadata()
 
     async def _list_mpris_players(self):
@@ -456,7 +446,7 @@ class MPRISNowPlayingProvider:
             )
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
 
         if reply.message_type == MessageType.ERROR:

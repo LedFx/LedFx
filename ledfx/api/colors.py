@@ -20,9 +20,7 @@ class ColorEndpoint(RestEndpoint):
             web.Response: The response containing the colors and gradients.
         """
         response = {
-            "colors": dict(
-                zip(("builtin", "user"), self._ledfx.colors.get_all())
-            ),
+            "colors": dict(zip(("builtin", "user"), self._ledfx.colors.get_all())),
             "gradients": dict(
                 zip(("builtin", "user"), self._ledfx.gradients.get_all())
             ),
@@ -83,9 +81,7 @@ class ColorEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
         if data is None:
-            return await self.invalid_request(
-                "Required attribute was not provided"
-            )
+            return await self.invalid_request("Required attribute was not provided")
 
         # TODO: Handle instances where neither color nor gradient is provided
         saved_keys = []

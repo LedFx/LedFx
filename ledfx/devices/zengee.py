@@ -45,5 +45,5 @@ class ZenggeDevice(NetworkedDevice):
             rgb = byteData.flatten().tolist()
             self.bulb.setRgb(rgb[0], rgb[1], rgb[2])
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("Error connecting to bulb: %s", e)

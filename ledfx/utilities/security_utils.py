@@ -15,7 +15,7 @@ import socket
 import urllib.parse
 import urllib.request
 
-import PIL.Image as Image
+from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -198,9 +198,7 @@ def resolve_safe_path_in_directory(
         return True, resolved_path, None
 
     except (ValueError, OSError) as e:
-        _LOGGER.warning(
-            "Path resolution failed for '%s': %s", relative_path, e
-        )
+        _LOGGER.warning("Path resolution failed for '%s': %s", relative_path, e)
         return False, None, f"Invalid path: {e}"
 
 
@@ -219,9 +217,7 @@ def validate_local_path(
                or None if validation failed
     """
     if not allowed_directories:
-        _LOGGER.warning(
-            "No allowed directories configured for path validation"
-        )
+        _LOGGER.warning("No allowed directories configured for path validation")
         return False, None
 
     try:
@@ -277,9 +273,7 @@ def is_blocked_ip(ip_str: str) -> bool:
         return True
 
 
-def validate_url_safety(
-    url: str, allow_private: bool = False
-) -> tuple[bool, str]:
+def validate_url_safety(url: str, allow_private: bool = False) -> tuple[bool, str]:
     """
     Validate URL for SSRF protection by checking scheme, hostname, and resolved IP.
 
@@ -320,9 +314,7 @@ def validate_url_safety(
 
         # Select which networks to block based on context
         blocked_networks = (
-            ALWAYS_BLOCKED_IP_NETWORKS
-            if allow_private
-            else BLOCKED_IP_NETWORKS
+            ALWAYS_BLOCKED_IP_NETWORKS if allow_private else BLOCKED_IP_NETWORKS
         )
 
         # Check all resolved IPs
@@ -341,7 +333,7 @@ def validate_url_safety(
 
         return True, ""
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         return False, f"URL validation error: {e}"
 
 
@@ -409,11 +401,11 @@ def validate_image_mime_type(file_path: str) -> bool:
 
         # Additional MIME check using file extension
         mime_type, _ = mimetypes.guess_type(file_path)
-        if mime_type and mime_type not in ALLOWED_MIME_TYPES:
+        if mime_type and mime_type not in ALLOWED_MIME_TYPES:  # noqa: SIM103
             return False
 
         return True
-    except Exception:
+    except Exception:  # noqa: BLE001
         return False
 
 
@@ -457,9 +449,7 @@ def build_browser_request(url: str) -> urllib.request.Request:
     """
     parsed = urllib.parse.urlsplit(url)
     origin = (
-        f"{parsed.scheme}://{parsed.netloc}/"
-        if parsed.scheme and parsed.netloc
-        else ""
+        f"{parsed.scheme}://{parsed.netloc}/" if parsed.scheme and parsed.netloc else ""
     )
     headers = {
         "User-Agent": (

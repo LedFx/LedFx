@@ -92,9 +92,7 @@ class Noise2d(Twod, GradientEffect):
         super().do_once()
 
         if self.first_run:
-            self.noise3d = np.zeros(
-                (self.r_height, self.r_width), dtype=np.float64
-            )
+            self.noise3d = np.zeros((self.r_height, self.r_width), dtype=np.float64)
             self.noise_x = random.random()
             self.noise_y = random.random()
             self.noise_z = random.random()
@@ -154,13 +152,9 @@ class Noise2d(Twod, GradientEffect):
 
         # generate arrays of the X adn Y axis of our plane, with a singular Z
         # this should allow libs to use any internal acceleration for unrolling across all points
-        x_array = np.linspace(
-            noise_x, noise_x + scale_x * self.r_height, self.r_height
-        )
-        y_array = np.linspace(
-            noise_y, noise_y + scale_y * self.r_width, self.r_width
-        )
-        z_array = np.array([self.noise_z])
+        x_array = np.linspace(noise_x, noise_x + scale_x * self.r_height, self.r_height)
+        y_array = np.linspace(noise_y, noise_y + scale_y * self.r_width, self.r_width)
+        z_array = np.array([self.noise_z])  # noqa: F841
 
         ###################################################################################
         # This is where the magic happens, calling the lib to get the noise plane

@@ -30,9 +30,7 @@ class AudioDevicesEndpoint(RestEndpoint):
 
         response = {}
         response["active_device_index"] = audio_config["audio_device"]
-        response["active_device_name"] = audio_config.get(
-            "audio_device_name", ""
-        )
+        response["active_device_name"] = audio_config.get("audio_device_name", "")
         response["devices"] = (
             AudioInputSource.input_devices()
         )  # dict(enumerate(input_devices))
@@ -63,9 +61,7 @@ class AudioDevicesEndpoint(RestEndpoint):
         valid_indexes = AudioInputSource.valid_device_indexes()
 
         if index not in valid_indexes:
-            return await self.invalid_request(
-                f"Invalid device index [{index}]"
-            )
+            return await self.invalid_request(f"Invalid device index [{index}]")
 
         # Update and save config
         new_config = self._ledfx.config.get("audio", {})

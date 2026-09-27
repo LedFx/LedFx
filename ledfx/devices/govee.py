@@ -86,7 +86,7 @@ class Govee(NetworkedDevice):
         data = json.dumps(message).encode("utf-8")
         try:
             self.udp_server.sendto(data, (self._config["ip_address"], port))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # we don't need this noise in sentry, and don't flood a standard log
             _LOGGER.info("govee:send_udp:Error sending UDP message %s", e)
 
@@ -130,12 +130,10 @@ class Govee(NetworkedDevice):
 
         try:
             if self._config["ignore_status"]:
-                self.udp_server = socket.socket(
-                    socket.AF_INET, socket.SOCK_DGRAM
-                )
+                self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             else:
                 self.udp_server = SocketSingleton(recv_port=self.recv_port)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error(
                 "Error creating UDP socket, try ignore status device setting %s",
                 e,
@@ -194,7 +192,7 @@ class Govee(NetworkedDevice):
                     False,
                 )
 
-        except socket.timeout:
+        except TimeoutError:
             return "No response received within the timeout period.", False
 
     async def async_initialize(self):

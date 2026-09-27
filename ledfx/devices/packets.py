@@ -102,9 +102,7 @@ def build_drgbw_packet(data: np.ndarray, timeout: int):
     return packet
 
 
-def build_dnrgb_packet(
-    data: np.ndarray, timeout: int, led_start_index: np.uint16
-):
+def build_dnrgb_packet(data: np.ndarray, timeout: int, led_start_index: np.uint16):
     """
     Generic DNRGB packet encoding
     Max LEDs: 489 / packet
@@ -182,19 +180,20 @@ def build_openrgb_packet(
 
     # header
     packet = bytearray(
-        # fmt: off
         struct.pack(
             "ccccIIIIH",
-            b"O", b"R", b"G", b"B",
+            b"O",
+            b"R",
+            b"G",
+            b"B",
             device_id,
             1050,  # RGBCONTROLLER_UPDATELEDS packet
-            struct.calcsize(f"IH{3 * frame_size}b{frame_size}x"),   # total packet length
+            struct.calcsize(f"IH{3 * frame_size}b{frame_size}x"),  # total packet length
             # body length inlcuding self should match packet total packet length
             # openRGB 0.9 ignored this field, but 0.91 enforces it
             (frame_size * 4 + 2 + 4),
             frame_size,  # number of pixels
         )
-        # fmt: on
     )
 
     # body

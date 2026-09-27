@@ -42,9 +42,7 @@ class NowPlayingEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         if not isinstance(data, dict):
-            return await self.invalid_request(
-                "Request body must be a JSON object."
-            )
+            return await self.invalid_request("Request body must be a JSON object.")
 
         np_service = self._ledfx.now_playing
 
