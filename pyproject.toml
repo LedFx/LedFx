@@ -125,8 +125,8 @@ required-version = ">=0.12.12"
 # for lock file maintenance, which Renovate does not delay. For an urgent
 # security fix newer than this, exempt the package below until it ages in.
 exclude-newer = "14 days"
-# Our own package: released and reviewed by us, so no wait.
-exclude-newer-package = { samplerate-ledfx = false }
+# Our own packages: released and reviewed by us, so no wait.
+exclude-newer-package = { aubio-ledfx = false, pyfastnoiselite-ledfx = false, samplerate-ledfx = false }
 # We want to use copy here, since symlink mode means we can't use our own portaudio dll
 # A bit slower, but it works for our use case
 link-mode = "copy"

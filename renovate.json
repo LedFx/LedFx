@@ -29,8 +29,10 @@
       "allowedVersions": "<3.6.0"
     },
     {
-      "description": "Our own package: released and reviewed by us, so no wait. Matches exclude-newer-package in pyproject.toml.",
+      "description": "Our own packages: released and reviewed by us, so no wait. Matches exclude-newer-package in pyproject.toml.",
       "matchPackageNames": [
+        "aubio-ledfx",
+        "pyfastnoiselite-ledfx",
         "samplerate-ledfx"
       ],
       "minimumReleaseAge": null
