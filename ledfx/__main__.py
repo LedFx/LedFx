@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Entry point for LedFx.
 

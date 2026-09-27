@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Hack and slashed down from original lib, to remove pygame
 # remove all LED manipulations as LEDFX does this in single message
