@@ -1,0 +1,202 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel main or tag runs: they publish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  UV_PYTHON: "3.12" # frozen builds, wheel; test jobs override
+  GHCR_IMAGE: ghcr.io/ledfx/ledfx
+  DOCKERHUB_IMAGE: ledfxorg/ledfx
+
+jobs:
+  # Docs/frontend-only PRs skip the builds here rather than with paths-ignore:
+  # a workflow skipped by paths-ignore never reports, so the required
+  # "CI passed" check would wait forever. Skipped jobs count as passed.
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.plan.outputs.code }}
+      version: ${{ steps.plan.outputs.version }}
+      release: ${{ steps.plan.outputs.release }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          sparse-checkout: pyproject.toml
+          sparse-checkout-cone-mode: false
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+        run: |
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # The one guard for every publish path.
+          if [[ "$REF" == refs/tags/v* ]]; then
+            if [[ "$REF" != "refs/tags/v$version" ]]; then
+              echo "::error::Tag ${REF#refs/tags/} does not match pyproject.toml version $version"
+              exit 1
+            fi
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+          code=true
+          if [ -n "$PR" ]; then
+            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+            # here-string, not a pipe: grep -q exiting early + pipefail would read as "no match"
+            grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" || code=false
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+  test-linux:
+    name: Test (Ubuntu, py${{ matrix.python }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12", "3.13"]
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libatlas3-base portaudio19-dev
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+          cache-dependency-glob: uv.lock
+      - name: Install LedFx
+        env:
+          CFLAGS: -Wno-incompatible-function-pointer-types
+        run: uv sync --all-extras --dev
+      - uses: LABSN/sound-ci-helpers@v1
+      - name: Create audio input
+        run: pactl load-module module-null-sink sink_name=LedFx_Test_Source sink_properties=device.description=LedFx_Test_Source
+      - name: Run tests
+        run: uv run pytest -v --timeout=120
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: ledfx-log-linux-py${{ matrix.python }}
+          path: debug_config/ledfx.log
+
+  test-windows:
+    name: Test (Windows, py${{ matrix.python }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: windows-2022 # pinned until we understand why windows-2025 has audio device issues
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"] # oldest and newest supported
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Enable long paths for git
+        run: git config --system core.longpaths true
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+          cache-dependency-glob: uv.lock
+      - name: Install LedFx
+        run: uv sync --all-extras --dev
+      - uses: LABSN/sound-ci-helpers@v1
+      - name: Run tests
+        run: uv run pytest -v --timeout=120
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: ledfx-log-windows-py${{ matrix.python }}
+          path: debug_config/ledfx.log
+
+  test-macos:
+    name: Smoke test (macOS arm64, py${{ matrix.python }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.13"] # oldest and newest supported
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5" # samplerate on Python 3.10 with CMake 4.x
+      CFLAGS: -Wno-incompatible-function-pointer-types
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: brew install portaudio mbedtls@2
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+          cache-dependency-glob: uv.lock
+      - name: Install LedFx
+        run: |
+          mbedtls=$(brew --prefix mbedtls@2)
+          export PATH="$mbedtls/bin:$PATH" LDFLAGS="-L$mbedtls/lib" CPPFLAGS="-I$mbedtls/include"
+          uv sync --all-extras --dev
+      - name: Check LedFx launches
+        run: uv run ledfx --ci-smoke-test -vv -c debug_config --offline
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: ledfx-log-macos-py${{ matrix.python }}
+          path: debug_config/ledfx.log
+
+  # The one check branch protection requires. Every build/test job belongs in
+  # needs; its name must never change.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs:
+      - plan
+      - test-linux
+      - test-windows
+      - test-macos
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1

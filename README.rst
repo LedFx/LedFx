@@ -137,8 +137,8 @@ License
 .. _`How to: Enable Stereo Mix in Windows 10`: https://thegeekpage.com/stereo-mix/
 
 
-.. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml/badge.svg
-   :target: https://github.com/LedFx/LedFx/actions/workflows/ci-build.yml
+.. |Build Status| image:: https://github.com/LedFx/LedFx/actions/workflows/ci.yml/badge.svg
+   :target: https://github.com/LedFx/LedFx/actions/workflows/ci.yml
    :alt: Build Status
 .. |Build Status Docs| image:: https://readthedocs.org/projects/ledfx/badge/?version=main
    :target: https://ledfx.readthedocs.io/
