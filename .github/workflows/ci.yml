@@ -439,8 +439,11 @@ jobs:
         if: env.PUBLISH == 'true'
         run: |
           for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
-            docker tag ledfx:ci "$image:edge-$ARCH"
-            docker push "$image:edge-$ARCH"
+            # Only main moves edge: a tag on an older commit would roll it back
+            if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+              docker tag ledfx:ci "$image:edge-$ARCH"
+              docker push "$image:edge-$ARCH"
+            fi
             docker tag ledfx:ci "$image:edge-$ARCH-$GITHUB_SHA"
             digest=$(docker push "$image:edge-$ARCH-$GITHUB_SHA" | awk '/digest: sha256:/ {print $3}')
             test -n "$digest"
@@ -458,7 +461,9 @@ jobs:
   docker-edge:
     name: Docker edge manifest
     needs: [plan, ci-passed]
-    if: github.event_name == 'push' && github.repository == 'LedFx/LedFx'
+    # Tag runs publish through docker-latest; moving edge there could roll it
+    # back to an older commit.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'LedFx/LedFx'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
