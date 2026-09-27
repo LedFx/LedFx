@@ -62,7 +62,7 @@ async def test_validation_rejects_short_duration(tmp_path):
         "name": "Bad",
         "items": [{"scene_id": "s1", "duration_ms": 100}],
     }
-    with pytest.raises(Exception):
+    with pytest.raises(Exception):  # noqa: B017
         # create_or_replace is async, await it properly
         await manager.create_or_replace(bad)
 

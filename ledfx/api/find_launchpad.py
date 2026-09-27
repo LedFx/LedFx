@@ -22,7 +22,7 @@ class FindLaunchpadDevicesEndpoint(RestEndpoint):
         """
         try:
             found = find_launchpad()
-        except Exception as msg:
+        except Exception as msg:  # noqa: BLE001
             error_message = f"Error checking for launchpad: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")

@@ -20,8 +20,6 @@ from ledfx.nowplaying.providers.sendspin import (
 class _UndefinedField:
     """Stub for aiosendspin's UndefinedField sentinel."""
 
-    pass
-
 
 _UNDEFINED = _UndefinedField()
 
@@ -100,9 +98,7 @@ def _patch_aiosendspin_types(monkeypatch):
     types_mod = ModuleType("aiosendspin.models.types")
     types_mod.UndefinedField = _UndefinedField
 
-    monkeypatch.setitem(
-        sys.modules, "aiosendspin.models.metadata", metadata_mod
-    )
+    monkeypatch.setitem(sys.modules, "aiosendspin.models.metadata", metadata_mod)
     monkeypatch.setitem(sys.modules, "aiosendspin.models.types", types_mod)
 
 
@@ -188,9 +184,7 @@ class TestSendspinProviderMetadata:
         # Message 2: only artist
         provider.on_metadata(
             _ServerStatePayload(
-                metadata=_SessionUpdateMetadata(
-                    timestamp=2000, artist="Artist"
-                )
+                metadata=_SessionUpdateMetadata(timestamp=2000, artist="Artist")
             )
         )
         state = ledfx.now_playing.get_current()

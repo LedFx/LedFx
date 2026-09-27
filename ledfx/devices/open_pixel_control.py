@@ -29,16 +29,12 @@ class OpenPixelControl(NetworkedDevice):
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info(
-            "Open Pixel Control sender for %s started.", self.config["name"]
-        )
+        _LOGGER.info("Open Pixel Control sender for %s started.", self.config["name"])
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.info(
-            "Open Pixel Control sender for %s stopped.", self.config["name"]
-        )
+        _LOGGER.info("Open Pixel Control sender for %s stopped.", self.config["name"])
         self._sock = None
 
     def flush(self, data):
@@ -55,7 +51,7 @@ class OpenPixelControl(NetworkedDevice):
 
     @staticmethod
     def send_out(
-        self,
+        self,  # noqa: PLW0211
         sock,
         dest,
         port,

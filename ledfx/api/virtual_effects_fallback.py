@@ -22,9 +22,7 @@ class EffectsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         _LOGGER.info("Fire fallback for virtual %s", virtual_id)
 

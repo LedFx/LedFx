@@ -18,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 # Only expose Sendspin functionality on Python 3.12+
 if sys.version_info >= (3, 12):
     try:
-        from ledfx.sendspin.stream import SendspinAudioStream  # noqa: F401
+        from ledfx.sendspin.stream import SendspinAudioStream
 
         __all__ = ["SendspinAudioStream"]
         SENDSPIN_AVAILABLE = True

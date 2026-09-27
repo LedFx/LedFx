@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 class Filter(AudioReactiveEffect, GradientEffect):
     NAME = "Filter"
     CATEGORY = "Simple"
-    HIDDEN_KEYS = [
+    HIDDEN_KEYS = [  # noqa: RUF012
         "background_color",
         "background_brightness",
         "blur",
@@ -58,9 +58,7 @@ class Filter(AudioReactiveEffect, GradientEffect):
         self.filtered_power = 0
 
     def config_updated(self, config):
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.color = np.array(parse_color(self._config["color"]))
         self.use_gradient = self._config["use_gradient"]
         self.roll_speed = self._config["roll_speed"]

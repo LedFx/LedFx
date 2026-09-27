@@ -5,7 +5,6 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Optional
 
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
@@ -51,7 +50,7 @@ class ImageCache:
             try:
                 with open(self.metadata_file) as f:
                     return json.load(f)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning("Failed to load cache metadata: %s", e)
                 return {"cache_entries": {}, "total_size": 0, "total_count": 0}
         return {"cache_entries": {}, "total_size": 0, "total_count": 0}
@@ -61,12 +60,10 @@ class ImageCache:
         try:
             with open(self.metadata_file, "w") as f:
                 json.dump(self.metadata, f, indent=2)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("Failed to save cache metadata: %s", e)
 
-    def _generate_cache_key(
-        self, url: str, params: Optional[dict] = None
-    ) -> str:
+    def _generate_cache_key(self, url: str, params: dict | None = None) -> str:
         """
         Generate cache key from URL and optional parameters using SHA-256 hash.
 
@@ -90,7 +87,7 @@ class ImageCache:
         """Get filesystem path for cached image."""
         return os.path.join(self.cache_dir, f"{cache_key}{extension}")
 
-    def get(self, url: str, params: Optional[dict] = None) -> Optional[str]:
+    def get(self, url: str, params: dict | None = None) -> str | None:
         """
         Get cached image if available (no expiration check).
 
@@ -108,7 +105,7 @@ class ImageCache:
             cache_path = self._get_cache_path(cache_key, entry["extension"])
             if os.path.exists(cache_path):
                 # Update access tracking
-                entry["last_accessed"] = datetime.utcnow().isoformat()
+                entry["last_accessed"] = datetime.utcnow().isoformat()  # noqa: DTZ003
                 entry["access_count"] = entry.get("access_count", 0) + 1
                 self._save_metadata()
                 _LOGGER.debug("Cache hit for %s", url)
@@ -122,9 +119,9 @@ class ImageCache:
         url: str,
         data: bytes,
         content_type: str,
-        etag: Optional[str] = None,
-        last_modified: Optional[str] = None,
-        params: Optional[dict] = None,
+        etag: str | None = None,
+        last_modified: str | None = None,
+        params: dict | None = None,
     ):
         """
         Store image in cache with extracted metadata.
@@ -160,12 +157,12 @@ class ImageCache:
         try:
             with open(cache_path, "wb") as f:
                 f.write(data)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("Failed to write cache file %s: %s", cache_path, e)
             return
 
         # Update metadata
-        now = datetime.utcnow().isoformat()
+        now = datetime.utcnow().isoformat()  # noqa: DTZ003
 
         # Remove old entry size if updating
         if cache_key in self.metadata["cache_entries"]:
@@ -184,7 +181,7 @@ class ImageCache:
         if params is None:
             try:
                 gradient_data = extract_gradient_metadata(cache_path)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to extract gradients for %s: %s",
                     url,
@@ -260,16 +257,14 @@ class ImageCache:
             if os.path.exists(cache_path):
                 try:
                     os.remove(cache_path)
-                except Exception as e:
-                    _LOGGER.warning(
-                        "Failed to delete cache file %s: %s", cache_path, e
-                    )
+                except Exception as e:  # noqa: BLE001
+                    _LOGGER.warning("Failed to delete cache file %s: %s", cache_path, e)
 
             self.metadata["total_size"] -= entry["file_size"]
             self.metadata["total_count"] -= 1
             del self.metadata["cache_entries"][cache_key]
 
-    def delete(self, url: str, params: Optional[dict] = None) -> bool:
+    def delete(self, url: str, params: dict | None = None) -> bool:
         """
         Remove specific URL (and params) from cache.
 
@@ -314,9 +309,7 @@ class ImageCache:
 
         if deleted_count > 0:
             self._save_metadata()
-            _LOGGER.info(
-                "Deleted %s cache entries for URL: %s", deleted_count, url
-            )
+            _LOGGER.info("Deleted %s cache entries for URL: %s", deleted_count, url)
 
         return deleted_count
 
@@ -384,8 +377,7 @@ class ImageCache:
                 "gradients": entry.get("gradients"),
             }
             for entry in self.metadata["cache_entries"].values()
-            if not entry["url"].startswith("asset://")
-            and entry.get("params") is None
+            if not entry["url"].startswith("asset://") and entry.get("params") is None
         ]
 
         # Sort by access_count descending
@@ -399,9 +391,7 @@ class ImageCache:
             "entries": entries,
         }
 
-    def get_cache_headers(
-        self, url: str, params: Optional[dict] = None
-    ) -> Optional[dict]:
+    def get_cache_headers(self, url: str, params: dict | None = None) -> dict | None:
         """
         Get stored ETag and Last-Modified headers for conditional requests.
 

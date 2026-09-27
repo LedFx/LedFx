@@ -43,7 +43,7 @@ class AssetsFixedEndpoint(RestEndpoint):
             )
             return await self.bare_request_success({"assets": assets})
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Failed to list built-in assets: %s", e)
             return await self.internal_error(
                 message=f"Failed to list built-in assets: {e}"

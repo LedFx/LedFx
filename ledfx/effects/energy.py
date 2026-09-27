@@ -77,15 +77,9 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
         self.color_cycler = 0
 
-        self.lows_color = np.array(
-            parse_color(self._config["color_lows"]), dtype=float
-        )
-        self.mids_color = np.array(
-            parse_color(self._config["color_mids"]), dtype=float
-        )
-        self.high_color = np.array(
-            parse_color(self._config["color_high"]), dtype=float
-        )
+        self.lows_color = np.array(parse_color(self._config["color_lows"]), dtype=float)
+        self.mids_color = np.array(parse_color(self._config["color_mids"]), dtype=float)
+        self.high_color = np.array(parse_color(self._config["color_high"]), dtype=float)
 
         self._multiplier = 1.6 - self._config["blur"] / 17
 
@@ -100,7 +94,7 @@ class EnergyAudioEffect(AudioReactiveEffect):
         self.beat_now = data.volume_beat_now()
 
     def render(self):
-        if self._config["color_cycler"]:
+        if self._config["color_cycler"]:  # noqa: SIM102
             if self.beat_now:
                 # Cycle between 0,1,2 for lows, mids and highs
                 self.color_cycler = (self.color_cycler + 1) % 3

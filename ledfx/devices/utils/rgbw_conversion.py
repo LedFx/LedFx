@@ -27,13 +27,9 @@ class OutputMode:
         self.indices = [_CHANNEL_MAP[c] for c in self.rgb_order]
         self.white_mode = white_mode
 
-        self.channels_per_pixel = WHITE_FUNCS_MAPPING[self.white_mode][
-            "channels"
-        ]
+        self.channels_per_pixel = WHITE_FUNCS_MAPPING[self.white_mode]["channels"]
 
-        self.white_func = getattr(
-            self, WHITE_FUNCS_MAPPING[self.white_mode]["func"]
-        )
+        self.white_func = getattr(self, WHITE_FUNCS_MAPPING[self.white_mode]["func"])
 
     def apply(self, rgb_array: np.ndarray) -> np.ndarray:
         """Applies white channel addition and channel reordering."""

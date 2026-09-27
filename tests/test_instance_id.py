@@ -126,8 +126,7 @@ class TestSendspinClientId:
         mock1 = self._run_connect_and_capture(instance_id)
         mock2 = self._run_connect_and_capture(instance_id)
         assert (
-            mock1.call_args.kwargs["client_id"]
-            == mock2.call_args.kwargs["client_id"]
+            mock1.call_args.kwargs["client_id"] == mock2.call_args.kwargs["client_id"]
         )
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
@@ -135,8 +134,7 @@ class TestSendspinClientId:
         mock1 = self._run_connect_and_capture(str(uuid.uuid4()))
         mock2 = self._run_connect_and_capture(str(uuid.uuid4()))
         assert (
-            mock1.call_args.kwargs["client_id"]
-            != mock2.call_args.kwargs["client_id"]
+            mock1.call_args.kwargs["client_id"] != mock2.call_args.kwargs["client_id"]
         )
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")

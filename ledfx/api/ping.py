@@ -25,9 +25,7 @@ class InfoEndpoint(RestEndpoint):
         device = self._ledfx.devices.get(device_id)
 
         if device is None:
-            return await self.invalid_request(
-                f"Device {device_id} was not found"
-            )
+            return await self.invalid_request(f"Device {device_id} was not found")
 
         ping_target = await resolve_destination(
             self._ledfx.loop,

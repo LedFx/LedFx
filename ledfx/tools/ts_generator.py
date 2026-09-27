@@ -3,7 +3,8 @@
 # Author: YeonV
 
 import logging
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import voluptuous as vol
 
@@ -66,9 +67,7 @@ def generate_inline_interface_body(
             hasattr(original_key_marker, "description")
             and original_key_marker.description
         ):
-            desc_lines = (
-                str(original_key_marker.description).strip().split("\n")
-            )
+            desc_lines = str(original_key_marker.description).strip().split("\n")
             js_doc_parts.extend([f"* {line.strip()}" for line in desc_lines])
         if default_value is not None:
             default_str = (
@@ -82,9 +81,7 @@ def generate_inline_interface_body(
                 js_doc_parts.append("* @default (computed)")
         constraints_doc = []
         constraint_validators = (
-            validator.validators
-            if isinstance(validator, vol.All)
-            else [validator]
+            validator.validators if isinstance(validator, vol.All) else [validator]
         )
         for sub_validator in constraint_validators:
             if isinstance(sub_validator, vol.Range):
@@ -101,9 +98,7 @@ def generate_inline_interface_body(
             js_doc_parts.extend([f"* {doc}" for doc in constraints_doc])
 
         ts_property_name = key_name_str  # Use snake_case
-        is_optional_char = (
-            "?" if isinstance(original_key_marker, vol.Optional) else ""
-        )
+        is_optional_char = "?" if isinstance(original_key_marker, vol.Optional) else ""
         js_doc_string = ""
         if js_doc_parts:
             js_doc_string = (
@@ -137,9 +132,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
     # Standard Types
     if validator is str:
         return "string"
-    elif validator is int:
-        return "number"
-    elif validator is float:
+    elif validator is int or validator is float:
         return "number"
     elif validator is bool:
         return "boolean"
@@ -156,9 +149,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
             possible_types = []
             if any(isinstance(opt, str) for opt in validator.container):
                 possible_types.append("string")
-            if any(
-                isinstance(opt, (int, float)) for opt in validator.container
-            ):
+            if any(isinstance(opt, (int, float)) for opt in validator.container):
                 possible_types.append("number")
             if any(isinstance(opt, bool) for opt in validator.container):
                 possible_types.append("boolean")
@@ -168,9 +159,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
                 (
                     '"{}"'.format(opt.replace('"', '\\"'))
                     if isinstance(opt, str)
-                    else (
-                        str(opt).lower() if isinstance(opt, bool) else str(opt)
-                    )
+                    else (str(opt).lower() if isinstance(opt, bool) else str(opt))
                 )
                 for opt in validator.container
             ]
@@ -197,9 +186,7 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
                     )
                     break
         if primary_ts_type == "any" and validator.validators:
-            _LOGGER.debug(
-                "Could not determine primary type in vol.All: %s.", validator
-            )
+            _LOGGER.debug("Could not determine primary type in vol.All: %s.", validator)
         return primary_ts_type
 
     elif isinstance(validator, vol.Schema):
@@ -286,22 +273,16 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
 def generate_ts_interface_from_voluptuous(
     schema_name: str,
     voluptuous_schema: vol.Schema,
-    extends_interface: str = None,
-    base_schema_keys: set = None,
+    extends_interface: str = None,  # noqa: RUF013
+    base_schema_keys: set = None,  # noqa: RUF013
 ) -> str:
     """Generates TS interface string, using snake_case properties."""
-    base_schema_keys = (
-        base_schema_keys if base_schema_keys is not None else set()
-    )
-    extends_clause = (
-        f" extends {extends_interface}" if extends_interface else ""
-    )
+    base_schema_keys = base_schema_keys if base_schema_keys is not None else set()
+    extends_clause = f" extends {extends_interface}" if extends_interface else ""
     interface_parts = [f"export interface {schema_name}{extends_clause} {{"]
     if not isinstance(voluptuous_schema.schema, dict):
         _LOGGER.error("Schema not dict for %s", schema_name)
-        interface_parts.extend(
-            ["  [key: string]: any; // Error: Schema not dict", "}"]
-        )
+        interface_parts.extend(["  [key: string]: any; // Error: Schema not dict", "}"])
         return "\n".join(interface_parts)
     processed_keys = set()
     for key_marker, validator in voluptuous_schema.schema.items():
@@ -319,9 +300,7 @@ def generate_ts_interface_from_voluptuous(
         if base_schema_keys and key_name_str in base_schema_keys:
             continue
 
-        ts_type_str = voluptuous_validator_to_ts_type(
-            validator, for_universal=False
-        )
+        ts_type_str = voluptuous_validator_to_ts_type(validator, for_universal=False)
         js_doc_parts = []
 
         # --- Description ---
@@ -346,7 +325,7 @@ def generate_ts_interface_from_voluptuous(
                             actual_default = potential_value
                         else:
                             is_computed = True
-                    except Exception:
+                    except Exception:  # noqa: BLE001
                         is_computed = True
 
                 if is_computed:
@@ -365,9 +344,7 @@ def generate_ts_interface_from_voluptuous(
         # --- Constraints ---
         constraints_doc = []
         constraint_validators = (
-            validator.validators
-            if isinstance(validator, vol.All)
-            else [validator]
+            validator.validators if isinstance(validator, vol.All) else [validator]
         )
         for sub_validator in constraint_validators:
             if isinstance(sub_validator, vol.Range):
@@ -478,21 +455,15 @@ def generate_typescript_types() -> str:
         from ledfx.effects import Effect
         from ledfx.virtuals import Virtual
 
-        _LOGGER.info(
-            "Imported managers to potentially trigger registry loading."
-        )
+        _LOGGER.info("Imported managers to potentially trigger registry loading.")
         if hasattr(Device, "registry") and callable(Device.registry):
             device_registry = Device.registry()
-            _LOGGER.info(
-                "Accessed device registry: %s types.", len(device_registry)
-            )
+            _LOGGER.info("Accessed device registry: %s types.", len(device_registry))
         else:
             _LOGGER.error("Could not find/call Device.registry().")
         if hasattr(Effect, "registry") and callable(Effect.registry):
             effect_registry = Effect.registry()
-            _LOGGER.info(
-                "Accessed effect registry: %s types.", len(effect_registry)
-            )
+            _LOGGER.info("Accessed effect registry: %s types.", len(effect_registry))
         else:
             _LOGGER.error("Could not find/call Effect.registry().")
     except Exception:
@@ -520,9 +491,7 @@ def generate_typescript_types() -> str:
         )
 
         base_schema_dict_def = {
-            vol.Required(
-                "name", description="Friendly name for the device"
-            ): str,
+            vol.Required("name", description="Friendly name for the device"): str,
             vol.Optional(
                 "icon_name",
                 description="https://material-ui.com/components/material-icons/",
@@ -545,11 +514,9 @@ def generate_typescript_types() -> str:
         if isinstance(base_device_schema_object.schema, dict):
             base_schema_dict = base_device_schema_object.schema
             _LOGGER.info("Base schema dict created. Extracting keys...")
-            for k in base_schema_dict.keys():
+            for k in base_schema_dict.keys():  # noqa: SIM118
                 key_name = str(
-                    k.schema
-                    if isinstance(k, (vol.Required, vol.Optional))
-                    else k
+                    k.schema if isinstance(k, (vol.Required, vol.Optional)) else k
                 )
                 base_schema_keys.add(key_name)
             _LOGGER.info("Base schema keys: %s", base_schema_keys)
@@ -558,9 +525,7 @@ def generate_typescript_types() -> str:
                 base_device_config_interface_name, base_device_schema_object
             )
             output_ts_string += "\n\n"
-            _LOGGER.info(
-                "Successfully generated %s", base_device_config_interface_name
-            )
+            _LOGGER.info("Successfully generated %s", base_device_config_interface_name)
         else:
             _LOGGER.error(
                 "Manually created base schema's '.schema' attribute is not dict?"
@@ -576,9 +541,7 @@ def generate_typescript_types() -> str:
         base_device_schema_object = None  # Ensure reset on error
 
     base_device_name_to_extend_final = (
-        base_device_config_interface_name
-        if base_device_schema_object
-        else None
+        base_device_config_interface_name if base_device_schema_object else None
     )
 
     # --- 1. Generate Virtual Config ---
@@ -595,7 +558,7 @@ def generate_typescript_types() -> str:
         else:
             _LOGGER.error("Virtual.CONFIG_SCHEMA not found/invalid.")
             output_ts_string += f"// Virtual config schema not found\nexport interface {virtual_config_interface_name} {{ [key: string]: any; }}\n\n"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         _LOGGER.error("Failed VirtualConfig: %s", e)
         output_ts_string += f"// Failed VirtualConfig\nexport interface {virtual_config_interface_name} {{ [key: string]: any; }}\n\n"
 
@@ -611,7 +574,7 @@ def generate_typescript_types() -> str:
         ):
             try:
                 device_schema_to_use = device_schema_to_use()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 device_schema_to_use = None
         if isinstance(device_schema_to_use, vol.Schema):
             device_config_ts_name = (
@@ -627,10 +590,8 @@ def generate_typescript_types() -> str:
                     base_schema_keys=base_schema_keys,
                 )
                 output_ts_string += "\n\n"
-            except Exception as e:
-                _LOGGER.error(
-                    "Failed gen TS Device '%s': %s", device_type_str, e
-                )
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.error("Failed gen TS Device '%s': %s", device_type_str, e)
                 output_ts_string += f"// Failed gen for {device_config_ts_name}\nexport interface {device_config_ts_name} {{ [key: string]: any; }}\n\n"
         else:
             _LOGGER.warning(
@@ -645,9 +606,7 @@ def generate_typescript_types() -> str:
             [f'"{dtype}"' for dtype in all_device_type_strings]
         )
     output_ts_string += "/**\n * Literal union of all known device type strings\n * @category Types\n */\n"
-    output_ts_string += (
-        f"export type DeviceType = {device_type_literal_union};\n\n"
-    )
+    output_ts_string += f"export type DeviceType = {device_type_literal_union};\n\n"
     output_ts_string += (
         "/**\n * Device specific configurations\n * @category Specific\n */\n"
     )
@@ -666,9 +625,7 @@ def generate_typescript_types() -> str:
     )
 
     # Include base schema properties first
-    if base_device_schema_object and isinstance(
-        base_device_schema_object.schema, dict
-    ):
+    if base_device_schema_object and isinstance(base_device_schema_object.schema, dict):
         for key_marker, validator in base_device_schema_object.schema.items():
             key_schema_obj = (
                 key_marker.schema
@@ -690,7 +647,7 @@ def generate_typescript_types() -> str:
         ):
             try:
                 device_schema_to_use = device_schema_to_use()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 device_schema_to_use = None
 
         if isinstance(device_schema_to_use, vol.Schema) and isinstance(
@@ -713,8 +670,7 @@ def generate_typescript_types() -> str:
                 if ts_property_name in all_device_properties:
                     # Fix: Check against all_DEVICE_properties, not all_EFFECT_properties
                     if (
-                        all_device_properties[ts_property_name]
-                        != basic_ts_type
+                        all_device_properties[ts_property_name] != basic_ts_type
                         and all_device_properties[ts_property_name] != "any"
                         and basic_ts_type != "any"
                     ):
@@ -733,29 +689,21 @@ def generate_typescript_types() -> str:
     output_ts_string += "/**\n * Universal interface merging all possible *optional* device properties (using snake_case)\n * @category Configs\n */\n"
     output_ts_string += f"export interface {universal_device_config_name} {{\n"
     # Add 'type' property using the DeviceType union we generated
-    output_ts_string += (
-        "  type?: DeviceType; // Optional device type identifier\n"
-    )
+    output_ts_string += "  type?: DeviceType; // Optional device type identifier\n"
 
     for prop_name in sorted(all_device_properties.keys()):
         # Avoid adding 'type' again if it was somehow in a schema
         if prop_name == "type":
             continue
         ts_type = all_device_properties[prop_name]
-        output_ts_string += (
-            f"  {prop_name}?: {ts_type};\n"  # snake_case, optional
-        )
+        output_ts_string += f"  {prop_name}?: {ts_type};\n"  # snake_case, optional
 
     output_ts_string += "}\n\n"
     # --- 3. Generate SPECIFIC Effect Config Schemas & EffectType Union ---
     all_effect_config_interface_names = []
     all_effect_type_strings = sorted(effect_registry.keys())
-    _LOGGER.info(
-        "Generating SPECIFIC TS for %s effect types...", len(effect_registry)
-    )
-    output_ts_string += (
-        "// Specific Effect Configurations (for Discriminated Union)\n"
-    )
+    _LOGGER.info("Generating SPECIFIC TS for %s effect types...", len(effect_registry))
+    output_ts_string += "// Specific Effect Configurations (for Discriminated Union)\n"
     for effect_type_str in all_effect_type_strings:
         effect_class = effect_registry[effect_type_str]
         effect_schema_to_use = getattr(effect_class, "CONFIG_SCHEMA", None)
@@ -774,7 +722,7 @@ def generate_typescript_types() -> str:
                     lines.insert(1, type_literal_line)
                 output_ts_string += f"/**\n * Specific configuration for the '{effect_type_str}' effect.\n * @category EffectSpecificConfigs\n */\n"
                 output_ts_string += "\n".join(lines) + "\n\n"
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.error(
                     "Failed gen SPECIFIC TS Effect '%s': %s",
                     effect_type_str,
@@ -794,9 +742,7 @@ def generate_typescript_types() -> str:
             [f'"{etype}"' for etype in all_effect_type_strings]
         )
     output_ts_string += "/**\n * Literal union of all known effect type strings\n * @category Types\n */\n"
-    output_ts_string += (
-        f"export type EffectType = {effect_type_literal_union};\n\n"
-    )
+    output_ts_string += f"export type EffectType = {effect_type_literal_union};\n\n"
     output_ts_string += (
         "/**\n * Effect specific configurations\n * @category Specific\n */\n"
     )
@@ -807,9 +753,7 @@ def generate_typescript_types() -> str:
         fallback_effect_config_name = "BaseEffectConfig"
         output_ts_string += f"// Fallback Base Effect Config\nexport interface {fallback_effect_config_name} {{ type?: EffectType; [key: string]: any; }}\n\n"
         specific_effect_config_union_name = fallback_effect_config_name
-        _LOGGER.warning(
-            "No specific effect config interfaces for discriminated union."
-        )
+        _LOGGER.warning("No specific effect config interfaces for discriminated union.")
 
     # --- 4. Collect ALL Effect Properties for Universal Interface ---
     all_effect_properties = {}
@@ -843,7 +787,7 @@ def generate_typescript_types() -> str:
                     ts_property_name,
                     basic_ts_type,
                 )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         _LOGGER.warning("Could not process base Effect schema: %s", e)
 
     # Then collect properties from specific effect classes
@@ -865,8 +809,7 @@ def generate_typescript_types() -> str:
                 )
                 if ts_property_name in all_effect_properties:
                     if (
-                        all_effect_properties[ts_property_name]
-                        != basic_ts_type
+                        all_effect_properties[ts_property_name] != basic_ts_type
                         and all_effect_properties[ts_property_name] != "any"
                         and basic_ts_type != "any"
                     ):
@@ -901,9 +844,7 @@ def generate_typescript_types() -> str:
         if all_device_config_interface_names
         else base_device_config_interface_name
     )
-    output_ts_string += (
-        "// API Response Types using the SPECIFIC Effect Config Union\n"
-    )
+    output_ts_string += "// API Response Types using the SPECIFIC Effect Config Union\n"
     output_ts_string += generate_specific_api_response_types(
         virtual_config_name_to_use,
         specific_effect_config_union_name,
@@ -923,9 +864,7 @@ def generate_typescript_types() -> str:
         class DummyLedFx:
             def __init__(self):
                 self.config = {"scenes": {}}
-                self.virtuals = type(
-                    "obj", (object,), {"get": lambda x: None}
-                )()
+                self.virtuals = type("obj", (object,), {"get": lambda x: None})()
 
         dummy_ledfx = DummyLedFx()
         scenes_instance = Scenes(dummy_ledfx)
@@ -941,7 +880,7 @@ def generate_typescript_types() -> str:
         else:
             _LOGGER.warning("Scene schema is not a voluptuous Schema")
             output_ts_string += f"// Fallback Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         _LOGGER.error("Failed to generate Scene config: %s", e)
         output_ts_string += f"// Failed Scene Config\nexport interface {scene_config_interface_name} {{ name: string; [key: string]: any; }}\n\n"
 
@@ -1007,7 +946,7 @@ def generate_typescript_types() -> str:
             _LOGGER.warning("PlaylistSchema is not a voluptuous Schema")
             output_ts_string += f"// Fallback Playlist Config\nexport interface {playlist_config_interface_name} {{ id: string; name: string; items: {playlist_item_interface_name}[]; [key: string]: any; }}\n\n"
 
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         _LOGGER.error("Failed to generate Playlist config: %s", e)
         output_ts_string += f"// Failed Playlist Config\nexport interface {playlist_config_interface_name} {{ id: string; name: string; items: any[]; [key: string]: any; }}\n\n"
 
@@ -1092,12 +1031,12 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # GET /api/playlists/{id} response
-    output_ts_string += "/**\n * Response for GET /api/playlists/{id}.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for GET /api/playlists/{id}.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface GetSinglePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
-    output_ts_string += (
-        f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
-    )
+    output_ts_string += f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
     output_ts_string += "  message?: string;\n"
     output_ts_string += "}\n\n"
 
@@ -1105,9 +1044,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "/**\n * Response for POST /api/playlists (playlist creation/replacement).\n * @category REST\n */\n"
     output_ts_string += "export interface CreatePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
-    output_ts_string += (
-        f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
-    )
+    output_ts_string += f"  data?: {{ playlist: {playlist_config_interface_name} }};\n"
     output_ts_string += "  payload?: {\n"
     output_ts_string += '    type: "success" | "error";\n'
     output_ts_string += "    reason: string;\n"
@@ -1144,7 +1081,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # DELETE /api/playlists response (id is passed as path parameter)
-    output_ts_string += "/**\n * Response for DELETE /api/playlists/{id}.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for DELETE /api/playlists/{id}.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface DeletePlaylistApiResponse {\n"
     output_ts_string += '  status: "success" | "error";\n'
     output_ts_string += "  payload?: {\n"
@@ -1194,7 +1133,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # DELETE /api/cache/images response
-    output_ts_string += "/**\n * Response for DELETE /api/cache/images.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for DELETE /api/cache/images.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface DeleteCacheApiResponse {\n"
     output_ts_string += '  status: "success" | "failed";\n'
     output_ts_string += "  data?: {\n"
@@ -1208,7 +1149,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # POST /api/cache/images/refresh response
-    output_ts_string += "/**\n * Response for POST /api/cache/images/refresh.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Response for POST /api/cache/images/refresh.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface RefreshCacheApiResponse {\n"
     output_ts_string += '  status: "success" | "failed";\n'
     output_ts_string += "  data?: {\n"
@@ -1224,7 +1167,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "// Assets API Response Types\n"
 
     # Asset metadata
-    output_ts_string += "/**\n * Represents a single asset with metadata.\n * @category Assets\n */\n"
+    output_ts_string += (
+        "/**\n * Represents a single asset with metadata.\n * @category Assets\n */\n"
+    )
     output_ts_string += "export interface AssetMetadata {\n"
     output_ts_string += "  path: string;\n"
     output_ts_string += "  size: number;\n"
@@ -1270,13 +1215,13 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # POST /api/assets/thumbnail request
-    output_ts_string += "/**\n * Request body for POST /api/assets/thumbnail.\n * @category REST\n */\n"
+    output_ts_string += (
+        "/**\n * Request body for POST /api/assets/thumbnail.\n * @category REST\n */\n"
+    )
     output_ts_string += "export interface ThumbnailRequest {\n"
     output_ts_string += "  path: string;\n"
     output_ts_string += "  size?: number; // 16-512, default 128\n"
-    output_ts_string += (
-        "  dimension?: 'max' | 'width' | 'height'; // default 'max'\n"
-    )
+    output_ts_string += "  dimension?: 'max' | 'width' | 'height'; // default 'max'\n"
     output_ts_string += "}\n\n"
 
     # --- 6.11. Generate Virtual Presets API Response Types ---
@@ -1306,7 +1251,9 @@ def generate_typescript_types() -> str:
     output_ts_string += "export interface SetVirtualPresetRequest {\n"
     output_ts_string += '  category: "ledfx_presets" | "user_presets";\n'
     output_ts_string += "  effect_id: EffectType;\n"
-    output_ts_string += '  preset_id: string; // Use "reset" with ledfx_presets to reset to defaults\n'
+    output_ts_string += (
+        '  preset_id: string; // Use "reset" with ledfx_presets to reset to defaults\n'
+    )
     output_ts_string += "}\n\n"
 
     # PUT /api/virtuals/{virtual_id}/presets response

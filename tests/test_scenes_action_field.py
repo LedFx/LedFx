@@ -71,9 +71,7 @@ class _DummyLedFx:
 
 
 def _build_scenes_manager(scene_config, virtuals, presets=None):
-    dummy_ledfx = _DummyLedFx(
-        scenes=scene_config, virtuals=virtuals, presets=presets
-    )
+    dummy_ledfx = _DummyLedFx(scenes=scene_config, virtuals=virtuals, presets=presets)
     return Scenes(dummy_ledfx), dummy_ledfx
 
 
@@ -95,7 +93,7 @@ def test_action_ignore_leaves_virtual_unchanged(mock_save):
         "v1": _DummyVirtual("v1", initial_effect),
     }
 
-    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)  # noqa: RUF059
     result = manager.activate(scene_id)
 
     assert result is True
@@ -120,7 +118,7 @@ def test_action_stop_clears_effect(mock_save):
         "v1": _DummyVirtual("v1", _DummyEffect("bars", {"speed": 5})),
     }
 
-    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)  # noqa: RUF059
     result = manager.activate(scene_id)
 
     assert result is True
@@ -281,7 +279,7 @@ def test_legacy_empty_object_behaves_as_ignore(mock_save):
         "v1": _DummyVirtual("v1", initial_effect),
     }
 
-    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)  # noqa: RUF059
     result = manager.activate(scene_id)
 
     assert result is True
@@ -346,7 +344,7 @@ def test_mixed_actions_in_scene(mock_save):
         "v4": _DummyVirtual("v4"),
     }
 
-    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)  # noqa: RUF059
     result = manager.activate(scene_id)
 
     assert result is True
@@ -460,7 +458,7 @@ def test_scene_activation_skips_missing_virtuals(mock_save):
         # "missing-virtual" not in the system
     }
 
-    manager, ledfx = _build_scenes_manager(scenes, virtuals)
+    manager, ledfx = _build_scenes_manager(scenes, virtuals)  # noqa: RUF059
     result = manager.activate(scene_id)
 
     assert result is True

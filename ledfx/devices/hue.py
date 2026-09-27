@@ -2,14 +2,13 @@ import logging
 import re
 import socket
 import time
-from typing import Optional
 
 import requests
 import voluptuous as vol
 
 # Try to import the optional package
 try:
-    import mbedtls.tls as tls
+    from mbedtls import tls
 
     MBEDTLS_AVAILABLE = True
 except ImportError:
@@ -40,13 +39,13 @@ class HueDevice(NetworkedDevice):
     )
 
     status: dict[int, tuple[int, int, int]]
-    _sock: Optional[socket.socket] = None
+    _sock: socket.socket | None = None
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "Hue"
         if not MBEDTLS_AVAILABLE:
-            raise Exception(
+            raise Exception(  # noqa: TRY002
                 "You need to install the python-mbedtls package for Hue to work."
             )
 
@@ -95,26 +94,24 @@ class HueDevice(NetworkedDevice):
                 )
             else:
                 # The Bridge Link Button needs to be pressed
-                raise Exception(
+                raise Exception(  # noqa: TRY002
                     "You need to press the Bridge Link Button and retry that again."
                 )
         else:
             # We need to check if the credentials are still valid for this device.
-            response, _ = self._hue_request(
-                "GET", f"api/{self._config['username']}"
-            )
+            response, _ = self._hue_request("GET", f"api/{self._config['username']}")
             if "error" in response[0]:
                 # Credentials are no longer valid - need Bridge Link Button to be pressed and LedFx to be restarted.
                 # We delete the invalid credentials here - after a restart a fresh registration will be tried.
                 self.update_config({"username": None, "clientkey": None})
-                raise Exception(
+                raise Exception(  # noqa: TRY002
                     "You need to press the Bridge Link Button and restart LedFx."
                 )
 
     def _check_hue_bridge(self):
         response, _ = self._hue_request("GET", "api/config")
         if response["swversion"] < "1948086000":
-            raise Exception(
+            raise Exception(  # noqa: TRY002
                 "Your Hue Bridge has an outdated Firmware installed. Update it using the Hue App."
             )
 
@@ -139,7 +136,7 @@ class HueDevice(NetworkedDevice):
         entertainmentZonesCount = len(all_groups)
 
         if entertainmentZonesCount == 0:
-            raise Exception(
+            raise Exception(  # noqa: TRY002
                 "You did not setup any Entertainment zones. Do that in the Hue App."
             )
 
@@ -151,7 +148,7 @@ class HueDevice(NetworkedDevice):
             f"/clip/v2/resource/entertainment_configuration/{entertainment_id}",
             ssl=True,
         )
-        lights = dict()
+        lights = dict()  # noqa: C408
         for channel in response["data"][0]["channels"]:
             lights.update(
                 {
@@ -164,9 +161,7 @@ class HueDevice(NetworkedDevice):
             )
 
         if len(lights) > 20:
-            raise Exception(
-                f"{len(lights)} lights found. Only 20 are allowed."
-            )
+            raise Exception(f"{len(lights)} lights found. Only 20 are allowed.")  # noqa: TRY002
 
         return lights
 
@@ -190,9 +185,7 @@ class HueDevice(NetworkedDevice):
         self._sock = self._dtls_client_context.wrap_socket(
             sock, self._config["ip_address"]
         )
-        self._sock.connect(
-            (self._config["ip_address"], self._config["udp_port"])
-        )
+        self._sock.connect((self._config["ip_address"], self._config["udp_port"]))
 
         # Since UDP packets can get lost - we need to try handshaking a couple of times
         handshake_success = False
@@ -201,7 +194,7 @@ class HueDevice(NetworkedDevice):
                 time.sleep(0.2)
                 self._sock.do_handshake()
                 handshake_success = True
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to establish TLS handshake when activating the UDP stream. Retrying. %s",
                     e,
@@ -220,7 +213,7 @@ class HueDevice(NetworkedDevice):
             self._sock = None
 
         request_data = {"action": "stop"}
-        response, _ = self._hue_request(
+        response, _ = self._hue_request(  # noqa: RUF059
             "PUT",
             f"/clip/v2/resource/entertainment_configuration/{self._config['entertainment_id']}",
             request_data,
@@ -253,7 +246,7 @@ class HueDevice(NetworkedDevice):
 
         try:
             self._sock.send(send_data)
-        except Exception:
+        except Exception:  # noqa: BLE001
             self.activate()
 
     async def async_initialize(self):

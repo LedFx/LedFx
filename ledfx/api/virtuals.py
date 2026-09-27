@@ -77,9 +77,7 @@ class VirtualsEndpoint(RestEndpoint):
                 )
             # Update the virtual's configuration
             virtual.config = virtual_config
-            _LOGGER.info(
-                "Updated virtual %s config to %s", virtual.id, virtual_config
-            )
+            _LOGGER.info("Updated virtual %s config to %s", virtual.id, virtual_config)
 
             virtual.virtual_cfg["config"] = virtual.config
 

@@ -29,9 +29,7 @@ class Line:
         draw(draw, image, width, beat_osc): Draws the line on the image.
     """
 
-    def __init__(
-        self, nx, color, offset, speed, fade_multipliers, line_width, segment
-    ):
+    def __init__(self, nx, color, offset, speed, fade_multipliers, line_width, segment):
         self.nx = nx
         self.ny = 0
         self.color = color
@@ -64,7 +62,7 @@ class Line:
         self.tail = tail
         # adjust for the code lines own speed
         self.ny += movement * self.speed
-        if self.ny > (1 + self.tail):
+        if self.ny > (1 + self.tail):  # noqa: SIM103
             return False
         return True
 
@@ -88,9 +86,7 @@ class Line:
                 y_end = int(y_start - self.segment)
 
                 # Use pre-calculated fade and convert once
-                faded_color = (self.color * self.fade_multipliers[i]).astype(
-                    np.uint8
-                )
+                faded_color = (self.color * self.fade_multipliers[i]).astype(np.uint8)
 
                 draw.line(
                     (x, y_start, x, y_end),
@@ -103,8 +99,7 @@ class Line:
 
         # Pre-calculate white color with beat
         head_color = (
-            np.array([255, 255, 255], dtype=np.float32)
-            * (0.5 + beat_roll * 0.5)
+            np.array([255, 255, 255], dtype=np.float32) * (0.5 + beat_roll * 0.5)
         ).astype(np.uint8)
 
         draw.line(
@@ -214,9 +209,7 @@ class DigitalRain2d(Twod, GradientEffect):
         )
 
         # Pre-calculate line geometry based on current dimensions
-        self.line_width = max(
-            1, int(self.r_width * (self._config["width"] / 100.0))
-        )
+        self.line_width = max(1, int(self.r_width * (self._config["width"] / 100.0)))
         tail_length = int(self.r_height * (self._config["tail"] / 100.0))
         self.tail_pixels = tail_length - self.line_width
 
@@ -279,9 +272,7 @@ class DigitalRain2d(Twod, GradientEffect):
         self.lines = [
             line
             for line in self.lines
-            if line.update(
-                self.run_seconds, self.passed, self.tail, self.impulse
-            )
+            if line.update(self.run_seconds, self.passed, self.tail, self.impulse)
         ]
 
         # Draw all remaining lines

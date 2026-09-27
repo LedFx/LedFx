@@ -61,9 +61,7 @@ class QLCEndpoint(RestEndpoint):
                 f"{integration} was not found or was not type spotify"
             )
 
-        return await self.request_success(
-            "info", "This endpoint does nothing yet"
-        )
+        return await self.request_success("info", "This endpoint does nothing yet")
 
     async def post(self, integration_id, request) -> web.Response:
         """
@@ -105,19 +103,15 @@ class QLCEndpoint(RestEndpoint):
             missing_attributes.append("song_position")
         if missing_attributes:
             return await self.invalid_request(
-                f'Required attributes {", ".join(missing_attributes)} were not provided'
+                f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
-        if scene_id not in self._ledfx.config["scenes"].keys():
-            return await self.invalid_request(
-                f"Scene {scene_id} does not exist"
-            )
+        if scene_id not in self._ledfx.config["scenes"].keys():  # noqa: SIM118
+            return await self.invalid_request(f"Scene {scene_id} does not exist")
 
         integration.add_trigger(scene_id, song_id, song_name, song_position)
 
-        save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
-        )
+        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
         return await self.request_success()
 
     async def delete(self, integration_id, request) -> web.Response:
@@ -150,7 +144,5 @@ class QLCEndpoint(RestEndpoint):
         integration.delete_trigger(trigger_id)
 
         # Update and save the config
-        save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
-        )
+        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
         return await self.request_success()

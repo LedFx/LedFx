@@ -116,12 +116,10 @@ class WebsocketEndpoint(RestEndpoint):
 
 
 class WebsocketConnection:
-    ip_uid_map = {}
+    ip_uid_map = {}  # noqa: RUF012
     map_lock = asyncio.Lock()
     # Phase 1: Class-level metadata storage
-    client_metadata: ClassVar[dict[str, dict[str, Any]]] = (
-        {}
-    )  # UUID -> metadata dict
+    client_metadata: ClassVar[dict[str, dict[str, Any]]] = {}  # UUID -> metadata dict
     metadata_lock: ClassVar[asyncio.Lock] = asyncio.Lock()
 
     def __init__(self, ledfx):
@@ -293,9 +291,7 @@ class WebsocketConnection:
                             message,
                         )
                     except ConnectionResetError:
-                        _LOGGER.info(
-                            "Websocket connection closed by the client."
-                        )
+                        _LOGGER.info("Websocket connection closed by the client.")
                         return
 
         _LOGGER.info("Stopped websocket sender.")
@@ -349,16 +345,12 @@ class WebsocketConnection:
         _LOGGER.info("Websocket connected.")
 
         # Send UID to the client
-        await self._socket.send_json(
-            {"event_type": "client_id", "client_id": self.uid}
-        )
+        await self._socket.send_json({"event_type": "client_id", "client_id": self.uid})
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
         self._sender_task = self._ledfx.loop.create_task(self._sender())
 
-        self._ledfx.events.fire_event(
-            ClientConnectedEvent(self.uid, self.client_ip)
-        )
+        self._ledfx.events.fire_event(ClientConnectedEvent(self.uid, self.client_ip))
 
         def shutdown_handler(e):
             self.close()
@@ -387,9 +379,7 @@ class WebsocketConnection:
                     else:
                         handler(self, message)
                 else:
-                    _LOGGER.error(
-                        "Received unknown command %s", message["type"]
-                    )
+                    _LOGGER.error("Received unknown command %s", message["type"])
                     self.send_error(message["id"], "Unknown command type.")
 
                 ws_msg = await socket.receive()
@@ -405,7 +395,7 @@ class WebsocketConnection:
             if socket.closed:
                 _LOGGER.info("Connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: %s", e)
+                _LOGGER.exception("Unexpected TypeError: %s", e)  # noqa: TRY401
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Connection cancelled")
@@ -414,7 +404,7 @@ class WebsocketConnection:
             _LOGGER.info("Connection reset")
 
         except Exception as err:
-            _LOGGER.exception("Unexpected Exception: %s", err)
+            _LOGGER.exception("Unexpected Exception: %s", err)  # noqa: TRY401
 
         finally:
             async with WebsocketConnection.map_lock:
@@ -454,9 +444,7 @@ class WebsocketConnection:
                     return True
             return False
 
-    async def _reserve_and_set_client_name(
-        self, desired_name: str
-    ) -> tuple[str, bool]:
+    async def _reserve_and_set_client_name(self, desired_name: str) -> tuple[str, bool]:
         """Atomically check for name conflicts, resolve them, and persist metadata.
 
         This method acquires metadata_lock once and holds it throughout the entire
@@ -485,10 +473,7 @@ class WebsocketConnection:
                     client_uuid,
                     meta,
                 ) in WebsocketConnection.client_metadata.items():
-                    if (
-                        client_uuid != self.uid
-                        and meta.get("name") == resolved_name
-                    ):
+                    if client_uuid != self.uid and meta.get("name") == resolved_name:
                         name_taken = True
                         break
 
@@ -529,9 +514,7 @@ class WebsocketConnection:
     async def get_all_clients_metadata(cls):
         """Get deep copy of all client metadata (thread-safe)"""
         async with cls.metadata_lock:
-            return {
-                uuid: meta.copy() for uuid, meta in cls.client_metadata.items()
-            }
+            return {uuid: meta.copy() for uuid, meta in cls.client_metadata.items()}
 
     @websocket_handler("set_client_info")
     async def set_client_info_handler(self, message):
@@ -560,9 +543,7 @@ class WebsocketConnection:
 
         # Atomically check, resolve conflicts, and persist metadata
         # This prevents TOCTOU race conditions
-        resolved_name, name_conflict = await self._reserve_and_set_client_name(
-            name
-        )
+        resolved_name, name_conflict = await self._reserve_and_set_client_name(name)
 
         # Send confirmation (after atomic operation completes)
         self.send(
@@ -593,7 +574,7 @@ class WebsocketConnection:
         client_type = data.get("type")
 
         # Validate and normalize type if provided
-        if client_type is not None:
+        if client_type is not None:  # noqa: SIM102
             if client_type not in VALID_CLIENT_TYPES:
                 _LOGGER.warning(
                     "Invalid client_type '%s' from %s, defaulting to 'unknown'",
@@ -679,7 +660,7 @@ class WebsocketConnection:
 
         if mode == "all":
             # Exclude sender to prevent self-echo
-            return [uuid for uuid in clients.keys() if uuid != sender_uuid]
+            return [uuid for uuid in clients if uuid != sender_uuid]
 
         elif mode == "type":
             value = target_config.get("value")
@@ -709,9 +690,7 @@ class WebsocketConnection:
                 _LOGGER.warning("Target mode 'uuids' requires 'uuids' list")
                 return []
             # Only return UUIDs that exist in connected clients
-            return [
-                client_uuid for client_uuid in uuids if client_uuid in clients
-            ]
+            return [client_uuid for client_uuid in uuids if client_uuid in clients]
 
         else:
             _LOGGER.warning("Invalid target mode: %s", mode)
@@ -749,9 +728,7 @@ class WebsocketConnection:
 
         # Filter targets based on target configuration
         target_config = validated_data["target"]
-        target_uuids = self._filter_targets(
-            target_config, clients, sender_uuid
-        )
+        target_uuids = self._filter_targets(target_config, clients, sender_uuid)
 
         # Reject if no targets matched
         if not target_uuids:
@@ -804,7 +781,7 @@ class WebsocketConnection:
             self.send_event(message["id"], event)
 
         # Some events are not subscribable - send an error message if the user tries to subscribe to one with a hint on what to use instead
-        if message.get("event_type") in NON_SUBSCRIBABLE_EVENTS.keys():
+        if message.get("event_type") in NON_SUBSCRIBABLE_EVENTS:
             msg = f"Websocket cannot subscribe to {message.get('event_type')} events - use {NON_SUBSCRIBABLE_EVENTS[message.get('event_type')]} instead"
             _LOGGER.warning("%s.", msg)
             self.send_error(message["id"], msg)
@@ -831,9 +808,7 @@ class WebsocketConnection:
         if subscription_id in self._listeners:
             self._listeners.pop(subscription_id)()
         else:
-            _LOGGER.warning(
-                "Unsubscibe unknown subscription ID %s", subscription_id
-            )
+            _LOGGER.warning("Unsubscibe unknown subscription ID %s", subscription_id)
 
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):
@@ -896,11 +871,9 @@ class WebsocketConnection:
         except binascii.Error:
             _LOGGER.info("Incorrect base64 padding.")
         except Exception as err:
-            _LOGGER.exception(
-                "Unexpected Exception in base64 decoding: %s", err
-            )
+            _LOGGER.exception("Unexpected Exception in base64 decoding: %s", err)  # noqa: TRY401
         else:
-            fmt = "<%dh" % (len(decoded) // 2)
+            fmt = "<%dh" % (len(decoded) // 2)  # noqa: UP031
             data = list(struct.unpack(fmt, decoded))
             # Minimum value is -32768 for signed, so that's why if the number is negative,
             # it is divided by 32768 when converting to float.
@@ -1039,9 +1012,7 @@ class WebsocketConnection:
             )
             return
 
-        pixels = np.frombuffer(pixel_data, dtype=np.uint8).reshape(
-            height, width, 3
-        )
+        pixels = np.frombuffer(pixel_data, dtype=np.uint8).reshape(height, width, 3)
         self._ledfx.events.fire_event(
             FrontendVisualiserDataEvent(
                 vis_id=vis_id,
@@ -1069,7 +1040,7 @@ class WebAudioStream:
         self._active = False
 
     @property
-    def data(self, x):
+    def data(self, x):  # noqa: PLR0206
         return self._data
 
     @data.setter
@@ -1078,5 +1049,5 @@ class WebAudioStream:
         if self._active:
             try:
                 self.callback(self._data, None, None, None)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.error("%s", e)

@@ -11,7 +11,7 @@ from ledfx.api import RestApi
 
 try:
     base_path = sys._MEIPASS
-except BaseException:
+except BaseException:  # noqa: BLE001
     base_path = os.path.abspath(".")
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,15 +39,9 @@ class HttpServer:
             name="favicon",
         )
         self.app.router.add_route("get", "/manifest.json", self.manifest)
-        self.app.router.add_route(
-            "get", "/frontend_config.json", self.frontend_config
-        )
-        self.app.router.add_route(
-            "get", "/serviceWorker.js", self.service_worker
-        )
-        self.app.router.add_route(
-            "get", "/service-worker.js", self.service_worker_b
-        )
+        self.app.router.add_route("get", "/frontend_config.json", self.frontend_config)
+        self.app.router.add_route("get", "/serviceWorker.js", self.service_worker)
+        self.app.router.add_route("get", "/service-worker.js", self.service_worker_b)
         self.app.router.add_route("get", "/callback/", self.index)
         self.app.router.add_route("get", "/", self.index)
 
@@ -69,14 +63,10 @@ class HttpServer:
         self.app.router.add_route("get", "/fonts.css", self.fonts_css)
 
     async def fonts_css(self, response):
-        return web.FileResponse(
-            path=ledfx_frontend.where() + "/fonts.css", status=200
-        )
+        return web.FileResponse(path=ledfx_frontend.where() + "/fonts.css", status=200)
 
     async def index(self, response):
-        return web.FileResponse(
-            path=ledfx_frontend.where() + "/index.html", status=200
-        )
+        return web.FileResponse(path=ledfx_frontend.where() + "/index.html", status=200)
 
     async def frontend_config(self, response):
         return web.FileResponse(
@@ -105,9 +95,7 @@ class HttpServer:
         try:
             await self.start_tcpsite()
             if ssl_certs:
-                ssl_context = ssl.create_default_context(
-                    ssl.Purpose.CLIENT_AUTH
-                )
+                ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
                 ssl_context.load_cert_chain(*ssl_certs)
                 await self.start_tcpsite(ssl_context)
         except OSError as error:
@@ -115,9 +103,7 @@ class HttpServer:
 
     async def start_tcpsite(self, ssl_context=None):
         port = self.port_s if ssl_context else self.port
-        site = web.TCPSite(
-            self.runner, self.host, port, ssl_context=ssl_context
-        )
+        site = web.TCPSite(self.runner, self.host, port, ssl_context=ssl_context)
         await site.start()
         self.base_url = ("http{}://{}:{}").format(
             "s" if ssl_context else "", self.host, port
@@ -134,10 +120,8 @@ class HttpServer:
             self.port,
             error,
         )
-        _LOGGER.error(
-            "Is LedFx Already Running? If not, try a different port."
-        )
-        if self._ledfx.icon is not None:
+        _LOGGER.error("Is LedFx Already Running? If not, try a different port.")
+        if self._ledfx.icon is not None:  # noqa: SIM102
             if self._ledfx.icon.HAS_NOTIFICATION:
                 self._ledfx.icon.notify(
                     f"Failed to start: something is running on port {self.port}\nIs LedFx already running?"

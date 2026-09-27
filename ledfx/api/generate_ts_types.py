@@ -18,12 +18,8 @@ class GenerateTypesEndpoint(RestEndpoint):
         try:
             ts_code = generate_typescript_types()
 
-            headers = {
-                "Content-Disposition": 'attachment; filename="ledfx.types.ts"'
-            }
-            _LOGGER.info(
-                "TypeScript generation processing successful. Returning code."
-            )
+            headers = {"Content-Disposition": 'attachment; filename="ledfx.types.ts"'}
+            _LOGGER.info("TypeScript generation processing successful. Returning code.")
             return web.Response(
                 text=ts_code,
                 content_type="application/typescript",

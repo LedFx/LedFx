@@ -51,20 +51,14 @@ class SendspinServersEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         if "id" not in data:
-            _LOGGER.warning(
-                "POST /api/sendspin/servers: missing required field 'id'"
-            )
-            return await self.invalid_request(
-                "Required key not provided: 'id'"
-            )
+            _LOGGER.warning("POST /api/sendspin/servers: missing required field 'id'")
+            return await self.invalid_request("Required key not provided: 'id'")
 
         if "server_url" not in data:
             _LOGGER.warning(
                 "POST /api/sendspin/servers: missing required field 'server_url'"
             )
-            return await self.invalid_request(
-                "Required key not provided: 'server_url'"
-            )
+            return await self.invalid_request("Required key not provided: 'server_url'")
 
         server_url = data["server_url"]
         if isinstance(server_url, str):

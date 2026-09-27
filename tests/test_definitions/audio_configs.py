@@ -21,7 +21,7 @@ def get_ledfx_audio_configs():
             url=f"http://{SERVER_PATH}/api/schema",
             method="GET",
         )
-    except Exception:
+    except Exception:  # noqa: BLE001
         pytest.fail("Unable to get Schema from LedFx.")
     schema = response.json()
     # drop any keys that are not in config_keys_to_test
@@ -44,9 +44,7 @@ def get_ledfx_audio_configs():
                         method="PUT",
                         api_endpoint="/api/config",
                         expected_return_code=200,
-                        payload_to_send={
-                            config_id: {config_option: enum_value}
-                        },
+                        payload_to_send={config_id: {config_option: enum_value}},
                         expected_response_keys=["status", "payload"],
                         expected_response_values=[
                             {
@@ -57,12 +55,7 @@ def get_ledfx_audio_configs():
                         sleep_after_test=0.5,
                     )
                     audio_configs_to_test[
-                        config_id
-                        + "_"
-                        + config_option
-                        + "_"
-                        + str(enum_value)
-                        + "_set"
+                        config_id + "_" + config_option + "_" + str(enum_value) + "_set"
                     ] = set_config_test_case
 
                     # Increment execution order
@@ -80,9 +73,7 @@ def get_ledfx_audio_configs():
                         method="PUT",
                         api_endpoint="/api/config",
                         expected_return_code=200,
-                        payload_to_send={
-                            config_id: {config_option: random_value}
-                        },
+                        payload_to_send={config_id: {config_option: random_value}},
                         expected_response_keys=["status", "payload"],
                         expected_response_values=[
                             {

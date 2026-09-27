@@ -1,7 +1,6 @@
 import logging
 import struct
 from socket import socket
-from typing import Union
 
 import numpy as np
 import voluptuous as vol
@@ -82,7 +81,6 @@ class DDPDevice(UDPDevice):
         """
         self.frame_count += 1
         try:
-
             DDPDevice.send_out(
                 self._sock,
                 self.destination,
@@ -103,9 +101,7 @@ class DDPDevice(UDPDevice):
             # print warning only once until it clears
             if not self.connection_warning:
                 # If we have lost connection, log it, go offline, and fire an event to the frontend
-                _LOGGER.warning(
-                    "Error in DDP connection to %s: %s", self.name, e
-                )
+                _LOGGER.warning("Error in DDP connection to %s: %s", self.name, e)
                 self.connection_warning = True
                 self._online = False
                 self._ledfx.events.fire_event(DevicesUpdatedEvent(self.id))
@@ -160,7 +156,7 @@ class DDPDevice(UDPDevice):
         port: int,
         sequence: int,
         packet_count: int,
-        data: Union[bytes, memoryview],
+        data: bytes | memoryview,
         last: bool,
         destination_id: int,
     ) -> None:

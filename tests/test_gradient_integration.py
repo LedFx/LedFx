@@ -196,7 +196,7 @@ class TestAssetGradientIntegration:
         image_data = img_bytes.getvalue()
 
         # Save as asset
-        success, abs_path, error = save_asset(
+        success, abs_path, error = save_asset(  # noqa: RUF059
             config_dir=temp_assets_dir,
             relative_path="test.png",
             data=image_data,
@@ -222,9 +222,7 @@ class TestAssetGradientIntegration:
         assert "led_punchy" in gradients
         assert "led_max" in gradients
 
-    def test_list_assets_handles_gradient_extraction_failure(
-        self, temp_assets_dir
-    ):
+    def test_list_assets_handles_gradient_extraction_failure(self, temp_assets_dir):
         """Asset listing should continue even if gradient extraction fails."""
         # Create minimal image
         img = Image.new("RGB", (2, 2), color=(255, 255, 255))

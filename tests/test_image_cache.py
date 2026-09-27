@@ -52,7 +52,7 @@ class TestCacheBasicOperations:
     def test_cache_directory_created(self, temp_cache_dir):
         """Test cache directory is created if it doesn't exist."""
         # Create cache - this should create the directory
-        cache = ImageCache(temp_cache_dir, max_size_mb=10, max_items=100)
+        cache = ImageCache(temp_cache_dir, max_size_mb=10, max_items=100)  # noqa: F841
         cache_dir = os.path.join(temp_cache_dir, "cache", "images")
         assert os.path.exists(cache_dir)
 
@@ -121,16 +121,12 @@ class TestCacheAccessTracking:
         cache.put(url, sample_image_data, "image/png")
 
         entry_key = cache._generate_cache_key(url)
-        first_access = cache.metadata["cache_entries"][entry_key][
-            "last_accessed"
-        ]
+        first_access = cache.metadata["cache_entries"][entry_key]["last_accessed"]
 
         time.sleep(0.01)  # Small delay
         cache.get(url)
 
-        second_access = cache.metadata["cache_entries"][entry_key][
-            "last_accessed"
-        ]
+        second_access = cache.metadata["cache_entries"][entry_key]["last_accessed"]
         assert second_access > first_access
 
 
@@ -233,9 +229,7 @@ class TestCachePersistence:
         cache1 = ImageCache(temp_cache_dir, max_size_mb=1, max_items=5)
         cache1.put(url, sample_image_data, "image/png")
         entry_key = cache1._generate_cache_key(url)
-        original_cached_at = cache1.metadata["cache_entries"][entry_key][
-            "cached_at"
-        ]
+        original_cached_at = cache1.metadata["cache_entries"][entry_key]["cached_at"]
 
         # Create new cache instance (simulates restart)
         cache2 = ImageCache(temp_cache_dir, max_size_mb=1, max_items=5)
@@ -283,9 +277,7 @@ class TestCacheStatistics:
             assert entry["n_frames"] == 1
             assert entry["is_animated"] is False
 
-    def test_stats_entries_sorted_by_access_count(
-        self, cache, sample_image_data
-    ):
+    def test_stats_entries_sorted_by_access_count(self, cache, sample_image_data):
         """Test stats entries are sorted by access_count descending."""
         url1 = "https://example.com/image1.png"
         url2 = "https://example.com/image2.png"
@@ -300,10 +292,7 @@ class TestCacheStatistics:
         stats = cache.get_stats()
         # url2 should be first (highest access_count)
         assert stats["entries"][0]["url"] == url2
-        assert (
-            stats["entries"][0]["access_count"]
-            > stats["entries"][1]["access_count"]
-        )
+        assert stats["entries"][0]["access_count"] > stats["entries"][1]["access_count"]
 
 
 class TestCacheHeaders:
@@ -353,9 +342,7 @@ class TestContentTypeExtensionMapping:
 
             entry_key = cache._generate_cache_key(url)
             entry = cache.metadata["cache_entries"][entry_key]
-            assert (
-                entry["extension"] == expected_ext
-            ), f"Failed for {content_type}"
+            assert entry["extension"] == expected_ext, f"Failed for {content_type}"
 
 
 # Test Scenarios Documentation

@@ -142,9 +142,7 @@ async def test_get_after_clear(endpoint, ledfx):
 @pytest.mark.asyncio
 async def test_put_gradient_config(endpoint, ledfx):
     """PUT updates gradient configuration."""
-    request = _make_request(
-        {"gradient": {"enabled": False, "variant": "led_max"}}
-    )
+    request = _make_request({"gradient": {"enabled": False, "variant": "led_max"}})
     with patch("ledfx.nowplaying.service.save_config"):
         response = await endpoint.put(request)
 
@@ -180,9 +178,7 @@ async def test_put_track_text_config(endpoint, ledfx):
 @pytest.mark.asyncio
 async def test_put_album_art_config(endpoint, ledfx):
     """PUT updates album_art configuration."""
-    request = _make_request(
-        {"album_art": {"enabled": True, "virtual_ids": ["m2"]}}
-    )
+    request = _make_request({"album_art": {"enabled": True, "virtual_ids": ["m2"]}})
     with patch("ledfx.nowplaying.service.save_config"):
         response = await endpoint.put(request)
 

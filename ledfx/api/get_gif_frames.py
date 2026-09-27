@@ -2,9 +2,9 @@ import io
 import logging
 from json import JSONDecodeError
 
-import PIL.ImageSequence as ImageSequence
 import pybase64
 from aiohttp import web
+from PIL import ImageSequence
 
 from ledfx.api import RestEndpoint
 from ledfx.utils import open_gif
@@ -51,9 +51,7 @@ class GetGifFramesEndpoint(RestEndpoint):
                 frame.convert("RGB").save(
                     output, format="JPEG"
                 )  # Convert frame to JPEG
-                encoded_frame = pybase64.b64encode(output.getvalue()).decode(
-                    "utf-8"
-                )
+                encoded_frame = pybase64.b64encode(output.getvalue()).decode("utf-8")
                 frames.append(encoded_frame)
 
         response = {

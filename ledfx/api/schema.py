@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class SchemaEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/schema"
 
-    VALID_SCHEMAS = {
+    VALID_SCHEMAS = {  # noqa: RUF012
         "devices",
         "effects",
         "integrations",
@@ -83,17 +83,17 @@ class SchemaEndpoint(RestEndpoint):
                     }
 
                     if effect.HIDDEN_KEYS:
-                        response["effects"][effect_type][
-                            "hidden_keys"
-                        ] = effect.HIDDEN_KEYS
+                        response["effects"][effect_type]["hidden_keys"] = (
+                            effect.HIDDEN_KEYS
+                        )
                     if effect.ADVANCED_KEYS:
-                        response["effects"][effect_type][
-                            "advanced_keys"
-                        ] = effect.ADVANCED_KEYS
+                        response["effects"][effect_type]["advanced_keys"] = (
+                            effect.ADVANCED_KEYS
+                        )
                     if effect.PERMITTED_KEYS:
-                        response["effects"][effect_type][
-                            "permitted_keys"
-                        ] = effect.PERMITTED_KEYS
+                        response["effects"][effect_type]["permitted_keys"] = (
+                            effect.PERMITTED_KEYS
+                        )
 
             elif schema == "integrations":
                 # Generate all the integrations schema
@@ -113,9 +113,7 @@ class SchemaEndpoint(RestEndpoint):
             elif schema == "virtuals":
                 # Get virtuals schema
                 response["virtuals"] = {
-                    "schema": convertToJsonSchema(
-                        self._ledfx.virtuals.schema()
-                    ),
+                    "schema": convertToJsonSchema(self._ledfx.virtuals.schema()),
                 }
 
             elif schema == "audio":
@@ -132,12 +130,10 @@ class SchemaEndpoint(RestEndpoint):
                 del audio_analysis_schema["properties"]["tempo_method"]
                 merged_schema = {**audio_input_schema, **audio_analysis_schema}
 
-                for key in (
-                    audio_input_schema.keys() & audio_analysis_schema.keys()
-                ):
-                    if isinstance(
-                        audio_input_schema[key], dict
-                    ) and isinstance(audio_analysis_schema[key], dict):
+                for key in audio_input_schema.keys() & audio_analysis_schema.keys():
+                    if isinstance(audio_input_schema[key], dict) and isinstance(
+                        audio_analysis_schema[key], dict
+                    ):
                         merged_schema[key] = {
                             **audio_input_schema[key],
                             **audio_analysis_schema[key],
@@ -146,7 +142,7 @@ class SchemaEndpoint(RestEndpoint):
                 response["audio"] = {
                     "schema": {
                         **merged_schema,
-                        **{"permitted_keys": PERMITTED_KEYS["audio"]},
+                        "permitted_keys": PERMITTED_KEYS["audio"],
                     }
                 }
             elif schema == "melbanks":
@@ -156,7 +152,7 @@ class SchemaEndpoint(RestEndpoint):
                         **convertToJsonSchema(
                             Melbanks.CONFIG_SCHEMA,
                         ),
-                        **{"permitted_keys": PERMITTED_KEYS["melbanks"]},
+                        "permitted_keys": PERMITTED_KEYS["melbanks"],
                     },
                 }
             elif schema == "melbank_collection":
@@ -164,11 +160,7 @@ class SchemaEndpoint(RestEndpoint):
                 response["melbank_collection"] = {
                     "schema": {
                         **convertToJsonSchema(Melbank.CONFIG_SCHEMA),
-                        **{
-                            "permitted_keys": PERMITTED_KEYS[
-                                "melbank_collection"
-                            ]
-                        },
+                        "permitted_keys": PERMITTED_KEYS["melbank_collection"],
                     },
                 }
             elif schema == "wled_preferences":
@@ -176,11 +168,7 @@ class SchemaEndpoint(RestEndpoint):
                 response["wled_preferences"] = {
                     "schema": {
                         **convertToJsonSchema(WLED_CONFIG_SCHEMA),
-                        **{
-                            "permitted_keys": PERMITTED_KEYS[
-                                "wled_preferences"
-                            ]
-                        },
+                        "permitted_keys": PERMITTED_KEYS["wled_preferences"],
                     },
                 }
 
@@ -189,7 +177,7 @@ class SchemaEndpoint(RestEndpoint):
                 response["core"] = {
                     "schema": {
                         **convertToJsonSchema(CORE_CONFIG_SCHEMA),
-                        **{"permitted_keys": PERMITTED_KEYS["core"]},
+                        "permitted_keys": PERMITTED_KEYS["core"],
                     },
                 }
 

@@ -9,7 +9,7 @@ class SocketSingleton:
         _type_: _description_
     """
 
-    _instances = {}
+    _instances = {}  # noqa: RUF012
     _lock = Lock()
 
     def __new__(cls, recv_port):
@@ -59,10 +59,7 @@ class SocketSingleton:
         with SocketSingleton._lock:
             if self.recv_port in SocketSingleton._instances:
                 SocketSingleton._instances[self.recv_port]["ref_count"] -= 1
-                if (
-                    SocketSingleton._instances[self.recv_port]["ref_count"]
-                    <= 0
-                ):
+                if SocketSingleton._instances[self.recv_port]["ref_count"] <= 0:
                     # Close the socket and remove the instance
                     self.udp_server.close()
                     del SocketSingleton._instances[self.recv_port]

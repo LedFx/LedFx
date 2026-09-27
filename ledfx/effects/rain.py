@@ -78,9 +78,7 @@ class RainAudioEffect(AudioReactiveEffect):
         self.frame_centre_index = self.frame_width // 2
         self.frame_side_lengths = self.frame_centre_index - 1
 
-        self.intensity_filter = self.create_filter(
-            alpha_decay=0.5, alpha_rise=0.99
-        )
+        self.intensity_filter = self.create_filter(alpha_decay=0.5, alpha_rise=0.99)
         self.filtered_intensities = np.zeros(3)
 
     def new_drop(self, location, color):
@@ -117,14 +115,11 @@ class RainAudioEffect(AudioReactiveEffect):
                 * self.drop_colors[color, index]
                 for color in range(3)
             ]
-            overlaid_frames[
-                :, index : index + self.frame_width
-            ] += colored_frame
+            overlaid_frames[:, index : index + self.frame_width] += colored_frame
 
         self.pixels = overlaid_frames[
             :,
-            self.frame_side_lengths : self.frame_side_lengths
-            + self.pixel_count,
+            self.frame_side_lengths : self.frame_side_lengths + self.pixel_count,
         ].T
         self.pixels += self.pulse_pixels
         # Decay the pulse pixels
@@ -143,9 +138,7 @@ class RainAudioEffect(AudioReactiveEffect):
     def audio_data_updated(self, data):
         # Calculate the low, mids, and high indexes scaling based on the pixel
         # count
-        intensities = np.fromiter(
-            (i.max() for i in self.melbank_thirds()), float
-        )
+        intensities = np.fromiter((i.max() for i in self.melbank_thirds()), float)
 
         self.update_drop_frames()
 

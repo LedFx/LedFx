@@ -54,9 +54,7 @@ class ClientEndpoint(RestEndpoint):
             )
 
         if action not in ACTIONS:
-            return await self.invalid_request(
-                f"Action {action} is not in {ACTIONS}"
-            )
+            return await self.invalid_request(f"Action {action} is not in {ACTIONS}")
 
         if action == "sync":
             client_id = data.get("client_id", "unknown")

@@ -9,7 +9,7 @@ import heapq
 import logging
 import threading
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import numpy as np
 
@@ -78,9 +78,7 @@ class SendspinAudioStream:
         ledfx=None,
     ):
         if SendspinClient is None:
-            raise ImportError(
-                "aiosendspin not available (requires Python 3.12+)"
-            )
+            raise ImportError("aiosendspin not available (requires Python 3.12+)")
 
         self.config = config
         self.callback = callback
@@ -196,12 +194,8 @@ class SendspinAudioStream:
                     )
             else:
                 # PCM path: decode synchronously then schedule.
-                audio_float32 = self._convert_to_float32_mono(
-                    chunk_data, audio_format
-                )
-                self._schedule_mono_samples(
-                    audio_float32, play_time_us, sample_rate
-                )
+                audio_float32 = self._convert_to_float32_mono(chunk_data, audio_format)
+                self._schedule_mono_samples(audio_float32, play_time_us, sample_rate)
         except Exception as e:
             _LOGGER.warning(
                 "Error processing audio chunk (codec=%s): %s",
@@ -380,10 +374,9 @@ class SendspinAudioStream:
                     "FLAC stream header processed OK (%d bytes)",
                     len(codec_header),
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(
-                    "pyFLAC: ignoring %s while processing "
-                    "stream header (%d bytes): %s",
+                    "pyFLAC: ignoring %s while processing stream header (%d bytes): %s",
                     type(e).__name__,
                     len(codec_header),
                     e,
@@ -449,15 +442,11 @@ class SendspinAudioStream:
             else:
                 mono = audio.flatten().astype(np.float32) / scale
 
-            self._schedule_mono_samples(
-                mono, current_play_time_us, sample_rate
-            )
+            self._schedule_mono_samples(mono, current_play_time_us, sample_rate)
             self._flac_pending_samples_emitted += num_samples
 
         except Exception as e:
-            _LOGGER.error(
-                "Error in pyFLAC write callback: %s", e, exc_info=True
-            )
+            _LOGGER.error("Error in pyFLAC write callback: %s", e, exc_info=True)  # noqa: G201
 
     def _finish_flac_decoder(self, reason: str) -> None:
         """Finish and discard the pyFLAC decoder if one is active.
@@ -477,7 +466,7 @@ class SendspinAudioStream:
         try:
             self._flac_decoder.finish()
             _LOGGER.debug("FLAC decoder finish() succeeded")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning("FLAC decoder finish(%s) failed: %s", reason, e)
         self._flac_decoder = None
         self._flac_fmt_logged = False
@@ -560,8 +549,7 @@ class SendspinAudioStream:
             self._chunk_buffer.clear()
         if buf_len:
             _LOGGER.info(
-                "Playback buffer flushed on stream end "
-                "(discarded_chunks=%d, id=%s)",
+                "Playback buffer flushed on stream end (discarded_chunks=%d, id=%s)",
                 buf_len,
                 id(self),
             )
@@ -581,8 +569,7 @@ class SendspinAudioStream:
             buf_len = len(self._chunk_buffer)
             self._chunk_buffer.clear()
         _LOGGER.info(
-            "Playback buffer cleared (stream/clear, "
-            "roles=%s, discarded_chunks=%d)",
+            "Playback buffer cleared (stream/clear, roles=%s, discarded_chunks=%d)",
             roles,
             buf_len,
         )
@@ -644,9 +631,7 @@ class SendspinAudioStream:
                 try:
                     self.callback(chunk, len(chunk), None, None)
                 except Exception as e:
-                    _LOGGER.error(
-                        "Error in LedFx audio callback: %s", e, exc_info=True
-                    )
+                    _LOGGER.error("Error in LedFx audio callback: %s", e, exc_info=True)  # noqa: G201
                 # Check immediately for more ready chunks
                 continue
 
@@ -667,8 +652,8 @@ class SendspinAudioStream:
             threading.current_thread().name,
         )
         self._active = True
-        self._stop_event: Optional[asyncio.Event] = None
-        self._reconnect_task: Optional[asyncio.Task] = None
+        self._stop_event: asyncio.Event | None = None
+        self._reconnect_task: asyncio.Task | None = None
 
         # Start background thread with asyncio event loop
         self._thread = threading.Thread(
@@ -684,14 +669,11 @@ class SendspinAudioStream:
         gracefully rather than relying on force-stopping the loop.
         """
         if not self._active:
-            _LOGGER.debug(
-                "stop() called but stream not active (id=%s)", id(self)
-            )
+            _LOGGER.debug("stop() called but stream not active (id=%s)", id(self))
             return
 
         _LOGGER.info(
-            "Stopping Sendspin stream "
-            "(id=%s, decoder=%s, thread=%s, loop_running=%s)",
+            "Stopping Sendspin stream (id=%s, decoder=%s, thread=%s, loop_running=%s)",
             id(self),
             "alive" if self._flac_decoder is not None else "None",
             threading.current_thread().name,
@@ -703,7 +685,7 @@ class SendspinAudioStream:
         if self._stop_event and self._loop and self._loop.is_running():
             try:
                 self._loop.call_soon_threadsafe(self._stop_event.set)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.debug("Exception in stop_event.set: %r", exc)
 
         # Cancel the reconnect task so blocked connect() / sleep() are
@@ -711,14 +693,14 @@ class SendspinAudioStream:
         if self._reconnect_task and self._loop and self._loop.is_running():
             try:
                 self._loop.call_soon_threadsafe(self._reconnect_task.cancel)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.debug("Exception in reconnect_task.cancel: %r", exc)
 
         # Cancel heartbeat task if running
         if self._heartbeat_task and self._loop and self._loop.is_running():
             try:
                 self._loop.call_soon_threadsafe(self._heartbeat_task.cancel)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.debug("Exception in heartbeat_task.cancel: %r", exc)
 
     def close(self):
@@ -783,13 +765,9 @@ class SendspinAudioStream:
 
         try:
             # Create a stop event that stop() can signal from another thread.
-            self._stop_event = self._loop.run_until_complete(
-                self._create_stop_event()
-            )
+            self._stop_event = self._loop.run_until_complete(self._create_stop_event())
             # Wrap _reconnect_loop in a task so stop() can cancel it.
-            self._reconnect_task = self._loop.create_task(
-                self._reconnect_loop()
-            )
+            self._reconnect_task = self._loop.create_task(self._reconnect_loop())
             # Start heartbeat/watchdog task
             self._heartbeat_task = self._loop.create_task(
                 self._heartbeat_watchdog_loop()
@@ -799,7 +777,7 @@ class SendspinAudioStream:
             _LOGGER.info("Sendspin reconnect task cancelled (id=%s)", id(self))
         except Exception as e:
             if self._active:
-                _LOGGER.error(
+                _LOGGER.error(  # noqa: G201
                     "Sendspin client error (id=%s): %s",
                     id(self),
                     e,
@@ -821,7 +799,7 @@ class SendspinAudioStream:
                     self._loop.run_until_complete(
                         asyncio.gather(*pending, return_exceptions=True)
                     )
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
             self._loop.close()
             self._reconnect_task = None
@@ -836,10 +814,7 @@ class SendspinAudioStream:
         when an always-on connection is idle because music is paused or stopped.
         """
         while self._active:
-            if (
-                self._expecting_audio
-                and self._last_audio_chunk_time is not None
-            ):
+            if self._expecting_audio and self._last_audio_chunk_time is not None:
                 now = time.monotonic()
                 since_last = now - self._last_audio_chunk_time
                 if since_last > self._WATCHDOG_TIMEOUT:
@@ -854,10 +829,7 @@ class SendspinAudioStream:
                     self._last_audio_chunk_time = None
                     # Cancel the reconnect task so the loop retries the connection
                     # immediately instead of sleeping through a long backoff.
-                    if (
-                        self._reconnect_task
-                        and not self._reconnect_task.done()
-                    ):
+                    if self._reconnect_task and not self._reconnect_task.done():
                         self._reconnect_task.cancel()
             await asyncio.sleep(self._HEARTBEAT_INTERVAL)
 
@@ -900,7 +872,7 @@ class SendspinAudioStream:
                     )
                     await asyncio.sleep(0.5)
                     continue
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 if not self._active:
                     break
                 _LOGGER.warning(
@@ -916,12 +888,10 @@ class SendspinAudioStream:
                 # Use stop_event.wait with timeout so stop() can wake us
                 # immediately instead of waiting the full backoff period.
                 try:
-                    await asyncio.wait_for(
-                        self._stop_event.wait(), timeout=backoff
-                    )
+                    await asyncio.wait_for(self._stop_event.wait(), timeout=backoff)
                     # If we get here, stop_event was set → exit
                     break
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass  # Normal: backoff elapsed, retry
                 except asyncio.CancelledError:
                     if not self._active:
@@ -1005,8 +975,7 @@ class SendspinAudioStream:
 
             def _disconnect_handler():
                 _LOGGER.warning(
-                    "Sendspin server disconnected (id=%s), "
-                    "triggering reconnect",
+                    "Sendspin server disconnected (id=%s), triggering reconnect",
                     id(self),
                 )
                 _disconnect_event.set()
@@ -1032,9 +1001,7 @@ class SendspinAudioStream:
 
             # Start the playback scheduler that drains the buffer at the
             # correct timestamps.
-            self._scheduler_task = asyncio.ensure_future(
-                self._playback_scheduler()
-            )
+            self._scheduler_task = asyncio.ensure_future(self._playback_scheduler())
 
             # Keep connection alive — exit if stop() signals or the server
             # disconnects (detected via the disconnect callback above).
@@ -1042,11 +1009,9 @@ class SendspinAudioStream:
                 if _disconnect_event.is_set():
                     raise ConnectionError("Sendspin server disconnected")
                 try:
-                    await asyncio.wait_for(
-                        self._stop_event.wait(), timeout=0.1
-                    )
+                    await asyncio.wait_for(self._stop_event.wait(), timeout=0.1)
                     break  # stop_event set
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
         except asyncio.CancelledError:

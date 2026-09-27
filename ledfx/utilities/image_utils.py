@@ -2,7 +2,7 @@
 
 import logging
 
-import PIL.Image as Image
+from PIL import Image
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,8 +32,6 @@ def get_image_metadata(
             n_frames = getattr(img, "n_frames", 1)
             is_animated = n_frames > 1
             return width, height, img_format, n_frames, is_animated
-    except Exception as e:
-        _LOGGER.warning(
-            "Could not read image metadata for %s: %s", abs_path, e
-        )
+    except Exception as e:  # noqa: BLE001
+        _LOGGER.warning("Could not read image metadata for %s: %s", abs_path, e)
         return 0, 0, None, 1, False

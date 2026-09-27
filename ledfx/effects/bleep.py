@@ -124,20 +124,14 @@ class Bleeper:
 
             plot_coords_top = np.clip(plot_coords_top, 0, 1)
             plot_coords_bot = np.clip(plot_coords_bot, 0, 1)
-            plot_coords_top = np.round(
-                plot_coords_top * self.norm_shape
-            ).astype(int)
-            plot_coords_bot = np.round(
-                plot_coords_bot * self.norm_shape
-            ).astype(int)
+            plot_coords_top = np.round(plot_coords_top * self.norm_shape).astype(int)
+            plot_coords_bot = np.round(plot_coords_bot * self.norm_shape).astype(int)
             list_plot_coords_top = [tuple(c) for c in plot_coords_top]
             list_plot_coords_bot = [tuple(c) for c in plot_coords_bot]
         else:
             plot_coords_top[:, 1] += -0.5 + self.amplitudes
             plot_coords_top = np.clip(plot_coords_top, 0, 1)
-            plot_coords_top = np.round(
-                plot_coords_top * self.norm_shape
-            ).astype(int)
+            plot_coords_top = np.round(plot_coords_top * self.norm_shape).astype(int)
             list_plot_coords_top = [tuple(c) for c in plot_coords_top]
 
         getattr(self, self.render_func)(
@@ -145,9 +139,7 @@ class Bleeper:
         )
         return mask_image
 
-    def points_render(
-        self, m_draw, list_plot_coords_top, list_plot_coords_bot
-    ):
+    def points_render(self, m_draw, list_plot_coords_top, list_plot_coords_bot):
         """
         Points style render of the bleep effect
 
@@ -175,11 +167,9 @@ class Bleeper:
             list_plot_coords_bot (list): The list of bottom point coords
         """
         if self.mirror:
-            for start, end in zip(
-                list_plot_coords_top, list_plot_coords_top[1:]
-            ):
+            for start, end in zip(list_plot_coords_top, list_plot_coords_top[1:]):  # noqa: RUF007
                 m_draw.line([start, end], fill=255, width=self.size)
-            for start, end in zip(
+            for start, end in zip(  # noqa: RUF007
                 list_plot_coords_bot,
                 list_plot_coords_bot[1:],
             ):
@@ -207,17 +197,13 @@ class Bleeper:
                 list_plot_coords_bot[1:],
                 list_plot_coords_top[1:],
             ):
-                m_draw.polygon(
-                    [(x0, y0), (x1, y1), (x2, y2), (x3, y3)], fill=255
-                )
+                m_draw.polygon([(x0, y0), (x1, y1), (x2, y2), (x3, y3)], fill=255)
         else:
-            for (x0, y0), (x1, y1) in zip(
+            for (x0, y0), (x1, y1) in zip(  # noqa: RUF007
                 list_plot_coords_top,
                 list_plot_coords_top[1:],
             ):
-                m_draw.polygon(
-                    [(x0, 0), (x1, 0), (x1, y1), (x0, y0)], fill=255
-                )
+                m_draw.polygon([(x0, 0), (x1, 0), (x1, y1), (x0, y0)], fill=255)
 
 
 class Bleep(Twod, GradientEffect):
@@ -277,9 +263,7 @@ class Bleep(Twod, GradientEffect):
         self.mirror_effect = self._config["mirror_effect"]
         self.grad_power = self._config["grad_power"]
         self.scroll_time = self._config["scroll_time"]
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.render_func = RENDER_MAPPINGS[self._config["draw"]]
         self.size = self._config["size"]
 
@@ -304,9 +288,7 @@ class Bleep(Twod, GradientEffect):
             else:
                 # odd case
                 half_height = np.linspace(1, 0, (self.r_height // 2) + 1)
-                lin_mirrored = np.concatenate(
-                    (half_height, half_height[::-1][1:])
-                )
+                lin_mirrored = np.concatenate((half_height, half_height[::-1][1:]))
             lin_vertical = lin_mirrored
         else:
             lin_vertical = np.linspace(0, 1, self.r_height)
@@ -325,9 +307,7 @@ class Bleep(Twod, GradientEffect):
         self.gradient_image = Image.new("RGB", (self.r_width, self.r_height))
         self.gradient_draw = ImageDraw.Draw(self.gradient_image)
         if self.grad_power:
-            colors = self.get_gradient_color_vectorized1d(lin_vertical).astype(
-                int
-            )
+            colors = self.get_gradient_color_vectorized1d(lin_vertical).astype(int)
             for y in range(self.r_height):
                 self.gradient_draw.line(
                     [(0, y), (self.r_width - 1, y)],
@@ -335,9 +315,7 @@ class Bleep(Twod, GradientEffect):
                     width=1,
                 )
         else:
-            colors = self.get_gradient_color_vectorized1d(
-                lin_horizontal
-            ).astype(int)
+            colors = self.get_gradient_color_vectorized1d(lin_horizontal).astype(int)
             for x in range(self.r_width):
                 self.gradient_draw.line(
                     [(x, 0), (x, self.r_height - 1)],

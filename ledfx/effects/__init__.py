@@ -79,9 +79,7 @@ def mix_colors(color_1: tuple, color_2: tuple, ratio: float) -> tuple:
         )
 
 
-def fill_rainbow(
-    pixels: NDArray, initial_hue: float, delta_hue: float
-) -> NDArray:
+def fill_rainbow(pixels: NDArray, initial_hue: float, delta_hue: float) -> NDArray:
     """
     Fills the given pixels with a rainbow effect.
 
@@ -99,9 +97,7 @@ def fill_rainbow(
     # Create an array of hue values starting from 'initial_hue' and increasing
     # by 'delta_hue' for each pixel. The array length is initially set to be longer
     # than the number of pixels.
-    hues = np.arange(
-        initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue
-    )
+    hues = np.arange(initial_hue, initial_hue + len(pixels) * delta_hue, delta_hue)
 
     # ensure each pixel has a corresponding hue value.
     hues = hues[: len(pixels)]
@@ -146,7 +142,7 @@ def _gaussian_kernel1d(sigma: float, order: int, array_len: int) -> NDArray:
     # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
     # trapping very small values of sigma to arbitarily 0.00001 to preven div zero crash
     sigma = max(0.00001, sigma)
-    radius = max(1, int(round(4.0 * sigma)))
+    radius = max(1, int(round(4.0 * sigma)))  # noqa: RUF046
     radius = min(int((array_len - 1) / 2), radius)
     radius = max(radius, 1)
 
@@ -234,7 +230,7 @@ def smooth(x, sigma):
     # Choose a radius for the filter kernel large enough to include all significant elements. Using
     # a radius of 4 standard deviations (rounded to int) will only truncate tail values that are of
     # the order of 1e-5 or smaller. For very small sigma values, just use a minimal radius.
-    kernel_radius = max(1, int(round(4.0 * sigma)))
+    kernel_radius = max(1, int(round(4.0 * sigma)))  # noqa: RUF046
     filter_kernel = _gaussian_kernel1d(sigma, 0, kernel_radius)
 
     # The filter kernel will be applied by convolution in 'valid' mode, which includes only the
@@ -249,9 +245,7 @@ def smooth(x, sigma):
     extended_input_len = len(x) + len(filter_kernel) - 1
     x_mirrored = x
     while len(x_mirrored) < extended_input_len:
-        mirror_len = min(
-            len(x_mirrored), (extended_input_len - len(x_mirrored)) // 2
-        )
+        mirror_len = min(len(x_mirrored), (extended_input_len - len(x_mirrored)) // 2)
         x_mirrored = np.r_[
             x_mirrored[mirror_len - 1 :: -1],
             x_mirrored,
@@ -280,7 +274,7 @@ class Effect(BaseRegistry):
     # over ride in effect children to hide existing keys from UI
     HIDDEN_KEYS = None
     # extend in effect children
-    ADVANCED_KEYS = ["diag"]
+    ADVANCED_KEYS = ["diag"]  # noqa: RUF012
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     USES_MELBANK_RANGE = False
@@ -296,9 +290,7 @@ class Effect(BaseRegistry):
                 description="Amount to blur the effect",
                 default=0.0,
             ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "flip", description="Flip the effect", default=False
-            ): bool,
+            vol.Optional("flip", description="Flip the effect", default=False): bool,
             vol.Optional(
                 "mirror",
                 description="Mirror the effect",
@@ -368,9 +360,7 @@ class Effect(BaseRegistry):
     def deactivate(self):
         """Detaches an output channel from the effect"""
         self.pixels = None
-        self._virtual = (
-            None  # Clear circular reference to allow garbage collection
-        )
+        self._virtual = None  # Clear circular reference to allow garbage collection
         # Clear LogSecHelper reference to this effect
         if self.logsec:
             self.logsec.effect = None
@@ -399,9 +389,7 @@ class Effect(BaseRegistry):
             try:
                 validated_config = type(self).schema()(config)
             except vol.Invalid as err:
-                _LOGGER.warning(
-                    "Error updating effect %s config: %s", self.NAME, err
-                )
+                _LOGGER.warning("Error updating effect %s config: %s", self.NAME, err)
                 return
 
             prior_config = self._config
@@ -416,12 +404,9 @@ class Effect(BaseRegistry):
             self.bg_color_use = bg_color != parse_color(LEDFX_COLORS["black"])
 
             # calculate colors always as they are used sometimes anyway
-            self._bg_color = (
-                np.array(bg_color) * self._config["background_brightness"]
-            )
+            self._bg_color = np.array(bg_color) * self._config["background_brightness"]
             self._bg_color_pil = tuple(
-                int(c * self._config["background_brightness"])
-                for c in bg_color
+                int(c * self._config["background_brightness"]) for c in bg_color
             )
 
             self.flip = self._config["flip"]
@@ -458,7 +443,6 @@ class Effect(BaseRegistry):
         complex properties off the configuration, otherwise the config
         should just be referenced in the effect's loop directly
         """
-        pass
 
     def _render(self):
         with self.lock:
@@ -475,7 +459,6 @@ class Effect(BaseRegistry):
         The effect can use self.pixels to see the previous effect
         frame if it wants to use it for something
         """
-        pass
 
     def get_pixels(self):
         """
@@ -500,17 +483,10 @@ class Effect(BaseRegistry):
                         # concatenate the pixels for mirror, then take the max of adjacent pixels
                         # prevents average dimming and is best compromise, removes flicker
                         # inherently symetrical
-                        mirrored_pixels = np.concatenate(
-                            (pixels[::-1], pixels)
-                        )
-                        pixels = np.maximum(
-                            mirrored_pixels[::2], mirrored_pixels[1::2]
-                        )
+                        mirrored_pixels = np.concatenate((pixels[::-1], pixels))
+                        pixels = np.maximum(mirrored_pixels[::2], mirrored_pixels[1::2])
 
-                    if (
-                        self.bg_color_use
-                        and self.background_mode == "additive"
-                    ):
+                    if self.bg_color_use and self.background_mode == "additive":
                         pixels += self._bg_color
 
                     if self.brightness is not None:
@@ -526,9 +502,7 @@ class Effect(BaseRegistry):
                     # And blurring with a less than 3 pixels seems... redundant
                     # TODO: Handle RGBW properly
                     if config["blur"] != 0.0 and self.pixel_count > 3:
-                        kernel = _gaussian_kernel1d(
-                            config["blur"], 0, len(pixels)
-                        )
+                        kernel = _gaussian_kernel1d(config["blur"], 0, len(pixels))
 
                         # Blur the R,G,B portions of the pixel array
                         # Lots of attempts at vectorisation/performance improvements here

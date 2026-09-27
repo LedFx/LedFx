@@ -23,7 +23,7 @@ class GifBase(Effect):
     Simple Gif base class that supplies basic gif and resize capability.
     """
 
-    RESIZE_METHOD_MAPPING = {
+    RESIZE_METHOD_MAPPING = {  # noqa: RUF012
         GIFResizeMethods.NEAREST.value: Image.NEAREST,
         GIFResizeMethods.BILINEAR.value: Image.BILINEAR,
         GIFResizeMethods.BICUBIC.value: Image.BICUBIC,
@@ -36,13 +36,9 @@ class GifBase(Effect):
                 "resize_method",
                 description="What strategy to use when resizing GIF",
                 default=GIFResizeMethods.BICUBIC.value,
-            ): vol.In(
-                [resize_method.value for resize_method in GIFResizeMethods]
-            ),
+            ): vol.In([resize_method.value for resize_method in GIFResizeMethods]),
         }
     )
 
     def config_updated(self, config):
-        self.resize_method = self.RESIZE_METHOD_MAPPING[
-            self._config["resize_method"]
-        ]
+        self.resize_method = self.RESIZE_METHOD_MAPPING[self._config["resize_method"]]

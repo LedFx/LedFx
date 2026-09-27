@@ -75,17 +75,13 @@ class CacheImagesEndpoint(RestEndpoint):
 
         url = request.query.get("url")
         # Query params are always strings - accept "true"/"false" (case-insensitive)
-        all_variants = (
-            request.query.get("all_variants", "false").lower() == "true"
-        )
+        all_variants = request.query.get("all_variants", "false").lower() == "true"
 
         if url:
             if all_variants:
                 # Clear all entries for this URL (all thumbnail variants)
                 cleared_count = cache.delete_all_for_url(url)
-                return await self.bare_request_success(
-                    {"cleared_count": cleared_count}
-                )
+                return await self.bare_request_success({"cleared_count": cleared_count})
             else:
                 # Clear specific URL (without params)
                 deleted = cache.delete(url)

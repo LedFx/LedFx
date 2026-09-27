@@ -22,7 +22,7 @@ class Scenes:
         self._scenes = self._ledfx.config["scenes"]
 
         def virtuals_validator(virtual_ids):
-            return list(
+            return list(  # noqa: C400
                 virtual_id
                 for virtual_id in virtual_ids
                 if self._ledfx.virtuals.get(virtual_id)
@@ -74,9 +74,7 @@ class Scenes:
         """Creates a scene of current effects of specified virtuals if no ID given, else updates one with matching id"""
         scene_config = self.SCENE_SCHEMA(scene_config)
         scene_id = (
-            scene_id
-            if scene_id in self._scenes
-            else generate_id(scene_config["name"])
+            scene_id if scene_id in self._scenes else generate_id(scene_config["name"])
         )
 
         virtual_effects = {}
@@ -119,8 +117,7 @@ class Scenes:
             if action is None:
                 # Empty dict or no type/config means ignore (legacy behavior)
                 if not virtual_config or (
-                    "type" not in virtual_config
-                    and "config" not in virtual_config
+                    "type" not in virtual_config and "config" not in virtual_config
                 ):
                     action = "ignore"
                 else:
@@ -160,9 +157,7 @@ class Scenes:
                 if preset_name:
                     # Resolve preset from current library for this effect type
                     # (will fall back to reset preset if not found)
-                    effect_config = self._resolve_preset(
-                        effect_type, preset_name
-                    )
+                    effect_config = self._resolve_preset(effect_type, preset_name)
                 else:
                     # Use explicit config
                     effect_config = virtual_config.get("config")
@@ -191,9 +186,7 @@ class Scenes:
                     config_dir=self._ledfx.config_dir,
                 )
             except Exception:
-                _LOGGER.exception(
-                    "Failed to save config after scene activation"
-                )
+                _LOGGER.exception("Failed to save config after scene activation")
 
         return True
 
@@ -215,18 +208,12 @@ class Scenes:
 
         # Check ledfx_presets first
         ledfx_presets = self._ledfx.config.get("ledfx_presets", {})
-        if (
-            effect_type in ledfx_presets
-            and preset_name in ledfx_presets[effect_type]
-        ):
+        if effect_type in ledfx_presets and preset_name in ledfx_presets[effect_type]:
             return ledfx_presets[effect_type][preset_name].get("config", {})
 
         # Check user_presets
         user_presets = self._ledfx.config.get("user_presets", {})
-        if (
-            effect_type in user_presets
-            and preset_name in user_presets[effect_type]
-        ):
+        if effect_type in user_presets and preset_name in user_presets[effect_type]:
             return user_presets[effect_type][preset_name].get("config", {})
 
         # Preset not found, fall back to reset preset
@@ -269,9 +256,7 @@ class Scenes:
         """Deletes a scene"""
 
         if not self._scenes.pop(scene_id, None):
-            _LOGGER.warning(
-                "Cannot delete non-existent scene id: %s", scene_id
-            )
+            _LOGGER.warning("Cannot delete non-existent scene id: %s", scene_id)
             return
         self._ledfx.events.fire_event(SceneDeletedEvent(scene_id))
         self.save_to_config()
@@ -300,8 +285,7 @@ class Scenes:
             if action is None:
                 # Empty dict or no type/config means ignore (legacy behavior)
                 if not virtual_config or (
-                    "type" not in virtual_config
-                    and "config" not in virtual_config
+                    "type" not in virtual_config and "config" not in virtual_config
                 ):
                     action = "ignore"
                 else:
@@ -343,9 +327,7 @@ class Scenes:
                 # For preset-based activation, resolve the preset to compare configs
                 preset_name = virtual_config.get("preset")
                 if preset_name:
-                    expected_config = self._resolve_preset(
-                        expected_type, preset_name
-                    )
+                    expected_config = self._resolve_preset(expected_type, preset_name)
                 else:
                     expected_config = virtual_config.get("config")
                     if expected_config is None:

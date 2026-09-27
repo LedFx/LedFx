@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
     # hiding dump by default, a dev can turn it on explicitily via removal
-    HIDDEN_KEYS = ["mirror", "flip", "blur", "dump"]
+    HIDDEN_KEYS = ["mirror", "flip", "blur", "dump"]  # noqa: RUF012
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "dump",
         "test",
@@ -96,9 +96,7 @@ class Twod(AudioReactiveEffect):
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
         # composite the virtual rotate with the effect level rotate
-        self.rotate = (
-            self._config["rotate"] + self._virtual._config["rotate"]
-        ) % 4
+        self.rotate = (self._config["rotate"] + self._virtual._config["rotate"]) % 4
 
         self.rotate_t = 0
         self.flip2d = self._config["flip_vertical"]
@@ -130,15 +128,11 @@ class Twod(AudioReactiveEffect):
         # image should be the right size to map in, at this point
         if self.flip2d:
             old_matrix = self.matrix
-            self.matrix = self.matrix.transpose(
-                Image.Transpose.FLIP_TOP_BOTTOM
-            )
+            self.matrix = self.matrix.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
             old_matrix.close()
         if self.mirror2d:
             old_matrix = self.matrix
-            self.matrix = self.matrix.transpose(
-                Image.Transpose.FLIP_LEFT_RIGHT
-            )
+            self.matrix = self.matrix.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             old_matrix.close()
         if self.rotate_t != 0:
             old_matrix = self.matrix
@@ -202,9 +196,7 @@ class Twod(AudioReactiveEffect):
         with self.lock:
             result = self.matrix.copy()
             if brightness and self.brightness != 1.0:
-                result = ImageEnhance.Brightness(result).enhance(
-                    self.brightness
-                )
+                result = ImageEnhance.Brightness(result).enhance(self.brightness)
             return result
 
     def draw(self):
@@ -221,7 +213,7 @@ class Twod(AudioReactiveEffect):
         if hasattr(self, "matrix") and self.matrix:
             try:
                 self.matrix.close()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
 
         if self.bg_color_use and self.background_mode == "overwrite":

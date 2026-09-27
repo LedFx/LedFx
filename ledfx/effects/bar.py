@@ -8,7 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Bar"
     CATEGORY = "BPM"
-    HIDDEN_KEYS = ["gradient_roll"]
+    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -16,12 +16,12 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "mode",
                 description="Choose from different animations",
                 default="wipe",
-            ): vol.In(list(["bounce", "wipe", "in-out"])),
+            ): vol.In(list(["bounce", "wipe", "in-out"])),  # noqa: C410
             vol.Optional(
                 "ease_method",
                 description="Acceleration profile of bar",
                 default="ease_out",
-            ): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),
+            ): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),  # noqa: C410
             vol.Optional(
                 "color_step",
                 description="Amount of color change per beat",
@@ -31,7 +31,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "beat_skip",
                 description="Skips odd or even beats",
                 default="none",
-            ): vol.In(list(["none", "odds", "even"])),
+            ): vol.In(list(["none", "odds", "even"])),  # noqa: C410
             vol.Optional(
                 "beat_offset",
                 description="Offset the beat",
@@ -42,7 +42,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="If skipping beats, skip every",
                 default=1,
             ): vol.In(
-                list([1, 2])
+                list([1, 2])  # noqa: C410
             ),  # if add 4, to skip every bar, a bit of extra work is required in audio.py
         }
     )
@@ -123,8 +123,6 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
 
         self.pixels = np.zeros(np.shape(self.pixels))
         self.pixels[
-            int(self.pixel_count * bar_start) : int(
-                self.pixel_count * bar_end
-            ),
+            int(self.pixel_count * bar_start) : int(self.pixel_count * bar_end),
             :,
         ] = color

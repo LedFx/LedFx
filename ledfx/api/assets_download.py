@@ -71,7 +71,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
         """
         try:
             data = await request.json()
-        except Exception:
+        except Exception:  # noqa: BLE001
             return await self.json_decode_error()
 
         asset_path = data.get("path")
@@ -84,9 +84,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
 
         return await self._download(request, asset_path)
 
-    async def _download(
-        self, request: web.Request, asset_path: str
-    ) -> web.Response:
+    async def _download(self, request: web.Request, asset_path: str) -> web.Response:
         """
         Internal helper to download an asset given its path.
 
@@ -101,9 +99,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
         if asset_path.startswith(("http://", "https://")):
             # open_image handles URL validation, download, and caching
             try:
-                image = open_image(
-                    asset_path, config_dir=self._ledfx.config_dir
-                )
+                image = open_image(asset_path, config_dir=self._ledfx.config_dir)
                 if not image:
                     return await self.invalid_request(
                         message=f"Failed to download or validate URL: {asset_path}",
@@ -124,7 +120,7 @@ class AssetsDownloadEndpoint(RestEndpoint):
                         message=f"Failed to cache URL: {asset_path}",
                         type="error",
                     )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning("Failed to fetch URL %s: %s", asset_path, e)
                 return await self.invalid_request(
                     message=f"Failed to fetch URL: {e}",
@@ -142,10 +138,8 @@ class AssetsDownloadEndpoint(RestEndpoint):
                         message=error or f"Asset not found: {asset_path}",
                         type="error",
                     )
-            except Exception as e:
-                _LOGGER.warning(
-                    "Failed to retrieve asset %s: %s", asset_path, e
-                )
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.warning("Failed to retrieve asset %s: %s", asset_path, e)
                 return await self.internal_error(
                     message=f"Failed to retrieve asset: {e}"
                 )

@@ -32,13 +32,9 @@ class _DummyEffect:
 class _DummyEffects:
     """Dummy effects registry for testing."""
 
-    pass
-
 
 class _DummyLedFx:
-    def __init__(
-        self, scenes=None, virtuals=None, presets=None, user_presets=None
-    ):
+    def __init__(self, scenes=None, virtuals=None, presets=None, user_presets=None):
         self.config_dir = ""
         self.config = {
             "scenes": scenes or {},
@@ -50,9 +46,7 @@ class _DummyLedFx:
         self.effects = _DummyEffects()
 
 
-def _build_scenes_manager(
-    scene_config, virtuals, presets=None, user_presets=None
-):
+def _build_scenes_manager(scene_config, virtuals, presets=None, user_presets=None):
     dummy_ledfx = _DummyLedFx(
         scenes=scene_config,
         virtuals=virtuals,
@@ -194,9 +188,7 @@ def test_is_active_with_action_forceblack_matching():
         }
     }
     virtuals = {
-        "v1": _DummyVirtual(
-            "v1", _DummyEffect("singleColor", {"color": "#000000"})
-        ),
+        "v1": _DummyVirtual("v1", _DummyEffect("singleColor", {"color": "#000000"})),
     }
 
     manager = _build_scenes_manager(scenes, virtuals)
@@ -216,9 +208,7 @@ def test_is_active_with_action_forceblack_wrong_color():
         }
     }
     virtuals = {
-        "v1": _DummyVirtual(
-            "v1", _DummyEffect("singleColor", {"color": "#ff0000"})
-        ),
+        "v1": _DummyVirtual("v1", _DummyEffect("singleColor", {"color": "#ff0000"})),
     }
 
     manager = _build_scenes_manager(scenes, virtuals)
@@ -411,9 +401,7 @@ def test_is_active_with_mixed_actions():
         "v3": _DummyVirtual(
             "v3", _DummyEffect("scroll", {"speed": 99})
         ),  # Ignored, can be anything
-        "v4": _DummyVirtual(
-            "v4", _DummyEffect("singleColor", {"color": "#000000"})
-        ),
+        "v4": _DummyVirtual("v4", _DummyEffect("singleColor", {"color": "#000000"})),
     }
 
     manager = _build_scenes_manager(scenes, virtuals)

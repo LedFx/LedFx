@@ -44,6 +44,4 @@ def copy_lib():
             os.path.abspath(lib_path),
         )
     except FileNotFoundError:
-        print(
-            "Directory for dll was not found, make sure the install was successful."
-        )
+        print("Directory for dll was not found, make sure the install was successful.")

@@ -22,9 +22,7 @@ class _DummyEffects:
 
 
 class _DummyLedFx:
-    def __init__(
-        self, scenes_config, presets_config=None, user_presets_config=None
-    ):
+    def __init__(self, scenes_config, presets_config=None, user_presets_config=None):
         self.config = {
             "scenes": scenes_config,
             "ledfx_presets": presets_config or {},

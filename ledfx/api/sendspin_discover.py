@@ -47,9 +47,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
             )
 
         try:
-            timeout = float(
-                request.rel_url.query.get("timeout", _DEFAULT_TIMEOUT)
-            )
+            timeout = float(request.rel_url.query.get("timeout", _DEFAULT_TIMEOUT))
         except (ValueError, TypeError):
             return await self.invalid_request("timeout must be a number")
 
@@ -66,15 +64,15 @@ class SendspinDiscoverEndpoint(RestEndpoint):
             for cfg in self._ledfx.config.get("sendspin_servers", {}).values()
         }
         for entry in discovered:
-            entry["already_configured"] = (
-                entry["server_url"] in configured_urls
-            )
+            entry["already_configured"] = entry["server_url"] in configured_urls
 
         count = len(discovered)
         if count:
             reason = f"Discovery complete. {count} server(s) found."
         else:
-            reason = "Discovery complete. No Sendspin servers found on the local network."
+            reason = (
+                "Discovery complete. No Sendspin servers found on the local network."
+            )
 
         return await self.request_success(
             type="info",
@@ -96,9 +94,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
         aiozc = AsyncZeroconf()
         try:
 
-            async def _handle_service(
-                zeroconf, service_type, name, state_change
-            ):
+            async def _handle_service(zeroconf, service_type, name, state_change):
                 if state_change is not ServiceStateChange.Added:
                     return
                 info = AsyncServiceInfo(service_type, name)
@@ -123,9 +119,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
 
                 if host is None:
                     # Fall back to hostname
-                    host = (
-                        str(info.server).rstrip(".") if info.server else None
-                    )
+                    host = str(info.server).rstrip(".") if info.server else None
 
                 if host is None:
                     return
@@ -138,9 +132,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                     path = "/" + path
                 # Bracket IPv6 literals so the URL is valid (e.g. ws://[::1]:8927/…)
                 try:
-                    if isinstance(
-                        ipaddress.ip_address(host), ipaddress.IPv6Address
-                    ):
+                    if isinstance(ipaddress.ip_address(host), ipaddress.IPv6Address):
                         url_host = f"[{host}]"
                     else:
                         url_host = host
@@ -161,9 +153,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                             }
                         )
 
-            def on_service_state_change(
-                zeroconf, service_type, name, state_change
-            ):
+            def on_service_state_change(zeroconf, service_type, name, state_change):
                 task = asyncio.ensure_future(
                     _handle_service(zeroconf, service_type, name, state_change)
                 )

@@ -1,8 +1,8 @@
 import logging
 
 import numpy as np
-import PIL.Image as Image
 import voluptuous as vol
+from PIL import Image
 
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
@@ -63,9 +63,7 @@ class Plasma2d(Twod, GradientEffect):
     def config_updated(self, config):
         self.density = self._config["density"]
         self.lower = self._config["lower"]
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.density_vertical = self._config["density_vertical"]
         self.twist = self._config["twist"]
         self.radius = self._config["radius"]
@@ -115,8 +113,8 @@ class Plasma2d(Twod, GradientEffect):
             self.r_width, self.r_height, self.now, self.bar
         )
 
-        color_mapped_plasma = self.get_gradient_color_vectorized2d(
-            plasma_array
-        ).astype(np.uint8)
+        color_mapped_plasma = self.get_gradient_color_vectorized2d(plasma_array).astype(
+            np.uint8
+        )
 
         self.matrix = Image.fromarray(color_mapped_plasma, "RGB")

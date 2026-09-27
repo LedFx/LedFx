@@ -47,9 +47,7 @@ test_groups = [
 # Define a list of all test cases
 test_cases = []
 for group_name, group in test_groups:
-    for name, case in sorted(
-        group.items(), key=lambda item: item[1].execution_order
-    ):
+    for name, case in sorted(group.items(), key=lambda item: item[1].execution_order):
         test_cases.append((group_name, name, case))
 
 
@@ -65,31 +63,23 @@ def test_api(group_name, test_name, case, http_session):
         method=case.method,
         payload=payload,
     )
-    assert (
-        response.status_code == case.expected_return_code
-    ), f"Expected status code {case.expected_return_code}, but got {response.status_code}"
+    assert response.status_code == case.expected_return_code, (
+        f"Expected status code {case.expected_return_code}, but got {response.status_code}"
+    )
     if case.expected_response_keys:
         missing_keys = [
-            key
-            for key in case.expected_response_keys
-            if key not in response.json()
+            key for key in case.expected_response_keys if key not in response.json()
         ]
-        assert (
-            not missing_keys
-        ), f"Missing expected keys in response: {missing_keys}"
+        assert not missing_keys, f"Missing expected keys in response: {missing_keys}"
     if case.expected_response_values:
         response_dict = response.json()
         for expected_dict in case.expected_response_values:
             for key, value in expected_dict.items():
-                if key in response_dict and isinstance(
-                    response_dict[key], dict
-                ):
+                if key in response_dict and isinstance(response_dict[key], dict):
                     try:
                         assert value.items() <= response_dict[key].items()
                     except AssertionError as exc:
-                        error_detail = find_first_error(
-                            value, response_dict[key]
-                        )
+                        error_detail = find_first_error(value, response_dict[key])
                         msg = (
                             f"Expected {key} to contain \n{value}, "
                             f"\n but got \n{response_dict.get(key)}. "
@@ -98,14 +88,9 @@ def test_api(group_name, test_name, case, http_session):
                         raise AssertionError(msg) from exc
                 else:
                     try:
-                        assert (
-                            key in response_dict
-                            and response_dict[key] == value
-                        )
+                        assert key in response_dict and response_dict[key] == value
                     except AssertionError as exc:
-                        error_detail = find_first_error(
-                            value, response_dict.get(key)
-                        )
+                        error_detail = find_first_error(value, response_dict.get(key))
                         msg = (
                             f"Expected {key} to be \n{value}, "
                             f"\n but got \n{response_dict.get(key)}. "

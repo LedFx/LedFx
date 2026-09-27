@@ -18,9 +18,7 @@ class OpenRGB(NetworkedDevice):
     def CONFIG_SCHEMA():
         return vol.Schema(
             {
-                vol.Required(
-                    "name", description="Friendly name for the device"
-                ): str,
+                vol.Required("name", description="Friendly name for the device"): str,
                 vol.Required(
                     "openrgb_id",
                     description="ID of OpenRGB device (within OpenRGB).",
@@ -81,9 +79,7 @@ class OpenRGB(NetworkedDevice):
                 self.name,
                 3,  # protocol_version
             )
-            self.openrgb_device = self.openrgb_device.devices[
-                self.openrgb_device_id
-            ]
+            self.openrgb_device = self.openrgb_device.devices[self.openrgb_device_id]
 
         except (ConnectionRefusedError, TimeoutError):
             _LOGGER.warning(

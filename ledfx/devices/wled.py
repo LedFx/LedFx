@@ -43,7 +43,7 @@ class WLEDDevice(NetworkedDevice):
         }
     )
 
-    SYNC_MODES = {
+    SYNC_MODES = {  # noqa: RUF012
         "UDP": UDPRealtimeDevice,
         "DDP": DDPDevice,
         "E131": E131Device,
@@ -84,9 +84,7 @@ class WLEDDevice(NetworkedDevice):
         }
 
     def config_updated(self, config):
-        if not isinstance(
-            self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]
-        ):
+        if not isinstance(self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]):
             self.setup_subdevice()
 
     def setup_subdevice(self):
@@ -124,16 +122,13 @@ class WLEDDevice(NetworkedDevice):
 
     async def add_postamble(self):
         _LOGGER.debug("Doing post creation things for WLED...")
-        if (
-            self.config["create_segments"]
-            or self._ledfx.config["create_segments"]
-        ):
+        if self.config["create_segments"] or self._ledfx.config["create_segments"]:
             segments = await self.wled.get_segments()
             isMatrix = segments[0].get("stopY", 0) > 0
             if len(segments) > 1 or isMatrix:
                 for seg in segments:
                     if seg["stop"] - seg["start"] > 0:
-                        name = seg.get("n", f'Seg-{seg["id"]}')
+                        name = seg.get("n", f"Seg-{seg['id']}")
                         rows = seg.get("stopY", 1)
                         if not rows > 1:
                             self.sub_v(
@@ -169,9 +164,7 @@ class WLEDDevice(NetworkedDevice):
         # Currently *assuming* that this PR gets released in 0.13
         # https://github.com/Aircoookie/WLED/pull/1944
         if wled_support_DDP(wled_build):
-            _LOGGER.info(
-                "WLED Build Supports Sync Setting API: %s", wled_build
-            )
+            _LOGGER.info("WLED Build Supports Sync Setting API: %s", wled_build)
             await self.wled.get_sync_settings()
         # self.wled.enable_realtime_gamma()
         # self.wled.set_inactivity_timeout(self._config["timeout"])

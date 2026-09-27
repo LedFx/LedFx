@@ -26,22 +26,17 @@ class PresetDeleteEndpoint(RestEndpoint):
         # Validate effect exists
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:
+        except BaseException:  # noqa: BLE001
             error_message = f"Effect {effect_id} does not exist"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
 
         # Check if effect has any user presets
-        if effect_id not in self._ledfx.config["user_presets"].keys():
-            return await self.invalid_request(
-                f"Effect {effect_id} has no user presets"
-            )
+        if effect_id not in self._ledfx.config["user_presets"].keys():  # noqa: SIM118
+            return await self.invalid_request(f"Effect {effect_id} has no user presets")
 
         # Check if preset exists
-        if (
-            preset_id
-            not in self._ledfx.config["user_presets"][effect_id].keys()
-        ):
+        if preset_id not in self._ledfx.config["user_presets"][effect_id].keys():  # noqa: SIM118
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in user presets"
             )
@@ -55,8 +50,8 @@ class PresetDeleteEndpoint(RestEndpoint):
                 config=self._ledfx.config,
                 config_dir=self._ledfx.config_dir,
             )
-        except Exception as e:
-            error_message = f"Failed to delete preset {preset_id}: {str(e)}"
+        except Exception as e:  # noqa: BLE001
+            error_message = f"Failed to delete preset {preset_id}: {e!s}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
 

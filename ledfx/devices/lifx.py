@@ -1,4 +1,3 @@
-import asyncio
 import logging
 
 import numpy as np
@@ -185,9 +184,7 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type = "matrix"
                     self._device_type = "LIFX Matrix"
                     tiles = await device.get_device_chain()
-                    self._tiles, self._total_pixels = self._collect_tile_info(
-                        tiles
-                    )
+                    self._tiles, self._total_pixels = self._collect_tile_info(tiles)
 
                     if self._tiles:
                         self._perm = self._build_permutation(tiles)
@@ -235,9 +232,7 @@ class LifxDevice(NetworkedDevice):
                     _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
 
         except (LifxError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Detection failed: %s", self._config["name"], e
-            )
+            _LOGGER.warning("LIFX %s: Detection failed: %s", self._config["name"], e)
 
     @property
     def pixel_count(self):
@@ -552,7 +547,7 @@ class LifxDevice(NetworkedDevice):
         if self._device:
             try:
                 await self._device.set_power(False)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 _LOGGER.warning("LIFX %s: Power off timed out", self.name)
             except (LifxError, OSError) as e:
                 _LOGGER.warning("LIFX %s: Power off error: %s", self.name, e)
@@ -637,17 +632,13 @@ class LifxDevice(NetworkedDevice):
             pixels = data.astype(np.dtype("B")).reshape(-1, 3)
             if len(pixels) > 0:
                 r, g, b = pixels[0]
-                color = HSBK.from_rgb(
-                    r / 255.0, g / 255.0, b / 255.0
-                ).to_protocol()
+                color = HSBK.from_rgb(r / 255.0, g / 255.0, b / 255.0).to_protocol()
                 packet = packets.Light.SetColor(
                     color=color, duration=self.frame_duration_ms
                 )
                 await self._device.connection.send_packet(packet)
         except (LifxError, OSError) as e:
-            _LOGGER.warning(
-                "LIFX %s: Light flush error: %s", self._config["name"], e
-            )
+            _LOGGER.warning("LIFX %s: Light flush error: %s", self._config["name"], e)
 
     def flush(self, data):
         if self._animator:

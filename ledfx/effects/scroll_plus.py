@@ -60,15 +60,9 @@ class ScrollAudioEffect(AudioReactiveEffect):
         self.pixels_incremental = 0
 
     def config_updated(self, config):
-        self.lows_color = np.array(
-            parse_color(self._config["color_lows"]), dtype=float
-        )
-        self.mids_color = np.array(
-            parse_color(self._config["color_mids"]), dtype=float
-        )
-        self.high_color = np.array(
-            parse_color(self._config["color_high"]), dtype=float
-        )
+        self.lows_color = np.array(parse_color(self._config["color_lows"]), dtype=float)
+        self.mids_color = np.array(parse_color(self._config["color_mids"]), dtype=float)
+        self.high_color = np.array(parse_color(self._config["color_high"]), dtype=float)
 
         self.lows_cutoff = self._config["threshold"] / 10
         self.mids_cutoff = self._config["threshold"] / 8

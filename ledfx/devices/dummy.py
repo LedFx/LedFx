@@ -44,4 +44,3 @@ class DummyDevice(DeviceWrapper):
             AttributeError: If an attribute error occurs during the flush.
             OSError: If an OS error occurs during the flush.
         """
-        pass

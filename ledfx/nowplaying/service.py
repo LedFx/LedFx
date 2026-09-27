@@ -66,10 +66,8 @@ def _sanitize_url(url: str) -> str:
         netloc = parsed.hostname or ""
         if parsed.port:
             netloc = f"{netloc}:{parsed.port}"
-        return urllib.parse.urlunparse(
-            (parsed.scheme, netloc, parsed.path, "", "", "")
-        )
-    except Exception:
+        return urllib.parse.urlunparse((parsed.scheme, netloc, parsed.path, "", "", ""))
+    except Exception:  # noqa: BLE001
         return "<url>"
 
 
@@ -190,9 +188,7 @@ class NowPlayingService:
         # Activate source on first metadata, or if a higher-priority source
         # pre-empts the current active source.
         incoming_priority = _SOURCE_PRIORITY.get(source_id, 0)
-        active_priority = _SOURCE_PRIORITY.get(
-            self._state.active_source_id or "", 0
-        )
+        active_priority = _SOURCE_PRIORITY.get(self._state.active_source_id or "", 0)
         if self._state.active_source_id is None:
             self._state.active_source_id = source_id
             _LOGGER.info("Now Playing active source set to: %s", source_id)
@@ -252,8 +248,8 @@ class NowPlayingService:
         self,
         source_id: str,
         url: str,
-        content_type: str = None,
-        artwork_hash: str = None,
+        content_type: str = None,  # noqa: RUF013
+        artwork_hash: str = None,  # noqa: RUF013
     ) -> bool:
         """Set artwork from a URL, download it, and extract gradients.
 
@@ -286,9 +282,7 @@ class NowPlayingService:
         # Download the image
         data, detected_content_type = self._download_image(url)
         if data is None:
-            _LOGGER.warning(
-                "Failed to download artwork from %s", _sanitize_url(url)
-            )
+            _LOGGER.warning("Failed to download artwork from %s", _sanitize_url(url))
             return False
 
         if content_type is None:
@@ -299,9 +293,7 @@ class NowPlayingService:
             artwork_hash = hashlib.sha256(data).hexdigest()[:16]
 
         # Save to disk and extract gradients
-        artwork_path, gradients, width, height = self._store_artwork(
-            data, content_type
-        )
+        artwork_path, gradients, width, height = self._store_artwork(data, content_type)
 
         self._state.artwork = ArtworkReference(
             source_id=source_id,
@@ -319,9 +311,7 @@ class NowPlayingService:
 
         _LOGGER.info("Artwork URL updated from %s", source_id)
         self._fire_event(
-            NowPlayingArtworkChangedEvent(
-                source_id, self._state.artwork.to_dict()
-            )
+            NowPlayingArtworkChangedEvent(source_id, self._state.artwork.to_dict())
         )
         return True
 
@@ -330,7 +320,7 @@ class NowPlayingService:
         source_id: str,
         data: bytes,
         content_type: str,
-        artwork_hash: str = None,
+        artwork_hash: str = None,  # noqa: RUF013
     ) -> bool:
         """Set artwork from raw image bytes.
 
@@ -358,9 +348,7 @@ class NowPlayingService:
             return False
 
         # Save to disk and extract gradients
-        artwork_path, gradients, width, height = self._store_artwork(
-            data, content_type
-        )
+        artwork_path, gradients, width, height = self._store_artwork(data, content_type)
 
         self._state.artwork = ArtworkReference(
             source_id=source_id,
@@ -380,9 +368,7 @@ class NowPlayingService:
             "Artwork bytes updated from %s (hash: %s)", source_id, artwork_hash
         )
         self._fire_event(
-            NowPlayingArtworkChangedEvent(
-                source_id, self._state.artwork.to_dict()
-            )
+            NowPlayingArtworkChangedEvent(source_id, self._state.artwork.to_dict())
         )
         return True
 
@@ -390,7 +376,7 @@ class NowPlayingService:
         self,
         data: bytes,
         content_type: str,
-        artwork_hash: str = None,
+        artwork_hash: str = None,  # noqa: RUF013
     ) -> bool:
         """Set artwork resolved by the internal album-art resolver.
 
@@ -418,9 +404,7 @@ class NowPlayingService:
         if current and current.hash == artwork_hash:
             return False
 
-        artwork_path, gradients, width, height = self._store_artwork(
-            data, content_type
-        )
+        artwork_path, gradients, width, height = self._store_artwork(data, content_type)
 
         source_id = self._state.active_source_id
         self._state.artwork = ArtworkReference(
@@ -439,9 +423,7 @@ class NowPlayingService:
 
         _LOGGER.info("Resolved artwork applied (hash: %s)", artwork_hash)
         self._fire_event(
-            NowPlayingArtworkChangedEvent(
-                source_id, self._state.artwork.to_dict()
-            )
+            NowPlayingArtworkChangedEvent(source_id, self._state.artwork.to_dict())
         )
         return True
 
@@ -473,13 +455,9 @@ class NowPlayingService:
             source_id: Provider identifier to clear.
         """
         if self._state.active_source_id == source_id:
-            _LOGGER.info(
-                "Clearing Now Playing state for active source: %s", source_id
-            )
+            _LOGGER.info("Clearing Now Playing state for active source: %s", source_id)
             prev_variant = self._state.selected_gradient_variant
-            self._state = NowPlayingState(
-                selected_gradient_variant=prev_variant
-            )
+            self._state = NowPlayingState(selected_gradient_variant=prev_variant)
             self._fire_event(NowPlayingClearedEvent(source_id))
         else:
             _LOGGER.debug(
@@ -572,7 +550,7 @@ class NowPlayingService:
             config["now_playing"] = dict(self._config)
             try:
                 save_config(config=config, config_dir=config_dir)
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning("Failed to save now_playing config: %s", exc)
 
     def apply_gradient_to_virtuals(self) -> int:
@@ -600,18 +578,14 @@ class NowPlayingService:
 
         # Resolve the gradient and sample color groups
         try:
-            config_updates = build_gradient_config(
-                gradient_str, gradients_collection
-            )
-        except Exception as exc:
+            config_updates = build_gradient_config(gradient_str, gradients_collection)
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.warning("Failed to resolve gradient: %s", exc)
             return 0
 
         # Determine target virtuals
         target_ids = (
-            set(self._gradient_virtual_ids)
-            if self._gradient_virtual_ids
-            else None
+            set(self._gradient_virtual_ids) if self._gradient_virtual_ids else None
         )
 
         updated, _skipped = apply_config_to_active_effects(
@@ -627,7 +601,7 @@ class NowPlayingService:
             if config is not None and config_dir:
                 try:
                     save_config(config=config, config_dir=config_dir)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     _LOGGER.warning(
                         "Failed to save config after gradient apply: %s", exc
                     )
@@ -740,16 +714,14 @@ class NowPlayingService:
                 else:
                     virtual.set_effect(effect, fallback=float(duration))
                 updated += 1
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Now Playing track text: failed to set effect on virtual %r: %s",
                     virtual_id,
                     exc,
                 )
 
-        _LOGGER.info(
-            "Applied Now Playing track text to %d virtual(s)", updated
-        )
+        _LOGGER.info("Applied Now Playing track text to %d virtual(s)", updated)
         return updated
 
     def _apply_album_art_to_virtuals(self) -> int:
@@ -799,13 +771,9 @@ class NowPlayingService:
         # Start from the built-in "artwork" preset so settings like bilinear
         # and test are pre-configured, then override image_source with the
         # actual artwork path.
-        ledfx_presets = getattr(self._ledfx, "config", {}).get(
-            "ledfx_presets", {}
-        )
+        ledfx_presets = getattr(self._ledfx, "config", {}).get("ledfx_presets", {})
         preset_config = (
-            ledfx_presets.get("imagespin", {})
-            .get("artwork", {})
-            .get("config", {})
+            ledfx_presets.get("imagespin", {}).get("artwork", {}).get("config", {})
         )
         effect_config = {**preset_config, "image_source": artwork.cache_key}
         updated = 0
@@ -830,7 +798,7 @@ class NowPlayingService:
                 else:
                     virtual.set_effect(effect, fallback=float(duration))
                 updated += 1
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "Now Playing album art: failed to set effect on virtual %r: %s",
                     virtual_id,
@@ -924,14 +892,14 @@ class NowPlayingService:
         try:
             with Image.open(io.BytesIO(data)) as img:
                 width, height = img.size
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.warning("Could not read image dimensions: %s", exc)
 
         # Extract gradients directly from the saved file
         gradients = None
         try:
             gradients = extract_gradient_metadata(absolute_path)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.warning("Gradient extraction failed: %s", exc)
 
         return absolute_path, gradients, width, height
@@ -943,9 +911,7 @@ class NowPlayingService:
             Tuple of (data_bytes, content_type) or (None, None) on failure.
         """
         if not is_allowed_image_extension(url):
-            _LOGGER.warning(
-                "URL has invalid image extension: %s", _sanitize_url(url)
-            )
+            _LOGGER.warning("URL has invalid image extension: %s", _sanitize_url(url))
             return None, None
 
         is_safe, error_msg = validate_url_safety(url, allow_private=True)
@@ -961,20 +927,13 @@ class NowPlayingService:
             req = build_browser_request(url)
             with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
                 content_length = resp.headers.get("Content-Length")
-                if (
-                    content_length
-                    and int(content_length) > MAX_IMAGE_SIZE_BYTES
-                ):
-                    _LOGGER.warning(
-                        "Artwork too large: %s bytes", content_length
-                    )
+                if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
+                    _LOGGER.warning("Artwork too large: %s bytes", content_length)
                     return None, None
 
                 data = resp.read(MAX_IMAGE_SIZE_BYTES + 1)
                 if len(data) > MAX_IMAGE_SIZE_BYTES:
-                    _LOGGER.warning(
-                        "Artwork exceeded size limit during download"
-                    )
+                    _LOGGER.warning("Artwork exceeded size limit during download")
                     return None, None
 
                 content_type = resp.headers.get("Content-Type", "image/jpeg")
@@ -989,7 +948,7 @@ class NowPlayingService:
                             _sanitize_url(url),
                         )
                         return None, None
-                except Exception:
+                except Exception:  # noqa: BLE001
                     _LOGGER.warning(
                         "Downloaded data is not a valid image: %s",
                         _sanitize_url(url),
@@ -997,7 +956,7 @@ class NowPlayingService:
                     return None, None
 
                 return data, content_type
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.warning(
                 "Failed to download artwork from %s: %s",
                 _sanitize_url(url),

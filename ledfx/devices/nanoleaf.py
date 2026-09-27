@@ -1,7 +1,6 @@
 import logging
 import socket
 import struct
-from typing import Optional
 
 import requests
 import voluptuous as vol
@@ -43,7 +42,7 @@ class NanoleafDevice(NetworkedDevice):
     )
 
     status: dict[int, tuple[int, int, int]]
-    _sock: Optional[socket.socket] = None
+    _sock: socket.socket | None = None
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -54,7 +53,7 @@ class NanoleafDevice(NetworkedDevice):
         self.setup_subdevice()
 
     def url(self, token: str) -> str:
-        return "http://%s:%i/api/v1/%s" % (
+        return "http://%s:%i/api/v1/%s" % (  # noqa: UP031
             self._config["ip_address"],
             self._config["port"],
             token,
@@ -100,9 +99,7 @@ class NanoleafDevice(NetworkedDevice):
                 return
 
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._sock.connect(
-                (self._config["ip_address"], self._config["udp_port"])
-            )
+            self._sock.connect((self._config["ip_address"], self._config["udp_port"]))
 
         super().activate()
 
@@ -121,18 +118,14 @@ class NanoleafDevice(NetworkedDevice):
             transition = 1
 
             for panel_id, (r, g, b) in self.status.items():
-                send_data += struct.pack(
-                    ">BBBBBH", panel_id, w, r, g, b, transition
-                )
+                send_data += struct.pack(">BBBBBH", panel_id, w, r, g, b, transition)
         else:
             send_data = struct.pack(">H", len(self.status))
             w = 0
             transition = 0
 
             for panel_id, (r, g, b) in self.status.items():
-                send_data += struct.pack(
-                    ">HBBBBH", panel_id, r, g, b, w, transition
-                )
+                send_data += struct.pack(">HBBBBH", panel_id, r, g, b, w, transition)
 
         self._sock.send(send_data)
 
@@ -144,7 +137,7 @@ class NanoleafDevice(NetworkedDevice):
         anim_data = str(len(self.status))
 
         for key, (r, g, b) in self.status.items():
-            anim_data += f" {str(key)} 1 {r} {g} {b} 0 0"
+            anim_data += f" {key!s} 1 {r} {g} {b} 0 0"
 
         try:
             response = requests.put(
@@ -161,7 +154,6 @@ class NanoleafDevice(NetworkedDevice):
                 timeout=2.0,
             )
         except (ConnectTimeout, ReadTimeout) as e:
-
             _LOGGER.warning(
                 "%s WriteTCP failure, Is Nanoleaf powered? %s", self.name, e
             )
@@ -193,7 +185,7 @@ class NanoleafDevice(NetworkedDevice):
             if "auth_token" in data:
                 return data["auth_token"]
 
-        raise Exception("No token, press sync button first")
+        raise Exception("No token, press sync button first")  # noqa: TRY002
 
     async def async_initialize(self):
         await super().async_initialize()
@@ -206,9 +198,7 @@ class NanoleafDevice(NetworkedDevice):
 
         _LOGGER.info("fetching nanoleaf's device info...")
 
-        nanoleaf_config = requests.get(
-            self.url(self.config["auth_token"])
-        ).json()
+        nanoleaf_config = requests.get(self.url(self.config["auth_token"])).json()  # noqa: ASYNC210
 
         _LOGGER.debug("nanoleaf config response: %s", nanoleaf_config)
 
@@ -227,11 +217,9 @@ class NanoleafDevice(NetworkedDevice):
             # Essentials Lightstrips, Rope Lights, Floor Lamp, WiFi A19, etc.)
             # do not expose panelLayout. Fall back to the /length endpoint
             # to determine pixel count, and address LEDs by simple index.
-            _LOGGER.info(
-                "no panelLayout found, falling back to /length endpoint..."
-            )
+            _LOGGER.info("no panelLayout found, falling back to /length endpoint...")
             try:
-                length_response = requests.get(
+                length_response = requests.get(  # noqa: ASYNC210
                     self.url(self.config["auth_token"]) + "/length",
                     timeout=2.0,
                 ).json()
