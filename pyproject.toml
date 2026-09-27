@@ -1,7 +1,7 @@
 [project]
 authors = [{ name = "LedFx Developers" }]
 license = { text = "GPL-3.0 License" }
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "numpy>=2.0.0,<3.0.0",
     "cffi>=0.16.0",
@@ -36,7 +36,7 @@ dependencies = [
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
     "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "pyfastnoiselite>=0.0.7",
+    "pyfastnoiselite-ledfx>=0.0.8",
     "netifaces2>=0.0.22",
     "packaging>=21.0",
     "xled>=0.7.0",
@@ -69,19 +69,19 @@ dev = [
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
-    "sphinx<9.1.1; python_version >= \"3.10\"",
-    "sphinxcontrib-websupport==2.0.0; python_version >= \"3.10\"",
-    "sphinxcontrib-httpdomain==2.0.0; python_version >= \"3.10\"",
-    "sphinx-autodoc-typehints==3.0.1; python_version >= \"3.10\"",
-    "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
-    "sphinx-autobuild; python_version >= \"3.10\"",
-    "sphinx-rtd-theme==3.1.0; python_version >= \"3.10\"",
-    "sphinx-toolbox==4.3.0; python_version >= \"3.10\"",
-    "rstcheck==6.3.0; python_version >= \"3.10\"",
-    "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
+    "sphinx<9.1.1",
+    "sphinxcontrib-websupport==2.0.0",
+    "sphinxcontrib-httpdomain==2.0.0",
+    "sphinx-autodoc-typehints==3.0.1",
+    "sphinx-autodoc-annotation==1.0-1",
+    "sphinx-autobuild",
+    "sphinx-rtd-theme==3.1.0",
+    "sphinx-toolbox==4.3.0",
+    "rstcheck==6.3.0",
+    "sphinx-copybutton==0.5.2",
     "myst-parser>=3.0.1",
     "linkify-it-py>=2.0.3",
-    "sphinxcontrib-mermaid; python_version >= \"3.10\"",
+    "sphinxcontrib-mermaid",
 ]
 
 [tool.pdm.build]

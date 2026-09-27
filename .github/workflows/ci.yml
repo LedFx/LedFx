@@ -89,7 +89,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.11", "3.12", "3.13"]
+        python: ["3.11", "3.12", "3.13", "3.14"]
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
@@ -126,7 +126,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.13"] # oldest and newest supported
+        python: ["3.11", "3.14"] # oldest and newest supported
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
@@ -159,10 +159,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.10", "3.13"] # oldest and newest supported
+        python: ["3.11", "3.14"] # oldest and newest supported
     env:
       UV_PYTHON: ${{ matrix.python }}
-      CMAKE_POLICY_VERSION_MINIMUM: "3.5" # samplerate on Python 3.10 with CMake 4.x
       CFLAGS: -Wno-incompatible-function-pointer-types
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -250,7 +249,6 @@ jobs:
     env:
       VERSION: ${{ needs.plan.outputs.version }}
       SUFFIX: ${{ matrix.suffix }}
-      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
       CFLAGS: -Wno-incompatible-function-pointer-types
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

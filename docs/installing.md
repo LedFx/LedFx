@@ -8,7 +8,7 @@ that can be used with LedFx.
 
 Here is everything you need to get started with LedFx:
 
-> 1.  A Computer (or Raspberry Pi) with Python 3.10 to 3.13
+> 1.  A Computer (or Raspberry Pi) with Python 3.11 to 3.14
 > 2.  An E1.31 capable device with addressable LEDs connected
 
 :::: warning
@@ -16,8 +16,8 @@ Here is everything you need to get started with LedFx:
 Python Version Support
 :::
 
-LedFx supports Python versions 3.10 through 3.13 only (matching `pyproject.toml`).
-Using Python outside this range (e.g., 3.14+) is explicitly unsupported and may cause non-deterministic failures.
+LedFx supports Python versions 3.11 through 3.14 only (matching `pyproject.toml`).
+Using Python outside this range (e.g., 3.15+) is explicitly unsupported and may cause non-deterministic failures.
 ::::
 
 Here is a list of tested ESP8266 firmware that works with LedFx:
@@ -43,7 +43,7 @@ $ .\LedFx.exe --open-ui
 
 ## Linux Installation
 
-To install on Linux first ensure you have Python 3.10 through 3.13 installed.
+To install on Linux first ensure you have Python 3.11 through 3.14 installed.
 
 1.  Install LedFx and all the dependencies using pipx:
 
@@ -59,7 +59,7 @@ To install on Linux first ensure you have Python 3.10 through 3.13 installed.
 
 ## macOS Installation
 
-To install on macOS first ensure you have Python 3.10 through 3.13 installed.
+To install on macOS first ensure you have Python 3.11 through 3.14 installed.
 
 1.  Install LedFx and all the dependencies using
     [homebrew](https://docs.brew.sh/Installation) and pip:
@@ -87,8 +87,8 @@ To install on macOS first ensure you have Python 3.10 through 3.13 installed.
 
 ## macOS Installation (Apple Silicon)
 
-To install on macOS (Apple Silicon) first ensure you have Python 3.10 through
-3.13 installed.
+To install on macOS (Apple Silicon) first ensure you have Python 3.11 through
+3.14 installed.
 
 1.  Install LedFx and all the dependencies using
     [homebrew](https://docs.brew.sh/Installation) in a [python
@@ -135,7 +135,7 @@ discretion.
   <strong>Note:</strong> To use LedFx on a pi you will need a USB audio card, or a loopback device (software, eg [aloop](https://www.alsa-project.org/wiki/Matrix:Module-aloop))
 </div>
 <br>
-Verify you have Python 3.10 through 3.13 by running `python3 --version`
+Verify you have Python 3.11 through 3.14 by running `python3 --version`
 
 **1.** Modify /usr/share/alsa/alsa.conf:
 
