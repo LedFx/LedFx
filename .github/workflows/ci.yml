@@ -452,11 +452,21 @@ jobs:
         if: env.PUBLISH == 'true'
         run: |
           for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
-            for tag in "edge-$ARCH" "edge-$ARCH-$GITHUB_SHA"; do
-              docker tag ledfx:ci "$image:$tag"
-              docker push "$image:$tag"
-            done
+            docker tag ledfx:ci "$image:edge-$ARCH"
+            docker push "$image:edge-$ARCH"
+            docker tag ledfx:ci "$image:edge-$ARCH-$GITHUB_SHA"
+            digest=$(docker push "$image:edge-$ARCH-$GITHUB_SHA" | awk '/digest: sha256:/ {print $3}')
+            test -n "$digest"
+            echo "$image@$digest" >> "docker-$ARCH.txt"
           done
+      # Releases promote these digests, not the edge tags: a main run of the
+      # same commit may retag those with a cached image while approval waits.
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: env.PUBLISH == 'true'
+        with:
+          name: docker-${{ matrix.arch }}
+          path: docker-${{ matrix.arch }}.txt
+          if-no-files-found: error
 
   docker-edge:
     name: Docker edge manifest
@@ -569,11 +579,16 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: docker-*
+          merge-multiple: true
       - name: Create release manifests
         run: |
           for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
-            docker buildx imagetools create -t "$image:latest" -t "$image:$VERSION" -t "$image:$GITHUB_SHA" \
-              "$image:edge-amd64-$GITHUB_SHA" "$image:edge-arm64-$GITHUB_SHA"
+            mapfile -t sources < <(grep -h "^$image@" docker-*.txt)
+            test "${#sources[@]}" -eq 2
+            docker buildx imagetools create -t "$image:latest" -t "$image:$VERSION" -t "$image:$GITHUB_SHA" "${sources[@]}"
           done
 
   sentry:
