@@ -56,15 +56,15 @@ readme = "README.rst"
 [dependency-groups]
 dev = [
     "flake8<7.3.1,>=7.3.0",
-    "black>=25.9.0,<25.12.1",
+    "black>=26.5.1,<26.6.0",
     "isort<7.0.1,>=7.0.0",
-    "pre-commit>=4.2.0,<4.5.2",
+    "pre-commit>=4.6.2,<4.7.0",
     "bokeh<4.0.0,>=3.3.3",
     "pytest>=8.0.0,<10.0.0",
-    "pytest-asyncio>=1.2.0,<1.4.0",
+    "pytest-asyncio>=1.4.0,<1.5.0",
     "pytest-order<2.0.0,>=1.2.0",
     "pytest-timeout>=2.3.0,<3.0.0",
-    "ruff>=0.14.0,<0.15.0",
+    "ruff>=0.16.7,<0.17.0",
     "lifx-emulator-core>=3.8.0",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
