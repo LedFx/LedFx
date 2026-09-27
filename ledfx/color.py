@@ -1,3 +1,4 @@
+import itertools
 import logging
 from collections import namedtuple
 
@@ -88,7 +89,7 @@ class Gradient:
             return f"#{last_color.red:02x}{last_color.green:02x}{last_color.blue:02x}"
 
         # Find containing segment and linearly interpolate
-        for (c1, p1), (c2, p2) in zip(stops, stops[1:]):  # noqa: RUF007
+        for (c1, p1), (c2, p2) in itertools.pairwise(stops):
             if p1 <= pos <= p2:
                 t = 0.0 if p2 == p1 else (pos - p1) / (p2 - p1)
                 r = int(round(c1.red + (c2.red - c1.red) * t))  # noqa: RUF046

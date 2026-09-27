@@ -1087,7 +1087,7 @@ class RegistryLoader:
     def reload_module(self, name):
         if name in sys.modules:
             path = sys.modules[name].__file__
-            if path.endswith(".pyc") or path.endswith(".pyo"):  # noqa: PIE810
+            if path.endswith((".pyc", ".pyo")):
                 path = path[:-1]
 
             try:
