@@ -184,6 +184,211 @@ jobs:
           name: ledfx-log-macos-py${{ matrix.python }}
           path: debug_config/ledfx.log
 
+  frozen-windows:
+    name: Frozen build (Windows)
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Enable long paths for git
+        run: git config --system core.longpaths true
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+          cache-dependency-glob: uv.lock
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis
+          echo "C:\Program Files (x86)\NSIS\Bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+      - name: Install LedFx
+        run: uv sync --extra hue --group build
+      - name: Build binary
+        run: uv run pyinstaller windows-binary.spec
+      - name: Swap in WASAPI loopback portaudio
+        run: mv -f loopback/libportaudio64bit.dll dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
+      - name: Build installer # ledfx.nsi packs dist\LedFx, so package after this
+        run: cd installer && makensis //DPRODUCT_VERSION="$VERSION" ledfx.nsi
+      - name: Package release archives
+        run: |
+          mv dist/LedFx "dist/LedFx-$VERSION"
+          (cd dist && 7z a "../LedFx-$VERSION-win-x64.zip" "LedFx-$VERSION")
+          mv "installer/ledfx-setup-win-$VERSION.exe" "LedFx-$VERSION-setup.exe"
+          7z a "LedFx-$VERSION-win-x64-setup.zip" "LedFx-$VERSION-setup.exe"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-win-x64
+          path: LedFx-${{ env.VERSION }}-win-x64.zip
+          if-no-files-found: error
+          compression-level: 0
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-win-x64-setup
+          path: LedFx-${{ env.VERSION }}-win-x64-setup.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  frozen-macos:
+    name: Frozen build (macOS ${{ matrix.suffix }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            suffix: osx-intel
+          - runner: macos-latest
+            suffix: osx-arm64
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      SUFFIX: ${{ matrix.suffix }}
+      CMAKE_POLICY_VERSION_MINIMUM: "3.5"
+      CFLAGS: -Wno-incompatible-function-pointer-types
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: brew install portaudio mbedtls@2
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+          cache-dependency-glob: uv.lock
+      - name: Install LedFx
+        run: |
+          mbedtls=$(brew --prefix mbedtls@2)
+          export PATH="$mbedtls/bin:$PATH" LDFLAGS="-L$mbedtls/lib" CPPFLAGS="-I$mbedtls/include"
+          uv sync --extra hue --group build
+      - name: Build binary
+        run: uv run pyinstaller osx-binary.spec
+      # tar here: upload-artifact drops the permissions and symlinks an .app needs
+      - name: Package release archive
+        run: |
+          chmod +x dist/LedFx/Contents/MacOS/LedFx
+          mv dist/LedFx "dist/LedFx-$VERSION.app"
+          xattr -cr "dist/LedFx-$VERSION.app"
+          tar -C dist -czf "LedFx-$VERSION-$SUFFIX.tar.gz" "LedFx-$VERSION.app"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: release-${{ matrix.suffix }}
+          path: LedFx-${{ env.VERSION }}-${{ matrix.suffix }}.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+
+  # Clean runners on purpose: they catch libraries missing from the bundle
+  # that the build runner happens to have installed.
+  smoke-windows:
+    name: Smoke test frozen build (Windows)
+    needs: [plan, frozen-windows]
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: LABSN/sound-ci-helpers@v1
+      - uses: actions/download-artifact@v7
+        with:
+          name: release-win-x64
+      - name: Run LedFx
+        run: |
+          7z x "LedFx-$VERSION-win-x64.zip"
+          "LedFx-$VERSION/LedFx.exe" -vv --ci-smoke-test --offline
+
+  smoke-macos:
+    name: Smoke test frozen build (macOS ${{ matrix.suffix }})
+    needs: [plan, frozen-macos]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15-intel
+            suffix: osx-intel
+          - runner: macos-latest
+            suffix: osx-arm64
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      SUFFIX: ${{ matrix.suffix }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: release-${{ matrix.suffix }}
+      - name: Run LedFx
+        run: |
+          tar -xzf "LedFx-$VERSION-$SUFFIX.tar.gz"
+          "./LedFx-$VERSION.app/Contents/MacOS/LedFx" -vv --ci-smoke-test --offline
+
+  package:
+    name: Build Python package
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+          cache-dependency-glob: uv.lock
+      - name: Write ledfx.env
+        env:
+          RELEASE: ${{ needs.plan.outputs.release }}
+        run: |
+          echo "GITHUB_SHA = \"$GITHUB_SHA\"" >> ledfx.env
+          echo "IS_RELEASE = $RELEASE" >> ledfx.env
+      - name: Build wheel and sdist
+        run: uv build
+      - uses: actions/upload-artifact@v6
+        with:
+          name: python-dist
+          path: dist/
+          if-no-files-found: error
+
+  smoke-package:
+    name: Smoke test Python package (${{ matrix.kind }})
+    needs: [plan, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [whl, tar.gz]
+    env:
+      KIND: ${{ matrix.kind }}
+    steps:
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - uses: actions/download-artifact@v7
+        with:
+          name: python-dist
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: false
+      - name: Install and run LedFx
+        run: |
+          uv venv
+          uv pip install ledfx-*."$KIND"
+          .venv/bin/ledfx -vv --ci-smoke-test --offline
+
   # The one check branch protection requires. Every build/test job belongs in
   # needs; its name must never change.
   ci-passed:
@@ -194,6 +399,12 @@ jobs:
       - test-linux
       - test-windows
       - test-macos
+      - frozen-windows
+      - frozen-macos
+      - smoke-windows
+      - smoke-macos
+      - package
+      - smoke-package
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
