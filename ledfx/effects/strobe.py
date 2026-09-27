@@ -39,7 +39,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
                 "strobe_pattern",
                 description="When to fire (*) or skip (.) the strobe (Note that beat 1 is arbitrary)",
                 default="****",
-            ): vol.In(list(["****", "*.*.", ".*.*", "*...", "...*"])),  # noqa: C410
+            ): vol.In(["****", "*.*.", ".*.*", "*...", "...*"]),
         }
     )
 

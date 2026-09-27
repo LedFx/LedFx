@@ -16,7 +16,7 @@ class EQAudioEffect(AudioReactiveEffect, GradientEffect):
                 "align",
                 description="Alignment of bands",
                 default="left",
-            ): vol.In(list(["left", "right", "invert", "center"])),  # noqa: C410
+            ): vol.In(["left", "right", "invert", "center"]),
             vol.Optional(
                 "gradient_repeat",
                 description="Repeat the gradient into segments",

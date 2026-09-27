@@ -16,12 +16,12 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "mode",
                 description="Choose from different animations",
                 default="wipe",
-            ): vol.In(list(["cascade", "wipe"])),  # noqa: C410
+            ): vol.In(["cascade", "wipe"]),
             vol.Optional(
                 "ease_method",
                 description="Acceleration profile of bar",
                 default="linear",
-            ): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),  # noqa: C410
+            ): vol.In(["ease_in_out", "ease_in", "ease_out", "linear"]),
             vol.Optional(
                 "color_step",
                 description="Amount of color change per beat",

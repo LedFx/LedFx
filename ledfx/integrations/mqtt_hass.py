@@ -295,18 +295,16 @@ class MQTT_HASS(Integration):
                     "stat_t": "~/state",
                     "icon": "mdi:transfer-right",
                     "entity_category": "config",
-                    "options": list(  # noqa: C410
-                        [
-                            "Add",
-                            "Dissolve",
-                            "Push",
-                            "Slide",
-                            "Iris",
-                            "Through White",
-                            "Through Black",
-                            "None",
-                        ]
-                    ),
+                    "options": [
+                        "Add",
+                        "Dissolve",
+                        "Push",
+                        "Slide",
+                        "Iris",
+                        "Through White",
+                        "Through Black",
+                        "None",
+                    ],
                     "device": hass_device,
                 }
             ),
