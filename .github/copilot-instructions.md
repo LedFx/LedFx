@@ -8,7 +8,7 @@ LedFx is a real-time LED visualization system syncing audio input to networked L
 
 - Tests: `uv run pytest ...`
 - Scripts: `uv run python ...`
-- Linting: `uv run prek run --all-files` (ruff check --fix + ruff format; `uv run prek install` adds it as a git hook)
+- Linting: `uv run --group dev prek run --all-files` (ruff check --fix + ruff format; `uv run --group dev prek install -f` adds it as a git hook, replacing an old pre-commit hook)
 - Packages: `uv sync`, `uv add` (not `pip install`)
 
 ## Key Structure
