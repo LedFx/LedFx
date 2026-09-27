@@ -51,22 +51,30 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
         run: |
           version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          # PR-controlled on PR runs; it ends up in outputs, file names and NSIS defines.
+          if [[ ! "$version" =~ ^[0-9][0-9A-Za-z.+-]*$ ]]; then
+            echo "::error::Unexpected version string in pyproject.toml"
+            exit 1
+          fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
           # The one guard for every publish path.
-          if [[ "$REF" == refs/tags/v* ]]; then
-            if [[ "$REF" != "refs/tags/v$version" ]]; then
-              echo "::error::Tag ${REF#refs/tags/} does not match pyproject.toml version $version"
-              exit 1
-            fi
+          if [[ "$REF" == refs/tags/v* && "$REF" != "refs/tags/v$version" ]]; then
+            echo "::error::Tag ${REF#refs/tags/} does not match pyproject.toml version $version"
+            exit 1
+          fi
+          # Only a tag push releases; re-run failed jobs to retry a release.
+          if [[ "$EVENT" == push && "$REF" == refs/tags/v* ]]; then
             echo "release=true" >> "$GITHUB_OUTPUT"
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
           code=true
           if [ -n "$PR" ]; then
-            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+            # previous_filename: moving code out of ledfx/ into docs/ is still a code change
+            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
             # here-string, not a pipe: grep -q exiting early + pipefail would read as "no match"
             grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" || code=false
           fi
