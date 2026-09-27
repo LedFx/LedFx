@@ -27,6 +27,13 @@
         "sphinx-autodoc-typehints"
       ],
       "allowedVersions": "<3.6.0"
+    },
+    {
+      "description": "Our own package: released and reviewed by us, so no wait. Matches exclude-newer-package in pyproject.toml.",
+      "matchPackageNames": [
+        "samplerate-ledfx"
+      ],
+      "minimumReleaseAge": null
     }
   ]
 }
