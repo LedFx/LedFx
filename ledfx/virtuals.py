@@ -1,5 +1,4 @@
 import logging
-import sys
 import threading
 import time
 from functools import cached_property
@@ -142,12 +141,7 @@ class Virtual:
     _active_effect = None
     _transition_effect = None
 
-    if (
-        sys.version_info[0] == 3 and sys.version_info[1] >= 11
-    ) or sys.version_info[0] >= 4:
-        _min_time = time.get_clock_info("perf_counter").resolution
-    else:
-        _min_time = time.get_clock_info("monotonic").resolution
+    _min_time = time.get_clock_info("perf_counter").resolution
 
     def _validate_and_set_frequency_range(self, config):
         """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""

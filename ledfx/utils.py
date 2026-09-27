@@ -68,23 +68,9 @@ from ledfx.utilities.security_utils import (
 _LOGGER = logging.getLogger(__name__)
 
 
-# perf_counter has high resolution on all platforms better than 1 ms
-# however on windows until 3.11 sleep is using monotonic at a low resolution
-# of approx 15.625 ms
-# other OS have monotonic same resolution as perf
-# so prior to 3.11 just default everything to monotonic and let the
-# virtuals thread sleep code deal with the speculative extra sleep for windows
-# OS changes to sleep clock high resolution for some audio sources
-# there is no programmatic inspection for what sleep is doing under the covers
-# At 3.11 onwards use the high res perf_counter everywhere as monotonic still
-# reports 15ms on a windows OS, but the sleep implementation is perf based
-
-if (
-    sys.version_info[0] == 3 and sys.version_info[1] >= 11
-) or sys.version_info[0] >= 4:
-    clock_source = "perf_counter"
-else:
-    clock_source = "monotonic"
+# perf_counter is high resolution everywhere, and since 3.11 sleep on
+# windows is perf based too (monotonic still reports ~15ms there)
+clock_source = "perf_counter"
 
 
 def calc_available_fps():
