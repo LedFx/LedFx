@@ -1327,7 +1327,7 @@ docs = [
     { name = "linkify-it-py", specifier = ">=2.0.3" },
     { name = "myst-parser", specifier = ">=3.0.1" },
     { name = "rstcheck", marker = "python_full_version >= '3.10'", specifier = "==6.2.5" },
-    { name = "sphinx", marker = "python_full_version >= '3.10'", specifier = "<8.2.4" },
+    { name = "sphinx", marker = "python_full_version >= '3.10'", specifier = "<9.1.1" },
     { name = "sphinx-autobuild", marker = "python_full_version >= '3.10'" },
     { name = "sphinx-autodoc-annotation", marker = "python_full_version >= '3.10'", specifier = "==1.0.post1" },
     { name = "sphinx-autodoc-typehints", marker = "python_full_version >= '3.10'", specifier = "==3.0.1" },
