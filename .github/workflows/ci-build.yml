@@ -257,7 +257,7 @@ jobs:
           echo "GHCR_IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
 
       - name: Build and run for ${{ matrix.ARCH }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: ./
           file: ./ledfx_docker/Dockerfile
