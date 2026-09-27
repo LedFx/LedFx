@@ -339,8 +339,8 @@ class Device(BaseRegistry):
                 existing_by_virtual[_virtual_id].append((segment_start, segment_end))
 
             # Sort each virtual's segments for binary search
-            for _virtual_id in existing_by_virtual:  # noqa: PLC0206
-                existing_by_virtual[_virtual_id].sort()
+            for existing_segments in existing_by_virtual.values():
+                existing_segments.sort()
 
             # Check each new segment against sorted existing segments
             for start_pixel, end_pixel in segments:

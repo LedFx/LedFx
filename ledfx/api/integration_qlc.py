@@ -39,7 +39,7 @@ class QLCEndpoint(RestEndpoint):
 
         # generate dict of {effect_id: effect_name}
         effect_names = []
-        for effect_type, effect in self._ledfx.effects.classes().items():  # noqa: PERF102
+        for effect in self._ledfx.effects.classes().values():
             effect_names.append(effect.NAME)
 
         scene_ids = []

@@ -876,14 +876,14 @@ def migrate_config(old_config):
 
         # Update user presets for equalizer2d
         equalizer2d_presets = new_config.get("user_presets", {}).get("equalizer2d", {})
-        for preset_name, preset_data in equalizer2d_presets.items():  # noqa: PERF102
+        for preset_data in equalizer2d_presets.values():
             preset_data["config"] = invert_equalizer2d_flip_vertical(
                 preset_data.get("config", {})
             )
 
         # Update scenes with equalizer2d effects
         for scene_id, scene_data in new_config.get("scenes", {}).items():
-            for virtual_id, virtual_effect in scene_data.get("virtuals", {}).items():  # noqa: PERF102
+            for virtual_effect in scene_data.get("virtuals", {}).values():
                 if virtual_effect.get("type") == "equalizer2d":
                     virtual_effect["config"] = invert_equalizer2d_flip_vertical(
                         virtual_effect.get("config", {})
