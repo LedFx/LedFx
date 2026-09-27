@@ -1,5 +1,7 @@
 # Run with prek: `uv run prek run --all-files`, or `uv run prek install` for a
 # git hook. `repo: builtin` hooks are prek-only (plain pre-commit can't run them).
+# ledfx_frontend/ is a built bundle: whitespace there can sit inside JS strings.
+exclude: ^ledfx_frontend/
 repos:
   - repo: builtin
     hooks:
