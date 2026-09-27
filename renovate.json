@@ -1,6 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["github>LedFx/renovate-config"],
-  "description": "main requires PRs but no status checks, so GitHub's native auto-merge could merge before CI finishes. Renovate merges itself instead, only once every check on the branch has passed. Drop this once main has required checks.",
-  "platformAutomerge": false
+  "packageRules": [
+    {
+      "description": "Windows CI is pinned to windows-2022 on purpose: windows-2025 has audio device issues (see ci-build.yml). Move it by hand once that is understood.",
+      "matchManagers": ["github-actions"],
+      "matchDepNames": ["windows"],
+      "enabled": false
+    }
+  ]
 }
