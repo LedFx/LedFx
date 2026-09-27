@@ -32,11 +32,11 @@ class PresetDeleteEndpoint(RestEndpoint):
             return await self.invalid_request(error_message)
 
         # Check if effect has any user presets
-        if effect_id not in self._ledfx.config["user_presets"].keys():  # noqa: SIM118
+        if effect_id not in self._ledfx.config["user_presets"]:
             return await self.invalid_request(f"Effect {effect_id} has no user presets")
 
         # Check if preset exists
-        if preset_id not in self._ledfx.config["user_presets"][effect_id].keys():  # noqa: SIM118
+        if preset_id not in self._ledfx.config["user_presets"][effect_id]:
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in user presets"
             )

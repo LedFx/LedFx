@@ -43,7 +43,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 return await self.json_decode_error()
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
-                if info not in response["integrations"][integration.id].keys():  # noqa: SIM118
+                if info not in response["integrations"][integration.id]:
                     return await self.invalid_request(
                         f"info attribute {info} not found"
                     )

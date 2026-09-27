@@ -478,7 +478,7 @@ class MQTT_HASS(Integration):
             return
 
         # React to Transition-Type
-        if virtualid in self.TRANSITION_MAPPING.keys():  # noqa: SIM118
+        if virtualid in self.TRANSITION_MAPPING:
             # _LOGGER.info("Transitions: %s", payload)
             prior_state = self._ledfx.config["global_transitions"]
             self._ledfx.config["global_transitions"] = True
@@ -553,10 +553,7 @@ class MQTT_HASS(Integration):
                 if selected_effect_or_preset:
                     if selected_effect_or_preset == "back":
                         effect_list = list(self._ledfx.effects.classes().keys())
-                    elif (
-                        selected_effect_or_preset  # noqa: SIM118
-                        in self._ledfx.effects.classes().keys()
-                    ):
+                    elif selected_effect_or_preset in self._ledfx.effects.classes():
                         # If an effect is selected, show its presets
                         ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(
                             selected_effect_or_preset, {}

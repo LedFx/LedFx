@@ -39,7 +39,7 @@ def fps_validator(value):
     if not isinstance(value, int):
         raise ValueError("fps must be an integer")  # noqa: TRY004
     return next(
-        (f for f in AVAILABLE_FPS.keys() if f >= value),  # noqa: SIM118
+        (f for f in AVAILABLE_FPS if f >= value),
         list(AVAILABLE_FPS.keys())[-1],
     )
 
@@ -794,7 +794,7 @@ class Devices(RegistryLoader):
         Creates a new device.
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
-        if "ip_address" in device_config.keys():  # noqa: SIM118
+        if "ip_address" in device_config:
             device_config["ip_address"] = clean_ip(device_config["ip_address"])
             device_ip = device_config["ip_address"]
             try:
@@ -809,7 +809,7 @@ class Devices(RegistryLoader):
                 return
 
             for existing_device in self._ledfx.devices.values():
-                if "ip_address" in existing_device.config.keys() and (  # noqa: SIM118
+                if "ip_address" in existing_device.config and (
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
                     or resolved_dest == getattr(existing_device, "_destination", None)
@@ -829,7 +829,7 @@ class Devices(RegistryLoader):
             # This allows us to respect the users choice of names if adding a WLED device via frontend
             # I turned black off as this logic is clearer on one line
             # fmt: off
-            if "name" in device_config.keys() and device_config["name"] is not None:  # noqa: SIM118
+            if "name" in device_config and device_config["name"] is not None:
                 wled_name = device_config["name"]
             elif wled_config["name"] == "WLED":
                 wled_name = f"{wled_config['name']}-{wled_config['mac'][6:]}".upper()
@@ -899,8 +899,8 @@ class Devices(RegistryLoader):
         }
 
         if device_type == "wled":  # noqa: SIM102
-            if "matrix" in led_info.keys():  # noqa: SIM102, SIM118
-                if "h" in led_info["matrix"].keys():  # noqa: SIM118
+            if "matrix" in led_info:  # noqa: SIM102
+                if "h" in led_info["matrix"]:
                     virtual_config["rows"] = led_info["matrix"]["h"]
 
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]

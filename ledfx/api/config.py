@@ -26,12 +26,12 @@ CORE_CONFIG_KEYS = set(map(str, CORE_CONFIG_SCHEMA.schema.keys()))
 
 
 def validate_and_trim_config(config, schema, node):
-    for key in config.keys():  # noqa: SIM118
+    for key in config:
         if key not in PERMITTED_KEYS[node] and key != "user_presets":
             raise KeyError(f"Unknown/forbidden {node} config key: '{key}'")
 
     validated_config = schema(config)
-    return {key: validated_config[key] for key in config.keys()}  # noqa: SIM118
+    return {key: validated_config[key] for key in config}
 
 
 class ConfigEndpoint(RestEndpoint):

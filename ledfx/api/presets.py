@@ -49,7 +49,7 @@ class PresetsEndpoint(RestEndpoint):
             self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
         )
 
-        if effect_id in self._ledfx.config["user_presets"].keys():  # noqa: SIM118
+        if effect_id in self._ledfx.config["user_presets"]:
             custom = self._ledfx.config["user_presets"][effect_id]
         else:
             custom = {}
@@ -107,7 +107,7 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:  # noqa: BLE001
             return await self.invalid_effect_id(effect_id)
 
-        if preset_id not in self._ledfx.config[category][effect_id].keys():  # noqa: SIM118
+        if preset_id not in self._ledfx.config[category][effect_id]:
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
@@ -152,7 +152,7 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:  # noqa: BLE001
             return await self.invalid_effect_id(effect_id)
 
-        if effect_id not in self._ledfx.config[category].keys():  # noqa: SIM118
+        if effect_id not in self._ledfx.config[category]:
             return await self.invalid_request(
                 f"Effect {effect_id} does not exist in category {category}"
             )
@@ -162,7 +162,7 @@ class PresetsEndpoint(RestEndpoint):
                 'Required attribute "preset_id" was not provided'
             )
 
-        if preset_id not in self._ledfx.config[category][effect_id].keys():  # noqa: SIM118
+        if preset_id not in self._ledfx.config[category][effect_id]:
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )

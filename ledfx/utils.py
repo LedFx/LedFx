@@ -536,7 +536,7 @@ class WLED:
         """
         mode = mode.upper()
 
-        assert mode in WLED.SYNC_MODES.keys()  # noqa: SIM118
+        assert mode in WLED.SYNC_MODES
 
         if mode == "udp":
             # if realtime udp is already enabled, we're good to go
@@ -953,7 +953,7 @@ class BaseRegistry(ABC):
             ValueError: If any key in the schema do not match our naming conventions.
         """
         # Check if all keys in the schema use snake_case
-        for key in schema.schema.keys():  # noqa: SIM118
+        for key in schema.schema:
             # If key is a vol.Required or vol.Optional, get the schema from the key
             # Otherwise, the key is the actual key
             # This is to handle nested schemas
@@ -1085,7 +1085,7 @@ class RegistryLoader:
         return self._objects.values()
 
     def reload_module(self, name):
-        if name in sys.modules.keys():  # noqa: SIM118
+        if name in sys.modules:
             path = sys.modules[name].__file__
             if path.endswith(".pyc") or path.endswith(".pyo"):  # noqa: PIE810
                 path = path[:-1]
@@ -2034,7 +2034,7 @@ def generate_defaults(ledfx_presets, ledfx_effects, effect_id):
     Returns:
         dict: The default presets for the effect.
     """
-    if effect_id in ledfx_presets.keys():  # noqa: SIM118
+    if effect_id in ledfx_presets:
         presets = ledfx_presets[effect_id]
     else:
         presets = {}
