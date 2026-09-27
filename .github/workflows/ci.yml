@@ -101,7 +101,6 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
-          cache-dependency-glob: uv.lock
       - name: Install LedFx
         env:
           CFLAGS: -Wno-incompatible-function-pointer-types
@@ -130,9 +129,6 @@ jobs:
         python: ["3.10", "3.13"] # oldest and newest supported
     env:
       UV_PYTHON: ${{ matrix.python }}
-    defaults:
-      run:
-        shell: bash
     steps:
       - name: Enable long paths for git
         run: git config --system core.longpaths true
@@ -142,7 +138,6 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
-          cache-dependency-glob: uv.lock
       - name: Install LedFx
         run: uv sync --all-extras --dev
       - uses: LABSN/sound-ci-helpers@d08c889a7bba7d9b1b059f8f76dac4672ea3a9cf # v1.0.4
@@ -178,7 +173,6 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
-          cache-dependency-glob: uv.lock
       - name: Install LedFx
         run: |
           mbedtls=$(brew --prefix mbedtls@2)
@@ -212,7 +206,6 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
-          cache-dependency-glob: uv.lock
       - name: Install NSIS
         shell: pwsh
         run: |
@@ -236,13 +229,7 @@ jobs:
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: release-win-x64
-          path: LedFx-${{ env.VERSION }}-win-x64.zip
-          if-no-files-found: error
-          compression-level: 0
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
-        with:
-          name: release-win-x64-setup
-          path: LedFx-${{ env.VERSION }}-win-x64-setup.zip
+          path: LedFx-${{ env.VERSION }}-win-x64*.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -255,7 +242,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
+        include: &macos
           - runner: macos-15-intel
             suffix: osx-intel
           - runner: macos-latest
@@ -274,7 +261,6 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
-          cache-dependency-glob: uv.lock
       - name: Install LedFx
         run: |
           mbedtls=$(brew --prefix mbedtls@2)
@@ -326,11 +312,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - runner: macos-15-intel
-            suffix: osx-intel
-          - runner: macos-latest
-            suffix: osx-arm64
+        include: *macos
     env:
       VERSION: ${{ needs.plan.outputs.version }}
       SUFFIX: ${{ matrix.suffix }}
@@ -356,7 +338,6 @@ jobs:
       - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
-          cache-dependency-glob: uv.lock
       - name: Write ledfx.env
         env:
           RELEASE: ${{ needs.plan.outputs.release }}
@@ -443,9 +424,7 @@ jobs:
           file: ledfx_docker/Dockerfile
           platforms: linux/${{ matrix.arch }}
           load: true
-          push: false
           provenance: false
-          sbom: false
           tags: ledfx:ci
           # Release builds never touch a cache: a tag run can read caches written on main.
           no-cache: ${{ needs.plan.outputs.release == 'true' }}
@@ -483,7 +462,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
       packages: write
     steps:
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
@@ -573,7 +551,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read
       packages: write
     env:
       VERSION: ${{ needs.plan.outputs.version }}
