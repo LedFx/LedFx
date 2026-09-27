@@ -13,5 +13,4 @@ concurrency:
 
 jobs:
   autofix:
-    # Pinned to the unmerged LedFx/.github PR; repinned to main after it merges.
-    uses: LedFx/.github/.github/workflows/autofix.yml@1a8ccef5a72d29f75e2d4c9a747857c2222e02f0 # main
+    uses: LedFx/.github/.github/workflows/autofix.yml@cb0f0bc37c326b5111bc914749b8596255379f49 # main
