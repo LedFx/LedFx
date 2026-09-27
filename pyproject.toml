@@ -72,7 +72,7 @@ docs = [
     "sphinx<9.1.1",
     "sphinxcontrib-websupport==2.0.0",
     "sphinxcontrib-httpdomain==2.0.0",
-    "sphinx-autodoc-typehints==3.0.1",
+    "sphinx-autodoc-typehints==3.13.6",
     "sphinx-autodoc-annotation==1.0-1",
     "sphinx-autobuild",
     "sphinx-rtd-theme==3.1.0",
