@@ -16,12 +16,12 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "mode",
                 description="Choose from different animations",
                 default="wipe",
-            ): vol.In(list(["bounce", "wipe", "in-out"])),  # noqa: C410
+            ): vol.In(["bounce", "wipe", "in-out"]),
             vol.Optional(
                 "ease_method",
                 description="Acceleration profile of bar",
                 default="ease_out",
-            ): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),  # noqa: C410
+            ): vol.In(["ease_in_out", "ease_in", "ease_out", "linear"]),
             vol.Optional(
                 "color_step",
                 description="Amount of color change per beat",
@@ -31,7 +31,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "beat_skip",
                 description="Skips odd or even beats",
                 default="none",
-            ): vol.In(list(["none", "odds", "even"])),  # noqa: C410
+            ): vol.In(["none", "odds", "even"]),
             vol.Optional(
                 "beat_offset",
                 description="Offset the beat",
@@ -42,7 +42,7 @@ class BarAudioEffect(AudioReactiveEffect, GradientEffect):
                 description="If skipping beats, skip every",
                 default=1,
             ): vol.In(
-                list([1, 2])  # noqa: C410
+                [1, 2]
             ),  # if add 4, to skip every bar, a bit of extra work is required in audio.py
         }
     )

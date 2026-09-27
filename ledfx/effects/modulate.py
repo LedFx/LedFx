@@ -31,7 +31,7 @@ class ModulateEffect(Effect):
                 "modulation_effect",
                 default="sine",
                 description="Choose an animation",
-            ): vol.In(list(["sine", "breath"])),  # noqa: C410
+            ): vol.In(["sine", "breath"]),
             vol.Optional(
                 "modulation_speed",
                 default=0.5,
