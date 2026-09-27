@@ -22,11 +22,11 @@ class Scenes:
         self._scenes = self._ledfx.config["scenes"]
 
         def virtuals_validator(virtual_ids):
-            return list(  # noqa: C400
+            return [
                 virtual_id
                 for virtual_id in virtual_ids
                 if self._ledfx.virtuals.get(virtual_id)
-            )
+            ]
 
         self.SCENE_SCHEMA = vol.Schema(
             {

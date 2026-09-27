@@ -200,7 +200,7 @@ def convertToJsonSchema(schema):
     elif isinstance(schema, list):
         val = {
             "type": "list",
-            "validators": list(convertToJsonSchema(validator) for validator in schema),  # noqa: C400
+            "validators": [convertToJsonSchema(validator) for validator in schema],
         }
         return val
 
