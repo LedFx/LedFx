@@ -6,6 +6,12 @@ on:
 permissions:
   contents: read
 
+# A new push makes the running fix obsolete.
+concurrency:
+  group: autofix-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   autofix:
-    uses: LedFx/.github/.github/workflows/autofix.yml@a58cdcc28cdd3ee62d3544c2ba5096c814778550 # main
+    # Pinned to the unmerged LedFx/.github PR; repinned to main after it merges.
+    uses: LedFx/.github/.github/workflows/autofix.yml@1a8ccef5a72d29f75e2d4c9a747857c2222e02f0 # main
