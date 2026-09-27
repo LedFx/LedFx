@@ -20,6 +20,13 @@
         "ledfx_docker/docker-compose-example.yml"
       ],
       "enabled": false
+    },
+    {
+      "description": "sphinx-toolbox (docs/conf.py uses sphinx_toolbox.collapse) requires sphinx-autodoc-typehints<3.6.0, up to 4.3.1 at least. Lift this when sphinx-toolbox does.",
+      "matchPackageNames": [
+        "sphinx-autodoc-typehints"
+      ],
+      "allowedVersions": "<3.6.0"
     }
   ]
 }
