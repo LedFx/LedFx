@@ -510,7 +510,7 @@ jobs:
           cd ..
           rm -rf dist/*
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           files: |
             LedFx-${{ steps.ledfx-version.outputs.ledfx-version }}-win-x64.zip
