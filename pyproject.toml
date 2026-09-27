@@ -30,7 +30,7 @@ dependencies = [
     "lifx-async>=6.5.1",
     "python-osc>=1.8.3",
     "pybase64~=1.4.0",
-    "mss~=10.1.0",
+    "mss~=10.2.0",
     "uvloop>=0.16.0; sys_platform != \"win32\"",
     "winloop>=0.3.1; sys_platform == \"win32\"",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
