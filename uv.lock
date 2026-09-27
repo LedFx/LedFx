@@ -135,17 +135,20 @@ wheels = [
 
 [[package]]
 name = "aiosendspin"
-version = "6.1.1"
+version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "cpace" },
+    { name = "cryptography" },
     { name = "mashumaro" },
+    { name = "noiseprotocol" },
     { name = "orjson" },
     { name = "zeroconf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/d3/33635dd5565e14b0451be0722e4c7b93824f6818d741a037608431d9379d/aiosendspin-6.1.1.tar.gz", hash = "sha256:387aa7b4db8cad34f6a6443af76d02c8b84b3b5a29ba3f0ef057b3a2b78ce623", size = 165147, upload-time = "2026-07-02T06:37:47.86Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/73/f0/03f798813a0e09f4e1565691d2e5138f0750c98b36d93f522d06c44efe66/aiosendspin-9.1.1.tar.gz", hash = "sha256:1e9a33ec5b6dcbc16b4f03c07586195beaa80eb2e5ba4254b97979ae0e0ec4b7", size = 251694, upload-time = "2026-08-25T15:28:43.958Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/70/ff/efde08a4473b4dca67790435e455f7db50340de5a62022ce04f4d0c21e6f/aiosendspin-6.1.1-py3-none-any.whl", hash = "sha256:6a59c927b5e539cab8035e736eaca46b4c5982a6d994a2fd3b33b26967b96e8c", size = 190556, upload-time = "2026-07-02T06:37:46.461Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/c8/e6bb6ece16ef74a3867543675a153cb09b10eb907025e8d77ac4db547bc4/aiosendspin-9.1.1-py3-none-any.whl", hash = "sha256:cb7227f70a8c6cfea450fb92ad26ed6fe3d86e883620700e2cde9372ad8c995b", size = 278171, upload-time = "2026-08-25T15:28:42.58Z" },
 ]
 
 [[package]]
@@ -764,6 +767,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cpace"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/02/e9/0aa114fdf26b4112222ddbfd190197aa5d11bce21b4747cc1889998eead5/cpace-0.1.0.tar.gz", hash = "sha256:049d30b4389c965cb2d98551f2f7361382bfa342afc5d53b6dc16b84a5759ad2", size = 60404, upload-time = "2026-07-13T21:07:15.01Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/e8/949c45844ad0d65d0112c2c4fa11cc8a7c4359fe2a20667e00c930860bef/cpace-0.1.0-py3-none-any.whl", hash = "sha256:9fabb60a711a85934225be4081b3f5994e1ca4cd1335c5b9171770c8f1a2fda3", size = 9456, upload-time = "2026-07-13T21:07:13.703Z" },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1262,7 +1277,7 @@ docs = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
     { name = "aiohttp-cors", specifier = ">=0.7.0" },
-    { name = "aiosendspin", marker = "python_full_version >= '3.12'", specifier = ">=6.0.5,<7.0.0" },
+    { name = "aiosendspin", marker = "python_full_version >= '3.12'", specifier = ">=9.1.1,<9.2.0" },
     { name = "aubio-ledfx", specifier = ">=0.4.11" },
     { name = "audio-hotplug", specifier = ">=0.1.0" },
     { name = "certifi", specifier = ">=2023.11.17" },
@@ -1808,6 +1823,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/24/bf/d1bda4f6168e0b2e9e5958945e01910052158313224ada5ce1fb2e1113b8/nodeenv-1.10.0.tar.gz", hash = "sha256:996c191ad80897d076bdfba80a41994c2b47c68e224c542b48feba42ba00f8bb", size = 55611, upload-time = "2025-12-20T14:08:54.006Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/88/b2/d0896bdcdc8d28a7fc5717c305f1a861c26e18c05047949fb371034d98bd/nodeenv-1.10.0-py2.py3-none-any.whl", hash = "sha256:5bb13e3eed2923615535339b3c620e76779af4cb4c6a90deccc9e36b274d3827", size = 23438, upload-time = "2025-12-20T14:08:52.782Z" },
+]
+
+[[package]]
+name = "noiseprotocol"
+version = "0.3.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cryptography" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/76/17/fcf8a90dcf36fe00b475e395f34d92f42c41379c77b25a16066f63002f95/noiseprotocol-0.3.1.tar.gz", hash = "sha256:b092a871b60f6a8f07f17950dc9f7098c8fe7d715b049bd4c24ee3752b90d645", size = 16890, upload-time = "2020-11-25T19:06:48.938Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9d/e1/76e4694201d67b93a6f1644b2588b4a3d965419fe189416e3496cf415db5/noiseprotocol-0.3.1-py3-none-any.whl", hash = "sha256:2e1a603a38439636cf0ffd8b3e8b12cee27d368a28b41be7dbe568b2abb23111", size = 20546, upload-time = "2020-03-03T18:51:28.095Z" },
 ]
 
 [[package]]
