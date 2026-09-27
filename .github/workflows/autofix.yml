@@ -1,0 +1,11 @@
+name: autofix.ci # must be exactly this: autofix.ci identifies the workflow by name
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  autofix:
+    uses: LedFx/.github/.github/workflows/autofix.yml@a58cdcc28cdd3ee62d3544c2ba5096c814778550 # main
