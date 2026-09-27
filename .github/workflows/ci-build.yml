@@ -48,7 +48,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install build dependencies
         run: |
@@ -105,7 +105,7 @@ jobs:
         run: git config --system core.longpaths true
 
       - name: Check out code from GitHub
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -146,7 +146,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install build dependencies
         run: |
@@ -191,7 +191,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Check out code from GitHub
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install build dependencies
         run: |
@@ -243,7 +243,7 @@ jobs:
     name: Build LedFx Docker Image for ${{ matrix.ARCH }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Set up QEMU (emulation)
         uses: docker/setup-qemu-action@v3
