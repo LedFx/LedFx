@@ -389,6 +389,101 @@ jobs:
           uv pip install ledfx-*."$KIND"
           .venv/bin/ledfx -vv --ci-smoke-test --offline
 
+  docker:
+    name: Docker (${{ matrix.arch }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      ARCH: ${{ matrix.arch }}
+      # push events are only main and v* tags; forks never publish
+      PUBLISH: ${{ github.event_name == 'push' && github.repository == 'LedFx/LedFx' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Docker Hub
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ledfx_docker/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          push: false
+          provenance: false
+          sbom: false
+          tags: ledfx:ci
+          # Release builds never touch a cache: a tag run can read caches written on main.
+          no-cache: ${{ needs.plan.outputs.release == 'true' }}
+          cache-from: ${{ needs.plan.outputs.release != 'true' && format('type=registry,ref={0}:cache-{1}', env.GHCR_IMAGE, matrix.arch) || '' }}
+          cache-to: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && format('type=registry,ref={0}:cache-{1},mode=max', env.GHCR_IMAGE, matrix.arch) || '' }}
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+            IS_RELEASE=${{ needs.plan.outputs.release }}
+      - name: Smoke test
+        run: docker run --rm ledfx:ci --ci-smoke-test -vv --offline
+      - name: Push the tested image
+        if: env.PUBLISH == 'true'
+        run: |
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            for tag in "edge-$ARCH" "edge-$ARCH-$GITHUB_SHA"; do
+              docker tag ledfx:ci "$image:$tag"
+              docker push "$image:$tag"
+            done
+          done
+
+  docker-edge:
+    name: Docker edge manifest
+    needs: [plan, ci-passed]
+    if: github.event_name == 'push' && github.repository == 'LedFx/LedFx'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create edge manifests
+        run: |
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            docker buildx imagetools create -t "$image:edge" -t "$image:edge-$GITHUB_SHA" \
+              "$image:edge-amd64-$GITHUB_SHA" "$image:edge-arm64-$GITHUB_SHA"
+          done
+
   # The one check branch protection requires. Every build/test job belongs in
   # needs; its name must never change.
   ci-passed:
@@ -405,6 +500,7 @@ jobs:
       - smoke-macos
       - package
       - smoke-package
+      - docker
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
