@@ -64,7 +64,7 @@ class RestEndpoint(BaseRegistry):
 
         unsatisfied_args = set(wanted_args) - set(available_args.keys())
         if unsatisfied_args:
-            raise web.HttpBadRequest("")
+            raise web.HTTPBadRequest()
 
         try:
             return await method(
