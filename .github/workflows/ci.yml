@@ -80,9 +80,47 @@ jobs:
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
 
+  # Fast lint gate before any build/test spend. Runs the same prek hook set
+  # contributors see locally (`uv run prek run --all-files`), so CI cannot
+  # drift from the dev experience. autofix.ci runs in parallel and pushes
+  # fixes; that push re-triggers this workflow. A lint failure skips every
+  # code job below (skipped jobs count as passed for the required check).
+  lint:
+    name: Lint (prek)
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+      - run: uv sync --group dev
+      - id: lint
+        run: uv run prek run --all-files
+      - name: Explain the skipped jobs to the author
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" --body "🚫 **Build and test jobs were skipped: linting must pass first.**
+
+          The [Lint (prek)]($RUN) job failed. Most findings are auto-fixed: the [autofix workflow](https://github.com/$REPO/actions/workflows/autofix.yml) pushes a fix commit to this PR and CI re-runs automatically. If no autofix commit appears, the finding has no autofix — open the run log for the exact rule and line, fix it, and push.
+
+          Local check: \`uv run prek run --all-files\`."
+
   test-linux:
     name: Test (Ubuntu, py${{ matrix.python }})
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -119,7 +157,7 @@ jobs:
 
   test-windows:
     name: Test (Windows, py${{ matrix.python }})
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: windows-2022 # pinned until we understand why windows-2025 has audio device issues
     timeout-minutes: 20
@@ -163,7 +201,7 @@ jobs:
 
   test-macos:
     name: Smoke test (macOS arm64, py${{ matrix.python }})
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: macos-latest
     timeout-minutes: 20
@@ -198,7 +236,7 @@ jobs:
 
   frozen-windows:
     name: Frozen build (Windows)
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
@@ -245,7 +283,7 @@ jobs:
 
   frozen-macos:
     name: Frozen build (macOS ${{ matrix.suffix }})
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -295,7 +333,7 @@ jobs:
   # that the build runner happens to have installed.
   smoke-windows:
     name: Smoke test frozen build (Windows)
-    needs: [plan, frozen-windows]
+    needs: [plan, lint, frozen-windows]
     runs-on: windows-latest
     timeout-minutes: 10
     env:
@@ -315,7 +353,7 @@ jobs:
 
   smoke-macos:
     name: Smoke test frozen build (macOS ${{ matrix.suffix }})
-    needs: [plan, frozen-macos]
+    needs: [plan, lint, frozen-macos]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     strategy:
@@ -336,7 +374,7 @@ jobs:
 
   package:
     name: Build Python package
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -363,7 +401,7 @@ jobs:
 
   smoke-package:
     name: Smoke test Python package (${{ matrix.kind }})
-    needs: [plan, package]
+    needs: [plan, lint, package]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     strategy:
@@ -389,7 +427,7 @@ jobs:
 
   docker:
     name: Docker (${{ matrix.arch }})
-    needs: plan
+    needs: [plan, lint]
     if: needs.plan.outputs.code == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -501,6 +539,7 @@ jobs:
     if: always()
     needs:
       - plan
+      - lint
       - test-linux
       - test-windows
       - test-macos
