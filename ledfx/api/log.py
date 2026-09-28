@@ -121,11 +121,11 @@ class LogWebsocket:
                 self.log_append(msg)
                 await self.send(msg)
 
-        except TypeError as e:
+        except TypeError:
             if self._socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: %s", e)  # noqa: TRY401
+                _LOGGER.exception("Unexpected TypeError")
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")
@@ -133,8 +133,8 @@ class LogWebsocket:
         except ConnectionResetError:
             _LOGGER.info("Logging connection reset")
 
-        except Exception as err:
-            _LOGGER.exception("Unexpected Exception: %s", err)  # noqa: TRY401
+        except Exception:
+            _LOGGER.exception("Unexpected Exception")
 
         _LOGGER.info("Stopping log sender")
 
@@ -164,11 +164,11 @@ class LogWebsocket:
                 # ignore any incoming messages
                 pass
 
-        except TypeError as e:
+        except TypeError:
             if socket.closed:
                 _LOGGER.info("Logging connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: %s", e)  # noqa: TRY401
+                _LOGGER.exception("Unexpected TypeError")
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Logging connection cancelled")
@@ -176,8 +176,8 @@ class LogWebsocket:
         except ConnectionResetError:
             _LOGGER.info("Logging connection reset")
 
-        except Exception as err:
-            _LOGGER.exception("Unexpected Exception: %s", err)  # noqa: TRY401
+        except Exception:
+            _LOGGER.exception("Unexpected Exception")
 
         finally:
             remove_listeners()

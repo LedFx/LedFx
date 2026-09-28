@@ -469,10 +469,9 @@ def load_config(config_dir: str) -> dict:
                 try:
                     config = migrate_config(config_json)
                     save_config(config, config_dir)
-                except Exception as e:
+                except Exception:
                     _LOGGER.exception(
-                        "Failed to migrate your config to the new standard :( Your old config is backed up safely. Please let a developer know what happened: %s",
-                        e,  # noqa: TRY401
+                        "Failed to migrate your config to the new standard :( Your old config is backed up safely. Please let a developer know what happened.",
                     )
                     config = {}
                 return CORE_CONFIG_SCHEMA(config)
