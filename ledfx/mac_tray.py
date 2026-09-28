@@ -11,12 +11,12 @@ class _MainThreadCall(Foundation.NSObject):
     """Carry a synchronous callback request to the Cocoa main thread."""
 
     def initWithCallback_(self, callback):
-        self = objc.super(_MainThreadCall, self).init()
-        self.callback = callback
-        self.event = threading.Event()
-        self.result = None
-        self.error = None
-        return self
+        call = objc.super(_MainThreadCall, self).init()
+        call.callback = callback
+        call.event = threading.Event()
+        call.result = None
+        call.error = None
+        return call
 
 
 class _MainThreadDispatcher(Foundation.NSObject):
@@ -25,7 +25,7 @@ class _MainThreadDispatcher(Foundation.NSObject):
     def runCall_(self, call):
         try:
             call.result = call.callback()
-        except BaseException as error:
+        except BaseException as error:  # noqa: BLE001
             call.error = error
         finally:
             call.event.set()
