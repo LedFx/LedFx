@@ -284,9 +284,13 @@ def main():
 
         from PIL import Image
 
+        icon_class = pystray.Icon
+        if sys.platform == "darwin":
+            from ledfx.mac_tray import Icon as icon_class
+
         icon_location = get_icon_path("tray.png")
 
-        icon = pystray.Icon("LedFx", icon=Image.open(icon_location), title="LedFx")
+        icon = icon_class("LedFx", icon=Image.open(icon_location), title="LedFx")
     else:
         icon = None
 
