@@ -62,9 +62,8 @@ jobs:
           gh auth setup-git
           git push --force origin "$BRANCH"
 
-          body=$(printf '%s\n\n%s' \
-            "The weekly Pyrefly check found diagnostics that no longer occur and removed those stale entries from pyrefly_errors.json. This uses --prune-baseline, which never records new diagnostics; new errors still fail the check." \
-            "[Workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)")
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          body="The weekly Pyrefly check found diagnostics that no longer occur and removed those stale entries from pyrefly_errors.json. This uses --prune-baseline, which never records new diagnostics; new errors still fail the check. Workflow run: $run_url"
           pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
           if [ -n "$pr" ]; then
             gh pr edit "$pr" --title "chore: prune stale Pyrefly baseline" --body "$body"
