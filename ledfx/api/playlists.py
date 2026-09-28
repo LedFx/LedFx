@@ -139,7 +139,7 @@ class PlaylistsEndpoint(RestEndpoint):
                 return await self.invalid_request(f"Unknown action: {action}")
 
         except Exception as e:
-            _LOGGER.exception("%s", e)  # noqa: TRY401
+            _LOGGER.exception("Unexpected error")
             return await self.internal_error(str(e))
 
     async def delete(self, request: web.Request) -> web.Response:

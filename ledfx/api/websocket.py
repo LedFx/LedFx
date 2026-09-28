@@ -391,11 +391,11 @@ class WebsocketConnection:
                 if msg_id is not None:
                     self.send_error(msg_id, "Invalid message format.")
 
-        except TypeError as e:
+        except TypeError:
             if socket.closed:
                 _LOGGER.info("Connection closed by client.")
             else:
-                _LOGGER.exception("Unexpected TypeError: %s", e)  # noqa: TRY401
+                _LOGGER.exception("Unexpected TypeError")
 
         except (asyncio.CancelledError, futures.CancelledError):
             _LOGGER.info("Connection cancelled")
@@ -403,8 +403,8 @@ class WebsocketConnection:
         except ConnectionResetError:
             _LOGGER.info("Connection reset")
 
-        except Exception as err:
-            _LOGGER.exception("Unexpected Exception: %s", err)  # noqa: TRY401
+        except Exception:
+            _LOGGER.exception("Unexpected Exception")
 
         finally:
             async with WebsocketConnection.map_lock:
@@ -869,8 +869,8 @@ class WebsocketConnection:
             decoded = pybase64.b64decode(message.get("data"))
         except binascii.Error:
             _LOGGER.info("Incorrect base64 padding.")
-        except Exception as err:
-            _LOGGER.exception("Unexpected Exception in base64 decoding: %s", err)  # noqa: TRY401
+        except Exception:
+            _LOGGER.exception("Unexpected Exception in base64 decoding")
         else:
             fmt = "<%dh" % (len(decoded) // 2)  # noqa: UP031
             data = list(struct.unpack(fmt, decoded))

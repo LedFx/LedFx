@@ -445,8 +445,8 @@ class SendspinAudioStream:
             self._schedule_mono_samples(mono, current_play_time_us, sample_rate)
             self._flac_pending_samples_emitted += num_samples
 
-        except Exception as e:
-            _LOGGER.error("Error in pyFLAC write callback: %s", e, exc_info=True)  # noqa: G201
+        except Exception:
+            _LOGGER.exception("Error in pyFLAC write callback")
 
     def _finish_flac_decoder(self, reason: str) -> None:
         """Finish and discard the pyFLAC decoder if one is active.
@@ -630,8 +630,8 @@ class SendspinAudioStream:
             if chunk is not None:
                 try:
                     self.callback(chunk, len(chunk), None, None)
-                except Exception as e:
-                    _LOGGER.error("Error in LedFx audio callback: %s", e, exc_info=True)  # noqa: G201
+                except Exception:
+                    _LOGGER.exception("Error in LedFx audio callback")
                 # Check immediately for more ready chunks
                 continue
 
@@ -777,11 +777,9 @@ class SendspinAudioStream:
             _LOGGER.info("Sendspin reconnect task cancelled (id=%s)", id(self))
         except Exception as e:
             if self._active:
-                _LOGGER.error(  # noqa: G201
-                    "Sendspin client error (id=%s): %s",
+                _LOGGER.exception(
+                    "Sendspin client error (id=%s)",
                     id(self),
-                    e,
-                    exc_info=True,
                 )
             else:
                 _LOGGER.info(
