@@ -66,6 +66,8 @@ def validate_sendspin_server_url(url: object) -> tuple[bool, str]:
 
     try:
         parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        port = parsed.port
     except Exception:  # noqa: BLE001
         return False, "server_url could not be parsed"
 
@@ -75,14 +77,13 @@ def validate_sendspin_server_url(url: object) -> tuple[bool, str]:
             f"server_url scheme '{parsed.scheme}' is not allowed; must be ws or wss",
         )
 
-    hostname = parsed.hostname
     if not hostname:
         return False, "server_url must contain a non-empty hostname"
 
-    if parsed.port is not None and not (0 <= parsed.port <= 65535):
+    if port is not None and not (0 <= port <= 65535):
         return (
             False,
-            f"server_url port {parsed.port} is out of range (0-65535)",
+            f"server_url port {port} is out of range (0-65535)",
         )
 
     path = parsed.path
@@ -117,7 +118,7 @@ def is_always_on(
         if device_idx >= len(devices):
             return False
         hostapi_index = devices[device_idx].get("hostapi")
-        if not isinstance(hostapi_index, int) or hostapi_index >= len(hostapis):
+        if not isinstance(hostapi_index, int) or not 0 <= hostapi_index < len(hostapis):
             return False
         hostapi_name = hostapis[hostapi_index].get("name")
         return hostapi_name == "SENDSPIN"

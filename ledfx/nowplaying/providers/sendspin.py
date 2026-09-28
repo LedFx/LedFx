@@ -9,30 +9,21 @@ means "cleared". The provider accumulates state across messages.
 """
 
 import logging
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 from ledfx.nowplaying.models import TrackMetadata
+
+if TYPE_CHECKING:
+    from ledfx.nowplaying.service import NowPlayingService
 
 _LOGGER = logging.getLogger(__name__)
 
 SOURCE_ID = "sendspin"
 
 
-class _NowPlayingService(Protocol):
-    """Now Playing operations used to publish Sendspin metadata."""
-
-    def set_metadata(self, source_id: str, metadata: TrackMetadata) -> bool: ...
-
-    def set_artwork_url(self, source_id: str, url: str) -> bool: ...
-
-    def clear_artwork(self, source_id: str) -> None: ...
-
-    def clear(self, source_id: str) -> None: ...
-
-
 class LedFxNowPlaying(Protocol):
     @property
-    def now_playing(self) -> _NowPlayingService | None: ...
+    def now_playing(self) -> "NowPlayingService | None": ...
 
 
 class _ServerState(Protocol):
@@ -40,10 +31,6 @@ class _ServerState(Protocol):
 
     @property
     def metadata(self) -> object: ...
-
-
-class _NotSent:
-    """Marker for metadata fields that were omitted by the server."""
 
 
 class SendspinNowPlayingProvider:
@@ -91,26 +78,15 @@ class SendspinNowPlayingProvider:
             _LOGGER.debug("Ignoring non-metadata server state update")
             return
 
-        # Extract fields: UndefinedField → _NOT_SENT (keep prev), else use value
-        def _val(field: str | None | UndefinedField) -> str | None | _NotSent:
-            if isinstance(field, UndefinedField):
-                return _NotSent()
-            return field
-
-        # Update accumulated state only for fields that were actually sent
-        title = _val(metadata.title)
-        artist = _val(metadata.artist)
-        album = _val(metadata.album)
-        artwork_url = _val(metadata.artwork_url)
-
-        if not isinstance(title, _NotSent):
-            self._title = title
-        if not isinstance(artist, _NotSent):
-            self._artist = artist
-        if not isinstance(album, _NotSent):
-            self._album = album
-        if not isinstance(artwork_url, _NotSent):
-            self._artwork_url = artwork_url
+        # Omitted fields retain their previous value; explicit None clears it.
+        if not isinstance(metadata.title, UndefinedField):
+            self._title = metadata.title
+        if not isinstance(metadata.artist, UndefinedField):
+            self._artist = metadata.artist
+        if not isinstance(metadata.album, UndefinedField):
+            self._album = metadata.album
+        if not isinstance(metadata.artwork_url, UndefinedField):
+            self._artwork_url = metadata.artwork_url
 
         # Build TrackMetadata from accumulated state
         track_metadata = TrackMetadata(

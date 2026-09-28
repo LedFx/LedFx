@@ -7,7 +7,6 @@ receiving audio from a Sendspin server and converting it to LedFx's expected for
 import asyncio
 import heapq
 import logging
-import os
 import threading
 import time
 from collections.abc import Callable, Mapping
@@ -23,6 +22,7 @@ from ledfx.nowplaying.providers.sendspin import (
     SendspinNowPlayingProvider,
 )
 from ledfx.sendspin.config import BUFFER_CAPACITY, MANUFACTURER, PRODUCT_NAME
+from ledfx.sendspin.identity import load_or_create_identity
 
 try:
     import pyflac
@@ -45,7 +45,6 @@ from aiosendspin.noise import (
     FileClientPairingStore,
     Identity,
     InMemoryClientPairingStore,
-    b64url_decode,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -61,7 +60,8 @@ _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 class _LedFxConfig(LedFxNowPlaying, Protocol):
     """LedFx fields needed to persist Sendspin state."""
 
-    config_dir: str
+    @property
+    def config_dir(self) -> str: ...
 
 
 class _FlacDecoder(Protocol):
@@ -424,7 +424,7 @@ class SendspinAudioStream:
 
     def _flac_write_callback(
         self,
-        audio: np.ndarray,
+        audio: NDArray[np.int16] | NDArray[np.int32],
         sample_rate: int,
         num_channels: int,
         num_samples: int,
@@ -507,7 +507,7 @@ class SendspinAudioStream:
         self._flac_pending_samples_emitted = 0
 
     @staticmethod
-    def _unpack_int24(data: bytes) -> np.ndarray:
+    def _unpack_int24(data: bytes) -> NDArray[np.int32]:
         """
         Unpack 24-bit little-endian signed integers.
 
@@ -527,8 +527,17 @@ class SendspinAudioStream:
             | (raw[:, 2].astype(np.int32) << 16)
         )
         # Sign-extend from 24-bit
-        samples = np.where(samples & 0x800000, samples | 0xFF000000, samples)
+        samples = (samples ^ 0x800000) - 0x800000
         return samples.astype(np.int32)
+
+    def _clear_playback_buffer(self) -> int:
+        """Discard queued audio and any partial chunk from the previous stream."""
+        self._leftover = np.array([], dtype=np.float32)
+        self._leftover_ts = 0
+        with self._buffer_lock:
+            discarded = len(self._chunk_buffer)
+            self._chunk_buffer.clear()
+        return discarded
 
     def _stream_start_handler(self, stream_start_msg: StreamStartMessage) -> None:
         """
@@ -551,8 +560,7 @@ class SendspinAudioStream:
 
         # Reset pyFLAC decoder on new stream (format may have changed).
         self._finish_flac_decoder("stream start")
-        self._leftover = np.array([], dtype=np.float32)
-        self._leftover_ts = 0
+        self._clear_playback_buffer()
 
         # Arm the watchdog: we now expect audio chunks to arrive.
         self._expecting_audio = True
@@ -574,11 +582,7 @@ class SendspinAudioStream:
         self._expecting_audio = False
         self._last_audio_chunk_time = None
         # Flush buffered audio so visualisation stops immediately.
-        self._leftover = np.array([], dtype=np.float32)
-        self._leftover_ts = 0
-        with self._buffer_lock:
-            buf_len = len(self._chunk_buffer)
-            self._chunk_buffer.clear()
+        buf_len = self._clear_playback_buffer()
         if buf_len:
             _LOGGER.info(
                 "Playback buffer flushed on stream end (discarded_chunks=%d, id=%s)",
@@ -595,11 +599,7 @@ class SendspinAudioStream:
         seeks/discontinuities, eventually causing decode failures.
         """
         self._finish_flac_decoder("stream clear")
-        self._leftover = np.array([], dtype=np.float32)
-        self._leftover_ts = 0
-        with self._buffer_lock:
-            buf_len = len(self._chunk_buffer)
-            self._chunk_buffer.clear()
+        buf_len = self._clear_playback_buffer()
         _LOGGER.info(
             "Playback buffer cleared (stream/clear, roles=%s, discarded_chunks=%d)",
             roles,
@@ -628,16 +628,11 @@ class SendspinAudioStream:
         if isinstance(progress, UndefinedField) or progress is None:
             return
 
-        playback_speed = getattr(progress, "playback_speed", None)
-        if playback_speed != 0:
+        if progress.playback_speed != 0:
             return
 
         # playback_speed == 0 → paused: flush buffered audio immediately.
-        self._leftover = np.array([], dtype=np.float32)
-        self._leftover_ts = 0
-        with self._buffer_lock:
-            buf_len = len(self._chunk_buffer)
-            self._chunk_buffer.clear()
+        buf_len = self._clear_playback_buffer()
         if buf_len:
             _LOGGER.info(
                 "Playback paused — flushed %d buffered chunks (id=%s)",
@@ -684,8 +679,8 @@ class SendspinAudioStream:
             threading.current_thread().name,
         )
         self._active = True
-        self._stop_event: asyncio.Event | None = None
-        self._reconnect_task: asyncio.Task[None] | None = None
+        self._stop_event = None
+        self._reconnect_task = None
 
         # Start background thread with asyncio event loop
         self._thread = threading.Thread(
@@ -745,35 +740,33 @@ class SendspinAudioStream:
         """
         self.stop()
 
-        if not self._thread or not self._thread.is_alive():
-            self._finish_flac_decoder("close")
-            _LOGGER.info("Sendspin stream closed (thread already gone)")
-            return
+        thread = self._thread
+        if thread is not None and thread.is_alive():
+            # Wait for the thread to exit.  The reconnect_task cancellation
+            # from stop() should cause _run_client → run_until_complete to
+            # finish promptly.
+            thread.join(timeout=7.0)
 
-        # Wait for the thread to exit.  The reconnect_task cancellation
-        # from stop() should cause _run_client → run_until_complete to
-        # finish promptly.
-        self._thread.join(timeout=7.0)
-
-        if self._thread.is_alive():
-            # Thread did not finish — force-stop the loop.
-            _LOGGER.warning(
-                "Sendspin thread did not exit within 7 s; "
-                "force-stopping event loop (id=%s)",
-                id(self),
-            )
-            if self._loop and self._loop.is_running():
-                self._loop.call_soon_threadsafe(self._loop.stop)
-            self._thread.join(timeout=3.0)
-            if self._thread.is_alive():
-                _LOGGER.error(
-                    "Sendspin thread still alive after force-stop (id=%s). "
-                    "Abandoning thread.",
+            if thread.is_alive():
+                # Thread did not finish — force-stop the loop.
+                _LOGGER.warning(
+                    "Sendspin thread did not exit within 7 s; "
+                    "force-stopping event loop (id=%s)",
                     id(self),
                 )
+                if self._loop and self._loop.is_running():
+                    self._loop.call_soon_threadsafe(self._loop.stop)
+                thread.join(timeout=3.0)
+                if thread.is_alive():
+                    _LOGGER.error(
+                        "Sendspin thread still alive after force-stop (id=%s). "
+                        "Abandoning thread.",
+                        id(self),
+                    )
 
         # Clean up pyFLAC decoder once the stream thread has fully stopped.
         self._finish_flac_decoder("close")
+        self._clear_playback_buffer()
 
         # Ensure no stale client/loop references survive.
         self._client = None
@@ -943,34 +936,10 @@ class SendspinAudioStream:
         if self._identity is not None and self._pairing_store is not None:
             return self._identity, self._pairing_store
 
-        config_dir = getattr(self._ledfx, "config_dir", None)
-        if isinstance(config_dir, (str, os.PathLike)) and config_dir:
+        config_dir = self._ledfx.config_dir if self._ledfx is not None else None
+        if config_dir:
             directory = Path(config_dir)
-            directory.mkdir(parents=True, exist_ok=True)
-            identity_path = directory / "sendspin_identity"
-            try:
-                private_key = b64url_decode(
-                    identity_path.read_text(encoding="ascii").strip()
-                )
-            except FileNotFoundError:
-                identity = Identity.generate()
-                try:
-                    descriptor = os.open(
-                        identity_path,
-                        os.O_WRONLY | os.O_CREAT | os.O_EXCL,
-                        0o600,
-                    )
-                except FileExistsError:
-                    private_key = b64url_decode(
-                        identity_path.read_text(encoding="ascii").strip()
-                    )
-                    identity = Identity.from_private_bytes(private_key)
-                else:
-                    with os.fdopen(descriptor, "w", encoding="ascii") as identity_file:
-                        identity_file.write(identity.private_b64u)
-            else:
-                identity = Identity.from_private_bytes(private_key)
-
+            identity = await asyncio.to_thread(load_or_create_identity, directory)
             pairing_store = await FileClientPairingStore.open(
                 directory / "sendspin_pairings.json"
             )
@@ -1064,7 +1033,7 @@ class SendspinAudioStream:
             # keep-alive loop below exits immediately when the server drops.
             _disconnect_event = asyncio.Event()
 
-            def _disconnect_handler():
+            def _disconnect_handler() -> None:
                 _LOGGER.warning(
                     "Sendspin server disconnected (id=%s), triggering reconnect",
                     id(self),
@@ -1128,8 +1097,7 @@ class SendspinAudioStream:
                     pass
             self._scheduler_task = None
 
-            with self._buffer_lock:
-                self._chunk_buffer.clear()
+            self._clear_playback_buffer()
 
             # Disarm the watchdog whenever a connection tears down so that the
             # reconnect delay (backoff sleep) is not mistaken for "no audio".

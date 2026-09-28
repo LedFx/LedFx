@@ -25,7 +25,8 @@ class _AudioController(Protocol):
 class _LedFxWithAudio(Protocol):
     """LedFx state needed to synchronize a configured Sendspin server."""
 
-    audio: _AudioController | None
+    @property
+    def audio(self) -> _AudioController | None: ...
 
 
 def _sendspin_available():
