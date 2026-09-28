@@ -100,7 +100,7 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
-          enable-cache: true
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - run: uv sync --group dev
       - id: lint
         run: uv run prek run --all-files
@@ -113,6 +113,7 @@ jobs:
         with:
           client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
           private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          permission-pull-requests: write # comments only; do not inherit blanket installation permissions
       - name: Explain the skipped jobs to the author
         if: failure() && github.event_name == 'pull_request'
         env:

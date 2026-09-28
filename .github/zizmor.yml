@@ -1,0 +1,8 @@
+# zizmor configuration for LedFx workflows.
+# Threshold: findings below `high` severity are advisory, not gate failures
+# (enforced with --severity=high in the lint gate).
+rules:
+  # The maintainers' choice of release action; zizmor's informational
+  # suggestion to replace it with `gh release` is not this repo's bar.
+  superfluous-actions:
+    disable: true
