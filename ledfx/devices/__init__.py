@@ -795,6 +795,7 @@ class Devices(RegistryLoader):
         Creates a new device.
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
+        resolved_dest: str | None = None
         if "ip_address" in device_config:
             device_config["ip_address"] = clean_ip(device_config["ip_address"])
             device_ip = device_config["ip_address"]
@@ -821,6 +822,8 @@ class Devices(RegistryLoader):
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
+            if resolved_dest is None:
+                raise ValueError("WLED devices require an ip_address")
             wled = WLED(resolved_dest)
             wled_config = await wled.get_config()
 
