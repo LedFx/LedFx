@@ -100,7 +100,7 @@ jobs:
           # The autofix workflow runs per commit; a run for the same head SHA
           # that is queued/in_progress (fix being pushed) or succeeded (fix
           # pushed) means the lint failure is already being resolved.
-          status="$(gh api "repos/$REPO/actions/workflows/autofix.ci.yml/runs?head_sha=$HEAD_SHA&per_page=5" \
+          status="$(gh api "repos/$REPO/actions/workflows/autofix.yml/runs?head_sha=$HEAD_SHA&per_page=5" \
             --jq '[.workflow_runs[] | select(.conclusion == "" or .conclusion == null or .conclusion == "success")] | length')"
           echo "count=$status" >> "$GITHUB_OUTPUT"
           echo "resolved-or-resolving autofix runs: $status"
