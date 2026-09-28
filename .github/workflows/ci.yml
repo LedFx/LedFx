@@ -93,7 +93,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -104,29 +103,9 @@ jobs:
       - run: uv sync --group dev
       - id: lint
         run: uv run prek run --all-files
-      # Comments come from ledfx-automation[bot], not github-actions[bot]:
-      # app-token comments notify subscribers (GITHUB_TOKEN ones are muted),
-      # and the identity carries over to release-please later.
-      - id: bot-token
-        if: failure() && github.event_name == 'pull_request'
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
-          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
-          permission-pull-requests: write # comments only; do not inherit blanket installation permissions
-      - name: Explain the skipped jobs to the author
-        if: failure() && github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
-          PR: ${{ github.event.pull_request.number }}
-          REPO: ${{ github.repository }}
-          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          gh pr comment "$PR" --repo "$REPO" --body "🚫 **Build and test jobs were skipped: linting must pass first.**
-
-          The [Lint (prek)]($RUN) job failed. Most findings are auto-fixed: the [autofix workflow](https://github.com/$REPO/actions/workflows/autofix.yml) pushes a fix commit to this PR and CI re-runs automatically. If no autofix commit appears, the finding has no autofix — open the run log for the exact rule and line, fix it, and push.
-
-          Local check: \`uv run prek run --all-files\`."
+      # Failure notification happens in lint-notify.yml (trusted workflow_run
+      # context): fork PRs get a read-only token here and org secrets are not
+      # injected into this workflow at all, so it stays credential-free.
 
   test-linux:
     name: Test (Ubuntu, py${{ matrix.python }})
