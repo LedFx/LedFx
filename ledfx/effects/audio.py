@@ -3,7 +3,9 @@ import queue
 import threading
 import time
 from collections import deque
+from collections.abc import Callable
 from functools import cache, cached_property, lru_cache
+from typing import ClassVar
 
 import aubio
 import numpy as np
@@ -34,7 +36,7 @@ class AudioInputSource:
     _audio_stream_active = False
     _audio = None
     _stream = None
-    _callbacks = []  # noqa: RUF012
+    _callbacks: ClassVar[list[Callable[[], None]]] = []
     _audioWindowSize = 4
     _processed_audio_sample = None
     _volume = -90
@@ -1165,7 +1167,7 @@ class AudioInputSource:
 
 class AudioAnalysisSource(AudioInputSource):
     # https://aubio.org/doc/latest/pitch_8h.html
-    PITCH_METHODS = [  # noqa: RUF012
+    PITCH_METHODS: ClassVar[list[str]] = [
         "yinfft",
         "yin",
         "yinfast",
@@ -1176,7 +1178,7 @@ class AudioAnalysisSource(AudioInputSource):
         "specacf",
     ]
     # https://aubio.org/doc/latest/specdesc_8h.html
-    ONSET_METHODS = [  # noqa: RUF012
+    ONSET_METHODS: ClassVar[list[str]] = [
         "energy",
         "hfc",
         "complex",
@@ -1211,7 +1213,7 @@ class AudioAnalysisSource(AudioInputSource):
 
     # some frequency constants
     # beat, bass, mids, high
-    freq_max_mels = [  # noqa: RUF012
+    freq_max_mels: ClassVar[list[int]] = [
         100,
         250,
         3000,
@@ -1502,7 +1504,7 @@ class AudioReactiveEffect(Effect):
 
     # this can be used by inheriting classes for power func selection in schema
     # see magnitude or scan effect for examples
-    POWER_FUNCS_MAPPING = {  # noqa: RUF012
+    POWER_FUNCS_MAPPING: ClassVar[dict[str, str]] = {
         "Beat": "beat_power",
         "Bass": "bass_power",
         "Lows (beat+bass)": "lows_power",

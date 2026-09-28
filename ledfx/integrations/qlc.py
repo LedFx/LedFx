@@ -4,6 +4,7 @@ import asyncio
 # import importlib
 # import pkgutil
 import logging
+from typing import ClassVar
 
 import aiohttp
 import voluptuous as vol
@@ -24,7 +25,7 @@ class QLC(Integration):
 
     beta = False
 
-    _widget_types = ["Button", "Slider", "Audio Triggers"]  # noqa: RUF012
+    _widget_types: ClassVar[list[str]] = ["Button", "Slider", "Audio Triggers"]
     NAME = "QLC+"
     DESCRIPTION = "Web Api Integration for Q Light Controller Plus"
 

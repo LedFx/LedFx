@@ -1,4 +1,5 @@
 import random
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -14,7 +15,7 @@ class RandomFlashEffect(TemporalEffect):
 
     NAME = "Random Flash"
     CATEGORY = "Non-Reactive"
-    HIDDEN_KEYS = ["flip", "mirror", "speed"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["flip", "mirror", "speed"]
     # based on fixed speed of 5.0
     RUNS_PER_SEC = 50.0
 

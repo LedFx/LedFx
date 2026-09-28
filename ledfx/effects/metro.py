@@ -1,4 +1,5 @@
 import timeit
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -31,7 +32,7 @@ except ImportError:
 class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["background_brightness", "blur", "mirror"]
     if not bokeh_available or not psutil_available:
         HIDDEN_KEYS.append("capture")
 

@@ -1,4 +1,5 @@
 from enum import IntEnum
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -41,7 +42,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan Multi"
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "input_source",
         "attack",
@@ -49,7 +50,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         "filter",
     ]
 
-    _sources = {  # noqa: RUF012
+    _sources: ClassVar[dict[str, str]] = {
         "Power": "power",
         "Melbank": "melbank",
     }

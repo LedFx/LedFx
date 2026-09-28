@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import numpy as np
 import voluptuous as vol
 
@@ -8,7 +10,7 @@ from ledfx.effects.gradient import GradientEffect
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Bar"
     CATEGORY = "BPM"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

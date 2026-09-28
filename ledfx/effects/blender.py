@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -88,7 +89,11 @@ STRETCH_FUNCS_MAPPING = {
 class Blender(AudioReactiveEffect):
     NAME = "Blender"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = [
+        "background_color",
+        "background_brightness",
+        "blur",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {

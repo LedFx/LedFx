@@ -1,5 +1,6 @@
 import logging
 import os
+from typing import ClassVar
 
 import voluptuous as vol
 from PIL import Image
@@ -16,7 +17,7 @@ class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
     # image spin supports alpha so allow background color
-    HIDDEN_KEYS = ["speed", "mirror", "flip", "blur", "album_art"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["speed", "mirror", "flip", "blur", "album_art"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
     CONFIG_SCHEMA = vol.Schema(

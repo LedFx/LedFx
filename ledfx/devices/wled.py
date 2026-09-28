@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import voluptuous as vol
 
@@ -43,7 +44,7 @@ class WLEDDevice(NetworkedDevice):
         }
     )
 
-    SYNC_MODES = {  # noqa: RUF012
+    SYNC_MODES: ClassVar[dict[str, type[NetworkedDevice]]] = {
         "UDP": UDPRealtimeDevice,
         "DDP": DDPDevice,
         "E131": E131Device,

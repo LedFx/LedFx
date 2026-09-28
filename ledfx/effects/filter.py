@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -14,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class Filter(AudioReactiveEffect, GradientEffect):
     NAME = "Filter"
     CATEGORY = "Simple"
-    HIDDEN_KEYS = [  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = [
         "background_color",
         "background_brightness",
         "blur",

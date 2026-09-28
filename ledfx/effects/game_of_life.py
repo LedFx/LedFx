@@ -2,6 +2,7 @@ import logging
 import random
 from collections import deque
 from enum import Enum
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -34,7 +35,7 @@ class GameOfLifeVisualiser(Twod):
         "frequency_range",
         "impulse_decay",
     ]
-    HEALTH_CHECK_OPTIONS_VALUES = {  # noqa: RUF012
+    HEALTH_CHECK_OPTIONS_VALUES: ClassVar[dict[str, dict[str, bool]]] = {
         HealthOptions.ALL.value: {
             HealthOptions.DEAD.value: True,
             HealthOptions.OSCILLATING.value: True,

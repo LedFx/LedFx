@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import ClassVar
 
 import numpy as np
 import psutil
@@ -20,7 +21,12 @@ _LOGGER = logging.getLogger(__name__)
 class PixelsEffect(TemporalEffect):
     NAME = "Pixels"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = [
+        "speed",
+        "background_brightness",
+        "blur",
+        "mirror",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {

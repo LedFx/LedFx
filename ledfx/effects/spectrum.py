@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import numpy as np
 import voluptuous as vol
 
@@ -19,7 +21,7 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         }
     )
 
-    rgb_mixes = [  # noqa: RUF012
+    rgb_mixes: ClassVar[list[list[int]]] = [
         [0, 1, 2],
         [0, 2, 1],
         [1, 0, 2],

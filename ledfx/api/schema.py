@@ -1,5 +1,6 @@
 import logging
 from json import JSONDecodeError
+from typing import ClassVar
 
 from aiohttp import web
 
@@ -15,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class SchemaEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/schema"
 
-    VALID_SCHEMAS = {  # noqa: RUF012
+    VALID_SCHEMAS: ClassVar[set[str]] = {
         "devices",
         "effects",
         "integrations",

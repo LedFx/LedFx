@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
@@ -5,7 +7,7 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
-    MAPPINGS = {  # noqa: RUF012
+    MAPPINGS: ClassVar[dict[str, int]] = {
         "1/1 (.,. )": 1,
         "1/2 (.-. )": 2,
         "1/4 (.o. )": 4,
@@ -16,7 +18,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     NAME = "BPM Strobe"
     CATEGORY = "BPM"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

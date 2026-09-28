@@ -14,6 +14,7 @@ import array
 import logging
 import time
 import timeit
+from typing import ClassVar
 
 import rtmidi
 from rtmidi import SystemError as RtmidiSystemError
@@ -26,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class RtmidiWrap:
-    apis = {  # noqa: RUF012
+    apis: ClassVar[dict[int, str]] = {
         rtmidi.API_MACOSX_CORE: "macOS (OS X) CoreMIDI",
         rtmidi.API_LINUX_ALSA: "Linux ALSA",
         rtmidi.API_UNIX_JACK: "Jack Client",
@@ -175,8 +176,8 @@ class RtmidiWrap:
 # ==========================================================================
 class LaunchpadBase:
     # these are defaults that need to be overridden in inheriting classes
-    layout = {"pixels": 0, "rows": 0}  # noqa: RUF012
-    segments = []  # noqa: RUF012
+    layout: ClassVar[dict[str, int]] = {"pixels": 0, "rows": 0}
+    segments: ClassVar[list[tuple[str, str, list[list[int]], int]]] = []
     # end defaults
 
     def __init__(self):
@@ -448,7 +449,13 @@ class LaunchpadPro(LaunchpadBase):
     #        +---+---+---+---+---+---+---+---+
     #
 
-    COLORS = {"black": 0, "off": 0, "white": 3, "red": 5, "green": 17}  # noqa: RUF012
+    COLORS: ClassVar[dict[str, int]] = {
+        "black": 0,
+        "off": 0,
+        "white": 3,
+        "red": 5,
+        "green": 17,
+    }
 
     # -------------------------------------------------------------------------------------
     # -- Opens one of the attached Launchpad MIDI devices.
@@ -673,8 +680,8 @@ class LaunchpadMk2(LaunchpadPro):
     # Mk2 programmers manual
     # https://fael-downloads-prod.focusrite.com/customer/prod/s3fs-public/downloads/Launchpad%20MK2%20Programmers%20Reference%20Manual%20v1.03.pdf
 
-    layout = {"pixels": 81, "rows": 9}  # noqa: RUF012
-    segments = [  # noqa: RUF012
+    layout: ClassVar[dict[str, int]] = {"pixels": 81, "rows": 9}
+    segments: ClassVar[list[tuple[str, str, list[list[int]], int]]] = [
         ("TopBar", "mdi:table-row", [[72, 79]], 1),
         (
             "RightBar",
@@ -1286,8 +1293,8 @@ class LaunchpadLPX(LaunchpadPro):
     # -- So the old strategy of simply looking for "LPX" will not work.
     # -- Workaround: If the user doesn't request a specific name, we'll just
     # -- search for "Launchpad X" and "LPX"...
-    layout = {"pixels": 81, "rows": 9}  # noqa: RUF012
-    segments = [  # noqa: RUF012
+    layout: ClassVar[dict[str, int]] = {"pixels": 81, "rows": 9}
+    segments: ClassVar[list[tuple[str, str, list[list[int]], int]]] = [
         ("TopBar", "mdi:table-row", [[72, 79]], 1),
         ("Logo", "launchpad", [[80, 80]], 1),
         (
@@ -1952,8 +1959,8 @@ class LaunchpadProMk3(LaunchpadPro):
 # https://www.bhphotovideo.com/lit_files/88417.pdf
 # ==========================================================================
 class LaunchpadS(LaunchpadPro):
-    layout = {"pixels": 81, "rows": 9}  # noqa: RUF012
-    segments = [  # noqa: RUF012
+    layout: ClassVar[dict[str, int]] = {"pixels": 81, "rows": 9}
+    segments: ClassVar[list[tuple[str, str, list[list[int]], int]]] = [
         ("TopBar", "mdi:table-row", [[72, 79]], 1),
         (
             "RightBar",
@@ -1990,7 +1997,7 @@ class LaunchpadS(LaunchpadPro):
     # this maps pixels from physical bottom left to launchpad references
     # as it is explicit per pixel
     # fmt: off
-    pixel_map = [112, 113, 114, 115, 116, 117, 118, 119, 120,  # noqa: RUF012
+    pixel_map: ClassVar[list[int]] = [112, 113, 114, 115, 116, 117, 118, 119, 120,
                  96, 97, 98, 99, 100, 101, 102, 103, 104,
                  80, 81, 82, 83, 84, 85, 86, 87, 88,
                  64, 65, 66, 67, 68, 69, 70, 71, 72,
@@ -2010,7 +2017,7 @@ class LaunchpadS(LaunchpadPro):
     # then the eight mode buttons.
 
     # fmt: off
-    pixel_map2 = [63, 64, 65, 66, 67, 68, 69, 70,  # noqa: RUF012
+    pixel_map2: ClassVar[list[int]] = [63, 64, 65, 66, 67, 68, 69, 70,
                   54, 55, 56, 57, 58, 59, 60, 61,
                   45, 46, 47, 48, 49, 50, 51, 52,
                   36, 37, 38, 39, 40, 41, 42, 43,

@@ -1,5 +1,6 @@
 import queue
 import time
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -12,7 +13,7 @@ from ledfx.effects.gradient import GradientEffect
 class Strobe(AudioReactiveEffect, GradientEffect):
     NAME = "Strobe"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

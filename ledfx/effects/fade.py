@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import numpy as np
 import voluptuous as vol
 
@@ -12,7 +14,7 @@ class FadeEffect(TemporalEffect, GradientEffect):
 
     NAME = "Fade"
     CATEGORY = "Non-Reactive"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {
