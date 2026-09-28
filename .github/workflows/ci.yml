@@ -420,8 +420,11 @@ jobs:
     if: needs.plan.outputs.code == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
-    # production holds the Docker Hub credentials; GHCR uses the job token
-    environment: production
+    # NOTE: deliberately no environment here. This job runs on every PR;
+    # an environment with protection rules (production has required
+    # reviewers + a branch policy) would block or reject PR builds. The
+    # Docker Hub login step is gated on PUBLISH, so fork PRs never touch
+    # the credentials.
     permissions:
       contents: read
       packages: write  # pushes the built image to GHCR

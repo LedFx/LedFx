@@ -18,12 +18,13 @@ rules:
     ignore:
       - lint-notify.yml
   secrets-outside-env:
-    # Docker Hub creds in ci.yml's docker-edge job stay job-level: an
-    # environment with required reviewers would put an approval wall in
-    # front of every main-branch push (the docker build job uses the
-    # production environment instead).
-    # AUTOMATION_APP_* in lint-notify.yml is a comment-only app token
-    # minted per run; there is no environment worth gating it behind.
+    # Deliberate, not an oversight:
+    # - ci.yml (docker / docker-edge): these jobs run on every PR, and any
+    #   environment with protection rules (production has required reviewers
+    #   plus a branch policy) would block or reject those builds. The Hub
+    #   login step is gated on PUBLISH, so fork PRs never touch the creds.
+    # - lint-notify.yml: AUTOMATION_APP_* is a comment-only app token minted
+    #   per run; there is no environment worth gating a notification behind.
     ignore:
       - ci.yml
       - lint-notify.yml
