@@ -34,7 +34,7 @@ class GameOfLifeVisualiser(Twod):
         "frequency_range",
         "impulse_decay",
     ]
-    HEALTH_CHECK_OPTIONS_VALUES = {
+    HEALTH_CHECK_OPTIONS_VALUES = {  # noqa: RUF012
         HealthOptions.ALL.value: {
             HealthOptions.DEAD.value: True,
             HealthOptions.OSCILLATING.value: True,
@@ -134,9 +134,7 @@ class GameOfLifeVisualiser(Twod):
             self.check_health = True
         else:
             self.check_health = False
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.decay = config["impulse_decay"]
         self.impulse_filter = self.create_filter(
             alpha_decay=self.decay, alpha_rise=0.99
@@ -156,9 +154,7 @@ class GameOfLifeVisualiser(Twod):
             self.inject = False
 
         # Pre-allocate image array to reuse across frames (avoid creating new arrays each frame)
-        self.img_array = np.zeros(
-            (self.r_height, self.r_width, 3), dtype=np.uint8
-        )
+        self.img_array = np.zeros((self.r_height, self.r_width, 3), dtype=np.uint8)
         # Pre-allocate history stack array to avoid creating new arrays every frame
         self.game._history_stack = np.zeros(
             (self.history, self.r_height, self.r_width), dtype=bool
@@ -176,17 +172,14 @@ class GameOfLifeVisualiser(Twod):
         super().deactivate()
 
     def audio_data_updated(self, data):
-        if self.inject and data.volume_beat_now():
-            if self.game:
-                self.game.add_random_entity()
+        if self.inject and data.volume_beat_now() and self.game:
+            self.game.add_random_entity()
 
         # if decay is set to minimum, then just run generations at full rate
         if self.decay == 0.01:
             self.impulse = 1.0
         else:
-            self.impulse = self.impulse_filter.update(
-                getattr(data, self.power_func)()
-            )
+            self.impulse = self.impulse_filter.update(getattr(data, self.power_func)())
 
     def draw(self):
         if self.test:
@@ -208,8 +201,7 @@ class GameOfLifeVisualiser(Twod):
         """
         if (
             self.check_health
-            and current_time - self.last_health_check
-            >= self.health_check_interval
+            and current_time - self.last_health_check >= self.health_check_interval
         ):
             if self.health_check_options[HealthOptions.DEAD.value]:
                 self.game.check_board_life()
@@ -254,9 +246,7 @@ class GameOfLifeVisualiser(Twod):
 
         # Map durations to colors using vectorized operations
         for duration in range(len(self.live_colors)):
-            alive_mask = np.logical_and(
-                current_board, alive_durations == duration
-            )
+            alive_mask = np.logical_and(current_board, alive_durations == duration)
             self.img_array[alive_mask] = self.live_colors[duration]
 
         for duration in range(len(self.dead_colors)):
@@ -265,9 +255,7 @@ class GameOfLifeVisualiser(Twod):
             if duration == 5:
                 continue
 
-            dead_mask = np.logical_and(
-                ~current_board, dead_durations == duration
-            )
+            dead_mask = np.logical_and(~current_board, dead_durations == duration)
             self.img_array[dead_mask] = self.dead_colors[duration]
 
         # Clear old PIL Image reference before creating new one to help GC
@@ -405,9 +393,7 @@ class GameOfLife:
         rows, cols = self.board_size
         start_row = np.random.randint(0, rows - 3)
         start_col = np.random.randint(0, cols - 3)
-        self.board[start_row : start_row + 3, start_col : start_col + 3] = (
-            glider
-        )
+        self.board[start_row : start_row + 3, start_col : start_col + 3] = glider
         _LOGGER.debug("Added glider at: %sx%s", start_row, start_col)
 
     def add_blinker(self):
@@ -436,15 +422,11 @@ class GameOfLife:
         """
         Generates a beacon somewhere on the board
         """
-        beacon = np.array(
-            [[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]]
-        )
+        beacon = np.array([[1, 1, 0, 0], [1, 1, 0, 0], [0, 0, 1, 1], [0, 0, 1, 1]])
         rows, cols = self.board_size
         start_row = np.random.randint(0, rows - 4)
         start_col = np.random.randint(0, cols - 4)
-        self.board[start_row : start_row + 4, start_col : start_col + 4] = (
-            beacon
-        )
+        self.board[start_row : start_row + 4, start_col : start_col + 4] = beacon
         _LOGGER.debug("Added beacon at: %sx%s", start_row, start_col)
 
     def add_random_entity(self):

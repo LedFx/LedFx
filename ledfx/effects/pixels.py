@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger(__name__)
 class PixelsEffect(TemporalEffect):
     NAME = "Pixels"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS = ["speed", "background_brightness", "blur", "mirror"]  # noqa: RUF012
 
     CONFIG_SCHEMA = vol.Schema(
         {

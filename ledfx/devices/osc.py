@@ -88,7 +88,7 @@ class OSCServerDevice(NetworkedDevice):
             return
 
         if data.size != self._config["pixel_count"] * 3:
-            raise Exception(
+            raise Exception(  # noqa: TRY002
                 f"Invalid buffer size. {data.size} != {self._config['pixel_count'] * 3}"
             )
 
@@ -159,8 +159,6 @@ class OSCServerDevice(NetworkedDevice):
 
     def __generate_path(self, path=None, address=None):
         path = self._config["path"] if path is None else path
-        address = (
-            self._config["starting_address"] if address is None else address
-        )
+        address = self._config["starting_address"] if address is None else address
 
         return path.format(address=address)

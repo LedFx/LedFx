@@ -55,14 +55,10 @@ class EffectsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         # Protect from DummyEffect
-        if virtual.active_effect and not isinstance(
-            virtual.active_effect, DummyEffect
-        ):
+        if virtual.active_effect and not isinstance(virtual.active_effect, DummyEffect):
             response = {
                 "effect": {
                     "config": virtual.active_effect.config,
@@ -88,9 +84,7 @@ class EffectsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         if not virtual.active_effect:
             return await self.invalid_request(
@@ -114,7 +108,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             schema = effect.schema().schema
-            for setting in schema.keys():
+            for setting in schema:
                 if setting in ignore_settings:
                     continue
                 # Booleans
@@ -148,9 +142,7 @@ class EffectsEndpoint(RestEndpoint):
                 f"Unable to set effect: Virtual {virtual_id} being streamed to"
             )
             _LOGGER.warning(error_message)
-            return await self.invalid_request(
-                error_message, "error", resp_code=409
-            )
+            return await self.invalid_request(error_message, "error", resp_code=409)
 
         # See if virtual's active effect type matches this effect type,
         # if so update the effect config
@@ -158,19 +150,14 @@ class EffectsEndpoint(RestEndpoint):
 
         try:
             # handling an effect update. nested if else and repeated code bleh. ain't a looker ;)
-            if (
-                virtual.active_effect
-                and virtual.active_effect.type == effect_type
-            ):
+            if virtual.active_effect and virtual.active_effect.type == effect_type:
                 # substring search to match any key of color
                 # this handles special cases where we want to update an effect and also trigger
                 # a transition by creating a new effect.
                 # add color_blend and set to False in your effect to prevent effect recreation on color change
                 # leave as a switch or add to HIDDEN_KEYS
-                if virtual.active_effect.config.get(
-                    "color_blend", True
-                ) and next(
-                    (key for key in effect_config.keys() if "color" in key),
+                if virtual.active_effect.config.get("color_blend", True) and next(
+                    (key for key in effect_config if "color" in key),
                     None,
                 ):
                     effect = self._ledfx.effects.create(
@@ -226,9 +213,7 @@ class EffectsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -255,7 +240,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             schema = effect.schema().schema
-            for setting in schema.keys():
+            for setting in schema:
                 if setting in ignore_settings:
                     continue
                 # Booleans
@@ -290,18 +275,16 @@ class EffectsEndpoint(RestEndpoint):
         fallback = process_fallback(data.get("fallback", None))
 
         if fallback is not None and virtual.streaming:
-            error_message = f"Unable to set effect: Virtual {virtual_id} is being streamed to"
-            _LOGGER.warning(error_message)
-            return await self.invalid_request(
-                error_message, "error", resp_code=409
+            error_message = (
+                f"Unable to set effect: Virtual {virtual_id} is being streamed to"
             )
+            _LOGGER.warning(error_message)
+            return await self.invalid_request(error_message, "error", resp_code=409)
 
         try:
             virtual.set_effect(effect, fallback=fallback)
         except (ValueError, RuntimeError) as msg:
-            error_message = (
-                f"Unable to set effect {effect} on {virtual_id}: {msg}"
-            )
+            error_message = f"Unable to set effect {effect} on {virtual_id}: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
@@ -332,9 +315,7 @@ class EffectsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         virtual.clear_effect()
 

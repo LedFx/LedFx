@@ -23,6 +23,7 @@ class Water(AudioReactiveEffect, HSVEffect):
 
     NAME = "Water"
     CATEGORY = "Atmospheric"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -100,9 +101,7 @@ class Water(AudioReactiveEffect, HSVEffect):
         if self.drops_queue is None:
             return
 
-        intensities = np.fromiter(
-            (i.max() ** 2 for i in self.melbank_thirds()), float
-        )
+        intensities = np.fromiter((i.max() ** 2 for i in self.melbank_thirds()), float)
         np.clip(intensities, 0, 1, out=intensities)
 
         # Bass emitters stay at start, end, and middle.
@@ -115,12 +114,10 @@ class Water(AudioReactiveEffect, HSVEffect):
         )
 
         # Emit drops and move the emitter
-        for i in range(0, len(self._mids_emitters)):
+        for i in range(len(self._mids_emitters)):
             mid_pos, mid_speed = self._mids_emitters[i]
             pos = 1 + int(mid_pos * (self.pixel_count - 2))
-            self.drops_queue.put(
-                (pos, intensities[1] * self._config["mids_size"])
-            )
+            self.drops_queue.put((pos, intensities[1] * self._config["mids_size"]))
             mid_pos += 0.0002 * mid_speed * self._config["speed"]
             if mid_pos < 0.0:
                 mid_pos += 1.0
@@ -128,12 +125,10 @@ class Water(AudioReactiveEffect, HSVEffect):
                 mid_pos -= 1.0
             self._mids_emitters[i] = (mid_pos, mid_speed)
 
-        for i in range(0, len(self._high_emitters)):
+        for i in range(len(self._high_emitters)):
             high_pos, high_speed = self._high_emitters[i]
             pos = 1 + int(high_pos * (self.pixel_count - 2))
-            self.drops_queue.put(
-                (pos, intensities[2] * self._config["high_size"])
-            )
+            self.drops_queue.put((pos, intensities[2] * self._config["high_size"]))
             high_pos += 0.0002 * high_speed * self._config["speed"]
             if high_pos < 0.0:
                 high_pos += 1.0
@@ -178,12 +173,12 @@ class Water(AudioReactiveEffect, HSVEffect):
         np.clip(self.hsv_array[:, 2], 0.0, 1.0, out=self.hsv_array[:, 2])
 
     def _create_drop(self, position, height):
-        self._buffer[0][position] = self._buffer[0][position - 1] = (
-            self._buffer[0][position + 1]
-        ) = height
-        self._buffer[1][position] = self._buffer[1][position - 1] = (
-            self._buffer[1][position + 1]
-        ) = height
+        self._buffer[0][position] = self._buffer[0][position - 1] = self._buffer[0][
+            position + 1
+        ] = height
+        self._buffer[1][position] = self._buffer[1][position - 1] = self._buffer[1][
+            position + 1
+        ] = height
 
     def _do_ripple(self, buf, buf_idx, damp_factor):
         """Apply ripple algorithm to the given buffer

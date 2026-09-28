@@ -45,7 +45,6 @@ class Oneshot(ABC):
 
 
 class Flash(Oneshot):
-
     def __init__(self, color, ramp, hold, fade, brightness):
         """
         Force all pixels in virtual to color over a time envelope defined in ms.

@@ -1,5 +1,7 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm@sha256:36e32fef1746d2e82b80f59c0a9a72ba0d96244cb55a80107d7f918c08954454 AS build
-# Pin to a specific version of uv
+# Pin to a specific version of uv. The python3.12-bookworm image above stopped
+# getting uv updates at 0.9.x, which can't read the current uv.lock.
+COPY --from=ghcr.io/astral-sh/uv:0.12.13@sha256:b485bd65cc2cf1c9a93b3554012c9c3778cf7b1b5fd3d3096ce9e1226c97e1e6 /uv /uvx /usr/local/bin/
 
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=0
 ARG TARGETARCH

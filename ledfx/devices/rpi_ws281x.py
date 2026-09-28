@@ -45,7 +45,7 @@ class RPI_WS281X(DeviceWrapper):
                 "gpio_pin",
                 description="Raspberry Pi GPIO pin your LEDs are connected to",
                 default=10,
-            ): vol.In(list([10, 12, 13, 18, 21])),
+            ): vol.In([10, 12, 13, 18, 21]),
             vol.Optional(
                 "color_order",
                 description="RGB data order mode, supported for physical hardware that just doesn't play by the rules",
@@ -82,9 +82,7 @@ class RPI_WS281X(DeviceWrapper):
 
     def activate(self):
         if not rpi_supported:
-            _LOGGER.warning(
-                "Unable to load ws281x module - are you on a Raspberry Pi?"
-            )
+            _LOGGER.warning("Unable to load ws281x module - are you on a Raspberry Pi?")
             self.set_offline()
             return
 

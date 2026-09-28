@@ -101,9 +101,7 @@ class TestPathResolution:
 
     def test_valid_simple_path(self, temp_config_dir):
         """Test that valid simple relative path resolves successfully."""
-        is_valid, abs_path, error = resolve_safe_asset_path(
-            temp_config_dir, "icon.png"
-        )
+        is_valid, abs_path, error = resolve_safe_asset_path(temp_config_dir, "icon.png")
         assert is_valid is True
         assert error is None
         assert abs_path is not None
@@ -139,9 +137,7 @@ class TestPathResolution:
 
     def test_empty_path_rejected(self, temp_config_dir):
         """Test that empty path is rejected."""
-        is_valid, abs_path, error = resolve_safe_asset_path(
-            temp_config_dir, ""
-        )
+        is_valid, abs_path, error = resolve_safe_asset_path(temp_config_dir, "")
         assert is_valid is False
         assert abs_path is None
         assert "Empty path" in error
@@ -169,9 +165,9 @@ class TestPathResolution:
         if is_valid:
             # If accepted (Unix), verify it's within assets directory
             assets_dir = get_assets_directory(temp_config_dir)
-            assert abs_path.startswith(
-                assets_dir
-            ), "Path must stay within assets directory"
+            assert abs_path.startswith(assets_dir), (
+                "Path must stay within assets directory"
+            )
         else:
             # If rejected (Windows), verify proper error
             assert abs_path is None
@@ -189,7 +185,7 @@ class TestPathResolution:
 
     def test_path_traversal_with_valid_prefix_rejected(self, temp_config_dir):
         """Test that path traversal is rejected even with valid-looking prefix."""
-        is_valid, abs_path, error = resolve_safe_asset_path(
+        is_valid, abs_path, error = resolve_safe_asset_path(  # noqa: RUF059
             temp_config_dir, "images/../../secrets.txt"
         )
         assert is_valid is False
@@ -219,7 +215,7 @@ class TestPathResolution:
 
     def test_whitespace_stripped(self, temp_config_dir):
         """Test that whitespace is stripped from paths."""
-        is_valid, abs_path, error = resolve_safe_asset_path(
+        is_valid, abs_path, error = resolve_safe_asset_path(  # noqa: RUF059
             temp_config_dir, "  icon.png  "
         )
         assert is_valid is True
@@ -287,9 +283,7 @@ class TestContentValidation:
 
     def test_valid_png_content(self, sample_png_data):
         """Test that valid PNG content passes validation."""
-        is_valid, error, image = validate_asset_content(
-            sample_png_data, "test.png"
-        )
+        is_valid, error, image = validate_asset_content(sample_png_data, "test.png")
         assert is_valid is True
         assert error is None
         assert image is not None
@@ -298,9 +292,7 @@ class TestContentValidation:
 
     def test_valid_jpeg_content(self, sample_jpeg_data):
         """Test that valid JPEG content passes validation."""
-        is_valid, error, image = validate_asset_content(
-            sample_jpeg_data, "test.jpg"
-        )
+        is_valid, error, image = validate_asset_content(sample_jpeg_data, "test.jpg")
         assert is_valid is True
         assert error is None
         assert image is not None
@@ -309,9 +301,7 @@ class TestContentValidation:
 
     def test_valid_gif_content(self, sample_gif_data):
         """Test that valid GIF content passes validation."""
-        is_valid, error, image = validate_asset_content(
-            sample_gif_data, "test.gif"
-        )
+        is_valid, error, image = validate_asset_content(sample_gif_data, "test.gif")
         assert is_valid is True
         assert error is None
         assert image is not None
@@ -320,9 +310,7 @@ class TestContentValidation:
 
     def test_valid_webp_content(self, sample_webp_data):
         """Test that valid WEBP content passes validation."""
-        is_valid, error, image = validate_asset_content(
-            sample_webp_data, "test.webp"
-        )
+        is_valid, error, image = validate_asset_content(sample_webp_data, "test.webp")
         assert is_valid is True
         assert error is None
         assert image is not None
@@ -341,9 +329,7 @@ class TestContentValidation:
     def test_extension_mismatch_rejected(self, sample_png_data):
         """Test that extension mismatch is detected."""
         # PNG data but .jpg extension
-        is_valid, error, image = validate_asset_content(
-            sample_png_data, "mismatch.jpg"
-        )
+        is_valid, error, image = validate_asset_content(sample_png_data, "mismatch.jpg")
         assert is_valid is False
         assert error is not None
         assert "mismatch" in error.lower()
@@ -353,9 +339,7 @@ class TestContentValidation:
         """Test that corrupted image data is rejected."""
         # Truncated PNG data
         corrupted_data = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"
-        is_valid, error, image = validate_asset_content(
-            corrupted_data, "corrupt.png"
-        )
+        is_valid, error, image = validate_asset_content(corrupted_data, "corrupt.png")
         assert is_valid is False
         assert error is not None
         assert image is None
@@ -434,11 +418,9 @@ class TestSaveAsset:
         assert os.path.exists(abs_path)
         assert "buttons" in abs_path
 
-    def test_save_creates_parent_directories(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_save_creates_parent_directories(self, temp_config_dir, sample_png_data):
         """Test that saving creates parent directories automatically."""
-        success, abs_path, error = save_asset(
+        success, abs_path, error = save_asset(  # noqa: RUF059
             temp_config_dir,
             "deep/nested/path/image.png",
             sample_png_data,
@@ -448,14 +430,10 @@ class TestSaveAsset:
         assert os.path.exists(abs_path)
         assert os.path.exists(os.path.dirname(abs_path))
 
-    def test_save_overwrite_rejected_by_default(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_save_overwrite_rejected_by_default(self, temp_config_dir, sample_png_data):
         """Test that overwriting existing file is rejected by default."""
         # Save once
-        success1, _, _ = save_asset(
-            temp_config_dir, "icon.png", sample_png_data
-        )
+        success1, _, _ = save_asset(temp_config_dir, "icon.png", sample_png_data)
         assert success1 is True
 
         # Try to save again without allow_overwrite
@@ -492,9 +470,7 @@ class TestSaveAsset:
         with open(abs_path, "rb") as f:
             assert f.read() == new_data
 
-    def test_save_invalid_extension_rejected(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_save_invalid_extension_rejected(self, temp_config_dir, sample_png_data):
         """Test that invalid extension is rejected."""
         success, abs_path, error = save_asset(
             temp_config_dir, "file.txt", sample_png_data
@@ -503,9 +479,7 @@ class TestSaveAsset:
         assert abs_path is None
         assert "not allowed" in error.lower()
 
-    def test_save_path_traversal_rejected(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_save_path_traversal_rejected(self, temp_config_dir, sample_png_data):
         """Test that path traversal is rejected during save."""
         success, abs_path, error = save_asset(
             temp_config_dir, "../../../etc/passwd", sample_png_data
@@ -517,9 +491,7 @@ class TestSaveAsset:
     def test_save_fake_image_rejected(self, temp_config_dir):
         """Test that fake image content is rejected."""
         fake_data = b"This is not an image"
-        success, abs_path, error = save_asset(
-            temp_config_dir, "fake.png", fake_data
-        )
+        success, abs_path, error = save_asset(temp_config_dir, "fake.png", fake_data)
         assert success is False
         assert abs_path is None
         assert "not a valid image" in error.lower()
@@ -541,16 +513,14 @@ class TestSaveAsset:
         assert abs_path is None
         assert "too large" in error.lower()
 
-    def test_atomic_write_uses_temp_file(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_atomic_write_uses_temp_file(self, temp_config_dir, sample_png_data):
         """Test that save uses atomic write (temp file pattern)."""
         # This is harder to test directly, but we can verify the final result
         # and check that no .tmp files are left behind
         assets_dir = get_assets_directory(temp_config_dir)
         ensure_assets_directory(temp_config_dir)
 
-        success, abs_path, error = save_asset(
+        success, abs_path, error = save_asset(  # noqa: RUF059
             temp_config_dir, "icon.png", sample_png_data
         )
 
@@ -597,14 +567,10 @@ class TestDeleteAsset:
         assert error is not None
         assert "not found" in error.lower()
 
-    def test_delete_cleans_empty_directories(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_delete_cleans_empty_directories(self, temp_config_dir, sample_png_data):
         """Test that deleting asset cleans up empty parent directories."""
         # Save asset in nested path
-        save_asset(
-            temp_config_dir, "deep/nested/path/image.png", sample_png_data
-        )
+        save_asset(temp_config_dir, "deep/nested/path/image.png", sample_png_data)
 
         # Delete the asset
         delete_asset(temp_config_dir, "deep/nested/path/image.png")
@@ -665,9 +631,7 @@ class TestListAssets:
         """Test listing nested assets."""
         save_asset(temp_config_dir, "icon.png", sample_png_data)
         save_asset(temp_config_dir, "buttons/play.png", sample_png_data)
-        save_asset(
-            temp_config_dir, "effects/fire/texture.jpg", sample_jpeg_data
-        )
+        save_asset(temp_config_dir, "effects/fire/texture.jpg", sample_jpeg_data)
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 3
@@ -720,9 +684,7 @@ class TestListAssets:
         assert ".DS_Store" not in paths
         assert "Thumbs.db" not in paths
 
-    def test_list_ignores_non_image_files(
-        self, temp_config_dir, sample_png_data
-    ):
+    def test_list_ignores_non_image_files(self, temp_config_dir, sample_png_data):
         """Test that non-image files are ignored in listing."""
         assets_dir = get_assets_directory(temp_config_dir)
         ensure_assets_directory(temp_config_dir)
@@ -753,9 +715,7 @@ class TestListAssets:
 
     def test_list_uses_forward_slashes(self, temp_config_dir, sample_png_data):
         """Test that listing uses forward slashes consistently."""
-        save_asset(
-            temp_config_dir, "folder/subfolder/image.png", sample_png_data
-        )
+        save_asset(temp_config_dir, "folder/subfolder/image.png", sample_png_data)
 
         assets = list_assets(temp_config_dir)
         assert len(assets) == 1
@@ -780,9 +740,7 @@ class TestGetAssetPath:
 
     def test_get_nonexistent_asset(self, temp_config_dir):
         """Test getting path to non-existent asset."""
-        exists, abs_path, error = get_asset_path(
-            temp_config_dir, "nonexistent.png"
-        )
+        exists, abs_path, error = get_asset_path(temp_config_dir, "nonexistent.png")
         assert exists is False
         assert abs_path is None
         assert error is not None
@@ -790,9 +748,7 @@ class TestGetAssetPath:
 
     def test_get_path_traversal_rejected(self, temp_config_dir):
         """Test that path traversal is rejected."""
-        exists, abs_path, error = get_asset_path(
-            temp_config_dir, "../../../etc/passwd"
-        )
+        exists, abs_path, error = get_asset_path(temp_config_dir, "../../../etc/passwd")
         assert exists is False
         assert abs_path is None
         assert error is not None
@@ -815,7 +771,7 @@ class TestSecurityPatterns:
         """Test that unicode path traversal attempts are rejected."""
         # Unicode encoding of ../
         unicode_traversal = "\u002e\u002e\u002f\u002e\u002e\u002f"
-        success, _, error = save_asset(
+        success, _, error = save_asset(  # noqa: RUF059
             temp_config_dir,
             f"{unicode_traversal}image.png",
             sample_png_data,
@@ -825,7 +781,7 @@ class TestSecurityPatterns:
     def test_mixed_separators(self, temp_config_dir, sample_png_data):
         """Test that mixed path separators are handled correctly."""
         # This should be normalized and accepted
-        success, abs_path, error = save_asset(
+        success, abs_path, error = save_asset(  # noqa: RUF059
             temp_config_dir, "folder\\subfolder/image.png", sample_png_data
         )
         assert success is True
@@ -841,7 +797,7 @@ class TestSecurityPatterns:
         ]
 
         for path in dangerous_paths:
-            success, abs_path, error = save_asset(
+            success, abs_path, error = save_asset(  # noqa: RUF059
                 temp_config_dir, path, sample_png_data
             )
             # Either rejected outright or resolved safely within assets
@@ -854,7 +810,7 @@ class TestSecurityPatterns:
         """Test that extremely long paths are handled gracefully."""
         # Create a very long path
         long_path = "/".join(["folder"] * 100) + "/image.png"
-        success, abs_path, error = save_asset(
+        success, abs_path, error = save_asset(  # noqa: RUF059
             temp_config_dir, long_path, sample_png_data
         )
         # Should either succeed or fail gracefully (OS limits)
@@ -929,9 +885,7 @@ class TestAnimationMetadata:
         assert asset["n_frames"] == 1
         assert asset["is_animated"] is False
 
-    def test_animated_gif_metadata(
-        self, temp_config_dir, sample_animated_gif_data
-    ):
+    def test_animated_gif_metadata(self, temp_config_dir, sample_animated_gif_data):
         """Test that animated GIF has correct animation metadata."""
         ensure_assets_directory(temp_config_dir)
         success, _abs_path, _error = save_asset(
@@ -1059,9 +1013,7 @@ class TestGetAssetOrBuiltinPath:
         # Find any subdirectory with images
         for root, _dirs, files in os.walk(builtin_gifs_dir):
             for file in files:
-                if file.lower().endswith(
-                    (".png", ".jpg", ".jpeg", ".gif", ".webp")
-                ):
+                if file.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".webp")):
                     # Get relative path from gifs directory
                     full_path = os.path.join(root, file)
                     rel_path = os.path.relpath(full_path, builtin_gifs_dir)
@@ -1084,9 +1036,7 @@ class TestGetAssetOrBuiltinPath:
         """Test that empty path is rejected."""
         from ledfx.assets import get_asset_or_builtin_path
 
-        exists, resolved_path, error = get_asset_or_builtin_path(
-            temp_config_dir, ""
-        )
+        exists, resolved_path, error = get_asset_or_builtin_path(temp_config_dir, "")
         assert exists is False
         assert resolved_path is None
         # Empty path gets treated as directory, not a file

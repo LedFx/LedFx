@@ -252,9 +252,9 @@ def normalise_title(title: str | None, artist: str = "") -> str:
             left_cmp = _normalise_compare(parts[0])
             artist_cmp = _normalise_compare(artist)
             suffix = left_cmp[len(artist_cmp) :]
-            if left_cmp.startswith(
-                artist_cmp + " "
-            ) and _COLLAB_CONNECTOR_RE.search(suffix):
+            if left_cmp.startswith(artist_cmp + " ") and _COLLAB_CONNECTOR_RE.search(
+                suffix
+            ):
                 title = parts[1].strip()
 
     # Strip any residual YouTube channel-suffix token at the front, e.g.

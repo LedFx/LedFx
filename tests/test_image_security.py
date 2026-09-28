@@ -257,7 +257,7 @@ class TestSSRFProtection:
             "http://169.254.170.2/image.gif",  # ECS metadata
         ]
         for url in blocked_urls:
-            is_safe, error_msg = validate_url_safety(url)
+            is_safe, error_msg = validate_url_safety(url)  # noqa: RUF059
             assert not is_safe, f"{url} should be blocked"
 
     def test_metadata_endpoints_blocked(self):
@@ -280,7 +280,7 @@ class TestSSRFProtection:
             "http://[0:0:0:0:0:0:0:1]/image.png",
         ]
         for url in blocked_urls:
-            is_safe, error_msg = validate_url_safety(url)
+            is_safe, error_msg = validate_url_safety(url)  # noqa: RUF059
             assert not is_safe, f"{url} should be blocked"
 
     def test_ipv6_private_blocked(self):
@@ -293,7 +293,7 @@ class TestSSRFProtection:
             "http://[fe80::1]/image.gif",  # Link-local
         ]
         for url in blocked_urls:
-            is_safe, error_msg = validate_url_safety(url)
+            is_safe, error_msg = validate_url_safety(url)  # noqa: RUF059
             assert not is_safe, f"{url} should be blocked"
 
     def test_invalid_protocols_blocked(self):
@@ -327,9 +327,7 @@ class TestSSRFProtection:
             )  # AF_INET, SOCK_STREAM, private IP
         ]
 
-        is_safe, error_msg = validate_url_safety(
-            "http://evil.example.com/image.jpg"
-        )
+        is_safe, error_msg = validate_url_safety("http://evil.example.com/image.jpg")
         assert not is_safe
         assert "blocked ip" in error_msg.lower()
         assert "192.168.1.1" in error_msg
@@ -344,9 +342,7 @@ class TestSSRFProtection:
             (2, 1, 6, "", ("93.184.216.34", 80))  # example.com IP
         ]
 
-        is_safe, error_msg = validate_url_safety(
-            "http://example.com/image.jpg"
-        )
+        is_safe, error_msg = validate_url_safety("http://example.com/image.jpg")
         assert is_safe
         assert error_msg == ""
 
@@ -435,28 +431,20 @@ class TestURLParsing:
         assert is_allowed_image_extension(
             "https://example.com/image.jpg?size=large&quality=high"
         )
-        assert is_allowed_image_extension(
-            "https://example.com/photo.png?token=abc123"
-        )
+        assert is_allowed_image_extension("https://example.com/photo.png?token=abc123")
 
     def test_url_with_fragment(self):
         """Test that URLs with fragments are handled correctly."""
-        assert is_allowed_image_extension(
-            "https://example.com/image.gif#section"
-        )
+        assert is_allowed_image_extension("https://example.com/image.gif#section")
         assert is_allowed_image_extension("https://example.com/photo.webp#top")
 
     def test_url_with_query_and_fragment(self):
         """Test that URLs with both query strings and fragments work."""
-        assert is_allowed_image_extension(
-            "https://example.com/image.png?v=2#preview"
-        )
+        assert is_allowed_image_extension("https://example.com/image.png?v=2#preview")
 
     def test_url_with_invalid_extension_and_query(self):
         """Test that invalid extensions are still caught with query strings."""
-        assert not is_allowed_image_extension(
-            "https://example.com/file.txt?type=image"
-        )
+        assert not is_allowed_image_extension("https://example.com/file.txt?type=image")
         assert not is_allowed_image_extension(
             "https://example.com/script.py?download=true"
         )
@@ -473,9 +461,7 @@ class TestExtensionlessRemoteURLs:
     def test_https_url_no_extension_allowed(self):
         """Test that HTTPS URLs without extension are allowed."""
         assert is_allowed_image_extension("https://example.com/image")
-        assert is_allowed_image_extension(
-            "https://cdn.example.com/image/abc123"
-        )
+        assert is_allowed_image_extension("https://cdn.example.com/image/abc123")
 
     def test_cdn_urls_without_extension_allowed(self):
         """Test that CDN URLs without extensions are allowed (content validated via HTTP headers)."""
@@ -491,15 +477,11 @@ class TestExtensionlessRemoteURLs:
     def test_remote_url_with_path_no_extension(self):
         """Test remote URLs with paths but no extension."""
         assert is_allowed_image_extension("https://example.com/api/v1/image")
-        assert is_allowed_image_extension(
-            "https://example.com/user/123/profile"
-        )
+        assert is_allowed_image_extension("https://example.com/user/123/profile")
 
     def test_remote_url_no_extension_with_query(self):
         """Test remote URL without extension but with query string."""
-        assert is_allowed_image_extension(
-            "https://example.com/image?id=123&size=large"
-        )
+        assert is_allowed_image_extension("https://example.com/image?id=123&size=large")
 
     def test_remote_url_no_extension_with_fragment(self):
         """Test remote URL without extension but with fragment."""
@@ -574,14 +556,10 @@ class TestPathTraversalNaughtyStrings:
 
         for naughty_path in naughty_paths:
             result = open_image(naughty_path)
-            assert (
-                result is None
-            ), f"Path traversal attempt should fail: {naughty_path}"
+            assert result is None, f"Path traversal attempt should fail: {naughty_path}"
 
             result = open_gif(naughty_path)
-            assert (
-                result is None
-            ), f"Path traversal attempt should fail: {naughty_path}"
+            assert result is None, f"Path traversal attempt should fail: {naughty_path}"
 
     def test_url_injection_attempts(self):
         """Test that URL injection attempts are blocked."""
@@ -589,14 +567,10 @@ class TestPathTraversalNaughtyStrings:
         for naughty_url in naughty_urls:
             result = open_image(naughty_url)
             # Should be blocked by SSRF protection or URL validation
-            assert (
-                result is None
-            ), f"URL injection attempt should fail: {naughty_url}"
+            assert result is None, f"URL injection attempt should fail: {naughty_url}"
 
             result = open_gif(naughty_url)
-            assert (
-                result is None
-            ), f"URL injection attempt should fail: {naughty_url}"
+            assert result is None, f"URL injection attempt should fail: {naughty_url}"
 
     def test_special_filename_attacks(self, tmp_path):
         """Test that special filename attacks are blocked."""
@@ -609,6 +583,6 @@ class TestPathTraversalNaughtyStrings:
             test_path = os.path.join(tmp_path, naughty_filename)
             result = open_image(test_path)
             # Should fail either due to validation or file not existing
-            assert (
-                result is None
-            ), f"Special filename should be rejected or fail: {naughty_filename}"
+            assert result is None, (
+                f"Special filename should be rejected or fail: {naughty_filename}"
+            )

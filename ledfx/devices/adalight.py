@@ -44,9 +44,7 @@ class AdalightDevice(SerialDevice):
 
     def flush(self, data):
         try:
-            self.serial.write(
-                packets.build_adalight_packet(data, self.color_order)
-            )
+            self.serial.write(packets.build_adalight_packet(data, self.color_order))
 
         except serial.SerialException:
             # If we have lost connection, log it, go offline, and fire an event to the frontend

@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np  # noqa: N999
 import voluptuous as vol
 
 from ledfx.color import parse_color, validate_color

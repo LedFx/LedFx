@@ -8,6 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Bands Matrix"
     CATEGORY = "2D"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -68,9 +69,7 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
             if volume > 0:
                 # Calculate gradient values for all positions at once
                 positions = np.arange(volume, dtype=np.float32)
-                gradient_values = grad_offset + grad_sign * (
-                    positions / band_width
-                )
+                gradient_values = grad_offset + grad_sign * (positions / band_width)
                 # Get all gradient colors at once using vectorized method
                 out_split[i][:volume] = self.get_gradient_color_vectorized1d(
                     gradient_values

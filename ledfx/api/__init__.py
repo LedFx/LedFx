@@ -68,12 +68,9 @@ class RestEndpoint(BaseRegistry):
 
         try:
             return await method(
-                **{
-                    arg_name: available_args[arg_name]
-                    for arg_name in wanted_args
-                }
+                **{arg_name: available_args[arg_name] for arg_name in wanted_args}
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             # _LOGGER.exception(e)
             reason = getattr(e, "args", None)
             if reason:

@@ -43,9 +43,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -69,9 +67,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
             fade = data.get("fade", 0)
             brightness = min(1, max(0, data.get("brightness", 1)))
 
-            result = virtual.add_oneshot(
-                Flash(color, ramp, hold, fade, brightness)
-            )
+            result = virtual.add_oneshot(Flash(color, ramp, hold, fade, brightness))
 
             if result is False:
                 return await self.invalid_request("oneshot failed")
@@ -92,9 +88,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -140,15 +134,11 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
             # test if start and end are integers
             if type(start) is not int or type(end) is not int:
-                return await self.invalid_request(
-                    "start and end must be integers"
-                )
+                return await self.invalid_request("start and end must be integers")
 
             hl_error = virtual.set_highlight(state, device, start, end, flip)
             if hl_error is not None:
-                return await self.invalid_request(
-                    f"highlight error: {hl_error}"
-                )
+                return await self.invalid_request(f"highlight error: {hl_error}")
 
         if tool == "oneshot":
             result = False

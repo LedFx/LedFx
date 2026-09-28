@@ -217,12 +217,9 @@ class CalibratorPatternCache:
                 "#ffff00",
             ]
             CalibratorPatternCache._CALIBRATION_COLORS = [
-                np.array(parse_color(name), dtype=float)
-                for name in color_names
+                np.array(parse_color(name), dtype=float) for name in color_names
             ]
-            CalibratorPatternCache._BLACK_COLOR = np.array(
-                [0.0, 0.0, 0.0], dtype=float
-            )
+            CalibratorPatternCache._BLACK_COLOR = np.array([0.0, 0.0, 0.0], dtype=float)
             CalibratorPatternCache._WHITE_COLOR = np.array(
                 parse_color("white"), dtype=float
             )
@@ -235,9 +232,7 @@ class CalibratorPatternCache:
             np.ndarray: RGB color array
         """
         color = self._CALIBRATION_COLORS[self._color_index]
-        self._color_index = (self._color_index + 1) % len(
-            self._CALIBRATION_COLORS
-        )
+        self._color_index = (self._color_index + 1) % len(self._CALIBRATION_COLORS)
         return color
 
     def reset_color_sequence(self):
@@ -290,9 +285,7 @@ class CalibratorPatternCache:
         mask_phase2 = (phase >= 2.0) & (phase < 3.0)
         mask_phase3 = (phase >= 3.0) & (phase < 4.0)
 
-        brightness[mask_phase1] = 1.0 - (phase[mask_phase1] - 1.0) * (
-            1.0 - dim_factor
-        )
+        brightness[mask_phase1] = 1.0 - (phase[mask_phase1] - 1.0) * (1.0 - dim_factor)
         brightness[mask_phase2] = dim_factor
         brightness[mask_phase3] = dim_factor + (phase[mask_phase3] - 3.0) * (
             1.0 - dim_factor

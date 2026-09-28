@@ -51,9 +51,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         if not virtual.active_effect:
             return await self.invalid_request(
@@ -65,7 +63,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
             self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
         )
 
-        if effect_id in self._ledfx.config["user_presets"].keys():
+        if effect_id in self._ledfx.config["user_presets"]:
             custom = self._ledfx.config["user_presets"][effect_id]
         else:
             custom = {}
@@ -74,12 +72,8 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         # Add active flags to presets based on current effect config
         active_effect_config = virtual.active_effect.config
-        default_with_active = self._add_active_flags(
-            default, active_effect_config
-        )
-        custom_with_active = self._add_active_flags(
-            custom, active_effect_config
-        )
+        default_with_active = self._add_active_flags(default, active_effect_config)
+        custom_with_active = self._add_active_flags(custom, active_effect_config)
 
         response = {
             "status": "success",
@@ -105,9 +99,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -128,7 +120,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         if missing_attributes:
             return await self.invalid_request(
-                f'Required attributes {", ".join(missing_attributes)} were not provided'
+                f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
         if category not in ["ledfx_presets", "user_presets"]:
@@ -137,23 +129,21 @@ class VirtualPresetsEndpoint(RestEndpoint):
             )
 
         if category == "ledfx_presets" and preset_id == "reset":
-            effect_config = generate_default_config(
-                self._ledfx.effects, effect_id
-            )
+            effect_config = generate_default_config(self._ledfx.effects, effect_id)
         else:
-            if effect_id not in self._ledfx.config[category].keys():
+            if effect_id not in self._ledfx.config[category]:
                 return await self.invalid_request(
                     f"Effect {effect_id} does not exist in category {category}"
                 )
-            if preset_id not in self._ledfx.config[category][effect_id].keys():
+            if preset_id not in self._ledfx.config[category][effect_id]:
                 return await self.invalid_request(
                     f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
                 )
             else:
                 # Create the effect and add it to the virtual
-                effect_config = self._ledfx.config[category][effect_id][
-                    preset_id
-                ]["config"]
+                effect_config = self._ledfx.config[category][effect_id][preset_id][
+                    "config"
+                ]
 
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config
@@ -161,9 +151,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         try:
             virtual.set_effect(effect)
         except (ValueError, RuntimeError) as msg:
-            error_message = (
-                f"Unable to set effect on virtual {virtual.id}: {msg}"
-            )
+            error_message = f"Unable to set effect on virtual {virtual.id}: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
 
@@ -197,9 +185,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         if not virtual.active_effect:
             return await self.invalid_request(
@@ -220,17 +206,15 @@ class VirtualPresetsEndpoint(RestEndpoint):
         effect_id = virtual.active_effect.type
 
         # If no presets for the effect, create a dict to store them
-        if effect_id not in self._ledfx.config["user_presets"].keys():
+        if effect_id not in self._ledfx.config["user_presets"]:
             self._ledfx.config["user_presets"][effect_id] = {}
 
         # Update the preset if it already exists, else create it
         self._ledfx.config["user_presets"][effect_id][preset_id] = {}
-        self._ledfx.config["user_presets"][effect_id][preset_id][
-            "name"
-        ] = preset_name
-        self._ledfx.config["user_presets"][effect_id][preset_id][
-            "config"
-        ] = virtual.active_effect.config
+        self._ledfx.config["user_presets"][effect_id][preset_id]["name"] = preset_name
+        self._ledfx.config["user_presets"][effect_id][preset_id]["config"] = (
+            virtual.active_effect.config
+        )
 
         save_config(
             config=self._ledfx.config,
@@ -260,9 +244,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         # Clear the effect
         virtual.clear_effect()

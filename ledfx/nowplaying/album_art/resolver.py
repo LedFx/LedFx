@@ -79,14 +79,10 @@ class AlbumArtResolver:
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            _LOGGER.warning(
-                "AlbumArtResolver: no running event loop, skipping lookup"
-            )
+            _LOGGER.warning("AlbumArtResolver: no running event loop, skipping lookup")
             return
 
-        self._resolve_task = asyncio.ensure_future(
-            self._resolve(metadata), loop=loop
-        )
+        self._resolve_task = asyncio.ensure_future(self._resolve(metadata), loop=loop)
 
     # ------------------------------------------------------------------
     # Private helpers
@@ -104,9 +100,7 @@ class AlbumArtResolver:
         """Cancel any in-flight provider lookup (e.g. source supplied artwork)."""
         if self._resolve_task is not None and not self._resolve_task.done():
             self._resolve_task.cancel()
-            _LOGGER.debug(
-                "AlbumArtResolver: pending lookup cancelled (source artwork)"
-            )
+            _LOGGER.debug("AlbumArtResolver: pending lookup cancelled (source artwork)")
         self._resolve_task = None
 
     async def _resolve(self, metadata: TrackMetadata) -> None:
@@ -115,7 +109,7 @@ class AlbumArtResolver:
             for provider in self._providers:
                 try:
                     data = await provider.resolve(metadata)
-                except Exception as exc:
+                except Exception as exc:  # noqa: BLE001
                     _LOGGER.warning(
                         "AlbumArtResolver: provider %s raised: %s",
                         type(provider).__name__,
@@ -137,7 +131,7 @@ class AlbumArtResolver:
                         self._service.set_artwork_resolved(
                             data, content_type, artwork_hash=artwork_hash
                         )
-                    except Exception as exc:
+                    except Exception as exc:  # noqa: BLE001
                         _LOGGER.warning(
                             "AlbumArtResolver: failed to deliver artwork: %s",
                             exc,

@@ -68,9 +68,7 @@ class Concentric(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.power_multiplier = self._config["power_multiplier"]
         self.gscale = self._config["gradient_scale"]
         self.h_stretch = self._config["stretch_height"]
@@ -89,17 +87,14 @@ class Concentric(Twod, GradientEffect):
         super().do_once()
         self.center_x = (self.r_width - 1) / 2
         self.center_y = (self.r_height - 1) / 2
-        self.y_coords, self.x_coords = np.ogrid[
-            0 : self.r_height, 0 : self.r_width
-        ]
+        self.y_coords, self.x_coords = np.ogrid[0 : self.r_height, 0 : self.r_width]
         # Create a coordinate grid
         # Calculate distance from the center, applying stretching
         # Dividing by stretch values makes the gradient expand further along that axis
 
         dist = np.sqrt(
             ((self.x_coords - self.center_x) / self.gscale) ** 2
-            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch)
-            ** 2
+            + ((self.y_coords - self.center_y) / self.gscale / self.h_stretch) ** 2
         )
         # Soften the center using a scalar-image Gaussian blur
         if self.smoothing > 0:
@@ -111,18 +106,14 @@ class Concentric(Twod, GradientEffect):
                     ImageFilter.GaussianBlur(radius=self.smoothing)
                 )
                 # Convert back to float and scale back to original range
-                dist = np.asarray(dist_img, dtype=np.float32) * (
-                    dist_max / 255.0
-                )
+                dist = np.asarray(dist_img, dtype=np.float32) * (dist_max / 255.0)
 
         max_radius = np.hypot(self.center_x, self.center_y / self.h_stretch)
         if max_radius > 0:
             dist /= max_radius
         dist = np.clip(dist, 0.0, 1.0)
 
-        self.dist = np.power(
-            dist, 0.9
-        )  # mild smoothing, lower values = softer
+        self.dist = np.power(dist, 0.9)  # mild smoothing, lower values = softer
 
     def draw(self):
         # Wave expansion
@@ -133,7 +124,5 @@ class Concentric(Twod, GradientEffect):
         ) % 1.0
 
         # Get colors from the gradient and reshape to the matrix dimensions
-        pixels = self.get_gradient_color_vectorized2d(color_points).astype(
-            np.uint8
-        )
+        pixels = self.get_gradient_color_vectorized2d(color_points).astype(np.uint8)
         self.matrix = Image.fromarray(pixels)

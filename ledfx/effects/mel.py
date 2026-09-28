@@ -71,9 +71,7 @@ def mel_to_hertz(mel):
     return 250.0 * (9 ** (mel / 3340.0)) - 250.0
 
 
-def melfrequencies_mel_filterbank(
-    num_bands, freq_min, freq_max, num_fft_bands
-):
+def melfrequencies_mel_filterbank(num_bands, freq_min, freq_max, num_fft_bands):
     """
     Returns center frequencies and band edges for a Mel filter bank.
 
@@ -155,9 +153,7 @@ def compute_melmat(
         center_frequencies_mel,
         lower_edges_mel,
         upper_edges_mel,
-    ) = melfrequencies_mel_filterbank(
-        num_mel_bands, freq_min, freq_max, num_fft_bands
-    )
+    ) = melfrequencies_mel_filterbank(num_mel_bands, freq_min, freq_max, num_fft_bands)
 
     # Convert Mel frequencies to Hz
     center_frequencies_hz = mel_to_hertz(center_frequencies_mel)
@@ -176,15 +172,11 @@ def compute_melmat(
     ):
         # Compute the left slope of the triangular filter for this Mel band
         left_slope = (freqs >= lower) & (freqs <= center)
-        melmat[imelband, left_slope] = (freqs[left_slope] - lower) / (
-            center - lower
-        )
+        melmat[imelband, left_slope] = (freqs[left_slope] - lower) / (center - lower)
 
         # Compute the right slope of the triangular filter for this Mel band
         right_slope = (freqs >= center) & (freqs <= upper)
-        melmat[imelband, right_slope] = (upper - freqs[right_slope]) / (
-            upper - center
-        )
+        melmat[imelband, right_slope] = (upper - freqs[right_slope]) / (upper - center)
 
     return (melmat, center_frequencies_hz, freqs)
 
@@ -220,14 +212,10 @@ def compute_melmat_from_range(
     ):
         # Compute the left slope of the triangular filter for this Mel band
         left_slope = (freqs >= lower) & (freqs <= center)
-        melmat[imelband, left_slope] = (freqs[left_slope] - lower) / (
-            center - lower
-        )
+        melmat[imelband, left_slope] = (freqs[left_slope] - lower) / (center - lower)
 
         # Compute the right slope of the triangular filter for this Mel band
         right_slope = (freqs >= center) & (freqs <= upper)
-        melmat[imelband, right_slope] = (upper - freqs[right_slope]) / (
-            upper - center
-        )
+        melmat[imelband, right_slope] = (upper - freqs[right_slope]) / (upper - center)
 
     return (melmat, center_frequencies_hz, freqs)

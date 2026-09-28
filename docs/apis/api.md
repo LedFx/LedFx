@@ -218,6 +218,12 @@ Returns the LedFx schema with the matching *schema_type* as JSON
 -   *effects*: Returns all the valid schemas for an LedFx effect
 -   *integrations*: Returns all the integrations registered with LedFx
 
+Effect schema entries include `uses_melbank_range`, a boolean capability flag
+for frontends. When `true`, the effect consumes melbank data through the
+virtual frequency range, so `frequency_min` and `frequency_max` controls are
+meaningful for that effect. When `false`, frontends can hide those virtual
+frequency controls for the selected effect.
+
 ## /api/devices
 
 Query and manage devices connected to LedFx

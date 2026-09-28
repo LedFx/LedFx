@@ -35,9 +35,7 @@ class FrontendEffect(Twod):
         self._cached_client_id = None
         self._rejected_client_ids = set()
         self._last_client_frame_time = None
-        self._client_timeout = (
-            3.0  # seconds before cached client is considered gone
-        )
+        self._client_timeout = 3.0  # seconds before cached client is considered gone
         self._incoming_pixels = None  # latest raw numpy array from frontend
 
     def _handle_visualiser_data(self, event):
@@ -54,8 +52,7 @@ class FrontendEffect(Twod):
                 self._cached_client_id is not None
                 and self._cached_client_id != event.client_id
                 and self._last_client_frame_time is not None
-                and (current_time - self._last_client_frame_time)
-                > self._client_timeout
+                and (current_time - self._last_client_frame_time) > self._client_timeout
             )
 
             if self._cached_client_id is None or cached_client_timed_out:
@@ -94,9 +91,7 @@ class FrontendEffect(Twod):
             Event.FRONTEND_VISUALISER_DATA,
         )
 
-        _LOGGER.info(
-            "Frontend effect activated and listening for visualiser data"
-        )
+        _LOGGER.info("Frontend effect activated and listening for visualiser data")
 
     def draw(self):
         """Called by Twod.render() — paste the latest frontend pixels into self.matrix."""

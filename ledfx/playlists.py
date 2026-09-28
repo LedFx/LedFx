@@ -27,9 +27,7 @@ from ledfx.utils import generate_id
 
 PlaylistItem = vol.Schema(
     {
-        vol.Required(
-            "scene_id", description="ID of the scene to activate"
-        ): str,
+        vol.Required("scene_id", description="ID of the scene to activate"): str,
         vol.Optional(
             "duration_ms",
             description="Duration in milliseconds to display this item",
@@ -42,7 +40,7 @@ def _validate_jitter_bounds(j):
     try:
         fmin = float(j.get("factor_min", 1.0))
         fmax = float(j.get("factor_max", 1.0))
-    except Exception:
+    except Exception:  # noqa: BLE001
         raise vol.Invalid("jitter.factor_min/factor_max must be numbers")
     if fmax < fmin:
         raise vol.Invalid("jitter.factor_max must be >= factor_min")
@@ -73,9 +71,7 @@ TimingSchema = vol.Schema(
 PlaylistSchema = vol.Schema(
     {
         vol.Required("id", description="Unique playlist identifier"): str,
-        vol.Required(
-            "name", description="Human readable name for the playlist"
-        ): str,
+        vol.Required("name", description="Human readable name for the playlist"): str,
         vol.Required(
             "items",
             description="Ordered list of items (scene_id + optional duration). Empty list = dynamic 'all scenes' resolved at start time.",
@@ -152,9 +148,7 @@ class PlaylistManager:
                 self._playlists[pid] = validated
             except vol.MultipleInvalid:
                 # ignore invalid entries but log to stderr
-                sys.stderr.write(
-                    f"[playlists] invalid playlist in config: {pid}\n"
-                )
+                sys.stderr.write(f"[playlists] invalid playlist in config: {pid}\n")
 
     def list_playlists(self) -> dict[str, dict]:
         return copy.deepcopy(self._playlists)
@@ -190,9 +184,7 @@ class PlaylistManager:
         # Determine which mode to use: caller-provided desired_mode wins,
         # otherwise fall back to the runtime/configured effective mode.
         effective_mode = (
-            desired_mode
-            if desired_mode is not None
-            else self._effective_mode(playlist)
+            desired_mode if desired_mode is not None else self._effective_mode(playlist)
         )
 
         # Regenerate when we don't have an order, when length changed, or
@@ -203,17 +195,13 @@ class PlaylistManager:
             or desired_mode is not None
         ):
             if effective_mode == "shuffle":
-                self._order = random.sample(
-                    list(range(len(items))), len(items)
-                )
+                self._order = random.sample(list(range(len(items))), len(items))
             else:
                 self._order = list(range(len(items)))
 
     def _current_item_info(
         self,
-    ) -> tuple[
-        dict | None, list, list | None, int | None, str | None, int | None
-    ]:
+    ) -> tuple[dict | None, list, list | None, int | None, str | None, int | None]:
         """Return (playlist, items, order, item_idx, scene_id, base_duration_ms)
         for the current active position. Values may be None when not
         applicable.
@@ -238,7 +226,7 @@ class PlaylistManager:
             base_duration_ms = items[item_idx].get(
                 "duration_ms", playlist.get("default_duration_ms", 500)
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             scene_id = None
             base_duration_ms = None
         return playlist, items, order, item_idx, scene_id, base_duration_ms
@@ -278,9 +266,7 @@ class PlaylistManager:
         p = dict(playlist)  # work on a shallow copy
         if not p.get("id"):
             if not p.get("name"):
-                raise ValueError(
-                    "Playlist must include 'id' or 'name' when creating"
-                )
+                raise ValueError("Playlist must include 'id' or 'name' when creating")
             base = generate_id(p["name"])
             new_id = base
             idx = 1
@@ -305,7 +291,7 @@ class PlaylistManager:
             if pid and pid == self._active_playlist_id:
                 # stop will clear runtime state
                 await self.stop()
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             # ignore stop failures and proceed with deletion attempt
             pass
 
@@ -386,7 +372,7 @@ class PlaylistManager:
                             self._core.scenes.activate(
                                 scene_id, save_config_after=False
                             )
-                    except Exception:
+                    except Exception:  # noqa: BLE001, S110
                         # Swallow scene activation errors to keep playlist running
                         pass
 
@@ -400,7 +386,7 @@ class PlaylistManager:
                                 effective_duration_ms=self._item_effective_duration_ms,
                             )
                         )
-                    except Exception:
+                    except Exception:  # noqa: BLE001, S110
                         # don't let event failures break playlist
                         pass
 
@@ -412,22 +398,17 @@ class PlaylistManager:
                     except asyncio.CancelledError:
                         # compute remaining time for this item
                         try:
-                            if (
-                                self._item_start_ts
-                                and self._item_effective_duration_ms
-                            ):
+                            if self._item_start_ts and self._item_effective_duration_ms:
                                 elapsed_ms = int(
-                                    (time.monotonic() - self._item_start_ts)
-                                    * 1000
+                                    (time.monotonic() - self._item_start_ts) * 1000
                                 )
                                 remaining = max(
                                     0,
-                                    self._item_effective_duration_ms
-                                    - elapsed_ms,
+                                    self._item_effective_duration_ms - elapsed_ms,
                                 )
                                 self._remaining_ms = remaining
                                 self._remaining_for_order_pos = order_pos
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             self._remaining_ms = None
                             self._remaining_for_order_pos = None
                         return
@@ -534,7 +515,7 @@ class PlaylistManager:
                     order_pos = self._active_index % len(self._order)
                     item_idx = self._order[order_pos]
                     scene_id = items[item_idx].get("scene_id")
-            except Exception:
+            except Exception:  # noqa: BLE001
                 scene_id = None
             try:
                 self._core.events.fire_event(
@@ -545,15 +526,14 @@ class PlaylistManager:
                         effective_duration_ms=self._item_effective_duration_ms,
                         remaining_ms=(
                             self._remaining_ms
-                            if self._remaining_for_order_pos
-                            == self._active_index
+                            if self._remaining_for_order_pos == self._active_index
                             else None
                         ),
                     )
                 )
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
         return True
 
@@ -565,7 +545,7 @@ class PlaylistManager:
         if pid:
             try:
                 _, _, _, _, scene_id, _ = self._current_item_info()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 scene_id = None
 
         self._active_playlist_id = None
@@ -605,7 +585,7 @@ class PlaylistManager:
                         remaining_ms=remaining_ms,
                     )
                 )
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
 
     async def pause(self) -> bool:
@@ -625,26 +605,22 @@ class PlaylistManager:
         # compute remaining_ms eagerly if we have an active item running
         try:
             if self._item_start_ts and self._item_effective_duration_ms:
-                elapsed_ms = int(
-                    (time.monotonic() - self._item_start_ts) * 1000
-                )
-                remaining = max(
-                    0, self._item_effective_duration_ms - elapsed_ms
-                )
+                elapsed_ms = int((time.monotonic() - self._item_start_ts) * 1000)
+                remaining = max(0, self._item_effective_duration_ms - elapsed_ms)
                 self._remaining_ms = remaining
                 self._remaining_for_order_pos = (
                     self._active_index % len(self._order)
                     if self._order
                     else self._active_index
                 )
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             # leave remaining as-is
             pass
         try:
             if self._active_playlist_id:
                 try:
                     _, _, _, _, scene_id, _ = self._current_item_info()
-                except Exception:
+                except Exception:  # noqa: BLE001
                     scene_id = None
                 self._core.events.fire_event(
                     PlaylistPausedEvent(
@@ -655,7 +631,7 @@ class PlaylistManager:
                         remaining_ms=self._remaining_ms,
                     )
                 )
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
         return True
 
@@ -667,15 +643,13 @@ class PlaylistManager:
         self._pause_event.set()
         # restart runner if needed; runner will use _remaining_ms if present
         if not self._task:
-            self._task = asyncio.create_task(
-                self._runner(self._active_playlist_id)
-            )
+            self._task = asyncio.create_task(self._runner(self._active_playlist_id))
         try:
             # include scene_id where possible
             scene_id = None
             try:
                 _, _, _, _, scene_id, _ = self._current_item_info()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 scene_id = None
             self._core.events.fire_event(
                 PlaylistResumedEvent(
@@ -686,7 +660,7 @@ class PlaylistManager:
                     remaining_ms=self._remaining_ms,
                 )
             )
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             pass
         return True
 
@@ -720,9 +694,7 @@ class PlaylistManager:
         else:
             self._ensure_order(playlist, self._runtime_items)
 
-        self._active_index = (self._active_index + direction) % len(
-            self._order
-        )
+        self._active_index = (self._active_index + direction) % len(self._order)
 
         # Restart runner to pick up new index immediately
         if self._task:
@@ -731,9 +703,7 @@ class PlaylistManager:
                 await self._task
             except asyncio.CancelledError:
                 pass
-        self._task = asyncio.create_task(
-            self._runner(self._active_playlist_id)
-        )
+        self._task = asyncio.create_task(self._runner(self._active_playlist_id))
         return True
 
     async def prev(self) -> bool:
@@ -767,20 +737,15 @@ class PlaylistManager:
                         # include scenes list matching the concrete order
                         try:
                             state["scenes"] = [
-                                items[i].get("scene_id")
-                                for i in state["order"]
+                                items[i].get("scene_id") for i in state["order"]
                             ]
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             state["scenes"] = []
                         # compute scene_id from order
-                        item_idx = self._order[
-                            self._active_index % len(self._order)
-                        ]
+                        item_idx = self._order[self._active_index % len(self._order)]
                         state["scene_id"] = items[item_idx].get("scene_id")
                         # include effective timing info (runtime override wins)
-                        state["timing"] = self._get_timing_for_playlist(
-                            playlist
-                        )
+                        state["timing"] = self._get_timing_for_playlist(playlist)
                         # include effective mode (runtime override wins)
                         state["mode"] = self._effective_mode(playlist)
                         # include timing info when available
@@ -796,13 +761,9 @@ class PlaylistManager:
                         ):
                             state["remaining_ms"] = int(self._remaining_ms)
                         else:
-                            if (
-                                self._item_start_ts
-                                and self._item_effective_duration_ms
-                            ):
+                            if self._item_start_ts and self._item_effective_duration_ms:
                                 elapsed = int(
-                                    (time.monotonic() - self._item_start_ts)
-                                    * 1000
+                                    (time.monotonic() - self._item_start_ts) * 1000
                                 )
                                 state["remaining_ms"] = max(
                                     0,
@@ -814,10 +775,9 @@ class PlaylistManager:
                         # include scenes mapping for the simple sequence order
                         try:
                             state["scenes"] = [
-                                items[i].get("scene_id")
-                                for i in state["order"]
+                                items[i].get("scene_id") for i in state["order"]
                             ]
-                        except Exception:
+                        except Exception:  # noqa: BLE001
                             state["scenes"] = []
                         item_idx = self._active_index % len(items)
                         state["scene_id"] = items[item_idx].get("scene_id")
@@ -833,7 +793,7 @@ class PlaylistManager:
                         )
                         if self._remaining_ms is not None:
                             state["remaining_ms"] = int(self._remaining_ms)
-        except Exception:
+        except Exception:  # noqa: BLE001, S110
             # fall back to minimal state
             pass
         return state

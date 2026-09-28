@@ -60,9 +60,7 @@ class E131Device(NetworkedDevice):
         else:
             self._config["pixel_count"] = self._config["channel_count"] // 3
 
-        span = (
-            self._config["channel_offset"] + self._config["channel_count"] - 1
-        )
+        span = self._config["channel_offset"] + self._config["channel_count"] - 1
         self._config["universe_end"] = self._config["universe"] + int(
             span / self._config["universe_size"]
         )
@@ -80,9 +78,7 @@ class E131Device(NetworkedDevice):
                 multicast = False
 
             if self._sacn:
-                _LOGGER.warning(
-                    "sACN sender already started for device %s", self.id
-                )
+                _LOGGER.warning("sACN sender already started for device %s", self.id)
 
             # Configure sACN and start the dedicated thread to flush the buffer
             # Some variables are immutable and must be called here
@@ -125,7 +121,7 @@ class E131Device(NetworkedDevice):
         with self.device_lock:
             if self._sacn is not None:
                 if data.size != self._config["channel_count"]:
-                    raise Exception(
+                    raise Exception(  # noqa: TRY002
                         f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
                     )
 

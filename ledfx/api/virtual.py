@@ -25,9 +25,7 @@ def make_virtual_response(virtual):
         "effect": {},
     }
     # Protect from DummyEffect
-    if virtual.active_effect and not isinstance(
-        virtual.active_effect, DummyEffect
-    ):
+    if virtual.active_effect and not isinstance(virtual.active_effect, DummyEffect):
         effect_response = {
             "config": virtual.active_effect.config,
             "name": virtual.active_effect.name,
@@ -49,9 +47,7 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         response = {"status": "success"}
         response[virtual.id] = make_virtual_response(virtual)
@@ -64,9 +60,7 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -79,21 +73,20 @@ class VirtualEndpoint(RestEndpoint):
             )
 
         # Update the virtual's configuration
-        if active:
-            if not virtual._active_effect or isinstance(
-                virtual.active_effect, DummyEffect
-            ):
-                last_effect = virtual.virtual_cfg.get("last_effect", None)
-                if last_effect:
-                    effect_config = virtual.get_effects_config(last_effect)
-                    if effect_config:
-                        effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx,
-                            type=last_effect,
-                            config=effect_config,
-                        )
-                        virtual.set_effect(effect)
-                        virtual.update_effect_config(effect)
+        if active and (
+            not virtual._active_effect or isinstance(virtual.active_effect, DummyEffect)
+        ):
+            last_effect = virtual.virtual_cfg.get("last_effect", None)
+            if last_effect:
+                effect_config = virtual.get_effects_config(last_effect)
+                if effect_config:
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx,
+                        type=last_effect,
+                        config=effect_config,
+                    )
+                    virtual.set_effect(effect)
+                    virtual.update_effect_config(effect)
         try:
             virtual.active = active
         except ValueError as msg:
@@ -117,9 +110,7 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -136,9 +127,7 @@ class VirtualEndpoint(RestEndpoint):
         try:
             virtual.update_segments(virtual_segments)
         except (ValueError, vol.MultipleInvalid, vol.Invalid) as msg:
-            error_message = (
-                f"Unable to set virtual segments {virtual_segments}: {msg}"
-            )
+            error_message = f"Unable to set virtual segments {virtual_segments}: {msg}"
             _LOGGER.warning(error_message)
             virtual.update_segments(old_segments)
             return await self.internal_error(error_message, "error")
@@ -161,9 +150,7 @@ class VirtualEndpoint(RestEndpoint):
         """
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         virtual.clear_effect()
         device_id = virtual.is_device

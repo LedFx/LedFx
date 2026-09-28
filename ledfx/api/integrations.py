@@ -43,7 +43,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 return await self.json_decode_error()
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
-                if info not in response["integrations"][integration.id].keys():
+                if info not in response["integrations"][integration.id]:
                     return await self.invalid_request(
                         f"info attribute {info} not found"
                     )
@@ -137,9 +137,7 @@ class IntegrationsEndpoint(RestEndpoint):
         ]
 
         # Save the config
-        save_config(
-            config=self._ledfx.config, config_dir=self._ledfx.config_dir
-        )
+        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
         return await self.request_success()
 
     async def post(self, request: web.Request) -> web.Response:

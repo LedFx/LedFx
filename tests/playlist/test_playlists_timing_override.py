@@ -110,9 +110,7 @@ async def test_configured_timing_used_when_no_override(tmp_path):
         "id": "rt3",
         "name": "RT3",
         "items": [{"scene_id": "sY", "duration_ms": 1000}],
-        "timing": {
-            "jitter": {"enabled": True, "factor_min": 0.8, "factor_max": 1.2}
-        },
+        "timing": {"jitter": {"enabled": True, "factor_min": 0.8, "factor_max": 1.2}},
     }
 
     await manager.create_or_replace(playlist)

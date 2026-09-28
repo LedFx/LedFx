@@ -8,6 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Blocks"
     CATEGORY = "2D"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -33,9 +34,7 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
         out_split = np.array_split(out, blocks_active, axis=1)
         for i in range(blocks_active):
             color = self.get_gradient_color(i / blocks_active)[:, np.newaxis]
-            out_split[i] = np.multiply(
-                out_split[i], (out_split[i].max() * color)
-            )
+            out_split[i] = np.multiply(out_split[i], (out_split[i].max() * color))
 
         self.pixels = np.hstack(out_split).T
         self.roll_gradient()

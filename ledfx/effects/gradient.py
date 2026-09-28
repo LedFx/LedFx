@@ -1,3 +1,4 @@
+import itertools
 import logging
 
 import numpy as np
@@ -98,7 +99,7 @@ class GradientEffect(Effect):
             if 0 < position < 1
         ]
         # pair colors (1,2), (2,3), (3,4) for color transition of each segment
-        gradient_colors_paired = zip(gradient_colors, gradient_colors[1:])
+        gradient_colors_paired = itertools.pairwise(gradient_colors)
 
         # create gradient array and split it up into the segments
         gradient = np.zeros((gradient_length, 3)).astype(float)
@@ -137,9 +138,7 @@ class GradientEffect(Effect):
         self._assert_gradient()
 
         increment = (
-            self._config["gradient_roll"]
-            / self.pixel_count
-            * self.gradient_pixel_count
+            self._config["gradient_roll"] / self.pixel_count * self.gradient_pixel_count
         )
         self._gradient_roll_counter += increment
 

@@ -26,7 +26,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
 
         try:
             client = OpenRGBClient(address="127.0.0.1", port=6742)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             error_message = (
                 f"Unable to connect to OpenRGB server at localhost:6742, {e}."
             )
@@ -79,7 +79,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
 
         try:
             client = OpenRGBClient(address=server, port=port)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             error_message = (
                 f"Unable to connect to OpenRGB server at {server}:{port}, {e}."
             )

@@ -31,7 +31,7 @@ except ImportError:
 class MetroEffect(AudioReactiveEffect):
     NAME = "Metro"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS = ["background_brightness", "blur", "mirror"]  # noqa: RUF012
     if not bokeh_available or not psutil_available:
         HIDDEN_KEYS.append("capture")
 
@@ -97,8 +97,8 @@ class MetroEffect(AudioReactiveEffect):
             parse_color(self._config["flash_color"]), dtype=float
         )
 
-        self.cycle_threshold = self._config["pulse_period"] * (
-            self._config["pulse_ratio"]
+        self.cycle_threshold = (
+            self._config["pulse_period"] * (self._config["pulse_ratio"])
         )
         if self._config["capture"] and self.graph_callbacks is None:
             # start a capture sequence, generate base graphs
@@ -161,17 +161,17 @@ class MetroEffect(AudioReactiveEffect):
                 else:
                     step_div = pow(2, step_count - 1)
                     chunk = int(self.pixel_count / (step_div))
-                    for blocks in range(0, step_div):
+                    for blocks in range(step_div):
                         start_pixel = blocks * chunk
                         end_pixel = start_pixel + int(chunk / 2)
-                        self.pixels[start_pixel : end_pixel - 1] = (
-                            self.flash_color
-                        )
+                        self.pixels[start_pixel : end_pixel - 1] = self.flash_color
                 self.was_flash = True
 
-        if self.graph_cpu is not None:
-            if now - self.last_cpu > self._config["cpu_secs"]:
-                cpu = psutil.cpu_percent(percpu=True)
-                for i in range(self.cores):
-                    self.graph_cpu.append_by_key(f"CPU {i}", cpu[i])
-                self.last_cpu = now
+        if (
+            self.graph_cpu is not None
+            and now - self.last_cpu > self._config["cpu_secs"]
+        ):
+            cpu = psutil.cpu_percent(percpu=True)
+            for i in range(self.cores):
+                self.graph_cpu.append_by_key(f"CPU {i}", cpu[i])
+            self.last_cpu = now

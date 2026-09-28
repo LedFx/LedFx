@@ -58,7 +58,7 @@ class DevicesEndpoint(RestEndpoint):
 
         if missing_attributes:
             return await self.invalid_request(
-                f'Required attributes {", ".join(missing_attributes)} were not provided'
+                f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
         try:
             device = await self._ledfx.devices.add_new_device(

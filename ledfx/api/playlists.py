@@ -36,7 +36,7 @@ class PlaylistsEndpoint(RestEndpoint):
             await self._ensure_manager()
             playlist = await self._ledfx.playlists.create_or_replace(data)
             return await self.request_success(data={"playlist": playlist})
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Playlist request rejected: %s", e)
             return await self.invalid_request(str(e))
 
@@ -57,9 +57,7 @@ class PlaylistsEndpoint(RestEndpoint):
             if action == "start":
                 pid = data.get("id")
                 if not pid:
-                    return await self.invalid_request(
-                        "id required for start action"
-                    )
+                    return await self.invalid_request("id required for start action")
                 # optional runtime override for mode: sequence|shuffle
                 mode = data.get("mode")
                 if mode is not None and mode not in ("sequence", "shuffle"):
@@ -76,14 +74,12 @@ class PlaylistsEndpoint(RestEndpoint):
                     try:
                         # validate (coerce types and enforce bounds)
                         timing = TimingSchema(timing)
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         # voluptuous.Invalid / MultipleInvalid may be raised
                         return await self.invalid_request(
                             f"timing validation failed: {e}"
                         )
-                ok = await self._ledfx.playlists.start(
-                    pid, mode=mode, timing=timing
-                )
+                ok = await self._ledfx.playlists.start(pid, mode=mode, timing=timing)
                 if not ok:
                     return await self.invalid_request(
                         f"Playlist {pid} not found or empty"
@@ -105,9 +101,7 @@ class PlaylistsEndpoint(RestEndpoint):
                         type="success", message="Active playlist paused"
                     )
                     if ok
-                    else await self.invalid_request(
-                        "No active playlist to pause"
-                    )
+                    else await self.invalid_request("No active playlist to pause")
                 )
             elif action == "resume":
                 ok = await self._ledfx.playlists.resume()
@@ -116,9 +110,7 @@ class PlaylistsEndpoint(RestEndpoint):
                         type="success", message="Active playlist resumed"
                     )
                     if ok
-                    else await self.invalid_request(
-                        "No active playlist to resume"
-                    )
+                    else await self.invalid_request("No active playlist to resume")
                 )
             elif action == "next":
                 ok = await self._ledfx.playlists.next()
@@ -128,9 +120,7 @@ class PlaylistsEndpoint(RestEndpoint):
                         message="Advanced to next scene in playlist",
                     )
                     if ok
-                    else await self.invalid_request(
-                        "No active playlist for next"
-                    )
+                    else await self.invalid_request("No active playlist for next")
                 )
             elif action == "prev":
                 ok = await self._ledfx.playlists.prev()
@@ -140,9 +130,7 @@ class PlaylistsEndpoint(RestEndpoint):
                         message="Moved to previous scene in playlist",
                     )
                     if ok
-                    else await self.invalid_request(
-                        "No active playlist for prev"
-                    )
+                    else await self.invalid_request("No active playlist for prev")
                 )
             elif action == "state":
                 state = await self._ledfx.playlists.get_state()
@@ -151,7 +139,7 @@ class PlaylistsEndpoint(RestEndpoint):
                 return await self.invalid_request(f"Unknown action: {action}")
 
         except Exception as e:
-            _LOGGER.exception("%s", e)
+            _LOGGER.exception("Unexpected error")
             return await self.internal_error(str(e))
 
     async def delete(self, request: web.Request) -> web.Response:

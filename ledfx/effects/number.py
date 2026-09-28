@@ -27,7 +27,7 @@ class Number(Texter2d):
     CATEGORY = "Diagnostic"
 
     # Mapping of display value options to their respective update methods
-    VALUE_SOURCE_MAPPING = {
+    VALUE_SOURCE_MAPPING = {  # noqa: RUF012
         "BPM": "update_bpm",
         "BPM Confidence": "update_bpm_confidence",
         "Time (HH:MM)": "update_time_hhmm",
@@ -66,7 +66,7 @@ class Number(Texter2d):
             vol.Optional(
                 "value_source",
                 description="Source of the value to display",
-                default=list(VALUE_SOURCE_MAPPING.keys())[0],
+                default=list(VALUE_SOURCE_MAPPING.keys())[0],  # noqa: RUF015
             ): vol.In(list(VALUE_SOURCE_MAPPING.keys())),
             vol.Optional(
                 "whole_digits",
@@ -107,11 +107,11 @@ class Number(Texter2d):
 
     def update_time_hhmm(self, data=None):
         """Update display value with current time as HH:MM string."""
-        self.display_value = datetime.now().strftime("%H:%M")
+        self.display_value = datetime.now().strftime("%H:%M")  # noqa: DTZ005
 
     def update_time_hhmmss(self, data=None):
         """Update display value with current time as HH:MM:SS string."""
-        self.display_value = datetime.now().strftime("%H:%M:%S")
+        self.display_value = datetime.now().strftime("%H:%M:%S")  # noqa: DTZ005
 
     def audio_data_updated(self, data):
         """
@@ -148,9 +148,7 @@ class Number(Texter2d):
         negative = value < 0
         if self.negative and negative:
             # Reserve space for sign
-            format_str = self._number_format_string(
-                digits_before - 1, digits_after
-            )
+            format_str = self._number_format_string(digits_before - 1, digits_after)
             try:
                 formatted = format_str.format(abs(value))
             except (ValueError, OverflowError):
@@ -164,9 +162,7 @@ class Number(Texter2d):
             else:
                 formatted = "-" + formatted
         else:
-            format_str = self._number_format_string(
-                digits_before, digits_after
-            )
+            format_str = self._number_format_string(digits_before, digits_after)
             try:
                 formatted = format_str.format(abs(value))
             except (ValueError, OverflowError):
@@ -182,9 +178,7 @@ class Number(Texter2d):
         Return a format string for a number with the given digit configuration.
         """
         if digits_after > 0:
-            total_width = (
-                digits_before + 1 + digits_after
-            )  # +1 for decimal point
+            total_width = digits_before + 1 + digits_after  # +1 for decimal point
             return f"{{:0{total_width}.{digits_after}f}}"
         else:
             return f"{{:0{digits_before}.0f}}"
@@ -210,9 +204,7 @@ class Number(Texter2d):
             if self.negative:
                 template_text = "-" + template_text
 
-        target_height = round(
-            self.r_height * self._config["height_percent"] / 100
-        )
+        target_height = round(self.r_height * self._config["height_percent"] / 100)
         min_size = 4
         max_size = target_height
         best_size = min_size
@@ -226,7 +218,7 @@ class Number(Texter2d):
                 if text_width <= self.r_width and text_height <= self.r_height:
                     best_size = size
                     break
-            except Exception:
+            except Exception:  # noqa: BLE001, S112
                 continue
         return best_size
 

@@ -49,9 +49,7 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
         _LOGGER.info("Getting Nanoleaf token from %s:%s", ip, port)
 
         try:
-            response = requests.post(
-                f"http://{ip}:{port}/api/v1/new", timeout=(3, 3)
-            )
+            response = requests.post(f"http://{ip}:{port}/api/v1/new", timeout=(3, 3))  # noqa: ASYNC210
             # TODO: See if we can just check the response is None - no nanoleaf to test with
             if response.text == "":
                 error_message = (
@@ -61,9 +59,7 @@ class GetNanoleadTokenEndpoint(RestEndpoint):
                 return await self.internal_error(error_message, "error")
             data = response.json()
         except requests.exceptions.RequestException as msg:
-            error_message = (
-                f"Error getting Nanoleaf token from {ip}:{port}: {msg}"
-            )
+            error_message = f"Error getting Nanoleaf token from {ip}:{port}: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
         return await self.bare_request_success(data)

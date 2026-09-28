@@ -1,9 +1,8 @@
 import logging
 import os
 
-import PIL.ImageEnhance as ImageEnhance
-import PIL.ImageSequence as ImageSequence
 import voluptuous as vol
+from PIL import ImageEnhance, ImageSequence
 
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
@@ -130,7 +129,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.orig_frames:
                 try:
                     frame.close()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
 
         # Close post_frames
@@ -138,7 +137,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.post_frames:
                 try:
                     frame.close()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
 
         # Close frames
@@ -146,7 +145,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.frames:
                 try:
                     frame.close()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
 
         # CRITICAL: Call parent deactivate to unsubscribe from audio callbacks and cleanup parent resources
@@ -174,7 +173,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.frames:
                 try:
                     frame.close()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
         self.frames = []
         self.reverse = False
@@ -189,7 +188,7 @@ class Keybeat2d(Twod, GifBase):
                 for frame in self.orig_frames:
                     try:
                         frame.close()
-                    except Exception:
+                    except Exception:  # noqa: BLE001, S110
                         pass
 
             if self.image_location:
@@ -198,9 +197,7 @@ class Keybeat2d(Twod, GifBase):
                 )
 
             if self.gif is None:
-                self.gif = open_gif(
-                    self.default, config_dir=self._ledfx.config_dir
-                )
+                self.gif = open_gif(self.default, config_dir=self._ledfx.config_dir)
                 self.force_fit = True
 
             iterator = ImageSequence.Iterator(self.gif)
@@ -244,7 +241,7 @@ class Keybeat2d(Twod, GifBase):
             for frame in self.post_frames:
                 try:
                     frame.close()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
 
         # Create working list from orig_frames (shallow copy - just references)
@@ -259,9 +256,7 @@ class Keybeat2d(Twod, GifBase):
         # Apply brightness enhancement - this creates NEW PIL Image objects
         # The enhance() method returns a new image, leaving originals untouched
         self.post_frames = [
-            ImageEnhance.Brightness(frame).enhance(
-                self._config["image_brightness"]
-            )
+            ImageEnhance.Brightness(frame).enhance(self._config["image_brightness"])
             for frame in self.post_frames
         ]
 
@@ -299,9 +294,7 @@ class Keybeat2d(Twod, GifBase):
                 if beat_index == skip_index:
                     del self.beat_frames[bi]
                     if self.logsec.diag:
-                        _LOGGER.info(
-                            "delete %s from %s", beat_index, self.beat_frames
-                        )
+                        _LOGGER.info("delete %s from %s", beat_index, self.beat_frames)
 
         self.framecount = len(self.post_frames)
 
@@ -324,8 +317,7 @@ class Keybeat2d(Twod, GifBase):
                 if x != 0 and x != self.framecount - 1
             ]
             beat_frames_ext = [
-                self.framecount + self.framecount - b - 2
-                for b in self.mirror_beats
+                self.framecount + self.framecount - b - 2 for b in self.mirror_beats
             ]
 
             # its hard to decide if this makes sense as a feature
@@ -366,9 +358,7 @@ class Keybeat2d(Twod, GifBase):
                     frames = self.framecount - beat_index + self.beat_frames[0]
                     self.beat_incs.append(1.0 / frames)
                 else:
-                    self.beat_incs.append(
-                        1.0 / (self.beat_frames[b + 1] - beat_index)
-                    )
+                    self.beat_incs.append(1.0 / (self.beat_frames[b + 1] - beat_index))
 
         if self.logsec.diag:
             _LOGGER.info(
@@ -420,18 +410,14 @@ class Keybeat2d(Twod, GifBase):
             stretch_height = max(1, stretch_height)
 
             self.frames.append(
-                frame.resize(
-                    (stretch_width, stretch_height), self.resize_method
-                )
+                frame.resize((stretch_width, stretch_height), self.resize_method)
             )
 
         self.offset_x = int(
-            ((self.r_width - stretch_width) / 2)
-            + (self.center_h * self.r_width)
+            ((self.r_width - stretch_width) / 2) + (self.center_h * self.r_width)
         )
         self.offset_y = int(
-            ((self.r_height - stretch_height) / 2)
-            + (self.center_v * self.r_height)
+            ((self.r_height - stretch_height) / 2) + (self.center_v * self.r_height)
         )
 
         if self.deep_diag:
@@ -473,13 +459,9 @@ class Keybeat2d(Twod, GifBase):
 
         self.beat_f_times.append((self.now, self.beat, self.frame_c, color))
         # cull any beats older than 60 seconds
-        self.beat_times = [
-            beat for beat in self.beat_times if self.now - beat < 60.0
-        ]
+        self.beat_times = [beat for beat in self.beat_times if self.now - beat < 60.0]
         self.beat_f_times = [
-            f_beat
-            for f_beat in self.beat_f_times
-            if self.now - f_beat[0] < 60.0
+            f_beat for f_beat in self.beat_f_times if self.now - f_beat[0] < 60.0
         ]
 
         # lets graph directly into the draw space
@@ -496,7 +478,7 @@ class Keybeat2d(Twod, GifBase):
             y_frame = graph_s + graph_h - (f_frame / self.framecount) * graph_h
             if y_frame < self.matrix.height:
                 pixels[x, y_frame] = color
-            x += 1
+            x += 1  # noqa: SIM113
             if x >= self.matrix.width:
                 break
 
@@ -514,9 +496,7 @@ class Keybeat2d(Twod, GifBase):
             diag_string = "\u25cf\u25cf\u25cf\u25cf"  # filled circle char
             color = (255, 255, 255)
         else:
-            diag_string = "\u25cb" * int(self.beat * 4) + " " * (
-                4 - int(self.beat * 4)
-            )
+            diag_string = "\u25cb" * int(self.beat * 4) + " " * (4 - int(self.beat * 4))
 
         diag_string += f"{self.frame_c:03} {self.bpm:3.0f} {passed:.0f}"
         self.m_draw.text((0, 0), diag_string, fill=color, font=self.font)
@@ -554,9 +534,7 @@ class Keybeat2d(Twod, GifBase):
                             self.frame_c + 1
                         ) % self.framecount
                     else:
-                        self.beat_idx = (
-                            self.beat_idx + 1
-                        ) % self.num_beat_frames
+                        self.beat_idx = (self.beat_idx + 1) % self.num_beat_frames
                 self.min_vol_found_in_last_beat = False
 
             self.last_beat_t = self.now
@@ -571,9 +549,7 @@ class Keybeat2d(Twod, GifBase):
             if not self.suppress_beat:
                 # Using the self.beat progress, we can interpolate between frames
                 frame_progress = self.beat / self.beat_incs[self.beat_idx]
-                self.frame_c = (
-                    int(frame_progress) + self.beat_frames[self.beat_idx]
-                )
+                self.frame_c = int(frame_progress) + self.beat_frames[self.beat_idx]
                 self.frame_s = self.frame_c
                 self.frame_c %= self.framecount
         else:

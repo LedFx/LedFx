@@ -9,6 +9,7 @@ from ledfx.effects.gradient import GradientEffect
 class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Power"
     CATEGORY = "Classic"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {

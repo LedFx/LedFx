@@ -1,7 +1,7 @@
 [project]
 authors = [{ name = "LedFx Developers" }]
 license = { text = "GPL-3.0 License" }
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.15"
 dependencies = [
     "numpy>=2.0.0,<3.0.0",
     "cffi>=0.16.0",
@@ -27,22 +27,22 @@ dependencies = [
     "zeroconf>=0.131.0",
     "pillow>=10.1.0",
     "flux-led>=1.0.4",
-    "lifx-async>=5.1.0",
+    "lifx-async>=6.5.1",
     "python-osc>=1.8.3",
-    "pybase64~=1.4.0",
-    "mss~=10.1.0",
+    "pybase64~=1.5.0",
+    "mss~=10.2.0",
     "uvloop>=0.16.0; sys_platform != \"win32\"",
     "winloop>=0.3.1; sys_platform == \"win32\"",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
     "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "pyfastnoiselite>=0.0.7",
+    "pyfastnoiselite-ledfx>=0.0.8",
     "netifaces2>=0.0.22",
     "packaging>=21.0",
     "xled>=0.7.0",
     "samplerate-ledfx>=0.2.3",
     "audio-hotplug>=0.1.0",
-    "aiosendspin>=6.0.5,<7.0.0; python_version >= '3.12'",
+    "aiosendspin>=9.1.1,<9.2.0; python_version >= '3.12'",
     "pyflac>=2.2.0; python_version >= '3.12'",
     "winrt-Windows.Foundation>=2.0.0; sys_platform == \"win32\"",
     "winrt-Windows.Media.Control>=2.0.0; sys_platform == \"win32\"",
@@ -55,33 +55,31 @@ readme = "README.rst"
 
 [dependency-groups]
 dev = [
-    "flake8<7.3.1,>=7.3.0",
-    "black>=25.9.0,<25.12.1",
-    "isort<7.0.1,>=7.0.0",
-    "pre-commit>=4.2.0,<4.5.2",
     "bokeh<4.0.0,>=3.3.3",
     "pytest>=8.0.0,<10.0.0",
-    "pytest-asyncio>=1.2.0,<1.4.0",
+    "pytest-asyncio>=1.4.0,<1.5.0",
     "pytest-order<2.0.0,>=1.2.0",
     "pytest-timeout>=2.3.0,<3.0.0",
-    "ruff>=0.14.0,<0.15.0",
-    "lifx-emulator-core>=3.1.0",
+    "lifx-emulator-core>=3.8.0",
+    "prek>=0.5.3",
+    # Keep in sync with the ruff-pre-commit rev in .pre-commit-config.yaml
+    "ruff==0.16.4",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
-    "sphinx<8.2.4; python_version >= \"3.10\"",
-    "sphinxcontrib-websupport==2.0.0; python_version >= \"3.10\"",
-    "sphinxcontrib-httpdomain==1.8.1; python_version >= \"3.10\"",
-    "sphinx-autodoc-typehints==3.0.1; python_version >= \"3.10\"",
-    "sphinx-autodoc-annotation==1.0-1; python_version >= \"3.10\"",
-    "sphinx-autobuild; python_version >= \"3.10\"",
-    "sphinx-rtd-theme==3.0.2; python_version >= \"3.10\"",
-    "sphinx-toolbox==4.1.0; python_version >= \"3.10\"",
-    "rstcheck==6.2.5; python_version >= \"3.10\"",
-    "sphinx-copybutton==0.5.2; python_version >= \"3.10\"",
+    "sphinx<9.1.1",
+    "sphinxcontrib-websupport==2.0.0",
+    "sphinxcontrib-httpdomain==2.0.0",
+    "sphinx-autodoc-typehints==3.5.2",
+    "sphinx-autodoc-annotation==1.0-1",
+    "sphinx-autobuild",
+    "sphinx-rtd-theme==3.1.0",
+    "sphinx-toolbox==4.3.0",
+    "rstcheck==6.3.0",
+    "sphinx-copybutton==0.5.2",
     "myst-parser>=3.0.1",
     "linkify-it-py>=2.0.3",
-    "sphinxcontrib-mermaid; python_version >= \"3.10\"",
+    "sphinxcontrib-mermaid",
 ]
 
 [tool.pdm.build]
@@ -118,23 +116,29 @@ asyncio_mode = "auto"
 timeout = 30
 
 [tool.uv]
+# 0.12.12 is the first release that also keeps files uploaded after the
+# exclude-newer cutoff out of uv.lock. Renovate and setup-uv both read this.
+required-version = ">=0.12.12"
+# Match Renovate's 14-day minimumReleaseAge (LedFx/renovate-config), including
+# for lock file maintenance, which Renovate does not delay. For an urgent
+# security fix newer than this, exempt the package below until it ages in.
+exclude-newer = "14 days"
+# Our own packages: released and reviewed by us, so no wait.
+exclude-newer-package = { aubio-ledfx = false, pyfastnoiselite-ledfx = false, samplerate-ledfx = false }
 # We want to use copy here, since symlink mode means we can't use our own portaudio dll
 # A bit slower, but it works for our use case
 link-mode = "copy"
 default-groups = []
+# cryptography 49 dropped x86_64 macOS. Built from source there it links
+# Homebrew's libssl.3.dylib, which clashes with Python's own libssl in the
+# frozen macOS Intel app (ImportError: SSL_get0_group_name). 48.0.1 is the
+# last release with Intel wheels (OpenSSL statically linked). Only LedFx's
+# lock and builds see this; pip installs are unaffected.
+constraint-dependencies = [
+    "cryptography<49; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+]
 
 [tool.ruff.lint]
-select = ["G004"]
-
-[tool.black]
-line-length = 79
-
-[tool.isort]
-profile = "black"
-line_length = 79
-# The following are the default values applied when profile="black"
-# multi_line_output = 3
-# include_trailing_comma = True
-# force_grid_wrap = 0
-# use_parentheses = True
-# ensure_newline_before_comments = True
+# ruff's defaults, plus: no f-strings in logging calls (format lazily).
+# Pre-existing violations are baselined with `# noqa`; fix them as you go.
+extend-select = ["G004"]

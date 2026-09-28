@@ -31,9 +31,7 @@ class ScenesEndpoint(RestEndpoint):
             # Add preset matching for each virtual's effect
             if "virtuals" in scene_payload:
                 virtuals_with_presets = {}
-                for virtual_id, effect_data in scene_payload[
-                    "virtuals"
-                ].items():
+                for virtual_id, effect_data in scene_payload["virtuals"].items():
                     virtual_payload = dict(effect_data)
                     if (
                         "type" in effect_data
@@ -76,7 +74,7 @@ class ScenesEndpoint(RestEndpoint):
                 'Required attribute "id" was not provided'
             )
 
-        if scene_id not in self._ledfx.config["scenes"].keys():
+        if scene_id not in self._ledfx.config["scenes"]:
             error_message = f"Scene {scene_id} does not exist"
             _LOGGER.warning(error_message)
             return await self.invalid_request()
@@ -122,10 +120,8 @@ class ScenesEndpoint(RestEndpoint):
                 'Required attribute "id" was not provided'
             )
 
-        if scene_id not in self._ledfx.config["scenes"].keys():
-            return await self.invalid_request(
-                f"Scene {scene_id} does not exist"
-            )
+        if scene_id not in self._ledfx.config["scenes"]:
+            return await self.invalid_request(f"Scene {scene_id} does not exist")
 
         scene = self._ledfx.config["scenes"][scene_id]
 
@@ -135,9 +131,7 @@ class ScenesEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     'Required attribute "ms" was not provided'
                 )
-            self._ledfx.loop.call_later(
-                ms, self._ledfx.scenes.activate, scene_id
-            )
+            self._ledfx.loop.call_later(ms, self._ledfx.scenes.activate, scene_id)
             return await self.request_success(
                 "info", f"Scene {scene['name']} will activate in {ms}ms"
             )
@@ -148,18 +142,14 @@ class ScenesEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     f"Scene {scene_id} could not be activated"
                 )
-            return await self.request_success(
-                "info", f"Activated {scene['name']}"
-            )
+            return await self.request_success("info", f"Activated {scene['name']}")
         elif action == "deactivate":
             deactivated = self._ledfx.scenes.deactivate(scene_id)
             if not deactivated:
                 return await self.invalid_request(
                     f"Scene {scene_id} could not be deactivated"
                 )
-            return await self.request_success(
-                "info", f"Deactivated {scene['name']}"
-            )
+            return await self.request_success("info", f"Deactivated {scene['name']}")
 
         elif action == "rename":
             name = data.get("name")
@@ -207,7 +197,7 @@ class ScenesEndpoint(RestEndpoint):
         if scene_id:
             # ID provided - must be an update
             sanitized_id = generate_id(scene_id)
-            if sanitized_id not in self._ledfx.config["scenes"].keys():
+            if sanitized_id not in self._ledfx.config["scenes"]:
                 error_message = f"Scene with id '{scene_id}' does not exist. To create a new scene, omit the 'id' field."
                 _LOGGER.warning(error_message)
                 return await self.invalid_request(error_message)
@@ -243,7 +233,7 @@ class ScenesEndpoint(RestEndpoint):
             dupe_id = generate_id(scene_name)
             dupe_index = 1
             scene_id = dupe_id
-            while scene_id in self._ledfx.config["scenes"].keys():
+            while scene_id in self._ledfx.config["scenes"]:
                 scene_id = f"{dupe_id}-{dupe_index}"
                 dupe_index = dupe_index + 1
 
@@ -317,9 +307,7 @@ class ScenesEndpoint(RestEndpoint):
                         effect["type"] = virtual.active_effect.type
                         effect["config"] = virtual.active_effect.config
                     else:
-                        _LOGGER.debug(
-                            "Skipping DummyEffect for virtual %s", virtual.id
-                        )
+                        _LOGGER.debug("Skipping DummyEffect for virtual %s", virtual.id)
                 scene_config["virtuals"][virtual.id] = effect
 
         # Update the scene if it already exists, else create it

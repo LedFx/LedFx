@@ -1,7 +1,6 @@
 """Data models for the Now Playing Service."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -10,16 +9,16 @@ class TrackMetadata:
 
     source_id: str
 
-    title: Optional[str] = None
-    artist: Optional[str] = None
-    album: Optional[str] = None
+    title: str | None = None
+    artist: str | None = None
+    album: str | None = None
 
-    track_id: Optional[str] = None
+    track_id: str | None = None
 
-    artwork_url: Optional[str] = None
-    artwork_hash: Optional[str] = None
+    artwork_url: str | None = None
+    artwork_hash: str | None = None
 
-    updated_at: Optional[float] = None
+    updated_at: float | None = None
 
     def track_identity(self) -> tuple:
         """Return a tuple representing the track identity for change detection.
@@ -48,16 +47,16 @@ class ArtworkReference:
 
     source_id: str
 
-    url: Optional[str] = None
-    cache_key: Optional[str] = None
+    url: str | None = None
+    cache_key: str | None = None
 
-    content_type: Optional[str] = None
-    hash: Optional[str] = None
+    content_type: str | None = None
+    hash: str | None = None
 
-    width: Optional[int] = None
-    height: Optional[int] = None
+    width: int | None = None
+    height: int | None = None
 
-    gradients: Optional[dict] = None
+    gradients: dict | None = None
 
     def to_dict(self) -> dict:
         """Serialize to a plain dict for API responses."""
@@ -77,15 +76,15 @@ class ArtworkReference:
 class NowPlayingState:
     """Complete current state of the Now Playing Service."""
 
-    active_source_id: Optional[str] = None
+    active_source_id: str | None = None
 
-    metadata: Optional[TrackMetadata] = None
-    artwork: Optional[ArtworkReference] = None
+    metadata: TrackMetadata | None = None
+    artwork: ArtworkReference | None = None
 
     selected_gradient_variant: str = "led_punchy"
-    current_gradient: Optional[str] = None
+    current_gradient: str | None = None
 
-    updated_at: Optional[float] = None
+    updated_at: float | None = None
 
     def to_dict(self) -> dict:
         """Serialize to a plain dict for API responses."""

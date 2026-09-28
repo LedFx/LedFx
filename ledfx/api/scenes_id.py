@@ -27,9 +27,7 @@ class SceneEndpoint(RestEndpoint):
         scene_id = generate_id(scene_id)
 
         if scene_id not in self._ledfx.config["scenes"]:
-            return await self.invalid_request(
-                f"Scene {scene_id} does not exist"
-            )
+            return await self.invalid_request(f"Scene {scene_id} does not exist")
 
         scene_config = self._ledfx.config["scenes"][scene_id]
         scene_payload = dict(scene_config)

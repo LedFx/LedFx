@@ -40,7 +40,8 @@ class Scan:
 class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan Multi"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]
+    USES_MELBANK_RANGE = True
+    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "input_source",
         "attack",
@@ -48,7 +49,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         "filter",
     ]
 
-    _sources = {
+    _sources = {  # noqa: RUF012
         "Power": "power",
         "Melbank": "melbank",
     }
@@ -159,9 +160,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
             for scan in self.scans:
                 if self._config["flip"] != self.flip_was:
                     scan.graph.dump_graph("Flip")
-                scan.graph.append_tag(
-                    "Config changed", scan.power, color="red"
-                )
+                scan.graph.append_tag("Config changed", scan.power, color="red")
             self.flip_was = self._config["flip"]
 
     def audio_data_updated(self, data):
@@ -227,9 +226,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
 
             # actually render
             self.pixels[
-                pixel_pos : min(
-                    pixel_pos + scan_width_pixels, self.pixel_count
-                )
+                pixel_pos : min(pixel_pos + scan_width_pixels, self.pixel_count)
             ] += scan.color_scan
 
             if not self._config["bounce"]:

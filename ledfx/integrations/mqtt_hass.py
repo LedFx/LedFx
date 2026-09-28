@@ -32,7 +32,7 @@ def extract_ip():
     try:
         st.connect(("10.255.255.255", 1))
         IP = st.getsockname()[0]
-    except Exception:
+    except Exception:  # noqa: BLE001
         IP = "127.0.0.1"
     finally:
         st.close()
@@ -62,9 +62,9 @@ class MQTT_HASS(Integration):
                 description="MQTT ip address",
                 default="127.0.0.1",
             ): str,
-            vol.Required(
-                "port", description="MQTT port", default=1883
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            vol.Required("port", description="MQTT port", default=1883): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=65535)
+            ),
             vol.Optional(
                 "username",
                 description="MQTT username",
@@ -83,7 +83,7 @@ class MQTT_HASS(Integration):
         }
     )
 
-    TRANSITION_MAPPING = {
+    TRANSITION_MAPPING = {  # noqa: RUF012
         "ledfxtransitiontype": "transition_mode",
         "ledfxtransitiontime": "transition_time",
     }
@@ -128,9 +128,7 @@ class MQTT_HASS(Integration):
         for virtual in self._ledfx.virtuals.values():
             if virtual.active:
                 active_pixels += virtual.pixel_count
-        _LOGGER.debug(
-            "active_pixels/total_pixels:%s/%s", active_pixels, total_pixels
-        )
+        _LOGGER.debug("active_pixels/total_pixels:%s/%s", active_pixels, total_pixels)
         # ToDo create sensor with total_pixels
 
         # Internal State-Handler
@@ -196,9 +194,7 @@ class MQTT_HASS(Integration):
 
         self._listeners.append(
             self._ledfx.events.add_listener(
-                lambda event: self.publish_virtual_config(
-                    event.virtual_id, client
-                ),
+                lambda event: self.publish_virtual_config(event.virtual_id, client),
                 Event.VIRTUAL_CONFIG_UPDATE,
             )
         )
@@ -210,9 +206,7 @@ class MQTT_HASS(Integration):
         )
 
         self._listeners.append(
-            self._ledfx.events.add_listener(
-                publish_paused_state, Event.VIRTUAL_PAUSE
-            )
+            self._ledfx.events.add_listener(publish_paused_state, Event.VIRTUAL_PAUSE)
         )
 
         self._listeners.append(
@@ -233,9 +227,7 @@ class MQTT_HASS(Integration):
         }
 
         # SENSOR
-        client.subscribe(
-            f"{self._config['topic']}/sensor/ledfxpixelsensor/set"
-        )
+        client.subscribe(f"{self._config['topic']}/sensor/ledfxpixelsensor/set")
         client.publish(
             f"{self._config['topic']}/sensor/ledfxpixelsensor/config",
             json.dumps(
@@ -253,9 +245,7 @@ class MQTT_HASS(Integration):
         )
 
         # SCENE SELECTOR
-        client.subscribe(
-            f"{self._config['topic']}/select/ledfxsceneselect/set"
-        )
+        client.subscribe(f"{self._config['topic']}/select/ledfxsceneselect/set")
         client.publish(
             f"{self._config['topic']}/select/ledfxsceneselect/config",
             json.dumps(
@@ -293,9 +283,7 @@ class MQTT_HASS(Integration):
         )
 
         # TRANSITION TYPE
-        client.subscribe(
-            f"{self._config['topic']}/select/ledfxtransitiontype/set"
-        )
+        client.subscribe(f"{self._config['topic']}/select/ledfxtransitiontype/set")
         client.publish(
             f"{self._config['topic']}/select/ledfxtransitiontype/config",
             json.dumps(
@@ -307,27 +295,23 @@ class MQTT_HASS(Integration):
                     "stat_t": "~/state",
                     "icon": "mdi:transfer-right",
                     "entity_category": "config",
-                    "options": list(
-                        [
-                            "Add",
-                            "Dissolve",
-                            "Push",
-                            "Slide",
-                            "Iris",
-                            "Through White",
-                            "Through Black",
-                            "None",
-                        ]
-                    ),
+                    "options": [
+                        "Add",
+                        "Dissolve",
+                        "Push",
+                        "Slide",
+                        "Iris",
+                        "Through White",
+                        "Through Black",
+                        "None",
+                    ],
                     "device": hass_device,
                 }
             ),
         )
 
         # TRANSITION TIME
-        client.subscribe(
-            f"{self._config['topic']}/number/ledfxtransitiontime/set"
-        )
+        client.subscribe(f"{self._config['topic']}/number/ledfxtransitiontime/set")
         client.publish(
             f"{self._config['topic']}/number/ledfxtransitiontime/config",
             json.dumps(
@@ -368,11 +352,8 @@ class MQTT_HASS(Integration):
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
             name = virtual.config["name"]
-            if (
-                name.startswith("gap-")
-                or name.endswith("-background")
-                or name.endswith("-mask")
-                or name.endswith("-foreground")
+            if name.startswith("gap-") or name.endswith(
+                ("-background", "-mask", "-foreground")
             ):
                 continue
 
@@ -404,9 +385,7 @@ class MQTT_HASS(Integration):
                         "icon": icon,
                         "effect": True,
                         # "effect_list": list(COLORS.keys()),
-                        "effect_list": list(
-                            self._ledfx.effects.classes().keys()
-                        ),
+                        "effect_list": list(self._ledfx.effects.classes().keys()),
                         "device": hass_device,
                     }
                 ),
@@ -443,9 +422,7 @@ class MQTT_HASS(Integration):
                 active_pixels += virtual.pixel_count
         if segs[0] == "ledfx":
             if payload == "HomeAssistant initialized":
-                virtual = self._ledfx.virtuals.get(
-                    next(iter(self._ledfx.virtuals))
-                )
+                virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
                 client.publish(
                     f"{self._config['topic']}/select/ledfxtransitiontype/state",
                     virtual.config["transition_mode"],
@@ -463,9 +440,7 @@ class MQTT_HASS(Integration):
                 client.publish(
                     f"{self._config['topic']}/select/ledfxaudio/state",
                     AudioInputSource.input_devices()[
-                        self._ledfx.config.get("audio", {}).get(
-                            "audio_device", {}
-                        )
+                        self._ledfx.config.get("audio", {}).get("audio_device", {})
                     ],
                 )
                 # Pixel-Sensor
@@ -500,13 +475,11 @@ class MQTT_HASS(Integration):
             return
 
         # React to Transition-Type
-        if virtualid in self.TRANSITION_MAPPING.keys():
+        if virtualid in self.TRANSITION_MAPPING:
             # _LOGGER.info("Transitions: %s", payload)
             prior_state = self._ledfx.config["global_transitions"]
             self._ledfx.config["global_transitions"] = True
-            virtual = self._ledfx.virtuals.get(
-                next(iter(self._ledfx.virtuals))
-            )
+            virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
             key = self.TRANSITION_MAPPING[virtualid]
             if key == "transition_time":
                 try:
@@ -562,7 +535,7 @@ class MQTT_HASS(Integration):
                         virtual.set_effect(effect)
                         virtual.active = payload.get("state", "off") == "on"
 
-                    except (ValueError, RuntimeError) as msg:
+                    except (ValueError, RuntimeError) as msg:  # noqa: PLR1704
                         _LOGGER.warning(msg)
                 else:
                     _LOGGER.debug("COLOR: %s", color)
@@ -576,20 +549,15 @@ class MQTT_HASS(Integration):
                 selected_effect_or_preset = payload.get("effect")
                 if selected_effect_or_preset:
                     if selected_effect_or_preset == "back":
-                        effect_list = list(
-                            self._ledfx.effects.classes().keys()
-                        )
-                    elif (
-                        selected_effect_or_preset
-                        in self._ledfx.effects.classes().keys()
-                    ):
+                        effect_list = list(self._ledfx.effects.classes().keys())
+                    elif selected_effect_or_preset in self._ledfx.effects.classes():
                         # If an effect is selected, show its presets
-                        ledfx_presets = self._ledfx.config.get(
-                            "ledfx_presets", {}
-                        ).get(selected_effect_or_preset, {})
-                        user_presets = self._ledfx.config.get(
-                            "user_presets", {}
-                        ).get(selected_effect_or_preset, {})
+                        ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(
+                            selected_effect_or_preset, {}
+                        )
+                        user_presets = self._ledfx.config.get("user_presets", {}).get(
+                            selected_effect_or_preset, {}
+                        )
                         effect_list = (
                             ["back"]
                             + list(ledfx_presets.keys())
@@ -603,12 +571,12 @@ class MQTT_HASS(Integration):
                         virtual.set_effect(effect)
                     else:
                         # If a preset is selected, apply it
-                        ledfx_presets = self._ledfx.config.get(
-                            "ledfx_presets", {}
-                        ).get(getattr(virtual.active_effect, "type", ""), {})
-                        user_presets = self._ledfx.config.get(
-                            "user_presets", {}
-                        ).get(getattr(virtual.active_effect, "type", ""), {})
+                        ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(
+                            getattr(virtual.active_effect, "type", ""), {}
+                        )
+                        user_presets = self._ledfx.config.get("user_presets", {}).get(
+                            getattr(virtual.active_effect, "type", ""), {}
+                        )
                         preset_config = ledfx_presets.get(
                             selected_effect_or_preset
                         ) or user_presets.get(selected_effect_or_preset)
@@ -626,11 +594,8 @@ class MQTT_HASS(Integration):
                             virtual.set_effect(effect)
                         return
                     name = virtual.config["name"]
-                    if (
-                        name.startswith("gap-")
-                        or name.endswith("-background")
-                        or name.endswith("-mask")
-                        or name.endswith("-foreground")
+                    if name.startswith("gap-") or name.endswith(
+                        ("-background", "-mask", "-foreground")
                     ):
                         return
 
@@ -743,7 +708,5 @@ class MQTT_HASS(Integration):
             client.username_pw_set(
                 self._config["username"], password=self._config["password"]
             )
-        client.connect_async(
-            self._config["ip_address"], self._config["port"], 60
-        )
+        client.connect_async(self._config["ip_address"], self._config["port"], 60)
         client.loop_start()

@@ -1,4 +1,4 @@
-import numpy as np
+import numpy as np  # noqa: N999
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
@@ -8,7 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Multicolor Bar"
     CATEGORY = "BPM"
-    HIDDEN_KEYS = ["gradient_roll"]
+    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -16,12 +16,12 @@ class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
                 "mode",
                 description="Choose from different animations",
                 default="wipe",
-            ): vol.In(list(["cascade", "wipe"])),
+            ): vol.In(["cascade", "wipe"]),
             vol.Optional(
                 "ease_method",
                 description="Acceleration profile of bar",
                 default="linear",
-            ): vol.In(list(["ease_in_out", "ease_in", "ease_out", "linear"])),
+            ): vol.In(["ease_in_out", "ease_in", "ease_out", "linear"]),
             vol.Optional(
                 "color_step",
                 description="Amount of color change per beat",

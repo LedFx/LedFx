@@ -1,0 +1,616 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel main or tag runs: they publish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  UV_PYTHON: "3.12" # frozen builds, wheel; test jobs override
+  GHCR_IMAGE: ghcr.io/ledfx/ledfx
+  DOCKERHUB_IMAGE: ledfxorg/ledfx
+
+jobs:
+  # Docs/frontend-only PRs skip the builds here rather than with paths-ignore:
+  # a workflow skipped by paths-ignore never reports, so the required
+  # "CI passed" check would wait forever. Skipped jobs count as passed.
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.plan.outputs.code }}
+      version: ${{ steps.plan.outputs.version }}
+      release: ${{ steps.plan.outputs.release }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: pyproject.toml
+          sparse-checkout-cone-mode: false
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          version=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          # PR-controlled on PR runs; it ends up in outputs, file names and NSIS defines.
+          if [[ ! "$version" =~ ^[0-9][0-9A-Za-z.+-]*$ ]]; then
+            echo "::error::Unexpected version string in pyproject.toml"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          # The one guard for every publish path.
+          if [[ "$REF" == refs/tags/v* && "$REF" != "refs/tags/v$version" ]]; then
+            echo "::error::Tag ${REF#refs/tags/} does not match pyproject.toml version $version"
+            exit 1
+          fi
+          # Only a tag push releases; re-run failed jobs to retry a release.
+          if [[ "$EVENT" == push && "$REF" == refs/tags/v* ]]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          fi
+          code=true
+          if [ -n "$PR" ]; then
+            # previous_filename: moving code out of ledfx/ into docs/ is still a code change
+            files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
+            # here-string, not a pipe: grep -q exiting early + pipefail would read as "no match"
+            grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" || code=false
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
+  test-linux:
+    name: Test (Ubuntu, py${{ matrix.python }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12", "3.13", "3.14"]
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libatlas3-base portaudio19-dev
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install LedFx
+        env:
+          CFLAGS: -Wno-incompatible-function-pointer-types
+        run: uv sync --all-extras --dev
+      - uses: LABSN/sound-ci-helpers@d08c889a7bba7d9b1b059f8f76dac4672ea3a9cf # v1.0.4
+      - name: Create audio input
+        run: pactl load-module module-null-sink sink_name=LedFx_Test_Source sink_properties=device.description=LedFx_Test_Source
+      - name: Run tests
+        run: uv run pytest -v --timeout=120
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ledfx-log-linux-py${{ matrix.python }}
+          path: debug_config/ledfx.log
+
+  test-windows:
+    name: Test (Windows, py${{ matrix.python }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: windows-2022 # pinned until we understand why windows-2025 has audio device issues
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.14"] # oldest and newest supported
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    steps:
+      - name: Enable long paths for git
+        run: git config --system core.longpaths true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install LedFx
+        run: uv sync --all-extras --dev
+      - uses: LABSN/sound-ci-helpers@d08c889a7bba7d9b1b059f8f76dac4672ea3a9cf # v1.0.4
+      # The LIFX emulator (tests/conftest.py) binds UDP 56700, inside Windows'
+      # dynamic port range. winnat reserves random blocks of that range at
+      # boot; when one covers 56700 the bind fails with WinError 10013.
+      # Reserve the port while winnat is stopped so it can't be taken.
+      - name: Reserve UDP 56700 for the LIFX emulator
+        run: |
+          net stop winnat
+          netsh int ipv4 add excludedportrange protocol=udp startport=56700 numberofports=1
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          net start winnat
+          netsh int ipv4 show excludedportrange protocol=udp
+      - name: Run tests
+        run: uv run pytest -v --timeout=120
+        timeout-minutes: 10
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ledfx-log-windows-py${{ matrix.python }}
+          path: debug_config/ledfx.log
+
+  test-macos:
+    name: Smoke test (macOS arm64, py${{ matrix.python }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.14"] # oldest and newest supported
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+      CFLAGS: -Wno-incompatible-function-pointer-types
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: brew install portaudio mbedtls@2
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install LedFx
+        run: |
+          mbedtls=$(brew --prefix mbedtls@2)
+          export PATH="$mbedtls/bin:$PATH" LDFLAGS="-L$mbedtls/lib" CPPFLAGS="-I$mbedtls/include"
+          uv sync --all-extras --dev
+      - name: Check LedFx launches
+        run: uv run ledfx --ci-smoke-test -vv -c debug_config --offline
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: ledfx-log-macos-py${{ matrix.python }}
+          path: debug_config/ledfx.log
+
+  frozen-windows:
+    name: Frozen build (Windows)
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Enable long paths for git
+        run: git config --system core.longpaths true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install NSIS
+        shell: pwsh
+        run: |
+          choco install nsis
+          echo "C:\Program Files (x86)\NSIS\Bin" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath "$env:GITHUB_PATH" -Append
+      - name: Install LedFx
+        run: uv sync --extra hue --group build
+      - name: Build binary
+        run: uv run pyinstaller windows-binary.spec
+      - name: Swap in WASAPI loopback portaudio
+        run: mv -f loopback/libportaudio64bit.dll dist/LedFx/_internal/_sounddevice_data/portaudio-binaries/libportaudio64bit.dll
+      - name: Build installer # ledfx.nsi packs dist\LedFx, so package after this
+        run: cd installer && makensis //DPRODUCT_VERSION="$VERSION" ledfx.nsi
+      - name: Package release archives
+        run: |
+          mv dist/LedFx "dist/LedFx-$VERSION"
+          (cd dist && 7z a "../LedFx-$VERSION-win-x64.zip" "LedFx-$VERSION")
+          mv "installer/ledfx-setup-win-$VERSION.exe" "LedFx-$VERSION-setup.exe"
+          7z a "LedFx-$VERSION-win-x64-setup.zip" "LedFx-$VERSION-setup.exe"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-win-x64
+          path: LedFx-${{ env.VERSION }}-win-x64*.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  frozen-macos:
+    name: Frozen build (macOS ${{ matrix.suffix }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include: &macos
+          - runner: macos-15-intel
+            suffix: osx-intel
+          - runner: macos-latest
+            suffix: osx-arm64
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      SUFFIX: ${{ matrix.suffix }}
+      CFLAGS: -Wno-incompatible-function-pointer-types
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: brew install portaudio mbedtls@2
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install LedFx
+        run: |
+          mbedtls=$(brew --prefix mbedtls@2)
+          export PATH="$mbedtls/bin:$PATH" LDFLAGS="-L$mbedtls/lib" CPPFLAGS="-I$mbedtls/include"
+          uv sync --extra hue --group build
+      - name: Build binary
+        run: uv run pyinstaller osx-binary.spec
+      # tar here: upload-artifact drops the permissions and symlinks an .app needs
+      - name: Package release archive
+        run: |
+          chmod +x dist/LedFx/Contents/MacOS/LedFx
+          mv dist/LedFx "dist/LedFx-$VERSION.app"
+          xattr -cr "dist/LedFx-$VERSION.app"
+          tar -C dist -czf "LedFx-$VERSION-$SUFFIX.tar.gz" "LedFx-$VERSION.app"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-${{ matrix.suffix }}
+          path: LedFx-${{ env.VERSION }}-${{ matrix.suffix }}.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+
+  # Clean runners on purpose: they catch libraries missing from the bundle
+  # that the build runner happens to have installed.
+  smoke-windows:
+    name: Smoke test frozen build (Windows)
+    needs: [plan, frozen-windows]
+    runs-on: windows-latest
+    timeout-minutes: 10
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: LABSN/sound-ci-helpers@d08c889a7bba7d9b1b059f8f76dac4672ea3a9cf # v1.0.4
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-win-x64
+      - name: Run LedFx
+        run: |
+          7z x "LedFx-$VERSION-win-x64.zip"
+          "LedFx-$VERSION/LedFx.exe" -vv --ci-smoke-test --offline
+
+  smoke-macos:
+    name: Smoke test frozen build (macOS ${{ matrix.suffix }})
+    needs: [plan, frozen-macos]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include: *macos
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      SUFFIX: ${{ matrix.suffix }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-${{ matrix.suffix }}
+      - name: Run LedFx
+        run: |
+          tar -xzf "LedFx-$VERSION-$SUFFIX.tar.gz"
+          "./LedFx-$VERSION.app/Contents/MacOS/LedFx" -vv --ci-smoke-test --offline
+
+  package:
+    name: Build Python package
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Write ledfx.env
+        env:
+          RELEASE: ${{ needs.plan.outputs.release }}
+        run: |
+          echo "GITHUB_SHA = \"$GITHUB_SHA\"" >> ledfx.env
+          echo "IS_RELEASE = $RELEASE" >> ledfx.env
+      - name: Build wheel and sdist
+        run: uv build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-dist
+          path: dist/
+          if-no-files-found: error
+
+  smoke-package:
+    name: Smoke test Python package (${{ matrix.kind }})
+    needs: [plan, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [whl, tar.gz]
+    env:
+      KIND: ${{ matrix.kind }}
+    steps:
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y portaudio19-dev
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-dist
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: false
+      - name: Install and run LedFx
+        run: |
+          uv venv
+          uv pip install ledfx-*."$KIND"
+          .venv/bin/ledfx -vv --ci-smoke-test --offline
+
+  docker:
+    name: Docker (${{ matrix.arch }})
+    needs: plan
+    if: needs.plan.outputs.code == 'true'
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    env:
+      ARCH: ${{ matrix.arch }}
+      # push events are only main and v* tags; forks never publish
+      PUBLISH: ${{ github.event_name == 'push' && github.repository == 'LedFx/LedFx' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+      - name: Log in to GHCR
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Log in to Docker Hub
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: ledfx_docker/Dockerfile
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          provenance: false
+          tags: ledfx:ci
+          # Release builds never touch a cache: a tag run can read caches written on main.
+          no-cache: ${{ needs.plan.outputs.release == 'true' }}
+          cache-from: ${{ needs.plan.outputs.release != 'true' && format('type=registry,ref={0}:cache-{1}', env.GHCR_IMAGE, matrix.arch) || '' }}
+          cache-to: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && format('type=registry,ref={0}:cache-{1},mode=max', env.GHCR_IMAGE, matrix.arch) || '' }}
+          build-args: |
+            GITHUB_SHA=${{ github.sha }}
+            IS_RELEASE=${{ needs.plan.outputs.release }}
+      - name: Smoke test
+        run: docker run --rm ledfx:ci --ci-smoke-test -vv --offline
+      - name: Push the tested image
+        if: env.PUBLISH == 'true'
+        run: |
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            # Only main moves edge: a tag on an older commit would roll it back
+            if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+              docker tag ledfx:ci "$image:edge-$ARCH"
+              docker push "$image:edge-$ARCH"
+            fi
+            docker tag ledfx:ci "$image:edge-$ARCH-$GITHUB_SHA"
+            digest=$(docker push "$image:edge-$ARCH-$GITHUB_SHA" | awk '/digest: sha256:/ {print $3}')
+            test -n "$digest"
+            echo "$image@$digest" >> "docker-$ARCH.txt"
+          done
+      # Releases promote these digests, not the edge tags: a main run of the
+      # same commit may retag those with a cached image while approval waits.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: env.PUBLISH == 'true'
+        with:
+          name: docker-${{ matrix.arch }}
+          path: docker-${{ matrix.arch }}.txt
+          if-no-files-found: error
+
+  docker-edge:
+    name: Docker edge manifest
+    needs: [plan, ci-passed]
+    # Tag runs publish through docker-latest; moving edge there could roll it
+    # back to an older commit.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'LedFx/LedFx'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Create edge manifests
+        run: |
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            docker buildx imagetools create -t "$image:edge" -t "$image:edge-$GITHUB_SHA" \
+              "$image:edge-amd64-$GITHUB_SHA" "$image:edge-arm64-$GITHUB_SHA"
+          done
+
+  # The one check branch protection requires. Every build/test job belongs in
+  # needs; its name must never change.
+  ci-passed:
+    name: CI passed
+    if: always()
+    needs:
+      - plan
+      - test-linux
+      - test-windows
+      - test-macos
+      - frozen-windows
+      - frozen-macos
+      - smoke-windows
+      - smoke-macos
+      - package
+      - smoke-package
+      - docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fail if any job failed or was cancelled
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
+
+  # Release: tag v<version> only. Each job only downloads tested artifacts and
+  # publishes them; one approval of the production environment releases all.
+  # GitHub approves per environment, so that holds only while every production
+  # job has the same needs and reaches the gate together. A job with extra
+  # needs would wait at the gate later and ask for a second approval.
+  github-release:
+    name: Publish GitHub release
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: release-*
+          merge-multiple: true
+      - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          name: LedFx ${{ needs.plan.outputs.version }}
+          files: LedFx-*
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+
+  pypi:
+    name: Publish to PyPI
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write # Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: python-dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+
+  docker-latest:
+    name: Publish Docker latest
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: docker-*
+          merge-multiple: true
+      - name: Create release manifests
+        run: |
+          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
+            mapfile -t sources < <(grep -h "^$image@" docker-*.txt)
+            test "${#sources[@]}" -eq 2
+            docker buildx imagetools create -t "$image:latest" -t "$image:$VERSION" -t "$image:$GITHUB_SHA" "${sources[@]}"
+          done
+
+  sentry:
+    name: Notify Sentry of release
+    needs: [plan, ci-passed]
+    if: needs.plan.outputs.release == 'true'
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Commit history for Sentry only; nothing is built.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3.7.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN_V2 }}
+          SENTRY_ORG: ledfx-org
+          SENTRY_PROJECT: ledfx-v2-rel
+        with:
+          environment: production
+          release: ledfx@${{ needs.plan.outputs.version }}

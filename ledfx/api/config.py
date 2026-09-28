@@ -26,12 +26,12 @@ CORE_CONFIG_KEYS = set(map(str, CORE_CONFIG_SCHEMA.schema.keys()))
 
 
 def validate_and_trim_config(config, schema, node):
-    for key in config.keys():
+    for key in config:
         if key not in PERMITTED_KEYS[node] and key != "user_presets":
             raise KeyError(f"Unknown/forbidden {node} config key: '{key}'")
 
     validated_config = schema(config)
-    return {key: validated_config[key] for key in config.keys()}
+    return {key: validated_config[key] for key in config}
 
 
 class ConfigEndpoint(RestEndpoint):
@@ -118,9 +118,9 @@ class ConfigEndpoint(RestEndpoint):
             config = await request.json()
 
             try:
-                assert parse_version(
-                    config["configuration_version"]
-                ) == parse_version(CONFIGURATION_VERSION)
+                assert parse_version(config["configuration_version"]) == parse_version(
+                    CONFIGURATION_VERSION
+                )
             except (KeyError, AssertionError):
                 _LOGGER.warning(
                     "LedFx config version: %s, import config version: %s",
@@ -141,12 +141,8 @@ class ConfigEndpoint(RestEndpoint):
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})
             )
-            wled_config = WLED_CONFIG_SCHEMA(
-                config.pop("wled_preferences", {})
-            )
-            melbanks_config = Melbanks.CONFIG_SCHEMA(
-                config.pop("melbanks", {})
-            )
+            wled_config = WLED_CONFIG_SCHEMA(config.pop("wled_preferences", {}))
+            melbanks_config = Melbanks.CONFIG_SCHEMA(config.pop("melbanks", {}))
             core_config = CORE_CONFIG_SCHEMA(config)
 
             core_config["audio"] = audio_config
@@ -186,14 +182,12 @@ class ConfigEndpoint(RestEndpoint):
             config = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return await self.generic_error(str(e))
 
         try:
             self.update_config(config)
-            save_config(
-                config=self._ledfx.config, config_dir=self._ledfx.config_dir
-            )
+            save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
             need_restart = self.check_need_restart(config)
             if need_restart:
                 # Ugly - return success to frontend before restarting
@@ -211,7 +205,7 @@ class ConfigEndpoint(RestEndpoint):
             error_message = f"Error updating config: {msg}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return await self.internal_error(str(e))
 
     def update_config(self, config):
@@ -245,18 +239,14 @@ class ConfigEndpoint(RestEndpoint):
         melbanks_config = validate_and_trim_config(
             config.pop("melbanks", {}), Melbanks.CONFIG_SCHEMA, "melbanks"
         )
-        core_config = validate_and_trim_config(
-            config, CORE_CONFIG_SCHEMA, "core"
-        )
+        core_config = validate_and_trim_config(config, CORE_CONFIG_SCHEMA, "core")
 
         # When user explicitly selects a new device via API, replace any stale
         # stored name with the current name for that selected index. This keeps
         # the live selection consistent now and preserves boot-time name-based
         # recovery if indices drift before the next restart.
         if "audio_device" in audio_config:
-            audio_config[
-                "audio_device_name"
-            ] = AudioInputSource.input_devices().get(
+            audio_config["audio_device_name"] = AudioInputSource.input_devices().get(
                 audio_config["audio_device"], ""
             )
 
@@ -266,9 +256,7 @@ class ConfigEndpoint(RestEndpoint):
         # handle special case wled_preferences nested dict
         for key in wled_config:
             if key in self._ledfx.config["wled_preferences"]:
-                self._ledfx.config["wled_preferences"][key].update(
-                    wled_config[key]
-                )
+                self._ledfx.config["wled_preferences"][key].update(wled_config[key])
             else:
                 self._ledfx.config["wled_preferences"][key] = wled_config[key]
 
@@ -282,14 +270,10 @@ class ConfigEndpoint(RestEndpoint):
             self._ledfx.config["audio"].update(audio_config)
 
             if hasattr(self._ledfx, "reconcile_sendspin_always_on_runtime"):
-                self._ledfx.reconcile_sendspin_always_on_runtime(
-                    "audio_config_updated"
-                )
+                self._ledfx.reconcile_sendspin_always_on_runtime("audio_config_updated")
 
         if hasattr(self._ledfx, "audio") and melbanks_config:
-            self._ledfx.audio.melbanks.update_config(
-                self._ledfx.config["melbanks"]
-            )
+            self._ledfx.audio.melbanks.update_config(self._ledfx.config["melbanks"])
 
         self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
 
@@ -303,9 +287,7 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             bool: True if a restart is needed, False otherwise.
         """
-        core_config = validate_and_trim_config(
-            config, CORE_CONFIG_SCHEMA, "core"
-        )
+        core_config = validate_and_trim_config(config, CORE_CONFIG_SCHEMA, "core")
 
         # If core_config is empty, no restart is needed
         if not core_config:

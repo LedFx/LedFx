@@ -8,6 +8,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 class EnergyAudioEffect(AudioReactiveEffect):
     NAME = "Energy"
     CATEGORY = "Classic"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -76,15 +77,9 @@ class EnergyAudioEffect(AudioReactiveEffect):
 
         self.color_cycler = 0
 
-        self.lows_color = np.array(
-            parse_color(self._config["color_lows"]), dtype=float
-        )
-        self.mids_color = np.array(
-            parse_color(self._config["color_mids"]), dtype=float
-        )
-        self.high_color = np.array(
-            parse_color(self._config["color_high"]), dtype=float
-        )
+        self.lows_color = np.array(parse_color(self._config["color_lows"]), dtype=float)
+        self.mids_color = np.array(parse_color(self._config["color_mids"]), dtype=float)
+        self.high_color = np.array(parse_color(self._config["color_high"]), dtype=float)
 
         self._multiplier = 1.6 - self._config["blur"] / 17
 
@@ -99,24 +94,23 @@ class EnergyAudioEffect(AudioReactiveEffect):
         self.beat_now = data.volume_beat_now()
 
     def render(self):
-        if self._config["color_cycler"]:
-            if self.beat_now:
-                # Cycle between 0,1,2 for lows, mids and highs
-                self.color_cycler = (self.color_cycler + 1) % 3
+        if self._config["color_cycler"] and self.beat_now:
+            # Cycle between 0,1,2 for lows, mids and highs
+            self.color_cycler = (self.color_cycler + 1) % 3
 
-                color_raw = self._ledfx.colors.get_all(merged=False)
-                if len(color_raw[1]) > 0:  # if there are user colors, use them
-                    color_list = list(color_raw[1].values())
-                else:
-                    color_list = list(color_raw[0].values())
-                color = parse_color(np.random.choice(color_list))
+            color_raw = self._ledfx.colors.get_all(merged=False)
+            if len(color_raw[1]) > 0:  # if there are user colors, use them
+                color_list = list(color_raw[1].values())
+            else:
+                color_list = list(color_raw[0].values())
+            color = parse_color(np.random.choice(color_list))
 
-                if self.color_cycler == 0:
-                    self.lows_color = color
-                elif self.color_cycler == 1:
-                    self.mids_color = color
-                elif self.color_cycler == 2:
-                    self.high_color = color
+            if self.color_cycler == 0:
+                self.lows_color = color
+            elif self.color_cycler == 1:
+                self.mids_color = color
+            elif self.color_cycler == 2:
+                self.high_color = color
 
         # Build the new energy profile based on the mids, highs and lows setting
         # the colors as red, green, and blue channel respectively

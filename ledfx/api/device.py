@@ -57,9 +57,7 @@ class DeviceEndpoint(RestEndpoint):
             return await self.invalid_request(
                 "Required attribute 'config' was not provided"
             )
-        _LOGGER.debug(
-            "Updating device %s with config %s", device_id, device_config
-        )
+        _LOGGER.debug("Updating device %s with config %s", device_id, device_config)
 
         try:
             device.update_config(device_config)
@@ -104,9 +102,7 @@ class DeviceEndpoint(RestEndpoint):
             response = {"status": "success", "virtuals": {}}
             response["paused"] = self._ledfx.virtuals._paused
             for virtual in self._ledfx.virtuals.values():
-                response["virtuals"][virtual.id] = make_virtual_response(
-                    virtual
-                )
+                response["virtuals"][virtual.id] = make_virtual_response(virtual)
 
         except (voluptuous.Error, ValueError) as msg:
             error_message = f"Error creating device {device_id}: {msg}"

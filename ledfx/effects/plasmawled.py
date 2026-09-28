@@ -1,8 +1,8 @@
 import logging
 
 import numpy as np
-import PIL.Image as Image
 import voluptuous as vol
+from PIL import Image
 
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
@@ -96,9 +96,7 @@ class Plasmawled(Twod, GradientEffect):
         self.stretch_vertical = self._config["stretch_vertical"]
         self.speed_multiplication = self._config["speed_multiplication"]
         self.size_multiplication = self._config["size_multiplication"]
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.speedb = 0
         self.sizeb = 0
         self.time_modifier = 0
@@ -129,8 +127,7 @@ class Plasmawled(Twod, GradientEffect):
 
         h_stretch = max(
             0.01,
-            self.stretch_horizontal
-            - (self.sizeb * self.stretch_horizontal / 3),
+            self.stretch_horizontal - (self.sizeb * self.stretch_horizontal / 3),
         )
         v_stretch = max(
             0.01,
@@ -152,16 +149,14 @@ class Plasmawled(Twod, GradientEffect):
         y_vals = y_indices * v_stretch / 16 + a / 4
 
         # Use vectorized operations to compute indices for lookup tables
-        sin_cos_indices = (
-            self.cosine_lookup_table[np.uint8(x_vals)] + a
-        ) % 256
+        sin_cos_indices = (self.cosine_lookup_table[np.uint8(x_vals)] + a) % 256
         sin_indices = (self.sine_lookup_table[np.uint8(y_vals)] + a) % 256
 
         # Use advanced indexing to access lookup table values
         data = self.sin8(sin_cos_indices + sin_indices) / 255.0
 
-        color_mapped_plasma = self.get_gradient_color_vectorized2d(
-            data
-        ).astype(np.uint8)
+        color_mapped_plasma = self.get_gradient_color_vectorized2d(data).astype(
+            np.uint8
+        )
 
         self.matrix = Image.fromarray(color_mapped_plasma, "RGB")

@@ -19,6 +19,7 @@ class Waterfall(Twod, GradientEffect):
 
     NAME = "Waterfall"
     CATEGORY = "Matrix"
+    USES_MELBANK_RANGE = True
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + [
         "background_mode",
     ]
@@ -106,9 +107,7 @@ class Waterfall(Twod, GradientEffect):
         self.bandsx = []
         for i in range(self.bands):
             start = int((self.r_width / float(self.bands)) * i)
-            end = max(
-                start, int(((self.r_width / float(self.bands)) * (i + 1)) - 1)
-            )
+            end = max(start, int(((self.r_width / float(self.bands)) * (i + 1)) - 1))
             self.bandsx.append([start, end])
         # protect from 0 half_height and divide by zero risk
         self.half_height = max(1, int(self.r_height // 2))
@@ -144,22 +143,15 @@ class Waterfall(Twod, GradientEffect):
                     distance = abs(y - self.half_height)
                     fade_factor = max(
                         0.0,
-                        1.0
-                        - (distance / self.half_height) * self.fade_out * 2.0,
+                        1.0 - (distance / self.half_height) * self.fade_out * 2.0,
                     )
                     grey_value = int(fade_factor * 255)
-                    mask_draw.line(
-                        (0, y, self.r_width - 1, y), fill=grey_value
-                    )
+                    mask_draw.line((0, y, self.r_width - 1, y), fill=grey_value)
             else:
                 for y in range(self.r_height):
-                    fade_factor = max(
-                        0.0, 1.0 - (y / self.half_height) * self.fade_out
-                    )
+                    fade_factor = max(0.0, 1.0 - (y / self.half_height) * self.fade_out)
                     grey_value = int(fade_factor * 255)
-                    mask_draw.line(
-                        (0, y, self.r_width - 1, y), fill=grey_value
-                    )
+                    mask_draw.line((0, y, self.r_width - 1, y), fill=grey_value)
 
             self.waterfall_background = Image.new(
                 "RGB", (self.r_width, self.r_height), self._bg_color_pil
@@ -185,9 +177,9 @@ class Waterfall(Twod, GradientEffect):
         else:
             self.volumes = np.array([split.mean() for split in r_split])
 
-        self.new_row_colors = self.get_gradient_color_vectorized1d(
-            self.volumes
-        ).astype(int)
+        self.new_row_colors = self.get_gradient_color_vectorized1d(self.volumes).astype(
+            int
+        )
 
     def scroll_history_one_row(self):
         """

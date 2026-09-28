@@ -103,10 +103,10 @@ class EffectsEndpoint(RestEndpoint):
         }
 
         # Check if at least one supported key is provided
-        provided_keys = [key for key in SUPPORTED_KEYS.keys() if key in data]
+        provided_keys = [key for key in SUPPORTED_KEYS if key in data]
         if not provided_keys:
             return await self.invalid_request(
-                f'At least one of the following attributes must be provided: {", ".join(SUPPORTED_KEYS.keys())}'
+                f"At least one of the following attributes must be provided: {', '.join(SUPPORTED_KEYS.keys())}"
             )
 
         # Validate and process each provided key
@@ -125,7 +125,7 @@ class EffectsEndpoint(RestEndpoint):
                             skip_keys=set(provided_keys),
                         )
                         config_updates.update(gradient_config)
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001
                         return await self.invalid_request(
                             f'Invalid value for "{key}": {e}'
                         )
@@ -150,10 +150,8 @@ class EffectsEndpoint(RestEndpoint):
                     else:
                         config_updates[key] = value
 
-            except Exception as e:
-                return await self.invalid_request(
-                    f'Invalid value for "{key}": {e}'
-                )
+            except Exception as e:  # noqa: BLE001
+                return await self.invalid_request(f'Invalid value for "{key}": {e}')
 
         # Optional filter: a list of virtual ids to restrict the update to
         virtuals_filter = None
@@ -178,10 +176,8 @@ class EffectsEndpoint(RestEndpoint):
                     config=self._ledfx.config,
                     config_dir=self._ledfx.config_dir,
                 )
-            except Exception as e:
-                _LOGGER.warning(
-                    "Failed to save config after apply_global: %s", e
-                )
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.warning("Failed to save config after apply_global: %s", e)
 
         return await self.request_success(
             "success",
@@ -259,9 +255,7 @@ class EffectsEndpoint(RestEndpoint):
                 virtual.update_effect_config(effect)
                 applied += 1
             except (ValueError, RuntimeError) as msg:
-                _LOGGER.warning(
-                    "Unable to set effect on virtual %s: %s", vid, msg
-                )
+                _LOGGER.warning("Unable to set effect on virtual %s: %s", vid, msg)
                 failed += 1
 
         # Persist configuration changes if anything applied
@@ -271,7 +265,7 @@ class EffectsEndpoint(RestEndpoint):
                     config=self._ledfx.config,
                     config_dir=self._ledfx.config_dir,
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to save config after apply_global_effect: %s", e
                 )

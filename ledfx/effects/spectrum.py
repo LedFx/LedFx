@@ -7,6 +7,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 class SpectrumAudioEffect(AudioReactiveEffect):
     NAME = "Spectrum"
     CATEGORY = "Classic"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -18,7 +19,7 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         }
     )
 
-    rgb_mixes = [
+    rgb_mixes = [  # noqa: RUF012
         [0, 1, 2],
         [0, 2, 1],
         [1, 0, 2],

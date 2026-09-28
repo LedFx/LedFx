@@ -8,6 +8,7 @@ from ledfx.effects.gradient import GradientEffect
 class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Bands"
     CATEGORY = "2D"
+    USES_MELBANK_RANGE = True
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -18,7 +19,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
                 "align",
                 description="Alignment of bands",
                 default="left",
-            ): vol.In(list(["left", "right", "invert", "center"])),
+            ): vol.In(["left", "right", "invert", "center"]),
         }
     )
 
@@ -45,9 +46,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             if vol:
                 out_split[i][:vol] = color
             if self._config["align"] == "center":
-                out_split[i] = np.roll(
-                    out_split[i], (band_width - vol) // 2, axis=0
-                )
+                out_split[i] = np.roll(out_split[i], (band_width - vol) // 2, axis=0)
             elif self._config["align"] == "invert":
                 out_split[i] = np.roll(out_split[i], -vol // 2, axis=0)
             elif self._config["align"] == "right":

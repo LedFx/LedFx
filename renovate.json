@@ -1,0 +1,41 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>LedFx/renovate-config"
+  ],
+  "packageRules": [
+    {
+      "description": "Windows CI is pinned to windows-2022 on purpose: windows-2025 has audio device issues (see ci.yml). Move it by hand once that is understood.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepNames": [
+        "windows"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "The compose file is an example users copy. Pinning :latest to a digest would freeze their image, so leave it alone.",
+      "matchFileNames": [
+        "ledfx_docker/docker-compose-example.yml"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "sphinx-toolbox (docs/conf.py uses sphinx_toolbox.collapse) requires sphinx-autodoc-typehints<3.6.0, up to 4.3.1 at least. Lift this when sphinx-toolbox does.",
+      "matchPackageNames": [
+        "sphinx-autodoc-typehints"
+      ],
+      "allowedVersions": "<3.6.0"
+    },
+    {
+      "description": "Our own packages: released and reviewed by us, so no wait. Matches exclude-newer-package in pyproject.toml.",
+      "matchPackageNames": [
+        "aubio-ledfx",
+        "pyfastnoiselite-ledfx",
+        "samplerate-ledfx"
+      ],
+      "minimumReleaseAge": null
+    }
+  ]
+}

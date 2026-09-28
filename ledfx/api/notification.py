@@ -44,7 +44,6 @@ class NotifyEndpoint(RestEndpoint):
             )
 
         _LOGGER.info("notify: %s --- %s", title, text)
-        if self.icon is not None:
-            if self.icon.HAS_NOTIFICATION:
-                self.icon.notify(f"{title}:\n{text}")
+        if self.icon is not None and self.icon.HAS_NOTIFICATION:
+            self.icon.notify(f"{title}:\n{text}")
         return await self.request_success()

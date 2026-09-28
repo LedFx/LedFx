@@ -89,30 +89,22 @@ class Clone(Twod):
                     "height": self.height,
                     "mon": self.screen,
                 }
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 self.fails += 1
-                _LOGGER.warning(
-                    "Clone Error setting up grab: %s %s", self.fails, e
-                )
+                _LOGGER.warning("Clone Error setting up grab: %s %s", self.fails, e)
                 self.sct = None
                 return
 
         try:
             frame = self.sct.grab(self.grab)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.fails += 1
-            _LOGGER.warning(
-                "Clone Error grabbing frame :%s: %s", self.fails, e
-            )
+            _LOGGER.warning("Clone Error grabbing frame :%s: %s", self.fails, e)
             self.sct = None
             return
 
-        rgb_image = Image.frombytes(
-            "RGB", frame.size, frame.bgra, "raw", "BGRX"
-        )
+        rgb_image = Image.frombytes("RGB", frame.size, frame.bgra, "raw", "BGRX")
 
-        self.matrix = rgb_image.resize(
-            (self.r_width, self.r_height), Image.BILINEAR
-        )
+        self.matrix = rgb_image.resize((self.r_width, self.r_height), Image.BILINEAR)
 
         self.fails = 0

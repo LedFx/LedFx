@@ -287,10 +287,7 @@ def _release_score(
     release_title = release.get("title") or ""
 
     release_title_similarity = _similarity(release_title, title)
-    score += (
-        release_title_similarity
-        * _SCORING_RULES.release_title_similarity_weight
-    )
+    score += release_title_similarity * _SCORING_RULES.release_title_similarity_weight
     reasons.append(f"release_title_sim={release_title_similarity:.2f}")
 
     # A single commonly has the same title as the track.
@@ -317,18 +314,13 @@ def _release_score(
 
     if candidate_artist and artist:
         artist_similarity = _similarity(candidate_artist, artist)
-        score += (
-            artist_similarity * _SCORING_RULES.release_artist_similarity_weight
-        )
+        score += artist_similarity * _SCORING_RULES.release_artist_similarity_weight
         reasons.append(f"release_artist_sim={artist_similarity:.2f}")
 
         if _normalise_compare(candidate_artist) == _normalise_compare(artist):
             score += _SCORING_RULES.release_artist_exact_bonus
             reasons.append("release_artist_exact")
-        elif (
-            artist_similarity
-            < _SCORING_RULES.release_artist_mismatch_threshold
-        ):
+        elif artist_similarity < _SCORING_RULES.release_artist_mismatch_threshold:
             score -= _SCORING_RULES.release_artist_mismatch_penalty
             reasons.append("release_artist_mismatch")
 
@@ -410,9 +402,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
             album,
         )
 
-        candidates = await self._search_release_candidates(
-            artist, title, album
-        )
+        candidates = await self._search_release_candidates(artist, title, album)
         if not candidates:
             _LOGGER.debug(
                 "MusicBrainz: no recordings found for artist=%r title=%r",
@@ -475,9 +465,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
         candidates_by_release: dict[str, _ReleaseCandidate] = {}
 
         for recording in recordings:
-            base_score, base_reasons = _recording_score(
-                recording, artist, title
-            )
+            base_score, base_reasons = _recording_score(recording, artist, title)
             recording_title = recording.get("title") or ""
             recording_id = recording.get("id") or ""
 
@@ -522,9 +510,7 @@ class MusicBrainzArtProvider(AlbumArtProvider):
 
         return candidates
 
-    def _build_queries(
-        self, artist: str, title: str, album: str | None
-    ) -> list[str]:
+    def _build_queries(self, artist: str, title: str, album: str | None) -> list[str]:
         """Build MusicBrainz recording search queries from strict to loose."""
         queries: list[str] = []
 
@@ -578,8 +564,9 @@ class MusicBrainzArtProvider(AlbumArtProvider):
         _LOGGER.debug("MusicBrainz: search query=%r", query)
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     url,
                     headers={
                         "User-Agent": _USER_AGENT,
@@ -587,19 +574,18 @@ class MusicBrainzArtProvider(AlbumArtProvider):
                     },
                     timeout=aiohttp.ClientTimeout(total=_SEARCH_TIMEOUT),
                     allow_redirects=True,
-                ) as resp:
-                    if resp.status != 200:
-                        _LOGGER.debug(
-                            "MusicBrainz search returned HTTP %d for query=%r",
-                            resp.status,
-                            query,
-                        )
-                        return []
-                    data = await resp.json(content_type=None)
-        except Exception as exc:
-            _LOGGER.warning(
-                "MusicBrainz search failed for query=%r: %s", query, exc
-            )
+                ) as resp,
+            ):
+                if resp.status != 200:
+                    _LOGGER.debug(
+                        "MusicBrainz search returned HTTP %d for query=%r",
+                        resp.status,
+                        query,
+                    )
+                    return []
+                data = await resp.json(content_type=None)
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.warning("MusicBrainz search failed for query=%r: %s", query, exc)
             return []
 
         return data.get("recordings") or []
@@ -609,18 +595,18 @@ class MusicBrainzArtProvider(AlbumArtProvider):
         url = _CAA_FRONT_URL.format(mbid=mbid)
 
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
                     url,
                     headers={"User-Agent": _USER_AGENT},
                     timeout=aiohttp.ClientTimeout(total=_ART_TIMEOUT),
                     allow_redirects=True,
-                ) as resp:
-                    if resp.status != 200:
-                        return None
-                    return await resp.read()
-        except Exception as exc:
-            _LOGGER.debug(
-                "Cover Art Archive fetch failed for %s: %s", mbid, exc
-            )
+                ) as resp,
+            ):
+                if resp.status != 200:
+                    return None
+                return await resp.read()
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.debug("Cover Art Archive fetch failed for %s: %s", mbid, exc)
             return None

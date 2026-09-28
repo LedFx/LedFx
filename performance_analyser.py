@@ -20,9 +20,7 @@ def load_and_prepare_data():
     ]
     df.drop("num_runs", axis=1, inplace=True)
     df["timestamp"] = pd.to_datetime(df["timestamp"])
-    total_runtime = (
-        df["timestamp"].max() - df["timestamp"].min()
-    ).total_seconds()
+    total_runtime = (df["timestamp"].max() - df["timestamp"].min()).total_seconds()
     df.drop("timestamp", axis=1, inplace=True)
     # drop any rows which are significantly outliers (where either the original or optimized time is more than 3 standard deviations from the mean)
     df = df[
@@ -55,9 +53,7 @@ def calculate_statistics(df):
 
     stats = {
         # Count the number of times the optimized method was faster
-        "optimized_faster_count": df[df["faster_method"] == "Optimized"].shape[
-            0
-        ],
+        "optimized_faster_count": df[df["faster_method"] == "Optimized"].shape[0],
         # Calculate the total time saved when the optimized method was faster
         "optimized_time_saved": round(
             df[df["faster_method"] == "Optimized"]["original_time"].sum()
@@ -77,9 +73,7 @@ def calculate_statistics(df):
             2,
         ),
         # Count the number of times the original method was faster
-        "original_faster_count": df[df["faster_method"] == "Original"].shape[
-            0
-        ],
+        "original_faster_count": df[df["faster_method"] == "Original"].shape[0],
         # Calculate the total time lost when the original method was faster
         "original_time_lost": round(
             df[df["faster_method"] == "Original"]["optimized_time"].sum()
@@ -135,9 +129,7 @@ def calculate_statistics(df):
         # Median Time Saved/Lost
         "median_time_saved": round(
             df[df["faster_method"] == "Optimized"]["original_time"].median()
-            - df[df["faster_method"] == "Optimized"][
-                "optimized_time"
-            ].median(),
+            - df[df["faster_method"] == "Optimized"]["optimized_time"].median(),
             2,
         ),
         "median_time_lost": round(
@@ -294,12 +286,10 @@ def print_statistics(stats, total_runtime):
     )
 
     print("Summary:")
-    if stats["optimized_faster_count"] > stats[
-        "original_faster_count"
-    ] and stats["optimized_time_saved"] > abs(stats["original_time_lost"]):
-        speedup = total_runtime / (
-            total_runtime - stats["optimized_time_saved"] / 1000
-        )
+    if stats["optimized_faster_count"] > stats["original_faster_count"] and stats[
+        "optimized_time_saved"
+    ] > abs(stats["original_time_lost"]):
+        speedup = total_runtime / (total_runtime - stats["optimized_time_saved"] / 1000)
         speedup_percent = round((speedup - 1) * 100, 2)
         print(
             f"The optimized method is the best to use. It was faster more often and saved more total time. Approximate speedup: {speedup_percent}%."
@@ -308,9 +298,7 @@ def print_statistics(stats, total_runtime):
         stats["original_faster_count"] > stats["optimized_faster_count"]
         and abs(stats["original_time_lost"]) > stats["optimized_time_saved"]
     ):
-        slowdown = total_runtime / (
-            total_runtime + stats["original_time_lost"] / 1000
-        )
+        slowdown = total_runtime / (total_runtime + stats["original_time_lost"] / 1000)
         slowdown_percent = round((1 - slowdown) * 100, 2)
         print(
             f"The original method is the best to use. It was faster more often and lost less total time. Approximate slowdown: {slowdown_percent}%."
@@ -356,9 +344,7 @@ def print_statistics(stats, total_runtime):
         f.write(
             f"Minimum time lost when original method was faster: {stats['min_time_lost']} milliseconds.\n\n"
         )
-        f.write(
-            "Maximum and Minimum Percentage Improvement/Degradation Analysis:\n"
-        )
+        f.write("Maximum and Minimum Percentage Improvement/Degradation Analysis:\n")
         f.write(
             f"Maximum percentage improvement when optimized method was faster: {stats['max_percent_improvement']}%.\n"
         )
@@ -399,9 +385,9 @@ def print_statistics(stats, total_runtime):
             f"Standard deviation of percentage degradation when original method was faster: {stats['std_dev_percent_degradation']}%.\n\n"
         )
         f.write("Summary:\n")
-        if stats["optimized_faster_count"] > stats[
-            "original_faster_count"
-        ] and stats["optimized_time_saved"] > abs(stats["original_time_lost"]):
+        if stats["optimized_faster_count"] > stats["original_faster_count"] and stats[
+            "optimized_time_saved"
+        ] > abs(stats["original_time_lost"]):
             speedup = total_runtime / (
                 total_runtime - stats["optimized_time_saved"] / 1000
             )
@@ -411,8 +397,7 @@ def print_statistics(stats, total_runtime):
             )
         elif (
             stats["original_faster_count"] > stats["optimized_faster_count"]
-            and abs(stats["original_time_lost"])
-            > stats["optimized_time_saved"]
+            and abs(stats["original_time_lost"]) > stats["optimized_time_saved"]
         ):
             slowdown = total_runtime / (
                 total_runtime + stats["original_time_lost"] / 1000

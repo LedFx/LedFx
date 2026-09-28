@@ -3,7 +3,7 @@ import shutil
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal
 
 import numpy as np
 import pytest
@@ -88,9 +88,7 @@ class HTTPSession:
         session.mount("https://", adapter)
         return session
 
-    def send_test_api_request(
-        self, url, method, payload: Optional[Union[str, dict]] = None
-    ):
+    def send_test_api_request(self, url, method, payload: str | dict | None = None):
         """
         Sends a test API request to the specified URL using the specified HTTP method.
 
@@ -111,21 +109,15 @@ class HTTPSession:
             if method == "GET":
                 response = self.session.get(url, headers=headers)
             elif method == "POST":
-                response = self.session.post(
-                    url, json=payload, headers=headers
-                )
+                response = self.session.post(url, json=payload, headers=headers)
             elif method == "PUT":
                 response = self.session.put(url, json=payload, headers=headers)
             elif method == "DELETE":
-                response = self.session.delete(
-                    url, json=payload, headers=headers
-                )
+                response = self.session.delete(url, json=payload, headers=headers)
             else:
                 raise ValueError(f"Invalid method: {method}")
-        except Exception as e:
-            pytest.fail(
-                f"An error occurred while sending the API request: {str(e)}"
-            )
+        except Exception as e:  # noqa: BLE001
+            pytest.fail(f"An error occurred while sending the API request: {e!s}")
         return response
 
 
@@ -142,9 +134,7 @@ class EnvironmentCleanup:
         _ = requests.post(f"http://{SERVER_PATH}/api/power", json={})
         while True:
             try:
-                response = requests.get(
-                    f"http://{SERVER_PATH}/api/info", timeout=1
-                )
+                response = requests.get(f"http://{SERVER_PATH}/api/info", timeout=1)
                 if response.status_code != 200:
                     break
                 time.sleep(0.5)
@@ -183,14 +173,14 @@ class EnvironmentCleanup:
         if os.path.exists(config_file):
             try:
                 os.remove(config_file)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 # Try multiple times for Windows file locking
                 for retry in range(5):
                     time.sleep(0.1)
                     try:
                         os.remove(config_file)
                         break
-                    except Exception:
+                    except Exception:  # noqa: BLE001, S110
                         pass
 
         # Then attempt to remove the entire directory
@@ -201,7 +191,7 @@ class EnvironmentCleanup:
             except FileNotFoundError:
                 # Directory or files were already removed - this is fine
                 break
-            except Exception as e:
+            except Exception:  # noqa: BLE001
                 # Only retry on other exceptions (e.g., permission errors)
                 time.sleep(idx / 10)
         else:
@@ -224,9 +214,7 @@ class EnvironmentCleanup:
             bool: True if LedFx is running, False otherwise.
         """
         try:
-            response = requests.get(
-                f"http://{SERVER_PATH}/api/info", timeout=1
-            )
+            response = requests.get(f"http://{SERVER_PATH}/api/info", timeout=1)
             if response.status_code == 200:
                 # LedFx has returned a response, so it is running, but likely still hydrating the schema
                 # We will wait until it is fully hydrated
@@ -257,9 +245,9 @@ class SystemInfo:
         Returns:
             dict: A dictionary where the keys represent the fps and the values represent the corresponding tick value.
         """
-        if (
-            sys.version_info[0] == 3 and sys.version_info[1] >= 11
-        ) or sys.version_info[0] >= 4:
+        if (sys.version_info[0] == 3 and sys.version_info[1] >= 11) or sys.version_info[  # noqa: YTT201, YTT203
+            0
+        ] >= 4:
             clock_source = "perf_counter"
         else:
             clock_source = "monotonic"
@@ -270,12 +258,8 @@ class SystemInfo:
             mult = 1
         max_fps_target = 126
         min_fps_target = 10
-        max_fps_ticks = np.ceil(
-            (1 / max_fps_target) / (sleep_res * mult)
-        ).astype(int)
-        min_fps_ticks = np.ceil(
-            (1 / min_fps_target) / (sleep_res * mult)
-        ).astype(int)
+        max_fps_ticks = np.ceil((1 / max_fps_target) / (sleep_res * mult)).astype(int)
+        min_fps_ticks = np.ceil((1 / min_fps_target) / (sleep_res * mult)).astype(int)
         tick_range = reversed(range(max_fps_ticks, min_fps_ticks))
         return {int(1 / (sleep_res * mult * i)): i * mult for i in tick_range}
 

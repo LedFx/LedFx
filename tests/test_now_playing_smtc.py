@@ -72,16 +72,12 @@ def _inject_winrt_modules(monkeypatch, manager=None, fail_request=False):
         media_manager_cls.request_async = AsyncMock(
             return_value=manager or _FakeManager()
         )
-    control_mod.GlobalSystemMediaTransportControlsSessionManager = (
-        media_manager_cls
-    )
+    control_mod.GlobalSystemMediaTransportControlsSessionManager = media_manager_cls
 
     for key in ("winrt", "winrt.windows", "winrt.windows.media"):
         if key not in sys.modules:
             monkeypatch.setitem(sys.modules, key, ModuleType(key))
-    monkeypatch.setitem(
-        sys.modules, "winrt.windows.media.control", control_mod
-    )
+    monkeypatch.setitem(sys.modules, "winrt.windows.media.control", control_mod)
     return control_mod
 
 
@@ -209,9 +205,7 @@ class TestSMTCInitialize:
         assert provider._manager is manager
         assert provider._manager_token is not None
 
-    async def test_attaches_to_existing_session(
-        self, provider, monkeypatch, ledfx
-    ):
+    async def test_attaches_to_existing_session(self, provider, monkeypatch, ledfx):
         """If a session is already active, initial metadata is fetched."""
         props = _FakeProps(title="Song", artist="Artist", album="Album")
         session = _FakeSession(props=props)
@@ -225,9 +219,7 @@ class TestSMTCInitialize:
         assert state.metadata.title == "Song"
         assert state.metadata.artist == "Artist"
 
-    async def test_no_active_session_at_startup(
-        self, provider, monkeypatch, ledfx
-    ):
+    async def test_no_active_session_at_startup(self, provider, monkeypatch, ledfx):
         """If no session is active at startup, state stays empty."""
         manager = _FakeManager(session=None)
         _inject_winrt_modules(monkeypatch, manager=manager)
@@ -322,9 +314,7 @@ class TestFetchAndPushMetadata:
 
     async def test_basic_metadata_forwarded(self, provider, ledfx):
         """Full title/artist/album are forwarded to NowPlayingService."""
-        props = _FakeProps(
-            title="My Song", artist="My Artist", album="My Album"
-        )
+        props = _FakeProps(title="My Song", artist="My Artist", album="My Album")
         provider._session = _FakeSession(props=props)
 
         await provider._fetch_and_push_metadata()

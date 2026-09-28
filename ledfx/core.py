@@ -71,8 +71,7 @@ if currently_frozen():
 
 
 class LedFxCore:
-
-    EXIT_CODES = {
+    EXIT_CODES = {  # noqa: RUF012
         1: "LedFx encountered an error - Shutting down.",
         2: "Keyboard interrupt - Shutting down.",
         3: "Shutdown request via API - Shutting down.",
@@ -193,10 +192,8 @@ class LedFxCore:
             )
             try:
                 sendspin_eager_start(self)
-            except Exception as exc:
-                _LOGGER.warning(
-                    "sendspin reconcile (%s) failed: %s", trigger, exc
-                )
+            except Exception as exc:  # noqa: BLE001
+                _LOGGER.warning("sendspin reconcile (%s) failed: %s", trigger, exc)
             return
 
         if hasattr(self, "audio") and self.audio is not None:
@@ -212,18 +209,14 @@ class LedFxCore:
     def _start_audio_device_monitor(self):
         """Start the audio device monitor for the current platform."""
         try:
-            self.audio_device_monitor = create_monitor(
-                loop=self.loop, debounce_ms=200
-            )
+            self.audio_device_monitor = create_monitor(loop=self.loop, debounce_ms=200)
             if self.audio_device_monitor:
                 # Start monitoring with callback to refresh device list
                 self.audio_device_monitor.start(self._on_audio_devices_changed)
                 _LOGGER.info("Audio device monitor enabled")
             else:
-                _LOGGER.debug(
-                    "Audio device monitoring not available on this platform"
-                )
-        except Exception as e:
+                _LOGGER.debug("Audio device monitoring not available on this platform")
+        except Exception as e:  # noqa: BLE001
             _LOGGER.warning(
                 "Failed to start audio device monitor: %s. "
                 "Device list will not update automatically when devices are added/removed.",
@@ -279,10 +272,8 @@ class LedFxCore:
 
             if valid != previous_valid:
                 self.events.fire_event(AudioDeviceListChangedEvent())
-        except Exception as exc:
-            _LOGGER.debug(
-                "_load_sendspin_servers: could not query devices: %s", exc
-            )
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.debug("_load_sendspin_servers: could not query devices: %s", exc)
 
         # Runtime path: server changes can alter whether the configured
         # Sendspin source is currently available.
@@ -307,7 +298,7 @@ class LedFxCore:
     def open_ui(self):
         # Check if we're binding to all adaptors
         if str(self.config["host"]) == "0.0.0.0":
-            url = f"http://127.0.0.1:{str(self.port)}"
+            url = f"http://127.0.0.1:{self.port!s}"
         else:
             # If the user has specified an adaptor, launch its address
             url = self.http.base_url
@@ -323,14 +314,10 @@ class LedFxCore:
         import pystray
 
         self.icon.menu = pystray.Menu(
-            pystray.MenuItem(
-                f"LedFx - {PROJECT_VERSION}", None, enabled=False
-            ),
+            pystray.MenuItem(f"LedFx - {PROJECT_VERSION}", None, enabled=False),
             pystray.Menu.SEPARATOR,
             pystray.MenuItem("Open", self.open_ui, default=True),
-            pystray.MenuItem(
-                "Check for Update", self.check_and_notify_updates
-            ),
+            pystray.MenuItem("Check for Update", self.check_and_notify_updates),
             pystray.MenuItem("Quit Ledfx", self.stop),
         )
 
@@ -357,9 +344,9 @@ class LedFxCore:
             time_now = time.time()
 
             if is_device:
-                vis_id = getattr(event, "device_id")
+                vis_id = event.device_id
             else:
-                vis_id = getattr(event, "virtual_id")
+                vis_id = event.virtual_id
 
             try:
                 time_since = time_now - time_since_last[vis_id]
@@ -384,21 +371,14 @@ class LedFxCore:
             shape = (rows, int(pixels_len / rows))
 
             if pixels_len > max_len:
-                new_shape, pixels_len = shape_to_fit_len(
-                    max_len, shape, pixels_len
-                )
+                new_shape, pixels_len = shape_to_fit_len(max_len, shape, pixels_len)
                 pixels = resize_pixels(pixels[:pixels_len], shape, new_shape)
                 shape = new_shape
 
             if self.config["ui_brightness_boost"] != 0:
-                pixels = pixels_boost(
-                    pixels, self.config["ui_brightness_boost"], 100
-                )
+                pixels = pixels_boost(pixels, self.config["ui_brightness_boost"], 100)
 
-            if (
-                self.config["transmission_mode"]
-                == Transmission.BASE64_COMPRESSED
-            ):
+            if self.config["transmission_mode"] == Transmission.BASE64_COMPRESSED:
                 b_arr = bytes(pixels.astype(np.uint8).flatten())
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
@@ -446,9 +426,8 @@ class LedFxCore:
             None
         """
 
-        if show_check_notification:
-            if self.icon and self.icon.HAS_NOTIFICATION:
-                self.icon.notify("Checking for updates...", "LedFx")
+        if show_check_notification and self.icon and self.icon.HAS_NOTIFICATION:
+            self.icon.notify("Checking for updates...", "LedFx")
         is_release = os.getenv("IS_RELEASE", "false").lower()
         if is_release == "false":
             _LOGGER.info("Not checking for updates - not a release.")
@@ -477,11 +456,8 @@ class LedFxCore:
                 _LOGGER.info("LedFx is up to date.")
         else:
             _LOGGER.warning("Unable to get update information.")
-            if show_check_notification:
-                if self.icon and self.icon.HAS_NOTIFICATION:
-                    self.icon.notify(
-                        "Unable to get update information", "LedFx"
-                    )
+            if show_check_notification and self.icon and self.icon.HAS_NOTIFICATION:
+                self.icon.notify("Unable to get update information", "LedFx")
 
     def start(self, open_ui=False, pause_all=False):
         async_fire_and_forget(
@@ -491,25 +467,20 @@ class LedFxCore:
         try:
             self.loop.run_forever()
         except KeyboardInterrupt:
-            self.loop.call_soon(
-                self.loop.create_task, self.async_stop(exit_code=2)
-            )
+            self.loop.call_soon(self.loop.create_task, self.async_stop(exit_code=2))
             self.loop.run_forever()
-        except BaseException:
+        except BaseException:  # noqa: BLE001
             # Catch all other exceptions and terminate the application. The loop
             # exception handler will take care of logging the actual error and
             # LedFx will cleanly shutdown.
             self.loop.run_until_complete(self.async_stop(exit_code=1))
-            pass
         finally:
             self.loop.stop()
 
         return self.exit_code
 
     async def async_start(self, open_ui=False, pause_all=False):
-        _LOGGER.info(
-            "Starting LedFx, listening on %s:%s", self.host, self.port
-        )
+        _LOGGER.info("Starting LedFx, listening on %s:%s", self.host, self.port)
 
         if (
             self.icon is not None
@@ -574,9 +545,7 @@ class LedFxCore:
         self._load_sendspin_servers()
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
-        self.virtuals.create_from_config(
-            self.config["virtuals"], pause_all=pause_all
-        )
+        self.virtuals.create_from_config(self.config["virtuals"], pause_all=pause_all)
         self.integrations.create_from_config(self.config["integrations"])
 
         # Start the HTTP server once internal registries are initialized so
@@ -591,13 +560,9 @@ class LedFxCore:
             self.open_ui()
 
         if self.config["scan_on_startup"]:
-            async_fire_and_forget(
-                self.zeroconf.discover_wled_devices(), self.loop
-            )
+            async_fire_and_forget(self.zeroconf.discover_wled_devices(), self.loop)
 
-        async_fire_and_forget(
-            self.integrations.activate_integrations(), self.loop
-        )
+        async_fire_and_forget(self.integrations.activate_integrations(), self.loop)
 
         if self.ci_testing:
             await asyncio.sleep(5)
@@ -605,9 +570,7 @@ class LedFxCore:
         if self.generate_typescript_types:
             _LOGGER.info("Generating TypeScript types via CLI flag...")
             current_script_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.abspath(
-                os.path.join(current_script_dir, "..")
-            )
+            project_root = os.path.abspath(os.path.join(current_script_dir, ".."))
             output_file_name = "ledfx_types.ts"
             ts_code_string = generate_typescript_types()
 
@@ -619,7 +582,7 @@ class LedFxCore:
                     "Attempting to write TypeScript types to: %s",
                     output_file_path,
                 )
-                with open(output_file_path, "w", encoding="utf-8") as f:
+                with open(output_file_path, "w", encoding="utf-8") as f:  # noqa: ASYNC230
                     f.write(ts_code_string)
                 _LOGGER.info(
                     "Successfully wrote TypeScript types to %s",
@@ -627,10 +590,8 @@ class LedFxCore:
                 )
 
             except OSError as e:
-                _LOGGER.error(
-                    "IOError writing TypeScript types to file: %s", e
-                )
-            except Exception as e:
+                _LOGGER.error("IOError writing TypeScript types to file: %s", e)
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.error(
                     "Unexpected error writing TypeScript types to file: %s",
                     e,
@@ -693,21 +654,19 @@ class LedFxCore:
             if self.audio_device_monitor:
                 try:
                     self.audio_device_monitor.stop()
-                except Exception as e:
-                    _LOGGER.warning(
-                        "Error stopping audio device monitor: %s", e
-                    )
+                except Exception as e:  # noqa: BLE001
+                    _LOGGER.warning("Error stopping audio device monitor: %s", e)
 
             if self._smtc_now_playing is not None:
                 try:
                     self._smtc_now_playing.stop()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     _LOGGER.warning("Error stopping SMTC provider: %s", e)
 
             if self._mpris_now_playing is not None:
                 try:
                     self._mpris_now_playing.stop()
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001
                     _LOGGER.warning("Error stopping MPRIS provider: %s", e)
 
             _LOGGER.info("Stopping HTTP Server...")
@@ -720,9 +679,7 @@ class LedFxCore:
                 if task is not asyncio.current_task()
             ]
             if tasks:
-                _LOGGER.debug(
-                    "Killing %s tasks prior to shutdown...", len(tasks)
-                )
+                _LOGGER.debug("Killing %s tasks prior to shutdown...", len(tasks))
                 # Cancel all tasks concurrently
                 group = asyncio.gather(*tasks, return_exceptions=True)
                 group.cancel()
@@ -735,7 +692,7 @@ class LedFxCore:
             # Save the configuration before shutting down
             save_config(config=self.config, config_dir=self.config_dir)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("An error occurred while stopping: %s", e)
             self.exit_code = 1
 
@@ -745,4 +702,4 @@ class LedFxCore:
             if self.exit_code != 1:
                 self.exit_code = exit_code
             self.loop.stop()
-            return exit_code
+            return exit_code  # noqa: B012

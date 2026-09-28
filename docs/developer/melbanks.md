@@ -149,6 +149,11 @@ melbank_data = self.melbank(filtered=False, size=self.pixel_count)
 # size: Interpolate to match pixel count
 ```
 
+Effects that call `self.melbank()` or `self.melbank_thirds()` should set
+`USES_MELBANK_RANGE = True` on the effect class. The `/api/schema` response
+exposes this as `uses_melbank_range` so frontends know whether virtual
+`frequency_min` and `frequency_max` controls apply to the selected effect.
+
 ### Automatic Melbank Selection
 
 Effects don't manually select melbanks. The system automatically:

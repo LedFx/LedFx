@@ -37,9 +37,9 @@ _LOGGER = logging.getLogger(__name__)
 
 def fps_validator(value):
     if not isinstance(value, int):
-        raise ValueError("fps must be an integer")
+        raise ValueError("fps must be an integer")  # noqa: TRY004
     return next(
-        (f for f in AVAILABLE_FPS.keys() if f >= value),
+        (f for f in AVAILABLE_FPS if f >= value),
         list(AVAILABLE_FPS.keys())[-1],
     )
 
@@ -51,9 +51,7 @@ class Device(BaseRegistry):
     def CONFIG_SCHEMA():
         return vol.Schema(
             {
-                vol.Required(
-                    "name", description="Friendly name for the device"
-                ): str,
+                vol.Required("name", description="Friendly name for the device"): str,
                 vol.Optional(
                     "icon_name",
                     description="https://material-ui.com/components/material-icons/",
@@ -107,13 +105,13 @@ class Device(BaseRegistry):
             valid_classes = list(type(self).__bases__)
             valid_classes.append(type(self))
             for base in valid_classes:
-                if hasattr(base, "config_updated"):
-                    if base.config_updated != super(base, base).config_updated:
-                        base.config_updated(self, validated_config)
+                if (
+                    hasattr(base, "config_updated")
+                    and base.config_updated != super(base, base).config_updated
+                ):
+                    base.config_updated(self, validated_config)
 
-            _LOGGER.info(
-                "Device %s config updated to %s.", self.name, validated_config
-            )
+            _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
             for virtual_id in self._ledfx.virtuals:
                 virtual = self._ledfx.virtuals.get(virtual_id)
@@ -130,7 +128,6 @@ class Device(BaseRegistry):
         """
         to be reimplemented by child classes
         """
-        pass
 
     @property
     def pixel_count(self):
@@ -145,9 +142,7 @@ class Device(BaseRegistry):
     def update_pixels(self, virtual_id, data):
         # update each segment from this virtual
         if not self._active:
-            _LOGGER.warning(
-                "Cannot update pixels of inactive device %s", self.name
-            )
+            _LOGGER.warning("Cannot update pixels of inactive device %s", self.name)
             return
 
         for item in data:
@@ -171,11 +166,11 @@ class Device(BaseRegistry):
                 # Legacy range mode: (pixels, start, end)
                 pixels, start, end = item
                 # protect against an empty race condition
-                if pixels.shape[0] != 0:
-                    if np.shape(pixels) == (3,) or np.shape(
-                        self._pixels[start : end + 1]
-                    ) == np.shape(pixels):
-                        self._pixels[start : end + 1] = pixels
+                if pixels.shape[0] != 0 and (
+                    np.shape(pixels) == (3,)
+                    or np.shape(self._pixels[start : end + 1]) == np.shape(pixels)
+                ):
+                    self._pixels[start : end + 1] = pixels
 
         # Only the priority virtual should flush to prevent multiple virtuals
         # from fighting over the device buffer
@@ -185,13 +180,9 @@ class Device(BaseRegistry):
                 frame = self.assemble_frame()
                 self.flush(frame)
 
-                self._ledfx.events.fire_event(
-                    DeviceUpdateEvent(self.id, frame)
-                )
+                self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
         else:
-            _LOGGER.warning(
-                "Flush skipped as %s has no priority_virtual", self.id
-            )
+            _LOGGER.warning("Flush skipped as %s has no priority_virtual", self.id)
 
     def assemble_frame(self):
         """
@@ -254,9 +245,7 @@ class Device(BaseRegistry):
             return None
 
         refresh_rate = max(
-            virtual.refresh_rate
-            for virtual in self._virtuals_objs
-            if virtual.active
+            virtual.refresh_rate for virtual in self._virtuals_objs if virtual.active
         )
         return next(
             virtual
@@ -266,10 +255,7 @@ class Device(BaseRegistry):
 
     @cached_property
     def _virtuals_objs(self):
-        return list(
-            self._ledfx.virtuals.get(virtual_id)
-            for virtual_id in self.virtuals
-        )
+        return [self._ledfx.virtuals.get(virtual_id) for virtual_id in self.virtuals]
 
     @property
     def active_virtuals(self):
@@ -278,9 +264,7 @@ class Device(BaseRegistry):
         it's a list bc there can be more than one virtual streaming
         to a device.
         """
-        return list(
-            virtual.id for virtual in self._virtuals_objs if virtual.active
-        )
+        return [virtual.id for virtual in self._virtuals_objs if virtual.active]
 
     @property
     def online(self):
@@ -291,7 +275,7 @@ class Device(BaseRegistry):
 
     @cached_property
     def virtuals(self):
-        return list(segment[0] for segment in self._segments)
+        return [segment[0] for segment in self._segments]
 
     def add_segments_batch(self, virtual_id, segments, force=False):
         """Add multiple segments efficiently with single overlap check.
@@ -352,13 +336,11 @@ class Device(BaseRegistry):
                     continue
                 if _virtual_id not in existing_by_virtual:
                     existing_by_virtual[_virtual_id] = []
-                existing_by_virtual[_virtual_id].append(
-                    (segment_start, segment_end)
-                )
+                existing_by_virtual[_virtual_id].append((segment_start, segment_end))
 
             # Sort each virtual's segments for binary search
-            for _virtual_id in existing_by_virtual:
-                existing_by_virtual[_virtual_id].sort()
+            for existing_segments in existing_by_virtual.values():
+                existing_segments.sort()
 
             # Check each new segment against sorted existing segments
             for start_pixel, end_pixel in segments:
@@ -439,16 +421,16 @@ class Device(BaseRegistry):
             if segment[0] != virtual_id:
                 new_segments.append(segment)
             else:
-                if self._pixels is not None:
-                    if self._ledfx.config.get("flush_on_deactivate", False):
-                        self._pixels[segment[1] : segment[2] + 1] = np.zeros(
-                            (segment[2] - segment[1] + 1, 3)
-                        )
+                if self._pixels is not None and self._ledfx.config.get(
+                    "flush_on_deactivate", False
+                ):
+                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
+                        (segment[2] - segment[1] + 1, 3)
+                    )
         self._segments = new_segments
 
-        if self.priority_virtual:
-            if virtual_id == self.priority_virtual.id:
-                self.invalidate_cached_props()
+        if self.priority_virtual and virtual_id == self.priority_virtual.id:
+            self.invalidate_cached_props()
 
     def clear_segments(self):
         self._segments = []
@@ -489,11 +471,9 @@ class Device(BaseRegistry):
             active = virtual.active
             if active:
                 virtual.deactivate()
-            virtual._segments = list(
-                segment
-                for segment in virtual._segments
-                if segment[0] != self.id
-            )
+            virtual._segments = [
+                segment for segment in virtual._segments if segment[0] != self.id
+            ]
             # Invalidate cached properties that depend on _segments
             virtual.invalidate_cached_props()
 
@@ -512,10 +492,7 @@ class Device(BaseRegistry):
                 )
                 continue
 
-            if (
-                hasattr(virtual, "virtual_cfg")
-                and virtual.virtual_cfg is not None
-            ):
+            if hasattr(virtual, "virtual_cfg") and virtual.virtual_cfg is not None:
                 virtual.virtual_cfg["segments"] = virtual.segments
 
             if active:
@@ -670,9 +647,7 @@ class NetworkedDevice(Device):
             _LOGGER.warning(
                 "Device %s: Searching for device... Is it online?", self.name
             )
-            async_fire_and_forget(
-                self.resolve_address(), loop=self._ledfx.loop
-            )
+            async_fire_and_forget(self.resolve_address(), loop=self._ledfx.loop)
             return
         else:
             return self._destination
@@ -711,7 +686,7 @@ class UDPDevice(NetworkedDevice):
 class AvailableCOMPorts:
     ports = serial.tools.list_ports.comports()
 
-    available_ports = [""]
+    available_ports = [""]  # noqa: RUF012
 
     for p in ports:
         available_ports.append(p.device)
@@ -726,9 +701,9 @@ class SerialDevice(Device):
                 description="COM port for Adalight compatible device",
                 default="",
             ): vol.In(list(AvailableCOMPorts.available_ports)),
-            vol.Required(
-                "baudrate", description="baudrate", default=500000
-            ): vol.All(int, vol.Range(min=115200)),
+            vol.Required("baudrate", description="baudrate", default=500000): vol.All(
+                int, vol.Range(min=115200)
+            ),
         }
     )
 
@@ -783,7 +758,7 @@ class Devices(RegistryLoader):
                     config=device["config"],
                     ledfx=self._ledfx,
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 # be very prolific on ignoring devices if they are bad
                 _LOGGER.warning(
                     "Failed to load device %s: %s",
@@ -819,7 +794,7 @@ class Devices(RegistryLoader):
         Creates a new device.
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
-        if "ip_address" in device_config.keys():
+        if "ip_address" in device_config:
             device_config["ip_address"] = clean_ip(device_config["ip_address"])
             device_ip = device_config["ip_address"]
             try:
@@ -834,11 +809,10 @@ class Devices(RegistryLoader):
                 return
 
             for existing_device in self._ledfx.devices.values():
-                if "ip_address" in existing_device.config.keys() and (
+                if "ip_address" in existing_device.config and (
                     existing_device.config["ip_address"] == device_ip
                     or existing_device.config["ip_address"] == resolved_dest
-                    or resolved_dest
-                    == getattr(existing_device, "_destination", None)
+                    or resolved_dest == getattr(existing_device, "_destination", None)
                 ):
                     self.run_device_ip_tests(
                         device_type, device_config, existing_device
@@ -855,7 +829,7 @@ class Devices(RegistryLoader):
             # This allows us to respect the users choice of names if adding a WLED device via frontend
             # I turned black off as this logic is clearer on one line
             # fmt: off
-            if "name" in device_config.keys() and device_config["name"] is not None:
+            if "name" in device_config and device_config["name"] is not None:
                 wled_name = device_config["name"]
             elif wled_config["name"] == "WLED":
                 wled_name = f"{wled_config['name']}-{wled_config['mac'][6:]}".upper()
@@ -870,9 +844,7 @@ class Devices(RegistryLoader):
                 _LOGGER.info("WLED build Supports DDP: %s", wled_build)
                 sync_mode = "DDP"
             else:
-                _LOGGER.info(
-                    "WLED build pre DDP, default to UDP: %s", wled_build
-                )
+                _LOGGER.info("WLED build pre DDP, default to UDP: %s", wled_build)
                 sync_mode = "UDP"
 
             icon_name = get_icon_name(wled_name)
@@ -926,10 +898,8 @@ class Devices(RegistryLoader):
             "rows": device_config.get("rows", 1),
         }
 
-        if device_type == "wled":
-            if "matrix" in led_info.keys():
-                if "h" in led_info["matrix"].keys():
-                    virtual_config["rows"] = led_info["matrix"]["h"]
+        if device_type == "wled" and "matrix" in led_info and "h" in led_info["matrix"]:
+            virtual_config["rows"] = led_info["matrix"]["h"]
 
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
@@ -1028,9 +998,7 @@ class Devices(RegistryLoader):
             pre_device (_type_): config from pre-existing device
         """
 
-        for result in self.generate_device_ip_tests(
-            new_type, new_config, pre_device
-        ):
+        for result in self.generate_device_ip_tests(new_type, new_config, pre_device):
             if result:
                 return
 
@@ -1059,7 +1027,7 @@ class Devices(RegistryLoader):
             "artnet",
         ]:
             if new_config["universe"] == pre_device.config["universe"]:
-                msg = f'Ignoring {new_config["ip_address"]}: Shares IP and port {new_config["port"]} and starting universe with existing device {pre_device.name}'
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and port {new_config['port']} and starting universe with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True
@@ -1082,15 +1050,14 @@ class Devices(RegistryLoader):
         Check if the new device is osc port and path separated from the pre-existing device
         """
         if new_type == "osc" and pre_device.type == "osc":
-            if new_config["port"] == pre_device.config["port"]:
-                if new_config["path"] == pre_device.config["path"]:
-                    if (
-                        new_config["starting_addr"]
-                        == pre_device.config["starting_addr"]
-                    ):
-                        msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
-                        _LOGGER.info(msg)
-                        raise ValueError(msg)
+            if (
+                new_config["port"] == pre_device.config["port"]
+                and new_config["path"] == pre_device.config["path"]
+                and new_config["starting_addr"] == pre_device.config["starting_addr"]
+            ):
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
             return True
         return False
 
@@ -1099,13 +1066,12 @@ class Devices(RegistryLoader):
         Check if the new device is DDP destination_id separated from the pre-existing device
         """
         if new_type == "ddp" and pre_device.type == "ddp":
-            if new_config["port"] == pre_device.config["port"]:
-                if new_config.get(
-                    "destination_id", 1
-                ) == pre_device.config.get("destination_id", 1):
-                    msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
-                    _LOGGER.info(msg)
-                    raise ValueError(msg)
+            if new_config["port"] == pre_device.config["port"] and new_config.get(
+                "destination_id", 1
+            ) == pre_device.config.get("destination_id", 1):
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
             return True
         return False
 

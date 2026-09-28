@@ -103,7 +103,6 @@ class HSVEffect(GradientEffect):
         To be defined by child class
         Be sure to update self.hsv_array
         """
-        pass
 
     def time(self, modifier=1.0, timestep=None):
         """

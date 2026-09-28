@@ -44,7 +44,7 @@ class Sparkle:
 class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan and Flare"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]
+    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
 
     CONFIG_SCHEMA = vol.Schema(
         {
@@ -125,9 +125,7 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         self.background_color = np.array(
             parse_color(self._config["background_color"]), dtype=float
         )
-        self.power_func = self.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
-        ]
+        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
         self.color_scan_cache = np.array(
             parse_color(self._config["color_scan"]), dtype=float
         )
@@ -181,31 +179,27 @@ class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
         pixel_pos = max(0, min(int(self.scan_pos), self.pixel_count))
 
         # add any new sparkles
-        if len(self.sparkles) < self._config["sparkles_max"]:
-            if self.power > self._config["sparkles_threshold"] * 2:
-                # cannot convince myself to limit sparkles per second
-                # if now - self.last_sparkle > (1 / self._config["sparkles_max"]):
-                sparkle_width = (
-                    scan_width_pixels * self._config["sparkles_size"]
-                )
-                if not self.returning:
-                    sparkle_pos = (
-                        pixel_pos - sparkle_width
-                    ) % self.pixel_count
-                else:
-                    sparkle_pos = (
-                        pixel_pos + scan_width_pixels
-                    ) % self.pixel_count
+        if (
+            len(self.sparkles) < self._config["sparkles_max"]
+            and self.power > self._config["sparkles_threshold"] * 2
+        ):
+            # cannot convince myself to limit sparkles per second
+            # if now - self.last_sparkle > (1 / self._config["sparkles_max"]):
+            sparkle_width = scan_width_pixels * self._config["sparkles_size"]
+            if not self.returning:
+                sparkle_pos = (pixel_pos - sparkle_width) % self.pixel_count
+            else:
+                sparkle_pos = (pixel_pos + scan_width_pixels) % self.pixel_count
 
-                sparkle = Sparkle(
-                    self.now,
-                    sparkle_pos,
-                    sparkle_width,
-                    (0 - step_per_sec) if self.returning else step_per_sec,
-                    self._config["sparkles_time"],
-                )
-                self.sparkles.append(sparkle)
-                self.last_sparkle = self.now
+            sparkle = Sparkle(
+                self.now,
+                sparkle_pos,
+                sparkle_width,
+                (0 - step_per_sec) if self.returning else step_per_sec,
+                self._config["sparkles_time"],
+            )
+            self.sparkles.append(sparkle)
+            self.last_sparkle = self.now
 
         # this is the real render pass
         self.pixels[0 : self.pixel_count] = (

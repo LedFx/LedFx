@@ -34,9 +34,9 @@ class MQTT(Integration):
                 description="MQTT ip address",
                 default="127.0.0.1",
             ): str,
-            vol.Required(
-                "port", description="MQTT port", default=1883
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
+            vol.Required("port", description="MQTT port", default=1883): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=65535)
+            ),
             vol.Optional(
                 "username",
                 description="MQTT username",
@@ -90,7 +90,7 @@ class MQTT(Integration):
                 _LOGGER.warning("%s", response)
                 return
             _LOGGER.warning("%s", self._ledfx.config["scenes"].keys())
-            if scene_id not in self._ledfx.config["scenes"].keys():
+            if scene_id not in self._ledfx.config["scenes"]:
                 response = {
                     "status": "failed",
                     "reason": f'Scene "{scene_id}" does not exist',
@@ -102,7 +102,7 @@ class MQTT(Integration):
 
             for virtual in self._ledfx.virtuals.values():
                 # Check virtual is in scene, make no changes if it isn't
-                if virtual.id not in scene["virtuals"].keys():
+                if virtual.id not in scene["virtuals"]:
                     _LOGGER.info(
                         "virtual with id %s has no data in scene %s",
                         virtual.id,
@@ -135,8 +135,6 @@ class MQTT(Integration):
             client.username_pw_set(
                 self._config["username"], password=self._config["password"]
             )
-        client.connect_async(
-            self._config["ip_address"], self._config["port"], 60
-        )
+        client.connect_async(self._config["ip_address"], self._config["port"], 60)
         client.loop_start()
         _LOGGER.info("%s", client)

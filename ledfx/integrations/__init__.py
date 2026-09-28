@@ -80,7 +80,6 @@ class Integration(BaseRegistry):
         Integrations should reimplement this if there's anything they need to do on shutdown to close cleanly.
         This method must be overwritten by the integration implementation.
         """
-        pass
 
     @property
     def name(self):
@@ -115,9 +114,7 @@ class Integrations(RegistryLoader):
             for integration in self.values():
                 integration.on_shutdown()
 
-            async_fire_and_forget(
-                self.close_all_connections(), self._ledfx.loop
-            )
+            async_fire_and_forget(self.close_all_connections(), self._ledfx.loop)
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
 
@@ -134,7 +131,7 @@ class Integrations(RegistryLoader):
                     data=integration["data"],
                     ledfx=self._ledfx,
                 )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 _LOGGER.warning("Failed to load integration: %s", e)
 
     async def close_all_connections(self):

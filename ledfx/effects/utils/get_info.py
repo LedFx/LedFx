@@ -13,7 +13,7 @@ async def fetch_info(session, ip_address, callback):
         async with session.get(url, timeout=timeout) as response:
             data = await response.json()
             callback(data)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         _LOGGER.warning("Error fetching info from %s: %s", ip_address, e)
 
 

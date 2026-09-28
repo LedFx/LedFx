@@ -34,11 +34,11 @@ def setup_sentry():
                 from subprocess import PIPE, Popen
 
                 process = Popen(["git", "rev-parse", "HEAD"], stdout=PIPE)
-                commit_hash, err = process.communicate()
+                commit_hash, err = process.communicate()  # noqa: RUF059
                 commit_hash = commit_hash[:7].decode("utf-8")
                 process.wait()
             # TODO: trap explicit exceptions if it becomes clear what they are
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             commit_hash = "unknown"
             _LOGGER.warning("Failed to get git commit hash: %s", e)
         finally:
