@@ -158,10 +158,10 @@ project-excludes = [
     "ledfx_frontend",
 ]
 
-# Type-coverage ratchet: existing errors live in pyrefly_errors.json (born on
-# Python 3.12 - aiosendspin/pyflac resolve there). The lint gate runs
-# `pyrefly check --error-stale-baseline` so new errors fail CI; routine
-# pay-down prunes fixed entries with --prune-baseline; --update-baseline is a
-# full reset and must be deliberate.
+# Type-coverage ratchet: existing errors live in pyrefly_errors.json, checked
+# in a self-contained env (3.12 + pyrefly only, no project deps) so the lint
+# gate and the autofix workflow - which never syncs the project venv - get the
+# identical error set. New errors fail CI; routine pay-down prunes fixed
+# entries with --prune-baseline; --update-baseline is a deliberate full reset.
 baseline = "pyrefly_errors.json"
 
