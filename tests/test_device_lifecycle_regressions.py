@@ -95,7 +95,11 @@ async def test_mdns_skips_unresolved_services() -> None:
 
 def test_hue_stops_handshaking_after_success() -> None:
     device = object.__new__(HueDevice)
-    device._config = {"entertainment_id": "e", "ip_address": "10.0.0.4", "udp_port": 2100}
+    device._config = {
+        "entertainment_id": "e",
+        "ip_address": "10.0.0.4",
+        "udp_port": 2100,
+    }
     device._dtls_client_context = MagicMock()
     with (
         patch.object(HueDevice, "_hue_request"),
@@ -124,4 +128,3 @@ def test_govee_second_deactivate_does_not_release_socket_again() -> None:
 
 def test_unextended_schema_returns_own_schema() -> None:
     assert Fire.schema(extended=False) is Fire.CONFIG_SCHEMA
-
