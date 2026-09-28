@@ -49,8 +49,12 @@ class NanoleafDevice(NetworkedDevice):
         self._device_type = "Nanoleaf"
         self.status = {}
 
+    OUTPUT_KEYS = ("ip_address", "port", "auth_token", "sync_mode", "udp_port", "model")
+
     def config_updated(self, config):
-        self.setup_subdevice()
+        if self._output_changed():
+            self.setup_subdevice()
+            self._built_settings = self._output_settings()
 
     def url(self, token: str) -> str:
         return "http://{}:{}/api/v1/{}".format(

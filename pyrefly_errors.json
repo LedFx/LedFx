@@ -22,13 +22,6 @@
       "severity": "error"
     },
     {
-      "column": 5,
-      "path": "ledfx/__main__.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `Manager` has no attribute `disabled`",
-      "severity": "error"
-    },
-    {
       "column": 19,
       "path": "ledfx/__main__.py",
       "name": "implicit-any-parameter",
@@ -2542,13 +2535,6 @@
       "severity": "error"
     },
     {
-      "column": 48,
-      "path": "ledfx/devices/__init__.py",
-      "name": "invalid-argument",
-      "concise_description": "Expected first argument to `super` to be a class object, got `type[Any]`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
@@ -2679,13 +2665,6 @@
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`sub_v` is missing an annotation for parameter `rows`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
       "severity": "error"
     },
     {
@@ -5983,13 +5962,6 @@
       "path": "ledfx/effects/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`inherited` is missing an annotation for parameter `method`",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "ledfx/effects/__init__.py",
-      "name": "invalid-argument",
-      "concise_description": "Expected first argument to `super` to be a class object, got `type[Any]`",
       "severity": "error"
     },
     {
@@ -19797,13 +19769,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/utils.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`install_package` is missing an annotation for parameter `package`",
-      "severity": "error"
-    },
-    {
       "column": 23,
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
@@ -20315,13 +20280,6 @@
       "severity": "error"
     },
     {
-      "column": 41,
-      "path": "ledfx/utils.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `bool` has no attribute `FileSystemEventHandler`",
-      "severity": "error"
-    },
-    {
       "column": 36,
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
@@ -20333,20 +20291,6 @@
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
       "concise_description": "`on_modified` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/utils.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `bool` has no attribute `Observer`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/utils.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `posixpath.dirname` called with arguments: (str | None)",
       "severity": "error"
     },
     {
@@ -20375,20 +20319,6 @@
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
       "concise_description": "`reload_module` is missing an annotation for parameter `name`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/utils.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `endswith`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/utils.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -20599,13 +20529,6 @@
       "path": "ledfx/utils.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `Range` has no attribute `end`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/utils.py",
-      "name": "unexpected-keyword",
-      "concise_description": "Unexpected keyword argument `size` in function `bokeh.plotting.glyph_api.GlyphAPI.circle`",
       "severity": "error"
     },
     {
