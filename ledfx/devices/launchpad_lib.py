@@ -221,10 +221,7 @@ class LaunchpadBase:
         self.idOut = self.midi.SearchDevice(name, True, False, number=number)
         self.idIn = self.midi.SearchDevice(name, False, True, number=number)
 
-        if self.idOut is None or self.idIn is None:  # noqa: SIM103
-            return False
-
-        return True
+        return self.idOut is not None and self.idIn is not None
 
     # -------------------------------------------------------------------------------------
     # -- Closes this device
@@ -328,7 +325,7 @@ class Launchpad(LaunchpadBase):
         if a is not None:
             return [
                 a[1] if a[0] == 144 else a[1] + 96,
-                True if a[2] > 0 else False,  # noqa: SIM210
+                bool(a[2] > 0),
             ]
         else:
             return None
@@ -344,9 +341,9 @@ class Launchpad(LaunchpadBase):
                 x = a[1] & 0x0F
                 y = (a[1] & 0xF0) >> 4
 
-                return [x, y + 1, True if a[2] > 0 else False]  # noqa: SIM210
+                return [x, y + 1, bool(a[2] > 0)]
             elif a[0] == 176:
-                return [a[1] - 104, 0, True if a[2] > 0 else False]  # noqa: SIM210
+                return [a[1] - 104, 0, bool(a[2] > 0)]
         return None
 
 

@@ -62,9 +62,7 @@ class Line:
         self.tail = tail
         # adjust for the code lines own speed
         self.ny += movement * self.speed
-        if self.ny > (1 + self.tail):  # noqa: SIM103
-            return False
-        return True
+        return self.ny <= (1 + self.tail)
 
     def draw(self, draw, image, beat_osc):
         ###

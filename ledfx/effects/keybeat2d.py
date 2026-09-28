@@ -469,17 +469,15 @@ class Keybeat2d(Twod, GifBase):
         # start at the last entry and work backwards
         graph_s = 9
         graph_h = min(self.r_height - 9, 32)
-        x = 0
         pixels = self.matrix.load()
-        for _, beat, f_frame, color in reversed(self.beat_f_times):
+        for x, (_, beat, f_frame, color) in enumerate(reversed(self.beat_f_times)):
             y_beat = graph_s + graph_h - beat * graph_h
             if y_beat < self.matrix.height:
                 pixels[x, y_beat] = (255, 255, 0)
             y_frame = graph_s + graph_h - (f_frame / self.framecount) * graph_h
             if y_frame < self.matrix.height:
                 pixels[x, y_frame] = color
-            x += 1  # noqa: SIM113
-            if x >= self.matrix.width:
+            if x + 1 >= self.matrix.width:
                 break
 
         # if we have not reached a 60 second window yet, then gestimate bpm
