@@ -352,16 +352,18 @@ async def test_post_scene_warns_preset_without_type():
     mock_request = MagicMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):  # noqa: SIM117
-        with patch("ledfx.api.scenes._LOGGER") as mock_logger:
-            response = await endpoint.post(mock_request)
-            data = json.loads(response.body.decode())
+    with (
+        patch("ledfx.api.scenes.save_config"),
+        patch("ledfx.api.scenes._LOGGER") as mock_logger,
+    ):
+        response = await endpoint.post(mock_request)
+        data = json.loads(response.body.decode())
 
-            assert data["status"] == "success"
-            # Should have logged a warning about missing type
-            mock_logger.warning.assert_called_once()
-            warning_msg = mock_logger.warning.call_args[0][0]
-            assert "preset" in warning_msg.lower()
-            assert "type" in warning_msg.lower()
-            warning_args = mock_logger.warning.call_args[0][1:]
-            assert "v1" in warning_args
+        assert data["status"] == "success"
+        # Should have logged a warning about missing type
+        mock_logger.warning.assert_called_once()
+        warning_msg = mock_logger.warning.call_args[0][0]
+        assert "preset" in warning_msg.lower()
+        assert "type" in warning_msg.lower()
+        warning_args = mock_logger.warning.call_args[0][1:]
+        assert "v1" in warning_args

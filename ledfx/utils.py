@@ -428,7 +428,7 @@ class WLED:
         Args:
             state (bool): on/off
         """
-        power = {"on": True if state else False}  # noqa: SIM210
+        power = {"on": bool(state)}
         await WLED._wled_request(
             requests.post, self.ip_address, "/json/state", data=power
         )
@@ -1377,10 +1377,7 @@ class Graph:
 
 def wled_support_DDP(build) -> bool:
     # https://github.com/Aircoookie/WLED/blob/main/CHANGELOG.md#build-2110060
-    if build >= 2110060:  # noqa: SIM103
-        return True
-    else:
-        return False
+    return build >= 2110060
 
 
 def clean_ip(ip_address):

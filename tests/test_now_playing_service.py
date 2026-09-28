@@ -848,16 +848,18 @@ class TestGradientAutoApplication:
 
         data = _make_test_png()
         # Mock gradient extraction to return a valid gradient
-        with patch(  # noqa: SIM117
-            "ledfx.nowplaying.service.extract_gradient_metadata",
-            return_value={
-                "led_punchy": {
-                    "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-                }
-            },
+        with (
+            patch(
+                "ledfx.nowplaying.service.extract_gradient_metadata",
+                return_value={
+                    "led_punchy": {
+                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+                    }
+                },
+            ),
+            patch("ledfx.nowplaying.service.save_config"),
         ):
-            with patch("ledfx.nowplaying.service.save_config"):
-                service_v.set_artwork_bytes("sendspin", data, "image/png")
+            service_v.set_artwork_bytes("sendspin", data, "image/png")
 
         # Effect should have been updated
         eff.update_config.assert_called_once()

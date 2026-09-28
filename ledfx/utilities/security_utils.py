@@ -401,10 +401,7 @@ def validate_image_mime_type(file_path: str) -> bool:
 
         # Additional MIME check using file extension
         mime_type, _ = mimetypes.guess_type(file_path)
-        if mime_type and mime_type not in ALLOWED_MIME_TYPES:  # noqa: SIM103
-            return False
-
-        return True
+        return not (mime_type and mime_type not in ALLOWED_MIME_TYPES)
     except Exception:  # noqa: BLE001
         return False
 
