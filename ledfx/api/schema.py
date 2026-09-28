@@ -16,7 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 class SchemaEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/schema"
 
-    VALID_SCHEMAS: ClassVar[dict] = {
+    VALID_SCHEMAS: ClassVar[set[str]] = {
         "devices",
         "effects",
         "integrations",
