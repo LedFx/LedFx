@@ -112,6 +112,26 @@ def test_concurrent_streams_share_one_complete_identity(tmp_path: Path) -> None:
         assert (tmp_path / "sendspin_identity").stat().st_mode & 0o777 == 0o600
 
 
+def test_corrupt_identity_is_replaced(tmp_path: Path) -> None:
+    pytest.importorskip("aiosendspin")
+    from ledfx.sendspin.identity import load_or_create_identity
+
+    (tmp_path / "sendspin_identity").write_text("not a key", "ascii")
+    identity = load_or_create_identity(tmp_path)
+    assert load_or_create_identity(tmp_path).peer_id == identity.peer_id
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["sendspin_identity"]
+
+
+def test_identity_without_hard_link_support(tmp_path: Path) -> None:
+    pytest.importorskip("aiosendspin")
+    from ledfx.sendspin.identity import load_or_create_identity
+
+    with patch("ledfx.sendspin.identity.os.link", side_effect=PermissionError):
+        identity = load_or_create_identity(tmp_path)
+    assert load_or_create_identity(tmp_path).peer_id == identity.peer_id
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["sendspin_identity"]
+
+
 async def test_reconnect_reuses_identity_and_pairing_store(
     stream: SendspinAudioStream,
 ) -> None:
