@@ -111,8 +111,8 @@ class ZeroConfRunner:
             name (str): The service name.
         """
         info = AsyncServiceInfo(service_type, name)
-        await info.async_request(zeroconf, 3000)
-        if info:
+        # async_request returns False on timeout, leaving info.server unset.
+        if await info.async_request(zeroconf, 3000) and info.server:
             hostname = str(info.server).rstrip(".")
             _LOGGER.info("Found WLED device: %s", hostname)
 

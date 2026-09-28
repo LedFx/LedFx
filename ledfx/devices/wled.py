@@ -85,8 +85,9 @@ class WLEDDevice(NetworkedDevice):
         }
 
     def config_updated(self, config):
-        if not isinstance(self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]):
-            self.setup_subdevice()
+        # The subdevice copies name/ip/pixel_count/refresh_rate, so rebuild it
+        # on every change rather than only when sync_mode changes.
+        self.setup_subdevice()
 
     def setup_subdevice(self):
         if self.subdevice is not None:

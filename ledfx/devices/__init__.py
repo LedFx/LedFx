@@ -605,10 +605,18 @@ class NetworkedDevice(Device):
             ): str,
         }
     )
+    _destination: str | None
 
     async def async_initialize(self):
         self._destination = None
         await self.resolve_address()
+
+    def update_config(self, config):
+        old_ip = (self._config or {}).get("ip_address")
+        if config.get("ip_address", old_ip) != old_ip:
+            # Reactivation during update_config re-resolves the new address.
+            self._destination = None
+        super().update_config(config)
 
     async def resolve_address(self, success_callback=None):
         try:
