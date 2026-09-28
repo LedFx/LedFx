@@ -145,6 +145,9 @@ constraint-dependencies = [
 extend-select = ["G004"]
 
 [tool.pyrefly]
+# Strict mode catches implicit and explicit Any, incomplete annotations, and
+# unsafe callable compatibility instead of only reporting high-confidence errors.
+preset = "strict"
 # Type-coverage ratchet: errors are counted by `uv run pyrefly check`; the
 # count must never increase. New code must be clean; old code is paid down
 # over time. See the error-count table in docs/ or the pyrefly section of
@@ -168,3 +171,5 @@ baseline = "pyrefly_errors.json"
 # Platform-specific optional imports are not present in every locked
 # environment, so missing-import diagnostics remain outside this ratchet.
 missing-import = "ignore"
+# Keep Any from bypassing the strict checker; use object or a concrete type.
+explicit-any = "error"

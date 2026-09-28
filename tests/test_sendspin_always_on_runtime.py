@@ -1,7 +1,6 @@
 """Runtime behavior tests for Sendspin always-on startup paths."""
 
 from types import SimpleNamespace
-from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 from ledfx.api.config import ConfigEndpoint
@@ -9,6 +8,10 @@ from ledfx.config import CORE_CONFIG_SCHEMA
 from ledfx.core import LedFxCore
 from ledfx.effects.audio import AudioInputSource
 from ledfx.sendspin.config import eager_start
+
+
+class _CoreWithAudio(LedFxCore):
+    audio: MagicMock | None
 
 
 def test_sendspin_always_on_default_true():
@@ -28,16 +31,19 @@ def test_audio_should_keep_active_for_sendspin_name_even_if_index_invalid():
 
 
 def test_handle_base_configuration_update_reconciles_when_enabled():
-    core = cast(Any, object.__new__(LedFxCore))
+    core = object.__new__(_CoreWithAudio)
     core.audio = None
     core.config = {"sendspin_always_on": True}
+    core.reconcile_sendspin_always_on_runtime = MagicMock()
 
-    with patch("ledfx.core.sendspin_eager_start") as mock_eager_start:
-        core.handle_base_configuration_update(
-            SimpleNamespace(config={"sendspin_always_on": True})
+    with patch("ledfx.core.sendspin_eager_start"):
+        LedFxCore.handle_base_configuration_update(
+            core, SimpleNamespace(config={"sendspin_always_on": True})
         )
 
-    mock_eager_start.assert_called_once_with(core)
+    core.reconcile_sendspin_always_on_runtime.assert_called_once_with(
+        "base_config_update"
+    )
 
 
 def test_eager_start_reuses_existing_audio_instance():
@@ -68,12 +74,12 @@ def test_eager_start_reuses_existing_audio_instance():
 
 
 def test_reconcile_sendspin_always_on_runtime_deactivates_when_disabled():
-    core = cast(Any, object.__new__(LedFxCore))
+    core = object.__new__(_CoreWithAudio)
     core.config = {"sendspin_always_on": False}
     core.audio = MagicMock()
 
     with patch("ledfx.core.sendspin_eager_start") as mock_eager_start:
-        core.reconcile_sendspin_always_on_runtime("unit_test")
+        LedFxCore.reconcile_sendspin_always_on_runtime(core, "unit_test")
 
     mock_eager_start.assert_not_called()
     core.audio.check_and_deactivate.assert_called_once_with()

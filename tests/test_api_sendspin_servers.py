@@ -100,7 +100,7 @@ class TestPostSendspinServers:
 
     @patch("ledfx.api.sendspin_servers.save_config")
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
-    async def test_add_server(self, _, mock_save):
+    async def test_add_server(self, _, mock_save: MagicMock):
         """Successfully adds a new server."""
         payload = {
             "id": "living-room",
@@ -120,7 +120,7 @@ class TestPostSendspinServers:
 
     @patch("ledfx.api.sendspin_servers.save_config")
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
-    async def test_add_server_with_client_name(self, _, mock_save):
+    async def test_add_server_with_client_name(self, _, mock_save: MagicMock):
         """Stores custom client_name when provided."""
         payload = {
             "id": "office",
@@ -262,7 +262,7 @@ class TestPutSendspinServer:
 
     @patch("ledfx.api.sendspin_server.save_config")
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
-    async def test_update_url(self, _, mock_save):
+    async def test_update_url(self, _, mock_save: MagicMock):
         """Updates server_url on an existing server."""
         payload = {"server_url": "ws://192.168.1.20:8927/sendspin"}
         resp = await self.client.put(
@@ -282,7 +282,7 @@ class TestPutSendspinServer:
 
     @patch("ledfx.api.sendspin_server.save_config")
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
-    async def test_update_client_name(self, _, mock_save):
+    async def test_update_client_name(self, _, mock_save: MagicMock):
         """Updates client_name without touching server_url."""
         payload = {"client_name": "LedFx-Updated"}
         await self.client.put(
@@ -348,7 +348,7 @@ class TestDeleteSendspinServer:
 
     @patch("ledfx.api.sendspin_server.save_config")
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
-    async def test_delete_server(self, _, mock_save):
+    async def test_delete_server(self, _, mock_save: MagicMock):
         """Successfully removes an existing server."""
         resp = await self.client.delete("/api/sendspin/servers/living-room")
         assert resp.status == 200
@@ -395,9 +395,10 @@ class TestGetSendspinDiscover:
 
     @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
     @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
-    async def test_discover_no_servers(self, mock_discover, _):
+    async def test_discover_no_servers(self, mock_discover: AsyncMock, _):
         """Returns empty list when no servers found."""
-        mock_discover.return_value = []
+        no_servers: list[dict[str, str | int]] = []
+        mock_discover.return_value = no_servers
         resp = await self.client.get("/api/sendspin/discover")
         assert resp.status == 200
         data = await resp.json()
@@ -407,7 +408,7 @@ class TestGetSendspinDiscover:
 
     @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
     @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
-    async def test_discover_finds_server(self, mock_discover, _):
+    async def test_discover_finds_server(self, mock_discover: AsyncMock, _):
         """Returns discovered servers with already_configured flag."""
         mock_discover.return_value = [
             {
@@ -429,7 +430,7 @@ class TestGetSendspinDiscover:
 
     @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
     @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
-    async def test_discover_already_configured(self, mock_discover, _):
+    async def test_discover_already_configured(self, mock_discover: AsyncMock, _):
         """Marks already-configured servers with already_configured=True."""
         self.mock_ledfx.config["sendspin_servers"] = {
             "living-room": {
@@ -451,9 +452,10 @@ class TestGetSendspinDiscover:
 
     @patch("ledfx.api.sendspin_discover._sendspin_available", return_value=True)
     @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
-    async def test_discover_respects_timeout_param(self, mock_discover, _):
+    async def test_discover_respects_timeout_param(self, mock_discover: AsyncMock, _):
         """Passes timeout query param to _discover."""
-        mock_discover.return_value = []
+        no_servers: list[dict[str, str | int]] = []
+        mock_discover.return_value = no_servers
         await self.client.get("/api/sendspin/discover?timeout=5.0")
         mock_discover.assert_called_once_with(5.0)
 

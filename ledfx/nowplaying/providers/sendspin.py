@@ -9,6 +9,11 @@ means "cleared". The provider accumulates state across messages.
 """
 
 import logging
+from typing import Protocol
+
+from aiosendspin.models.core import ServerStatePayload
+from aiosendspin.models.metadata import SessionUpdateMetadata
+from aiosendspin.models.types import UndefinedField
 
 from ledfx.nowplaying.models import TrackMetadata
 
@@ -16,8 +21,26 @@ _LOGGER = logging.getLogger(__name__)
 
 SOURCE_ID = "sendspin"
 
-# Sentinel indicating a field was not sent (retain previous value)
-_NOT_SENT = object()
+
+class _NowPlayingService(Protocol):
+    """Now Playing operations used to publish Sendspin metadata."""
+
+    def set_metadata(self, source_id: str, metadata: TrackMetadata) -> bool: ...
+
+    def set_artwork_url(self, source_id: str, url: str) -> bool: ...
+
+    def clear_artwork(self, source_id: str) -> None: ...
+
+    def clear(self, source_id: str) -> None: ...
+
+
+class LedFxNowPlaying(Protocol):
+    @property
+    def now_playing(self) -> _NowPlayingService | None: ...
+
+
+class _NotSent:
+    """Marker for metadata fields that were omitted by the server."""
 
 
 class SendspinNowPlayingProvider:
@@ -34,17 +57,17 @@ class SendspinNowPlayingProvider:
         ledfx: LedFxCore instance (must have .now_playing attribute).
     """
 
-    def __init__(self, ledfx):
+    def __init__(self, ledfx: LedFxNowPlaying) -> None:
         self._ledfx = ledfx
-        self._last_artwork_url = None
+        self._last_artwork_url: str | None = None
         # Accumulated track state (survives across incremental updates)
-        self._title = None
-        self._artist = None
-        self._album = None
-        self._artwork_url = None
+        self._title: str | None = None
+        self._artist: str | None = None
+        self._album: str | None = None
+        self._artwork_url: str | None = None
         _LOGGER.info("Sendspin Now Playing provider initialized")
 
-    def on_metadata(self, server_state_payload) -> None:
+    def on_metadata(self, server_state_payload: ServerStatePayload) -> None:
         """Handle a server/state metadata update from aiosendspin.
 
         Sendspin sends incremental updates. UndefinedField means "not sent"
@@ -54,9 +77,6 @@ class SendspinNowPlayingProvider:
         Args:
             server_state_payload: ServerStatePayload from the metadata callback.
         """
-        from aiosendspin.models.metadata import SessionUpdateMetadata
-        from aiosendspin.models.types import UndefinedField
-
         metadata = server_state_payload.metadata
         if metadata is None:
             return
@@ -66,9 +86,9 @@ class SendspinNowPlayingProvider:
             return
 
         # Extract fields: UndefinedField → _NOT_SENT (keep prev), else use value
-        def _val(field):
+        def _val(field: str | None | UndefinedField) -> str | None | _NotSent:
             if isinstance(field, UndefinedField):
-                return _NOT_SENT
+                return _NotSent()
             return field
 
         # Update accumulated state only for fields that were actually sent
@@ -77,13 +97,13 @@ class SendspinNowPlayingProvider:
         album = _val(metadata.album)
         artwork_url = _val(metadata.artwork_url)
 
-        if title is not _NOT_SENT:
+        if not isinstance(title, _NotSent):
             self._title = title
-        if artist is not _NOT_SENT:
+        if not isinstance(artist, _NotSent):
             self._artist = artist
-        if album is not _NOT_SENT:
+        if not isinstance(album, _NotSent):
             self._album = album
-        if artwork_url is not _NOT_SENT:
+        if not isinstance(artwork_url, _NotSent):
             self._artwork_url = artwork_url
 
         # Build TrackMetadata from accumulated state
@@ -96,10 +116,9 @@ class SendspinNowPlayingProvider:
         )
 
         # Forward to Now Playing Service
-        now_playing = getattr(self._ledfx, "now_playing", None)
+        now_playing = self._ledfx.now_playing
         if now_playing is None:
             return
-
         now_playing.set_metadata(SOURCE_ID, track_metadata)
 
         # Handle artwork URL changes
@@ -116,7 +135,7 @@ class SendspinNowPlayingProvider:
 
     def clear(self) -> None:
         """Clear Now Playing state and reset accumulated state."""
-        now_playing = getattr(self._ledfx, "now_playing", None)
+        now_playing = self._ledfx.now_playing
         if now_playing is not None:
             now_playing.clear(SOURCE_ID)
         self._last_artwork_url = None
