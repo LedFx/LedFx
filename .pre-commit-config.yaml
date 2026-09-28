@@ -43,3 +43,14 @@ repos:
           - --min-severity
           - high
           - .github/workflows/
+  # Type-coverage ratchet: pyrefly_errors.json holds the baseline; new errors
+  # fail CI (--error-stale-baseline). Pay the baseline down by fixing errors
+  # and running `uv run pyrefly check --update-baseline` in the same commit.
+  - repo: local
+    hooks:
+      - id: pyrefly
+        name: pyrefly (type ratchet)
+        entry: uv run pyrefly check --error-stale-baseline
+        language: system
+        pass_filenames: false
+        require_serial: true
