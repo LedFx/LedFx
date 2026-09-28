@@ -145,10 +145,10 @@ constraint-dependencies = [
 extend-select = ["G004"]
 
 [tool.pyrefly]
-# Type-coverage ratchet: errors are counted by `uv run pyrefly check`; the
-# count must never increase. New code must be clean; old code is paid down
-# over time. See the error-count table in docs/ or the pyrefly section of
-# the lint gate history.
+# Require complete annotations and reject unsafe uses of Any.
+preset = "strict"
+# Run via tools/pyrefly_check.py in the locked Python 3.12 dev environment.
+# Existing errors are baselined; new errors must be fixed.
 project-includes = [
     "ledfx",
     "tests",
@@ -168,3 +168,5 @@ baseline = "pyrefly_errors.json"
 # Platform-specific optional imports are not present in every locked
 # environment, so missing-import diagnostics remain outside this ratchet.
 missing-import = "ignore"
+# Keep Any from bypassing the strict checker; use object or a concrete type.
+explicit-any = "error"
