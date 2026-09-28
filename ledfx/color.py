@@ -323,7 +323,7 @@ def validate_color(color: str) -> str:
         str: The validated and formatted color string.
 
     """
-    return "#%02x%02x%02x" % parse_color(color)  # noqa: UP031
+    return "#{:02x}{:02x}{:02x}".format(*parse_color(color))
 
 
 def get_color_at_position(gradient_like, position: float) -> str:
@@ -343,7 +343,7 @@ def get_color_at_position(gradient_like, position: float) -> str:
         return validate_color(gradient_like)
 
     if isinstance(parsed, RGB):
-        return "#%02x%02x%02x" % parsed  # noqa: UP031
+        return "#{:02x}{:02x}{:02x}".format(*parsed)
 
     # Otherwise parsed is a Gradient
     return parsed.sample(position)

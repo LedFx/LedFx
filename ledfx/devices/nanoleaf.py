@@ -53,7 +53,7 @@ class NanoleafDevice(NetworkedDevice):
         self.setup_subdevice()
 
     def url(self, token: str) -> str:
-        return "http://%s:%i/api/v1/%s" % (  # noqa: UP031
+        return "http://{}:{}/api/v1/{}".format(
             self._config["ip_address"],
             self._config["port"],
             token,

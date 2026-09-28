@@ -872,7 +872,7 @@ class WebsocketConnection:
         except Exception as err:
             _LOGGER.exception("Unexpected Exception in base64 decoding: %s", err)  # noqa: TRY401
         else:
-            fmt = "<%dh" % (len(decoded) // 2)  # noqa: UP031
+            fmt = f"<{len(decoded) // 2}h"
             data = list(struct.unpack(fmt, decoded))
             # Minimum value is -32768 for signed, so that's why if the number is negative,
             # it is divided by 32768 when converting to float.
