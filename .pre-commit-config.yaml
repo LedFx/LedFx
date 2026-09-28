@@ -15,11 +15,12 @@ repos:
         args: [--fix]
       - id: ruff-format
   # Structural check that ClassVar annotations describe their literals.
-  # Ruff's RUF012 cannot see this (it only asks that an annotation exists).
+  # Ruff's RUF012 cannot see this (it only asks that an annotation exist).
   - repo: local
     hooks:
       - id: classvar-audit
         name: classvar audit
-        entry: python3 tools/classvar_audit.py
-        language: system
+        entry: python tools/classvar_audit.py
+        language: python
         types: [python]
+        pass_filenames: false
