@@ -487,7 +487,7 @@
       "column": 36,
       "path": "ledfx/api/websocket.py",
       "name": "bad-assignment",
-      "concise_description": "`ndarray[tuple[Any, ...], dtype[floating[_32Bit]]]` is not assignable to attribute `data` with type `Never`",
+      "concise_description": "`ndarray[tuple[int], dtype[floating[_32Bit]]]` is not assignable to attribute `data` with type `Never`",
       "severity": "error"
     },
     {
@@ -1044,13 +1044,6 @@
       "severity": "error"
     },
     {
-      "column": 31,
-      "path": "ledfx/devices/ddp.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `ndarray[tuple[int], dtype[unsignedinteger[_8Bit]]]` is not assignable to parameter `obj` with type `Buffer` in function `memoryview.__new__`",
-      "severity": "error"
-    },
-    {
       "column": 17,
       "path": "ledfx/devices/e131.py",
       "name": "missing-attribute",
@@ -1446,7 +1439,7 @@
       "column": 68,
       "path": "ledfx/devices/packets.py",
       "name": "not-a-type",
-      "concise_description": "Expected a type form, got instance of `Overload[\n  [_ArrayT: ndarray](object: _ArrayT, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> _ArrayT\n  [_ArrayT: ndarray](object: numpy._core.multiarray._SupportsArray[_ArrayT], dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: Literal[0] = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> _ArrayT\n  [_ScalarT: generic](object: _ArrayLike, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[_ScalarT]]\n  [_ScalarT: generic](object: Any, dtype: _DTypeLike, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[_ScalarT]]\n  (object: Any, dtype: _HasDType[dtype] | _HasNumPyDType[dtype] | dtype | list[Any] | str | _DTypeDict | tuple[Any, Any] | type[Any] | None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray\n]`",
+      "concise_description": "Expected a type form, got instance of `Overload[\n  [ArrayT: ndarray](object: ArrayT, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ArrayT\n  [ArrayT: ndarray](object: numpy._core.multiarray._SupportsArray[ArrayT], dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: Literal[0] = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ArrayT\n  [ScalarT: generic](object: _ArrayLike, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[ScalarT]]\n  [ScalarT: generic](object: Any, dtype: _DTypeLike, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[ScalarT]]\n  (object: Any, dtype: _HasDType[dtype] | _HasNumPyDType[dtype] | dtype | list[Any] | str | _DTypeDict | tuple[Any, Any] | type[Any] | None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray\n]`",
       "severity": "error"
     },
     {
@@ -6833,20 +6826,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/nowplaying/providers/sendspin.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models.metadata`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/nowplaying/providers/sendspin.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models.types`",
-      "severity": "error"
-    },
-    {
       "column": 13,
       "path": "ledfx/nowplaying/providers/smtc.py",
       "name": "missing-import",
@@ -7022,55 +7001,6 @@
       "severity": "error"
     },
     {
-      "column": 12,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `pyflac`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.client`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models.core`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models.metadata`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models.player`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.models.types`",
-      "severity": "error"
-    },
-    {
       "column": 21,
       "path": "ledfx/sendspin/stream.py",
       "name": "missing-attribute",
@@ -7106,10 +7036,38 @@
       "severity": "error"
     },
     {
+      "column": 42,
+      "path": "ledfx/sendspin/stream.py",
+      "name": "missing-argument",
+      "concise_description": "Missing argument `identity` in function `aiosendspin.client.client.SendspinClient.__init__`",
+      "severity": "error"
+    },
+    {
+      "column": 42,
+      "path": "ledfx/sendspin/stream.py",
+      "name": "missing-argument",
+      "concise_description": "Missing argument `pairing_store` in function `aiosendspin.client.client.SendspinClient.__init__`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/sendspin/stream.py",
+      "name": "unexpected-keyword",
+      "concise_description": "Unexpected keyword argument `client_id` in function `aiosendspin.client.client.SendspinClient.__init__`",
+      "severity": "error"
+    },
+    {
       "column": 29,
       "path": "ledfx/sendspin/stream.py",
       "name": "not-callable",
       "concise_description": "Expected a callable, got `None`",
+      "severity": "error"
+    },
+    {
+      "column": 40,
+      "path": "ledfx/sendspin/stream.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Unknown | None` is not assignable to parameter `url` with type `str` in function `aiosendspin.client.client.SendspinClient.connect`",
       "severity": "error"
     },
     {
@@ -7585,7 +7543,7 @@
       "column": 43,
       "path": "ledfx/virtuals.py",
       "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `numpy._core.multiarray._ConstructorEmpty.__call__` called with arguments: (tuple[Literal[0] | Unknown | None, Literal[3]])",
+      "concise_description": "No matching overload found for function `numpy._core.multiarray.zeros` called with arguments: (tuple[Literal[0] | Unknown | None, Literal[3]])",
       "severity": "error"
     },
     {
@@ -8198,13 +8156,6 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "tests/test_instance_id.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.client`",
-      "severity": "error"
-    },
-    {
       "column": 34,
       "path": "tests/test_now_playing_mpris.py",
       "name": "bad-assignment",
@@ -8489,13 +8440,6 @@
       "path": "tests/test_sendspin_always_on_runtime.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `LedFxCore` has no attribute `audio`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "tests/test_sendspin_stream_flac_lifecycle.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `aiosendspin.client`",
       "severity": "error"
     },
     {
