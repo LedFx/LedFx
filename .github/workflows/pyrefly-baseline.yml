@@ -68,9 +68,8 @@ jobs:
           if [ -n "$pr" ]; then
             gh pr edit "$pr" --title "chore: prune stale Pyrefly baseline" --body "$body"
           else
-            gh pr create --base main --head "$BRANCH" \
-              --title "chore: prune stale Pyrefly baseline" --body "$body"
-            pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+            pr=$(gh pr create --base main --head "$BRANCH" \
+              --title "chore: prune stale Pyrefly baseline" --body "$body")
           fi
           gh pr merge "$pr" --auto --squash
       - name: Close an obsolete baseline PR

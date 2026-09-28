@@ -1306,7 +1306,7 @@ dev = [
     { name = "bokeh", specifier = ">=3.3.3,<4.0.0" },
     { name = "lifx-emulator-core", specifier = ">=3.8.0" },
     { name = "prek", specifier = ">=0.5.3" },
-    { name = "pyrefly", specifier = ">=1.3.0" },
+    { name = "pyrefly", specifier = "==1.3.0" },
     { name = "pytest", specifier = ">=8.0.0,<10.0.0" },
     { name = "pytest-asyncio", specifier = ">=1.4.0,<1.5.0" },
     { name = "pytest-order", specifier = ">=1.2.0,<2.0.0" },
