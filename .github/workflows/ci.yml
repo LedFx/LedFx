@@ -74,7 +74,9 @@ jobs:
             # previous_filename: moving code out of ledfx/ into docs/ is still a code change
             files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
             # here-string, not a pipe: grep -q exiting early + pipefail would read as "no match"
-            grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" || code=false
+            # docs/**/*.py is type-checked by the Pyrefly lint hook, so it counts as code.
+            grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" \
+              || grep -qE '^docs/.*\.py$' <<< "$files" || code=false
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
 

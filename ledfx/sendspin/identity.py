@@ -1,22 +1,31 @@
 """Persistent Sendspin identity shared by streams in one config directory."""
 
+import logging
 import os
 import tempfile
 from pathlib import Path
 
 from aiosendspin.noise import Identity, b64url_decode
 
+_LOGGER = logging.getLogger(__name__)
+
+
+def _read_identity(path: Path) -> Identity:
+    return Identity.from_private_bytes(b64url_decode(path.read_text("ascii").strip()))
+
 
 def load_or_create_identity(directory: Path) -> Identity:
     """Publish a complete private key atomically, retaining any concurrent winner."""
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / "sendspin_identity"
+    corrupt = False
     try:
-        return Identity.from_private_bytes(
-            b64url_decode(path.read_text("ascii").strip())
-        )
+        return _read_identity(path)
     except FileNotFoundError:
         pass
+    except (ValueError, UnicodeDecodeError):
+        _LOGGER.warning("Replacing unreadable Sendspin identity at %s", path)
+        corrupt = True
 
     identity = Identity.generate()
     # mkstemp creates the private key file with mode 0600. Linking the completed
@@ -26,12 +35,16 @@ def load_or_create_identity(directory: Path) -> Identity:
     try:
         with os.fdopen(descriptor, "w", encoding="ascii") as key_file:
             key_file.write(identity.private_b64u)
+        if corrupt:
+            os.replace(temporary_path, path)
+            return identity
         try:
             os.link(temporary_path, path)
         except FileExistsError:
-            return Identity.from_private_bytes(
-                b64url_decode(path.read_text("ascii").strip())
-            )
+            return _read_identity(path)
+        except OSError:
+            # Filesystems without hard links (FAT, some SMB/FUSE mounts).
+            os.replace(temporary_path, path)
         return identity
     finally:
-        temporary_path.unlink()
+        temporary_path.unlink(missing_ok=True)
