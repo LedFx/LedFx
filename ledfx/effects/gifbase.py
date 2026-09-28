@@ -1,5 +1,6 @@
 import logging
 from enum import Enum
+from typing import ClassVar
 
 import voluptuous as vol
 from PIL import Image
@@ -23,7 +24,7 @@ class GifBase(Effect):
     Simple Gif base class that supplies basic gif and resize capability.
     """
 
-    RESIZE_METHOD_MAPPING = {  # noqa: RUF012
+    RESIZE_METHOD_MAPPING: ClassVar[dict] = {
         GIFResizeMethods.NEAREST.value: Image.NEAREST,
         GIFResizeMethods.BILINEAR.value: Image.BILINEAR,
         GIFResizeMethods.BICUBIC.value: Image.BICUBIC,

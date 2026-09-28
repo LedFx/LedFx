@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import numpy as np
 
@@ -100,7 +101,7 @@ class Transitions(metaclass=IterClass):
         else:
             np.clip(x1, None, 255 * 2 * (weight - 0.5), x1)
 
-    NAMED_FUNCTIONS = {  # noqa: RUF012
+    NAMED_FUNCTIONS: ClassVar[dict] = {
         "Add": add,
         "Dissolve": dissolve,
         "Push": push,

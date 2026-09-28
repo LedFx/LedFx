@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -29,7 +30,7 @@ class Template1d(AudioReactiveEffect):
     CATEGORY = "Classic"
     # HIDDEN_KEYS are keys that are not shown in the UI, it is a way to hide settings inherited from
     # the parent class, where you don't make use of them. So it does not confuse the user.
-    HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list] = ["background_color", "background_brightness", "blur"]
     # ADVANCED_KEYS are keys that are not shown in the UI, unless Advanced mode is enabled via the switch in the effect edit dialog
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + ["float_range"]
 

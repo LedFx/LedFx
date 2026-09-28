@@ -4,6 +4,7 @@ import socket
 import threading
 from abc import abstractmethod
 from functools import cached_property, partial
+from typing import ClassVar
 
 import numpy as np
 import serial
@@ -686,7 +687,7 @@ class UDPDevice(NetworkedDevice):
 class AvailableCOMPorts:
     ports = serial.tools.list_ports.comports()
 
-    available_ports = [""]  # noqa: RUF012
+    available_ports: ClassVar[list] = [""]
 
     for p in ports:
         available_ports.append(p.device)

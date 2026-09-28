@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 import numpy as np
 import voluptuous as vol
 
@@ -8,7 +10,7 @@ from ledfx.effects.audio import AudioReactiveEffect
 class VuMeterAudioEffect(AudioReactiveEffect):
     NAME = "VuMeter"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS = ["background_color", "background_brightness", "blur"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list] = ["background_color", "background_brightness", "blur"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

@@ -1,5 +1,6 @@
 import socket
 from threading import Lock
+from typing import ClassVar
 
 
 class SocketSingleton:
@@ -9,7 +10,7 @@ class SocketSingleton:
         _type_: _description_
     """
 
-    _instances = {}  # noqa: RUF012
+    _instances: ClassVar[dict] = {}
     _lock = Lock()
 
     def __new__(cls, recv_port):

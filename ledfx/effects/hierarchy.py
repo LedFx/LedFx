@@ -1,5 +1,6 @@
 import logging
 import timeit
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -14,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class Hierarchy(AudioReactiveEffect):
     NAME = "Hierarchy"
     CATEGORY = "Simple"
-    HIDDEN_KEYS = [  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list] = [
         "background_color",
         "background_brightness",
         "blur",

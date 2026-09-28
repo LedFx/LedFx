@@ -35,6 +35,7 @@ from platform import (
 
 # from asyncio import coroutines, ensure_future
 from subprocess import PIPE, Popen
+from typing import ClassVar
 
 import netifaces
 import numpy as np
@@ -300,7 +301,7 @@ class WLED:
     A collection of WLED helper functions
     """
 
-    SYNC_MODES = {"DDP": 4048, "E131": 5568, "ARTNET": 6454}  # noqa: RUF012
+    SYNC_MODES: ClassVar[dict] = {"DDP": 4048, "E131": 5568, "ARTNET": 6454}
 
     def __init__(self, ip_address):
         self.ip_address = ip_address
@@ -2124,7 +2125,7 @@ class PerformanceAnalysis:
     A class for comparing the performance of two functions.
     """
 
-    _write_buffer = []  # noqa: RUF012
+    _write_buffer: ClassVar[list] = []
     _write_buffer_limit = 100
 
     @staticmethod

@@ -1,4 +1,6 @@
-import numpy as np  # noqa: N999
+from typing import ClassVar  # noqa: N999
+
+import numpy as np
 import voluptuous as vol
 
 from ledfx.effects.audio import AudioReactiveEffect
@@ -8,7 +10,7 @@ from ledfx.effects.gradient import GradientEffect
 class MultiBarAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Multicolor Bar"
     CATEGORY = "BPM"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

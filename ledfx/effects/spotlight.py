@@ -2,6 +2,7 @@
 
 import random
 import timeit
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -16,7 +17,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Spotlight"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "max_active_spots",
         "use_gradient",

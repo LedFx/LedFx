@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -27,7 +28,7 @@ class Number(Texter2d):
     CATEGORY = "Diagnostic"
 
     # Mapping of display value options to their respective update methods
-    VALUE_SOURCE_MAPPING = {  # noqa: RUF012
+    VALUE_SOURCE_MAPPING: ClassVar[dict] = {
         "BPM": "update_bpm",
         "BPM Confidence": "update_bpm_confidence",
         "Time (HH:MM)": "update_time_hhmm",

@@ -1,4 +1,5 @@
 import logging
+from typing import ClassVar
 
 import numpy as np
 import voluptuous as vol
@@ -44,7 +45,7 @@ class Sparkle:
 class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan and Flare"
     CATEGORY = "Classic"
-    HIDDEN_KEYS = ["gradient_roll"]  # noqa: RUF012
+    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

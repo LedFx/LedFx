@@ -1,6 +1,7 @@
 import json
 import logging
 import socket
+from typing import ClassVar
 
 import paho.mqtt.client as mqtt
 import voluptuous as vol
@@ -83,7 +84,7 @@ class MQTT_HASS(Integration):
         }
     )
 
-    TRANSITION_MAPPING = {  # noqa: RUF012
+    TRANSITION_MAPPING: ClassVar[dict] = {
         "ledfxtransitiontype": "transition_mode",
         "ledfxtransitiontime": "transition_time",
     }

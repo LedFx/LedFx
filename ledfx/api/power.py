@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from json import JSONDecodeError
+from typing import ClassVar
 
 from aiohttp import web
 
@@ -12,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class InfoEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/power"
 
-    exit_codes = {"shutdown": 3, "restart": 4}  # noqa: RUF012
+    exit_codes: ClassVar[dict] = {"shutdown": 3, "restart": 4}
 
     async def post(self, request: web.Request) -> web.Response:
         """
