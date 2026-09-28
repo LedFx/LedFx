@@ -2067,7 +2067,7 @@ def log_packages():
         _LOGGER.debug("%s : %s", dist.metadata["name"], dist.version)
 
 
-def is_package_installed(package_name: str, import_name: str = None) -> bool:  # noqa: RUF013
+def is_package_installed(package_name: str, import_name: str | None = None) -> bool:
     """
     Check if a package is available in the environment.
 
