@@ -20,6 +20,7 @@ import urllib.request
 from abc import ABC
 from collections import deque
 from collections.abc import Callable, MutableMapping
+from datetime import UTC
 from functools import lru_cache
 from importlib import metadata
 from itertools import chain
@@ -2208,7 +2209,9 @@ class PerformanceAnalysis:
         - optimized_time (float): The execution time of the optimized method.
         - percent_faster (float): The percentage improvement in execution time of the optimized method compared to the original method.
         """
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")  # noqa: DTZ005
+        timestamp = (
+            datetime.datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S.%f")
+        )
         PerformanceAnalysis._write_buffer.append(
             [
                 timestamp,
@@ -2260,8 +2263,10 @@ class UpdateChecker:
             data = response.json()
             UpdateChecker._latest_version = data["tag_name"].replace("v", "")
             UpdateChecker._release_age = (
-                datetime.datetime.now()  # noqa: DTZ005
-                - datetime.datetime.strptime(data["published_at"], "%Y-%m-%dT%H:%M:%SZ")  # noqa: DTZ007
+                datetime.datetime.now(UTC)
+                - datetime.datetime.strptime(
+                    data["published_at"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=UTC)
             ).days
             UpdateChecker._release_url = data["html_url"]
             UpdateChecker._update_check_succeeded = True

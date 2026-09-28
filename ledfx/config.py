@@ -289,7 +289,7 @@ def get_profile_dump_location(config_dir: str) -> str:
     Returns:
         str: The complete path for dumping the profile.
     """
-    date_time = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")  # noqa: DTZ005
+    date_time = datetime.datetime.now().astimezone().strftime("%d-%m-%y_%H-%M-%S")
     return os.path.join(config_dir, f"LedFx_{date_time}.profile")
 
 
@@ -903,7 +903,7 @@ def create_backup(config_dir: str, backup_reason: str) -> None:
     """
 
     config_file = os.path.join(config_dir, CONFIG_FILE_NAME)
-    date = datetime.datetime.now().strftime("%d-%m-%y_%H-%M-%S")  # noqa: DTZ005
+    date = datetime.datetime.now().astimezone().strftime("%d-%m-%y_%H-%M-%S")
     backup_location = os.path.join(config_dir, f"config_backup_{date}.json")
     if os.path.exists(config_file):
         try:
