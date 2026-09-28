@@ -1,15 +1,29 @@
 # zizmor configuration for LedFx workflows.
-# Threshold: findings below `high` severity are advisory, not gate failures
-# (enforced with --min-severity high in the lint gate).
+#
+# The lint gate runs zizmor with --min-severity high --persona=auditor:
+# findings below `high` are advisory, not gate failures.
+#
+# Scope notes:
+# - superfluous-actions: the maintainers' choice of release action; zizmor's
+#   suggestion to replace it with `gh release` is not this repo's bar.
+# - dangerous-triggers/lint-notify.yml: that workflow is the reviewed, safe
+#   shape of workflow_run — the default-branch version always executes, it
+#   never checks out or executes PR code, and PR-controlled values only ever
+#   reach `gh` as API arguments. See the comment block at the top of the
+#   workflow for the full argument.
 rules:
-  # The maintainers' choice of release action; zizmor's informational
-  # suggestion to replace it with `gh release` is not this repo's bar.
   superfluous-actions:
     disable: true
-  # lint-notify.yml is the reviewed, safe shape of workflow_run: the default-
-  # branch version always executes, it never checks out or executes PR code,
-  # and PR-controlled values never reach a run block. See the comment block
-  # at the top of that workflow for the full argument.
   dangerous-triggers:
     ignore:
+      - lint-notify.yml
+  secrets-outside-env:
+    # Docker Hub creds in ci.yml's docker-edge job stay job-level: an
+    # environment with required reviewers would put an approval wall in
+    # front of every main-branch push (the docker build job uses the
+    # production environment instead).
+    # AUTOMATION_APP_* in lint-notify.yml is a comment-only app token
+    # minted per run; there is no environment worth gating it behind.
+    ignore:
+      - ci.yml
       - lint-notify.yml

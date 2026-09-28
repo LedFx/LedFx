@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: read
-      pull-requests: read
+      pull-requests: read  # reads PR metadata (changed paths) to decide which jobs run
     outputs:
       code: ${{ steps.plan.outputs.code }}
       version: ${{ steps.plan.outputs.version }}
@@ -420,9 +420,11 @@ jobs:
     if: needs.plan.outputs.code == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
+    # production holds the Docker Hub credentials; GHCR uses the job token
+    environment: production
     permissions:
       contents: read
-      packages: write
+      packages: write  # pushes the built image to GHCR
     strategy:
       fail-fast: false
       matrix:
@@ -503,7 +505,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      packages: write
+      packages: write  # pushes the merged edge manifest to GHCR
     steps:
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
@@ -559,7 +561,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write
+      contents: write  # creates the GitHub release and uploads frozen-build assets
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -596,7 +598,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      packages: write
+      packages: write  # pushes the release tag image to GHCR
     env:
       VERSION: ${{ needs.plan.outputs.version }}
     steps:
