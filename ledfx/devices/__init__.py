@@ -716,11 +716,11 @@ class SerialDevice(Device):
 
     def activate(self):
         try:
-            if self.serial and self.serial.isOpen:
+            if self.serial and self.serial.is_open:
                 return
 
             self.serial = serial.Serial(self.com_port, self.baudrate)
-            if self.serial.isOpen:
+            if self.serial.is_open:
                 super().activate()
                 self._online = True
 

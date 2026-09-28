@@ -660,6 +660,9 @@ class MQTT_HASS(Integration):
 
     # Clean up HomeAssistant
     async def on_delete(self):
+        # Never connected (e.g. created inactive): nothing to clean up in HA.
+        if self._client is None:
+            return
         self._client.publish(
             f"{self._config['topic']}/light/ledfxscene/config", json.dumps({})
         )

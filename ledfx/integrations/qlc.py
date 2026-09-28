@@ -208,15 +208,16 @@ class QLC(Integration):
     async def get_widgets(self):
         """Returns a list of widgets as tuples: [(ID, Type, Name),...]"""
         # First get list of widgets (ID, Name)
-        widgets = []
-        message = "QLC+API|getWidgetsList"
-        response = await self._client.query(message)
-        widgets_list = response.lstrip(f"{message}|").split("|")
+        widgets: list[tuple[str, str, str]] = []
+        if self._client is None:
+            return widgets
+        # query() already strips the "QLC+API|" prefix from responses.
+        response = await self._client.query("QLC+API|getWidgetsList")
+        widgets_list = response.removeprefix("getWidgetsList|").split("|")
         # Then get the type for each widget (in individual requests bc QLC api be like that)
         for widget_id, widget_name in zip(widgets_list[::2], widgets_list[1::2]):
-            message = "QLC+API|getWidgetType"
-            response = await self._client.query(f"{message}|{widget_id}")
-            widget_type = response.lstrip(f"{message}|")
+            response = await self._client.query(f"QLC+API|getWidgetType|{widget_id}")
+            widget_type = response.removeprefix("getWidgetType|")
             if widget_type in self._widget_types:
                 widgets.append((widget_id, widget_type, widget_name))
         return widgets
@@ -290,7 +291,9 @@ class QLCWebsocketClient:
         """Send a message, and return the response"""
         await self.send(message)
         result = await self.receive()
-        return result.lstrip("QLC+API|")
+        if result is None:
+            return ""
+        return result.removeprefix("QLC+API|")
 
     async def send(self, message):
         """Send a message to the WebSocket."""
