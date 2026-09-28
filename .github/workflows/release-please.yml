@@ -1,0 +1,39 @@
+# Opens/updates a release PR when releasable commits (conventional-commit
+# style, see the linked tracking issue) land on main. Merging that release PR
+# bumps pyproject.toml + ledfx/consts.py, writes CHANGELOG.md and pushes the
+# version tag - which is what triggers the existing tag-publish pipeline.
+name: release-please
+
+on:
+  schedule:
+    - cron: "17 21 * * 1" # Mondays 21:17 UTC, off the busy hour
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-please-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    if: github.repository == 'LedFx/LedFx'
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write  # opens/updates the release PR
+    steps:
+      - id: mint
+        uses: actions/create-github-app-token@6b3491cd7178e2c0428db1c0a4c0553b5e0b1b53 # v3.2.0
+        with:
+          client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write  # release branch, changelog, version tag
+          permission-pull-requests: write  # the release PR itself
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.mint.outputs.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

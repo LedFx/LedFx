@@ -28,3 +28,4 @@ rules:
     ignore:
       - ci.yml
       - lint-notify.yml
+      - release-please.yml
