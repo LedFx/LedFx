@@ -107,11 +107,11 @@ class Number(Texter2d):
 
     def update_time_hhmm(self, data=None):
         """Update display value with current time as HH:MM string."""
-        self.display_value = datetime.now().strftime("%H:%M")  # noqa: DTZ005
+        self.display_value = datetime.now().astimezone().strftime("%H:%M")
 
     def update_time_hhmmss(self, data=None):
         """Update display value with current time as HH:MM:SS string."""
-        self.display_value = datetime.now().strftime("%H:%M:%S")  # noqa: DTZ005
+        self.display_value = datetime.now().astimezone().strftime("%H:%M:%S")
 
     def audio_data_updated(self, data):
         """

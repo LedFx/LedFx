@@ -4,7 +4,7 @@ import hashlib
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
@@ -105,7 +105,7 @@ class ImageCache:
             cache_path = self._get_cache_path(cache_key, entry["extension"])
             if os.path.exists(cache_path):
                 # Update access tracking
-                entry["last_accessed"] = datetime.utcnow().isoformat()  # noqa: DTZ003
+                entry["last_accessed"] = datetime.now(UTC).isoformat()
                 entry["access_count"] = entry.get("access_count", 0) + 1
                 self._save_metadata()
                 _LOGGER.debug("Cache hit for %s", url)
@@ -162,7 +162,7 @@ class ImageCache:
             return
 
         # Update metadata
-        now = datetime.utcnow().isoformat()  # noqa: DTZ003
+        now = datetime.now(UTC).isoformat()
 
         # Remove old entry size if updating
         if cache_key in self.metadata["cache_entries"]:

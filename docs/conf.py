@@ -23,7 +23,9 @@ from ledfx.consts import PROJECT_AUTHOR, PROJECT_NAME, PROJECT_VERSION
 
 PROJECT_PACKAGE_NAME = PROJECT_NAME
 PROJECT_AUTHOR = PROJECT_AUTHOR  # noqa: PLW0127
-PROJECT_COPYRIGHT = f" 2018-{datetime.datetime.now().year}, {PROJECT_AUTHOR}"  # noqa: DTZ005
+PROJECT_COPYRIGHT = (
+    f" 2018-{datetime.datetime.now().astimezone().year}, {PROJECT_AUTHOR}"
+)
 PROJECT_SHORT_DESCRIPTION = "LedFx is an open-source effect controller"
 PROJECT_LONG_DESCRIPTION = (
     "LedFx is an open-source effect controller "
