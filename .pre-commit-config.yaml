@@ -44,13 +44,20 @@ repos:
           - high
           - .github/workflows/
   # Type-coverage ratchet: pyrefly_errors.json holds the baseline; new errors
-  # fail CI (--error-stale-baseline). Pay the baseline down by fixing errors
-  # and running `uv run pyrefly check --update-baseline` in the same commit.
+  # fail CI (--error-stale-baseline). Routine pay-down: fix errors, then prune
+  # the baseline with `uv run pyrefly check --prune-baseline` (drops only
+  # entries that no longer fire). Reserve --update-baseline for an intentional
+  # full reset — it regenerates from current diagnostics and would silently
+  # absorb any new error present at the time.
+  # Runs on 3.12 with the project venv on its path: the baseline is
+  # interpreter-sensitive (aiosendspin/pyflac exist only on 3.12; bokeh/
+  # pytest/lifx_emulator come from the synced project venv), so the error set
+  # must be generated and checked in the same environment as the lint gate.
   - repo: local
     hooks:
       - id: pyrefly
         name: pyrefly (type ratchet)
-        entry: uv run pyrefly check --error-stale-baseline
+        entry: uv run --python 3.12 --group dev --with pyrefly pyrefly check --error-stale-baseline
         language: system
         pass_filenames: false
         require_serial: true
