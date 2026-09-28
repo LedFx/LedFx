@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 env:
-  UV_PYTHON: "3.12.14" # fixed so strict Pyrefly diagnostics match the baseline
+  UV_PYTHON: "3.12" # frozen builds, wheel; test jobs override
   GHCR_IMAGE: ghcr.io/ledfx/ledfx
   DOCKERHUB_IMAGE: ledfxorg/ledfx
 

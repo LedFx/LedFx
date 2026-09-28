@@ -27,7 +27,7 @@ jobs:
         with:
           enable-cache: true
       - name: Install the locked project environment
-        run: uv sync --python 3.12.14 --group dev
+        run: uv sync --python 3.12 --group dev
       - name: Prune diagnostics that no longer occur
         run: uv run pyrefly check --prune-baseline
       - name: Detect baseline changes
