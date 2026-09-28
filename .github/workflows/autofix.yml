@@ -1,4 +1,4 @@
-name: autofix.ci # must be exactly this: autofix.ci identifies the workflow by name
+name: autofix.ci
 
 on:
   pull_request:
@@ -6,11 +6,29 @@ on:
 permissions:
   contents: read
 
-# A new push makes the running fix obsolete.
 concurrency:
   group: autofix-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   autofix:
-    uses: LedFx/.github/.github/workflows/autofix.yml@cb0f0bc37c326b5111bc914749b8596255379f49 # main
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: false # PR code is untrusted; avoid a cache-poisoning path.
+      - name: Install the locked project environment
+        run: uv sync --group dev
+      # Fixers modify files and exit non-zero; autofix.ci picks up the changes.
+      - run: uv run prek run --all-files
+        continue-on-error: true
+      # Also cancels other workflows on this commit: a fix commit replaces it.
+      - id: autofix
+        uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a # v1.3.4
+      # Nothing to fix but still failing: report what needs a human.
+      - if: steps.autofix.outputs.autofix_started != 'true'
+        run: uv run prek run --all-files --show-diff-on-failure
