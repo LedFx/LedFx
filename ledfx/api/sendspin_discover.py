@@ -127,7 +127,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                 port = info.port or 8927
                 # Read WebSocket path from TXT record (spec recommends /sendspin)
                 properties = info.decoded_properties or {}
-                path = properties.get("path", "/sendspin")
+                path = properties.get("path") or "/sendspin"
                 if not path.startswith("/"):
                     path = "/" + path
                 # Bracket IPv6 literals so the URL is valid (e.g. ws://[::1]:8927/…)

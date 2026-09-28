@@ -72,12 +72,12 @@ class TestBackwardCompatibility:
 
 
 # ---------------------------------------------------------------------------
-# Sendspin client_id construction
+# Sendspin persistent identity construction
 # ---------------------------------------------------------------------------
 
 
-class TestSendspinClientId:
-    """Tests for client_id built in SendspinAudioStream."""
+class TestSendspinIdentity:
+    """Tests for the persistent identity passed to SendspinClient."""
 
     @pytest.fixture()
     def _skip_if_no_aiosendspin(self):
@@ -87,8 +87,10 @@ class TestSendspinClientId:
         except ImportError:
             pytest.skip("aiosendspin not available")
 
-    def _run_connect_and_capture(self, instance_id):
+    def _run_connect_and_capture(self, instance_id, config_dir):
         """Run _connect_and_receive with a mocked SendspinClient, return the mock class."""
+        from types import SimpleNamespace
+
         from ledfx.sendspin.stream import SendspinAudioStream
 
         mock_client_cls = MagicMock()
@@ -106,6 +108,7 @@ class TestSendspinClientId:
                 },
                 callback=lambda *a: None,
                 instance_id=instance_id,
+                ledfx=SimpleNamespace(config_dir=str(config_dir)),
             )
             with pytest.raises(Exception, match="stop"):
                 asyncio.run(stream._connect_and_receive())
@@ -113,28 +116,30 @@ class TestSendspinClientId:
         return mock_client_cls
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
-    def test_client_id_uses_short_instance_id(self):
+    def test_client_identity_is_stable_for_config_directory(self, tmp_path):
         instance_id = str(uuid.uuid4())
-        mock_cls = self._run_connect_and_capture(instance_id)
-        client_id = mock_cls.call_args.kwargs["client_id"]
-        assert client_id.startswith(f"ledfx-{instance_id[:8]}")
-        assert len(instance_id[:8]) == 8
+        mock_cls = self._run_connect_and_capture(instance_id, tmp_path)
+        identity = mock_cls.call_args.kwargs["identity"]
+        assert identity.peer_id
+        assert (tmp_path / "sendspin_identity").exists()
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
-    def test_client_id_deterministic(self):
+    def test_client_identity_persists_across_streams(self, tmp_path):
         instance_id = str(uuid.uuid4())
-        mock1 = self._run_connect_and_capture(instance_id)
-        mock2 = self._run_connect_and_capture(instance_id)
+        mock1 = self._run_connect_and_capture(instance_id, tmp_path)
+        mock2 = self._run_connect_and_capture(instance_id, tmp_path)
         assert (
-            mock1.call_args.kwargs["client_id"] == mock2.call_args.kwargs["client_id"]
+            mock1.call_args.kwargs["identity"].peer_id
+            == mock2.call_args.kwargs["identity"].peer_id
         )
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
-    def test_client_id_differs_across_instances(self):
-        mock1 = self._run_connect_and_capture(str(uuid.uuid4()))
-        mock2 = self._run_connect_and_capture(str(uuid.uuid4()))
+    def test_client_identity_differs_across_config_directories(self, tmp_path):
+        mock1 = self._run_connect_and_capture(str(uuid.uuid4()), tmp_path / "one")
+        mock2 = self._run_connect_and_capture(str(uuid.uuid4()), tmp_path / "two")
         assert (
-            mock1.call_args.kwargs["client_id"] != mock2.call_args.kwargs["client_id"]
+            mock1.call_args.kwargs["identity"].peer_id
+            != mock2.call_args.kwargs["identity"].peer_id
         )
 
     @pytest.mark.usefixtures("_skip_if_no_aiosendspin")

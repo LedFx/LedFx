@@ -274,20 +274,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/api/sendspin_discover.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `startswith`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/api/sendspin_discover.py",
-      "name": "unsupported-operation",
-      "concise_description": "`+` is not supported between `Literal['/']` and `None`",
-      "severity": "error"
-    },
-    {
       "column": 31,
       "path": "ledfx/api/utils.py",
       "name": "bad-assignment",
@@ -6938,76 +6924,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `process`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `time`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `time`",
-      "severity": "error"
-    },
-    {
-      "column": 44,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `wait`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 42,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-argument",
-      "concise_description": "Missing argument `identity` in function `aiosendspin.client.client.SendspinClient.__init__`",
-      "severity": "error"
-    },
-    {
-      "column": 42,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "missing-argument",
-      "concise_description": "Missing argument `pairing_store` in function `aiosendspin.client.client.SendspinClient.__init__`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "unexpected-keyword",
-      "concise_description": "Unexpected keyword argument `client_id` in function `aiosendspin.client.client.SendspinClient.__init__`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "ledfx/sendspin/stream.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Unknown | None` is not assignable to parameter `url` with type `str` in function `aiosendspin.client.client.SendspinClient.connect`",
-      "severity": "error"
-    },
-    {
       "column": 49,
       "path": "ledfx/tools/ts_generator.py",
       "name": "unexpected-keyword",
@@ -8100,20 +8016,6 @@
       "severity": "error"
     },
     {
-      "column": 5,
-      "path": "tests/test_now_playing_sendspin.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `ModuleType` has no attribute `SessionUpdateMetadata`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "tests/test_now_playing_sendspin.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `ModuleType` has no attribute `UndefinedField`",
-      "severity": "error"
-    },
-    {
       "column": 16,
       "path": "tests/test_now_playing_service.py",
       "name": "unsupported-operation",
@@ -8342,27 +8244,6 @@
       "path": "tests/test_scenes_id.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `decode`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "tests/test_sendspin_always_on_runtime.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `LedFxCore` has no attribute `audio`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "tests/test_sendspin_always_on_runtime.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `LedFxCore` has no attribute `audio`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "tests/test_sendspin_always_on_runtime.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `LedFxCore` has no attribute `audio`",
       "severity": "error"
     },
     {

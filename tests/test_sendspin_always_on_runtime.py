@@ -1,6 +1,7 @@
 """Runtime behavior tests for Sendspin always-on startup paths."""
 
 from types import SimpleNamespace
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 from ledfx.api.config import ConfigEndpoint
@@ -27,7 +28,7 @@ def test_audio_should_keep_active_for_sendspin_name_even_if_index_invalid():
 
 
 def test_handle_base_configuration_update_reconciles_when_enabled():
-    core = object.__new__(LedFxCore)
+    core = cast(Any, object.__new__(LedFxCore))
     core.audio = None
     core.config = {"sendspin_always_on": True}
 
@@ -67,7 +68,7 @@ def test_eager_start_reuses_existing_audio_instance():
 
 
 def test_reconcile_sendspin_always_on_runtime_deactivates_when_disabled():
-    core = object.__new__(LedFxCore)
+    core = cast(Any, object.__new__(LedFxCore))
     core.config = {"sendspin_always_on": False}
     core.audio = MagicMock()
 

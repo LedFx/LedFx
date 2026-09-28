@@ -93,10 +93,10 @@ def _patch_aiosendspin_types(monkeypatch):
 
     # Create fake modules
     metadata_mod = ModuleType("aiosendspin.models.metadata")
-    metadata_mod.SessionUpdateMetadata = _SessionUpdateMetadata
+    metadata_mod.__dict__["SessionUpdateMetadata"] = _SessionUpdateMetadata
 
     types_mod = ModuleType("aiosendspin.models.types")
-    types_mod.UndefinedField = _UndefinedField
+    types_mod.__dict__["UndefinedField"] = _UndefinedField
 
     monkeypatch.setitem(sys.modules, "aiosendspin.models.metadata", metadata_mod)
     monkeypatch.setitem(sys.modules, "aiosendspin.models.types", types_mod)
