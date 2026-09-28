@@ -57,7 +57,7 @@ class TestIntegrationOpenImage:
 
     @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
-    @patch("urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_valid_remote_image(
         self, mock_urlopen, mock_build_request, mock_validate_url
     ):
@@ -101,7 +101,7 @@ class TestIntegrationOpenImage:
 
     @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
-    @patch("urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_extensionless_remote_url_success(
         self, mock_urlopen, mock_build_request, mock_validate_url
     ):
@@ -172,7 +172,7 @@ class TestIntegrationOpenGif:
 
     @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
-    @patch("urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_extensionless_remote_gif_url_success(
         self, mock_urlopen, mock_build_request, mock_validate_url
     ):

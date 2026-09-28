@@ -47,6 +47,7 @@ from ledfx.utilities.security_utils import (
     MAX_IMAGE_SIZE_BYTES,
     build_browser_request,
     is_allowed_image_extension,
+    safe_urlopen,
     validate_pil_image,
     validate_url_safety,
 )
@@ -925,7 +926,9 @@ class NowPlayingService:
 
         try:
             req = build_browser_request(url)
-            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
+            with safe_urlopen(
+                req, timeout=DOWNLOAD_TIMEOUT, allow_private=True
+            ) as resp:
                 content_length = resp.headers.get("Content-Length")
                 if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
                     _LOGGER.warning("Artwork too large: %s bytes", content_length)

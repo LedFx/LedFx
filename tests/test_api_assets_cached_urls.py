@@ -58,7 +58,7 @@ def sample_gif_bytes():
 class TestAssetsDownloadCachedURL:
     """Test /api/assets/download with cached URLs."""
 
-    @patch("ledfx.utils.urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_download_uncached_url_returns_error(self, mock_urlopen):
         """
         Test that requesting an unreachable URL returns appropriate error.
@@ -107,7 +107,7 @@ class TestAssetsDownloadCachedURL:
 class TestAssetsThumbnailCachedURL:
     """Test /api/assets/thumbnail with cached URLs."""
 
-    @patch("ledfx.utils.urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_thumbnail_uncached_url_returns_error(self, mock_urlopen):
         """
         Test that requesting thumbnail of unreachable URL returns error.

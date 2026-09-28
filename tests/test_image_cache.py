@@ -406,7 +406,7 @@ class TestCacheFallbackOnError:
 
     @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
-    @patch("urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_corrupt_cache_fallback_open_image(
         self,
         mock_urlopen,
@@ -460,7 +460,7 @@ class TestCacheFallbackOnError:
 
     @patch("ledfx.utils.validate_url_safety")
     @patch("ledfx.utils.build_browser_request")
-    @patch("urllib.request.urlopen")
+    @patch("ledfx.utils.safe_urlopen")
     def test_corrupt_cache_fallback_open_gif(
         self,
         mock_urlopen,

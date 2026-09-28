@@ -56,6 +56,7 @@ from ledfx.utilities.security_utils import (
     build_browser_request,
     is_allowed_image_extension,
     resolve_safe_path_in_directory,
+    safe_urlopen,
     validate_image_mime_type,
     validate_local_path,
     validate_pil_image,
@@ -1652,7 +1653,7 @@ def open_gif(gif_path, force_refresh=False, config_dir=None):
 
             # Download with size limit and timeout
             req = build_browser_request(gif_path)
-            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as response:
+            with safe_urlopen(req, timeout=DOWNLOAD_TIMEOUT) as response:
                 # Check content-length header
                 content_length = response.headers.get("Content-Length")
                 if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
@@ -1839,7 +1840,7 @@ def open_image(image_path, force_refresh=False, config_dir=None):
 
             # Download with size limit and timeout
             req = build_browser_request(image_path)
-            with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as response:
+            with safe_urlopen(req, timeout=DOWNLOAD_TIMEOUT) as response:
                 # Check content-length header
                 content_length = response.headers.get("Content-Length")
                 if content_length and int(content_length) > MAX_IMAGE_SIZE_BYTES:
