@@ -543,15 +543,13 @@ class Keybeat2d(Twod, GifBase):
         if self.above_min_vol:
             self.min_vol_found_in_last_beat = True
 
-        if self.num_beat_frames > 0:
-            if not self.suppress_beat:
-                # Using the self.beat progress, we can interpolate between frames
-                frame_progress = self.beat / self.beat_incs[self.beat_idx]
-                self.frame_c = int(frame_progress) + self.beat_frames[self.beat_idx]
-                self.frame_s = self.frame_c
-                self.frame_c %= self.framecount
-        else:
-            frame_progress = 0.0
+        frame_progress = 0.0
+        if self.num_beat_frames > 0 and not self.suppress_beat:
+            # Using the self.beat progress, we can interpolate between frames
+            frame_progress = self.beat / self.beat_incs[self.beat_idx]
+            self.frame_c = int(frame_progress) + self.beat_frames[self.beat_idx]
+            self.frame_s = self.frame_c
+            self.frame_c %= self.framecount
 
         if self.deep_diag:
             _LOGGER.info(

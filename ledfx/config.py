@@ -12,6 +12,8 @@ from packaging.version import parse as parse_version
 
 from ledfx.consts import CONFIGURATION_VERSION
 
+_LOGGER = logging.getLogger(__name__)
+
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 PRESETS_FILE_NAME = "presets.json"

@@ -3,8 +3,12 @@
 import asyncio
 import json
 import socket
+import subprocess
+import sys
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import numpy as np
 import pytest
 import voluptuous as vol
 from aiohttp import MultipartWriter, WSMessage, WSMsgType, web
@@ -18,7 +22,7 @@ from ledfx.api.websocket import WebsocketConnection
 from ledfx.config import load_logger, migrate_config
 from ledfx.devices import Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
-from ledfx.utils import get_local_ip
+from ledfx.utils import WLED, get_local_ip
 
 
 async def test_missing_route_argument_returns_bad_request() -> None:
@@ -172,3 +176,196 @@ async def test_websocket_rejects_non_object_json_without_handler_crash(
     with patch("ledfx.api.websocket.web.WebSocketResponse", return_value=ws):
         await connection.handle(request)
     ws.close.assert_awaited_once()
+
+
+async def test_wled_power_state_awaits_before_indexing() -> None:
+    wled = WLED("127.0.0.1")
+    with patch.object(WLED, "get_state", AsyncMock(return_value={"on": True})):
+        assert await wled.get_power_state() is True
+
+
+def test_config_directory_failure_logs_before_logger_setup(tmp_path: Path) -> None:
+    # Runs in a fresh interpreter: __main__ calls this before load_logger().
+    blocker = tmp_path / "file"
+    blocker.write_text("")
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import ledfx.config as c; c.ensure_config_directory(__import__('sys').argv[1])",
+            str(blocker / "config"),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "NameError" not in result.stderr
+
+
+def test_transition_mode_none_is_callable_mid_transition() -> None:
+    from ledfx.transitions import Transitions
+
+    transitions = Transitions(10)
+    frame = np.zeros((10, 3))
+    transitions["None"](transitions, frame, np.ones((10, 3)), 0.5)
+    assert not frame.any()
+
+
+def test_effect_update_config_stores_coerced_values() -> None:
+    from ledfx.effects.fire import Fire
+
+    effect = Fire(MagicMock(), {})
+    effect.update_config({"intensity": 12.7, "color_shift": "0.5"})
+    config = effect._config or {}
+    assert config["intensity"] == 12
+    assert config["color_shift"] == 0.5
+
+
+def test_number_switching_from_time_to_bpm_formats_a_number() -> None:
+    from ledfx.effects.number import Number
+
+    effect = Number(MagicMock(), {"value_source": "Time (HH:MM)"})
+    effect.update_time_hhmm()
+    effect.update_config({"value_source": "BPM"})
+    assert effect._format_number(effect.display_value, 3, 2) == "000.00"
+
+
+def test_gif_reprocessing_replaces_frames() -> None:
+    from PIL import Image
+
+    from ledfx.effects.gifplayer import GifPlayer
+
+    player = object.__new__(GifPlayer)
+    player.frames = []
+    player.r_width, player.r_height = 4, 2
+    player.resize_method = Image.Resampling.NEAREST
+    for _ in range(2):
+        gif = Image.new("RGBA", (8, 8))
+        player.gif = MagicMock(
+            size=gif.size, n_frames=3, convert=MagicMock(return_value=gif)
+        )
+        player.process_gif()
+    assert len(player.frames) == 3
+
+
+async def test_launchpad_segments_skipped_without_device() -> None:
+    from ledfx.devices.launchpad import LaunchpadDevice
+
+    device = object.__new__(LaunchpadDevice)
+    device._config = {"create_segments": True}
+    device.lp = None
+    with patch.object(LaunchpadDevice, "set_class"):
+        await device.add_postamble()
+
+
+def test_serial_device_reopens_after_deactivate() -> None:
+    import serial
+
+    from ledfx.devices import Device
+    from ledfx.devices.adalight import AdalightDevice
+
+    device = object.__new__(AdalightDevice)
+    device.serial = None
+    device.com_port, device.baudrate = "loop://", 115200
+    with (
+        patch("ledfx.devices.serial.Serial", side_effect=serial.serial_for_url),
+        patch.object(Device, "activate"),
+        patch.object(Device, "deactivate"),
+    ):
+        device.activate()
+        device.deactivate()
+        device.activate()
+    assert device.serial is not None
+    assert device.serial.is_open
+    device.serial.close()
+
+
+def test_osc_device_deactivates_twice() -> None:
+    from ledfx.devices import Device
+    from ledfx.devices.osc import OSCServerDevice
+
+    device = object.__new__(OSCServerDevice)
+    device._device_type = "OSC"
+    device._config = {"name": "osc"}
+    device._client = None
+    with patch.object(Device, "deactivate"):
+        device.deactivate()
+
+
+def test_wled_sync_mode_change_activates_new_subdevice() -> None:
+    from ledfx.devices.wled import WLEDDevice
+
+    device = object.__new__(WLEDDevice)
+    device._ledfx = MagicMock()
+    device._active = True
+    device._destination = "10.0.0.2"
+    device._config = {
+        "sync_mode": "E131",
+        "name": "wled",
+        "ip_address": "10.0.0.2",
+        "pixel_count": 10,
+        "refresh_rate": 60,
+    }
+    device.device_configs = {"E131": {}}
+    device.subdevice = MagicMock()
+    new_sender = MagicMock()
+    with patch.dict(WLEDDevice.SYNC_MODES, {"E131": new_sender}):
+        device.setup_subdevice()
+    new_sender.return_value.activate.assert_called_once()
+
+
+async def test_unconnected_mqtt_hass_can_be_deleted() -> None:
+    from ledfx.integrations.mqtt_hass import MQTT_HASS
+
+    integration = object.__new__(MQTT_HASS)
+    integration._active = False
+    integration._client = None
+    await integration.on_delete()
+
+
+async def test_qlc_widgets_without_connection_and_prefix_parsing() -> None:
+    from ledfx.integrations.qlc import QLC
+
+    integration = object.__new__(QLC)
+    integration._active = False
+    integration._client = None
+    assert await integration.get_widgets() == []
+
+    offline = object.__new__(QLCWebsocketClient)
+    offline.websocket = None
+    assert await offline.query("QLC+API|getWidgetsList") == ""
+
+    integration._client = MagicMock()
+    integration._client.query = AsyncMock(
+        side_effect=["getWidgetsList|1|Trig", "getWidgetType|Audio Triggers"]
+    )
+    assert await integration.get_widgets() == [("1", "Audio Triggers", "Trig")]
+
+
+def test_e131_waits_for_destination_before_starting_sender() -> None:
+    import threading
+
+    from ledfx.devices import NetworkedDevice
+    from ledfx.devices.e131 import E131Device
+
+    device = object.__new__(E131Device)
+    device._ledfx = MagicMock()
+    device.device_lock = threading.Lock()
+    device._destination = None
+    device._sacn = None
+    device._config = {
+        "name": "e131",
+        "ip_address": "10.0.0.3",
+        "universe": 1,
+        "universe_end": 1,
+        "packet_priority": 100,
+    }
+    with (
+        patch("ledfx.devices.e131.sacn.sACNsender") as sender,
+        patch("ledfx.devices.async_fire_and_forget"),
+        patch.object(NetworkedDevice, "activate") as base_activate,
+    ):
+        device.activate()
+    sender.assert_not_called()
+    base_activate.assert_called_once()
