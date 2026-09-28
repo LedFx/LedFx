@@ -6,18 +6,25 @@ class of mistake (a set literal annotated ``ClassVar[dict]``). This hook
 turns that error class into a pre-commit failure instead of a review
 comment.
 
-For every ``ClassVar[...]`` annotated assignment whose value is a container
-literal, the annotation is checked against the literal structurally:
+For every ``ClassVar[...]`` annotated assignment whose value is a known
+literal, the annotation is checked against the value structurally:
 
 - ``list[E]`` / ``set[E]``: the value is that container and every element
   matches ``E``.
-- ``dict[K, V]``: the value is a dict and every key matches ``K``, every
-  value matches ``V``.
-- ``tuple[A, B, ...]``: same length, positional matches.
-- Bare names (``str``, ``int``, a custom class, ``Any``), parameterised
-  non-containers (``Callable[[], None]``, ``type[X]``), unions and forward
-  references are trusted: they are not structurally checkable without a
-  type checker.
+- ``dict[K, V]``: every key matches ``K`` and every value matches ``V``;
+  ``**`` unpacking of a dict literal is checked recursively, other
+  unpacking is trusted.
+- ``tuple[A, B, ...]``: fixed length, positional. ``tuple[T, ...]`` is
+  variadic (all elements match ``T``). ``tuple[T]`` is exactly one element.
+- Scalars (``str``, ``int``, ``float``, ``bool``, ``bytes``) are checked
+  against literal constants, with Python's numeric assignability (int and
+  bool are acceptable where float is annotated; bool where int).
+- Signed literals (``-1``, ``+2.5``) are unwrapped before checking.
+
+Anything the audit cannot resolve — calls, names, attributes, enum
+``.value`` members, comprehensions, forward references, unions, custom
+classes, bare containers — is trusted rather than guessed, so it stays
+silent on code it cannot judge.
 
 Scope note: this is a structural audit, not a type checker. It knows
 nothing about class hierarchies or imports; a real checker is the
@@ -35,27 +42,68 @@ SKIP_PARTS = {".venv", ".git", "__pycache__", "ledfx_frontend", "build", "dist"}
 
 SCALARS = {"str", "int", "float", "bool", "bytes"}
 
+# numeric tower: int and bool are assignable where float is annotated,
+# bool where int is annotated (https://typing.python.org spec).
+_NUMERIC_TOWER = {"float": {"int", "bool"}, "int": {"bool"}}
 
-def ann_base(annotation: ast.expr) -> str | None:
-    """Base name of a (possibly subscripted) annotation, else None."""
-    node: ast.expr = annotation
-    while isinstance(node, ast.Subscript):
-        node = node.value
-    return node.id if isinstance(node, ast.Name) else None
+
+def _signed_constant(value: ast.expr) -> ast.Constant | None:
+    """Unwrap ``+1`` / ``-1.5`` style unary constants to the inner Constant."""
+    if isinstance(value, ast.Constant):
+        return value
+    if (
+        isinstance(value, ast.UnaryOp)
+        and isinstance(value.op, (ast.UAdd, ast.USub))
+        and isinstance(value.operand, ast.Constant)
+    ):
+        return value.operand
+    return None
+
+
+def _is_known_literal(value: ast.expr) -> bool:
+    """Constants (incl. signed), and dict/list/set/tuple literals."""
+    return _signed_constant(value) is not None or isinstance(
+        value, (ast.Dict, ast.List, ast.Set, ast.Tuple)
+    )
+
+
+def _is_classvar(node: ast.expr) -> bool:
+    if isinstance(node, ast.Name):
+        return node.id == "ClassVar"
+    if isinstance(node, ast.Attribute):
+        return node.attr == "ClassVar"  # typing.ClassVar
+    return False
 
 
 def strip_classvar(annotation: ast.expr) -> ast.expr:
-    if (
-        isinstance(annotation, ast.Subscript)
-        and isinstance(annotation.value, ast.Name)
-        and annotation.value.id == "ClassVar"
-    ):
+    if isinstance(annotation, ast.Subscript) and _is_classvar(annotation.value):
         return annotation.slice
     return annotation
 
 
+def _scalar_ok(ann_name: str, const: ast.Constant) -> bool:
+    type_name = type(const.value).__name__
+    return type_name == ann_name or type_name in _NUMERIC_TOWER.get(ann_name, ())
+
+
+def _dict_pairs_ok(value: ast.Dict, k_ann: ast.expr, v_ann: ast.expr) -> bool:
+    for key, val in zip(value.keys, value.values):
+        if key is None:
+            # ``**`` unpacking: if the unpacked value is a dict literal we
+            # can check its pairs recursively; otherwise trust it.
+            if isinstance(val, ast.Dict) and not _dict_pairs_ok(val, k_ann, v_ann):
+                return False
+            continue
+        if not (matches(key, k_ann) and matches(val, v_ann)):
+            return False
+    return True
+
+
 def matches(value: ast.expr, annotation: ast.expr) -> bool:
     """Does a literal value node structurally match its annotation node?"""
+    if not _is_known_literal(value):
+        return True  # calls, names, attributes, comprehensions, ...: trust
+
     if isinstance(annotation, ast.Constant) and isinstance(annotation.value, str):
         return True  # forward reference: not resolvable here
 
@@ -67,12 +115,11 @@ def matches(value: ast.expr, annotation: ast.expr) -> bool:
             return isinstance(value, ast.List)
         if name == "set":
             return isinstance(value, ast.Set)
+        if name == "tuple":
+            return isinstance(value, ast.Tuple)
         if name in SCALARS:
-            if isinstance(value, ast.Constant):
-                return type(value.value).__name__ == name
-            # a container literal can never be a scalar; other non-literal
-            # nodes (enum .value, calls, computed) can be anything: trust
-            return not isinstance(value, (ast.Dict, ast.List, ast.Set, ast.Tuple))
+            const = _signed_constant(value)
+            return const is not None and _scalar_ok(name, const)
         return True  # other bare names (classes, enums, Any): trust them
 
     if not isinstance(annotation, ast.Subscript):
@@ -93,12 +140,20 @@ def matches(value: ast.expr, annotation: ast.expr) -> bool:
         ):
             return False
         k_ann, v_ann = slc.elts
-        return all(matches(k, k_ann) for k in value.keys if k is not None) and all(
-            matches(v, v_ann) for v in value.values
-        )
+        return _dict_pairs_ok(value, k_ann, v_ann)
     if base == "tuple":
-        if not (isinstance(value, ast.Tuple) and isinstance(slc, ast.Tuple)):
+        if not isinstance(value, ast.Tuple):
             return False
+        if not isinstance(slc, ast.Tuple):
+            # ``tuple[T]``: exactly one element of T
+            return len(value.elts) == 1 and matches(value.elts[0], slc)
+        if (
+            len(slc.elts) == 2
+            and isinstance(slc.elts[1], ast.Constant)
+            and slc.elts[1].value is Ellipsis
+        ):
+            # ``tuple[T, ...]``: variadic, every element is T
+            return all(matches(e, slc.elts[0]) for e in value.elts)
         if len(value.elts) != len(slc.elts):
             return False
         return all(matches(v, a) for v, a in zip(value.elts, slc.elts))

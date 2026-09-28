@@ -16,11 +16,13 @@ repos:
       - id: ruff-format
   # Structural check that ClassVar annotations describe their literals.
   # Ruff's RUF012 cannot see this (it only asks that an annotation exist).
+  # uv run: the project interpreter; no python(3) on PATH needed (Windows).
   - repo: local
     hooks:
       - id: classvar-audit
         name: classvar audit
-        entry: python tools/classvar_audit.py
-        language: python
+        entry: uv run python tools/classvar_audit.py
+        language: system
         types: [python]
         pass_filenames: false
+        require_serial: true
