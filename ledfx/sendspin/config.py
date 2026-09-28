@@ -3,9 +3,12 @@
 import logging
 import urllib.parse
 from collections.abc import Callable, Mapping, Sequence
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 import voluptuous as vol
+
+if TYPE_CHECKING:
+    from ledfx.effects.audio import AudioAnalysisSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -24,17 +27,13 @@ MANUFACTURER = "LedFx Developers"
 BUFFER_CAPACITY = 384000
 
 
-class _AudioInput(Protocol):
-    """Operations on LedFx's audio analysis source used by eager startup."""
-
-    def update_config(self, config: Mapping[str, object]) -> None: ...
-
-
 class _LedFx(Protocol):
     """Core state needed by Sendspin's always-on startup helper."""
 
-    config: Mapping[str, object]
-    audio: _AudioInput | None
+    @property
+    def config(self) -> Mapping[str, object]: ...
+
+    audio: "AudioAnalysisSource | None"
 
 
 # Sendspin configuration schema

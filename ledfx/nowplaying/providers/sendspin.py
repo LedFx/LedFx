@@ -11,10 +11,6 @@ means "cleared". The provider accumulates state across messages.
 import logging
 from typing import Protocol
 
-from aiosendspin.models.core import ServerStatePayload
-from aiosendspin.models.metadata import SessionUpdateMetadata
-from aiosendspin.models.types import UndefinedField
-
 from ledfx.nowplaying.models import TrackMetadata
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,6 +33,13 @@ class _NowPlayingService(Protocol):
 class LedFxNowPlaying(Protocol):
     @property
     def now_playing(self) -> _NowPlayingService | None: ...
+
+
+class _ServerState(Protocol):
+    """Metadata field consumed from a Sendspin server state update."""
+
+    @property
+    def metadata(self) -> object: ...
 
 
 class _NotSent:
@@ -67,7 +70,7 @@ class SendspinNowPlayingProvider:
         self._artwork_url: str | None = None
         _LOGGER.info("Sendspin Now Playing provider initialized")
 
-    def on_metadata(self, server_state_payload: ServerStatePayload) -> None:
+    def on_metadata(self, server_state_payload: _ServerState) -> None:
         """Handle a server/state metadata update from aiosendspin.
 
         Sendspin sends incremental updates. UndefinedField means "not sent"
@@ -75,8 +78,11 @@ class SendspinNowPlayingProvider:
         "updated to this".
 
         Args:
-            server_state_payload: ServerStatePayload from the metadata callback.
+            server_state_payload: _ServerState from the metadata callback.
         """
+        from aiosendspin.models.metadata import SessionUpdateMetadata
+        from aiosendspin.models.types import UndefinedField
+
         metadata = server_state_payload.metadata
         if metadata is None:
             return

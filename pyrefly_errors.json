@@ -57,6 +57,13 @@
       "severity": "error"
     },
     {
+      "column": 24,
+      "path": "ledfx/__main__.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `HIGH_PRIORITY_CLASS` in module `psutil`",
+      "severity": "error"
+    },
+    {
       "column": 17,
       "path": "ledfx/__main__.py",
       "name": "unknown-name",
@@ -103,6 +110,20 @@
       "path": "ledfx/api/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
+      "severity": "error"
+    },
+    {
+      "column": 30,
+      "path": "ledfx/api/__init__.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `typing.MutableMapping.update` called with arguments: (dict[str, Request | str | Any | None])",
+      "severity": "error"
+    },
+    {
+      "column": 19,
+      "path": "ledfx/api/__init__.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `HttpBadRequest` in module `aiohttp.web`",
       "severity": "error"
     },
     {
@@ -211,10 +232,45 @@
       "severity": "error"
     },
     {
+      "column": 16,
+      "path": "ledfx/api/assets.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `MultipartReader` has no attribute `name`",
+      "severity": "error"
+    },
+    {
+      "column": 35,
+      "path": "ledfx/api/assets.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `MultipartReader` has no attribute `read`",
+      "severity": "error"
+    },
+    {
+      "column": 37,
+      "path": "ledfx/api/assets.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `MultipartReader` has no attribute `read`",
+      "severity": "error"
+    },
+    {
       "column": 42,
       "path": "ledfx/api/assets_download.py",
       "name": "bad-argument-type",
       "concise_description": "Argument `str | None` is not assignable to parameter `file_path` with type `str` in function `_get_content_type`",
+      "severity": "error"
+    },
+    {
+      "column": 16,
+      "path": "ledfx/api/assets_download.py",
+      "name": "bad-return",
+      "concise_description": "Returned type `FileResponse` is not assignable to declared return type `Response`",
+      "severity": "error"
+    },
+    {
+      "column": 18,
+      "path": "ledfx/api/assets_download.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `str | None` is not assignable to parameter `path` with type `PathLike[str] | str` in function `aiohttp.web_fileresponse.FileResponse.__init__`",
       "severity": "error"
     },
     {
@@ -243,6 +299,13 @@
       "path": "ledfx/api/assets_thumbnail.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_calculate_thumbnail_dimensions` is missing an annotation for parameter `dimension`",
+      "severity": "error"
+    },
+    {
+      "column": 33,
+      "path": "ledfx/api/assets_thumbnail.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `str | None` is not assignable to parameter `fp` with type `IO[bytes] | PathLike[bytes] | PathLike[str] | bytes | str` in function `PIL.Image.open`",
       "severity": "error"
     },
     {
@@ -687,6 +750,13 @@
       "severity": "error"
     },
     {
+      "column": 16,
+      "path": "ledfx/api/log.py",
+      "name": "bad-return",
+      "concise_description": "Returned type `WebSocketResponse` is not assignable to declared return type `Response`",
+      "severity": "error"
+    },
+    {
       "column": 24,
       "path": "ledfx/api/log.py",
       "name": "implicit-any-parameter",
@@ -950,6 +1020,13 @@
       "path": "ledfx/api/utils.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "severity": "error"
+    },
+    {
+      "column": 52,
+      "path": "ledfx/api/utils.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Container | Iterable[Unknown]` is not assignable to parameter `iterable` with type `Iterable[@_]` in function `list.__init__`",
       "severity": "error"
     },
     {
@@ -1317,6 +1394,13 @@
       "severity": "error"
     },
     {
+      "column": 20,
+      "path": "ledfx/api/websocket.py",
+      "name": "bad-return",
+      "concise_description": "Returned type `WebSocketResponse` is not assignable to declared return type `Response`",
+      "severity": "error"
+    },
+    {
       "column": 24,
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
@@ -1474,14 +1558,14 @@
       "column": 49,
       "path": "ledfx/api/websocket.py",
       "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `dict[str, dict[str, object]]`",
+      "concise_description": "Cannot set item in `dict[str, dict[str, Any]]`",
       "severity": "error"
     },
     {
       "column": 49,
       "path": "ledfx/api/websocket.py",
       "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `dict[str, dict[str, object]]`",
+      "concise_description": "Cannot set item in `dict[str, dict[str, Any]]`",
       "severity": "error"
     },
     {
@@ -1509,7 +1593,7 @@
       "column": 49,
       "path": "ledfx/api/websocket.py",
       "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `dict[str, dict[str, object]]`",
+      "concise_description": "Cannot set item in `dict[str, dict[str, Any]]`",
       "severity": "error"
     },
     {
@@ -1625,10 +1709,24 @@
       "severity": "error"
     },
     {
+      "column": 36,
+      "path": "ledfx/api/websocket.py",
+      "name": "bad-assignment",
+      "concise_description": "`ndarray[tuple[int], dtype[floating[_32Bit]]]` is not assignable to attribute `data` with type `Never`",
+      "severity": "error"
+    },
+    {
       "column": 48,
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
       "concise_description": "`audio_stream_data_base64_handler` is missing an annotation for parameter `message`",
+      "severity": "error"
+    },
+    {
+      "column": 40,
+      "path": "ledfx/api/websocket.py",
+      "name": "bad-assignment",
+      "concise_description": "`ndarray[tuple[Any, ...], dtype[floating[_32Bit]]]` is not assignable to attribute `data` with type `Never`",
       "severity": "error"
     },
     {
@@ -1866,7 +1964,14 @@
       "column": 21,
       "path": "ledfx/color.py",
       "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_ScalarT` for generic type alias `NDArray[_ScalarT]`",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 66,
+      "path": "ledfx/color.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
       "severity": "error"
     },
     {
@@ -2565,13 +2670,6 @@
     {
       "column": 38,
       "path": "ledfx/core.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Self@LedFxCore` is not assignable to parameter `ledfx` with type `_LedFx` in function `ledfx.sendspin.config.eager_start`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/core.py",
       "name": "implicit-any-parameter",
       "concise_description": "`loop_exception_handler` is missing an annotation for parameter `loop`",
       "severity": "error"
@@ -2703,13 +2801,6 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "invalid-syntax",
-      "concise_description": "`return` in a `finally` block will silence exceptions",
-      "severity": "error"
-    },
-    {
       "column": 19,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
@@ -2805,6 +2896,20 @@
       "path": "ledfx/devices/__init__.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 74,
+      "path": "ledfx/devices/__init__.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Unknown | None` is not assignable to parameter `pixels` with type `ndarray` in function `ledfx.events.DeviceUpdateEvent.__init__`",
+      "severity": "error"
+    },
+    {
+      "column": 28,
+      "path": "ledfx/devices/__init__.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.numeric.roll` called with arguments: (Unknown | None, Unknown, axis=Literal[0])",
       "severity": "error"
     },
     {
@@ -2973,6 +3078,13 @@
       "path": "ledfx/devices/__init__.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `SerialDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 16,
+      "path": "ledfx/devices/__init__.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `Serial` has no attribute `isOpen`",
       "severity": "error"
     },
     {
@@ -3445,6 +3557,34 @@
       "severity": "error"
     },
     {
+      "column": 17,
+      "path": "ledfx/devices/e131.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `priority`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/devices/e131.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `multicast`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "ledfx/devices/e131.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `destination`",
+      "severity": "error"
+    },
+    {
+      "column": 56,
+      "path": "ledfx/devices/e131.py",
+      "name": "bad-assignment",
+      "concise_description": "`Unknown | None` is not assignable to attribute `destination` with type `str`",
+      "severity": "error"
+    },
+    {
       "column": 9,
       "path": "ledfx/devices/e131.py",
       "name": "missing-override-decorator",
@@ -3830,6 +3970,48 @@
       "severity": "error"
     },
     {
+      "column": 20,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-module-attribute",
+      "concise_description": "Could not import `SystemError` from `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `API_MACOSX_CORE` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `API_LINUX_ALSA` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `API_UNIX_JACK` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `API_WINDOWS_MM` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `API_RTMIDI_DUMMY` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
       "column": 22,
       "path": "ledfx/devices/launchpad_lib.py",
       "name": "implicit-any-attribute",
@@ -3883,6 +4065,27 @@
       "path": "ledfx/devices/launchpad_lib.py",
       "name": "implicit-any-parameter",
       "concise_description": "`SearchDevices` is missing an annotation for parameter `quiet`",
+      "severity": "error"
+    },
+    {
+      "column": 26,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `get_compiled_api` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 32,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `MidiOut` in module `rtmidi`",
+      "severity": "error"
+    },
+    {
+      "column": 32,
+      "path": "ledfx/devices/launchpad_lib.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `MidiIn` in module `rtmidi`",
       "severity": "error"
     },
     {
@@ -5034,6 +5237,13 @@
       "severity": "error"
     },
     {
+      "column": 60,
+      "path": "ledfx/devices/lifx.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `CeilingLight | HevLight | InfraredLight | Light | MatrixLight | MultiZoneLight` is not assignable to parameter `device` with type `MatrixLight` in function `lifx.animation.animator.Animator.for_matrix`",
+      "severity": "error"
+    },
+    {
       "column": 17,
       "path": "ledfx/devices/lifx.py",
       "name": "missing-attribute",
@@ -5052,41 +5262,6 @@
       "path": "ledfx/devices/lifx.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `pixel_count`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/devices/lifx.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get_zone_count`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/devices/lifx.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `capabilities`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/devices/lifx.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `_ensure_capabilities`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/lifx.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `object` has no attribute `has_extended_multizone`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/devices/lifx.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get_device_chain`",
       "severity": "error"
     },
     {
@@ -5122,13 +5297,6 @@
       "path": "ledfx/devices/lifx.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_flush_light` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/devices/lifx.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `connection`",
       "severity": "error"
     },
     {
@@ -5328,6 +5496,20 @@
       "severity": "error"
     },
     {
+      "column": 17,
+      "path": "ledfx/devices/openrgb.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Unknown | None` is not assignable to parameter `sock` with type `socket` in function `OpenRGB.send_out`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/devices/openrgb.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `OpenRGBClient` has no attribute `id`",
+      "severity": "error"
+    },
+    {
       "column": 24,
       "path": "ledfx/devices/osc.py",
       "name": "implicit-any-parameter",
@@ -5367,6 +5549,13 @@
       "path": "ledfx/devices/osc.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `OSCServerDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 40,
+      "path": "ledfx/devices/osc.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Unknown | None` is not assignable to parameter `address` with type `str` in function `pythonosc.udp_client.UDPClient.__init__`",
       "severity": "error"
     },
     {
@@ -5416,6 +5605,27 @@
       "path": "ledfx/devices/osc.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__generate_path` is missing an annotation for parameter `address`",
+      "severity": "error"
+    },
+    {
+      "column": 68,
+      "path": "ledfx/devices/packets.py",
+      "name": "not-a-type",
+      "concise_description": "Expected a type form, got instance of `Overload[\n  [ArrayT: ndarray](object: ArrayT, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ArrayT\n  [ArrayT: ndarray](object: numpy._core.multiarray._SupportsArray[ArrayT], dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: Literal[0] = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ArrayT\n  [ScalarT: generic](object: _ArrayLike, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[ScalarT]]\n  [ScalarT: generic](object: Any, dtype: _DTypeLike, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[ScalarT]]\n  (object: Any, dtype: _HasDType[dtype] | _HasNumPyDType[dtype] | dtype | list[Any] | str | _DTypeDict | tuple[Any, Any] | type[Any] | None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray\n]`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/rpi_ws281x.py",
+      "name": "missing-module-attribute",
+      "concise_description": "Could not import `SK6812_STRIP_RGBW` from `rpi_ws281x`",
+      "severity": "error"
+    },
+    {
+      "column": 9,
+      "path": "ledfx/devices/rpi_ws281x.py",
+      "name": "missing-module-attribute",
+      "concise_description": "Could not import `WS2811_STRIP_RGB` from `rpi_ws281x`",
       "severity": "error"
     },
     {
@@ -5612,6 +5822,20 @@
       "path": "ledfx/devices/udp.py",
       "name": "implicit-any-parameter",
       "concise_description": "`choose_and_send_packet` is missing an annotation for parameter `timeout`",
+      "severity": "error"
+    },
+    {
+      "column": 59,
+      "path": "ledfx/devices/udp.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `int` is not assignable to parameter `led_start_index` with type `unsignedinteger[_16Bit]` in function `ledfx.devices.packets.build_dnrgb_packet`",
+      "severity": "error"
+    },
+    {
+      "column": 63,
+      "path": "ledfx/devices/udp.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `int` is not assignable to parameter `led_start_index` with type `unsignedinteger[_16Bit]` in function `ledfx.devices.packets.build_dnrgb_packet`",
       "severity": "error"
     },
     {
@@ -5888,6 +6112,13 @@
       "severity": "error"
     },
     {
+      "column": 23,
+      "path": "ledfx/effects/__init__.py",
+      "name": "bad-assignment",
+      "concise_description": "`None` is not assignable to attribute `pixels` with type `ndarray`",
+      "severity": "error"
+    },
+    {
       "column": 25,
       "path": "ledfx/effects/__init__.py",
       "name": "implicit-any-type-argument",
@@ -5909,10 +6140,66 @@
       "severity": "error"
     },
     {
+      "column": 26,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 76,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
       "column": 25,
       "path": "ledfx/effects/__init__.py",
       "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_ScalarT` for generic type alias `NDArray[_ScalarT]`",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 51,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 69,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 30,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 56,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 28,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
+      "severity": "error"
+    },
+    {
+      "column": 54,
+      "path": "ledfx/effects/__init__.py",
+      "name": "implicit-any-type-argument",
+      "concise_description": "Cannot determine the type parameter `ScalarT` for generic type alias `NDArray[ScalarT]`",
       "severity": "error"
     },
     {
@@ -6182,6 +6469,34 @@
       "severity": "error"
     },
     {
+      "column": 22,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `Schema` has no attribute `fget`",
+      "severity": "error"
+    },
+    {
+      "column": 29,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `digital_filter` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `pvoc` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 39,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `cvec` in module `aubio`",
+      "severity": "error"
+    },
+    {
       "column": 32,
       "path": "ledfx/effects/audio.py",
       "name": "implicit-any-attribute",
@@ -6275,6 +6590,13 @@
     {
       "column": 28,
       "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `db_spl` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 28,
+      "path": "ledfx/effects/audio.py",
       "name": "implicit-any-parameter",
       "concise_description": "`audio_sample` is missing an annotation for parameter `raw`",
       "severity": "error"
@@ -6298,6 +6620,27 @@
       "path": "ledfx/effects/audio.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `config`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `tempo` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `onset` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "ledfx/effects/audio.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `pitch` in module `aubio`",
       "severity": "error"
     },
     {
@@ -6784,6 +7127,13 @@
       "severity": "error"
     },
     {
+      "column": 40,
+      "path": "ledfx/effects/bar.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
+      "severity": "error"
+    },
+    {
       "column": 36,
       "path": "ledfx/effects/bar.py",
       "name": "unbound-name",
@@ -7211,6 +7561,13 @@
       "severity": "error"
     },
     {
+      "column": 37,
+      "path": "ledfx/effects/blender.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
+      "severity": "error"
+    },
+    {
       "column": 9,
       "path": "ledfx/effects/blender.py",
       "name": "missing-override-decorator",
@@ -7544,6 +7901,20 @@
       "path": "ledfx/effects/clone.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Clone.draw` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 35,
+      "path": "ledfx/effects/clone.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Unknown | None` is not assignable to parameter `monitor` with type `dict[str, Any] | tuple[int, int, int, int]` in function `mss.base.MSS.grab`",
+      "severity": "error"
+    },
+    {
+      "column": 71,
+      "path": "ledfx/effects/clone.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
       "severity": "error"
     },
     {
@@ -9017,6 +9388,13 @@
       "severity": "error"
     },
     {
+      "column": 61,
+      "path": "ledfx/effects/frontend.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
       "column": 9,
       "path": "ledfx/effects/frontend.py",
       "name": "missing-override-decorator",
@@ -9213,6 +9591,13 @@
       "severity": "error"
     },
     {
+      "column": 39,
+      "path": "ledfx/effects/game_of_life.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `ndarray[tuple[int, int, int], dtype[unsignedinteger[_8Bit]]] | Unknown | None` is not assignable to parameter `obj` with type `SupportsArrayInterface` in function `PIL.Image.fromarray`",
+      "severity": "error"
+    },
+    {
       "column": 24,
       "path": "ledfx/effects/game_of_life.py",
       "name": "implicit-any-parameter",
@@ -9238,6 +9623,34 @@
       "path": "ledfx/effects/game_of_life.py",
       "name": "implicit-any-parameter",
       "concise_description": "`check_board_oscillating` is missing an annotation for parameter `lookback_generations`",
+      "severity": "error"
+    },
+    {
+      "column": 41,
+      "path": "ledfx/effects/gifbase.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `NEAREST` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
+      "column": 42,
+      "path": "ledfx/effects/gifbase.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
+      "column": 41,
+      "path": "ledfx/effects/gifbase.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BICUBIC` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
+      "column": 41,
+      "path": "ledfx/effects/gifbase.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `LANCZOS` in module `PIL.Image`",
       "severity": "error"
     },
     {
@@ -9356,7 +9769,7 @@
       "column": 34,
       "path": "ledfx/effects/gifplayer.py",
       "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `n_frames`",
+      "concise_description": "Object of type `Image | ImageFile | None` has no attribute `n_frames`",
       "severity": "error"
     },
     {
@@ -9616,6 +10029,13 @@
       "path": "ledfx/effects/gradient.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",
+      "severity": "error"
+    },
+    {
+      "column": 43,
+      "path": "ledfx/effects/gradient.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.numeric.roll` called with arguments: (Unknown | None, int, axis=Literal[1])",
       "severity": "error"
     },
     {
@@ -9934,6 +10354,13 @@
       "severity": "error"
     },
     {
+      "column": 15,
+      "path": "ledfx/effects/hsv_effect.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.amax` called with arguments: (ndarray | Unknown | None, axis=Literal[1], out=Unknown)",
+      "severity": "error"
+    },
+    {
       "column": 36,
       "path": "ledfx/effects/hsv_effect.py",
       "name": "unsupported-operation",
@@ -10081,10 +10508,24 @@
       "severity": "error"
     },
     {
+      "column": 23,
+      "path": "ledfx/effects/imagespin.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
       "column": 41,
       "path": "ledfx/effects/imagespin.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",
+      "severity": "error"
+    },
+    {
+      "column": 71,
+      "path": "ledfx/effects/imagespin.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `NEAREST` in module `PIL.Image`",
       "severity": "error"
     },
     {
@@ -10132,27 +10573,6 @@
     {
       "column": 9,
       "path": "ledfx/effects/imagespin.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `thumbnail`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `width`",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `height`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/effects/imagespin.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Imagespin.draw` overrides a member in a parent class but is missing an `@override` decorator",
       "severity": "error"
@@ -10169,6 +10589,13 @@
       "path": "ledfx/effects/imagespin.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `thumbnail`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/imagespin.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Image | ImageFile | Unknown | None` is not assignable to parameter `im` with type `Image | float | str | tuple[float, ...]` in function `PIL.Image.Image.paste`",
       "severity": "error"
     },
     {
@@ -10326,6 +10753,13 @@
       "severity": "error"
     },
     {
+      "column": 47,
+      "path": "ledfx/effects/keybeat2d.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Image | ImageFile | None` is not assignable to parameter `im` with type `Image` in function `PIL.ImageSequence.Iterator.__init__`",
+      "severity": "error"
+    },
+    {
       "column": 13,
       "path": "ledfx/effects/keybeat2d.py",
       "name": "missing-attribute",
@@ -10400,6 +10834,20 @@
       "path": "ledfx/effects/keybeat2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`overlay` is missing an annotation for parameter `skip_beat`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/keybeat2d.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/keybeat2d.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
       "severity": "error"
     },
     {
@@ -10921,6 +11369,111 @@
       "severity": "error"
     },
     {
+      "column": 17,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `hztomel` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `hztomel` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 18,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `meltohz` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `hztomel` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `hztomel` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 18,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `meltohz` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `hztomel` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 17,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `hztomel` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 18,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `meltohz` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
       "column": 32,
       "path": "ledfx/effects/melbank.py",
       "name": "implicit-any-parameter",
@@ -10937,6 +11490,13 @@
     {
       "column": 31,
       "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
       "name": "implicit-any-parameter",
       "concise_description": "`hertz_to_matt` is missing an annotation for parameter `freq`",
       "severity": "error"
@@ -10946,6 +11506,27 @@
       "path": "ledfx/effects/melbank.py",
       "name": "implicit-any-parameter",
       "concise_description": "`matt_to_hertz` is missing an annotation for parameter `matt`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
+      "severity": "error"
+    },
+    {
+      "column": 31,
+      "path": "ledfx/effects/melbank.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `filterbank` in module `aubio`",
       "severity": "error"
     },
     {
@@ -11366,6 +11947,13 @@
       "path": "ledfx/effects/metro.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",
+      "severity": "error"
+    },
+    {
+      "column": 26,
+      "path": "ledfx/effects/metro.py",
+      "name": "bad-assignment",
+      "concise_description": "`int | None` is not assignable to attribute `cores` with type `int`",
       "severity": "error"
     },
     {
@@ -12122,6 +12710,13 @@
       "path": "ledfx/effects/pitchSpectrum.py",
       "name": "unsupported-operation",
       "concise_description": "`-` is not supported between `None` and `Literal[21]`",
+      "severity": "error"
+    },
+    {
+      "column": 33,
+      "path": "ledfx/effects/pitchSpectrum.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._typing._ufunc._UFunc_Nin2_Nout1.__call__` called with arguments: (ndarray | Unknown | None, Unknown)",
       "severity": "error"
     },
     {
@@ -12902,6 +13497,13 @@
       "severity": "error"
     },
     {
+      "column": 36,
+      "path": "ledfx/effects/rainbow.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `ndarray | Unknown | None` is not assignable to parameter `pixels` with type `ndarray[tuple[Any, ...], dtype[Unknown]]` in function `ledfx.effects.fill_rainbow`",
+      "severity": "error"
+    },
+    {
       "column": 5,
       "path": "ledfx/effects/random_flash.py",
       "name": "bad-override",
@@ -13025,6 +13627,20 @@
       "path": "ledfx/effects/real_strobe.py",
       "name": "implicit-any-parameter",
       "concise_description": "`on_activate` is missing an annotation for parameter `pixel_count`",
+      "severity": "error"
+    },
+    {
+      "column": 48,
+      "path": "ledfx/effects/real_strobe.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
+      "severity": "error"
+    },
+    {
+      "column": 53,
+      "path": "ledfx/effects/real_strobe.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
       "severity": "error"
     },
     {
@@ -13235,6 +13851,13 @@
       "path": "ledfx/effects/scan.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `ScanAudioEffect.render` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 44,
+      "path": "ledfx/effects/scan.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
       "severity": "error"
     },
     {
@@ -14330,6 +14953,13 @@
       "severity": "error"
     },
     {
+      "column": 13,
+      "path": "ledfx/effects/soap2d.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Unknown | None` is not assignable to parameter `pixels_prev` with type `ndarray` in function `Soap2D._smear_axis_signed_oob`",
+      "severity": "error"
+    },
+    {
       "column": 9,
       "path": "ledfx/effects/soap2d.py",
       "name": "unsupported-operation",
@@ -14596,6 +15226,13 @@
       "severity": "error"
     },
     {
+      "column": 13,
+      "path": "ledfx/effects/spotlight.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `ndarray | Unknown | None` is not assignable to parameter `a` with type `_SupportsArrayUFunc | ndarray` in function `numpy._typing._ufunc._UFunc_Nin2_Nout1.at`",
+      "severity": "error"
+    },
+    {
       "column": 5,
       "path": "ledfx/effects/strobe.py",
       "name": "bad-override",
@@ -14771,6 +15408,13 @@
       "severity": "error"
     },
     {
+      "column": 40,
+      "path": "ledfx/effects/template1d.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
+      "severity": "error"
+    },
+    {
       "column": 24,
       "path": "ledfx/effects/template2d.py",
       "name": "implicit-any-parameter",
@@ -14880,6 +15524,27 @@
       "path": "ledfx/effects/temporal.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `join`",
+      "severity": "error"
+    },
+    {
+      "column": 34,
+      "path": "ledfx/effects/texter2d.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `NEAREST` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
+      "column": 35,
+      "path": "ledfx/effects/texter2d.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
+      "column": 34,
+      "path": "ledfx/effects/texter2d.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BICUBIC` in module `PIL.Image`",
       "severity": "error"
     },
     {
@@ -15160,6 +15825,13 @@
       "path": "ledfx/effects/twod.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `_config`",
+      "severity": "error"
+    },
+    {
+      "column": 49,
+      "path": "ledfx/effects/twod.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Transpose | int` is not assignable to parameter `method` with type `Transpose` in function `PIL.Image.Image.transpose`",
       "severity": "error"
     },
     {
@@ -15590,6 +16262,13 @@
       "severity": "error"
     },
     {
+      "column": 37,
+      "path": "ledfx/effects/utils/words.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `tuple[float, Unknown]` is not assignable to parameter `size` with type `list[int] | tuple[int, int]` in function `PIL.Image.new`",
+      "severity": "error"
+    },
+    {
       "column": 22,
       "path": "ledfx/effects/utils/words.py",
       "name": "implicit-any-parameter",
@@ -15832,6 +16511,13 @@
       "path": "ledfx/effects/vumeter.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `VuMeterAudioEffect.render` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 40,
+      "path": "ledfx/effects/vumeter.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
       "severity": "error"
     },
     {
@@ -16339,10 +17025,24 @@
       "severity": "error"
     },
     {
+      "column": 27,
+      "path": "ledfx/effects/waterfall2d.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Image | Unknown | None` is not assignable to parameter `im` with type `Image | float | str | tuple[float, ...]` in function `PIL.Image.Image.paste`",
+      "severity": "error"
+    },
+    {
       "column": 9,
       "path": "ledfx/effects/waterfall2d.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Waterfall.draw` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 57,
+      "path": "ledfx/effects/waterfall2d.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `Image | Unknown | None` is not assignable to parameter `mask` with type `Image` in function `PIL.Image.composite`",
       "severity": "error"
     },
     {
@@ -18257,6 +18957,13 @@
       "severity": "error"
     },
     {
+      "column": 51,
+      "path": "ledfx/nowplaying/service.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `str | None` is not assignable to parameter `image_source` with type `Image | str` in function `ledfx.utilities.gradient_extraction.extract_gradient_metadata`",
+      "severity": "error"
+    },
+    {
       "column": 44,
       "path": "ledfx/nowplaying/service.py",
       "name": "implicit-any-type-argument",
@@ -18803,6 +19510,34 @@
       "severity": "error"
     },
     {
+      "column": 52,
+      "path": "ledfx/tools/ts_generator.py",
+      "name": "not-iterable",
+      "concise_description": "Type `Container` is not iterable",
+      "severity": "error"
+    },
+    {
+      "column": 61,
+      "path": "ledfx/tools/ts_generator.py",
+      "name": "not-iterable",
+      "concise_description": "Type `Container` is not iterable",
+      "severity": "error"
+    },
+    {
+      "column": 53,
+      "path": "ledfx/tools/ts_generator.py",
+      "name": "not-iterable",
+      "concise_description": "Type `Container` is not iterable",
+      "severity": "error"
+    },
+    {
+      "column": 28,
+      "path": "ledfx/tools/ts_generator.py",
+      "name": "not-iterable",
+      "concise_description": "Type `Container` is not iterable",
+      "severity": "error"
+    },
+    {
       "column": 23,
       "path": "ledfx/tools/ts_generator.py",
       "name": "implicit-any-type-argument",
@@ -18821,27 +19556,6 @@
       "path": "ledfx/tools/ts_generator.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `schema`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `schema`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `schema`",
       "severity": "error"
     },
     {
@@ -18898,6 +19612,13 @@
       "path": "ledfx/transitions.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_validate` is missing an annotation for parameter `weight`",
+      "severity": "error"
+    },
+    {
+      "column": 24,
+      "path": "ledfx/transitions.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (Self@Transitions)",
       "severity": "error"
     },
     {
@@ -19080,6 +19801,41 @@
       "path": "ledfx/utilities/gradient_extraction.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
+      "severity": "error"
+    },
+    {
+      "column": 19,
+      "path": "ledfx/utilities/gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "`None` is not subscriptable",
+      "severity": "error"
+    },
+    {
+      "column": 43,
+      "path": "ledfx/utilities/gradient_extraction.py",
+      "name": "bad-index",
+      "concise_description": "Cannot index into `float`",
+      "severity": "error"
+    },
+    {
+      "column": 43,
+      "path": "ledfx/utilities/gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "`None` is not subscriptable",
+      "severity": "error"
+    },
+    {
+      "column": 33,
+      "path": "ledfx/utilities/gradient_extraction.py",
+      "name": "bad-index",
+      "concise_description": "Cannot index into `float`",
+      "severity": "error"
+    },
+    {
+      "column": 33,
+      "path": "ledfx/utilities/gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -20245,6 +21001,20 @@
       "severity": "error"
     },
     {
+      "column": 13,
+      "path": "ledfx/utils.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `Range` has no attribute `end`",
+      "severity": "error"
+    },
+    {
+      "column": 25,
+      "path": "ledfx/utils.py",
+      "name": "unexpected-keyword",
+      "concise_description": "Unexpected keyword argument `size` in function `bokeh.plotting.glyph_api.GlyphAPI.circle`",
+      "severity": "error"
+    },
+    {
       "column": 24,
       "path": "ledfx/utils.py",
       "name": "unbound-name",
@@ -20322,6 +21092,13 @@
       "severity": "error"
     },
     {
+      "column": 9,
+      "path": "ledfx/utils.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `ImageFile` has no attribute `n_frames`",
+      "severity": "error"
+    },
+    {
       "column": 14,
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
@@ -20347,6 +21124,20 @@
       "path": "ledfx/utils.py",
       "name": "bad-argument-type",
       "concise_description": "Argument `str | None` is not assignable to parameter `resolved_path` with type `str` in function `_validate_and_open_image`",
+      "severity": "error"
+    },
+    {
+      "column": 33,
+      "path": "ledfx/utils.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `ImageFile` has no attribute `n_frames`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "ledfx/utils.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `ImageFile` has no attribute `n_frames`",
       "severity": "error"
     },
     {
@@ -20609,6 +21400,13 @@
       "severity": "error"
     },
     {
+      "column": 64,
+      "path": "ledfx/utils.py",
+      "name": "missing-attribute",
+      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
+      "severity": "error"
+    },
+    {
       "column": 22,
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
@@ -20840,6 +21638,13 @@
       "severity": "error"
     },
     {
+      "column": 43,
+      "path": "ledfx/virtuals.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy._core.multiarray.zeros` called with arguments: (tuple[Literal[0] | Unknown | None, Literal[3]])",
+      "severity": "error"
+    },
+    {
       "column": 27,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -20977,6 +21782,13 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`render_calibration` is missing an annotation for parameter `device_id`",
+      "severity": "error"
+    },
+    {
+      "column": 34,
+      "path": "ledfx/virtuals.py",
+      "name": "no-matching-overload",
+      "concise_description": "No matching overload found for function `numpy.lib._shape_base_impl.tile` called with arguments: (Unknown | None, tuple[int, Literal[1]])",
       "severity": "error"
     },
     {
@@ -21435,10 +22247,31 @@
       "severity": "error"
     },
     {
+      "column": 45,
+      "path": "tests/playlist/test_playlists_additional.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `test_active_endpoint_returns_null_when_inactive.DummyRequest` is not assignable to parameter `request` with type `Request` in function `ledfx.api.playlists.PlaylistsEndpoint.put`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/playlist/test_playlists_additional.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `str | None` is not assignable to parameter `s` with type `bytearray | bytes | str` in function `json.loads`",
+      "severity": "error"
+    },
+    {
       "column": 5,
       "path": "tests/playlist/test_playlists_additional.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_get_playlists_endpoint_returns_empty_when_no_playlists` is missing an annotation for parameter `tmp_path`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/playlist/test_playlists_additional.py",
+      "name": "bad-argument-type",
+      "concise_description": "Argument `str | None` is not assignable to parameter `s` with type `bytearray | bytes | str` in function `json.loads`",
       "severity": "error"
     },
     {
@@ -23913,20 +24746,6 @@
       "severity": "error"
     },
     {
-      "column": 14,
-      "path": "tests/test_definitions/all_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`response` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 14,
-      "path": "tests/test_definitions/audio_configs.py",
-      "name": "unbound-name",
-      "concise_description": "`response` may be uninitialized",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "tests/test_gap_devices.py",
       "name": "implicit-any-parameter",
@@ -23938,6 +24757,41 @@
       "path": "tests/test_gap_devices.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `device_type`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_extraction.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
       "severity": "error"
     },
     {
@@ -23969,6 +24823,27 @@
       "severity": "error"
     },
     {
+      "column": 21,
+      "path": "tests/test_gradient_integration.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_integration.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_integration.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
       "column": 62,
       "path": "tests/test_gradient_integration.py",
       "name": "implicit-any-parameter",
@@ -23994,6 +24869,20 @@
       "path": "tests/test_gradient_integration.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_asset_gradients_detect_background` is missing an annotation for parameter `temp_assets_dir`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_integration.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
+      "severity": "error"
+    },
+    {
+      "column": 21,
+      "path": "tests/test_gradient_integration.py",
+      "name": "unsupported-operation",
+      "concise_description": "Cannot set item in `None`",
       "severity": "error"
     },
     {
@@ -26776,6 +27665,13 @@
       "severity": "error"
     },
     {
+      "column": 15,
+      "path": "tests/test_scenes_api_action_field.py",
+      "name": "missing-override-decorator",
+      "concise_description": "Class member `TestScenesEndpointPost.get_application` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
       "column": 58,
       "path": "tests/test_scenes_api_action_field.py",
       "name": "implicit-any-parameter",
@@ -26811,6 +27707,20 @@
       "severity": "error"
     },
     {
+      "column": 15,
+      "path": "tests/test_scenes_api_action_field.py",
+      "name": "missing-override-decorator",
+      "concise_description": "Class member `TestScenesEndpointGet.get_application` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 15,
+      "path": "tests/test_scenes_api_action_field.py",
+      "name": "missing-override-decorator",
+      "concise_description": "Class member `TestSceneEndpointDelete.get_application` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
       "column": 47,
       "path": "tests/test_scenes_api_action_field.py",
       "name": "implicit-any-parameter",
@@ -26825,10 +27735,24 @@
       "severity": "error"
     },
     {
-      "column": 19,
+      "column": 15,
+      "path": "tests/test_scenes_api_action_field.py",
+      "name": "missing-override-decorator",
+      "concise_description": "Class member `TestSceneEndpointGet.get_application` overrides a member in a parent class but is missing an `@override` decorator",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_action_field.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
       "path": "tests/test_scenes_api_integration.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
       "severity": "error"
     },
     {
@@ -26836,6 +27760,41 @@
       "path": "tests/test_scenes_api_integration.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 19,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "implicit-any-empty-container",
+      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
       "severity": "error"
     },
     {
@@ -26843,6 +27802,55 @@
       "path": "tests/test_scenes_api_integration.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 27,
+      "path": "tests/test_scenes_api_integration.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
       "severity": "error"
     },
     {
@@ -26881,10 +27889,31 @@
       "severity": "error"
     },
     {
+      "column": 23,
+      "path": "tests/test_scenes_id.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
       "column": 21,
       "path": "tests/test_scenes_id.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_id.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_id.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
       "severity": "error"
     },
     {
@@ -26895,10 +27924,31 @@
       "severity": "error"
     },
     {
+      "column": 23,
+      "path": "tests/test_scenes_id.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_id.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
+      "severity": "error"
+    },
+    {
       "column": 21,
       "path": "tests/test_scenes_id.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
+      "severity": "error"
+    },
+    {
+      "column": 23,
+      "path": "tests/test_scenes_id.py",
+      "name": "missing-attribute",
+      "concise_description": "Object of class `NoneType` has no attribute `decode`",
       "severity": "error"
     },
     {
@@ -27193,13 +28243,6 @@
       "path": "tests/test_utilities/test_utils.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_utilities/test_utils.py",
-      "name": "unbound-name",
-      "concise_description": "`response` may be uninitialized",
       "severity": "error"
     },
     {

@@ -18,6 +18,7 @@ class MockLedFx:
     def __init__(self):
         self.config = {"sendspin_servers": {}}
         self.config_dir = "/tmp/test_sendspin"
+        self.audio: MagicMock | None = None
         self._load_sendspin_servers = MagicMock()
 
 

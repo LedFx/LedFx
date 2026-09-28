@@ -145,13 +145,10 @@ constraint-dependencies = [
 extend-select = ["G004"]
 
 [tool.pyrefly]
-# Strict mode catches implicit and explicit Any, incomplete annotations, and
-# unsafe callable compatibility instead of only reporting high-confidence errors.
+# Require complete annotations and reject unsafe uses of Any.
 preset = "strict"
-# Type-coverage ratchet: errors are counted by `uv run pyrefly check`; the
-# count must never increase. New code must be clean; old code is paid down
-# over time. See the error-count table in docs/ or the pyrefly section of
-# the lint gate history.
+# Run via tools/pyrefly_check.py in the locked Python 3.12 dev environment.
+# Existing errors are baselined; new errors must be fixed.
 project-includes = [
     "ledfx",
     "tests",
