@@ -3,7 +3,7 @@ from typing import ClassVar
 
 import voluptuous as vol
 
-from ledfx.devices import NetworkedDevice, UDPDevice
+from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device
 from ledfx.devices.udp import UDPRealtimeDevice
@@ -44,7 +44,7 @@ class WLEDDevice(NetworkedDevice):
         }
     )
 
-    SYNC_MODES: ClassVar[dict[str, type[UDPDevice]]] = {
+    SYNC_MODES: ClassVar[dict[str, type[NetworkedDevice]]] = {
         "UDP": UDPRealtimeDevice,
         "DDP": DDPDevice,
         "E131": E131Device,
