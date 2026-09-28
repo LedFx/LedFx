@@ -104,10 +104,19 @@ jobs:
       - run: uv sync --group dev
       - id: lint
         run: uv run prek run --all-files
+      # Comments come from ledfx-automation[bot], not github-actions[bot]:
+      # app-token comments notify subscribers (GITHUB_TOKEN ones are muted),
+      # and the identity carries over to release-please later.
+      - id: bot-token
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
       - name: Explain the skipped jobs to the author
         if: failure() && github.event_name == 'pull_request'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
