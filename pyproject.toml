@@ -64,6 +64,7 @@ dev = [
     "prek>=0.5.3",
     # Keep in sync with the ruff-pre-commit rev in .pre-commit-config.yaml
     "ruff==0.16.4",
+    "pyrefly>=1.3.0",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
@@ -142,3 +143,24 @@ constraint-dependencies = [
 # ruff's defaults, plus: no f-strings in logging calls (format lazily).
 # Pre-existing violations are baselined with `# noqa`; fix them as you go.
 extend-select = ["G004"]
+
+[tool.pyrefly]
+# Type-coverage ratchet: errors are counted by `uv run pyrefly check`; the
+# count must never increase. New code must be clean; old code is paid down
+# over time. See the error-count table in docs/ or the pyrefly section of
+# the lint gate history.
+project-includes = [
+    "ledfx",
+    "tests",
+    "docs",
+]
+project-excludes = [
+    "ledfx_frontend",
+]
+
+# Type-coverage ratchet: existing errors live in pyrefly_errors.json. The
+# lint gate runs `pyrefly check --error-stale-baseline` so new errors fail
+# CI; fixed errors get pruned on the next --update-baseline pass; the count
+# only ratchets down.
+baseline = "pyrefly_errors.json"
+
