@@ -159,9 +159,12 @@ project-excludes = [
 ]
 
 # Type-coverage ratchet: existing errors live in pyrefly_errors.json, checked
-# in a self-contained env (3.12 + pyrefly only, no project deps) so the lint
-# gate and the autofix workflow - which never syncs the project venv - get the
-# identical error set. New errors fail CI; routine pay-down prunes fixed
-# entries with --prune-baseline; --update-baseline is a deliberate full reset.
+# in the locked project environment so CI, weekly maintenance, and local
+# checks see the same diagnostics. New errors fail CI; routine pay-down prunes
+# fixed entries with --prune-baseline; --update-baseline is for full resets.
 baseline = "pyrefly_errors.json"
 
+[tool.pyrefly.errors]
+# Platform-specific optional imports are not present in every locked
+# environment, so missing-import diagnostics remain outside this ratchet.
+missing-import = "ignore"
