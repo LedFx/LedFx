@@ -248,8 +248,8 @@ class NowPlayingService:
         self,
         source_id: str,
         url: str,
-        content_type: str = None,  # noqa: RUF013
-        artwork_hash: str = None,  # noqa: RUF013
+        content_type: str | None = None,
+        artwork_hash: str | None = None,
     ) -> bool:
         """Set artwork from a URL, download it, and extract gradients.
 
@@ -320,7 +320,7 @@ class NowPlayingService:
         source_id: str,
         data: bytes,
         content_type: str,
-        artwork_hash: str = None,  # noqa: RUF013
+        artwork_hash: str | None = None,
     ) -> bool:
         """Set artwork from raw image bytes.
 
@@ -376,7 +376,7 @@ class NowPlayingService:
         self,
         data: bytes,
         content_type: str,
-        artwork_hash: str = None,  # noqa: RUF013
+        artwork_hash: str | None = None,
     ) -> bool:
         """Set artwork resolved by the internal album-art resolver.
 

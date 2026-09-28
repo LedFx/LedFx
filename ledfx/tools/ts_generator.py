@@ -273,8 +273,8 @@ def voluptuous_validator_to_ts_type(validator, for_universal=False) -> str:
 def generate_ts_interface_from_voluptuous(
     schema_name: str,
     voluptuous_schema: vol.Schema,
-    extends_interface: str = None,  # noqa: RUF013
-    base_schema_keys: set = None,  # noqa: RUF013
+    extends_interface: str | None = None,
+    base_schema_keys: set | None = None,
 ) -> str:
     """Generates TS interface string, using snake_case properties."""
     base_schema_keys = base_schema_keys if base_schema_keys is not None else set()
