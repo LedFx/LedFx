@@ -352,11 +352,8 @@ class MQTT_HASS(Integration):
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
             name = virtual.config["name"]
-            if (
-                name.startswith("gap-")  # noqa: PIE810
-                or name.endswith("-background")
-                or name.endswith("-mask")
-                or name.endswith("-foreground")
+            if name.startswith("gap-") or name.endswith(
+                ("-background", "-mask", "-foreground")
             ):
                 continue
 
@@ -597,11 +594,8 @@ class MQTT_HASS(Integration):
                             virtual.set_effect(effect)
                         return
                     name = virtual.config["name"]
-                    if (
-                        name.startswith("gap-")  # noqa: PIE810
-                        or name.endswith("-background")
-                        or name.endswith("-mask")
-                        or name.endswith("-foreground")
+                    if name.startswith("gap-") or name.endswith(
+                        ("-background", "-mask", "-foreground")
                     ):
                         return
 

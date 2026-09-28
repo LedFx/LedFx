@@ -1,3 +1,4 @@
+import itertools
 import logging
 import timeit
 
@@ -167,12 +168,9 @@ class Bleeper:
             list_plot_coords_bot (list): The list of bottom point coords
         """
         if self.mirror:
-            for start, end in zip(list_plot_coords_top, list_plot_coords_top[1:]):  # noqa: RUF007
+            for start, end in itertools.pairwise(list_plot_coords_top):
                 m_draw.line([start, end], fill=255, width=self.size)
-            for start, end in zip(  # noqa: RUF007
-                list_plot_coords_bot,
-                list_plot_coords_bot[1:],
-            ):
+            for start, end in itertools.pairwise(list_plot_coords_bot):
                 m_draw.line([start, end], fill=255, width=self.size)
         else:
             for start, end in zip(
@@ -199,10 +197,7 @@ class Bleeper:
             ):
                 m_draw.polygon([(x0, y0), (x1, y1), (x2, y2), (x3, y3)], fill=255)
         else:
-            for (x0, y0), (x1, y1) in zip(  # noqa: RUF007
-                list_plot_coords_top,
-                list_plot_coords_top[1:],
-            ):
+            for (x0, y0), (x1, y1) in itertools.pairwise(list_plot_coords_top):
                 m_draw.polygon([(x0, 0), (x1, 0), (x1, y1), (x0, y0)], fill=255)
 
 
