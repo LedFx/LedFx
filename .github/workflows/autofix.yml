@@ -22,7 +22,7 @@ jobs:
         with:
           enable-cache: false # PR code is untrusted; avoid a cache-poisoning path.
       - name: Install the locked project environment
-        run: uv sync --python 3.12 --group dev
+        run: uv sync --python 3.12.14 --group dev
       # Fixers modify files and exit non-zero; autofix.ci picks up the changes.
       - run: uv run prek run --all-files
         continue-on-error: true
