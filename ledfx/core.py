@@ -32,7 +32,7 @@ from ledfx.config import (
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.effects.audio import AudioInputSource
+from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -94,6 +94,7 @@ class LedFxCore:
         offline_mode=False,
     ):
 
+        self.audio: AudioAnalysisSource | None = None
         self.icon = icon
         self.config_dir = config_dir
 

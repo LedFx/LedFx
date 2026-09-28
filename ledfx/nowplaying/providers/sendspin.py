@@ -9,15 +9,28 @@ means "cleared". The provider accumulates state across messages.
 """
 
 import logging
+from typing import TYPE_CHECKING, Protocol
 
 from ledfx.nowplaying.models import TrackMetadata
+
+if TYPE_CHECKING:
+    from ledfx.nowplaying.service import NowPlayingService
 
 _LOGGER = logging.getLogger(__name__)
 
 SOURCE_ID = "sendspin"
 
-# Sentinel indicating a field was not sent (retain previous value)
-_NOT_SENT = object()
+
+class LedFxNowPlaying(Protocol):
+    @property
+    def now_playing(self) -> "NowPlayingService | None": ...
+
+
+class _ServerState(Protocol):
+    """Metadata field consumed from a Sendspin server state update."""
+
+    @property
+    def metadata(self) -> object: ...
 
 
 class SendspinNowPlayingProvider:
@@ -34,17 +47,17 @@ class SendspinNowPlayingProvider:
         ledfx: LedFxCore instance (must have .now_playing attribute).
     """
 
-    def __init__(self, ledfx):
+    def __init__(self, ledfx: LedFxNowPlaying) -> None:
         self._ledfx = ledfx
-        self._last_artwork_url = None
+        self._last_artwork_url: str | None = None
         # Accumulated track state (survives across incremental updates)
-        self._title = None
-        self._artist = None
-        self._album = None
-        self._artwork_url = None
+        self._title: str | None = None
+        self._artist: str | None = None
+        self._album: str | None = None
+        self._artwork_url: str | None = None
         _LOGGER.info("Sendspin Now Playing provider initialized")
 
-    def on_metadata(self, server_state_payload) -> None:
+    def on_metadata(self, server_state_payload: _ServerState) -> None:
         """Handle a server/state metadata update from aiosendspin.
 
         Sendspin sends incremental updates. UndefinedField means "not sent"
@@ -52,7 +65,7 @@ class SendspinNowPlayingProvider:
         "updated to this".
 
         Args:
-            server_state_payload: ServerStatePayload from the metadata callback.
+            server_state_payload: _ServerState from the metadata callback.
         """
         from aiosendspin.models.metadata import SessionUpdateMetadata
         from aiosendspin.models.types import UndefinedField
@@ -65,26 +78,15 @@ class SendspinNowPlayingProvider:
             _LOGGER.debug("Ignoring non-metadata server state update")
             return
 
-        # Extract fields: UndefinedField → _NOT_SENT (keep prev), else use value
-        def _val(field):
-            if isinstance(field, UndefinedField):
-                return _NOT_SENT
-            return field
-
-        # Update accumulated state only for fields that were actually sent
-        title = _val(metadata.title)
-        artist = _val(metadata.artist)
-        album = _val(metadata.album)
-        artwork_url = _val(metadata.artwork_url)
-
-        if title is not _NOT_SENT:
-            self._title = title
-        if artist is not _NOT_SENT:
-            self._artist = artist
-        if album is not _NOT_SENT:
-            self._album = album
-        if artwork_url is not _NOT_SENT:
-            self._artwork_url = artwork_url
+        # Omitted fields retain their previous value; explicit None clears it.
+        if not isinstance(metadata.title, UndefinedField):
+            self._title = metadata.title
+        if not isinstance(metadata.artist, UndefinedField):
+            self._artist = metadata.artist
+        if not isinstance(metadata.album, UndefinedField):
+            self._album = metadata.album
+        if not isinstance(metadata.artwork_url, UndefinedField):
+            self._artwork_url = metadata.artwork_url
 
         # Build TrackMetadata from accumulated state
         track_metadata = TrackMetadata(
@@ -96,10 +98,9 @@ class SendspinNowPlayingProvider:
         )
 
         # Forward to Now Playing Service
-        now_playing = getattr(self._ledfx, "now_playing", None)
+        now_playing = self._ledfx.now_playing
         if now_playing is None:
             return
-
         now_playing.set_metadata(SOURCE_ID, track_metadata)
 
         # Handle artwork URL changes
@@ -116,7 +117,7 @@ class SendspinNowPlayingProvider:
 
     def clear(self) -> None:
         """Clear Now Playing state and reset accumulated state."""
-        now_playing = getattr(self._ledfx, "now_playing", None)
+        now_playing = self._ledfx.now_playing
         if now_playing is not None:
             now_playing.clear(SOURCE_ID)
         self._last_artwork_url = None

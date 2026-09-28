@@ -4,7 +4,6 @@
 
 import logging
 from collections.abc import Callable
-from typing import Any
 
 import voluptuous as vol
 
@@ -24,7 +23,7 @@ def get_class_name_for_ts(name_parts):
 
 
 # Forward declaration for recursive type hint
-ForwardRefVoluptuousValidatorToTsType = Callable[[Any, bool], str]
+ForwardRefVoluptuousValidatorToTsType = Callable[[object, bool], str]
 
 
 def generate_inline_interface_body(
