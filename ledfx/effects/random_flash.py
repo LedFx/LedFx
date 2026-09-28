@@ -15,7 +15,7 @@ class RandomFlashEffect(TemporalEffect):
 
     NAME = "Random Flash"
     CATEGORY = "Non-Reactive"
-    HIDDEN_KEYS: ClassVar[list] = ["flip", "mirror", "speed"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["flip", "mirror", "speed"]
     # based on fixed speed of 5.0
     RUNS_PER_SEC = 50.0
 

@@ -24,7 +24,7 @@ class GifBase(Effect):
     Simple Gif base class that supplies basic gif and resize capability.
     """
 
-    RESIZE_METHOD_MAPPING: ClassVar[dict] = {
+    RESIZE_METHOD_MAPPING: ClassVar[dict[str, int]] = {
         GIFResizeMethods.NEAREST.value: Image.NEAREST,
         GIFResizeMethods.BILINEAR.value: Image.BILINEAR,
         GIFResizeMethods.BICUBIC.value: Image.BICUBIC,

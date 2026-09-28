@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class InfoEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/power"
 
-    exit_codes: ClassVar[dict] = {"shutdown": 3, "restart": 4}
+    exit_codes: ClassVar[dict[str, int]] = {"shutdown": 3, "restart": 4}
 
     async def post(self, request: web.Request) -> web.Response:
         """

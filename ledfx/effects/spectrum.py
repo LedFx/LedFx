@@ -21,7 +21,7 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         }
     )
 
-    rgb_mixes: ClassVar[list] = [
+    rgb_mixes: ClassVar[list[list[int]]] = [
         [0, 1, 2],
         [0, 2, 1],
         [1, 0, 2],

@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 @Effect.no_registration
 class Twod(AudioReactiveEffect):
     # hiding dump by default, a dev can turn it on explicitily via removal
-    HIDDEN_KEYS: ClassVar[list] = ["mirror", "flip", "blur", "dump"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["mirror", "flip", "blur", "dump"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "dump",
         "test",

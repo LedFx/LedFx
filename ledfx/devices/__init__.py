@@ -687,7 +687,7 @@ class UDPDevice(NetworkedDevice):
 class AvailableCOMPorts:
     ports = serial.tools.list_ports.comports()
 
-    available_ports: ClassVar[list] = [""]
+    available_ports: ClassVar[list[str]] = [""]
 
     for p in ports:
         available_ports.append(p.device)

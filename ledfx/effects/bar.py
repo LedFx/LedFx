@@ -10,7 +10,7 @@ from ledfx.effects.gradient import GradientEffect
 class BarAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Bar"
     CATEGORY = "BPM"
-    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

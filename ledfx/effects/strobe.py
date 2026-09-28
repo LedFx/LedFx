@@ -7,7 +7,7 @@ from ledfx.effects.gradient import GradientEffect
 
 
 class Strobe(AudioReactiveEffect, GradientEffect):
-    MAPPINGS: ClassVar[dict] = {
+    MAPPINGS: ClassVar[dict[str, int]] = {
         "1/1 (.,. )": 1,
         "1/2 (.-. )": 2,
         "1/4 (.o. )": 4,
@@ -18,7 +18,7 @@ class Strobe(AudioReactiveEffect, GradientEffect):
 
     NAME = "BPM Strobe"
     CATEGORY = "BPM"
-    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

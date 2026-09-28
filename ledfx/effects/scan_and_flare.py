@@ -45,7 +45,7 @@ class Sparkle:
 class ScanAndFlareAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan and Flare"
     CATEGORY = "Classic"
-    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
     CONFIG_SCHEMA = vol.Schema(
         {

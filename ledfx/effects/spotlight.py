@@ -17,7 +17,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     NAME = "Spotlight"
     CATEGORY = "Classic"
-    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "max_active_spots",
         "use_gradient",

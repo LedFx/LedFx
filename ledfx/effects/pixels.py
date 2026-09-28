@@ -21,7 +21,12 @@ _LOGGER = logging.getLogger(__name__)
 class PixelsEffect(TemporalEffect):
     NAME = "Pixels"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS: ClassVar[list] = ["speed", "background_brightness", "blur", "mirror"]
+    HIDDEN_KEYS: ClassVar[list[str]] = [
+        "speed",
+        "background_brightness",
+        "blur",
+        "mirror",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {

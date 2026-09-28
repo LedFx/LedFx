@@ -72,7 +72,7 @@ if currently_frozen():
 
 
 class LedFxCore:
-    EXIT_CODES: ClassVar[dict] = {
+    EXIT_CODES: ClassVar[dict[int, str]] = {
         1: "LedFx encountered an error - Shutting down.",
         2: "Keyboard interrupt - Shutting down.",
         3: "Shutdown request via API - Shutting down.",

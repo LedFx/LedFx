@@ -301,7 +301,7 @@ class WLED:
     A collection of WLED helper functions
     """
 
-    SYNC_MODES: ClassVar[dict] = {"DDP": 4048, "E131": 5568, "ARTNET": 6454}
+    SYNC_MODES: ClassVar[dict[str, int]] = {"DDP": 4048, "E131": 5568, "ARTNET": 6454}
 
     def __init__(self, ip_address):
         self.ip_address = ip_address
@@ -2125,7 +2125,7 @@ class PerformanceAnalysis:
     A class for comparing the performance of two functions.
     """
 
-    _write_buffer: ClassVar[list] = []
+    _write_buffer: ClassVar[list[list]] = []
     _write_buffer_limit = 100
 
     @staticmethod

@@ -89,7 +89,11 @@ STRETCH_FUNCS_MAPPING = {
 class Blender(AudioReactiveEffect):
     NAME = "Blender"
     CATEGORY = "Matrix"
-    HIDDEN_KEYS: ClassVar[list] = ["background_color", "background_brightness", "blur"]
+    HIDDEN_KEYS: ClassVar[list[str]] = [
+        "background_color",
+        "background_brightness",
+        "blur",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {

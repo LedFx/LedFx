@@ -17,7 +17,7 @@ class Imagespin(Twod):
     NAME = "Image"
     CATEGORY = "Matrix"
     # image spin supports alpha so allow background color
-    HIDDEN_KEYS: ClassVar[list] = ["speed", "mirror", "flip", "blur", "album_art"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["speed", "mirror", "flip", "blur", "album_art"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
     CONFIG_SCHEMA = vol.Schema(

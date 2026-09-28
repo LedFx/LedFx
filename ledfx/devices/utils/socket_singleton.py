@@ -10,7 +10,7 @@ class SocketSingleton:
         _type_: _description_
     """
 
-    _instances: ClassVar[dict] = {}
+    _instances: ClassVar[dict[int, dict[str, "SocketSingleton | int"]]] = {}
     _lock = Lock()
 
     def __new__(cls, recv_port):

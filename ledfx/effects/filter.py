@@ -15,7 +15,7 @@ _LOGGER = logging.getLogger(__name__)
 class Filter(AudioReactiveEffect, GradientEffect):
     NAME = "Filter"
     CATEGORY = "Simple"
-    HIDDEN_KEYS: ClassVar[list] = [
+    HIDDEN_KEYS: ClassVar[list[str]] = [
         "background_color",
         "background_brightness",
         "blur",

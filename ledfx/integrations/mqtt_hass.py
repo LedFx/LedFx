@@ -84,7 +84,7 @@ class MQTT_HASS(Integration):
         }
     )
 
-    TRANSITION_MAPPING: ClassVar[dict] = {
+    TRANSITION_MAPPING: ClassVar[dict[str, str]] = {
         "ledfxtransitiontype": "transition_mode",
         "ledfxtransitiontime": "transition_time",
     }

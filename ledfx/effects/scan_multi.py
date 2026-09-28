@@ -42,7 +42,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
     NAME = "Scan Multi"
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
-    HIDDEN_KEYS: ClassVar[list] = ["gradient_roll"]
+    HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
     ADVANCED_KEYS = AudioReactiveEffect.ADVANCED_KEYS + [
         "input_source",
         "attack",
@@ -50,7 +50,7 @@ class ScanMultiAudioEffect(AudioReactiveEffect, GradientEffect):
         "filter",
     ]
 
-    _sources: ClassVar[dict] = {
+    _sources: ClassVar[dict[str, str]] = {
         "Power": "power",
         "Melbank": "melbank",
     }

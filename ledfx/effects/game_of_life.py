@@ -35,7 +35,7 @@ class GameOfLifeVisualiser(Twod):
         "frequency_range",
         "impulse_decay",
     ]
-    HEALTH_CHECK_OPTIONS_VALUES: ClassVar[dict] = {
+    HEALTH_CHECK_OPTIONS_VALUES: ClassVar[dict[str, dict[str, bool]]] = {
         HealthOptions.ALL.value: {
             HealthOptions.DEAD.value: True,
             HealthOptions.OSCILLATING.value: True,

@@ -116,7 +116,7 @@ class WebsocketEndpoint(RestEndpoint):
 
 
 class WebsocketConnection:
-    ip_uid_map: ClassVar[dict] = {}
+    ip_uid_map: ClassVar[dict[str, str]] = {}
     map_lock = asyncio.Lock()
     # Phase 1: Class-level metadata storage
     client_metadata: ClassVar[dict[str, dict[str, Any]]] = {}  # UUID -> metadata dict

@@ -275,7 +275,7 @@ class Effect(BaseRegistry):
     # over ride in effect children to hide existing keys from UI
     HIDDEN_KEYS = None
     # extend in effect children
-    ADVANCED_KEYS: ClassVar[list] = ["diag"]
+    ADVANCED_KEYS: ClassVar[list[str]] = ["diag"]
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     USES_MELBANK_RANGE = False

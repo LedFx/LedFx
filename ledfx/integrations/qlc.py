@@ -25,7 +25,7 @@ class QLC(Integration):
 
     beta = False
 
-    _widget_types: ClassVar[list] = ["Button", "Slider", "Audio Triggers"]
+    _widget_types: ClassVar[list[str]] = ["Button", "Slider", "Audio Triggers"]
     NAME = "QLC+"
     DESCRIPTION = "Web Api Integration for Q Light Controller Plus"
 

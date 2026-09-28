@@ -10,7 +10,11 @@ from ledfx.effects.audio import AudioReactiveEffect
 class VuMeterAudioEffect(AudioReactiveEffect):
     NAME = "VuMeter"
     CATEGORY = "Diagnostic"
-    HIDDEN_KEYS: ClassVar[list] = ["background_color", "background_brightness", "blur"]
+    HIDDEN_KEYS: ClassVar[list[str]] = [
+        "background_color",
+        "background_brightness",
+        "blur",
+    ]
 
     CONFIG_SCHEMA = vol.Schema(
         {
