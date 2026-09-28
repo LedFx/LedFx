@@ -64,7 +64,7 @@ dev = [
     "prek>=0.5.3",
     # Keep in sync with the ruff-pre-commit rev in .pre-commit-config.yaml
     "ruff==0.16.4",
-    "pyrefly>=1.3.0",
+    "pyrefly==1.3.0",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
@@ -147,6 +147,8 @@ extend-select = ["G004"]
 [tool.pyrefly]
 # Require complete annotations and reject unsafe uses of Any.
 preset = "strict"
+# Match CI so diagnostics do not depend on the contributor's OS.
+python-platform = "linux"
 # Run via tools/pyrefly_check.py in the locked Python 3.12 dev environment.
 # Existing errors are baselined; new errors must be fixed.
 project-includes = [

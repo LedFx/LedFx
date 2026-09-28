@@ -45,7 +45,7 @@ repos:
           - .github/workflows/
   # Type-coverage ratchet: pyrefly_errors.json holds the baseline; new errors
   # fail CI (--error-stale-baseline). Routine pay-down: fix errors, then prune
-  # the baseline with `uv run --locked --python 3.12 --group dev python
+  # the baseline with `uv run --isolated --locked --python 3.12 --group dev python
   # tools/pyrefly_check.py --prune-baseline`. This drops fixed errors
   # without adding new ones; never use --update-baseline to "make CI pass".
   # Select both the locked environment and the interpreter Pyrefly queries.
@@ -54,7 +54,7 @@ repos:
     rev: 1.3.0
     hooks:
       - id: pyrefly-check
-        entry: uv run --locked --python 3.12 --group dev python tools/pyrefly_check.py
+        entry: uv run --isolated --locked --python 3.12 --group dev python tools/pyrefly_check.py
         args: [--error-stale-baseline]
         language: system
         pass_filenames: false
