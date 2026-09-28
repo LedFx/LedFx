@@ -1,0 +1,88 @@
+name: Pyrefly baseline maintenance
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pyrefly-baseline-main
+  cancel-in-progress: false
+
+jobs:
+  prune-baseline:
+    name: Prune fixed Pyrefly errors
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+      - name: Install the locked project environment
+        run: uv sync --python 3.12 --group dev
+      - name: Prune diagnostics that no longer occur
+        run: uv run pyrefly check --prune-baseline
+      - name: Detect baseline changes
+        id: changes
+        run: |
+          if git diff --quiet -- pyrefly_errors.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "The baseline is current; no maintenance PR is needed."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Fixed diagnostics were removed from the baseline."
+          fi
+      - name: Mint the ledfx-automation token
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Open or refresh the baseline PR
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          BRANCH: automation/prune-pyrefly-baseline
+        run: |
+          git config user.name "ledfx-automation[bot]"
+          git config user.email "ledfx-automation[bot]@users.noreply.github.com"
+          git checkout -B "$BRANCH" HEAD
+          git add pyrefly_errors.json
+          git commit -m "chore: prune stale Pyrefly baseline"
+          gh auth setup-git
+          git push --force origin "$BRANCH"
+
+          body="The weekly Pyrefly check found diagnostics that no longer occur and removed those stale entries from pyrefly_errors.json. This uses --prune-baseline, which never records new diagnostics; new errors still fail the check.
+
+[Workflow run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "chore: prune stale Pyrefly baseline" --body "$body"
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore: prune stale Pyrefly baseline" --body "$body"
+            pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          fi
+          gh pr merge "$pr" --auto --squash
+      - name: Close an obsolete baseline PR
+        if: steps.changes.outputs.changed == 'false'
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+          BRANCH: automation/prune-pyrefly-baseline
+        run: |
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr" ]; then
+            gh pr close "$pr" --comment "The baseline is already current, so this maintenance PR is no longer needed."
+            gh auth setup-git
+            git push origin --delete "$BRANCH"
+          fi

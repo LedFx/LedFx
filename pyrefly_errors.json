@@ -883,13 +883,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/core.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `winloop`",
-      "severity": "error"
-    },
-    {
       "column": 13,
       "path": "ledfx/core.py",
       "name": "bad-argument-type",
@@ -1090,13 +1083,6 @@
       "path": "ledfx/devices/govee.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `recvfrom`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/devices/hue.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `mbedtls`",
       "severity": "error"
     },
     {
@@ -1580,13 +1566,6 @@
       "path": "ledfx/effects/__init__.py",
       "name": "bad-argument-type",
       "concise_description": "Argument `ndarray | Unknown | None` is not assignable to parameter `obj` with type `Sized` in function `len`",
-      "severity": "error"
-    },
-    {
-      "column": 8,
-      "path": "ledfx/effects/audio.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `samplerate`",
       "severity": "error"
     },
     {
@@ -2476,27 +2455,6 @@
       "path": "ledfx/effects/digitalrain2d.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 8,
-      "path": "ledfx/effects/droplets/visualise.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `imageio`",
-      "severity": "error"
-    },
-    {
-      "column": 8,
-      "path": "ledfx/effects/droplets/visualise.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `matplotlib`",
-      "severity": "error"
-    },
-    {
-      "column": 1,
-      "path": "ledfx/effects/droplets/visualise.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `matplotlib`",
       "severity": "error"
     },
     {
@@ -6777,20 +6735,6 @@
       "severity": "error"
     },
     {
-      "column": 8,
-      "path": "ledfx/mac_tray.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `Foundation`",
-      "severity": "error"
-    },
-    {
-      "column": 8,
-      "path": "ledfx/mac_tray.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `objc`",
-      "severity": "error"
-    },
-    {
       "column": 19,
       "path": "ledfx/mdns_manager.py",
       "name": "missing-attribute",
@@ -6823,13 +6767,6 @@
       "path": "ledfx/nowplaying/providers/mpris.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `ERROR`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/nowplaying/providers/smtc.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `winrt.windows.media.control`",
       "severity": "error"
     },
     {
@@ -7726,20 +7663,6 @@
       "path": "tests/playlist/test_playlists_additional.py",
       "name": "bad-argument-type",
       "concise_description": "Argument `str | None` is not assignable to parameter `s` with type `bytearray | bytes | str` in function `json.loads`",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "tests/scripts/keyrest.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `keyboard`",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "tests/scripts/oneshot.py",
-      "name": "missing-import",
-      "concise_description": "Cannot find module `keyboard`",
       "severity": "error"
     },
     {
