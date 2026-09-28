@@ -121,11 +121,10 @@ class HttpServer:
             error,
         )
         _LOGGER.error("Is LedFx Already Running? If not, try a different port.")
-        if self._ledfx.icon is not None:  # noqa: SIM102
-            if self._ledfx.icon.HAS_NOTIFICATION:
-                self._ledfx.icon.notify(
-                    f"Failed to start: something is running on port {self.port}\nIs LedFx already running?"
-                )
+        if self._ledfx.icon is not None and self._ledfx.icon.HAS_NOTIFICATION:
+            self._ledfx.icon.notify(
+                f"Failed to start: something is running on port {self.port}\nIs LedFx already running?"
+            )
         time.sleep(2)
         self._ledfx.stop(1)
 

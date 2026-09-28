@@ -574,14 +574,13 @@ class WebsocketConnection:
         client_type = data.get("type")
 
         # Validate and normalize type if provided
-        if client_type is not None:  # noqa: SIM102
-            if client_type not in VALID_CLIENT_TYPES:
-                _LOGGER.warning(
-                    "Invalid client_type '%s' from %s, defaulting to 'unknown'",
-                    client_type,
-                    self.uid,
-                )
-                client_type = "unknown"
+        if client_type is not None and client_type not in VALID_CLIENT_TYPES:
+            _LOGGER.warning(
+                "Invalid client_type '%s' from %s, defaulting to 'unknown'",
+                client_type,
+                self.uid,
+            )
+            client_type = "unknown"
 
         # Check if any updates were provided
         if name is None and client_type is None:

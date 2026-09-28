@@ -167,9 +167,11 @@ class MetroEffect(AudioReactiveEffect):
                         self.pixels[start_pixel : end_pixel - 1] = self.flash_color
                 self.was_flash = True
 
-        if self.graph_cpu is not None:  # noqa: SIM102
-            if now - self.last_cpu > self._config["cpu_secs"]:
-                cpu = psutil.cpu_percent(percpu=True)
-                for i in range(self.cores):
-                    self.graph_cpu.append_by_key(f"CPU {i}", cpu[i])
-                self.last_cpu = now
+        if (
+            self.graph_cpu is not None
+            and now - self.last_cpu > self._config["cpu_secs"]
+        ):
+            cpu = psutil.cpu_percent(percpu=True)
+            for i in range(self.cores):
+                self.graph_cpu.append_by_key(f"CPU {i}", cpu[i])
+            self.last_cpu = now

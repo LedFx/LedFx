@@ -105,9 +105,11 @@ class Device(BaseRegistry):
             valid_classes = list(type(self).__bases__)
             valid_classes.append(type(self))
             for base in valid_classes:
-                if hasattr(base, "config_updated"):  # noqa: SIM102
-                    if base.config_updated != super(base, base).config_updated:
-                        base.config_updated(self, validated_config)
+                if (
+                    hasattr(base, "config_updated")
+                    and base.config_updated != super(base, base).config_updated
+                ):
+                    base.config_updated(self, validated_config)
 
             _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
@@ -164,11 +166,11 @@ class Device(BaseRegistry):
                 # Legacy range mode: (pixels, start, end)
                 pixels, start, end = item
                 # protect against an empty race condition
-                if pixels.shape[0] != 0:  # noqa: SIM102
-                    if np.shape(pixels) == (3,) or np.shape(
-                        self._pixels[start : end + 1]
-                    ) == np.shape(pixels):
-                        self._pixels[start : end + 1] = pixels
+                if pixels.shape[0] != 0 and (
+                    np.shape(pixels) == (3,)
+                    or np.shape(self._pixels[start : end + 1]) == np.shape(pixels)
+                ):
+                    self._pixels[start : end + 1] = pixels
 
         # Only the priority virtual should flush to prevent multiple virtuals
         # from fighting over the device buffer
@@ -419,16 +421,16 @@ class Device(BaseRegistry):
             if segment[0] != virtual_id:
                 new_segments.append(segment)
             else:
-                if self._pixels is not None:  # noqa: SIM102
-                    if self._ledfx.config.get("flush_on_deactivate", False):
-                        self._pixels[segment[1] : segment[2] + 1] = np.zeros(
-                            (segment[2] - segment[1] + 1, 3)
-                        )
+                if self._pixels is not None and self._ledfx.config.get(
+                    "flush_on_deactivate", False
+                ):
+                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
+                        (segment[2] - segment[1] + 1, 3)
+                    )
         self._segments = new_segments
 
-        if self.priority_virtual:  # noqa: SIM102
-            if virtual_id == self.priority_virtual.id:
-                self.invalidate_cached_props()
+        if self.priority_virtual and virtual_id == self.priority_virtual.id:
+            self.invalidate_cached_props()
 
     def clear_segments(self):
         self._segments = []
@@ -896,10 +898,8 @@ class Devices(RegistryLoader):
             "rows": device_config.get("rows", 1),
         }
 
-        if device_type == "wled":  # noqa: SIM102
-            if "matrix" in led_info:  # noqa: SIM102
-                if "h" in led_info["matrix"]:
-                    virtual_config["rows"] = led_info["matrix"]["h"]
+        if device_type == "wled" and "matrix" in led_info and "h" in led_info["matrix"]:
+            virtual_config["rows"] = led_info["matrix"]["h"]
 
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
@@ -1050,15 +1050,14 @@ class Devices(RegistryLoader):
         Check if the new device is osc port and path separated from the pre-existing device
         """
         if new_type == "osc" and pre_device.type == "osc":
-            if new_config["port"] == pre_device.config["port"]:  # noqa: SIM102
-                if new_config["path"] == pre_device.config["path"]:  # noqa: SIM102
-                    if (
-                        new_config["starting_addr"]
-                        == pre_device.config["starting_addr"]
-                    ):
-                        msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
-                        _LOGGER.info(msg)
-                        raise ValueError(msg)
+            if (
+                new_config["port"] == pre_device.config["port"]
+                and new_config["path"] == pre_device.config["path"]
+                and new_config["starting_addr"] == pre_device.config["starting_addr"]
+            ):
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
             return True
         return False
 
@@ -1067,13 +1066,12 @@ class Devices(RegistryLoader):
         Check if the new device is DDP destination_id separated from the pre-existing device
         """
         if new_type == "ddp" and pre_device.type == "ddp":
-            if new_config["port"] == pre_device.config["port"]:  # noqa: SIM102
-                if new_config.get("destination_id", 1) == pre_device.config.get(
-                    "destination_id", 1
-                ):
-                    msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
-                    _LOGGER.info(msg)
-                    raise ValueError(msg)
+            if new_config["port"] == pre_device.config["port"] and new_config.get(
+                "destination_id", 1
+            ) == pre_device.config.get("destination_id", 1):
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
+                _LOGGER.info(msg)
+                raise ValueError(msg)
             return True
         return False
 

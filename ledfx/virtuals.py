@@ -1038,48 +1038,47 @@ class Virtual:
         for device_id, segments in self._segments_by_device.items():
             data = []
             device = self._ledfx.devices.get(device_id)
-            if device is not None:  # noqa: SIM102
-                if device.is_active():
-                    if self._calibration:
-                        # Reset color sequence for each device to maintain consistency
-                        self._calibration_cache.reset_color_sequence()
-                        self.render_calibration(data, device, segments, device_id)
-                    elif self._config["mapping"] == "span":
-                        for (
-                            start,
-                            stop,
-                            step,
-                            device_start,
-                            device_end,
-                        ) in segments:
-                            seg = pixels[start:stop:step]
-                            # Where we override segment
-                            for oneshot in self._oneshots:
-                                oneshot.apply(seg, start, stop)
-                            data.append((seg, device_start, device_end))
-                    elif self._config["mapping"] == "copy":
-                        for (
-                            start,
-                            stop,
-                            step,
-                            device_start,
-                            device_end,
-                        ) in segments:
-                            target_physical_len = device_end - device_start + 1
-                            target_effect_len = self._get_effective_pixel_count(
-                                target_physical_len
-                            )
-                            # In copy mode, we need to scale the effect and afterwards expand the
-                            # pixel groups separately for every segment, because pre-calculating once
-                            # and scaling would lead to incorrect pixel group lengths.
-                            seg = interpolate_pixels(pixels, target_effect_len)[::step]
-                            seg = self._effective_to_physical_pixels(
-                                seg, target_physical_len
-                            )
-                            for oneshot in self._oneshots:
-                                oneshot.apply(seg, start, stop)
-                            data.append((seg, device_start, device_end))
-                    device.update_pixels(self.id, data)
+            if device is not None and device.is_active():
+                if self._calibration:
+                    # Reset color sequence for each device to maintain consistency
+                    self._calibration_cache.reset_color_sequence()
+                    self.render_calibration(data, device, segments, device_id)
+                elif self._config["mapping"] == "span":
+                    for (
+                        start,
+                        stop,
+                        step,
+                        device_start,
+                        device_end,
+                    ) in segments:
+                        seg = pixels[start:stop:step]
+                        # Where we override segment
+                        for oneshot in self._oneshots:
+                            oneshot.apply(seg, start, stop)
+                        data.append((seg, device_start, device_end))
+                elif self._config["mapping"] == "copy":
+                    for (
+                        start,
+                        stop,
+                        step,
+                        device_start,
+                        device_end,
+                    ) in segments:
+                        target_physical_len = device_end - device_start + 1
+                        target_effect_len = self._get_effective_pixel_count(
+                            target_physical_len
+                        )
+                        # In copy mode, we need to scale the effect and afterwards expand the
+                        # pixel groups separately for every segment, because pre-calculating once
+                        # and scaling would lead to incorrect pixel group lengths.
+                        seg = interpolate_pixels(pixels, target_effect_len)[::step]
+                        seg = self._effective_to_physical_pixels(
+                            seg, target_physical_len
+                        )
+                        for oneshot in self._oneshots:
+                            oneshot.apply(seg, start, stop)
+                        data.append((seg, device_start, device_end))
+                device.update_pixels(self.id, data)
 
     def _flush_complex_segments(self, pixels):
         """
@@ -1387,18 +1386,18 @@ class Virtual:
                 self._validate_and_set_frequency_range(_config)
 
                 # Clear cached effect properties so the changes take effect
-                if self._active_effect is not None:  # noqa: SIM102
-                    if hasattr(self._active_effect, "clear_melbank_freq_props"):
-                        self._active_effect.clear_melbank_freq_props()
+                if self._active_effect is not None and hasattr(
+                    self._active_effect, "clear_melbank_freq_props"
+                ):
+                    self._active_effect.clear_melbank_freq_props()
 
             if self._active_effect is not None:
                 # if a virtual level config change impacts a 2d effect layout, then trigger an init
-                if (  # noqa: SIM102
+                if (
                     _config["rows"] != self._config["rows"]
                     or _config["rotate"] != self._config["rotate"]
-                ):
-                    if hasattr(self._active_effect, "set_init"):
-                        self._active_effect.set_init()
+                ) and hasattr(self._active_effect, "set_init"):
+                    self._active_effect.set_init()
 
                 if _config["grouping"] != self._config["grouping"]:
                     # The effect needs to be reactivated later after the config has been applied

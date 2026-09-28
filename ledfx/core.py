@@ -426,9 +426,8 @@ class LedFxCore:
             None
         """
 
-        if show_check_notification:  # noqa: SIM102
-            if self.icon and self.icon.HAS_NOTIFICATION:
-                self.icon.notify("Checking for updates...", "LedFx")
+        if show_check_notification and self.icon and self.icon.HAS_NOTIFICATION:
+            self.icon.notify("Checking for updates...", "LedFx")
         is_release = os.getenv("IS_RELEASE", "false").lower()
         if is_release == "false":
             _LOGGER.info("Not checking for updates - not a release.")
@@ -457,9 +456,8 @@ class LedFxCore:
                 _LOGGER.info("LedFx is up to date.")
         else:
             _LOGGER.warning("Unable to get update information.")
-            if show_check_notification:  # noqa: SIM102
-                if self.icon and self.icon.HAS_NOTIFICATION:
-                    self.icon.notify("Unable to get update information", "LedFx")
+            if show_check_notification and self.icon and self.icon.HAS_NOTIFICATION:
+                self.icon.notify("Unable to get update information", "LedFx")
 
     def start(self, open_ui=False, pause_all=False):
         async_fire_and_forget(
