@@ -80,6 +80,13 @@ def randomize_effect_config(
             if coerce_type is int:
                 if not isinstance(lower, int) or not isinstance(upper, int):
                     continue
+                # Draw only from integers inside exclusive bounds.
+                if not bounds.min_included:
+                    lower += 1
+                if not bounds.max_included:
+                    upper -= 1
+                if lower > upper:
+                    continue
                 value = random.randint(lower, upper)
             else:
                 value = random.uniform(lower, upper)

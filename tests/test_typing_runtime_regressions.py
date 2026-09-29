@@ -13,8 +13,8 @@ from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 from ledfx.api import RestEndpoint
 from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.config import ConfigEndpoint
-from ledfx.api.virtual_effects import EffectsEndpoint
-from ledfx.api.websocket import WebsocketConnection
+from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
+from ledfx.api.websocket import WebsocketConnection, websocket_handlers
 from ledfx.config import load_logger, migrate_config
 from ledfx.devices import Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
@@ -93,6 +93,22 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     assert 2 <= generated["count"] <= 5
 
 
+def test_randomize_int_respects_exclusive_bounds() -> None:
+    def exclusive(low: int, high: int) -> vol.All:
+        return vol.All(
+            vol.Coerce(int),
+            vol.Range(min=low, max=high, min_included=False, max_included=False),
+        )
+
+    schema: dict[object, object] = {
+        vol.Optional("one"): exclusive(0, 2),
+        vol.Optional("none"): exclusive(0, 1),
+    }
+    for _ in range(50):
+        # 1 is the only integer in (0, 2); (0, 1) holds none, so it is skipped.
+        assert randomize_effect_config(schema, ()) == {"one": 1}
+
+
 def test_migration_discards_effect_without_type_and_keeps_virtual() -> None:
     load_logger()
     original = {
@@ -167,8 +183,21 @@ async def test_websocket_rejects_non_object_json_without_handler_crash(
     ws.send_json = AsyncMock()
     ws.close = AsyncMock()
     ws.closed = False
-    ws.receive = AsyncMock(return_value=WSMessage(WSMsgType.TEXT, payload, ""))
+    # A valid frame first, so a stale ID from it would be reused on failure.
+    ws.receive = AsyncMock(
+        side_effect=[
+            WSMessage(WSMsgType.TEXT, '{"id": 7, "type": "noop_test"}', ""),
+            WSMessage(WSMsgType.TEXT, payload, ""),
+        ]
+    )
+    connection.send_error = MagicMock()
+    noop = MagicMock()
     request = MagicMock(remote="127.0.0.1")
-    with patch("ledfx.api.websocket.web.WebSocketResponse", return_value=ws):
+    with (
+        patch("ledfx.api.websocket.web.WebSocketResponse", return_value=ws),
+        patch.dict(websocket_handlers, {"noop_test": noop}),
+    ):
         await connection.handle(request)
     ws.close.assert_awaited_once()
+    noop.assert_called_once()
+    connection.send_error.assert_not_called()
