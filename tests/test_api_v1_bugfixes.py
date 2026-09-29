@@ -3,7 +3,8 @@ success response says, or answers with its usual failure response."""
 
 import asyncio
 import copy
-from unittest.mock import MagicMock
+import json
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -11,6 +12,7 @@ from ledfx.api import RestEndpoint
 from ledfx.api.colors import ColorEndpoint
 from ledfx.api.colors_delete import ColorDeleteEndpoint
 from ledfx.api.device import DeviceEndpoint
+from ledfx.api.find_lifx import FindLifxEndpoint
 from ledfx.api.power import MAX_POWER_TIMEOUT
 from ledfx.api.power import InfoEndpoint as PowerEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
@@ -30,7 +32,7 @@ from ledfx.color import (
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import UserDefaultCollection
-from tests.test_api_validation_responses import _call, _reason
+from tests.test_api_validation_responses import _call, _reason, _request
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
@@ -378,3 +380,92 @@ async def test_a_pending_scene_activation_runs_once() -> None:
     await asyncio.sleep(0.01)
     ledfx.scenes.activate.assert_called_once_with("s1")
     assert not ledfx.scenes._pending
+
+
+async def _find_lifx(ledfx: MagicMock, query: dict[str, str]):
+    request = _request("GET")
+    request.has_body = False
+    request.query = query
+    request.match_info = dict[str, str]()
+    response = await asyncio.wait_for(FindLifxEndpoint(ledfx).handler(request), 2)
+    return response.status, json.loads(response.text or "")
+
+
+async def test_find_lifx_both_runs_mdns_and_udp_together() -> None:
+    udp_started = asyncio.Event()
+
+    async def mdns(*_):
+        await udp_started.wait()  # would never finish if udp ran after it
+        return [{"serial": "m"}]
+
+    async def udp(*_):
+        udp_started.set()
+        return [{"serial": "u"}]
+
+    with (
+        patch.object(FindLifxEndpoint, "_discover_mdns", side_effect=mdns),
+        patch.object(FindLifxEndpoint, "_discover_udp", side_effect=udp),
+    ):
+        status, reply = await _find_lifx(
+            fake_ledfx(), {"method": "both", "discovery_timeout": "1"}
+        )
+    assert status == 200
+    assert reply == {"method": "both", "devices": [{"serial": "m"}, {"serial": "u"}]}
+
+
+async def test_find_lifx_caps_the_total_time() -> None:
+    mdns_cancelled = asyncio.Event()
+
+    async def mdns(*_):
+        try:
+            await asyncio.Event().wait()
+        finally:
+            mdns_cancelled.set()
+
+    async def udp(*_):
+        return [{"serial": "u"}]
+
+    with (
+        patch.object(FindLifxEndpoint, "_discover_mdns", side_effect=mdns),
+        patch.object(FindLifxEndpoint, "_discover_udp", side_effect=udp),
+        patch("ledfx.api.find_lifx.DISCOVERY_GRACE", 0),
+    ):
+        status, reply = await _find_lifx(
+            fake_ledfx(), {"method": "both", "discovery_timeout": "0.05"}
+        )
+    assert status == 200
+    assert reply["devices"] == [{"serial": "u"}]
+    assert mdns_cancelled.is_set()
+
+
+async def test_find_lifx_keeps_other_scan_results_when_one_fails() -> None:
+    async def mdns(*_):
+        raise RuntimeError("add_new_device blew up")
+
+    async def udp(*_):
+        return [{"serial": "u"}]
+
+    with (
+        patch.object(FindLifxEndpoint, "_discover_mdns", side_effect=mdns),
+        patch.object(FindLifxEndpoint, "_discover_udp", side_effect=udp),
+    ):
+        status, reply = await _find_lifx(
+            fake_ledfx(), {"method": "both", "discovery_timeout": "1"}
+        )
+    assert status == 200
+    assert reply["devices"] == [{"serial": "u"}]
+
+
+@pytest.mark.parametrize("step", ["get_label", "add_new_device"])
+async def test_find_lifx_closes_a_device_when_its_scan_is_cancelled(step: str) -> None:
+    ledfx = fake_ledfx()
+    device = MagicMock(serial="d073d5000001", ip="10.0.0.9")
+    device.get_label = AsyncMock(return_value="Lamp")
+    device.close = AsyncMock()
+    ledfx.devices.add_new_device = AsyncMock()
+    getattr(
+        device if step == "get_label" else ledfx.devices, step
+    ).side_effect = asyncio.CancelledError
+    with pytest.raises(asyncio.CancelledError):
+        await FindLifxEndpoint(ledfx)._process_discovered_device(device, True, set())
+    device.close.assert_awaited_once()
