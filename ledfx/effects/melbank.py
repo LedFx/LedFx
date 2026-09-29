@@ -58,26 +58,6 @@ FREQUENCY_RANGES_SIMPLE = {
 }
 
 _LOGGER = logging.getLogger(__name__)
-MELBANK_COEFFS_TYPES = (
-    # matt_mel is our default, and seems to be the best so far with the other default options
-    "matt_mel",
-    # Triangle kinda sucks
-    "triangle",
-    # Bark looks like it might be OK - needs tinkering
-    "bark",
-    # Mel seems... fine?
-    "mel",
-    # htk is weak on the bass and high end
-    "htk",
-    # scott weak on bass and high end
-    "scott",
-    # scott_mel is weak high end and smeared midrange
-    "scott_mel",
-    # These 3 just flat out dont work with the changes to the codebase
-    # "slaney",
-    # "fixed",
-    # "fixed_simple",
-)
 
 
 class Melbank:

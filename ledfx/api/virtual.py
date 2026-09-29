@@ -1,7 +1,6 @@
 import logging
 from json import JSONDecodeError
 
-import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
@@ -126,7 +125,7 @@ class VirtualEndpoint(RestEndpoint):
         old_segments = virtual.segments
         try:
             virtual.update_segments(virtual_segments)
-        except (ValueError, vol.MultipleInvalid, vol.Invalid) as msg:
+        except ValueError as msg:
             error_message = f"Unable to set virtual segments {virtual_segments}: {msg}"
             _LOGGER.warning(error_message)
             virtual.update_segments(old_segments)

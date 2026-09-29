@@ -786,36 +786,29 @@ curl -X GET http://localhost:8888/api/scenes/living-room
 
 ---
 
-## Validation (Voluptuous sketch)
+## Validation (pydantic models)
+
+Stored scenes are validated by these models from `ledfx/configuration/models.py`. The scene id is the key in `scenes`; the API accepts it as an optional `id` field. An unset optional field is omitted from the stored JSON, not written as `null`.
 
 ```python
-VirtualActionSchema = vol.Schema(
-    {
-        vol.Optional("action"): vol.In(["ignore", "stop", "forceblack", "activate"]),
-        vol.Optional("type"): str,  # Required if action="activate"
-        vol.Optional(
-            "config"
-        ): dict,  # Required if action="activate" and preset not provided
-        vol.Optional(
-            "preset"
-        ): str,  # Alternative to config for action="activate", requires type
-    }
-)
+class SceneVirtual(LedFxModel):  # one virtual's entry in a scene
+    type: str | None = None  # Required if action="activate"
+    # Required if action="activate" and preset not provided.
+    # Absent (None) differs from {}: a legacy entry without config is skipped.
+    config: dict[str, object] | None = None
+    action: str | None = None  # "ignore" | "stop" | "forceblack" | "activate"
+    # Alternative to config for action="activate"; requires type.
+    preset: str | None = None
 
-SceneSchema = vol.Schema(
-    {
-        vol.Optional("id"): str,
-        vol.Required("name"): str,
-        vol.Optional("virtuals"): {
-            str: VirtualActionSchema
-        },  # Map of virtual_id -> action config
-        vol.Optional("scene_image", default="Wallpaper"): str,
-        vol.Optional("scene_tags"): vol.Any(str, None),
-        vol.Optional("scene_puturl"): vol.Any(str, None),
-        vol.Optional("scene_payload"): vol.Any(str, None),
-        vol.Optional("scene_midiactivate"): vol.Any(dict, None),
-    }
-)
+
+class Scene(LedFxModel):
+    name: str
+    scene_image: str = "Wallpaper"
+    scene_tags: str | None = None
+    scene_puturl: str | None = None
+    scene_payload: str | None = None
+    scene_midiactivate: str | None = None
+    virtuals: dict[str, SceneVirtual] = {}  # Map of virtual_id -> action config
 ```
 
 **Validation rules:**

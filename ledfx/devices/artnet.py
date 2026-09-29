@@ -96,17 +96,13 @@ class ArtNetDevice(NetworkedDevice):
 
     def config_use(self, config):
         # get the preamble string, strip it and convert to np.arry of unint8
-        self.pre_amble = np.array(
-            extract_uint8_seq(config.get("pre_amble", "")), dtype=np.uint8
-        )
-        self.post_amble = np.array(
-            extract_uint8_seq(config.get("post_amble", "")), dtype=np.uint8
-        )
-        self.pixels_per_device = config.get("pixels_per_device", 0)
+        self.pre_amble = np.array(extract_uint8_seq(config.pre_amble), dtype=np.uint8)
+        self.post_amble = np.array(extract_uint8_seq(config.post_amble), dtype=np.uint8)
+        self.pixels_per_device = config.pixels_per_device
         # first byte in dmx is 1, but we are zero based
-        self.dmx_start_address = config.get("dmx_start_address", 1) - 1
-        self.rgb_mode = config.get("rgb_order")
-        self.white_mode = config.get("white_mode")
+        self.dmx_start_address = config.dmx_start_address - 1
+        self.rgb_mode = config.rgb_order
+        self.white_mode = config.white_mode
         self.packet_size = self.config.packet_size
 
     def activate(self):

@@ -40,6 +40,14 @@ def test_coerce_matches_voluptuous_truncation() -> None:
         Sample(count="abc")
 
 
+def test_coerce_overflow_is_a_validation_error() -> None:
+    # int(inf) and float(10**400) raise OverflowError, not ValueError.
+    with pytest.raises(ValidationError):
+        Sample(count=float("inf"))
+    with pytest.raises(ValidationError):
+        Sample(ratio=10**400)
+
+
 def test_defaults_are_validated_and_normalised() -> None:
     assert Sample().color == "#ff0000"
 

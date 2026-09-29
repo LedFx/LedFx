@@ -24,7 +24,7 @@ try:
 except ImportError:
     have_psutil = False
 
-import ledfx.config as config_helpers
+import ledfx.configuration.paths as config_helpers
 from ledfx.consts import PROJECT_VERSION
 from ledfx.core import LedFxCore
 from ledfx.utils import (

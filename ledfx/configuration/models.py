@@ -64,7 +64,7 @@ class LedFxModel(BaseModel):
 
 # No return annotation on purpose: pydantic's model_dump() type is kept, so the
 # legacy dict sites (audio, melbank, virtual) read values as untyped, as they did
-# voluptuous output. Layer 8 replaces those sites with typed models.
+# voluptuous output. Typing them needs those sites to read typed models instead.
 def validate_dict(model: type[BaseModel], data: object, *, runtime: bool = False):
     """Validate data (any mapping; anything else is a ValidationError) and
     return a plain dict shaped like voluptuous output."""
@@ -98,6 +98,7 @@ class AudioInputConfig(LedFxModel):
 class AudioAnalysisConfig(LedFxModel):
     model_config = ConfigDict(extra="allow")
 
+    # aubio's mcomb and fcomb pitch methods crash the process; never offer them.
     pitch_method: Literal["yinfft", "yin", "yinfast", "schmitt", "specacf"] = Field(
         "yinfft", description="Method to detect pitch"
     )

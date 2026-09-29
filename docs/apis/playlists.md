@@ -358,44 +358,47 @@ curl -X PUT http://localhost:8888/api/playlists \
 
 ---
 
-## Validation (Voluptuous sketch)
+## Validation (pydantic models)
+
+Stored playlists are validated by these models from `ledfx/configuration/models.py`. `CoercedFloat` accepts numbers and numeric strings. Models with `extra="allow"` keep unknown keys.
 
 ```python
-TimingJitter = vol.Schema(
-    {
-        vol.Required("enabled"): bool,
-        vol.Optional("factor_min", default=1.0): vol.All(float, vol.Range(min=0.0)),
-        vol.Optional("factor_max", default=1.0): vol.All(float, vol.Range(min=0.0)),
-    }
-)
+class PlaylistItem(LedFxModel):
+    scene_id: str
+    duration_ms: int | None = Field(None, ge=500)  # omitted when unset
 
-PlaylistTiming = vol.Schema({vol.Optional("jitter"): TimingJitter})
 
-PlaylistItem = vol.Schema(
-    {
-        vol.Required("scene_id"): str,
-        vol.Optional("duration_ms"): vol.All(int, vol.Range(min=500)),
-    }
-)
+class Jitter(LedFxModel):
+    model_config = ConfigDict(extra="allow")
 
-PlaylistMode = vol.Schema(vol.In(["sequence", "shuffle"]))
+    enabled: bool = False
+    factor_min: CoercedFloat = Field(1.0, ge=0.0)
+    factor_max: CoercedFloat = Field(1.0, ge=0.0)  # must be >= factor_min
 
-PlaylistSchema = vol.Schema(
-    {
-        # 'id' is optional when creating a playlist via the API. If omitted,
-        # the server will auto-generate (slug) an id from the provided "name".
-        # if present and the id exists, the playlist will be overwritten
-        vol.Optional("id"): str,
-        vol.Required("name"): str,
-        vol.Required("items"): [PlaylistItem],
-        vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
-        vol.Optional("mode", default="sequence"): PlaylistMode,
-        vol.Optional("timing"): PlaylistTiming,
-        vol.Optional("tags", default=list): [str],
-        vol.Optional("image"): vol.Any(str, None),
-    }
-)
+
+class PlaylistTiming(LedFxModel):
+    model_config = ConfigDict(extra="allow")
+
+    jitter: Jitter = Jitter()
+
+
+class Playlist(LedFxModel):
+    model_config = ConfigDict(extra="allow")
+
+    # 'id' is optional when creating a playlist via the API. If omitted,
+    # the server will auto-generate (slug) an id from the provided "name".
+    # if present and the id exists, the playlist will be overwritten
+    id: str
+    name: str
+    items: list[PlaylistItem]
+    default_duration_ms: int = Field(500, ge=500)
+    mode: Literal["sequence", "shuffle"] = "sequence"
+    timing: PlaylistTiming = PlaylistTiming()
+    tags: list[object] = []
+    image: str | None = "Wallpaper"
 ```
+
+The runtime `timing` override on `{"action": "start"}` is validated with `PlaylistTiming`.
 
 ---
 

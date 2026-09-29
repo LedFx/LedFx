@@ -6,11 +6,10 @@ import time
 from unittest.mock import MagicMock, patch
 
 import pytest
-import voluptuous as vol
 from PIL import Image
-from pydantic import ValidationError
+from pydantic import ValidationError, create_model
 
-from ledfx.configuration.plugin import vol_to_model
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.effects import DummyEffect
 from ledfx.events import Event
 from ledfx.nowplaying.models import (
@@ -593,12 +592,10 @@ class TestNowPlayingServiceEvents:
 # ------------------------------------------------------------------
 
 
-def _make_mock_schema(*keys):
-    """Create a voluptuous schema containing the given optional string keys."""
-    schema_dict = {}
-    for k in keys:
-        schema_dict[vol.Optional(k, default="")] = str
-    return vol.Schema(schema_dict)
+def _make_mock_model(*keys: str) -> type[PluginConfig]:
+    """A plugin config model with the given optional string keys."""
+    fields: dict[str, tuple[type[str], str]] = {k: (str, "") for k in keys}
+    return create_model("MockEffect", __base__=PluginConfig, **fields)  # pyrefly: ignore[no-matching-overload]
 
 
 def _make_mock_effect(schema_keys, hidden_keys=None, config=None):
@@ -607,7 +604,7 @@ def _make_mock_effect(schema_keys, hidden_keys=None, config=None):
     eff.HIDDEN_KEYS = hidden_keys or []
     eff._config = config or {}
 
-    mock_model = vol_to_model("MockEffect", _make_mock_schema(*schema_keys))
+    mock_model = _make_mock_model(*schema_keys)
     type(eff).config_model = MagicMock(return_value=mock_model)
     return eff
 

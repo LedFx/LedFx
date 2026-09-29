@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import MagicMock
 
 import pytest
 from pydantic import ValidationError
@@ -6,7 +7,7 @@ from pydantic import ValidationError
 from ledfx.configuration.lenient import Quarantine
 from ledfx.configuration.plugin import PluginConfig
 from ledfx.utils import BaseRegistry
-from tests.configuration.test_plugin_parity import _registry_classes
+from tests.configuration.model_schema import _registry_classes
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
 if TYPE_CHECKING:
@@ -71,8 +72,8 @@ def test_lenient_create_quarantines_bad_value_and_builds() -> None:
         lenient=quarantine,
     )
     assert effect is not None
-    assert effect.config["brightness"] == 1.0
-    assert effect.config["gradient_name"] == "UI only"
+    assert effect.config.brightness == 1.0
+    assert effect.config.as_dict()["gradient_name"] == "UI only"
     assert records == [("effects.rainbow.config.brightness", 7)]
 
 
@@ -111,7 +112,7 @@ def test_unavailable_serial_port_skips_device_and_keeps_stored_value() -> None:
 
 
 def test_lenient_repair_is_written_back_to_its_device_entry() -> None:
-    # spec §7: the repaired value replaces the bad one in the store entry, so the
+    # The repaired value replaces the bad one in the store entry, so the
     # next boot finds nothing to quarantine (the original stays in the jsonl).
     from ledfx.configuration.models import DeviceEntry
     from ledfx.devices import Device
@@ -204,7 +205,7 @@ def test_derived_values_are_mirrored_to_the_device_entry() -> None:
     )
     device = _dummy_device(ledfx)
     device._set_config_values(pixel_count=64)
-    assert device.config["pixel_count"] == 64
+    assert getattr(device.config, "pixel_count") == 64  # noqa: B009
     assert ledfx.config.devices[0].config["pixel_count"] == 64
     ledfx.config_store.request_save.assert_called_once()
 
@@ -230,14 +231,15 @@ def test_e131_derives_channel_count_and_universe_end() -> None:
         ledfx=ledfx,
     )
     assert device is not None
-    assert device.config["channel_count"] == 600
-    assert device.config["universe_end"] == 2  # 600 channels / 510 per universe
+    assert getattr(device.config, "channel_count") == 600  # noqa: B009
+    # 600 channels / 510 per universe
+    assert getattr(device.config, "universe_end") == 2  # noqa: B009
 
 
 def test_configs_match_accepts_a_running_effect_config() -> None:
     # A running effect's config is a PluginConfig; preset and scene "active"
     # checks compare it with stored dicts.
-    from ledfx.config import configs_match
+    from ledfx.configuration.presets import configs_match
     from ledfx.effects import Effects
 
     ledfx = fake_ledfx()
@@ -327,3 +329,17 @@ async def test_setting_an_invalid_effect_config_is_a_400() -> None:
     response = await EffectsEndpoint(ledfx).post("virtual", request)
     assert response.status == 400
     assert "brightness" in json.dumps(json.loads(response.text or ""))
+
+
+def test_toggle_flips_flags_on_a_real_effect() -> None:
+    from ledfx.effects import Effects
+    from ledfx.virtuals import apply_config_to_active_effects
+
+    ledfx = fake_ledfx()
+    ledfx.dev_enabled.return_value = False
+    effect = Effects(ledfx).create(ledfx=ledfx, type="rainbow", config={"flip": True})
+    assert effect is not None
+    virtual = MagicMock(id="v", active_effect=effect)
+    updates: dict[str, object] = {"flip": "toggle", "mirror": "toggle"}
+    assert apply_config_to_active_effects([virtual], updates) == (1, 0)
+    assert effect.config.flip is False and effect.config.mirror is True

@@ -11,7 +11,6 @@ import stat
 import tempfile
 import threading
 from collections.abc import AsyncIterator
-from typing import ClassVar
 
 from ledfx.configuration.lenient import lenient_validate
 from ledfx.configuration.migrations import (
@@ -83,8 +82,6 @@ def _on_loop_thread(loop: asyncio.AbstractEventLoop) -> bool:
 
 class ConfigStore:
     """Owns config.json: load -> migrate -> validate, and atomic saves."""
-
-    _registry: ClassVar[dict[str, "ConfigStore"]] = {}
 
     def __init__(self, config_dir: str, data: LedFxConfig) -> None:
         self.config_dir = config_dir
@@ -362,15 +359,3 @@ class ConfigStore:
     def virtual_entry(self, id: str) -> VirtualEntry | None:
         # ponytail: linear scan; index by id if virtual counts reach the thousands
         return next((e for e in self.data.virtuals if e.id == id), None)
-
-    # ---- registry for the legacy save_config shim -----------------------
-    @classmethod
-    def registered(cls, config_dir: str) -> "ConfigStore | None":
-        return cls._registry.get(os.path.abspath(config_dir))
-
-    def register(self) -> None:
-        ConfigStore._registry[os.path.abspath(self.config_dir)] = self
-
-    def unregister(self) -> None:
-        if ConfigStore._registry.get(os.path.abspath(self.config_dir)) is self:
-            del ConfigStore._registry[os.path.abspath(self.config_dir)]

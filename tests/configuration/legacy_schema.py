@@ -1,7 +1,7 @@
 """Render, normalise and compare the legacy GET /api/schema payload.
 
-The snapshot is captured once from the pre-overhaul code (layer 7, Task 7.1)
-and must never be regenerated: every later layer has to reproduce it.
+The snapshot was captured once from the voluptuous-based code and must never
+be regenerated: the pydantic models have to reproduce it exactly.
 """
 
 import asyncio

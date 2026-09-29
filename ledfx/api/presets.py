@@ -4,7 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import preset_category
+from ledfx.configuration.presets import preset_category
 from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_defaults, inject_missing_default_keys
 

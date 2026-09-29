@@ -91,9 +91,50 @@ existing config.json, resolving any possible config poisoning.
 Note the backup json file will be named according to the following
 format
 
-config_backup_YYYY-MM-DD_HH-MM-SS.json
+config_backup_<REASON>_<YYYYmmdd-HHMMSS>.json
+
+for example `config_backup_DELETE_20260929-174512.json`. A `_1`, `_2`
+suffix is added if two backups land in the same second. LedFx also
+makes backups on its own; the reason says why:
+
+-   `DECODE`: config.json was not valid JSON.
+-   `OSERROR`: config.json could not be read.
+-   `VERSION`: config.json was upgraded to a newer format.
+-   `DOWNGRADE`: config.json was written by a newer LedFx.
+-   `QUARANTINE`: invalid entries were removed from config.json.
+-   `IMPORT`: config.json was replaced by an imported config.
+-   `DELETE`: config.json was reset to defaults.
 
 It will be in the .ledfx directory along with the ledfx.log instances
+
+### Safe mode
+
+If config.json cannot be read, is not valid JSON, is not a LedFx config
+or cannot be upgraded, LedFx leaves the file untouched, starts on
+default settings and does not save any changes. It also stops saving
+(but keeps your settings) if it could not make a backup before changing
+the file. The reason is logged as an error and shown as
+`config_error` in `/api/info` (it is `null` when everything is fine).
+LedFx saves again after you import a config or reset the config from
+the settings page. To recover, fix or replace config.json with LedFx
+stopped, or import one of the backups.
+
+### Quarantined settings
+
+A single invalid value, such as a device without a type or an out of
+range effect setting, does not stop LedFx. The value is replaced by its
+default (or the entry is dropped), and the original is appended to
+`config.quarantine.jsonl` in the .ledfx directory, one JSON record per
+line:
+
+> ``` json
+> {"time": "...", "path": "devices.1", "value": {...}, "errors": ["..."]}
+> ```
+
+`path` says where the value was and `errors` says why it was rejected.
+To get a value back, copy `value` from the record, correct it, and
+re-enter it in the UI, or put it back at `path` in config.json while
+LedFx is stopped.
 
 Please note: This is a dotfile naming convention and may be hidden by
 default in your file manager.

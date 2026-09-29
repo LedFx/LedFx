@@ -389,19 +389,26 @@ Response:
 Effects can access gradients through the `gradient` config parameter:
 
 ```python
+from pydantic import Field
+
+from ledfx.configuration.fields import Gradient
+from ledfx.configuration.plugin import TypedConfig
+from ledfx.effects.gradient import GradientEffect
+
+
 class MyEffect(GradientEffect):
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional("gradient", default="Rainbow"): validate_gradient,
-        }
-    )
+    class Config(GradientEffect.Config):
+        gradient: Gradient = Field("Rainbow", description="Color gradient to display")
+
+    config = TypedConfig(Config)
 
     def config_updated(self, config):
-        # Gradient string can come from:
+        # self.config.gradient can come from:
         # 1. Predefined gradients ("Rainbow", "Sunset", etc.)
         # 2. Custom gradient strings
         # 3. Image-extracted gradients (led_safe/led_punchy/led_max)
         super().config_updated(config)
+        gradient = self.config.gradient
 ```
 
 **Frontend sets gradient from image**:

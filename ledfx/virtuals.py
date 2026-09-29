@@ -4,9 +4,7 @@ import time
 from functools import cached_property
 
 import numpy as np
-import voluptuous as vol
 
-from ledfx.config import preset_config
 from ledfx.configuration.fields import EnumSource, register_enum_source
 from ledfx.configuration.models import (
     EffectEntry,
@@ -14,6 +12,7 @@ from ledfx.configuration.models import (
     VirtualEntry,
     validate_dict,
 )
+from ledfx.configuration.presets import preset_config
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
@@ -118,13 +117,6 @@ class Virtual:
 
         # Initialize transitions - will be resized in _reactivate_effect() when effect activates
         self.transitions = Transitions(0)
-
-        # list of devices in order of their mapping on the virtual
-        # [[id, start, end, invert]...]
-        # not a very good schema, but vol seems a bit handicapped in terms of lists.
-        # this won't necessarily ensure perfectly validated segments, but it at
-        # least gives an idea of the format
-        self.SEGMENTS_SCHEMA = vol.Schema([self.validate_segment])
 
     def __del__(self):
         self.active = False
@@ -256,7 +248,7 @@ class Virtual:
         """
         with self.lock:
             segments_config = [list(item) for item in segments_config]
-            _segments = self.SEGMENTS_SCHEMA(segments_config)
+            _segments = [self.validate_segment(s) for s in segments_config]
 
             _pixel_count = self.pixel_count
 
@@ -1459,12 +1451,6 @@ class Virtuals:
             if "segments" in entry.model_fields_set:
                 try:
                     new_virtual.update_segments(entry.segments)
-                except vol.MultipleInvalid:
-                    _LOGGER.warning(
-                        "Virtual %s: segment schema changed, not restoring segment",
-                        entry.id,
-                    )
-                    continue
                 except (RuntimeError, ValueError) as e:
                     _LOGGER.warning(
                         "Virtual %s: failed to restore segments: %s",
@@ -1702,21 +1688,6 @@ class Virtuals:
         _LOGGER.info("Active Devices: %s", active_devices)
 
 
-def virtual_id_validator(virtual_id: str) -> str:
-    """
-    Support an empty validator function for static voluptuous validation.
-    Allows any string value in the schema, as substantiated before virtuals
-    are created
-
-    Args:
-        virtual_id (str): the virtual ID to validate
-
-    Returns:
-        str: the validated virtual ID
-    """
-    return virtual_id
-
-
 def apply_config_to_active_effects(
     virtuals,
     config_updates: dict,
@@ -1764,7 +1735,7 @@ def apply_config_to_active_effects(
 
             # Handle toggle for boolean keys
             if value == "toggle" and key in ("flip", "mirror"):
-                current_value = getattr(eff, "_config", {}).get(key, False)
+                current_value = getattr(eff.config, key, False)
                 effect_config_update[key] = not current_value
             else:
                 effect_config_update[key] = value

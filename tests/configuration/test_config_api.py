@@ -125,6 +125,17 @@ async def test_scene_rename_reports_the_old_name() -> None:
     assert ledfx.config.scenes["s1"].name == "New"
 
 
+async def test_post_import_rejects_a_non_object_body() -> None:
+    endpoint, ledfx = _endpoint()
+    ledfx.config_store.replace = AsyncMock()
+    for body in ([1, 2], "config", None):
+        response = await endpoint.post(_request("POST", body))
+        payload = json.loads(response.text or "")
+        assert response.status == 200 and payload["status"] == "failed"
+        assert "not a LedFx config" in payload["payload"]["reason"]
+    ledfx.config_store.replace.assert_not_called()
+
+
 def _spotify_endpoint() -> tuple[SpotifyEndpoint, Spotify, MagicMock]:
     ledfx = fake_ledfx(
         {

@@ -20,14 +20,13 @@ from ledfx.color import (
     validate_color,
     validate_gradient,
 )
-from ledfx.config import (
+from ledfx.configuration.models import LedFxConfig
+from ledfx.configuration.paths import (
     VISUALISATION_CONFIG_KEYS,
     Transmission,
-    create_backup,
     get_ssl_certs,
 )
-from ledfx.configuration.models import LedFxConfig
-from ledfx.configuration.store import ConfigStore
+from ledfx.configuration.store import ConfigStore, backup_config_file
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -96,10 +95,9 @@ class LedFxCore:
 
         if clear_config:
             _LOGGER.warning("Clearing LedFx config.")
-            create_backup(config_dir, "DELETE")
+            backup_config_file(config_dir, "DELETE", move=True)
 
         self.config_store = ConfigStore.load(config_dir)
-        self.config_store.register()
         if not self.config.instance_id:
             self.config.instance_id = str(uuid.uuid4())
         self.hosts = get_sorted_physical_ips()
@@ -666,9 +664,7 @@ class LedFxCore:
             self.exit_code = 1
 
         finally:
-            # Write any debounced change, even if shutdown above failed. The
-            # store stays registered so late legacy save_config calls still honour
-            # its safe-mode block.
+            # Write any debounced change, even if shutdown above failed.
             try:
                 self.config_store.flush_sync()
             except Exception:  # must not skip loop.stop() below

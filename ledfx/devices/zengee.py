@@ -31,7 +31,7 @@ class ZenggeDevice(NetworkedDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "Zengge/MagicHome/FluxLED"
-        self.bulb = flux_led.WifiLedBulb(config["ip_address"])
+        self.bulb = flux_led.WifiLedBulb(self.config.ip_address)
 
     def activate(self):
         super().activate()

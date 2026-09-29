@@ -12,8 +12,6 @@ import copy
 import random
 import time
 
-import voluptuous as vol
-
 from ledfx.configuration.models import Playlist
 from ledfx.events import (
     PlaylistAdvancedEvent,
@@ -23,86 +21,6 @@ from ledfx.events import (
     PlaylistStoppedEvent,
 )
 from ledfx.utils import generate_id
-
-PlaylistItem = vol.Schema(
-    {
-        vol.Required("scene_id", description="ID of the scene to activate"): str,
-        vol.Optional(
-            "duration_ms",
-            description="Duration in milliseconds to display this item",
-        ): vol.All(int, vol.Range(min=500)),
-    }
-)
-
-
-def _validate_jitter_bounds(j):
-    try:
-        fmin = float(j.get("factor_min", 1.0))
-        fmax = float(j.get("factor_max", 1.0))
-    except Exception:  # noqa: BLE001
-        raise vol.Invalid("jitter.factor_min/factor_max must be numbers")
-    if fmax < fmin:
-        raise vol.Invalid("jitter.factor_max must be >= factor_min")
-    return j
-
-
-JitterSchema = vol.All(
-    vol.Schema(
-        {
-            vol.Optional("enabled", default=False): bool,
-            vol.Optional("factor_min", default=1.0): vol.All(
-                vol.Coerce(float), vol.Range(min=0.0)
-            ),
-            vol.Optional("factor_max", default=1.0): vol.All(
-                vol.Coerce(float), vol.Range(min=0.0)
-            ),
-        },
-        extra=vol.ALLOW_EXTRA,
-    ),
-    _validate_jitter_bounds,
-)
-
-TimingSchema = vol.Schema(
-    {vol.Optional("jitter", default={}): JitterSchema}, extra=vol.ALLOW_EXTRA
-)
-
-
-PlaylistSchema = vol.Schema(
-    {
-        vol.Required("id", description="Unique playlist identifier"): str,
-        vol.Required("name", description="Human readable name for the playlist"): str,
-        vol.Required(
-            "items",
-            description="Ordered list of items (scene_id + optional duration). Empty list = dynamic 'all scenes' resolved at start time.",
-        ): [PlaylistItem],
-        vol.Optional(
-            "default_duration_ms",
-            description="Default duration (ms) applied to items that omit duration",
-            default=500,
-        ): vol.All(int, vol.Range(min=500)),
-        vol.Optional(
-            "mode",
-            description="Playback mode: 'sequence' or 'shuffle'",
-            default="sequence",
-        ): vol.In(["sequence", "shuffle"]),
-        vol.Optional(
-            "timing",
-            description="Advanced timing settings",
-            default={},
-        ): TimingSchema,
-        vol.Optional(
-            "tags",
-            description="Tags for filtering or grouping playlists",
-            default=list,
-        ): list,
-        vol.Optional(
-            "image",
-            description="Image or icon to display for the playlist",
-            default="Wallpaper",
-        ): vol.Any(str, None),
-    },
-    extra=vol.ALLOW_EXTRA,
-)
 
 
 class PlaylistManager:

@@ -8,14 +8,14 @@ import time
 from unittest.mock import MagicMock
 
 import pytest
-import voluptuous as vol
+from pydantic import ValidationError
 
 from ledfx.api.websocket import (
-    BROADCAST_SCHEMA,
     BROADCAST_TYPES,
     MAX_PAYLOAD_SIZE,
     TARGET_MODES,
     VALID_CLIENT_TYPES,
+    BroadcastData,
     WebsocketConnection,
 )
 from ledfx.events import ClientBroadcastEvent, ClientsUpdatedEvent
@@ -816,53 +816,53 @@ class TestPhase3Broadcasting:
 
 
 class TestSchemaValidation:
-    """Test Voluptuous schema validation"""
+    """Test broadcast message validation"""
 
     def test_broadcast_schema_valid(self):
-        """Test BROADCAST_SCHEMA accepts valid data"""
+        """Test BroadcastData accepts valid data"""
         valid_data = {
             "broadcast_type": "scene_sync",
             "target": {"mode": "all"},
             "payload": {"scene_id": "test"},
         }
 
-        result = BROADCAST_SCHEMA(valid_data)
-        assert result["broadcast_type"] == "scene_sync"
+        result = BroadcastData.model_validate(valid_data)
+        assert result.broadcast_type == "scene_sync"
 
     def test_broadcast_schema_missing_required(self):
-        """Test BROADCAST_SCHEMA rejects missing required fields"""
+        """Test BroadcastData rejects missing required fields"""
         invalid_data = {
             "broadcast_type": "scene_sync",
             # Missing 'target' and 'payload'
         }
 
-        with pytest.raises(vol.Invalid):
-            BROADCAST_SCHEMA(invalid_data)
+        with pytest.raises(ValidationError):
+            BroadcastData.model_validate(invalid_data)
 
     def test_broadcast_schema_invalid_broadcast_type(self):
-        """Test BROADCAST_SCHEMA rejects invalid broadcast_type"""
+        """Test BroadcastData rejects invalid broadcast_type"""
         invalid_data = {
             "broadcast_type": "invalid_type",
             "target": {"mode": "all"},
             "payload": {},
         }
 
-        with pytest.raises(vol.Invalid):
-            BROADCAST_SCHEMA(invalid_data)
+        with pytest.raises(ValidationError):
+            BroadcastData.model_validate(invalid_data)
 
     def test_broadcast_schema_invalid_target_mode(self):
-        """Test BROADCAST_SCHEMA rejects invalid target mode"""
+        """Test BroadcastData rejects invalid target mode"""
         invalid_data = {
             "broadcast_type": "custom",
             "target": {"mode": "invalid_mode"},
             "payload": {},
         }
 
-        with pytest.raises(vol.Invalid):
-            BROADCAST_SCHEMA(invalid_data)
+        with pytest.raises(ValidationError):
+            BroadcastData.model_validate(invalid_data)
 
     def test_broadcast_schema_prevents_extra_fields(self):
-        """Test BROADCAST_SCHEMA rejects extra fields (PREVENT_EXTRA)"""
+        """Test BroadcastData rejects extra fields (PREVENT_EXTRA)"""
         invalid_data = {
             "broadcast_type": "custom",
             "target": {"mode": "all"},
@@ -870,8 +870,8 @@ class TestSchemaValidation:
             "sender_id": "fake-uuid",  # Should be rejected
         }
 
-        with pytest.raises(vol.Invalid):
-            BROADCAST_SCHEMA(invalid_data)
+        with pytest.raises(ValidationError):
+            BroadcastData.model_validate(invalid_data)
 
 
 class TestConstants:

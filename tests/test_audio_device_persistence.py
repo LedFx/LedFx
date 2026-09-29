@@ -492,7 +492,7 @@ class TestUpdateDeviceConfig:
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
     def test_update_device_config_saves_to_disk(self, mock_devices):
-        """#21: With _ledfx attached — save_config is called."""
+        """#21: With _ledfx attached — a config save is requested."""
         ledfx = make_mock_ledfx()
         ais = make_ais(config={"audio_device": 0, "audio_device_name": ""}, ledfx=ledfx)
         ais._update_device_config(17)

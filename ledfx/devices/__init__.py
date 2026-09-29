@@ -90,7 +90,7 @@ class Device(BaseRegistry):
             # artnet
             old_config = self._config
             if old_config is not None:
-                config = {**old_config, **config}
+                config = old_config.as_dict() | config
 
             validated_config = type(self).config_model().model_validate(config)
             self._config = validated_config
@@ -605,7 +605,7 @@ class NetworkedDevice(Device):
     def update_config(self, config):
         old_config = self._config
         old_destination = getattr(self, "_destination", None)
-        old_ip = (old_config or {}).get("ip_address")
+        old_ip = getattr(old_config, "ip_address", None)
         if config.get("ip_address", old_ip) != old_ip:
             # Reactivation during update_config re-resolves the new address.
             self._destination = None
@@ -822,9 +822,10 @@ class Devices(RegistryLoader):
                 return
 
             for existing_device in self._ledfx.devices.values():
-                if "ip_address" in existing_device.config and (
-                    existing_device.config["ip_address"] == device_ip
-                    or existing_device.config["ip_address"] == resolved_dest
+                existing_ip = getattr(existing_device.config, "ip_address", None)
+                if existing_ip is not None and (
+                    existing_ip == device_ip
+                    or existing_ip == resolved_dest
                     or resolved_dest == getattr(existing_device, "_destination", None)
                 ):
                     self.run_device_ip_tests(
@@ -958,7 +959,7 @@ class Devices(RegistryLoader):
             if (
                 device.type == "wled"
                 and device.pixel_count > 480
-                and device.config["sync_mode"] != mode
+                and device.config.sync_mode != mode
             ):
                 device.wled.set_sync_mode(mode)
                 await device.wled.flush_sync_settings()
@@ -1040,7 +1041,7 @@ class Devices(RegistryLoader):
             "e131",
             "artnet",
         ]:
-            if new_config["universe"] == pre_device.config["universe"]:
+            if new_config["universe"] == pre_device.config.universe:
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP and port {new_config['port']} and starting universe with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
@@ -1052,7 +1053,7 @@ class Devices(RegistryLoader):
         Check if the new device is openrgb_id separated from the pre-existing device
         """
         if new_type == "openrgb" and pre_device.type == "openrgb":
-            if new_config["openrgb_id"] == pre_device.config["openrgb_id"]:
+            if new_config["openrgb_id"] == pre_device.config.openrgb_id:
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP and OpenRGB ID with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
@@ -1065,9 +1066,9 @@ class Devices(RegistryLoader):
         """
         if new_type == "osc" and pre_device.type == "osc":
             if (
-                new_config["port"] == pre_device.config["port"]
-                and new_config["path"] == pre_device.config["path"]
-                and new_config["starting_addr"] == pre_device.config["starting_addr"]
+                new_config["port"] == pre_device.config.port
+                and new_config["path"] == pre_device.config.path
+                and new_config["starting_addr"] == pre_device.config.starting_addr
             ):
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP, Port, Path and starting address with existing device {pre_device.name}"
                 _LOGGER.info(msg)
@@ -1080,9 +1081,11 @@ class Devices(RegistryLoader):
         Check if the new device is DDP destination_id separated from the pre-existing device
         """
         if new_type == "ddp" and pre_device.type == "ddp":
-            if new_config["port"] == pre_device.config["port"] and new_config.get(
-                "destination_id", 1
-            ) == pre_device.config.get("destination_id", 1):
+            if (
+                new_config["port"] == pre_device.config.port
+                and new_config.get("destination_id", 1)
+                == pre_device.config.destination_id
+            ):
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP, port {new_config['port']} and destination_id with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
@@ -1094,7 +1097,7 @@ class Devices(RegistryLoader):
         Check if the new Hue device is group_name separated from the pre-existing Hue device
         """
         if new_type == "hue" and pre_device.type == "hue":
-            if new_config["group_name"] == pre_device.config["group_name"]:
+            if new_config["group_name"] == pre_device.config.group_name:
                 msg = f"Ignoring {new_config['ip_address']}: Shares IP and group_name with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
@@ -1114,8 +1117,8 @@ class Devices(RegistryLoader):
             pre_port = DEFAULT_PORT
         if "port" in new_config:
             new_port = new_config["port"]
-        if "port" in pre_device.config:
-            pre_port = pre_device.config["port"]
+        if getattr(pre_device.config, "port", None) is not None:
+            pre_port = pre_device.config.port
 
         if new_port is not None and pre_port is not None:
             if new_port == pre_port:

@@ -106,8 +106,10 @@ class ConfigEndpoint(RestEndpoint):
             raw = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
+        if not isinstance(raw, dict):
+            return await self.invalid_request("Imported config is not a LedFx config.")
         # Lenient validation would drop a newer release's fields yet report success.
-        if isinstance(raw, dict) and schema_version_of(raw) > CURRENT_SCHEMA_VERSION:
+        if schema_version_of(raw) > CURRENT_SCHEMA_VERSION:
             return await self.invalid_request(
                 "This config is from a newer version of LedFx; update LedFx to import it."
             )

@@ -834,41 +834,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/api/utils.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`createRegistrySchema` is missing an annotation for parameter `registry`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/utils.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`convertToJsonSchema` is missing an annotation for parameter `schema`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/api/utils.py",
-      "name": "bad-assignment",
-      "concise_description": "`list[Unknown]` is not assignable to dict key `required` with type `dict[Unknown, Unknown]`",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/api/utils.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/api/utils.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Container | Iterable[Unknown]` is not assignable to parameter `iterable` with type `Iterable[@_]` in function `list.__init__`",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/api/virtual.py",
       "name": "implicit-any-parameter",
@@ -1846,146 +1811,6 @@
       "path": "ledfx/color.py",
       "name": "not-iterable",
       "concise_description": "Type `None` is not iterable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`validate_ipv4_address` is missing an annotation for parameter `value`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/config.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `None` is not assignable to declared return type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/config.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `None` is not assignable to declared return type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get_ssl_certs` is missing an annotation for parameter `config_dir`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `tuple`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/config.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `None` is not assignable to declared return type `tuple[Unknown, ...]`",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/config.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `None` is not assignable to declared return type `tuple[Unknown, ...]`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/config.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `None` is not assignable to declared return type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/config.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `None` is not assignable to declared return type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`migrate_config` is missing an annotation for parameter `old_config`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`filter_config_for_comparison` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`configs_match` is missing an annotation for parameter `config1`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`configs_match` is missing an annotation for parameter `config2`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`find_matching_preset` is missing an annotation for parameter `ledfx_presets`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`find_matching_preset` is missing an annotation for parameter `user_presets`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`find_matching_preset` is missing an annotation for parameter `ledfx_effects`",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`find_matching_preset` is missing an annotation for parameter `effect_type`",
-      "severity": "error"
-    },
-    {
-      "column": 62,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`find_matching_preset` is missing an annotation for parameter `effect_config`",
-      "severity": "error"
-    },
-    {
-      "column": 51,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
       "severity": "error"
     },
     {
@@ -15212,13 +15037,6 @@
       "severity": "error"
     },
     {
-      "column": 29,
-      "path": "ledfx/playlists.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_validate_jitter_bounds` is missing an annotation for parameter `j`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/playlists.py",
       "name": "implicit-any-parameter",
@@ -16791,27 +16609,6 @@
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
       "concise_description": "`schema` is missing an annotation for parameter `extra`",
-      "severity": "error"
-    },
-    {
-      "column": 44,
-      "path": "ledfx/utils.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 57,
-      "path": "ledfx/utils.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
-      "column": 44,
-      "path": "ledfx/utils.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `tuple` has no attribute `schema`",
       "severity": "error"
     },
     {

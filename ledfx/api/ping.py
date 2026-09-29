@@ -30,7 +30,7 @@ class InfoEndpoint(RestEndpoint):
         ping_target = await resolve_destination(
             self._ledfx.loop,
             self._ledfx.thread_executor,
-            device.config["ip_address"],
+            getattr(device.config, "ip_address"),  # noqa: B009 - networked devices only
         )
         ping = await async_ping(
             address=ping_target,

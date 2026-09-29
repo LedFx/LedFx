@@ -47,7 +47,10 @@ class FindLifxEndpoint(RestEndpoint):
     def _find_existing_lifx_by_serial(self, serial: str):
         """Check if a LIFX device already exists by serial number."""
         for existing in self._ledfx.devices.values():
-            if existing.type == "lifx" and existing.config.get("serial") == serial:
+            if (
+                existing.type == "lifx"
+                and getattr(existing.config, "serial", None) == serial
+            ):
                 return existing
         return None
 

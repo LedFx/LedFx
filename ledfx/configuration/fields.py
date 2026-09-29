@@ -76,12 +76,15 @@ class OneOf:
 
 
 def coerce(target: Callable[[object], object]) -> BeforeValidator:
-    """vol.Coerce(target): call target; TypeError/ValueError become invalid."""
+    """vol.Coerce(target): call target; TypeError/ValueError become invalid.
+
+    OverflowError too (int(inf), float(10**400)), so it is a validation error.
+    """
 
     def run(value: object) -> object:
         try:
             return target(value)
-        except (TypeError, ValueError) as err:
+        except (TypeError, ValueError, OverflowError) as err:
             raise ValueError(str(err)) from err
 
     return BeforeValidator(run)
