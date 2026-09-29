@@ -11,6 +11,8 @@ from ledfx.api import RestEndpoint
 from ledfx.api.colors import ColorEndpoint
 from ledfx.api.colors_delete import ColorDeleteEndpoint
 from ledfx.api.device import DeviceEndpoint
+from ledfx.api.power import MAX_POWER_TIMEOUT
+from ledfx.api.power import InfoEndpoint as PowerEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
 from ledfx.api.presets import PresetsEndpoint
 from ledfx.api.virtual_tools import VirtualToolsEndpoint
@@ -287,3 +289,28 @@ async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
     assert status == 200
     assert _reason(reply) == "Invalid color: notacolor"
     virtual.force_frame.assert_not_called()
+
+
+@pytest.mark.parametrize("timeout", ["5", True, -1, 1.5, MAX_POWER_TIMEOUT + 1])
+async def test_power_rejects_a_bad_timeout(timeout: object) -> None:
+    ledfx = fake_ledfx()
+    status, reply = await _call(
+        PowerEndpoint(ledfx), "POST", {"action": "restart", "timeout": timeout}
+    )
+    assert status == 200
+    assert _reason(reply) == (
+        f"Timeout must be a whole number of seconds from 0 to {MAX_POWER_TIMEOUT}"
+    )
+    ledfx.loop.call_later.assert_not_called()
+    ledfx.stop.assert_not_called()
+
+
+async def test_power_answers_at_once_and_stops_later() -> None:
+    ledfx = fake_ledfx()
+    status, reply = await asyncio.wait_for(
+        _call(PowerEndpoint(ledfx), "POST", {"action": "restart", "timeout": 5}),
+        timeout=1,
+    )
+    assert (status, reply) == (200, {"status": "success"})
+    ledfx.loop.call_later.assert_called_once_with(5, ledfx.stop, 4)
+    ledfx.stop.assert_not_called()
