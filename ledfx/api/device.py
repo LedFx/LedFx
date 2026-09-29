@@ -27,7 +27,7 @@ class DeviceEndpoint(RestEndpoint):
         """
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            return await self.invalid_request("{device} was not found")
+            return await self.invalid_request(f"Device {device_id} was not found")
 
         response = device.config
         return await self.bare_request_success(response)
