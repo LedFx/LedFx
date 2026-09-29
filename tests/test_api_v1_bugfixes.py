@@ -20,6 +20,7 @@ from ledfx.api.device import DeviceEndpoint
 from ledfx.api.find_lifx import FindLifxEndpoint
 from ledfx.api.find_openrgb import FindOpenRGBDevicesEndpoint
 from ledfx.api.get_gif_frames import GetGifFramesEndpoint
+from ledfx.api.integration_qlc import QLCEndpoint
 from ledfx.api.integration_spotify import QLCEndpoint as SpotifyEndpoint
 from ledfx.api.power import MAX_POWER_TIMEOUT
 from ledfx.api.power import InfoEndpoint as PowerEndpoint
@@ -666,3 +667,19 @@ async def test_spotify_post_refuses_a_trigger_another_scene_owns() -> None:
     )
     assert spotify.triggers == {"s1": {"abc-1000": ["abc", "Song", 1000]}}
     ledfx.config_store.request_save.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "kind"), [(SpotifyEndpoint, "spotify"), (QLCEndpoint, "qlc")]
+)
+@pytest.mark.parametrize("method", ["GET", "PUT", "POST", "DELETE"])
+async def test_unknown_integration_is_named_in_the_reason(
+    endpoint: type[RestEndpoint], kind: str, method: str
+) -> None:
+    ledfx = fake_ledfx()
+    ledfx.integrations.get.return_value = None
+    status, reply = await _call(endpoint(ledfx), method, {}, integration_id="nope")
+    assert (status, _reason(reply)) == (
+        200,
+        f"nope was not found or was not type {kind}",
+    )

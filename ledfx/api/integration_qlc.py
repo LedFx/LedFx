@@ -31,7 +31,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type qlc"
+                f"{integration_id} was not found or was not type qlc"
             )
 
         response = {}
@@ -81,7 +81,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type qlc"
+                f"{integration_id} was not found or was not type qlc"
             )
 
         try:
@@ -134,7 +134,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type qlc"
+                f"{integration_id} was not found or was not type qlc"
             )
 
         try:
@@ -186,7 +186,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "qlc"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type qlc"
+                f"{integration_id} was not found or was not type qlc"
             )
 
         try:

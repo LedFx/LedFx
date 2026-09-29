@@ -57,7 +57,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type spotify"
+                f"{integration_id} was not found or was not type spotify"
             )
 
         response = integration.get_triggers()
@@ -86,7 +86,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type spotify"
+                f"{integration_id} was not found or was not type spotify"
             )
 
         try:
@@ -125,7 +125,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type spotify"
+                f"{integration_id} was not found or was not type spotify"
             )
 
         try:
@@ -163,7 +163,7 @@ class QLCEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "spotify"):
             return await self.invalid_request(
-                f"{integration} was not found or was not type spotify"
+                f"{integration_id} was not found or was not type spotify"
             )
 
         try:
