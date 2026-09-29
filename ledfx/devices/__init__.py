@@ -13,6 +13,7 @@ import voluptuous as vol
 from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 from ledfx.config import save_config
+from ledfx.configuration.fields import fps_validator
 from ledfx.events import (
     DeviceCreatedEvent,
     DevicesUpdatedEvent,
@@ -34,15 +35,6 @@ from ledfx.utils import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def fps_validator(value):
-    if not isinstance(value, int):
-        raise ValueError("fps must be an integer")  # noqa: TRY004
-    return next(
-        (f for f in AVAILABLE_FPS if f >= value),
-        list(AVAILABLE_FPS.keys())[-1],
-    )
 
 
 @BaseRegistry.no_registration

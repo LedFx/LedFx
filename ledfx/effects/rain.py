@@ -61,7 +61,7 @@ class RainAudioEffect(AudioReactiveEffect):
             vol.Optional(
                 "raindrop_animation",
                 description="Droplet animation style",
-                default=DROPLET_NAMES[0],
+                default="Ripple",
             ): vol.In(DROPLET_NAMES),
         }
     )

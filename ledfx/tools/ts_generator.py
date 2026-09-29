@@ -452,7 +452,6 @@ def generate_typescript_types() -> str:
         _LOGGER.info("Attempting to access registries via class methods...")
         from ledfx.devices import Device
         from ledfx.effects import Effect
-        from ledfx.virtuals import Virtual
 
         _LOGGER.info("Imported managers to potentially trigger registry loading.")
         if hasattr(Device, "registry") and callable(Device.registry):
@@ -542,24 +541,6 @@ def generate_typescript_types() -> str:
     base_device_name_to_extend_final = (
         base_device_config_interface_name if base_device_schema_object else None
     )
-
-    # --- 1. Generate Virtual Config ---
-    virtual_config_interface_name = "VirtualConfig"
-    try:
-        if hasattr(Virtual, "CONFIG_SCHEMA") and isinstance(
-            Virtual.CONFIG_SCHEMA, vol.Schema
-        ):
-            output_ts_string += "/**\n * Configuration for Virtual Strips/Segments\n * @category Configs\n */\n"
-            output_ts_string += generate_ts_interface_from_voluptuous(
-                virtual_config_interface_name, Virtual.CONFIG_SCHEMA
-            )
-            output_ts_string += "\n\n"
-        else:
-            _LOGGER.error("Virtual.CONFIG_SCHEMA not found/invalid.")
-            output_ts_string += f"// Virtual config schema not found\nexport interface {virtual_config_interface_name} {{ [key: string]: any; }}\n\n"
-    except Exception as e:  # noqa: BLE001
-        _LOGGER.error("Failed VirtualConfig: %s", e)
-        output_ts_string += f"// Failed VirtualConfig\nexport interface {virtual_config_interface_name} {{ [key: string]: any; }}\n\n"
 
     # --- 2. Generate Specific Device Configs & DeviceType Union ---
     all_device_config_interface_names = []
@@ -833,11 +814,7 @@ def generate_typescript_types() -> str:
     output_ts_string += "}\n\n"
 
     # --- 6. Generate API Response specific types ---
-    virtual_config_name_to_use = (
-        virtual_config_interface_name
-        if "Virtual" in locals() and hasattr(Virtual, "CONFIG_SCHEMA")
-        else "Record<string, any>"
-    )
+    virtual_config_name_to_use = "Record<string, any>"
     device_union_name_to_use = (
         device_config_union_name
         if all_device_config_interface_names

@@ -6,9 +6,16 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS, convertToJsonSchema
-from ledfx.config import CORE_CONFIG_SCHEMA, WLED_CONFIG_SCHEMA
-from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
-from ledfx.effects.melbank import Melbank, Melbanks
+from ledfx.config import CORE_CONFIG_SCHEMA
+from ledfx.configuration.models import (
+    AudioAnalysisConfig,
+    AudioInputConfig,
+    MelbankConfig,
+    MelbanksConfig,
+    VirtualConfig,
+    WledPreferences,
+)
+from ledfx.configuration.schema import legacy_schema
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -112,25 +119,16 @@ class SchemaEndpoint(RestEndpoint):
                     }
 
             elif schema == "virtuals":
-                # Get virtuals schema
-                response["virtuals"] = {
-                    "schema": convertToJsonSchema(self._ledfx.virtuals.schema()),
-                }
+                response["virtuals"] = {"schema": legacy_schema(VirtualConfig)}
 
             elif schema == "audio":
-                # Get audio schema
-                audio_input_schema = convertToJsonSchema(
-                    AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
-                )
-                audio_analysis_schema = convertToJsonSchema(
-                    AudioAnalysisSource.CONFIG_SCHEMA
-                )
+                audio_input_schema = legacy_schema(AudioInputConfig)
+                audio_analysis_schema = legacy_schema(AudioAnalysisConfig)
                 # drop the tempo method from the audio input schema
                 # TODO: figure out a better way to handle this in the frontend
                 # permitted_keys isn't working
                 del audio_analysis_schema["properties"]["tempo_method"]
                 merged_schema = {**audio_input_schema, **audio_analysis_schema}
-
                 for key in audio_input_schema.keys() & audio_analysis_schema.keys():
                     if isinstance(audio_input_schema[key], dict) and isinstance(
                         audio_analysis_schema[key], dict
@@ -139,7 +137,6 @@ class SchemaEndpoint(RestEndpoint):
                             **audio_input_schema[key],
                             **audio_analysis_schema[key],
                         }
-
                 response["audio"] = {
                     "schema": {
                         **merged_schema,
@@ -147,30 +144,25 @@ class SchemaEndpoint(RestEndpoint):
                     }
                 }
             elif schema == "melbanks":
-                # Get melbanks schema
                 response["melbanks"] = {
                     "schema": {
-                        **convertToJsonSchema(
-                            Melbanks.CONFIG_SCHEMA,
-                        ),
+                        **legacy_schema(MelbanksConfig),
                         "permitted_keys": PERMITTED_KEYS["melbanks"],
-                    },
+                    }
                 }
             elif schema == "melbank_collection":
-                # Get melbank collection schema
                 response["melbank_collection"] = {
                     "schema": {
-                        **convertToJsonSchema(Melbank.CONFIG_SCHEMA),
+                        **legacy_schema(MelbankConfig),
                         "permitted_keys": PERMITTED_KEYS["melbank_collection"],
-                    },
+                    }
                 }
             elif schema == "wled_preferences":
-                # Get wled schema
                 response["wled_preferences"] = {
                     "schema": {
-                        **convertToJsonSchema(WLED_CONFIG_SCHEMA),
+                        **legacy_schema(WledPreferences),
                         "permitted_keys": PERMITTED_KEYS["wled_preferences"],
-                    },
+                    }
                 }
 
             elif schema == "core":

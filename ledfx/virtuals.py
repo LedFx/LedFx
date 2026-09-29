@@ -7,11 +7,12 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.config import save_config
+from ledfx.configuration.fields import EnumSource, register_enum_source
+from ledfx.configuration.models import VirtualConfig, validate_dict
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
     MAX_FREQ,
-    MIN_FREQ,
     FrequencyRange,
 )
 from ledfx.effects.oneshots.oneshot import Oneshot
@@ -31,107 +32,6 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Virtual:
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required("name", description="Friendly name for the device"): str,
-            vol.Required(
-                "mapping",
-                description="Span: Effect spans all segments. Copy: Effect copied on each segment",
-                default="span",
-            ): vol.In(["span", "copy"]),
-            vol.Optional(
-                "complex_segments",
-                description="Use complex segment mapping mode for performance",
-                default=False,
-            ): bool,
-            vol.Required(
-                "grouping",
-                description="Number of physical pixels to combine into larger virtual pixel groups",
-                default=1,
-            ): vol.All(int, vol.Range(min=0)),
-            vol.Optional(
-                "icon_name",
-                description="Icon for the device*",
-                default="mdi:led-strip-variant",
-            ): str,
-            vol.Optional(
-                "max_brightness",
-                description="Max brightness for the device",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "center_offset",
-                description="Number of pixels from the perceived center of the device",
-                default=0,
-            ): int,
-            vol.Optional(
-                "preview_only",
-                description="Preview the pixels without updating the devices",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "transition_time",
-                description="Length of transition between effects",
-                default=0.4,
-            ): vol.All(
-                vol.Coerce(float),
-                vol.Range(min=0, max=5, min_included=True, max_included=True),
-            ),
-            vol.Optional(
-                "transition_mode",
-                description="Type of transition between effects",
-                default="Add",
-            ): vol.In([mode for mode in Transitions]),
-            vol.Optional(
-                "frequency_min",
-                description="Lowest frequency for this virtual's audio reactive effects",
-                default=MIN_FREQ,  # GET THIS FROM CORE AUDIO
-            ): vol.All(
-                vol.Coerce(int),
-                vol.Range(
-                    min=MIN_FREQ,
-                    max=MAX_FREQ,
-                ),
-            ),  # AND HERE TOO,
-            vol.Optional(
-                "frequency_max",
-                description="Highest frequency for this virtual's audio reactive effects",
-                default=MAX_FREQ,  # GET THIS FROM CORE AUDIO
-            ): vol.All(
-                vol.Coerce(int),
-                vol.Range(
-                    min=MIN_FREQ,
-                    max=MAX_FREQ,
-                ),
-            ),  # AND HERE TOO,
-            vol.Optional(
-                "rows",
-                description="Amount of rows. > 1 if this virtual is a matrix",
-                default=1,
-            ): int,
-            # we will hide this slider in the front end if rows is <= 1
-            vol.Optional(
-                "rotate",
-                description="90 Degree rotations",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
-        }
-    )
-
-    # vol.Required(
-    #     "start_pixel",
-    #     description="First pixel the virtual will map onto device (inclusive)",
-    # ): int,
-    # vol.Required(
-    #     "end_pixel",
-    #     description="Last pixel the virtual will map onto device (inclusive)",
-    # ): int,
-    # vol.Optional(
-    #     "invert",
-    #     description="Reverse the virtual mapping onto this device",
-    #     default=False,
-    # ): bool,
-
     _paused = False
     _active = False
     _output_thread = None
@@ -1336,11 +1236,6 @@ class Virtual:
             self.virtual_cfg.get("effects", {}).get(effect_type, {}).get("config", {})
         )
 
-    @staticmethod
-    def schema() -> vol.Schema:
-        """returns the schema for the object"""
-        return Virtual.CONFIG_SCHEMA
-
     @property
     def config(self) -> dict:
         """Returns the config for the object"""
@@ -1357,7 +1252,7 @@ class Virtual:
         else:
             _config = new_config
 
-        _config = self.CONFIG_SCHEMA(_config)
+        _config = validate_dict(VirtualConfig, _config)
         reactivate_effect = False
         mapping_changed = False
 
@@ -1603,9 +1498,6 @@ class Virtuals:
                 VirtualConfigUpdateEvent(virtual_cfg["id"], virtual_cfg["config"])
             )
 
-    def schema(self):
-        return Virtual.CONFIG_SCHEMA
-
     def create(self, id=None, *args, **kwargs):
         """Creates a virtual"""
 
@@ -1622,7 +1514,7 @@ class Virtuals:
         _auto_generated = kwargs.pop("auto_generated", False)
 
         if _config is not None:
-            _config = Virtual.CONFIG_SCHEMA(_config)
+            _config = validate_dict(VirtualConfig, _config)
             obj = Virtual(config=_config, *args, **kwargs)  # noqa: B026
         else:
             obj = Virtual(*args, **kwargs)
@@ -1872,3 +1764,12 @@ def apply_config_to_active_effects(
             skipped += 1
 
     return updated, skipped
+
+
+register_enum_source(
+    "virtuals",
+    EnumSource(
+        options=lambda: Virtuals.get_virtual_ids(),
+        names=lambda: Virtuals.get_virtual_names(),
+    ),
+)

@@ -4,10 +4,11 @@ import numpy as np
 
 
 def _create_name(filename: str) -> str:
-    return filename.strip(".npy").replace("_", " ").title()
+    return filename.removesuffix(".npy").replace("_", " ").title()
 
 
-files = os.listdir(os.path.dirname(__file__))
+# Sorted: os.listdir order is filesystem-dependent, and the enum order is API.
+files = sorted(os.listdir(os.path.dirname(__file__)))
 
 DROPLETS = {_create_name(file): file for file in files if file.endswith(".npy")}
 

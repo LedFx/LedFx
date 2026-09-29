@@ -75,42 +75,6 @@ class Transmission:
         return t_list
 
 
-# adds the {setting: ..., user: ...} thing to the defaults dict
-def parse_default_wled_setting(setting):
-    key, value = setting
-    return (key, {"setting": value, "user_enabled": False})
-
-
-# creates validators for the different wled preferences
-def wled_validator_generator(data_type):
-    return vol.Schema(
-        {
-            vol.Optional("setting"): data_type,
-            vol.Optional("user_enabled"): bool,
-        }
-    )
-
-
-# creates the vol.optionals using the above two functions
-def wled_optional_generator(setting):
-    key, default = setting
-    return (
-        vol.Optional(key, default=default),
-        wled_validator_generator(type(default["setting"])),
-    )
-
-
-# generate the default settings with the setting, user enabled dict thing
-_default_wled_settings = dict(
-    map(parse_default_wled_setting, _default_wled_settings.items())
-)
-
-# generate the config schema to validate changes
-WLED_CONFIG_SCHEMA = vol.Schema(
-    dict(map(wled_optional_generator, _default_wled_settings.items()))
-)
-
-
 def validate_ipv4_address(value):
     """Validate that value is a valid IPv4 address (including broadcast).
 

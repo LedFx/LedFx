@@ -11,14 +11,19 @@ import aubio
 import numpy as np
 import samplerate
 import sounddevice as sd
-import voluptuous as vol
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
 from ledfx.config import save_config
+from ledfx.configuration.fields import EnumSource, register_enum_source
+from ledfx.configuration.models import (
+    AudioAnalysisConfig,
+    AudioInputConfig,
+    validate_dict,
+)
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
-from ledfx.effects.melbank import FFT_SIZE, MIC_RATE, Melbanks
+from ledfx.effects.melbank import MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, AudioSourceErrorEvent, Event
 from ledfx.sendspin import SENDSPIN_AVAILABLE
 from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
@@ -435,32 +440,6 @@ class AudioInputSource:
         devices = AudioInputSource.input_devices()
         return devices.get(index, "")
 
-    @staticmethod
-    @property
-    def AUDIO_CONFIG_SCHEMA():
-        AudioInputSource.valid_device_indexes()
-        AudioInputSource.input_devices()
-        return vol.Schema(
-            {
-                vol.Optional("sample_rate", default=60): int,
-                vol.Optional("mic_rate", default=44100): int,
-                vol.Optional("fft_size", default=FFT_SIZE): int,
-                vol.Optional("min_volume", default=0.2): vol.All(
-                    vol.Coerce(float), vol.Range(min=0.0, max=1.0)
-                ),
-                vol.Optional(
-                    "audio_device", default=None
-                ): AudioInputSource.device_index_validator,
-                vol.Optional("audio_device_name", default=""): str,
-                vol.Optional(
-                    "delay_ms",
-                    default=0,
-                    description="Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
-                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5000)),
-            },
-            extra=vol.ALLOW_EXTRA,
-        )
-
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.lock = threading.Lock()
@@ -575,7 +554,7 @@ class AudioInputSource:
         # already been cleared.
         if hasattr(self, "_config") and isinstance(self._config, dict):
             config = {**self._config, **config}
-        new_config = self.AUDIO_CONFIG_SCHEMA.fget()(config)
+        new_config = validate_dict(AudioInputConfig, config, runtime=True)
 
         device_changing = False
         pipeline_changing = False
@@ -1189,27 +1168,6 @@ class AudioAnalysisSource(AudioInputSource):
         "mkl",
         "specflux",
     ]
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "pitch_method",
-                default="yinfft",
-                description="Method to detect pitch",
-            ): vol.In(PITCH_METHODS),
-            vol.Optional("tempo_method", default="default"): str,
-            vol.Optional(
-                "onset_method",
-                default="hfc",
-                description="Method used to detect onsets",
-            ): vol.In(ONSET_METHODS),
-            vol.Optional(
-                "pitch_tolerance",
-                default=0.8,
-                description="Pitch detection tolerance",
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2)),
-        },
-        extra=vol.ALLOW_EXTRA,
-    )
 
     # some frequency constants
     # beat, bass, mids, high
@@ -1221,7 +1179,7 @@ class AudioAnalysisSource(AudioInputSource):
     ]
 
     def __init__(self, ledfx, config):
-        config = self.CONFIG_SCHEMA(config)
+        config = validate_dict(AudioAnalysisConfig, config)
         super().__init__(ledfx, config)
         self.initialise_analysis()
 
@@ -1307,7 +1265,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.beat_power_history = deque(maxlen=self.beat_power_history_len)
 
     def update_config(self, config):
-        validated_config = self.CONFIG_SCHEMA(config)
+        validated_config = validate_dict(AudioAnalysisConfig, config)
         super().update_config(validated_config)
         self.initialise_analysis()
 
@@ -1703,3 +1661,14 @@ class AudioReactiveEffect(Effect):
         # Ensure each third has at least one element to prevent NaN from max/mean
         # on empty arrays (can happen with very narrow frequency ranges)
         return tuple(arr if len(arr) > 0 else np.array([0.0]) for arr in thirds)
+
+
+register_enum_source(
+    "audio_devices",
+    # Lambdas look the methods up at call time, so tests that patch them still work.
+    # {**...} widens dict[int, str] to the dict[object, str] the source declares.
+    EnumSource(
+        options=lambda: {**AudioInputSource.input_devices()},
+        validate=lambda v: AudioInputSource.device_index_validator(v),
+    ),
+)
