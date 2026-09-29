@@ -2,6 +2,7 @@
 
 import io
 from dataclasses import dataclass, field
+from typing import cast
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +11,7 @@ from PIL import Image
 from ledfx.events import Event
 from ledfx.nowplaying.providers.sendspin import (
     SOURCE_ID,
+    LedFxNowPlaying,
     SendspinNowPlayingProvider,
 )
 
@@ -392,6 +394,19 @@ class TestSendspinProviderNoLedfx:
             now_playing: None = None
 
         provider = SendspinNowPlayingProvider(_BareLedfx())
+        payload = _ServerStatePayload(
+            metadata=_SessionUpdateMetadata(
+                timestamp=1000,
+                title="Song",
+            )
+        )
+        # Should not raise
+        provider.on_metadata(payload)
+        provider.clear()
+
+    def test_missing_now_playing_attribute_graceful(self):
+        """LedFxCore sets now_playing only in async_start; tolerate its absence."""
+        provider = SendspinNowPlayingProvider(cast(LedFxNowPlaying, object()))
         payload = _ServerStatePayload(
             metadata=_SessionUpdateMetadata(
                 timestamp=1000,

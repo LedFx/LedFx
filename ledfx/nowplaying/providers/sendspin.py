@@ -22,6 +22,8 @@ SOURCE_ID = "sendspin"
 
 
 class LedFxNowPlaying(Protocol):
+    # LedFxCore sets now_playing only in async_start, so the attribute may be
+    # missing at runtime: read it with getattr(..., None), not directly.
     @property
     def now_playing(self) -> "NowPlayingService | None": ...
 
@@ -44,7 +46,7 @@ class SendspinNowPlayingProvider:
     sent by the server are updated; UndefinedField values are ignored.
 
     Args:
-        ledfx: LedFxCore instance (must have .now_playing attribute).
+        ledfx: LedFxCore instance (.now_playing may be absent or None).
     """
 
     def __init__(self, ledfx: LedFxNowPlaying) -> None:
@@ -98,7 +100,7 @@ class SendspinNowPlayingProvider:
         )
 
         # Forward to Now Playing Service
-        now_playing = self._ledfx.now_playing
+        now_playing = getattr(self._ledfx, "now_playing", None)
         if now_playing is None:
             return
         now_playing.set_metadata(SOURCE_ID, track_metadata)
@@ -117,7 +119,7 @@ class SendspinNowPlayingProvider:
 
     def clear(self) -> None:
         """Clear Now Playing state and reset accumulated state."""
-        now_playing = self._ledfx.now_playing
+        now_playing = getattr(self._ledfx, "now_playing", None)
         if now_playing is not None:
             now_playing.clear(SOURCE_ID)
         self._last_artwork_url = None
