@@ -57,6 +57,7 @@ class SceneEndpoint(RestEndpoint):
             return await self.invalid_request("Scene not found")
 
         # Delete the scene from configuration
+        self._ledfx.scenes.cancel_pending(scene_id)
         del self._ledfx.config.scenes[scene_id]
 
         # Save the config

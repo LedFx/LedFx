@@ -17,6 +17,9 @@ if TYPE_CHECKING:
 
 _LOGGER = logging.getLogger(__name__)
 
+# Longest delay, in seconds, a PUT activate_in may schedule (24 hours).
+MAX_SCENE_DELAY = 86400
+
 
 def scene_payload(ledfx: "LedFxCore", scene_id: str, scene: Scene) -> dict[str, object]:
     """A scene as the API shows it: active state and matched presets added."""
@@ -84,6 +87,7 @@ class ScenesEndpoint(RestEndpoint):
             return await self.invalid_request(error_message)
 
         # Delete the scene from configuration
+        self._ledfx.scenes.cancel_pending(scene_id)
         del self._ledfx.config.scenes[scene_id]
 
         # Save the config
@@ -133,9 +137,16 @@ class ScenesEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     'Required attribute "ms" was not provided'
                 )
-            if not isinstance(ms, int | float) or isinstance(ms, bool) or ms < 0:
-                return await self.invalid_request('"ms" must be a non-negative number')
-            self._ledfx.loop.call_later(ms, self._ledfx.scenes.activate, scene_id)
+            # Despite its name, "ms" has always been a delay in seconds.
+            if (
+                isinstance(ms, bool)
+                or not isinstance(ms, int | float)
+                or not 0 <= ms <= MAX_SCENE_DELAY
+            ):
+                return await self.invalid_request(
+                    f'"ms" must be a number of seconds from 0 to {MAX_SCENE_DELAY}'
+                )
+            self._ledfx.scenes.activate_in(scene_id, ms)
             return await self.request_success(
                 "info", f"Scene {scene.name} will activate in {ms}s"
             )
