@@ -3,10 +3,12 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from pydantic import ValidationError
 
+from ledfx.api.config import ConfigEndpoint
 from ledfx.configuration.models import (
     AudioConfig,
     MelbankConfig,
@@ -66,6 +68,29 @@ def test_wled_defaults_and_partial_nested_update() -> None:
     timeout = cfg["inactivity_timeout"]
     assert isinstance(timeout, dict) and timeout["setting"] == 5
     assert cfg["wled_preferred_mode"] == {"setting": "UDP", "user_enabled": False}
+
+
+WLED_NULLS = [
+    {key: {field: None}}
+    for key in ("wled_preferred_mode", "realtime_gamma_enabled", "inactivity_timeout")
+    for field in ("setting", "user_enabled")
+]
+
+
+@pytest.mark.parametrize("prefs", WLED_NULLS)
+def test_wled_setting_rejects_explicit_null(prefs: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        validate_dict(WledPreferences, prefs)
+
+
+@pytest.mark.parametrize("prefs", WLED_NULLS)
+async def test_put_config_rejects_null_wled_setting(prefs: dict[str, object]) -> None:
+    core = MagicMock()
+    request = MagicMock()
+    request.json = AsyncMock(return_value={"wled_preferences": prefs})
+    response = await ConfigEndpoint(core).put(request)
+    assert json.loads(response.text or "{}")["status"] == "failed"
+    core.events.fire_event.assert_not_called()
 
 
 def test_dump_schemas_cli(tmp_path: Path) -> None:

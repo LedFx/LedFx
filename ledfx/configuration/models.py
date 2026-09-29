@@ -8,6 +8,7 @@ from pydantic import (
     Field,
     SerializerFunctionWrapHandler,
     model_serializer,
+    model_validator,
 )
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 
@@ -140,17 +141,28 @@ class MelbanksConfig(LedFxModel):
     min_frequency: CoercedInt = Field(20, ge=0, le=15000)
 
 
-class WledStrSetting(LedFxModel):
+class _WledSetting(LedFxModel):
+    """Either key may be omitted, but not sent as null (voluptuous rejected it)."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _reject_null(cls, data: object) -> object:
+        if isinstance(data, dict) and None in data.values():
+            raise ValueError("setting and user_enabled may be omitted, not null")
+        return data
+
+
+class WledStrSetting(_WledSetting):
     setting: str | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
     user_enabled: bool | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
 
 
-class WledBoolSetting(LedFxModel):
+class WledBoolSetting(_WledSetting):
     setting: bool | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
     user_enabled: bool | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
 
 
-class WledIntSetting(LedFxModel):
+class WledIntSetting(_WledSetting):
     setting: int | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
     user_enabled: bool | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
 
