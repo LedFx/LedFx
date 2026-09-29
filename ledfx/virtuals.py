@@ -278,6 +278,7 @@ class Virtual:
                         self.activate_segments(self._segments)
                         raise
 
+                old_segments = self._segments
                 self._segments = _segments
 
                 self.invalidate_cached_props()
@@ -290,7 +291,21 @@ class Virtual:
                 # so no need to restart the effect
                 if self.pixel_count != _pixel_count:
                     # chenging segments is a deep edit, just flush any transition
-                    self._reactivate_effect()
+                    try:
+                        self._reactivate_effect()
+                    except Exception:
+                        # Roll back fully: device segments, our segments, and
+                        # the effect restarted at the old size.
+                        if self._active:
+                            self.deactivate_segments()
+                            self.activate_segments(old_segments)
+                        self._segments = old_segments
+                        self.invalidate_cached_props()
+                        self._compile_device_remap()
+                        self._reactivate_effect()
+                        # Turn off devices only the new segments activated.
+                        self._ledfx.virtuals.check_and_deactivate_devices()
+                        raise
 
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
