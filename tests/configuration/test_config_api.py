@@ -1,6 +1,7 @@
 import json
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 
@@ -175,6 +176,18 @@ async def test_invalid_integration_update_keeps_the_running_integration() -> Non
     response = await IntegrationsEndpoint(ledfx).post(_request("POST", body))
     assert json.loads(response.text or "")["status"] == "failed"
     ledfx.integrations.destroy.assert_not_called()
+    ledfx.integrations.create.assert_not_called()
+
+
+@pytest.mark.parametrize("config", ["abc", 5, [["name", "x"]]])
+async def test_non_object_integration_config_is_a_validation_error(
+    config: object,
+) -> None:
+    ledfx = fake_ledfx()
+    ledfx.integrations.get_class.return_value = Spotify
+    body = {"type": "spotify", "config": config}
+    response = await IntegrationsEndpoint(ledfx).post(_request("POST", body))
+    assert response.status == 400
     ledfx.integrations.create.assert_not_called()
 
 

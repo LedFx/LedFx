@@ -168,7 +168,7 @@ class IntegrationsEndpoint(RestEndpoint):
         try:
             integration_config = (
                 integration_class.config_model()
-                .model_validate(dict(integration_config))
+                .model_validate(integration_config)
                 .as_dict()
             )
         except ValidationError as err:
