@@ -1,0 +1,63 @@
+{
+    "audio": {
+        "audio_device": 1,
+        "min_volume": 0.3
+    },
+    "configuration_version": "2.3.5",
+    "devices": [],
+    "scenes": {
+        "s": {
+            "name": "S",
+            "virtuals": {
+                "matrix": {
+                    "config": {
+                        "center": false,
+                        "flip_vertical": true,
+                        "ring": false
+                    },
+                    "type": "equalizer2d"
+                }
+            }
+        }
+    },
+    "user_presets": {
+        "equalizer2d": {
+            "p1": {
+                "config": {
+                    "center": false,
+                    "flip_vertical": false,
+                    "ring": false
+                },
+                "name": "P1"
+            }
+        }
+    },
+    "virtuals": [
+        {
+            "auto_generated": false,
+            "config": {
+                "name": "Matrix"
+            },
+            "effect": {
+                "config": {
+                    "center": false,
+                    "flip_vertical": true,
+                    "ring": false
+                },
+                "type": "equalizer2d"
+            },
+            "effects": {
+                "equalizer2d": {
+                    "config": {
+                        "center": false,
+                        "flip_vertical": true,
+                        "ring": false
+                    },
+                    "type": "equalizer2d"
+                }
+            },
+            "id": "matrix",
+            "segments": []
+        }
+    ]
+}

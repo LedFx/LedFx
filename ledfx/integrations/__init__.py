@@ -3,6 +3,7 @@
 # import numpy as np
 # import requests
 import logging
+from collections.abc import Callable
 from enum import IntEnum
 
 # from ledfx.config import save_config
@@ -31,6 +32,13 @@ class Integration(BaseRegistry):
         self._active = active
         self._data = data
         self._status = Status.DISCONNECTED
+
+    def _call_on_loop(self, callback: Callable[..., object], *args: object) -> None:
+        """Hand a callback from a foreign thread (e.g. paho) to the event loop."""
+        try:
+            self._ledfx.loop.call_soon_threadsafe(callback, *args)
+        except RuntimeError:  # the loop closed during shutdown
+            _LOGGER.debug("Event loop closed; dropped %r", callback)
 
     def __del__(self):
         if self._active:

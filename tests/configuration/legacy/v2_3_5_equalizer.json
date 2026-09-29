@@ -1,0 +1,12 @@
+{
+    "configuration_version": "2.3.5",
+    "audio": {"audio_device": 1, "min_volume": 0.3},
+    "devices": [],
+    "virtuals": [
+        {"id": "matrix", "config": {"name": "Matrix"}, "segments": [], "auto_generated": false,
+         "effect": {"type": "equalizer2d", "config": {"ring": false, "center": false, "flip_vertical": false}},
+         "effects": {"equalizer2d": {"type": "equalizer2d", "config": {"ring": false, "center": false}}}}
+    ],
+    "user_presets": {"equalizer2d": {"p1": {"name": "P1", "config": {"ring": false, "center": false, "flip_vertical": true}}}},
+    "scenes": {"s": {"name": "S", "virtuals": {"matrix": {"type": "equalizer2d", "config": {"ring": false, "center": false}}}}}
+}

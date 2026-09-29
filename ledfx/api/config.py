@@ -1,4 +1,5 @@
 import logging
+import os
 from json import JSONDecodeError
 
 import voluptuous as vol
@@ -10,12 +11,9 @@ from ledfx.config import (
     CORE_CONFIG_KEYS_NO_RESTART,
     CORE_CONFIG_SCHEMA,
     WLED_CONFIG_SCHEMA,
-    create_backup,
-    migrate_config,
-    parse_version,
     save_config,
 )
-from ledfx.consts import CONFIGURATION_VERSION
+from ledfx.configuration.migrations import run_migrations
 from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
 from ledfx.effects.melbank import Melbanks
 from ledfx.events import BaseConfigUpdateEvent
@@ -23,6 +21,8 @@ from ledfx.events import BaseConfigUpdateEvent
 _LOGGER = logging.getLogger(__name__)
 
 CORE_CONFIG_KEYS = set(map(str, CORE_CONFIG_SCHEMA.schema.keys()))
+BACKUP_FAILED = "Could not back up config.json; nothing was changed."
+WRITE_FAILED = "Could not write config.json; nothing was changed."
 
 
 def validate_and_trim_config(config, schema, node):
@@ -90,14 +90,11 @@ class ConfigEndpoint(RestEndpoint):
         Returns:
             web.Response: The response indicating the success of the operation.
         """
-        create_backup(self._ledfx.config_dir, "DELETE")
-        self._ledfx.config = CORE_CONFIG_SCHEMA({})
-
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
-
+        store = self._ledfx.config_store
+        if os.path.exists(store.path) and store.backup("DELETE") is None:
+            return await self.internal_error(BACKUP_FAILED)
+        if not await store.replace(CORE_CONFIG_SCHEMA({})):
+            return await self.internal_error(WRITE_FAILED)
         self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
         return await self.request_success(
             "success", "Config reset to default values, LedFx restarting."
@@ -116,27 +113,16 @@ class ConfigEndpoint(RestEndpoint):
         """
         try:
             config = await request.json()
-
             try:
-                assert parse_version(config["configuration_version"]) == parse_version(
-                    CONFIGURATION_VERSION
-                )
-            except (KeyError, AssertionError):
-                _LOGGER.warning(
-                    "LedFx config version: %s, import config version: %s",
-                    CONFIGURATION_VERSION,
-                    config.get("configuration_version", "UNDEFINED (old!)"),
-                )
-                try:
-                    config = migrate_config(config)
-                except Exception as e:
-                    msg = f"Failed to migrate import config to the new standard: {e}"
-                    _LOGGER.exception(msg)
-                    return await self.internal_error(msg, "error")
+                config = run_migrations(config)
+            except Exception as e:
+                msg = f"Failed to migrate import config to the new standard: {e}"
+                _LOGGER.exception(msg)
+                return await self.internal_error(msg, "error")
 
-            # if we got this far, we are happy with and committing to the import config
-            # so backup the old one
-            create_backup(self._ledfx.config_dir, "IMPORT")
+            store = self._ledfx.config_store
+            if os.path.exists(store.path) and store.backup("IMPORT") is None:
+                return await self.internal_error(BACKUP_FAILED)
 
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
                 config.pop("audio", {})
@@ -149,12 +135,8 @@ class ConfigEndpoint(RestEndpoint):
             core_config["wled_preferences"] = wled_config
             core_config["melbanks"] = melbanks_config
 
-            self._ledfx.config = core_config
-
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+            if not await store.replace(core_config):
+                return await self.internal_error(WRITE_FAILED)
 
             self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
             return await self.request_success()

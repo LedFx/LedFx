@@ -33,7 +33,7 @@ def test_audio_should_keep_active_for_sendspin_name_even_if_index_invalid():
 def test_handle_base_configuration_update_reconciles_when_enabled():
     core = object.__new__(_CoreWithAudio)
     core.audio = None
-    core.config = {"sendspin_always_on": True}
+    core.config_store = MagicMock(data={"sendspin_always_on": True})
     core.reconcile_sendspin_always_on_runtime = MagicMock()
 
     with patch("ledfx.core.sendspin_eager_start"):
@@ -75,7 +75,7 @@ def test_eager_start_reuses_existing_audio_instance():
 
 def test_reconcile_sendspin_always_on_runtime_deactivates_when_disabled():
     core = object.__new__(_CoreWithAudio)
-    core.config = {"sendspin_always_on": False}
+    core.config_store = MagicMock(data={"sendspin_always_on": False})
     core.audio = MagicMock()
 
     with patch("ledfx.core.sendspin_eager_start") as mock_eager_start:

@@ -20,15 +20,15 @@ from ledfx.color import (
     validate_gradient,
 )
 from ledfx.config import (
+    CORE_CONFIG_SCHEMA,
     VISUALISATION_CONFIG_KEYS,
     Transmission,
     create_backup,
     ensure_instance_id,
     get_ssl_certs,
-    load_config,
     remove_virtuals_active_effects,
-    save_config,
 )
+from ledfx.configuration.store import ConfigStore
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
@@ -102,7 +102,8 @@ class LedFxCore:
             _LOGGER.warning("Clearing LedFx config.")
             create_backup(config_dir, "DELETE")
 
-        self.config = load_config(config_dir)
+        self.config_store = ConfigStore.load(config_dir, CORE_CONFIG_SCHEMA)
+        self.config_store.register()
         ensure_instance_id(self.config)
         self.config["hosts"] = get_sorted_physical_ips()
 
@@ -137,6 +138,7 @@ class LedFxCore:
         self.loop.set_default_executor(self.thread_executor)
         self.loop.set_exception_handler(self.loop_exception_handler)
         asyncio.set_event_loop(self.loop)
+        self.config_store.attach_loop(self.loop)
 
         # Audio device monitor will be started after loop is running
         self.audio_device_monitor = None
@@ -160,6 +162,11 @@ class LedFxCore:
         )
 
         self.exit_code = None
+
+    @property
+    def config(self) -> dict:  # pyrefly: ignore[implicit-any-type-argument]
+        """The live configuration (owned by config_store); typed in layer 8."""
+        return self.config_store.data
 
     def handle_base_configuration_update(self, event):
         """
@@ -691,14 +698,19 @@ class LedFxCore:
                 except asyncio.CancelledError:
                     pass
                 _LOGGER.debug("All tasks killed.")
-            # Save the configuration before shutting down
-            save_config(config=self.config, config_dir=self.config_dir)
 
         except Exception as e:  # noqa: BLE001
             _LOGGER.error("An error occurred while stopping: %s", e)
             self.exit_code = 1
 
         finally:
+            # Write any debounced change, even if shutdown above failed. The
+            # store stays registered so late save_config() calls still honour
+            # its safe-mode block.
+            try:
+                self.config_store.flush_sync()
+            except Exception:  # must not skip loop.stop() below
+                _LOGGER.exception("Failed to flush config on shutdown")
             self.thread_executor.shutdown()
             # Don't overwrite error exit code
             if self.exit_code != 1:

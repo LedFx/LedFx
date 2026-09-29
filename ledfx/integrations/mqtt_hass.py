@@ -122,6 +122,10 @@ class MQTT_HASS(Integration):
         )
 
     def on_connect(self, client, userdata, flags, rc):
+        """paho network thread: hand the connect event to the event loop."""
+        self._call_on_loop(self._handle_connect, client, rc)
+
+    def _handle_connect(self, client, rc):
         total_pixels = 0
         for device in self._ledfx.devices.values():
             total_pixels += device.pixel_count
@@ -396,6 +400,13 @@ class MQTT_HASS(Integration):
         client.publish("ledfx/state", "HomeAssistant initialized")
 
     def on_message(self, client, userdata, msg):
+        """paho network thread: hand the message to the event loop."""
+        self._call_on_loop(self._handle_message, msg)
+
+    def _handle_message(self, msg):
+        client = self._client
+        if client is None:
+            return
         _LOGGER.debug(
             "MQTT-Message incoming: \n[MQTT    ] Topic: %s\n[MQTT    ] Payload: %s",
             msg.topic,

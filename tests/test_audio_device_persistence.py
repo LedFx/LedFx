@@ -426,7 +426,9 @@ class TestSendspinDeviceListEvent:
     )
     def test_load_sendspin_servers_fires_device_list_changed(self, mock_valid):
         core = object.__new__(LedFxCore)
-        core.config = {"sendspin_servers": {"demo": {"url": "ws://demo"}}}
+        core.config_store = MagicMock(
+            data={"sendspin_servers": {"demo": {"url": "ws://demo"}}}
+        )
         core.events = MagicMock()
 
         from ledfx.effects.audio import SENDSPIN_SERVERS

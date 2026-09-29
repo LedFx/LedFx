@@ -61,6 +61,10 @@ class MQTT(Integration):
         _LOGGER.info("CONFIG: %s", self._config)
 
     def on_connect(self, client, userdata, flags, rc):
+        """paho network thread: hand the connect event to the event loop."""
+        self._call_on_loop(self._handle_connect, client, rc)
+
+    def _handle_connect(self, client, rc):
         _LOGGER.info("Connecting2")
         _LOGGER.info("Connected with result code %s", rc)
 
@@ -77,6 +81,10 @@ class MQTT(Integration):
         )
 
     def on_message(self, client, userdata, msg):
+        """paho network thread: hand the message to the event loop."""
+        self._call_on_loop(self._handle_message, msg)
+
+    def _handle_message(self, msg):
         _LOGGER.info("%s %s", msg.topic, msg.payload)
 
         if msg.topic == f"{self._config['topic']}/SCENE":

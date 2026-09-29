@@ -79,3 +79,6 @@ __pycache__/
 
 # AI stuff
 .claude/
+
+# Local design docs (superpowers specs/plans) — never committed
+docs/superpowers/

@@ -1,0 +1,46 @@
+{
+    "configuration_version": "0.10.7",
+    "devices": [
+        {
+            "config": {
+                "ip_address": "10.0.0.9",
+                "name": "Kitchen",
+                "pixel_count": 60
+            },
+            "id": "wled-kitchen",
+            "type": "wled"
+        }
+    ],
+    "scenes": {
+        "evening": {
+            "name": "Evening",
+            "virtuals": {
+                "kitchen": {
+                    "config": {
+                        "color": "#ff0000"
+                    },
+                    "type": "singleColor"
+                }
+            }
+        }
+    },
+    "user_presets": {},
+    "virtuals": [
+        {
+            "auto_generated": false,
+            "config": {
+                "name": "Kitchen"
+            },
+            "id": "kitchen",
+            "is_device": "wled-kitchen",
+            "segments": [
+                [
+                    "wled-kitchen",
+                    0,
+                    59,
+                    false
+                ]
+            ]
+        }
+    ]
+}

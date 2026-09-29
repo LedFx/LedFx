@@ -1,0 +1,27 @@
+{
+    "host": "0.0.0.0",
+    "port": 8888,
+    "crossfade": 1,
+    "fade": 0.5,
+    "audio": {"audio_device": 2, "min_volume": 5},
+    "devices": [
+        {"id": "strip", "type": "e131", "config": {"name": "Strip", "pixel_count": 30, "ip_address": "10.0.0.5"}},
+        {"id": "old-matrix", "type": "FXMatrix", "config": {"name": "Old", "pixel_count": 64}},
+        {"id": "art", "type": "artnet", "effect": {"type": "rainbow"}, "config": {"name": "Art", "pixel_count": 10, "ip_address": "10.0.0.6", "device_repeat": 2, "output_mode": "RGBW Brighter"}}
+    ],
+    "displays": [
+        {"id": "strip", "is_device": "strip", "config": {"name": "Strip"}, "segments": [["strip", 0, 29, false]],
+         "effect": {"type": "Rainbow(Reactive)", "config": {"Diagnostic": true, "background_colour": "#000000", "brightness": 0.5}}},
+        {"id": "ghost", "config": {"name": "Ghost"}, "segments": [], "effect": {"type": "NoSuchEffect", "config": {}}}
+    ],
+    "custom_presets": {
+        "rainbow": {"calm": {"name": "Calm", "config": {"brightness": 0.3, "Diagnostic": false}}},
+        "gone_effect": {"x": {"name": "X", "config": {}}}
+    },
+    "scenes": {
+        "party": {"name": "Party", "scene_image": "Wallpaper", "displays": {
+            "strip": {"type": "rainbow", "config": {"flip": true}},
+            "ghost": {}
+        }}
+    }
+}
