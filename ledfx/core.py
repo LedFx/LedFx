@@ -48,7 +48,6 @@ from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
-from ledfx.tools.ts_generator import generate_typescript_types
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
@@ -86,7 +85,6 @@ class LedFxCore:
         port_s=None,
         icon=None,
         ci_testing=False,
-        generate_typescript_types=False,
         clear_config=False,
         clear_effects=False,
         offline_mode=False,
@@ -113,7 +111,6 @@ class LedFxCore:
         self.port = port if port else self.config.port
         self.port_s = port_s if port_s else self.config.port_s
         self.ci_testing = ci_testing
-        self.generate_typescript_types = generate_typescript_types
         self.offline_mode = offline_mode
 
         try:
@@ -573,38 +570,6 @@ class LedFxCore:
         if self.ci_testing:
             await asyncio.sleep(5)
             self.stop(5)
-        if self.generate_typescript_types:
-            _LOGGER.info("Generating TypeScript types via CLI flag...")
-            current_script_dir = os.path.dirname(os.path.abspath(__file__))
-            project_root = os.path.abspath(os.path.join(current_script_dir, ".."))
-            output_file_name = "ledfx_types.ts"
-            ts_code_string = generate_typescript_types()
-
-            try:
-                os.makedirs(project_root, exist_ok=True)
-                output_file_path = os.path.join(project_root, output_file_name)
-
-                _LOGGER.info(
-                    "Attempting to write TypeScript types to: %s",
-                    output_file_path,
-                )
-                with open(output_file_path, "w", encoding="utf-8") as f:  # noqa: ASYNC230
-                    f.write(ts_code_string)
-                _LOGGER.info(
-                    "Successfully wrote TypeScript types to %s",
-                    output_file_path,
-                )
-
-            except OSError as e:
-                _LOGGER.error("IOError writing TypeScript types to file: %s", e)
-            except Exception as e:  # noqa: BLE001
-                _LOGGER.error(
-                    "Unexpected error writing TypeScript types to file: %s",
-                    e,
-                )
-
-            self.stop(5)
-
         if not self.offline_mode:
             self.check_and_notify_updates()
 

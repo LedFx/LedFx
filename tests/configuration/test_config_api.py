@@ -179,9 +179,11 @@ async def test_invalid_integration_update_keeps_the_running_integration() -> Non
 
 
 async def test_new_integration_stores_raw_data_not_display_data() -> None:
-    _, spotify, ledfx = _spotify_endpoint()
+    ledfx = fake_ledfx({"scenes": {"s1": {"name": "S1"}}})
+    config = Spotify.config_model().model_validate({"name": "Spotify"})
+    spotify = Spotify(ledfx, config, False, None)
+    vars(spotify).update(_id="sp", _type="spotify")  # set by the registry
     spotify.add_trigger("s1", "abc", "Song", 1000)
-    ledfx.config.integrations.clear()
     ledfx.integrations.get_class.return_value = Spotify
     ledfx.integrations.create.return_value = spotify
     body = {"type": "spotify", "config": {"name": "Spotify"}}

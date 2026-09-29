@@ -1,12 +1,18 @@
 import logging
+import math
 import random
-from collections.abc import Collection, Iterable, Mapping
+from collections.abc import Collection
 from json import JSONDecodeError
+from types import UnionType
+from typing import Annotated, Literal, Union, get_args, get_origin
 
-import voluptuous as vol
+import annotated_types
 from aiohttp import web
+from pydantic import BaseModel, BeforeValidator, ValidationError
+from pydantic.fields import FieldInfo
 
 from ledfx.api import RestEndpoint
+from ledfx.configuration.fields import OneOf
 from ledfx.effects import DummyEffect
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,61 +45,91 @@ def process_fallback(fallback):
     return fallback
 
 
+def _field_metadata(info: FieldInfo) -> list[object]:
+    """Constraints on the field plus those inside an ``Annotated[...] | None``."""
+    found = list(info.metadata)
+    for arg in get_args(info.annotation):
+        found.extend(getattr(arg, "__metadata__", ()))
+    return found
+
+
+def _base_type(info: FieldInfo) -> object:
+    """The annotation without ``| None`` and ``Annotated[...]`` wrappers."""
+    annotation = info.annotation
+    args = [a for a in get_args(annotation) if a is not type(None)]
+    if get_origin(annotation) in (Union, UnionType) and len(args) == 1:
+        annotation = args[0]
+    while get_origin(annotation) is Annotated:
+        annotation = get_args(annotation)[0]
+    return annotation
+
+
+def _choices(info: FieldInfo) -> list[object]:
+    for meta in _field_metadata(info):
+        if isinstance(meta, OneOf):
+            return meta.values()
+    base = _base_type(info)
+    if get_origin(base) is Literal:
+        return list(get_args(base))
+    return []
+
+
+def _bounds(info: FieldInfo) -> tuple[float, float] | None:
+    lower: float | None = None
+    upper: float | None = None
+    for meta in _field_metadata(info):
+        if isinstance(meta, (annotated_types.Ge, annotated_types.Gt)):
+            value = meta.ge if isinstance(meta, annotated_types.Ge) else meta.gt
+            if isinstance(value, (int, float)):
+                lower = value
+        elif isinstance(meta, (annotated_types.Le, annotated_types.Lt)):
+            value = meta.le if isinstance(meta, annotated_types.Le) else meta.lt
+            if isinstance(value, (int, float)):
+                upper = value
+    if lower is None or upper is None or lower > upper:
+        return None
+    return lower, upper
+
+
 def randomize_effect_config(
-    schema: Mapping[object, object], ignored: Collection[str]
+    model: type[BaseModel], ignored: Collection[str]
 ) -> dict[str, object]:
-    """Randomize supported settings without guessing values for unknown schemas."""
+    """Randomize supported settings without guessing values for unknown fields.
+
+    Like the voluptuous version: booleans and choices always; numbers only for
+    coerced fields with both bounds (vol.All(vol.Coerce(...), vol.Range(...))).
+    Every value is checked against the field, so exclusive bounds and extra
+    validators are respected.
+    """
     result: dict[str, object] = {}
-    for setting, validator in schema.items():
-        name = setting.schema if isinstance(setting, vol.Marker) else setting
-        if not isinstance(name, str) or name in ignored:
+    for name, info in model.model_fields.items():
+        if name in ignored:
             continue
-        if validator is bool:
-            result[name] = random.choice([True, False])
-        elif isinstance(validator, vol.In):
-            container = validator.container
-            if isinstance(container, Iterable):
-                choices = list(container)
-                if choices:
-                    result[name] = random.choice(choices)
-        elif isinstance(validator, vol.All):
-            coerce_type: type[int | float] | None = None
-            bounds: vol.Range | None = None
-            for item in validator.validators:
-                if isinstance(item, vol.Coerce):
-                    if item.type is int:
-                        coerce_type = int
-                    elif item.type is float:
-                        coerce_type = float
-                elif isinstance(item, vol.Range):
-                    bounds = item
-            if bounds is None or coerce_type is None:
+        base = _base_type(info)
+        choices = _choices(info)
+        value: object
+        if base is bool:
+            value = random.choice([True, False])
+        elif choices:
+            value = random.choice(choices)
+        elif base in (int, float) and any(
+            isinstance(m, BeforeValidator) for m in _field_metadata(info)
+        ):
+            bounds = _bounds(info)
+            if bounds is None:
                 continue
-            lower, upper = bounds.min, bounds.max
-            if not isinstance(lower, (int, float)) or not isinstance(
-                upper, (int, float)
-            ):
-                continue
-            if lower > upper:
-                continue
-            if coerce_type is int:
-                if not isinstance(lower, int) or not isinstance(upper, int):
-                    continue
-                # Draw only from integers inside exclusive bounds.
-                if not bounds.min_included:
-                    lower += 1
-                if not bounds.max_included:
-                    upper -= 1
-                if lower > upper:
-                    continue
-                value = random.randint(lower, upper)
+            if base is int:
+                value = random.randint(math.ceil(bounds[0]), math.floor(bounds[1]))
             else:
-                value = random.uniform(lower, upper)
-            # Respect extra validators and exclusive bounds in the schema.
-            try:
-                result[name] = validator(value)
-            except vol.Invalid:
+                value = random.uniform(*bounds)
+        else:
+            continue
+        try:
+            model.model_validate({name: value})
+        except ValidationError as err:
+            if any(e["loc"][:1] == (name,) for e in err.errors()):
                 continue
+        result[name] = value
     return result
 
 
@@ -162,7 +198,7 @@ class EffectsEndpoint(RestEndpoint):
             effect_type = virtual.active_effect.type
             effect = self._ledfx.effects.get_class(effect_type)
             effect_config = randomize_effect_config(
-                effect.schema().schema, ["brightness"]
+                effect.config_model(), ["brightness"]
             )
 
         fallback = process_fallback(data.get("fallback", None))
@@ -210,6 +246,8 @@ class EffectsEndpoint(RestEndpoint):
                 )
                 virtual.set_effect(effect, fallback=fallback)
 
+        except ValidationError as err:
+            return await self.validation_error(err)
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect: {msg}"
             _LOGGER.warning(error_message)
@@ -258,14 +296,17 @@ class EffectsEndpoint(RestEndpoint):
         elif effect_config == "RANDOMIZE":
             effect = self._ledfx.effects.get_class(effect_type)
             effect_config = randomize_effect_config(
-                effect.schema().schema,
+                effect.config_model(),
                 ["brightness", "background_color", "background_brightness"],
             )
 
         # Create the effect and add it to the virtual
-        effect = self._ledfx.effects.create(
-            ledfx=self._ledfx, type=effect_type, config=effect_config
-        )
+        try:
+            effect = self._ledfx.effects.create(
+                ledfx=self._ledfx, type=effect_type, config=effect_config
+            )
+        except ValidationError as err:
+            return await self.validation_error(err)
 
         fallback = process_fallback(data.get("fallback", None))
 

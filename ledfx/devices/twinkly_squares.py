@@ -27,10 +27,10 @@ class TwinklySquaresDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self._device_type = "TwinklySquares"
         self.ctrl = None
-        self.config["pixel_count"] = 64 * self._config["panel_count"]
+        self._set_config_values(pixel_count=64 * self._config["panel_count"])
 
     def config_updated(self, config):
-        self.config["pixel_count"] = 64 * self._config["panel_count"]
+        self._set_config_values(pixel_count=64 * self._config["panel_count"])
         return super().config_updated(config)
 
     def flush(self, data):
@@ -86,7 +86,7 @@ class TwinklySquaresDevice(NetworkedDevice):
 
         # Update pixel count if different
         if self._config["pixel_count"] != self.leds:
-            self._config["pixel_count"] = self.leds
+            self._set_config_values(pixel_count=self.leds)
             config_changed = True
 
         # Update associated virtuals with the detected matrix height

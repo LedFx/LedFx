@@ -84,8 +84,7 @@ class MetroEffect(AudioReactiveEffect):
         self.graph_cpu = None
         self.cores = 0
         self.last_cpu = 0.0
-        config["capture"] = False
-        super().__init__(ledfx, config)
+        super().__init__(ledfx, config.with_values(capture=False))
 
     def on_activate(self, pixel_count):
         pass

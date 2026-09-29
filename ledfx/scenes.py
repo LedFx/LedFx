@@ -59,7 +59,7 @@ class Scenes:
             effect = {}
             if virtual.active_effect:
                 effect["type"] = virtual.active_effect.type
-                effect["config"] = virtual.active_effect.config
+                effect["config"] = virtual.active_effect.config.as_dict()
             virtual_effects[virtual_id] = effect
         scene = Scene.model_validate({**scene_config, "virtuals": virtual_effects})
         scene_id = scene_id if scene_id in self._scenes else generate_id(scene.name)

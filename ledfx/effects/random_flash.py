@@ -44,8 +44,7 @@ class RandomFlashEffect(TemporalEffect):
 
     def __init__(self, ledfx, config):
         # overriding speed (from TemporalEffect) to achieve smooth fade
-        config["speed"] = 5.0
-        super().__init__(ledfx, config)
+        super().__init__(ledfx, config.with_values(speed=5.0))
         self.last_time = self.now
         self.last_hit_pixels = None
 

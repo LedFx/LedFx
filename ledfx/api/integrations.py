@@ -1,8 +1,9 @@
+import copy
 import logging
 from json import JSONDecodeError
 
-import voluptuous as vol
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.configuration.models import IntegrationEntry
@@ -165,9 +166,13 @@ class IntegrationsEndpoint(RestEndpoint):
                 f"Unknown integration type: {integration_type}"
             )
         try:
-            integration_config = integration_class.schema()(integration_config)
-        except vol.Invalid as err:
-            return await self.invalid_request(f"Invalid integration config: {err}")
+            integration_config = (
+                integration_class.config_model()
+                .model_validate(dict(integration_config))
+                .as_dict()
+            )
+        except ValidationError as err:
+            return await self.validation_error(err)
 
         # Allow for id be None for new integrations
         integration_id = data.get("id")
@@ -207,7 +212,7 @@ class IntegrationsEndpoint(RestEndpoint):
             type=integration_type,
             active=False,
             config=integration_config,
-            data=None if new or stored is None else stored.data,
+            data=None if new or stored is None else copy.deepcopy(stored.data),
             ledfx=self._ledfx,
         )
 
@@ -217,7 +222,7 @@ class IntegrationsEndpoint(RestEndpoint):
                 "id": integration.id,
                 "type": integration.type,
                 "active": integration.active,
-                "config": integration.config,
+                "config": integration.config.as_dict(),
             }
             if integration.stored_data is not None:
                 entry["data"] = integration.stored_data

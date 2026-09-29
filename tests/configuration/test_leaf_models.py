@@ -110,6 +110,9 @@ def test_dump_schemas_cli(tmp_path: Path) -> None:
     )
     data = json.loads(out.read_text())
     assert {"audio", "virtuals", "wled_preferences", "melbanks"} <= set(data)
+    assert {"devices", "effects", "integrations"} <= set(data)
+    brightness = data["effects"]["rainbow"]["schema"]["properties"]["brightness"]
+    assert brightness["maximum"] == 1.0
     assert os.path.getsize(out) > 0
 
 
@@ -136,4 +139,7 @@ def test_schemas_endpoints_serve_all_kinds_and_one_kind() -> None:
     one = kind("virtuals")
     assert list(one) == ["virtuals"]
     assert "transition_mode" in json.dumps(one)
+    effects, devices = kind("effects")["effects"], kind("devices")["devices"]
+    assert isinstance(effects, dict) and "rainbow" in effects
+    assert isinstance(devices, dict) and "dummy" in devices
     assert kind("nope")["status"] == "failed"

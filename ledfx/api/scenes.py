@@ -304,7 +304,7 @@ class ScenesEndpoint(RestEndpoint):
                     # which appear active even when the virtual is not!!!
                     if not isinstance(virtual.active_effect, DummyEffect):
                         effect["type"] = virtual.active_effect.type
-                        effect["config"] = virtual.active_effect.config
+                        effect["config"] = virtual.active_effect.config.as_dict()
                     else:
                         _LOGGER.debug("Skipping DummyEffect for virtual %s", virtual.id)
                 scene_config["virtuals"][virtual.id] = effect

@@ -35,7 +35,7 @@ from platform import (
 )
 
 # from asyncio import coroutines, ensure_future
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import netifaces
 import numpy as np
@@ -60,6 +60,11 @@ from ledfx.utilities.security_utils import (
     validate_pil_image,
     validate_url_safety,
 )
+
+if TYPE_CHECKING:
+    from ledfx.configuration.lenient import Quarantine
+    from ledfx.configuration.models import DeviceEntry, EffectEntry, IntegrationEntry
+    from ledfx.configuration.plugin import PluginConfig
 
 # from asyncio import coroutines, ensure_future
 
@@ -846,6 +851,66 @@ class BaseRegistry(ABC):
     """
 
     _schema_attr = "CONFIG_SCHEMA"
+    _auto_config_model: ClassVar["type[PluginConfig] | None"] = None
+    # Keys whose valid choices come from this machine (serial ports). At startup a
+    # stored value that is not available here skips the plugin, as before, instead
+    # of being reset to the default and later persisted.
+    RUNTIME_CHOICE_KEYS: ClassVar[frozenset[str]] = frozenset()
+
+    @classmethod
+    def config_model(cls) -> "type[PluginConfig]":
+        """The pydantic model for this class's config.
+
+        Uses the class's own ``Config`` when declared (layers 10-12); otherwise
+        auto-converts the voluptuous CONFIG_SCHEMA of the classes in the MRO that
+        have no declared Config, on top of the nearest declared ancestors.
+        """
+        # Local import: ledfx.configuration imports ledfx.utils (generate_title).
+        from ledfx.configuration.plugin import PluginConfig, vol_to_model
+
+        declared = cls.__dict__.get("Config")
+        if declared is not None:
+            return declared
+        cached = cls.__dict__.get("_auto_config_model")
+        if cached is not None:
+            return cached
+        mro = inspect.getmro(cls)
+        ancestors = [c.__dict__["Config"] for c in mro[1:] if "Config" in c.__dict__]
+        bases = tuple(
+            b
+            for b in ancestors
+            if not any(o is not b and issubclass(o, b) for o in ancestors)
+        ) or (PluginConfig,)
+        schema = vol.Schema({}, extra=vol.ALLOW_EXTRA)
+        for c in mro[::-1]:
+            if "Config" in c.__dict__:
+                continue
+            if cls._schema_attr not in c.__dict__:
+                continue
+            own = getattr(c, cls._schema_attr)
+            if type(own) is property:
+                # Device/launchpad/openrgb/adalight: the property only reads
+                # import-time values (AVAILABLE_FPS), so caching stays correct.
+                own = own.fget()
+            schema = schema.extend(own.schema)
+        cls.validate_schema_keys(schema)
+        model = vol_to_model(f"{cls.__name__}Config", schema, bases)
+        cls._auto_config_model = model  # on this exact class, never inherited
+        return model
+
+    def _set_config_values(self, **changes: object) -> None:
+        """Change derived config values (e.g. discovered pixel_count) and persist them."""
+        config = self._config.with_values(**changes)
+        if config == self._config:
+            return  # e.g. WLED re-reporting the same values on every boot
+        self._config = config
+        store = getattr(getattr(self, "_ledfx", None), "config_store", None)
+        if store is None or not self.id:
+            return
+        entry = store.device_entry(self.id)
+        if entry is not None:
+            entry.config = self._config.as_dict()
+            store.request_save()
 
     def __init_subclass__(cls, **kwargs):
         """Automatically register the class"""
@@ -941,17 +1006,6 @@ class BaseRegistry(ABC):
         """Returns the type for the object"""
         return getattr(self, "_type", None)
 
-    @property
-    def config(self) -> dict:
-        """Returns the config for the object"""
-        return getattr(self, "_config", None)
-
-    @config.setter
-    def config(self, _config):
-        """Updates the config for an object"""
-        _config = self.schema()(_config)
-        return setattr(self, "_config", _config)
-
 
 class RegistryLoader:
     """Manages loading of components for a given registry"""
@@ -1030,8 +1084,21 @@ class RegistryLoader:
         # Create the new object based on the registry entries and validate the schema.
         _cls = self._cls.registry().get(type)
         _config = kwargs.pop("config", None)
+        # Startup loads pass lenient=<quarantine callback> (and optionally
+        # lenient_path and lenient_entry, the store entry a repair is written back
+        # to); API calls validate strictly and raise ValidationError.
+        lenient = kwargs.pop("lenient", None)
+        lenient_path = kwargs.pop("lenient_path", None)
+        lenient_entry = kwargs.pop("lenient_entry", None)
         if _config is not None:
-            _config = _cls.schema()(_config)
+            if lenient is None:
+                _config = _cls.config_model().model_validate(dict(_config))
+            else:
+                _config = self.validate_leniently(
+                    _cls, type, id, dict(_config), lenient, lenient_path, lenient_entry
+                )
+                if _config is None:
+                    return None
             obj = _cls(config=_config, *args, **kwargs)  # noqa: B026
         else:
             obj = _cls(*args, **kwargs)
@@ -1043,6 +1110,65 @@ class RegistryLoader:
         # Store the object into the internal list and return it
         self._objects[id] = obj
         return obj
+
+    def validate_leniently(
+        self,
+        _cls: type[BaseRegistry],
+        type: str,
+        id: str,
+        raw: dict[str, object],
+        quarantine: "Quarantine",
+        path: str | None,
+        entry: "DeviceEntry | IntegrationEntry | EffectEntry | None",
+    ) -> "PluginConfig | None":
+        """Startup load: default and quarantine bad values instead of dropping the
+        plugin, and write the repaired config back to its store entry so the next
+        boot finds nothing to quarantine. Returns None when the plugin must be
+        skipped (its stored config is left untouched)."""
+        from pydantic import ValidationError
+
+        from ledfx.configuration.lenient import lenient_validate
+
+        model = _cls.config_model()
+        try:
+            return model.model_validate(raw)
+        except ValidationError as err:
+            missing = sorted(
+                {str(e["loc"][0]) for e in err.errors() if e["loc"]}
+                & _cls.RUNTIME_CHOICE_KEYS
+            )
+            if missing:
+                _LOGGER.warning(
+                    "Skipping %s '%s': %s not available on this machine.",
+                    type,
+                    id,
+                    missing,
+                )
+                return None
+        path = path or f"{self._cls.__name__.lower()}s.{id}.config"
+        repairs = 0
+
+        def counted(record_path: str, value: object, errors: list[str]) -> None:
+            nonlocal repairs
+            repairs += 1
+            quarantine(record_path, value, errors)
+
+        config = lenient_validate(model, raw, path, counted)
+        if config is None:
+            _LOGGER.warning("Skipping %s '%s': its config is unusable.", type, id)
+        elif repairs and entry is not None:
+            if self._ledfx.config_store.quarantine_failed:
+                # The dropped values exist only in config.json; keep it as is.
+                _LOGGER.error(
+                    "Not saving the repaired %s '%s' config: its invalid values "
+                    "could not be quarantined.",
+                    type,
+                    id,
+                )
+            else:
+                entry.config = config.as_dict()
+                self._ledfx.config_store.request_save()
+        return config
 
     def destroy(self, id):
         if id not in self._objects:

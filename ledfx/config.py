@@ -322,6 +322,11 @@ def filter_config_for_comparison(config):
     Returns:
         dict: A new dictionary with UI-only keys removed.
     """
+    # Local import: ledfx.configuration imports ledfx.utils, which imports us.
+    from ledfx.configuration.plugin import PluginConfig
+
+    if isinstance(config, PluginConfig):
+        config = config.as_dict()  # a running effect's config
     if not isinstance(config, dict):
         return {}
     return {

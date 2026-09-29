@@ -68,7 +68,7 @@ class DeviceEndpoint(RestEndpoint):
         # Persist the merged, validated config: a partial PUT must not drop keys.
         entry = self._ledfx.config_store.device_entry(device_id)
         if entry is not None:
-            entry.config = device.config
+            entry.config = device.config.as_dict()
         self._ledfx.config_store.request_save()
         return await self.request_success()
 

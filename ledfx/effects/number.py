@@ -63,7 +63,6 @@ class Number(Texter2d):
 
     CONFIG_SCHEMA = vol.Schema(
         {
-            **Texter2d.CONFIG_SCHEMA.schema,  # Inherit parent schema
             vol.Optional(
                 "value_source",
                 description="Source of the value to display",

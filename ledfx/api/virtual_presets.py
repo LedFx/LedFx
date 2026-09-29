@@ -208,7 +208,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         # Update the preset if it already exists, else create it
         self._ledfx.config.user_presets.setdefault(effect_id, {})[preset_id] = Preset(
-            name=preset_name, config=virtual.active_effect.config
+            name=preset_name, config=virtual.active_effect.config.as_dict()
         )
 
         self._ledfx.config_store.request_save()

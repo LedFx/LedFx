@@ -2,11 +2,13 @@
 # import voluptuous as vol
 # import numpy as np
 # import requests
+import copy
 import logging
 from collections.abc import Callable
 from enum import IntEnum
 
 from ledfx.configuration.models import IntegrationEntry
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.events import Event
 from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
 
@@ -25,6 +27,7 @@ class Status(IntEnum):
 @BaseRegistry.no_registration
 class Integration(BaseRegistry):
     beta = True  # Over ride in child classes to publish
+    config = TypedConfig(PluginConfig)
 
     def __init__(self, ledfx, config, active, data):
         self._ledfx = ledfx
@@ -141,8 +144,12 @@ class Integrations(RegistryLoader):
                     type=integration.type,
                     active=integration.active,
                     config=integration.config,
-                    data=integration.data,
+                    # A copy: the plugin mutates its data, and only its API
+                    # writes it back to the entry.
+                    data=copy.deepcopy(integration.data),
                     ledfx=self._ledfx,
+                    lenient=self._ledfx.config_store.quarantine,
+                    lenient_entry=integration,
                 )
             except Exception as e:  # noqa: BLE001
                 _LOGGER.warning("Failed to load integration: %s", e)

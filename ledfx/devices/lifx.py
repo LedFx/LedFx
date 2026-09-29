@@ -164,11 +164,13 @@ class LifxDevice(NetworkedDevice):
 
             async with device:
                 # Save serial, class, and type for faster future connections
-                self._config["serial"] = device.serial
                 lifx_class = type(device).__name__
-                self._config["lifx_class"] = lifx_class
                 self._lifx_type = LIFX_TYPE_MAP.get(lifx_class, "light")
-                self._config["lifx_type"] = self._lifx_type
+                self._set_config_values(
+                    serial=device.serial,
+                    lifx_class=lifx_class,
+                    lifx_type=self._lifx_type,
+                )
 
                 _LOGGER.info(
                     "LIFX %s: Detected %s (%s) serial=%s",
@@ -188,9 +190,11 @@ class LifxDevice(NetworkedDevice):
 
                     if self._tiles:
                         self._perm = self._build_permutation(tiles)
-                        self._config["pixel_count"] = self._total_pixels
-                        self._config["matrix_width"] = self._matrix_width
-                        self._config["matrix_height"] = self._matrix_height
+                        self._set_config_values(
+                            pixel_count=self._total_pixels,
+                            matrix_width=self._matrix_width,
+                            matrix_height=self._matrix_height,
+                        )
                         _LOGGER.info(
                             "LIFX %s: Matrix %dx%d (%d pixels)",
                             self._config["name"],
@@ -208,7 +212,7 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type = "strip"
                     self._device_type = "LIFX Strip"
                     self._zone_count = await device.get_zone_count()
-                    self._config["pixel_count"] = self._zone_count
+                    self._set_config_values(pixel_count=self._zone_count)
 
                     if not device.capabilities:
                         await device._ensure_capabilities()
@@ -228,7 +232,7 @@ class LifxDevice(NetworkedDevice):
                 elif isinstance(device, (Light, HevLight, InfraredLight)):
                     self._lifx_type = "light"
                     self._device_type = "LIFX Light"
-                    self._config["pixel_count"] = 1
+                    self._set_config_values(pixel_count=1)
                     _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
 
         except (LifxError, OSError) as e:

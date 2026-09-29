@@ -8,6 +8,7 @@ import pytest
 import voluptuous as vol
 
 from ledfx.api.device import DeviceEndpoint
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Device
 from ledfx.devices.artnet import ArtNetDevice
 from ledfx.devices.ddp import DDPDevice
@@ -51,11 +52,13 @@ async def test_device_put_persists_merged_config() -> None:
         {"devices": [{"id": "d", "type": "ddp", "config": {"ip_address": "10.0.0.5"}}]}
     )
     device = ledfx.devices.get.return_value
-    device.config = {"ip_address": "10.0.0.5", "sync_mode": "E131"}
+    device.config = PluginConfig.model_validate(
+        {"ip_address": "10.0.0.5", "sync_mode": "E131"}
+    )
     request = MagicMock()
     request.json = AsyncMock(return_value={"config": {"sync_mode": "E131"}})
     await DeviceEndpoint(ledfx).put("d", request)
-    assert ledfx.config.devices[0].config == device.config
+    assert ledfx.config.devices[0].config == device.config.as_dict()
     ledfx.config_store.request_save.assert_called_once()
 
 
@@ -87,6 +90,7 @@ def test_wled_rebuilds_subdevice_on_pixel_count_change() -> None:
     old = MagicMock()
     device.subdevice = old
     sender = MagicMock()
+    sender.config_model.return_value.model_validate.side_effect = dict
     with patch.dict(WLEDDevice.SYNC_MODES, {"UDP": sender}):
         device.config_updated(device._config)
     old.deactivate.assert_called_once()

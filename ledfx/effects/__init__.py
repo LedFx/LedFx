@@ -11,6 +11,7 @@ import voluptuous as vol
 from numpy.typing import NDArray
 
 from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.effects.utils.logsec_helper import LogSecHelper
 from ledfx.events import EffectUpdatedEvent
 from ledfx.utils import BaseRegistry, RegistryLoader
@@ -279,6 +280,7 @@ class Effect(BaseRegistry):
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     USES_MELBANK_RANGE = False
+    config = TypedConfig(PluginConfig)
     _config = None
     _active = False
     _virtual = None
@@ -370,31 +372,16 @@ class Effect(BaseRegistry):
         _LOGGER.info("Effect %s deactivated.", self.NAME)
 
     @classmethod
-    def get_combined_default_schema(cls):
-        # Initialize an empty schema
-        combined_schema = {}
-
-        # Function to recursively merge schemas from parent classes
-        def merge_schema(c):
-            for base in c.__bases__:
-                merge_schema(base)
-            if hasattr(c, "CONFIG_SCHEMA"):
-                combined_schema.update(c.CONFIG_SCHEMA({}))
-
-        merge_schema(cls)
-
-        return combined_schema
+    def get_combined_default_schema(cls) -> dict[str, object]:
+        return cls.config_model().model_validate({}).as_dict()
 
     def update_config(self, config):
         with self.lock:
-            try:
-                # Validate the merged config so coerced values are what we store.
-                validated_config = type(self).schema()(
-                    {**(self._config or {}), **config}
-                )
-            except vol.Invalid as err:
-                _LOGGER.warning("Error updating effect %s config: %s", self.NAME, err)
-                return
+            validated_config = (
+                type(self)
+                .config_model()
+                .model_validate({**(self._config or {}), **config})
+            )
 
             # A failing config_updated hook restores this, derived state included.
             old_state, old_diag = dict(vars(self)), self.logsec.diag

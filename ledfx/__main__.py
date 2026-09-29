@@ -179,13 +179,6 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--generate-typescript-types",
-        dest="generate_typescript_types",
-        action="store_true",
-        help="Generate TypeScript types for the API and exit",
-    )
-
-    parser.add_argument(
         "--dump-schemas",
         dest="dump_schemas",
         metavar="PATH",
@@ -316,7 +309,6 @@ def entry_point(icon=None):
             clear_config=args.clear_config,
             clear_effects=args.clear_effects,
             offline_mode=args.offline_mode,
-            generate_typescript_types=args.generate_typescript_types,
         )
 
         exit_code = ledfx.start(open_ui=args.open_ui, pause_all=args.pause_all)

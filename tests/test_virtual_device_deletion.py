@@ -719,3 +719,92 @@ class TestLogging:
             "v-log" in record.message and "no device segments" in record.message
             for record in caplog.records
         ), f"Expected warning about v-log, got: {[r.message for r in caplog.records]}"
+
+
+class TestRestoreRepairsEffectHistory:
+    """A startup repair of the active effect also repairs its history entry,
+    so switching back to that effect later does not hit the bad value."""
+
+    async def test_switching_back_uses_the_repaired_config(self) -> None:
+        from unittest.mock import AsyncMock
+
+        from ledfx.api.virtual_effects import EffectsEndpoint
+        from ledfx.effects import Effects
+
+        ledfx = _make_ledfx(devices=[_DummyDevice("dev-1", pixel_count=50)])
+        ledfx.effects = Effects(ledfx)
+        bad = {"type": "singleColor", "config": {"brightness": 7}}
+        ledfx.config.virtuals.append(
+            VirtualEntry.model_validate(
+                {
+                    "id": "v-1",
+                    "config": {"name": "V1"},
+                    "segments": [["dev-1", 0, 9, False]],
+                    "effect": bad,
+                    "effects": {"singleColor": bad},
+                }
+            )
+        )
+        request = MagicMock()
+        request.json = AsyncMock(return_value={"type": "singleColor"})
+        try:
+            ledfx.virtuals.create_from_config(ledfx.config.virtuals)
+            entry = ledfx.config.virtuals[0]
+            assert entry.effects["singleColor"].config["brightness"] == 1.0
+            response = await EffectsEndpoint(ledfx).post("v-1", request)
+            assert response.status == 200
+            assert json.loads(response.text or "")["status"] == "success"
+        finally:
+            virtual = ledfx.virtuals.get("v-1")
+            if virtual is not None:
+                virtual._active = False  # no output thread to stop
+            for effect in list(ledfx.effects.values()):
+                if effect._active:
+                    effect._deactivate()  # stops the temporal effect's thread
+
+    async def test_a_non_active_history_slot_is_repaired_at_boot(self) -> None:
+        from unittest.mock import AsyncMock
+
+        from ledfx.api.virtual_effects import EffectsEndpoint
+        from ledfx.effects import Effects
+
+        ledfx = _make_ledfx(devices=[_DummyDevice("dev-1", pixel_count=50)])
+        ledfx.effects = Effects(ledfx)
+        unknown = {"type": "gone", "config": {"brightness": 7}}
+        ledfx.config.virtuals.append(
+            VirtualEntry.model_validate(
+                {
+                    "id": "v-1",
+                    "config": {"name": "V1"},
+                    "segments": [["dev-1", 0, 9, False]],
+                    "effects": {
+                        "rainbow": {"type": "rainbow", "config": {"brightness": 7}},
+                        "gone": unknown,
+                    },
+                }
+            )
+        )
+        request = MagicMock()
+        request.json = AsyncMock(return_value={"type": "rainbow"})
+        try:
+            ledfx.virtuals.create_from_config(ledfx.config.virtuals)
+            entry = ledfx.config.virtuals[0]
+            assert entry.effects["rainbow"].config["brightness"] == 1.0
+            assert entry.effects["gone"].model_dump() == unknown  # kept as is
+            ledfx.config_store.quarantine.assert_called_once()
+            path, value, _ = ledfx.config_store.quarantine.call_args.args
+            assert (path, value) == (
+                "virtuals.v-1.effects.rainbow.config.brightness",
+                7,
+            )
+            ledfx.config_store.request_save.assert_called()
+            response = await EffectsEndpoint(ledfx).post("v-1", request)
+            assert response.status == 200
+            assert json.loads(response.text or "")["status"] == "success"
+        finally:
+            virtual = ledfx.virtuals.get("v-1")
+            if virtual is not None:
+                virtual._active = False  # no output thread to stop
+            for effect in list(ledfx.effects.values()):
+                if effect._active:
+                    effect._deactivate()  # stops the temporal effect's thread

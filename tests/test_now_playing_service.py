@@ -10,6 +10,7 @@ import voluptuous as vol
 from PIL import Image
 from pydantic import ValidationError
 
+from ledfx.configuration.plugin import vol_to_model
 from ledfx.effects import DummyEffect
 from ledfx.events import Event
 from ledfx.nowplaying.models import (
@@ -606,8 +607,8 @@ def _make_mock_effect(schema_keys, hidden_keys=None, config=None):
     eff.HIDDEN_KEYS = hidden_keys or []
     eff._config = config or {}
 
-    mock_schema = _make_mock_schema(*schema_keys)
-    type(eff).schema = classmethod(lambda cls: mock_schema)
+    mock_model = vol_to_model("MockEffect", _make_mock_schema(*schema_keys))
+    type(eff).config_model = MagicMock(return_value=mock_model)
     return eff
 
 

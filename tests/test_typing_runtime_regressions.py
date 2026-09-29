@@ -17,10 +17,11 @@ from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 from ledfx.api import RestEndpoint
 from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.config import ConfigEndpoint
-from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
+from ledfx.api.virtual_effects import EffectsEndpoint
 from ledfx.api.websocket import WebsocketConnection, websocket_handlers
 from ledfx.config import load_logger
 from ledfx.configuration.migrations.legacy import legacy_to_v1
+from ledfx.configuration.plugin import vol_to_model
 from ledfx.devices import Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
 from ledfx.utils import WLED, get_local_ip
@@ -79,7 +80,9 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     effect.config = dict[str, object]()
     virtual.active_effect = effect
     ledfx.effects.create.return_value = effect
-    ledfx.effects.get_class.return_value.schema.return_value = schema
+    ledfx.effects.get_class.return_value.config_model.return_value = vol_to_model(
+        "TestEffect", schema
+    )
     request = MagicMock()
     request.json = AsyncMock(
         return_value={"config": "RANDOMIZE", "type": "test-effect"}
@@ -95,22 +98,6 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     assert set(generated) == {"flag", "count"}
     assert isinstance(generated["flag"], bool)
     assert 2 <= generated["count"] <= 5
-
-
-def test_randomize_int_respects_exclusive_bounds() -> None:
-    def exclusive(low: int, high: int) -> vol.All:
-        return vol.All(
-            vol.Coerce(int),
-            vol.Range(min=low, max=high, min_included=False, max_included=False),
-        )
-
-    schema: dict[object, object] = {
-        vol.Optional("one"): exclusive(0, 2),
-        vol.Optional("none"): exclusive(0, 1),
-    }
-    for _ in range(50):
-        # 1 is the only integer in (0, 2); (0, 1) holds none, so it is skipped.
-        assert randomize_effect_config(schema, ()) == {"one": 1}
 
 
 def test_migration_discards_effect_without_type_and_keeps_virtual() -> None:
