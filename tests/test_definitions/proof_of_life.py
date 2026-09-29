@@ -70,6 +70,14 @@ proof_of_life_tests = {
         expected_return_code=200,
         expected_response_keys=["status", "scenes"],
     ),
+    # The playlist manager is created with the core, not on first use.
+    "playlists_list": APITestCase(
+        execution_order=10,
+        method="GET",
+        api_endpoint="/api/playlists",
+        expected_return_code=200,
+        expected_response_keys=["playlists"],
+    ),
     # If we have a dirty config, clean up the test jig before we start
     "cleanup_test_device": APITestCase(
         execution_order=3,

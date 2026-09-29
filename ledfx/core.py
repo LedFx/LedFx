@@ -519,6 +519,7 @@ class LedFxCore:
         self.virtuals.reset_for_core(self)
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
+        self.playlists = PlaylistManager(self)
         self.colors = UserDefaultCollection(
             self,
             "Colors",
@@ -592,8 +593,6 @@ class LedFxCore:
     async def _handle_startup_playlist(self):
         """Activate the configured startup playlist, if any."""
         if self.config.startup_playlist_id != "":
-            if not hasattr(self, "playlists"):
-                self.playlists = PlaylistManager(self)
             pid = self.config.startup_playlist_id
             if await self.playlists.start(pid):
                 _LOGGER.info(

@@ -84,6 +84,7 @@ def make_minimal_ledfx_for_endpoint(tmp_path):
     ledfx.config = fake.config
     ledfx.config_store = fake.config_store
     ledfx.config_dir = str(tmp_path)
+    ledfx.playlists = PlaylistManager(ledfx)  # as LedFxCore does at startup
     return ledfx
 
 
