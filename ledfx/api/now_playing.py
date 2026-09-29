@@ -41,16 +41,13 @@ class NowPlayingEndpoint(RestEndpoint):
         except json.JSONDecodeError:
             return await self.json_decode_error()
 
-        if not isinstance(data, dict):
-            return await self.invalid_request("Request body must be a JSON object.")
-
         np_service = self._ledfx.now_playing
 
         try:
             validated = np_service.update_config(data)
         except ValidationError as exc:
             _LOGGER.warning("Invalid now_playing config: %s", exc)
-            return await self.invalid_request(str(exc))
+            return await self.validation_error(exc)
 
         return await self.request_success(
             "success", "Now Playing configuration updated.", validated

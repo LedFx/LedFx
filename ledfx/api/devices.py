@@ -2,6 +2,7 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 
@@ -64,6 +65,8 @@ class DevicesEndpoint(RestEndpoint):
             device = await self._ledfx.devices.add_new_device(
                 device_type, device_config
             )
+        except ValidationError as err:
+            return await self.validation_error(err)
         except ValueError as msg:
             error_message = f"Error creating device: {msg}"
             _LOGGER.warning(error_message)

@@ -55,12 +55,12 @@ class AudioDevicesEndpoint(RestEndpoint):
         index = data.get("audio_device")
         if index is None:
             return await self.invalid_request(
-                "Required attribute 'index' was not provided"
+                "Required attribute 'audio_device' was not provided"
             )
 
         valid_indexes = AudioInputSource.valid_device_indexes()
 
-        if index not in valid_indexes:
+        if isinstance(index, bool) or index not in valid_indexes:
             return await self.invalid_request(f"Invalid device index [{index}]")
 
         # Update and save config

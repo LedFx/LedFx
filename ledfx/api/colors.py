@@ -10,6 +10,8 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class ColorEndpoint(RestEndpoint):
+    # DELETE takes a list of color names.
+    OBJECT_BODY_METHODS = ("PUT", "POST")
     ENDPOINT_PATH = "/api/colors"
 
     async def get(self) -> web.Response:
@@ -44,6 +46,10 @@ class ColorEndpoint(RestEndpoint):
             data = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
+        if not isinstance(data, list) or not all(isinstance(k, str) for k in data):
+            return await self.invalid_request(
+                "Request body must be a JSON list of color names"
+            )
 
         for key in data:
             if key in self._ledfx.colors:

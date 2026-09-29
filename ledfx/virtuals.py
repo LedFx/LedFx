@@ -161,9 +161,16 @@ class Virtual:
         valid = True
         msg = None
 
-        if len(segment) != 4:
+        if not (
+            isinstance(segment, (list, tuple))
+            and len(segment) == 4
+            and isinstance(segment[0], str)
+            and isinstance(segment[1], int)
+            and isinstance(segment[2], int)
+        ):
             msg = f"Invalid segment format: {segment}, should be [device_id, start, end, invert]"
-            valid = False
+            _LOGGER.error(msg)
+            raise ValueError(msg)
 
         device_id, start_pixel, end_pixel, invert = segment
 
@@ -247,7 +254,14 @@ class Virtual:
             None
         """
         with self.lock:
-            segments_config = [list(item) for item in segments_config]
+            if not isinstance(segments_config, (list, tuple)):
+                raise ValueError(  # noqa: TRY004 - callers catch ValueError
+                    f"Invalid segments: {segments_config}, should be a list of segments"
+                )
+            segments_config = [
+                list(item) if isinstance(item, (list, tuple)) else item
+                for item in segments_config
+            ]
             _segments = [self.validate_segment(s) for s in segments_config]
 
             _pixel_count = self.pixel_count

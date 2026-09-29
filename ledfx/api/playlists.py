@@ -4,6 +4,7 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.configuration.models import PlaylistTiming, validate_dict
@@ -37,6 +38,8 @@ class PlaylistsEndpoint(RestEndpoint):
             await self._ensure_manager()
             playlist = await self._ledfx.playlists.create_or_replace(data)
             return await self.request_success(data={"playlist": playlist})
+        except ValidationError as err:
+            return await self.validation_error(err)
         except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Playlist request rejected: %s", e)
             return await self.invalid_request(str(e))
@@ -57,7 +60,7 @@ class PlaylistsEndpoint(RestEndpoint):
             # Playlist Selection Actions (require id)
             if action == "start":
                 pid = data.get("id")
-                if not pid:
+                if not pid or not isinstance(pid, str):
                     return await self.invalid_request("id required for start action")
                 # optional runtime override for mode: sequence|shuffle
                 mode = data.get("mode")
@@ -75,10 +78,8 @@ class PlaylistsEndpoint(RestEndpoint):
                     try:
                         # validate (coerce types and enforce bounds)
                         timing = validate_dict(PlaylistTiming, timing)
-                    except ValueError as e:  # pydantic's ValidationError
-                        return await self.invalid_request(
-                            f"timing validation failed: {e}"
-                        )
+                    except ValidationError as err:
+                        return await self.validation_error(err)
                 ok = await self._ledfx.playlists.start(pid, mode=mode, timing=timing)
                 if not ok:
                     return await self.invalid_request(
@@ -151,7 +152,7 @@ class PlaylistsEndpoint(RestEndpoint):
             )
 
         pid = data.get("id")
-        if pid is None:
+        if not isinstance(pid, str):
             return await self.invalid_request(
                 "id required in JSON body, or use DELETE /api/playlists/{id}"
             )

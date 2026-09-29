@@ -26,11 +26,14 @@ class InfoEndpoint(RestEndpoint):
 
         if device is None:
             return await self.invalid_request(f"Device {device_id} was not found")
+        ip_address = getattr(device.config, "ip_address", None)
+        if not ip_address:
+            return await self.invalid_request(f"Device {device_id} has no IP address")
 
         ping_target = await resolve_destination(
             self._ledfx.loop,
             self._ledfx.thread_executor,
-            getattr(device.config, "ip_address"),  # noqa: B009 - networked devices only
+            ip_address,
         )
         ping = await async_ping(
             address=ping_target,

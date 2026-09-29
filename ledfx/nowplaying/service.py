@@ -482,10 +482,13 @@ class NowPlayingService:
         merged = {**self._config}
         for section in ("gradient", "track_text", "album_art"):
             if section in new_config:
-                merged[section] = {
-                    **merged.get(section, {}),
-                    **new_config[section],
-                }
+                value = new_config[section]
+                # Not an object: left as is for validation to report.
+                merged[section] = (
+                    {**merged.get(section, {}), **value}
+                    if isinstance(value, dict)
+                    else value
+                )
 
         validated = NowPlayingConfig.model_validate(merged).model_dump()
         self._config = validated

@@ -50,6 +50,8 @@ def _check_keys(section: dict[str, object], node: str) -> None:
 
 class ConfigEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/config"
+    # POST (import) explains a non-object file itself.
+    OBJECT_BODY_METHODS = ("PUT", "DELETE")
 
     def _runtime_value(self, key: str) -> object:
         if key == "hosts":

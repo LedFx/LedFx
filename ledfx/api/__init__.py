@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import uuid
 from json import JSONDecodeError
@@ -16,6 +17,10 @@ SNACKBAR_OPTIONS = ["success", "info", "warning", "error"]
 
 @BaseRegistry.no_registration
 class RestEndpoint(BaseRegistry):
+    # Methods whose JSON body must be an object. GET bodies may name keys as
+    # a string or list; an endpoint that takes another shape overrides this.
+    OBJECT_BODY_METHODS: tuple[str, ...] = ("PUT", "POST", "DELETE")
+
     def __init__(self, ledfx):
         self._ledfx = ledfx
 
@@ -28,11 +33,13 @@ class RestEndpoint(BaseRegistry):
             request.path,
         )
         body = None
+        body_is_json = False
         # Skip body parsing for multipart requests - they need to use request.multipart()
         content_type = request.headers.get("Content-Type", "")
         if request.has_body and not content_type.startswith("multipart/"):
             try:
                 body = await request.json()
+                body_is_json = True
             except JSONDecodeError:
                 body = await request.text()
             finally:
@@ -67,10 +74,21 @@ class RestEndpoint(BaseRegistry):
         if unsatisfied_args:
             raise web.HTTPBadRequest()
 
+        if (
+            request.method in self.OBJECT_BODY_METHODS
+            and body_is_json
+            and not isinstance(body, dict)
+        ):
+            return await self.invalid_request("Request body must be a JSON object")
+
         try:
             return await method(
                 **{arg_name: available_args[arg_name] for arg_name in wanted_args}
             )
+        except ValidationError as e:
+            return await self.validation_error(e)
+        except web.HTTPException:
+            raise
         except Exception as e:  # noqa: BLE001
             # _LOGGER.exception(e)
             reason = getattr(e, "args", None)
@@ -98,6 +116,7 @@ class RestEndpoint(BaseRegistry):
         response = {
             "status": "failed",
             "reason": "JSON decoding failed",
+            "payload": {"type": "error", "reason": "Request body is not valid JSON"},
         }
         return web.json_response(data=response, status=400, dumps=dumps)
 
@@ -149,7 +168,8 @@ class RestEndpoint(BaseRegistry):
         return web.json_response(data=response, status=resp_code, dumps=dumps)
 
     async def validation_error(self, err: ValidationError) -> web.Response:
-        errors = err.errors(include_url=False, include_context=False)
+        # err.json() stringifies inputs that plain JSON can't encode.
+        errors = json.loads(err.json(include_url=False, include_context=False))
         response = {
             "status": "failed",
             "payload": {"type": "error", "reason": f"{len(errors)} invalid value(s)"},

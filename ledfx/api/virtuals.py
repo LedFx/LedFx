@@ -67,7 +67,11 @@ class VirtualsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 'Required attribute "config" was not provided'
             )
+        if not isinstance(virtual_config, dict):
+            return await self.invalid_request('"config" must be an object')
         virtual_id = data.get("id")
+        if virtual_id is not None and not isinstance(virtual_id, str):
+            return await self.invalid_request('"id" must be a string')
 
         # Update virtual config if id exists
         if virtual_id is not None:
@@ -102,7 +106,12 @@ class VirtualsEndpoint(RestEndpoint):
             }
         # Or, create new virtual if id does not exist
         else:
-            virtual_id = generate_id(virtual_config.get("name"))
+            # Validate first: the id is generated from the name.
+            try:
+                VirtualConfig.model_validate(virtual_config)
+            except ValidationError as err:
+                return await self.validation_error(err)
+            virtual_id = generate_id(virtual_config["name"])
 
             # Create the virtual
             _LOGGER.info("Creating virtual with config %s", virtual_config)

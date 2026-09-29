@@ -72,7 +72,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
 
         try:
             port = int(port)
-        except ValueError:
+        except (TypeError, ValueError):
             error_message = f"Unable to convert {port} to int."
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)

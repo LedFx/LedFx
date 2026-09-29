@@ -67,32 +67,40 @@ class VirtualEndpoint(RestEndpoint):
             return await self.json_decode_error()
         active = data.get("active")
         if active is None:
+            # PUT only toggles; a config update is POST /api/virtuals with the id.
             return await self.invalid_request(
-                'Required attribute "active" was not provided'
+                'Required attribute "active" was not provided. '
+                "To change the config, POST it to /api/virtuals with the virtual's id"
             )
+        if not isinstance(active, bool):
+            return await self.invalid_request('"active" must be true or false')
 
         # Update the virtual's configuration
-        if active and (
-            not virtual._active_effect or isinstance(virtual.active_effect, DummyEffect)
-        ):
-            entry = virtual.entry
-            last_effect = entry.last_effect if entry is not None else None
-            if last_effect:
-                effect_config = virtual.get_effects_config(last_effect)
-                if effect_config:
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type=last_effect,
-                        config=effect_config,
-                    )
-                    virtual.set_effect(effect)
-                    virtual.update_effect_config(effect)
+        effect = None
         try:
+            if active and (
+                not virtual._active_effect
+                or isinstance(virtual.active_effect, DummyEffect)
+            ):
+                # Restore the last effect; a stale stored config fails here too.
+                entry = virtual.entry
+                last_effect = entry.last_effect if entry is not None else None
+                if last_effect:
+                    effect_config = virtual.get_effects_config(last_effect)
+                    if effect_config:
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx,
+                            type=last_effect,
+                            config=effect_config,
+                        )
+                        virtual.set_effect(effect)
             virtual.active = active
-        except ValueError as msg:
+        except (ValueError, RuntimeError) as msg:  # includes ValidationError
             error_message = f"Unable to set virtual {virtual.id} status: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error(error_message, "error")
+            return await self.invalid_request(error_message)
+        if effect is not None:
+            virtual.update_effect_config(effect)
 
         entry = virtual.entry
         if entry is not None:
@@ -121,15 +129,13 @@ class VirtualEndpoint(RestEndpoint):
                 'Required attribute "segments" was not provided'
             )
 
-        # Update the virtual's configuration
-        old_segments = virtual.segments
+        # update_segments validates first and restores on an activation failure.
         try:
             virtual.update_segments(virtual_segments)
         except ValueError as msg:
             error_message = f"Unable to set virtual segments {virtual_segments}: {msg}"
             _LOGGER.warning(error_message)
-            virtual.update_segments(old_segments)
-            return await self.internal_error(error_message, "error")
+            return await self.invalid_request(error_message)
 
         entry = virtual.entry
         if entry is not None:

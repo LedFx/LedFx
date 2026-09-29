@@ -150,6 +150,11 @@ def randomize_effect_config(
 class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/effects"
 
+    def _known_effect(self, effect_type: object) -> bool:
+        return (
+            isinstance(effect_type, str) and effect_type in self._ledfx.effects.types()
+        )
+
     async def get(self, virtual_id) -> web.Response:
         """
         Get active effect configuration for a virtual.
@@ -194,7 +199,7 @@ class EffectsEndpoint(RestEndpoint):
         if virtual is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        if not virtual.active_effect:
+        if not virtual.active_effect or isinstance(virtual.active_effect, DummyEffect):
             return await self.invalid_request(
                 f"Virtual {virtual_id} has no active effect"
             )
@@ -205,7 +210,10 @@ class EffectsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         effect_config = data.get("config")
-        effect_type = data.get("type")
+        # Without a type, the config updates the active effect.
+        effect_type = data.get("type", virtual.active_effect.type)
+        if not self._known_effect(effect_type):
+            return await self.invalid_request(f"Unknown effect type: {effect_type}")
         if effect_config is None:
             effect_config = {}
         if effect_config == "RANDOMIZE":
@@ -214,6 +222,8 @@ class EffectsEndpoint(RestEndpoint):
             effect_config = randomize_effect_config(
                 effect.config_model(), ["brightness"]
             )
+        if not isinstance(effect_config, dict):
+            return await self.invalid_request("'config' must be an object")
 
         fallback = process_fallback(data.get("fallback", None))
 
@@ -265,7 +275,7 @@ class EffectsEndpoint(RestEndpoint):
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error(error_message, "warning")
+            return await self.invalid_request(error_message, "warning")
 
         virtual.update_effect_config(effect)
 
@@ -303,6 +313,8 @@ class EffectsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 "Required attribute 'type' was not provided"
             )
+        if not self._known_effect(effect_type):
+            return await self.invalid_request(f"Unknown effect type: {effect_type}")
 
         effect_config = data.get("config")
         if effect_config is None:
@@ -313,6 +325,8 @@ class EffectsEndpoint(RestEndpoint):
                 effect.config_model(),
                 ["brightness", "background_color", "background_brightness"],
             )
+        elif not isinstance(effect_config, dict):
+            return await self.invalid_request("'config' must be an object")
 
         # Create the effect and add it to the virtual
         try:
@@ -336,7 +350,7 @@ class EffectsEndpoint(RestEndpoint):
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect {effect} on {virtual_id}: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error(error_message, "error")
+            return await self.invalid_request(error_message)
 
         virtual.update_effect_config(effect)
 
