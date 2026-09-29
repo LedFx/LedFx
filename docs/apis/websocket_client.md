@@ -585,9 +585,9 @@ All `ClientBroadcastEvent` payloads MUST include server-derived sender fields:
 
 ```python
 {
-    "sender_uuid": str,          # Server-derived, never from client
-    "sender_name": str | None,   # From metadata, fallback to "Client-{uuid[:8]}"
-    "sender_type": str,          # From metadata, default "unknown"
+    "sender_uuid": str,  # Server-derived, never from client
+    "sender_name": str | None,  # From metadata, fallback to "Client-{uuid[:8]}"
+    "sender_type": str,  # From metadata, default "unknown"
 }
 ```
 

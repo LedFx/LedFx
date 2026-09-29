@@ -19,13 +19,13 @@ repos:
         entry: uv run --frozen --only-group dev ruff check --force-exclude
         args: [--fix]
         language: system
-        types_or: [python, pyi]
+        types_or: [python, pyi, jupyter]
         require_serial: true
       - id: ruff-format
         name: ruff format
         entry: uv run --frozen --only-group dev ruff format --force-exclude
         language: system
-        types_or: [python, pyi]
+        types_or: [python, pyi, jupyter, markdown]
         require_serial: true
   # Structural check that ClassVar annotations describe their literals.
   # Ruff's RUF012 cannot see this (it only asks that an annotation exist).

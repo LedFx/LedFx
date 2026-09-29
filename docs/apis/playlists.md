@@ -361,36 +361,40 @@ curl -X PUT http://localhost:8888/api/playlists \
 ## Validation (Voluptuous sketch)
 
 ```python
-TimingJitter = vol.Schema({
-    vol.Required("enabled"): bool,
-    vol.Optional("factor_min", default=1.0): vol.All(float, vol.Range(min=0.0)),
-    vol.Optional("factor_max", default=1.0): vol.All(float, vol.Range(min=0.0)),
-})
+TimingJitter = vol.Schema(
+    {
+        vol.Required("enabled"): bool,
+        vol.Optional("factor_min", default=1.0): vol.All(float, vol.Range(min=0.0)),
+        vol.Optional("factor_max", default=1.0): vol.All(float, vol.Range(min=0.0)),
+    }
+)
 
-PlaylistTiming = vol.Schema({
-    vol.Optional("jitter"): TimingJitter
-})
+PlaylistTiming = vol.Schema({vol.Optional("jitter"): TimingJitter})
 
-PlaylistItem = vol.Schema({
-    vol.Required("scene_id"): str,
-    vol.Optional("duration_ms"): vol.All(int, vol.Range(min=500)),
-})
+PlaylistItem = vol.Schema(
+    {
+        vol.Required("scene_id"): str,
+        vol.Optional("duration_ms"): vol.All(int, vol.Range(min=500)),
+    }
+)
 
 PlaylistMode = vol.Schema(vol.In(["sequence", "shuffle"]))
 
-PlaylistSchema = vol.Schema({
-  # 'id' is optional when creating a playlist via the API. If omitted,
-  # the server will auto-generate (slug) an id from the provided "name".
-  # if present and the id exists, the playlist will be overwritten
-  vol.Optional("id"): str,
-  vol.Required("name"): str,
-  vol.Required("items"): [PlaylistItem],
-  vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
-  vol.Optional("mode", default="sequence"): PlaylistMode,
-  vol.Optional("timing"): PlaylistTiming,
-  vol.Optional("tags", default=list): [str],
-  vol.Optional("image"): vol.Any(str, None),
-})
+PlaylistSchema = vol.Schema(
+    {
+        # 'id' is optional when creating a playlist via the API. If omitted,
+        # the server will auto-generate (slug) an id from the provided "name".
+        # if present and the id exists, the playlist will be overwritten
+        vol.Optional("id"): str,
+        vol.Required("name"): str,
+        vol.Required("items"): [PlaylistItem],
+        vol.Optional("default_duration_ms"): vol.All(int, vol.Range(min=500)),
+        vol.Optional("mode", default="sequence"): PlaylistMode,
+        vol.Optional("timing"): PlaylistTiming,
+        vol.Optional("tags", default=list): [str],
+        vol.Optional("image"): vol.Any(str, None),
+    }
+)
 ```
 
 ---

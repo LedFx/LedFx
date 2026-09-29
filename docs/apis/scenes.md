@@ -789,23 +789,33 @@ curl -X GET http://localhost:8888/api/scenes/living-room
 ## Validation (Voluptuous sketch)
 
 ```python
-VirtualActionSchema = vol.Schema({
-  vol.Optional("action"): vol.In(["ignore", "stop", "forceblack", "activate"]),
-  vol.Optional("type"): str,  # Required if action="activate"
-  vol.Optional("config"): dict,  # Required if action="activate" and preset not provided
-  vol.Optional("preset"): str,  # Alternative to config for action="activate", requires type
-})
+VirtualActionSchema = vol.Schema(
+    {
+        vol.Optional("action"): vol.In(["ignore", "stop", "forceblack", "activate"]),
+        vol.Optional("type"): str,  # Required if action="activate"
+        vol.Optional(
+            "config"
+        ): dict,  # Required if action="activate" and preset not provided
+        vol.Optional(
+            "preset"
+        ): str,  # Alternative to config for action="activate", requires type
+    }
+)
 
-SceneSchema = vol.Schema({
-  vol.Optional("id"): str,
-  vol.Required("name"): str,
-  vol.Optional("virtuals"): {str: VirtualActionSchema},  # Map of virtual_id -> action config
-  vol.Optional("scene_image", default="Wallpaper"): str,
-  vol.Optional("scene_tags"): vol.Any(str, None),
-  vol.Optional("scene_puturl"): vol.Any(str, None),
-  vol.Optional("scene_payload"): vol.Any(str, None),
-  vol.Optional("scene_midiactivate"): vol.Any(dict, None),
-})
+SceneSchema = vol.Schema(
+    {
+        vol.Optional("id"): str,
+        vol.Required("name"): str,
+        vol.Optional("virtuals"): {
+            str: VirtualActionSchema
+        },  # Map of virtual_id -> action config
+        vol.Optional("scene_image", default="Wallpaper"): str,
+        vol.Optional("scene_tags"): vol.Any(str, None),
+        vol.Optional("scene_puturl"): vol.Any(str, None),
+        vol.Optional("scene_payload"): vol.Any(str, None),
+        vol.Optional("scene_midiactivate"): vol.Any(dict, None),
+    }
+)
 ```
 
 **Validation rules:**
