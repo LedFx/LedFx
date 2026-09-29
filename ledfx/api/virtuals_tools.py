@@ -1,7 +1,9 @@
 import logging
 from json import JSONDecodeError
+from typing import Annotated
 
 from aiohttp import web
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
@@ -10,6 +12,43 @@ from ledfx.effects.oneshots.oneshot import Flash
 _LOGGER = logging.getLogger(__name__)
 
 TOOLS = ["force_color", "calibration", "highlight", "oneshot", "copy"]
+
+
+class OneshotRequest(BaseModel):
+    """POST body for the oneshot tool. Times are in milliseconds."""
+
+    # An infinite fade never expires and turns the pixels to NaN.
+    model_config = ConfigDict(allow_inf_nan=False)
+
+    color: Annotated[str | list[int], AfterValidator(validate_color)] = "white"
+    ramp: float = Field(0, ge=0)
+    hold: float = Field(0, ge=0)
+    fade: float = Field(0, ge=0)
+    # Values outside 0-1 are clamped, as they always were.
+    brightness: float = 1
+
+    def flash(self) -> Flash:
+        brightness = min(1, max(0, self.brightness))
+        return Flash(
+            parse_color(self.color), self.ramp, self.hold, self.fade, brightness
+        )
+
+
+async def refuse_post_tool(
+    endpoint: RestEndpoint, tool: object, tools: list[str]
+) -> web.Response | None:
+    """The failure response for a POST tool other than oneshot, else None."""
+    if tool is None:
+        return await endpoint.invalid_request(
+            'Required attribute "tool" was not provided'
+        )
+    if tool not in tools:
+        return await endpoint.invalid_request(f"Tool {tool} is not in {tools}")
+    if tool != "oneshot":
+        return await endpoint.invalid_request(
+            f"POST only runs the oneshot tool; use PUT for {tool}"
+        )
+    return None
 
 
 class VirtualsToolsEndpoint(RestEndpoint):
@@ -50,26 +89,12 @@ class VirtualsToolsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         tool = data.get("tool")
+        if refused := await refuse_post_tool(self, tool, TOOLS):
+            return refused
 
-        if tool is None:
-            return await self.invalid_request(
-                'Required attribute "tool" was not provided'
-            )
-
-        if tool not in TOOLS:
-            return await self.invalid_request(f"Tool {tool} is not in {TOOLS}")
-
-        if tool == "oneshot":
-            color = parse_color(validate_color(data.get("color", "white")))
-            ramp = data.get("ramp", 0)
-            hold = data.get("hold", 0)
-            fade = data.get("fade", 0)
-            brightness = min(1, max(0, data.get("brightness", 1)))
-
-            result = virtual.add_oneshot(Flash(color, ramp, hold, fade, brightness))
-
-            if result is False:
-                return await self.invalid_request("oneshot failed")
+        oneshot = OneshotRequest.model_validate(data)
+        if virtual.add_oneshot(oneshot.flash()) is False:
+            return await self.invalid_request("oneshot failed")
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)

@@ -13,6 +13,8 @@ from ledfx.api.colors_delete import ColorDeleteEndpoint
 from ledfx.api.device import DeviceEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
 from ledfx.api.presets import PresetsEndpoint
+from ledfx.api.virtual_tools import VirtualToolsEndpoint
+from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
@@ -205,3 +207,65 @@ def test_user_default_collection_refuses_to_touch_built_ins() -> None:
         del colors[BUILTIN_COLOR]
     with pytest.raises(KeyError):
         del colors["ghost"]
+
+
+def _tool_virtual() -> tuple[MagicMock, MagicMock]:
+    ledfx = fake_ledfx()
+    virtual = MagicMock()
+    virtual.add_oneshot.return_value = True
+    ledfx.virtuals.get.return_value = virtual
+    ledfx.virtuals.__iter__.return_value = iter(["v1"])
+    return ledfx, virtual
+
+
+async def _tools_post(body: object, one_virtual: bool):
+    ledfx, virtual = _tool_virtual()
+    if one_virtual:
+        reply = await _call(VirtualsToolsEndpoint(ledfx), "POST", body, virtual_id="v1")
+    else:
+        reply = await _call(VirtualToolsEndpoint(ledfx), "POST", body)
+    return *reply, virtual
+
+
+@pytest.mark.parametrize("one_virtual", [True, False])
+@pytest.mark.parametrize("tool", ["force_color", "calibration", "highlight", "copy"])
+async def test_tools_post_refuses_tools_it_does_not_run(
+    tool: str, one_virtual: bool
+) -> None:
+    body = {"tool": tool, "color": "red"}
+    status, reply, virtual = await _tools_post(body, one_virtual)
+    assert status == 200
+    assert reply["status"] == "failed"
+    assert virtual.method_calls == []
+
+
+@pytest.mark.parametrize("one_virtual", [True, False])
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("brightness", "x"),
+        ("ramp", "slow"),
+        ("hold", -1),
+        ("fade", None),
+        ("fade", "inf"),
+        ("hold", "nan"),
+        ("color", "notacolor"),
+    ],
+)
+async def test_tools_oneshot_rejects_bad_values(
+    field: str, value: object, one_virtual: bool
+) -> None:
+    body = {"tool": "oneshot", field: value}
+    status, reply, virtual = await _tools_post(body, one_virtual)
+    assert status == 400
+    assert [e["loc"] for e in reply["errors"]] == [[field]]
+    virtual.add_oneshot.assert_not_called()
+
+
+@pytest.mark.parametrize("one_virtual", [True, False])
+async def test_tools_oneshot_still_clamps_brightness(one_virtual: bool) -> None:
+    body = {"tool": "oneshot", "color": "#ffffff", "ramp": 10, "brightness": 5}
+    status, reply, virtual = await _tools_post(body, one_virtual)
+    assert (status, reply) == (200, {"status": "success", "tool": "oneshot"})
+    (flash,), _ = virtual.add_oneshot.call_args
+    assert list(flash._color) == [255.0, 255.0, 255.0]
