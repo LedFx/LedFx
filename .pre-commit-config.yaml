@@ -8,12 +8,24 @@ repos:
       - id: check-yaml
       - id: check-toml
       - id: trailing-whitespace
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.4
+  # ruff runs from the locked version (uv.lock, bumped by Renovate) rather than
+  # ruff-pre-commit's own rev, so there is a single ruff pin. Needs
+  # `uv sync --group dev`, as in CI. Args and filters match ruff-pre-commit.
+  - repo: local
     hooks:
       - id: ruff-check
+        name: ruff check
+        entry: uv run --frozen --only-group dev ruff check --force-exclude
         args: [--fix]
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
       - id: ruff-format
+        name: ruff format
+        entry: uv run --frozen --only-group dev ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
   # Structural check that ClassVar annotations describe their literals.
   # Ruff's RUF012 cannot see this (it only asks that an annotation exist).
   # language: python lets prek provision the interpreter via its uv
