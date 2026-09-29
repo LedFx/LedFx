@@ -75,7 +75,7 @@ class TrackMetadata:
 class ArtworkReference:
     source_id: str
     url: Optional[str] = None
-    cache_key: Optional[str] = None   # absolute path of saved asset
+    cache_key: Optional[str] = None  # absolute path of saved asset
     content_type: Optional[str] = None
     hash: Optional[str] = None
     width: Optional[int] = None
@@ -105,19 +105,19 @@ Persisted under `config["now_playing"]`.
 ```python
 {
     "gradient": {
-        "enabled": True,                     # apply gradient to virtuals
-        "variant": "led_punchy",             # led_safe | led_punchy | led_max
-        "virtual_ids": [],                   # [] = all virtuals
+        "enabled": True,  # apply gradient to virtuals
+        "variant": "led_punchy",  # led_safe | led_punchy | led_max
+        "virtual_ids": [],  # [] = all virtuals
     },
     "track_text": {
         "enabled": True,
-        "duration": 60,                      # seconds (0–60); 0 = permanent
+        "duration": 60,  # seconds (0–60); 0 = permanent
         "virtual_ids": [],
-        "preset": "",                        # texter2d preset name
+        "preset": "",  # texter2d preset name
     },
     "album_art": {
         "enabled": True,
-        "duration": 10,                      # seconds (0–60); 0 = permanent
+        "duration": 10,  # seconds (0–60); 0 = permanent
         "virtual_ids": [],
     },
 }

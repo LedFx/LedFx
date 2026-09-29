@@ -73,9 +73,9 @@ if device_idx == default_device:
 sd._terminate()
 sd._initialize()
 try:
-    open_audio_stream(device_idx)       # retry configured
+    open_audio_stream(device_idx)  # retry configured
 except:
-    open_audio_stream(default_device)   # fallback
+    open_audio_stream(default_device)  # fallback
 ```
 
 ## Startup vs Manual Selection — Path Comparison
@@ -191,8 +191,9 @@ def try_open_device(dev_idx, reinit=False):
     open_audio_stream(dev_idx)
     update_device_tracking(dev_idx)
 
+
 # Three-step recovery:
-if try_open_device(device_idx):               # 1. Try configured
+if try_open_device(device_idx):  # 1. Try configured
     return
 if try_open_device(device_idx, reinit=True):  # 2. Reinit + retry configured
     return

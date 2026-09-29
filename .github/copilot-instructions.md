@@ -32,9 +32,14 @@ All effects inherit from `Effect` (extends `BaseRegistry`). Modify `self.pixels`
 ```python
 class MyEffect(Effect):
     NAME = "My Effect"
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional("speed", default=1.0): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional("speed", default=1.0): vol.All(
+                vol.Coerce(float), vol.Range(min=0.1, max=10.0)
+            ),
+        }
+    )
+
     def render(self):
         pass  # modify self.pixels
 ```

@@ -528,6 +528,7 @@ class ClientSyncEvent(Event):  # DELETE ENTIRE CLASS
         super().__init__(Event.CLIENT_SYNC)
         self.client_id = client_id
 
+
 # REMOVE: CLIENT_SYNC constant
 class Event:
     # ... other constants ...

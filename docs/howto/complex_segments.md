@@ -49,12 +49,12 @@ The compiled data structure looks like:
 _device_remap = {
     "device_1": {
         "src": np.array([0, 1, 2, ..., 50]),  # Virtual pixels
-        "dst": np.array([10, 11, 12, ..., 60])  # Device pixels
+        "dst": np.array([10, 11, 12, ..., 60]),  # Device pixels
     },
     "device_2": {
         "src": np.array([51, 52, 53, ..., 100]),
-        "dst": np.array([0, 1, 2, ..., 49])
-    }
+        "dst": np.array([0, 1, 2, ..., 49]),
+    },
 }
 ```
 

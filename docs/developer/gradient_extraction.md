@@ -133,7 +133,7 @@ The extraction pipeline processes images through four stages:
 
 ```python
 quantized = pil_image.quantize(colors=9, method=Image.Quantize.MEDIANCUT)
-palette = quantized.getpalette()[:n_colors * 3]  # RGB triplets
+palette = quantized.getpalette()[: n_colors * 3]  # RGB triplets
 ```
 
 **Process**:
@@ -390,9 +390,11 @@ Effects can access gradients through the `gradient` config parameter:
 
 ```python
 class MyEffect(GradientEffect):
-    CONFIG_SCHEMA = vol.Schema({
-        vol.Optional("gradient", default="Rainbow"): validate_gradient,
-    })
+    CONFIG_SCHEMA = vol.Schema(
+        {
+            vol.Optional("gradient", default="Rainbow"): validate_gradient,
+        }
+    )
 
     def config_updated(self, config):
         # Gradient string can come from:
