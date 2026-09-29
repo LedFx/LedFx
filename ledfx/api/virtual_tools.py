@@ -73,10 +73,14 @@ class VirtualToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Required attribute for force_color, color was not provided"
                 )
+            try:
+                rgb = parse_color(validate_color(color))
+            except ValueError as e:
+                return await self.invalid_request(str(e))
             for virtual_id in self._ledfx.virtuals:
                 virtual = self._ledfx.virtuals.get(virtual_id)
                 if virtual.is_device == virtual.id:
-                    virtual.force_frame(parse_color(validate_color(color)))
+                    virtual.force_frame(rgb)
 
         if tool == "oneshot":
             # Disable all oneshot Flash if put request is sent.

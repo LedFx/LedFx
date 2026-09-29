@@ -269,3 +269,21 @@ async def test_tools_oneshot_still_clamps_brightness(one_virtual: bool) -> None:
     assert (status, reply) == (200, {"status": "success", "tool": "oneshot"})
     (flash,), _ = virtual.add_oneshot.call_args
     assert list(flash._color) == [255.0, 255.0, 255.0]
+
+
+@pytest.mark.parametrize("one_virtual", [True, False])
+async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
+    one_virtual: bool,
+) -> None:
+    ledfx, virtual = _tool_virtual()
+    body = {"tool": "force_color", "color": "notacolor"}
+    if one_virtual:
+        status, reply = await _call(
+            VirtualsToolsEndpoint(ledfx), "PUT", body, virtual_id="v1"
+        )
+    else:
+        virtual.is_device = virtual.id = "v1"
+        status, reply = await _call(VirtualToolsEndpoint(ledfx), "PUT", body)
+    assert status == 200
+    assert _reason(reply) == "Invalid color: notacolor"
+    virtual.force_frame.assert_not_called()

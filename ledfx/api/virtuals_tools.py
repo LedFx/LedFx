@@ -136,7 +136,11 @@ class VirtualsToolsEndpoint(RestEndpoint):
                     "Required attribute for force_color, color was not provided"
                 )
 
-            virtual.force_frame(parse_color(validate_color(color)))
+            try:
+                rgb = parse_color(validate_color(color))
+            except ValueError as e:
+                return await self.invalid_request(str(e))
+            virtual.force_frame(rgb)
 
         if tool == "calibration":
             mode = data.get("mode")
