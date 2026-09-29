@@ -9,17 +9,17 @@ from aiohttp.test_utils import AioHTTPTestCase
 
 from ledfx.api.scenes import ScenesEndpoint
 from ledfx.api.scenes_id import SceneEndpoint
+from ledfx.configuration.models import Scene
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class MockLedFx:
     """Mock LedFx instance for testing."""
 
     def __init__(self):
-        self.config = {
-            "scenes": {},
-            "ledfx_presets": {},
-            "user_presets": {},
-        }
+        fake = fake_ledfx({"scenes": {}, "user_presets": {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.config_dir = "/tmp/test"
         self.virtuals = {}
         self.effects = MagicMock()
@@ -36,8 +36,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         app.router.add_post("/api/scenes", endpoint.post)
         return app
 
-    @patch("ledfx.api.scenes.save_config")
-    async def test_create_scene_with_action_fields(self, mock_save):
+    async def test_create_scene_with_action_fields(self):
         """Test creating a scene with action fields."""
         request_data = {
             "name": "Test Scene",
@@ -73,8 +72,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         assert scene_config["virtuals"]["v3"]["action"] == "forceblack"
         assert scene_config["virtuals"]["v4"]["action"] == "ignore"
 
-    @patch("ledfx.api.scenes.save_config")
-    async def test_create_scene_with_preset(self, mock_save):
+    async def test_create_scene_with_preset(self):
         """Test creating a scene with preset reference."""
         request_data = {
             "name": "Preset Scene",
@@ -104,8 +102,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         # Should not have config when using preset
         assert "config" not in scene_config["virtuals"]["v1"]
 
-    @patch("ledfx.api.scenes.save_config")
-    async def test_create_scene_legacy_format(self, mock_save):
+    async def test_create_scene_legacy_format(self):
         """Test creating a scene with legacy format (no action field)."""
         request_data = {
             "name": "Legacy Scene",
@@ -134,8 +131,7 @@ class TestScenesEndpointPost(AioHTTPTestCase):
         assert scene_config["virtuals"]["v1"]["config"]["intensity"] == 5
         assert "action" not in scene_config["virtuals"]["v1"]
 
-    @patch("ledfx.api.scenes.save_config")
-    async def test_upsert_scene_with_id(self, mock_save):
+    async def test_upsert_scene_with_id(self):
         """Test upserting a scene with explicit ID."""
         # First create a scene without ID
         request_data = {
@@ -190,7 +186,7 @@ class TestScenesEndpointGet(AioHTTPTestCase):
 
     async def test_get_scenes_with_preset_detection(self):
         """Test that GET /api/scenes includes preset detection."""
-        self.mock_ledfx.config["scenes"] = {
+        self.mock_ledfx.config.scenes = {
             "scene-1": {
                 "name": "Scene 1",
                 "virtuals": {
@@ -221,10 +217,10 @@ class TestScenesEndpointGet(AioHTTPTestCase):
 
     async def test_get_scenes_includes_active_flag(self):
         """Test that scenes include active flag."""
-        self.mock_ledfx.config["scenes"] = {
+        self.mock_ledfx.config.scenes = {
             "scene-1": {
                 "name": "Scene 1",
-                "virtuals": {},
+                "virtuals": dict[str, object](),
             },
         }
         self.mock_ledfx.scenes.is_active.return_value = True
@@ -246,13 +242,9 @@ class TestSceneEndpointDelete(AioHTTPTestCase):
         app.router.add_delete("/api/scenes/{scene_id}", endpoint.handler)
         return app
 
-    @patch("ledfx.api.scenes_id.save_config")
-    async def test_delete_scene_restful(self, mock_save):
+    async def test_delete_scene_restful(self):
         """Test RESTful DELETE /api/scenes/{id} endpoint."""
-        self.mock_ledfx.config["scenes"]["test-scene"] = {
-            "name": "Test Scene",
-            "virtuals": {},
-        }
+        self.mock_ledfx.config.scenes["test-scene"] = Scene(name="Test Scene")
 
         resp = await self.client.delete("/api/scenes/test-scene")
 
@@ -262,8 +254,8 @@ class TestSceneEndpointDelete(AioHTTPTestCase):
         assert "test-scene" in data["payload"]["reason"]
 
         # Verify scene was deleted
-        assert "test-scene" not in self.mock_ledfx.config["scenes"]
-        mock_save.assert_called_once()
+        assert "test-scene" not in self.mock_ledfx.config.scenes
+        self.mock_ledfx.config_store.request_save.assert_called_once()
 
     async def test_delete_nonexistent_scene(self):
         """Test deleting a scene that doesn't exist."""
@@ -287,19 +279,21 @@ class TestSceneEndpointGet(AioHTTPTestCase):
 
     async def test_get_scene_with_preset_detection(self):
         """Test GET single scene includes preset detection."""
-        self.mock_ledfx.config["scenes"]["my-scene"] = {
-            "name": "My Scene",
-            "virtuals": {
-                "v1": {
-                    "action": "activate",
-                    "type": "scroll",
-                    "config": {"speed": 3},
+        self.mock_ledfx.config.scenes["my-scene"] = Scene.model_validate(
+            {
+                "name": "My Scene",
+                "virtuals": {
+                    "v1": {
+                        "action": "activate",
+                        "type": "scroll",
+                        "config": {"speed": 3},
+                    },
                 },
-            },
-        }
+            }
+        )
         self.mock_ledfx.scenes.is_active.return_value = False
 
-        with patch("ledfx.api.scenes_id.find_matching_preset") as mock_find:
+        with patch("ledfx.api.scenes.find_matching_preset") as mock_find:
             mock_find.return_value = ("rainbow-preset", "user_presets")
 
             resp = await self.client.get("/api/scenes/my-scene")
@@ -339,15 +333,14 @@ async def test_scene_action_field_preservation():
     mock_request = AsyncMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):
-        response = await scenes_endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    response = await scenes_endpoint.post(mock_request)
+    data = json.loads(response.text or "")
 
-        virtuals = data["scene"]["config"]["virtuals"]
+    virtuals = data["scene"]["config"]["virtuals"]
 
-        # Verify all action types are preserved
-        assert virtuals["v1"]["action"] == "activate"
-        assert virtuals["v1"]["preset"] == "rainbow"
-        assert virtuals["v2"]["action"] == "stop"
-        assert virtuals["v3"]["action"] == "forceblack"
-        assert virtuals["v4"]["action"] == "ignore"
+    # Verify all action types are preserved
+    assert virtuals["v1"]["action"] == "activate"
+    assert virtuals["v1"]["preset"] == "rainbow"
+    assert virtuals["v2"]["action"] == "stop"
+    assert virtuals["v3"]["action"] == "forceblack"
+    assert virtuals["v4"]["action"] == "ignore"

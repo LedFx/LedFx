@@ -7,69 +7,28 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ledfx.config import CORE_CONFIG_SCHEMA, ensure_instance_id
+from ledfx.configuration.models import LedFxConfig
 
 # ---------------------------------------------------------------------------
-# Config bootstrap: ensure_instance_id
+# Config model: instance_id (LedFxCore fills an empty one with a UUID at start)
 # ---------------------------------------------------------------------------
 
 
-class TestEnsureInstanceId:
-    """Tests for ensure_instance_id config helper."""
-
-    def test_generates_uuid_when_missing(self):
-        config: dict[str, str] = {}
-        ensure_instance_id(config)
-        # Must be a valid UUID string
-        val = uuid.UUID(config["instance_id"])
-        assert str(val) == config["instance_id"]
-
-    def test_generates_uuid_when_empty_string(self):
-        config = {"instance_id": ""}
-        ensure_instance_id(config)
-        uuid.UUID(config["instance_id"])  # valid UUID
-
-    def test_preserves_existing_instance_id(self):
-        existing = str(uuid.uuid4())
-        config = {"instance_id": existing}
-        ensure_instance_id(config)
-        assert config["instance_id"] == existing
-
-    def test_generated_ids_are_unique(self):
-        configs: list[dict[str, str]] = [{}, {}]
-        for c in configs:
-            ensure_instance_id(c)
-        assert configs[0]["instance_id"] != configs[1]["instance_id"]
-
-    def test_schema_accepts_instance_id(self):
+class TestInstanceIdField:
+    def test_model_accepts_instance_id(self) -> None:
         test_id = str(uuid.uuid4())
-        config = CORE_CONFIG_SCHEMA({"instance_id": test_id})
-        assert config["instance_id"] == test_id
+        assert LedFxConfig(instance_id=test_id).instance_id == test_id
 
-    def test_schema_defaults_instance_id_to_empty(self):
-        config = CORE_CONFIG_SCHEMA({})
-        assert config["instance_id"] == ""
+    def test_model_defaults_instance_id_to_empty(self) -> None:
+        assert LedFxConfig().instance_id == ""
 
-
-# ---------------------------------------------------------------------------
-# Backward compatibility: existing config without instance_id
-# ---------------------------------------------------------------------------
-
-
-class TestBackwardCompatibility:
-    """Ensure old configs without instance_id load and validate fine."""
-
-    def test_old_config_without_instance_id(self):
+    def test_old_config_without_instance_id_loads(self) -> None:
         old_config = {
             "host": "127.0.0.1",
             "port": 8888,
             "sendspin_servers": {"MyServer": {"server_url": "ws://host:1234"}},
         }
-        validated = CORE_CONFIG_SCHEMA(old_config)
-        assert validated["instance_id"] == ""
-        # ensure_instance_id fills it in
-        ensure_instance_id(validated)
-        uuid.UUID(validated["instance_id"])
+        assert LedFxConfig.model_validate(old_config).instance_id == ""
 
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,6 @@ import time
 import urllib.parse
 import urllib.request
 
-import voluptuous as vol
 from PIL import Image
 
 from ledfx.assets import (
@@ -21,7 +20,7 @@ from ledfx.assets import (
 from ledfx.color import (
     build_gradient_config,
 )
-from ledfx.config import save_config
+from ledfx.configuration.models import NowPlayingConfig
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
     NowPlayingClearedEvent,
@@ -41,6 +40,7 @@ from ledfx.nowplaying.normalise import (
     normalise_artist,
     normalise_title,
 )
+from ledfx.presets import ledfx_presets
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.security_utils import (
     DOWNLOAD_TIMEOUT,
@@ -85,41 +85,6 @@ _SOURCE_PRIORITY: dict[str, int] = {
     "smtc": 1,
 }
 
-# Valid gradient variant names
-GRADIENT_VARIANTS = ("led_safe", "led_punchy", "led_max")
-NOW_PLAYING_CONFIG_SCHEMA = vol.Schema(
-    {
-        vol.Optional("gradient", default={}): vol.Schema(
-            {
-                vol.Optional("enabled", default=False): bool,
-                vol.Optional("variant", default="led_punchy"): vol.In(
-                    GRADIENT_VARIANTS
-                ),
-                vol.Optional("virtual_ids", default=[]): [str],
-            }
-        ),
-        vol.Optional("track_text", default={}): vol.Schema(
-            {
-                vol.Optional("enabled", default=True): bool,
-                vol.Optional("duration", default=60): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=60)
-                ),
-                vol.Optional("virtual_ids", default=[]): [str],
-                vol.Optional("preset", default=""): str,
-            }
-        ),
-        vol.Optional("album_art", default={}): vol.Schema(
-            {
-                vol.Optional("enabled", default=True): bool,
-                vol.Optional("duration", default=10): vol.All(
-                    vol.Coerce(int), vol.Range(min=0, max=60)
-                ),
-                vol.Optional("virtual_ids", default=[]): [str],
-            }
-        ),
-    }
-)
-
 # Content-type to file extension mapping
 _EXTENSION_MAP = {
     "image/gif": ".gif",
@@ -149,8 +114,7 @@ class NowPlayingService:
         self._state = NowPlayingState()
 
         # Load persisted configuration
-        raw_config = getattr(ledfx, "config", {}).get("now_playing", {})
-        self._config = NOW_PLAYING_CONFIG_SCHEMA(raw_config)
+        self._config = ledfx.config.now_playing.model_dump()
 
         # Apply gradient settings from config
         grad_cfg = self._config["gradient"]
@@ -502,7 +466,7 @@ class NowPlayingService:
         """Validate, apply and persist a new configuration.
 
         Merges *new_config* with the current configuration, validates
-        the result against :data:`NOW_PLAYING_CONFIG_SCHEMA`, applies
+        the result against :class:`NowPlayingConfig`, applies
         the settings to the service, and saves to disk.
 
         Args:
@@ -512,7 +476,7 @@ class NowPlayingService:
             The validated, complete configuration dict.
 
         Raises:
-            vol.Invalid: If validation fails.
+            pydantic.ValidationError: If validation fails.
         """
         # Merge: new values override current, then validate
         merged = {**self._config}
@@ -523,7 +487,7 @@ class NowPlayingService:
                     **new_config[section],
                 }
 
-        validated = NOW_PLAYING_CONFIG_SCHEMA(merged)
+        validated = NowPlayingConfig.model_validate(merged).model_dump()
         self._config = validated
 
         # Apply gradient settings
@@ -539,20 +503,14 @@ class NowPlayingService:
             self._update_current_gradient()
 
         # Persist to core config
-        self._save_config()
+        self._persist_config()
 
         return dict(validated)
 
-    def _save_config(self) -> None:
+    def _persist_config(self) -> None:
         """Persist the now_playing config section to disk."""
-        config = getattr(self._ledfx, "config", None)
-        config_dir = getattr(self._ledfx, "config_dir", None)
-        if config is not None and config_dir:
-            config["now_playing"] = dict(self._config)
-            try:
-                save_config(config=config, config_dir=config_dir)
-            except Exception as exc:  # noqa: BLE001
-                _LOGGER.warning("Failed to save now_playing config: %s", exc)
+        self._ledfx.config.now_playing = NowPlayingConfig.model_validate(self._config)
+        self._ledfx.config_store.request_save()
 
     def apply_gradient_to_virtuals(self) -> int:
         """Apply the current gradient + color group updates to target virtuals.
@@ -597,15 +555,7 @@ class NowPlayingService:
 
         # Persist configuration changes
         if updated > 0:
-            config_dir = getattr(self._ledfx, "config_dir", None)
-            config = getattr(self._ledfx, "config", None)
-            if config is not None and config_dir:
-                try:
-                    save_config(config=config, config_dir=config_dir)
-                except Exception as exc:  # noqa: BLE001
-                    _LOGGER.warning(
-                        "Failed to save config after gradient apply: %s", exc
-                    )
+            self._ledfx.config_store.request_save()
 
         _LOGGER.info("Applied Now Playing gradient to %d effect(s)", updated)
         return updated
@@ -676,21 +626,12 @@ class NowPlayingService:
         # Resolve preset config: ledfx_presets first, then user_presets
         effect_config = {}
         if preset_name:
-            cfg = getattr(self._ledfx, "config", {})
-            preset_config = (
-                cfg.get("ledfx_presets", {})
-                .get("texter2d", {})
-                .get(preset_name, {})
-                .get("config", {})
-            )
-            if not preset_config:
-                preset_config = (
-                    cfg.get("user_presets", {})
-                    .get("texter2d", {})
-                    .get(preset_name, {})
-                    .get("config", {})
-                )
-            effect_config = dict(preset_config)
+            builtin = ledfx_presets.get("texter2d", {}).get(preset_name)
+            user = self._ledfx.config.user_presets.get("texter2d", {}).get(preset_name)
+            if builtin and builtin["config"]:
+                effect_config = dict(builtin["config"])
+            elif user is not None:
+                effect_config = dict(user.config)
 
         effect_config["text"] = text
         updated = 0
@@ -772,10 +713,8 @@ class NowPlayingService:
         # Start from the built-in "artwork" preset so settings like bilinear
         # and test are pre-configured, then override image_source with the
         # actual artwork path.
-        ledfx_presets = getattr(self._ledfx, "config", {}).get("ledfx_presets", {})
-        preset_config = (
-            ledfx_presets.get("imagespin", {}).get("artwork", {}).get("config", {})
-        )
+        artwork_preset = ledfx_presets.get("imagespin", {}).get("artwork")
+        preset_config = artwork_preset["config"] if artwork_preset else {}
         effect_config = {**preset_config, "image_source": artwork.cache_key}
         updated = 0
 

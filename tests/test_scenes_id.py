@@ -3,6 +3,7 @@ import json
 import pytest
 
 from ledfx.api.scenes_id import SceneEndpoint
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class _DummyScenes:
@@ -23,11 +24,14 @@ class _DummyEffects:
 
 class _DummyLedFx:
     def __init__(self, scenes_config, presets_config=None, user_presets_config=None):
-        self.config = {
-            "scenes": scenes_config,
-            "ledfx_presets": presets_config or {},
-            "user_presets": user_presets_config or {},
-        }
+        fake = fake_ledfx(
+            {
+                "scenes": scenes_config,
+                "user_presets": user_presets_config or {},
+            }
+        )
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.scenes = _DummyScenes()
         self.effects = _DummyEffects()
 
@@ -114,7 +118,7 @@ async def test_get_scene_handles_scene_with_no_virtuals():
     data = json.loads(response.body.decode())
 
     assert data["status"] == "success"
-    assert "virtuals" not in data["scene"]["config"]
+    assert data["scene"]["config"]["virtuals"] == {}  # the model always has it
 
 
 @pytest.mark.asyncio

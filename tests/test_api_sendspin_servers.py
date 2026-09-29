@@ -11,13 +11,17 @@ from aiohttp.test_utils import TestClient, TestServer
 from ledfx.api.sendspin_discover import SendspinDiscoverEndpoint
 from ledfx.api.sendspin_server import SendspinServerEndpoint
 from ledfx.api.sendspin_servers import SendspinServersEndpoint
+from ledfx.configuration.models import SendspinServerConfig
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class MockLedFx:
     """Minimal LedFx mock for Sendspin API tests."""
 
     def __init__(self):
-        self.config = {"sendspin_servers": {}}
+        fake = fake_ledfx({"sendspin_servers": {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.config_dir = "/tmp/test_sendspin"
         self.audio: MagicMock | None = None
         self._load_sendspin_servers = MagicMock()
@@ -53,7 +57,7 @@ class TestGetSendspinServers:
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
     async def test_get_with_servers(self, _):
         """Returns all configured servers."""
-        self.mock_ledfx.config["sendspin_servers"] = {
+        self.mock_ledfx.config.sendspin_servers = {
             "living-room": {
                 "server_url": "ws://192.168.1.12:8927/sendspin",
                 "client_name": "LedFx",
@@ -100,9 +104,8 @@ class TestPostSendspinServers:
         yield
         await self.client.close()
 
-    @patch("ledfx.api.sendspin_servers.save_config")
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
-    async def test_add_server(self, _, mock_save: MagicMock):
+    async def test_add_server(self, _):
         """Successfully adds a new server."""
         payload = {
             "id": "living-room",
@@ -116,13 +119,12 @@ class TestPostSendspinServers:
         assert resp.status == 200
         data = await resp.json()
         assert data["status"] == "success"
-        assert "living-room" in self.mock_ledfx.config["sendspin_servers"]
-        mock_save.assert_called_once()
+        assert "living-room" in self.mock_ledfx.config.sendspin_servers
+        self.mock_ledfx.config_store.request_save.assert_called_once()
         self.mock_ledfx._load_sendspin_servers.assert_called_once()
 
-    @patch("ledfx.api.sendspin_servers.save_config")
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
-    async def test_add_server_with_client_name(self, _, mock_save: MagicMock):
+    async def test_add_server_with_client_name(self, _):
         """Stores custom client_name when provided."""
         payload = {
             "id": "office",
@@ -135,9 +137,9 @@ class TestPostSendspinServers:
             headers={"Content-Type": "application/json"},
         )
         assert resp.status == 200
-        stored = self.mock_ledfx.config["sendspin_servers"]["office"]
-        assert stored["client_name"] == "LedFx-Office"
-        assert stored["server_url"] == "wss://192.168.1.55:8927/sendspin"
+        stored = self.mock_ledfx.config.sendspin_servers["office"]
+        assert stored.client_name == "LedFx-Office"
+        assert stored.server_url == "wss://192.168.1.55:8927/sendspin"
 
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
     async def test_add_server_missing_id(self, _):
@@ -188,10 +190,9 @@ class TestPostSendspinServers:
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
     async def test_add_duplicate_server(self, _):
         """Rejects adding a server with an ID that already exists."""
-        self.mock_ledfx.config["sendspin_servers"]["living-room"] = {
-            "server_url": "ws://192.168.1.12:8927/sendspin",
-            "client_name": "LedFx",
-        }
+        self.mock_ledfx.config.sendspin_servers["living-room"] = SendspinServerConfig(
+            server_url="ws://192.168.1.12:8927/sendspin", client_name="LedFx"
+        )
         payload = {
             "id": "living-room",
             "server_url": "ws://192.168.1.99:8927/sendspin",
@@ -208,18 +209,17 @@ class TestPostSendspinServers:
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=True)
     async def test_add_server_id_is_slugified(self, _):
         """The 'id' field is run through generate_id (slugified)."""
-        with patch("ledfx.api.sendspin_servers.save_config"):
-            payload = {
-                "id": "Living Room Server!",
-                "server_url": "ws://192.168.1.12:8927/sendspin",
-            }
-            await self.client.post(
-                "/api/sendspin/servers",
-                data=json.dumps(payload),
-                headers={"Content-Type": "application/json"},
-            )
-            # generate_id("Living Room Server!") => "living-room-server"
-            assert "living-room-server" in self.mock_ledfx.config["sendspin_servers"]
+        payload = {
+            "id": "Living Room Server!",
+            "server_url": "ws://192.168.1.12:8927/sendspin",
+        }
+        await self.client.post(
+            "/api/sendspin/servers",
+            data=json.dumps(payload),
+            headers={"Content-Type": "application/json"},
+        )
+        # generate_id("Living Room Server!") => "living-room-server"
+        assert "living-room-server" in self.mock_ledfx.config.sendspin_servers
 
     @patch("ledfx.api.sendspin_servers._sendspin_available", return_value=False)
     async def test_post_unavailable(self, _):
@@ -248,7 +248,7 @@ class TestPutSendspinServer:
     @pytest.fixture(autouse=True)
     async def setup(self):
         self.mock_ledfx = MockLedFx()
-        self.mock_ledfx.config["sendspin_servers"] = {
+        self.mock_ledfx.config.sendspin_servers = {
             "living-room": {
                 "server_url": "ws://192.168.1.12:8927/sendspin",
                 "client_name": "LedFx",
@@ -262,9 +262,8 @@ class TestPutSendspinServer:
         yield
         await self.client.close()
 
-    @patch("ledfx.api.sendspin_server.save_config")
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
-    async def test_update_url(self, _, mock_save: MagicMock):
+    async def test_update_url(self, _):
         """Updates server_url on an existing server."""
         payload = {"server_url": "ws://192.168.1.20:8927/sendspin"}
         resp = await self.client.put(
@@ -276,15 +275,14 @@ class TestPutSendspinServer:
         data = await resp.json()
         assert data["status"] == "success"
         assert (
-            self.mock_ledfx.config["sendspin_servers"]["living-room"]["server_url"]
+            self.mock_ledfx.config.sendspin_servers["living-room"].server_url
             == "ws://192.168.1.20:8927/sendspin"
         )
-        mock_save.assert_called_once()
+        self.mock_ledfx.config_store.request_save.assert_called_once()
         self.mock_ledfx._load_sendspin_servers.assert_called_once()
 
-    @patch("ledfx.api.sendspin_server.save_config")
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
-    async def test_update_client_name(self, _, mock_save: MagicMock):
+    async def test_update_client_name(self, _):
         """Updates client_name without touching server_url."""
         payload = {"client_name": "LedFx-Updated"}
         await self.client.put(
@@ -292,9 +290,9 @@ class TestPutSendspinServer:
             data=json.dumps(payload),
             headers={"Content-Type": "application/json"},
         )
-        server = self.mock_ledfx.config["sendspin_servers"]["living-room"]
-        assert server["client_name"] == "LedFx-Updated"
-        assert server["server_url"] == "ws://192.168.1.12:8927/sendspin"
+        server = self.mock_ledfx.config.sendspin_servers["living-room"]
+        assert server.client_name == "LedFx-Updated"
+        assert server.server_url == "ws://192.168.1.12:8927/sendspin"
 
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
     async def test_update_not_found(self, _):
@@ -334,7 +332,7 @@ class TestDeleteSendspinServer:
     @pytest.fixture(autouse=True)
     async def setup(self):
         self.mock_ledfx = MockLedFx()
-        self.mock_ledfx.config["sendspin_servers"] = {
+        self.mock_ledfx.config.sendspin_servers = {
             "living-room": {
                 "server_url": "ws://192.168.1.12:8927/sendspin",
                 "client_name": "LedFx",
@@ -348,16 +346,15 @@ class TestDeleteSendspinServer:
         yield
         await self.client.close()
 
-    @patch("ledfx.api.sendspin_server.save_config")
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
-    async def test_delete_server(self, _, mock_save: MagicMock):
+    async def test_delete_server(self, _):
         """Successfully removes an existing server."""
         resp = await self.client.delete("/api/sendspin/servers/living-room")
         assert resp.status == 200
         data = await resp.json()
         assert data["status"] == "success"
-        assert "living-room" not in self.mock_ledfx.config["sendspin_servers"]
-        mock_save.assert_called_once()
+        assert "living-room" not in self.mock_ledfx.config.sendspin_servers
+        self.mock_ledfx.config_store.request_save.assert_called_once()
         self.mock_ledfx._load_sendspin_servers.assert_called_once()
 
     @patch("ledfx.api.sendspin_server._sendspin_available", return_value=True)
@@ -434,7 +431,7 @@ class TestGetSendspinDiscover:
     @patch.object(SendspinDiscoverEndpoint, "_discover", new_callable=AsyncMock)
     async def test_discover_already_configured(self, mock_discover: AsyncMock, _):
         """Marks already-configured servers with already_configured=True."""
-        self.mock_ledfx.config["sendspin_servers"] = {
+        self.mock_ledfx.config.sendspin_servers = {
             "living-room": {
                 "server_url": "ws://192.168.1.12:8927/sendspin",
                 "client_name": "LedFx",

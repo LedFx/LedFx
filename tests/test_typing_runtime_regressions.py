@@ -85,13 +85,12 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
         return_value={"config": "RANDOMIZE", "type": "test-effect"}
     )
     endpoint = EffectsEndpoint(ledfx)
-    with patch("ledfx.api.virtual_effects.save_config"):
-        if method == "put":
-            response = await endpoint.put("virtual", request)
-            generated = effect.update_config.call_args.args[0]
-        else:
-            response = await endpoint.post("virtual", request)
-            generated = ledfx.effects.create.call_args.kwargs["config"]
+    if method == "put":
+        response = await endpoint.put("virtual", request)
+        generated = effect.update_config.call_args.args[0]
+    else:
+        response = await endpoint.post("virtual", request)
+        generated = ledfx.effects.create.call_args.kwargs["config"]
     assert response.status == 200
     assert set(generated) == {"flag", "count"}
     assert isinstance(generated["flag"], bool)

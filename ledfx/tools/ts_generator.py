@@ -844,7 +844,7 @@ def generate_typescript_types() -> str:
 
         dummy_ledfx = DummyLedFx()
         scenes_instance = Scenes(dummy_ledfx)
-        scene_schema = scenes_instance.SCENE_SCHEMA
+        scene_schema = getattr(scenes_instance, "SCENE_SCHEMA", None)
 
         if isinstance(scene_schema, vol.Schema):
             output_ts_string += "// Scene Configuration\n"

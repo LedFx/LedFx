@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import time
+import uuid
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
@@ -20,14 +21,12 @@ from ledfx.color import (
     validate_gradient,
 )
 from ledfx.config import (
-    CORE_CONFIG_SCHEMA,
     VISUALISATION_CONFIG_KEYS,
     Transmission,
     create_backup,
-    ensure_instance_id,
     get_ssl_certs,
-    remove_virtuals_active_effects,
 )
+from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.store import ConfigStore
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
@@ -47,7 +46,6 @@ from ledfx.nowplaying import NowPlayingService
 from ledfx.nowplaying.providers.mpris import MPRISNowPlayingProvider
 from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
-from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.tools.ts_generator import generate_typescript_types
@@ -102,19 +100,18 @@ class LedFxCore:
             _LOGGER.warning("Clearing LedFx config.")
             create_backup(config_dir, "DELETE")
 
-        self.config_store = ConfigStore.load(config_dir, CORE_CONFIG_SCHEMA)
+        self.config_store = ConfigStore.load(config_dir)
         self.config_store.register()
-        ensure_instance_id(self.config)
-        self.config["hosts"] = get_sorted_physical_ips()
-
+        if not self.config.instance_id:
+            self.config.instance_id = str(uuid.uuid4())
+        self.hosts = get_sorted_physical_ips()
         if clear_effects:
             _LOGGER.warning("Clearing active effects.")
-            remove_virtuals_active_effects(self.config)
-
-        self.config["ledfx_presets"] = ledfx_presets
-        self.host = host if host else self.config["host"]
-        self.port = port if port else self.config["port"]
-        self.port_s = port_s if port_s else self.config["port_s"]
+            for virtual in self.config.virtuals:
+                virtual.effect = None
+        self.host = host if host else self.config.host
+        self.port = port if port else self.config.port
+        self.port_s = port_s if port_s else self.config.port_s
         self.ci_testing = ci_testing
         self.generate_typescript_types = generate_typescript_types
         self.offline_mode = offline_mode
@@ -145,7 +142,7 @@ class LedFxCore:
         self._mpris_now_playing = None
         self._smtc_now_playing = None
 
-        if self.config.get("debug_asyncio", False):
+        if self.config.debug_asyncio:
             self.loop.set_debug(True)
 
         if self.icon:
@@ -164,8 +161,8 @@ class LedFxCore:
         self.exit_code = None
 
     @property
-    def config(self) -> dict:  # pyrefly: ignore[implicit-any-type-argument]
-        """The live configuration (owned by config_store); typed in layer 8."""
+    def config(self) -> LedFxConfig:
+        """The live configuration (owned by config_store)."""
         return self.config_store.data
 
     def handle_base_configuration_update(self, event):
@@ -194,7 +191,7 @@ class LedFxCore:
         This centralizes policy decisions so API/config/server hooks only need
         to signal *when* to re-check, not duplicate *what* to do.
         """
-        if self.config.get("sendspin_always_on", True):
+        if self.config.sendspin_always_on:
             _LOGGER.debug(
                 "sendspin reconcile (%s): always-on enabled, checking eager start.",
                 trigger,
@@ -213,7 +210,7 @@ class LedFxCore:
             self.audio.check_and_deactivate()
 
     def dev_enabled(self):
-        return self.config["dev_mode"]
+        return self.config.dev_mode
 
     def _start_audio_device_monitor(self):
         """Start the audio device monitor for the current platform."""
@@ -262,10 +259,10 @@ class LedFxCore:
 
         previous_valid = AudioInputSource.valid_device_indexes()
 
-        sendspin_config = self.config.get("sendspin_servers", {})
+        sendspin_config = self.config.sendspin_servers
         SENDSPIN_SERVERS.clear()
         for name, config in sendspin_config.items():
-            SENDSPIN_SERVERS[name] = config
+            SENDSPIN_SERVERS[name] = config.model_dump()
             _LOGGER.info("Sendspin server configured: %s", name)
 
         if sendspin_config:
@@ -306,7 +303,7 @@ class LedFxCore:
 
     def open_ui(self):
         # Check if we're binding to all adaptors
-        if str(self.config["host"]) == "0.0.0.0":
+        if str(self.config.host) == "0.0.0.0":
             url = f"http://127.0.0.1:{self.port!s}"
         else:
             # If the user has specified an adaptor, launch its address
@@ -344,9 +341,9 @@ class LedFxCore:
             self.virtual_listener()
             self.device_listener()
 
-        min_time_since = 1 / self.config["visualisation_fps"]
+        min_time_since = 1 / self.config.visualisation_fps
         time_since_last = {}
-        max_len = self.config["visualisation_maxlen"]
+        max_len = self.config.visualisation_maxlen
 
         def handle_visualisation_update(event):
             is_device = event.event_type == Event.DEVICE_UPDATE
@@ -384,10 +381,10 @@ class LedFxCore:
                 pixels = resize_pixels(pixels[:pixels_len], shape, new_shape)
                 shape = new_shape
 
-            if self.config["ui_brightness_boost"] != 0:
-                pixels = pixels_boost(pixels, self.config["ui_brightness_boost"], 100)
+            if self.config.ui_brightness_boost != 0:
+                pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
 
-            if self.config["transmission_mode"] == Transmission.BASE64_COMPRESSED:
+            if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
                 b_arr = bytes(pixels.astype(np.uint8).flatten())
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
@@ -501,11 +498,11 @@ class LedFxCore:
             )
 
         # Initialize image cache
-        cache_config = self.config.get("image_cache", {})
+        cache_config = self.config.image_cache
         init_image_cache(
             self.config_dir,
-            max_size_mb=cache_config.get("max_size_mb", 500),
-            max_items=cache_config.get("max_items", 500),
+            max_size_mb=cache_config.max_size_mb,
+            max_items=cache_config.max_items,
         )
 
         # Initialize Now Playing Service
@@ -531,7 +528,7 @@ class LedFxCore:
             self,
             "Colors",
             LEDFX_COLORS,
-            "user_colors",
+            self.config.user_colors,
             validate_color,
             parse_color,
         )
@@ -539,13 +536,13 @@ class LedFxCore:
             self,
             "Gradients",
             LEDFX_GRADIENTS,
-            "user_gradients",
+            self.config.user_gradients,
             validate_gradient,
             parse_gradient,
         )
 
         # TODO: Deferr
-        self.devices.create_from_config(self.config["devices"])
+        self.devices.create_from_config(self.config.devices)
         await self.devices.async_initialize_devices()
 
         # Load Sendspin server configurations into audio system BEFORE
@@ -554,8 +551,8 @@ class LedFxCore:
         self._load_sendspin_servers()
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
-        self.virtuals.create_from_config(self.config["virtuals"], pause_all=pause_all)
-        self.integrations.create_from_config(self.config["integrations"])
+        self.virtuals.create_from_config(self.config.virtuals, pause_all=pause_all)
+        self.integrations.create_from_config(self.config.integrations)
 
         # Start the HTTP server once internal registries are initialized so
         # websockets and REST endpoints are fully ready before the UI opens.
@@ -568,7 +565,7 @@ class LedFxCore:
         if open_ui:
             self.open_ui()
 
-        if self.config["scan_on_startup"]:
+        if self.config.scan_on_startup:
             async_fire_and_forget(self.zeroconf.discover_wled_devices(), self.loop)
 
         async_fire_and_forget(self.integrations.activate_integrations(), self.loop)
@@ -611,16 +608,16 @@ class LedFxCore:
         if not self.offline_mode:
             self.check_and_notify_updates()
 
-        if self.config["startup_scene_id"] != "":
-            if self.scenes.activate(self.config["startup_scene_id"]):
+        if self.config.startup_scene_id != "":
+            if self.scenes.activate(self.config.startup_scene_id):
                 _LOGGER.info(
                     "startup_scene_id; %s activated.",
-                    self.config["startup_scene_id"],
+                    self.config.startup_scene_id,
                 )
             else:
                 _LOGGER.warning(
                     "startup_scene_id: %s not found.",
-                    self.config["startup_scene_id"],
+                    self.config.startup_scene_id,
                 )
 
         await self._handle_startup_playlist()
@@ -631,10 +628,10 @@ class LedFxCore:
 
     async def _handle_startup_playlist(self):
         """Activate the configured startup playlist, if any."""
-        if self.config["startup_playlist_id"] != "":
+        if self.config.startup_playlist_id != "":
             if not hasattr(self, "playlists"):
                 self.playlists = PlaylistManager(self)
-            pid = self.config["startup_playlist_id"]
+            pid = self.config.startup_playlist_id
             if await self.playlists.start(pid):
                 _LOGGER.info(
                     "startup_playlist_id: %s started.",
@@ -705,7 +702,7 @@ class LedFxCore:
 
         finally:
             # Write any debounced change, even if shutdown above failed. The
-            # store stays registered so late save_config() calls still honour
+            # store stays registered so late legacy save_config calls still honour
             # its safe-mode block.
             try:
                 self.config_store.flush_sync()

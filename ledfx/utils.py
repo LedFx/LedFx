@@ -45,7 +45,6 @@ from dotenv import load_dotenv
 from PIL import Image, ImageFont
 
 from ledfx.color import LEDFX_GRADIENTS
-from ledfx.config import save_config
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 from ledfx.events import ColorsUpdatedEvent
 from ledfx.libraries.cache import ImageCache
@@ -761,19 +760,19 @@ class UserDefaultCollection(MutableMapping):
         ledfx,
         collection_name: str,
         defaults: dict,
-        user: str,
+        user: dict[str, str],
         validator: callable = lambda x: x,
         parser: callable = lambda x: x,
     ):
         """
         collection_name: friendly description of the collection
         defaults: dict of default values
-        user: ledfx config key for user values
+        user: the live config dict of user values (e.g. config.user_colors)
         """
         self._ledfx = ledfx
         self._collection_name = collection_name
         self._default_vals = defaults
-        self._user_vals = self._ledfx.config[user]
+        self._user_vals = user
         self._validator = validator
         self._parser = parser
 
@@ -797,10 +796,7 @@ class UserDefaultCollection(MutableMapping):
         if key in self._user_vals:
             del self._user_vals[key]
         _LOGGER.info("Deleted %s: %s", self._collection_name.lower().rstrip("s"), key)
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         # Fire event if colors or gradients were deleted
         if self._collection_name in ("Colors", "Gradients"):
             self._ledfx.events.fire_event(ColorsUpdatedEvent())
@@ -811,10 +807,7 @@ class UserDefaultCollection(MutableMapping):
             return
         self._user_vals[key] = self._validator(value)
         _LOGGER.info("Saved %s: %s", self._collection_name.lower().rstrip("s"), key)
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         # Fire event if colors or gradients were updated
         if self._collection_name in ("Colors", "Gradients"):
             self._ledfx.events.fire_event(ColorsUpdatedEvent())

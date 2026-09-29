@@ -11,6 +11,7 @@ from ledfx.nowplaying.providers.smtc import (
     SMTCNowPlayingProvider,
 )
 from ledfx.nowplaying.service import NowPlayingService
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 # ------------------------------------------------------------------
 # WinRT stub helpers
@@ -96,7 +97,9 @@ class _DummyEvents:
 
 class _DummyLedFx:
     def __init__(self):
-        self.config = {}
+        fake = fake_ledfx()
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.events = _DummyEvents()
         self.now_playing = NowPlayingService(self)
 

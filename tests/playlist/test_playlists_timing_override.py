@@ -4,6 +4,7 @@ import random
 import pytest
 
 from ledfx.playlists import PlaylistManager
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class DummyScenes:
@@ -17,7 +18,9 @@ class DummyScenes:
 class DummyCore:
     def __init__(self, tmpdir):
         self.config_dir = tmpdir
-        self.config = {"playlists": {}, "scenes": {}}
+        fake = fake_ledfx({"playlists": {}, "scenes": {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.scenes = type(
             "S",
             (),

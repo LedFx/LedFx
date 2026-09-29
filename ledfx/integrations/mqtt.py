@@ -73,11 +73,11 @@ class MQTT(Integration):
         client.publish(f"{self._config['topic']}/STAT", "online")
         client.publish(
             f"{self._config['topic']}/SCENES",
-            str(self._ledfx.config["scenes"]),
+            str({sid: s.model_dump() for sid, s in self._ledfx.config.scenes.items()}),
         )
         client.publish(
             f"{self._config['topic']}/DEVICES",
-            str(self._ledfx.config["virtuals"]),
+            str([v.model_dump() for v in self._ledfx.config.virtuals]),
         )
 
     def on_message(self, client, userdata, msg):
@@ -97,8 +97,8 @@ class MQTT(Integration):
                 }
                 _LOGGER.warning("%s", response)
                 return
-            _LOGGER.warning("%s", self._ledfx.config["scenes"].keys())
-            if scene_id not in self._ledfx.config["scenes"]:
+            _LOGGER.warning("%s", self._ledfx.config.scenes.keys())
+            if scene_id not in self._ledfx.config.scenes:
                 response = {
                     "status": "failed",
                     "reason": f'Scene "{scene_id}" does not exist',
@@ -106,11 +106,11 @@ class MQTT(Integration):
                 _LOGGER.warning("%s", response)
                 return
 
-            scene = self._ledfx.config["scenes"][scene_id]
+            scene = self._ledfx.config.scenes[scene_id]
 
             for virtual in self._ledfx.virtuals.values():
                 # Check virtual is in scene, make no changes if it isn't
-                if virtual.id not in scene["virtuals"]:
+                if virtual.id not in scene.virtuals:
                     _LOGGER.info(
                         "virtual with id %s has no data in scene %s",
                         virtual.id,
@@ -120,18 +120,19 @@ class MQTT(Integration):
 
                 # Set effect of virtual to that saved in the scene,
                 # clear active effect of virtual if no effect in scene
-                if scene["virtuals"][virtual.id]:
+                scene_virtual = scene.virtuals[virtual.id]
+                if scene_virtual.type is not None:
                     # Create the effect and add it to the virtual
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=scene["virtuals"][virtual.id]["type"],
-                        config=scene["virtuals"][virtual.id]["config"],
+                        type=scene_virtual.type,
+                        config=scene_virtual.config or {},
                     )
                     virtual.set_effect(effect)
                 else:
                     virtual.clear_effect()
 
-            self._ledfx.events.fire_event(SceneActivatedEvent(scene["name"]))
+            self._ledfx.events.fire_event(SceneActivatedEvent(scene.name))
             # SET SCENE END
 
     async def connect(self):

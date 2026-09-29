@@ -132,7 +132,7 @@ class WLEDDevice(NetworkedDevice):
 
     async def add_postamble(self):
         _LOGGER.debug("Doing post creation things for WLED...")
-        if self.config["create_segments"] or self._ledfx.config["create_segments"]:
+        if self.config["create_segments"] or self._ledfx.config.create_segments:
             segments = await self.wled.get_segments()
             isMatrix = segments[0].get("stopY", 0) > 0
             if len(segments) > 1 or isMatrix:

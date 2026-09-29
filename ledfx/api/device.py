@@ -6,7 +6,6 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual import make_virtual_response
-from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,14 +66,10 @@ class DeviceEndpoint(RestEndpoint):
             return await self.internal_error(error_message, "error")
         # Update and save the configuration
         # Persist the merged, validated config: a partial PUT must not drop keys.
-        for saved in self._ledfx.config["devices"]:
-            if saved["id"] == device_id:
-                saved["config"] = device.config
-                break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        entry = self._ledfx.config_store.device_entry(device_id)
+        if entry is not None:
+            entry.config = device.config
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def post(self, device_id, request) -> web.Response:
@@ -138,13 +133,8 @@ class DeviceEndpoint(RestEndpoint):
         self._ledfx.devices.destroy(device_id)
 
         # Update and save the configuration
-        self._ledfx.config["devices"] = [
-            device
-            for device in self._ledfx.config["devices"]
-            if device["id"] != device_id
+        self._ledfx.config.devices = [
+            device for device in self._ledfx.config.devices if device.id != device_id
         ]
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()

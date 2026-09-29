@@ -3,12 +3,15 @@ import asyncio
 import pytest
 
 from ledfx.playlists import PlaylistManager
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class DummyCore:
     def __init__(self, tmpdir):
         self.config_dir = tmpdir
-        self.config = {"playlists": {}, "scenes": {}}
+        fake = fake_ledfx({"playlists": {}, "scenes": {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.scenes = type(
             "S",
             (),
@@ -38,7 +41,7 @@ async def test_create_and_list_playlists(tmp_path):
     assert "evening" in allp
 
     # ensure persisted in core.config
-    assert core.config["playlists"]["evening"]["name"] == "Evening"
+    assert core.config.playlists["evening"].name == "Evening"
 
 
 @pytest.mark.asyncio
@@ -49,7 +52,7 @@ async def test_create_generates_id_when_missing(tmp_path):
     playlist = {"name": "My Playlist", "items": [{"scene_id": "s1"}]}
     p = await manager.create_or_replace(playlist)
     assert "id" in p
-    assert p["id"] in core.config["playlists"]
+    assert p["id"] in core.config.playlists
 
 
 @pytest.mark.asyncio

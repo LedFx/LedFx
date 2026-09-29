@@ -5,13 +5,14 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from ledfx.config import CORE_CONFIG_SCHEMA, create_backup, save_config
+from ledfx.config import create_backup, save_config
 from ledfx.configuration.migrations import CURRENT_SCHEMA_VERSION
+from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.store import ConfigStore
 
 
 def test_save_config_shim_without_store_writes_atomically(tmp_path: Path) -> None:
-    save_config({"port": 1}, str(tmp_path))
+    save_config(LedFxConfig(port=1), str(tmp_path))
     data = json.loads((tmp_path / "config.json").read_text())
     assert data["port"] == 1 and data["configuration_version"] == "2.3.6"
     # New behaviour: the store's envelope, and no temp file left behind.
@@ -20,11 +21,11 @@ def test_save_config_shim_without_store_writes_atomically(tmp_path: Path) -> Non
 
 
 async def test_save_config_shim_routes_to_registered_store(tmp_path: Path) -> None:
-    store = ConfigStore.load(str(tmp_path), CORE_CONFIG_SCHEMA)
+    store = ConfigStore.load(str(tmp_path))
     store.attach_loop(asyncio.get_running_loop())
     store.register()
     try:
-        store.data["port"] = 1111
+        store.data.port = 1111
         save_config(store.data, str(tmp_path))
         assert store._save_handle is not None  # debounced, not written yet
         store.flush_sync()
@@ -34,7 +35,7 @@ async def test_save_config_shim_routes_to_registered_store(tmp_path: Path) -> No
 
 
 def test_create_backup_keeps_move_semantics_for_clear_config(tmp_path: Path) -> None:
-    save_config({"port": 1}, str(tmp_path))
+    save_config(LedFxConfig(port=1), str(tmp_path))
     create_backup(str(tmp_path), "DELETE")
     assert not (tmp_path / "config.json").exists()
     # New behaviour: the collision-proof name, not the old fixed one.

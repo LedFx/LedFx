@@ -5,9 +5,10 @@ from json import JSONDecodeError
 from typing import Protocol
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.configuration.models import SendspinServerConfig
 from ledfx.effects.audio import AudioInputSource
 from ledfx.sendspin.config import validate_sendspin_server_url
 
@@ -88,11 +89,11 @@ class SendspinServerEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        servers = self._ledfx.config.get("sendspin_servers", {})
+        servers = self._ledfx.config.sendspin_servers
         if server_id not in servers:
             return await self.invalid_request(f"Server '{server_id}' not found.")
 
-        url_changed = False
+        update = {}
         if "server_url" in data:
             server_url = data["server_url"]
             if isinstance(server_url, str):
@@ -106,14 +107,20 @@ class SendspinServerEndpoint(RestEndpoint):
                     reason,
                 )
                 return await self.invalid_request(reason)
-            if servers[server_id].get("server_url") != server_url:
-                url_changed = True
-            servers[server_id]["server_url"] = server_url
+            update["server_url"] = server_url
 
         if "client_name" in data:
-            servers[server_id]["client_name"] = data["client_name"]
+            update["client_name"] = data["client_name"]
 
-        save_config(self._ledfx.config, self._ledfx.config_dir)
+        old = servers[server_id]
+        try:
+            new = SendspinServerConfig.model_validate({**old.model_dump(), **update})
+        except ValidationError as err:
+            return await self.validation_error(err)
+        servers[server_id] = new
+        url_changed = new.server_url != old.server_url
+
+        self._ledfx.config_store.request_save()
         self._ledfx._load_sendspin_servers()
         _sync_active_stream(self._ledfx, server_id, restart=url_changed)
 
@@ -129,13 +136,13 @@ class SendspinServerEndpoint(RestEndpoint):
                 "Sendspin is not available. Requires Python 3.12+ and aiosendspin package."
             )
 
-        servers = self._ledfx.config.get("sendspin_servers", {})
+        servers = self._ledfx.config.sendspin_servers
         if server_id not in servers:
             return await self.invalid_request(f"Server '{server_id}' not found.")
 
         del servers[server_id]
 
-        save_config(self._ledfx.config, self._ledfx.config_dir)
+        self._ledfx.config_store.request_save()
         self._ledfx._load_sendspin_servers()
         _sync_active_stream(self._ledfx, server_id, restart=False)
 

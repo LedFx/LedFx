@@ -2,103 +2,88 @@ import logging
 import os
 from json import JSONDecodeError
 
-import voluptuous as vol
 from aiohttp import web
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS
-from ledfx.config import (
-    CORE_CONFIG_KEYS_NO_RESTART,
-    CORE_CONFIG_SCHEMA,
-    save_config,
+from ledfx.configuration.lenient import lenient_validate
+from ledfx.configuration.migrations import (
+    CURRENT_SCHEMA_VERSION,
+    run_migrations,
+    schema_version_of,
 )
-from ledfx.configuration.migrations import run_migrations
+from ledfx.configuration.migrations.v2 import strip_envelope
 from ledfx.configuration.models import (
-    AudioAnalysisConfig,
+    RESTART_FIELDS,
+    WRITABLE_CORE_FIELDS,
     AudioConfig,
-    AudioInputConfig,
+    LedFxConfig,
     MelbanksConfig,
     WledPreferences,
     validate_dict,
 )
+from ledfx.consts import LEGACY_CONFIGURATION_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import BaseConfigUpdateEvent
+from ledfx.presets import ledfx_presets
 
 _LOGGER = logging.getLogger(__name__)
 
-CORE_CONFIG_KEYS = set(map(str, CORE_CONFIG_SCHEMA.schema.keys()))
+RUNTIME_KEYS = ("hosts", "ledfx_presets", "configuration_version")
+CONFIG_KEYS = frozenset(LedFxConfig.model_fields) | frozenset(RUNTIME_KEYS)
 BACKUP_FAILED = "Could not back up config.json; nothing was changed."
 WRITE_FAILED = "Could not write config.json; nothing was changed."
 
 
-def validate_and_trim_config(config, model, node: str):
-    for key in config:
-        if key not in PERMITTED_KEYS[node] and key != "user_presets":
+def _object(value: object, node: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise KeyError(f"{node} must be a JSON object")
+    return value
+
+
+def _check_keys(section: dict[str, object], node: str) -> None:
+    for key in section:
+        if key not in PERMITTED_KEYS[node]:
             raise KeyError(f"Unknown/forbidden {node} config key: '{key}'")
-    if isinstance(model, type) and issubclass(model, BaseModel):
-        validated_config = validate_dict(model, config, runtime=True)
-    else:
-        validated_config = model(config)  # CORE_CONFIG_SCHEMA until layer 8
-    return {key: validated_config[key] for key in config}
 
 
 class ConfigEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/config"
 
+    def _runtime_value(self, key: str) -> object:
+        if key == "hosts":
+            return self._ledfx.hosts
+        if key == "ledfx_presets":
+            return ledfx_presets
+        return LEGACY_CONFIGURATION_VERSION
+
     async def get(self, request: web.Request) -> web.Response:
-        """
-        Get complete ledfx config.
-        You may ask for a specific key/keys in the request body
-        eg. "audio" will return audio config
-        eg. ["audio", "melbanks"] will return audio and melbanks config
-
-        Parameters:
-        - request (web.Request): The request object.
-
-        Returns:
-        - web.Response: The response object containing the ledfx config.
-        """
-        keys = set()
-
+        """Get the config; the body may name a key or a list of keys."""
+        keys: set[str] = set()
         if request.can_read_body:
             try:
-                wanted_keys = await request.json()
+                wanted = await request.json()
             except JSONDecodeError:
                 return await self.json_decode_error()
-
-            if isinstance(wanted_keys, list):
-                keys.update(wanted_keys)
-            elif isinstance(wanted_keys, str):
-                keys.add(wanted_keys)
-
-            keys = keys & CORE_CONFIG_KEYS
-
-        # if no keys left after filtering, or none requested, send them all
+            if isinstance(wanted, list):
+                keys.update(wanted)
+            elif isinstance(wanted, str):
+                keys.add(wanted)
+            keys &= CONFIG_KEYS
         if not keys:
-            keys = CORE_CONFIG_KEYS
-
-        response = {}
-        for key in keys:
-            config = self._ledfx.config.get(key)
-
-            if key == "audio":
-                config = validate_dict(AudioConfig, config, runtime=True)
-            elif key == "melbanks":
-                config = validate_dict(MelbanksConfig, config)
-            elif key == "wled_preferences":
-                config = validate_dict(WledPreferences, config)
-
-            response[key] = config
+            keys = set(CONFIG_KEYS)
+        dumped = self._ledfx.config.model_dump(mode="json")
+        # GET has always shown the resolved audio device (the old schema resolved it).
+        dumped["audio"] = validate_dict(AudioConfig, dumped["audio"], runtime=True)
+        response = {
+            key: (self._runtime_value(key) if key in RUNTIME_KEYS else dumped[key])
+            for key in keys
+        }
         return await self.bare_request_success(response)
 
     async def delete(self) -> web.Response:
-        """
-        Resets config to defaults and restarts ledfx
-
-        Returns:
-            web.Response: The response indicating the success of the operation.
-        """
+        """Reset config to defaults and restart LedFx."""
         store = self._ledfx.config_store
         # An unreadable config.json can't be copied (load already tried); reset
         # and import are how safe mode recovers from it, so go ahead.
@@ -108,7 +93,7 @@ class ConfigEndpoint(RestEndpoint):
             and not store.unreadable
         ):
             return await self.internal_error(BACKUP_FAILED)
-        if not await store.replace(CORE_CONFIG_SCHEMA({})):
+        if not await store.replace(LedFxConfig()):
             return await self.internal_error(WRITE_FAILED)
         self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
         return await self.request_success(
@@ -116,188 +101,135 @@ class ConfigEndpoint(RestEndpoint):
         )
 
     async def post(self, request: web.Request) -> web.Response:
-        """
-        Loads a complete config and restarts ledfx
-
-        Parameters:
-        - request (web.Request): The request containing the config to load.
-
-        Returns:
-        - web.Response: The HTTP response object
-
-        """
+        """Import a complete config (leniently) and restart LedFx."""
         try:
-            config = await request.json()
-            try:
-                config = run_migrations(config)
-            except Exception as e:
-                msg = f"Failed to migrate import config to the new standard: {e}"
-                _LOGGER.exception(msg)
-                return await self.internal_error(msg, "error")
-
-            store = self._ledfx.config_store
-            if (
-                os.path.exists(store.path)
-                and store.backup("IMPORT") is None
-                and not store.unreadable
-            ):
-                return await self.internal_error(BACKUP_FAILED)
-
-            audio_config = validate_dict(
-                AudioConfig, config.pop("audio", {}), runtime=True
-            )
-            wled_config = validate_dict(
-                WledPreferences, config.pop("wled_preferences", {})
-            )
-            melbanks_config = validate_dict(MelbanksConfig, config.pop("melbanks", {}))
-            core_config = CORE_CONFIG_SCHEMA(config)
-
-            core_config["audio"] = audio_config
-            core_config["wled_preferences"] = wled_config
-            core_config["melbanks"] = melbanks_config
-
-            if not await store.replace(core_config):
-                return await self.internal_error(WRITE_FAILED)
-
-            self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
-            return await self.request_success()
-
+            raw = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
-
-        except (vol.MultipleInvalid, ValidationError) as msg:
-            error_message = f"Error loading config: {msg}"
-            _LOGGER.warning(error_message)
-            return await self.internal_error(error_message, "error")
+        # Lenient validation would drop a newer release's fields yet report success.
+        if isinstance(raw, dict) and schema_version_of(raw) > CURRENT_SCHEMA_VERSION:
+            return await self.invalid_request(
+                "This config is from a newer version of LedFx; update LedFx to import it."
+            )
+        try:
+            raw = run_migrations(raw)
+        except Exception as e:
+            msg = f"Failed to migrate import config to the new standard: {e}"
+            _LOGGER.exception(msg)
+            return await self.internal_error(msg, "error")
+        strip_envelope(raw)
+        store = self._ledfx.config_store
+        config = lenient_validate(LedFxConfig, raw, "import", store.quarantine)
+        if config is None:
+            return await self.invalid_request("Imported config is not a LedFx config.")
+        if (
+            os.path.exists(store.path)
+            and store.backup("IMPORT") is None
+            and not store.unreadable
+        ):
+            return await self.internal_error(BACKUP_FAILED)
+        if not await store.replace(config):
+            return await self.internal_error(WRITE_FAILED)
+        self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
+        return await self.request_success()
 
     async def put(self, request: web.Request) -> web.Response:
-        """
-        Updates ledfx config
-
-        Parameters:
-            request (web.Request): The request containing the config to update.
-
-        Returns:
-            web.Response: The HTTP response object
-        """
-
+        """Update the config; restarts only if a restart field changed."""
         try:
-            config = await request.json()
+            patch = await request.json()
         except JSONDecodeError:
             return await self.json_decode_error()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:  # noqa: BLE001 - body read failures are a 500, as before
             return await self.internal_error(str(e))
+        try:
+            changed = self.apply_patch(patch)
+        except KeyError as e:
+            return await self.invalid_request(f"Error updating config: {e}")
+        except ValidationError as err:
+            return await self.validation_error(err)
+        except Exception as e:  # noqa: BLE001 - as before: never a bare traceback
+            return await self.internal_error(str(e))
+        self._ledfx.config_store.request_save()
+        if changed & RESTART_FIELDS:
+            try:
+                return await self.request_success(
+                    type="success",
+                    message="LedFx is restarting to apply the new configuration",
+                )
+            finally:
+                self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
+        return await self.request_success(
+            type="success", message="Configuration Updated"
+        )
+
+    def apply_patch(self, patch: dict[str, object]) -> set[str]:
+        """Validate the whole patch first, then apply it. Returns changed fields."""
+        cfg = self._ledfx.config
+        audio = _object(patch.pop("audio", {}), "audio")
+        wled = _object(patch.pop("wled_preferences", {}), "wled_preferences")
+        melbanks = _object(patch.pop("melbanks", {}), "melbanks")
+        _check_keys(audio, "audio")
+        _check_keys(wled, "wled_preferences")
+        _check_keys(melbanks, "melbanks")
+        for key in patch:
+            if key not in WRITABLE_CORE_FIELDS and key != "user_presets":
+                raise KeyError(f"Unknown/forbidden core config key: '{key}'")
+
+        candidate = cfg.model_copy(deep=True)
+        for key, value in patch.items():
+            setattr(candidate, key, value)
+        if audio:
+            if "audio_device" in audio:
+                device = audio["audio_device"]
+                names = AudioInputSource.input_devices()
+                audio["audio_device_name"] = (
+                    names.get(device, "") if isinstance(device, int) else ""
+                )
+            candidate.audio = AudioConfig.model_validate(
+                {**cfg.audio.model_dump(), **audio}
+            )
+        if wled:
+            current = cfg.wled_preferences.model_dump()
+            candidate.wled_preferences = WledPreferences.model_validate(
+                {
+                    **current,
+                    **{
+                        k: {**current.get(k, {}), **_object(v, k)}
+                        for k, v in wled.items()
+                    },
+                }
+            )
+        if melbanks:
+            candidate.melbanks = MelbanksConfig.model_validate(
+                {**cfg.melbanks.model_dump(), **melbanks}
+            )
+
+        changed = {
+            name
+            for name in LedFxConfig.model_fields
+            if getattr(candidate, name) != getattr(cfg, name)
+        }
+        previous = {name: getattr(cfg, name) for name in changed}
+        for name in changed:
+            setattr(cfg, name, getattr(candidate, name))
 
         try:
-            self.update_config(config)
-            save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
-            need_restart = self.check_need_restart(config)
-            if need_restart:
-                # Ugly - return success to frontend before restarting
-                try:
-                    return await self.request_success(
-                        type="success",
-                        message="LedFx is restarting to apply the new configuration",
+            if audio:
+                if getattr(self._ledfx, "audio", None) is not None:
+                    self._ledfx.audio.update_config(candidate.audio.model_dump())
+                # Also with no audio running: a Sendspin device may need an eager start.
+                if hasattr(self._ledfx, "reconcile_sendspin_always_on_runtime"):
+                    self._ledfx.reconcile_sendspin_always_on_runtime(
+                        "audio_config_updated"
                     )
-                finally:
-                    self._ledfx.loop.call_soon_threadsafe(self._ledfx.stop, 4)
-            return await self.request_success(
-                type="success", message="Configuration Updated"
+            if melbanks and getattr(self._ledfx, "audio", None) is not None:
+                self._ledfx.audio.melbanks.update_config(cfg.melbanks.model_dump())
+            self._ledfx.events.fire_event(
+                BaseConfigUpdateEvent({**patch, **({"audio": audio} if audio else {})})
             )
-        except (KeyError, vol.MultipleInvalid, ValidationError) as msg:
-            error_message = f"Error updating config: {msg}"
-            _LOGGER.warning(error_message)
-            return await self.invalid_request(error_message)
-        except Exception as e:  # noqa: BLE001
-            return await self.internal_error(str(e))
-
-    def update_config(self, config):
-        """
-        Updates the configuration of the LedFx instance with the provided config.
-
-        Args:
-            config (dict): The new configuration to be applied.
-
-        Returns:
-            None
-        """
-        audio_config = config.pop("audio", {})
-
-        audio_config = validate_and_trim_config(
-            audio_config,
-            AudioInputConfig,
-            "audio",
-        )
-
-        audio_config = validate_and_trim_config(
-            audio_config,
-            AudioAnalysisConfig,
-            "audio",
-        )
-        wled_config = validate_and_trim_config(
-            config.pop("wled_preferences", {}),
-            WledPreferences,
-            "wled_preferences",
-        )
-        melbanks_config = validate_and_trim_config(
-            config.pop("melbanks", {}), MelbanksConfig, "melbanks"
-        )
-        core_config = validate_and_trim_config(config, CORE_CONFIG_SCHEMA, "core")
-
-        # When user explicitly selects a new device via API, replace any stale
-        # stored name with the current name for that selected index. This keeps
-        # the live selection consistent now and preserves boot-time name-based
-        # recovery if indices drift before the next restart.
-        if "audio_device" in audio_config:
-            audio_config["audio_device_name"] = AudioInputSource.input_devices().get(
-                audio_config["audio_device"], ""
-            )
-
-        self._ledfx.config["melbanks"].update(melbanks_config)
-        self._ledfx.config.update(core_config)
-
-        # handle special case wled_preferences nested dict
-        for key in wled_config:
-            if key in self._ledfx.config["wled_preferences"]:
-                self._ledfx.config["wled_preferences"][key].update(wled_config[key])
-            else:
-                self._ledfx.config["wled_preferences"][key] = wled_config[key]
-
-        if audio_config:
-            if hasattr(self._ledfx, "audio") and self._ledfx.audio is not None:
-                self._ledfx.audio.update_config(audio_config)
-            # Merge into persisted config AFTER update_config so that
-            # update_config's old-vs-new comparison sees the unmodified old
-            # values (self._config may be the same object as
-            # self._ledfx.config["audio"] after _persist_config replaces it).
-            self._ledfx.config["audio"].update(audio_config)
-
-            if hasattr(self._ledfx, "reconcile_sendspin_always_on_runtime"):
-                self._ledfx.reconcile_sendspin_always_on_runtime("audio_config_updated")
-
-        if hasattr(self._ledfx, "audio") and melbanks_config:
-            self._ledfx.audio.melbanks.update_config(self._ledfx.config["melbanks"])
-
-        self._ledfx.events.fire_event(BaseConfigUpdateEvent(config))
-
-    def check_need_restart(self, config):
-        """
-        Checks if a restart is needed based on the provided configuration.
-
-        Args:
-            config (dict): The configuration to be checked.
-
-        Returns:
-            bool: True if a restart is needed, False otherwise.
-        """
-        core_config = validate_and_trim_config(config, CORE_CONFIG_SCHEMA, "core")
-
-        # If core_config is empty, no restart is needed
-        if not core_config:
-            return False
-
-        need_restart = True
-        if any(key in core_config for key in CORE_CONFIG_KEYS_NO_RESTART):
-            need_restart = False
-
-        return need_restart
+        except Exception:
+            # The request fails, so none of the patch may stay (audio writes too).
+            for name, value in previous.items():
+                setattr(cfg, name, value)
+            raise
+        return changed

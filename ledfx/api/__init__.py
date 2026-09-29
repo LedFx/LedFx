@@ -4,7 +4,9 @@ import uuid
 from json import JSONDecodeError
 
 from aiohttp import web
+from pydantic import ValidationError
 
+from ledfx.api.jsonutil import dumps
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,7 +86,7 @@ class RestEndpoint(BaseRegistry):
                     "reason": reason,
                 },
             }
-            return web.json_response(data=response, status=202)
+            return web.json_response(data=response, status=202, dumps=dumps)
 
     async def json_decode_error(self) -> web.Response:
         """
@@ -97,7 +99,7 @@ class RestEndpoint(BaseRegistry):
             "status": "failed",
             "reason": "JSON decoding failed",
         }
-        return web.json_response(data=response, status=400)
+        return web.json_response(data=response, status=400, dumps=dumps)
 
     async def internal_error(
         self, message="Internal error", type="error"
@@ -117,7 +119,7 @@ class RestEndpoint(BaseRegistry):
             "status": "failed",
             "payload": {"type": type, "reason": message},
         }
-        return web.json_response(data=response, status=500)
+        return web.json_response(data=response, status=500, dumps=dumps)
 
     async def invalid_request(
         self, message="Invalid request", type="error", resp_code=200
@@ -144,7 +146,16 @@ class RestEndpoint(BaseRegistry):
                 "reason": message,
             },
         }
-        return web.json_response(data=response, status=resp_code)
+        return web.json_response(data=response, status=resp_code, dumps=dumps)
+
+    async def validation_error(self, err: ValidationError) -> web.Response:
+        errors = err.errors(include_url=False, include_context=False)
+        response = {
+            "status": "failed",
+            "payload": {"type": "error", "reason": f"{len(errors)} invalid value(s)"},
+            "errors": errors,
+        }
+        return web.json_response(data=response, status=400, dumps=dumps)
 
     async def request_success(
         self, type=None, message=None, data=None, resp_code=200
@@ -175,7 +186,7 @@ class RestEndpoint(BaseRegistry):
             }
         if data:
             response["data"] = data
-        return web.json_response(data=response, status=resp_code)
+        return web.json_response(data=response, status=resp_code, dumps=dumps)
 
     async def bare_request_success(self, payload) -> web.Response:
         """
@@ -192,7 +203,7 @@ class RestEndpoint(BaseRegistry):
             raise ValueError(
                 "Payload must be provided to the bare request_success method."
             )
-        return web.json_response(data=payload, status=200)
+        return web.json_response(data=payload, status=200, dumps=dumps)
 
 
 class RestApi(RegistryLoader):

@@ -4,7 +4,6 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,16 +46,17 @@ class EffectsEndpoint(RestEndpoint):
         try:
             if virtual.active_effect and virtual.active_effect.type == effect_type:
                 virtual.clear_effect()
-                virtual.virtual_cfg.pop("effect", None)
+                entry = virtual.entry
+                if entry is not None:
+                    entry.effect = None
         except Exception as e:  # noqa: BLE001
             _LOGGER.error("Error clearing active effect in effects delete: %s", e)
 
-        virtual.virtual_cfg.get("effects", {}).pop(effect_type, None)
+        entry = virtual.entry
+        if entry is not None:
+            entry.effects.pop(effect_type, None)
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         response = {"status": "success"}
         return await self.bare_request_success(response)

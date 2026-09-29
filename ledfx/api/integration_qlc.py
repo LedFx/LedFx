@@ -4,7 +4,6 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
 from ledfx.events import Event
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,8 +42,8 @@ class QLCEndpoint(RestEndpoint):
             effect_names.append(effect.NAME)
 
         scene_ids = []
-        for scene in self._ledfx.config["scenes"]:
-            scene_ids.append(self._ledfx.config["scenes"][scene]["name"])
+        for scene in self._ledfx.config.scenes.values():
+            scene_ids.append(scene.name)
 
         response["event_types"] = {
             Event.EFFECT_SET: {
@@ -114,14 +113,11 @@ class QLCEndpoint(RestEndpoint):
             )
 
         # Save the configuration (integration will handle modifying "data")
-        for _integration in self._ledfx.config["integrations"]:
-            if _integration["id"] == integration_id:
-                _integration["data"] = integration.data
+        for _integration in self._ledfx.config.integrations:
+            if _integration.id == integration_id:
+                _integration.data = integration.data
                 break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def post(self, integration_id, request) -> web.Response:
@@ -169,14 +165,11 @@ class QLCEndpoint(RestEndpoint):
         integration.create_event(event_type, event_filter, True, qlc_payload)
 
         # Update and save the configuration
-        for _integration in self._ledfx.config["integrations"]:
-            if _integration["id"] == integration_id:
-                _integration["data"] = integration.data
+        for _integration in self._ledfx.config.integrations:
+            if _integration.id == integration_id:
+                _integration.data = integration.data
                 break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def delete(self, integration_id, request) -> web.Response:
@@ -225,12 +218,9 @@ class QLCEndpoint(RestEndpoint):
         integration.delete_event(event_type, event_filter)
 
         # Save the configuration (integration will handle modifying "data")
-        for _integration in self._ledfx.config["integrations"]:
-            if _integration["id"] == integration_id:
-                _integration["data"] = integration.data
+        for _integration in self._ledfx.config.integrations:
+            if _integration.id == integration_id:
+                _integration.data = integration.data
                 break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()

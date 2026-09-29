@@ -4,21 +4,28 @@ from typing import Annotated, Literal
 
 from pydantic import (
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Field,
+    JsonValue,
     SerializerFunctionWrapHandler,
     model_serializer,
     model_validator,
 )
 from pydantic.fields import ComputedFieldInfo, FieldInfo
+from pydantic.json_schema import JsonDict
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
+    X_LEGACY,
     X_OMIT_DEFAULT,
+    X_READONLY,
     X_REQUIRED,
+    X_RESTART,
     AudioDeviceIndex,
     CoercedFloat,
     CoercedInt,
+    IPv4,
     OneOf,
     coerce,
 )
@@ -129,7 +136,8 @@ class MelbanksConfig(LedFxModel):
     model_config = ConfigDict(extra="allow")
 
     samples: CoercedInt = Field(24, ge=0, le=100)
-    peak_isolation: float = 0.4
+    # 1 is infinite power (melbank.py), below 0 the response inverts.
+    peak_isolation: CoercedFloat = Field(0.4, ge=0.0, le=0.99)
     coeffs_type: Literal[
         "matt_mel", "triangle", "bark", "mel", "htk", "scott", "scott_mel"
     ] = "matt_mel"
@@ -231,5 +239,266 @@ class VirtualConfig(LedFxModel):
         le=15000,
         description="Highest frequency for this virtual's audio reactive effects",
     )
-    rows: int = Field(1, description="Amount of rows. > 1 if this virtual is a matrix")
+    rows: int = Field(
+        1, ge=1, description="Amount of rows. > 1 if this virtual is a matrix"
+    )
     rotate: CoercedInt = Field(0, ge=0, le=3, description="90 Degree rotations")
+
+
+_RO: JsonDict = {X_READONLY: True}
+# Optional-without-default: absent from config.json when None (never "null").
+_UNSET: JsonDict = {X_OMIT_DEFAULT: True}
+
+
+def _legacy_type(legacy_type: str, default: JsonValue) -> JsonDict:
+    """Collections were untyped list/dict in the pre-overhaul core schema."""
+    return {X_LEGACY: {"type": legacy_type, "default": default}}
+
+
+def _empty_to_none(value: object) -> object:
+    return None if value == {} else value
+
+
+class EffectEntry(LedFxModel):
+    type: str
+    config: dict[str, object] = {}
+
+
+class DeviceEntry(LedFxModel):
+    id: str
+    type: str
+    config: dict[str, object]
+
+
+class VirtualEntry(LedFxModel):
+    id: str
+    config: VirtualConfig
+    segments: list[list[object]] = []
+    is_device: str | Literal[False] = False
+    auto_generated: bool = False
+    # None (never toggled) is not written, so a save never pauses virtuals.
+    active: bool | None = Field(None, json_schema_extra=_UNSET)
+    effect: Annotated[EffectEntry | None, BeforeValidator(_empty_to_none)] = Field(
+        None, json_schema_extra=_UNSET
+    )
+    effects: dict[str, EffectEntry] = {}
+    last_effect: str | None = Field(None, json_schema_extra=_UNSET)
+
+
+class IntegrationEntry(LedFxModel):
+    id: str
+    type: str
+    active: bool = False
+    # qlc/mqtt/mqtt_hass keep a list here; other integrations a dict.
+    data: list[object] | dict[str, object] = {}
+    config: dict[str, object] = {}
+
+
+class SceneVirtual(LedFxModel):
+    type: str | None = Field(None, json_schema_extra=_UNSET)
+    # None (absent) differs from {}: a legacy entry without config is skipped.
+    config: dict[str, object] | None = Field(None, json_schema_extra=_UNSET)
+    action: str | None = Field(None, json_schema_extra=_UNSET)
+    preset: str | None = Field(None, json_schema_extra=_UNSET)
+
+
+class Scene(LedFxModel):
+    name: str
+    scene_image: str = "Wallpaper"
+    scene_tags: str | None = Field(None, json_schema_extra=_UNSET)
+    scene_puturl: str | None = Field(None, json_schema_extra=_UNSET)
+    scene_payload: str | None = Field(None, json_schema_extra=_UNSET)
+    scene_midiactivate: str | None = Field(None, json_schema_extra=_UNSET)
+    virtuals: dict[str, SceneVirtual] = {}
+
+
+class PlaylistItem(LedFxModel):
+    scene_id: str
+    duration_ms: int | None = Field(None, ge=500, json_schema_extra=_UNSET)
+
+
+class Jitter(LedFxModel):
+    model_config = ConfigDict(extra="allow")
+
+    enabled: bool = False
+    # inf would overflow the int() of the sampled duration.
+    factor_min: CoercedFloat = Field(1.0, ge=0.0, allow_inf_nan=False)
+    factor_max: CoercedFloat = Field(1.0, ge=0.0, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def _bounds(self) -> "Jitter":
+        if self.factor_max < self.factor_min:
+            raise ValueError("jitter.factor_max must be >= factor_min")
+        return self
+
+
+class PlaylistTiming(LedFxModel):
+    model_config = ConfigDict(extra="allow")
+
+    jitter: Jitter = Jitter()
+
+
+class Playlist(LedFxModel):
+    model_config = ConfigDict(extra="allow")
+
+    id: str
+    name: str
+    items: list[PlaylistItem]
+    default_duration_ms: int = Field(500, ge=500)
+    mode: Literal["sequence", "shuffle"] = "sequence"
+    timing: PlaylistTiming = PlaylistTiming()
+    tags: list[object] = []
+    image: str | None = "Wallpaper"
+
+
+class Preset(LedFxModel):
+    name: str
+    config: dict[str, object] = {}
+
+
+class MelbankCollectionEntry(LedFxModel):
+    id: str
+    config: MelbankConfig
+
+
+class SendspinServerConfig(LedFxModel):
+    # Literals (not imported): ledfx.sendspin pulls optional deps. Pinned by a test.
+    server_url: str = "ws://192.168.1.12:8927/sendspin"
+    client_name: str = "LedFx"
+
+
+class NowPlayingGradient(LedFxModel):
+    enabled: bool = False
+    variant: Literal["led_safe", "led_punchy", "led_max"] = "led_punchy"
+    virtual_ids: list[str] = []
+
+
+class NowPlayingTrackText(LedFxModel):
+    enabled: bool = True
+    duration: CoercedInt = Field(60, ge=0, le=60)
+    virtual_ids: list[str] = []
+    preset: str = ""
+
+
+class NowPlayingAlbumArt(LedFxModel):
+    enabled: bool = True
+    duration: CoercedInt = Field(10, ge=0, le=60)
+    virtual_ids: list[str] = []
+
+
+class NowPlayingConfig(LedFxModel):
+    gradient: NowPlayingGradient = NowPlayingGradient()
+    track_text: NowPlayingTrackText = NowPlayingTrackText()
+    album_art: NowPlayingAlbumArt = NowPlayingAlbumArt()
+
+
+class ImageCacheConfig(LedFxModel):
+    model_config = ConfigDict(extra="allow")
+
+    max_size_mb: int = 500
+    max_items: int = 500
+
+
+class LedFxConfig(LedFxModel):
+    """The persisted config.json (minus schema_version/configuration_version)."""
+
+    host: str = Field("0.0.0.0", json_schema_extra={X_RESTART: True})
+    port: int = Field(8888, json_schema_extra={X_RESTART: True})
+    port_s: int = Field(8443, json_schema_extra={X_RESTART: True})
+    dev_mode: bool = Field(False, json_schema_extra={X_RESTART: True})
+    devices: list[DeviceEntry] = Field(
+        list[DeviceEntry](), json_schema_extra={**_RO, **_legacy_type("array", [])}
+    )
+    virtuals: list[VirtualEntry] = Field(
+        list[VirtualEntry](), json_schema_extra={**_RO, **_legacy_type("array", [])}
+    )
+    audio: AudioConfig = Field(
+        AudioConfig(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    melbank_collection: list[MelbankCollectionEntry] = Field(
+        list[MelbankCollectionEntry](),
+        json_schema_extra={X_RESTART: True, **_legacy_type("array", [])},
+    )
+    melbanks: MelbanksConfig = Field(
+        MelbanksConfig(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    user_presets: dict[str, dict[str, Preset]] = Field(
+        dict[str, dict[str, Preset]](),
+        json_schema_extra={**_RO, **_legacy_type("dict", {})},
+    )
+    scenes: dict[str, Scene] = Field(
+        dict[str, Scene](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    playlists: dict[str, Playlist] = Field(
+        dict[str, Playlist](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    integrations: list[IntegrationEntry] = Field(
+        list[IntegrationEntry](), json_schema_extra={**_RO, **_legacy_type("array", [])}
+    )
+    transmission_mode: Literal["compressed", "uncompressed"] = Field(
+        "compressed", json_schema_extra={X_RESTART: True}
+    )
+    visualisation_fps: int = Field(30, ge=1, le=60)
+    visualisation_maxlen: int = Field(81, ge=5, le=65536)
+    global_transitions: bool = Field(
+        True,
+        description="Changes to any virtual's transitions apply to all other virtuals",
+        json_schema_extra={X_RESTART: True},
+    )
+    user_colors: dict[str, str] = Field(
+        dict[str, str](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    user_gradients: dict[str, str] = Field(
+        dict[str, str](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    scan_on_startup: bool = False
+    create_segments: bool = False
+    flush_on_deactivate: bool = False
+    wled_preferences: WledPreferences = Field(
+        WledPreferences(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    global_brightness: CoercedFloat = Field(1.0, ge=0, le=1.0)
+    ui_brightness_boost: CoercedFloat = Field(0.0, ge=0, le=1.0)
+    startup_scene_id: str = ""
+    startup_playlist_id: str = ""
+    lifx_broadcast_address: IPv4 = "255.255.255.255"
+    lifx_discovery_timeout: int = Field(30, ge=1, le=120)
+    instance_id: str = Field("", json_schema_extra=_RO)
+    sendspin_servers: dict[str, SendspinServerConfig] = Field(
+        dict[str, SendspinServerConfig](),
+        json_schema_extra={**_RO, **_legacy_type("dict", {})},
+    )
+    sendspin_always_on: bool = True
+    now_playing: NowPlayingConfig = Field(
+        NowPlayingConfig(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+    )
+    allowed_origins: list[str] = Field(
+        list[str](),
+        description='Extra web origins (e.g. "https://ledfx.example.com") allowed to use the API from a browser. "*" allows every origin',
+    )
+    allowed_hosts: list[str] = Field(
+        list[str](),
+        description='Extra host names (e.g. "ledfx.example.com") that browsers may use to reach LedFx. "*" allows every name',
+    )
+    allow_null_origin: bool = Field(
+        False, description='Accept browser requests whose Origin is "null"'
+    )
+    # Keys older builds only tolerated via ALLOW_EXTRA; not in the legacy schema.
+    debug_asyncio: bool = Field(
+        False, json_schema_extra={**_RO, X_LEGACY: {"omit": True}}
+    )
+    image_cache: ImageCacheConfig = Field(
+        ImageCacheConfig(), json_schema_extra={**_RO, X_LEGACY: {"omit": True}}
+    )
+
+
+def _marked(key: str) -> frozenset[str]:
+    return frozenset(
+        name
+        for name, info in LedFxConfig.model_fields.items()
+        if isinstance(info.json_schema_extra, dict) and info.json_schema_extra.get(key)
+    )
+
+
+WRITABLE_CORE_FIELDS = frozenset(LedFxConfig.model_fields) - _marked(X_READONLY)
+RESTART_FIELDS = _marked(X_RESTART)

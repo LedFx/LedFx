@@ -12,8 +12,8 @@ import serial.tools.list_ports
 import voluptuous as vol
 from sacn.sending.sender_socket_base import DEFAULT_PORT
 
-from ledfx.config import save_config
 from ledfx.configuration.fields import fps_validator
+from ledfx.configuration.models import DeviceEntry, VirtualEntry
 from ledfx.events import (
     DeviceCreatedEvent,
     DevicesUpdatedEvent,
@@ -428,9 +428,7 @@ class Device(BaseRegistry):
             if segment[0] != virtual_id:
                 new_segments.append(segment)
             else:
-                if self._pixels is not None and self._ledfx.config.get(
-                    "flush_on_deactivate", False
-                ):
+                if self._pixels is not None and self._ledfx.config.flush_on_deactivate:
                     self._pixels[segment[1] : segment[2] + 1] = np.zeros(
                         (segment[2] - segment[1] + 1, 3)
                     )
@@ -451,13 +449,8 @@ class Device(BaseRegistry):
 
     def _cleanup_virtual_from_scenes(self, virtual_id):
         """Remove a virtual from all scene configurations."""
-        ledfx_scenes = self._ledfx.config["scenes"].copy()
-        for scene_id, scene_config in ledfx_scenes.items():
-            self._ledfx.config["scenes"][scene_id]["virtuals"] = {
-                _virtual_id: effect
-                for _virtual_id, effect in scene_config["virtuals"].items()
-                if _virtual_id != virtual_id
-            }
+        for scene in self._ledfx.config.scenes.values():
+            scene.virtuals.pop(virtual_id, None)
 
     async def remove_from_virtuals(self):
         """Remove segments referencing this device from all virtuals.
@@ -499,8 +492,9 @@ class Device(BaseRegistry):
                 )
                 continue
 
-            if hasattr(virtual, "virtual_cfg") and virtual.virtual_cfg is not None:
-                virtual.virtual_cfg["segments"] = virtual.segments
+            entry = virtual.entry
+            if entry is not None:
+                entry.segments = virtual.segments
 
             if active:
                 virtual.activate()
@@ -519,10 +513,10 @@ class Device(BaseRegistry):
                 self._ledfx.devices.destroy(device_id)
 
                 # Update the configuration
-                self._ledfx.config["devices"] = [
+                self._ledfx.config.devices = [
                     _device
-                    for _device in self._ledfx.config["devices"]
-                    if _device["id"] != device_id
+                    for _device in self._ledfx.config.devices
+                    if _device.id != device_id
                 ]
 
             # cleanup this virtual from any scenes (may already be done,
@@ -532,18 +526,13 @@ class Device(BaseRegistry):
             self._ledfx.virtuals.destroy(id)
 
             # Update the configuration
-            self._ledfx.config["virtuals"] = [
-                virtual
-                for virtual in self._ledfx.config["virtuals"]
-                if virtual["id"] != id
+            self._ledfx.config.virtuals = [
+                virtual for virtual in self._ledfx.config.virtuals if virtual.id != id
             ]
 
         # Save the configuration once after all deletions
         if virtuals_to_destroy:
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+            self._ledfx.config_store.request_save()
 
     async def add_postamble(self):
         # over ride in child classes for device specific behaviours
@@ -579,17 +568,17 @@ class Device(BaseRegistry):
         virtual.update_segments(segments)
 
         # Update the configuration
-        self._ledfx.config["virtuals"].append(
-            {
-                "id": virtual.id,
-                "config": virtual.config,
-                "segments": virtual.segments,
-                "is_device": False,
-                "auto_generated": True,
-            }
+        self._ledfx.config.virtuals.append(
+            VirtualEntry.model_validate(
+                {
+                    "id": virtual.id,
+                    "config": virtual.config,
+                    "segments": virtual.segments,
+                    "is_device": False,
+                    "auto_generated": True,
+                }
+            )
         )
-
-        virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
 
 
 @BaseRegistry.no_registration
@@ -770,23 +759,19 @@ class Devices(RegistryLoader):
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
 
-    def create_from_config(self, config):
+    def create_from_config(self, config: list[DeviceEntry]) -> None:
         for device in config:
             _LOGGER.info("Loading device from config: %s", device)
             try:
                 self._ledfx.devices.create(
-                    id=device["id"],
-                    type=device["type"],
-                    config=device["config"],
+                    id=device.id,
+                    type=device.type,
+                    config=device.config,
                     ledfx=self._ledfx,
                 )
             except Exception as e:  # noqa: BLE001
                 # be very prolific on ignoring devices if they are bad
-                _LOGGER.warning(
-                    "Failed to load device %s: %s",
-                    device.get("id", "unknown"),
-                    e,
-                )
+                _LOGGER.warning("Failed to load device %s: %s", device.id, e)
 
     def deactivate_devices(self):
         for device in self.values():
@@ -906,12 +891,14 @@ class Devices(RegistryLoader):
         if device_type == "wled":
             device_config["name"] = wled_name
         # Update and save the configuration
-        self._ledfx.config["devices"].append(
-            {
-                "id": device.id,
-                "type": device.type,
-                "config": device_config,
-            }
+        self._ledfx.config.devices.append(
+            DeviceEntry.model_validate(
+                {
+                    "id": device.id,
+                    "type": device.type,
+                    "config": device_config,
+                }
+            )
         )
 
         # Generate virtual configuration for the device
@@ -941,26 +928,23 @@ class Devices(RegistryLoader):
         virtual.update_segments(segments)
 
         # Update the configuration
-        self._ledfx.config["virtuals"].append(
-            {
-                "id": virtual.id,
-                "config": virtual.config,
-                "segments": virtual.segments,
-                "is_device": device.id,
-                "auto_generated": virtual.auto_generated,
-            }
+        self._ledfx.config.virtuals.append(
+            VirtualEntry.model_validate(
+                {
+                    "id": virtual.id,
+                    "config": virtual.config,
+                    "segments": virtual.segments,
+                    "is_device": device.id,
+                    "auto_generated": virtual.auto_generated,
+                }
+            )
         )
-
-        virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
 
         self._ledfx.events.fire_event(DeviceCreatedEvent(device.name))
         await device.add_postamble()
 
         # Finally, save the config to file!
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         return device
 

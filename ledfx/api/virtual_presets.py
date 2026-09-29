@@ -4,7 +4,9 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import configs_match, save_config
+from ledfx.config import configs_match, preset_category, preset_config
+from ledfx.configuration.models import Preset
+from ledfx.presets import ledfx_presets
 from ledfx.utils import (
     generate_default_config,
     generate_defaults,
@@ -59,14 +61,14 @@ class VirtualPresetsEndpoint(RestEndpoint):
             )
         effect_id = virtual.active_effect.type
 
-        default = generate_defaults(
-            self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
-        )
+        default = generate_defaults(ledfx_presets, self._ledfx.effects, effect_id)
 
-        if effect_id in self._ledfx.config["user_presets"]:
-            custom = self._ledfx.config["user_presets"][effect_id]
-        else:
-            custom = {}
+        custom = {
+            preset_id: preset.model_dump()
+            for preset_id, preset in self._ledfx.config.user_presets.get(
+                effect_id, {}
+            ).items()
+        }
 
         custom = inject_missing_default_keys(custom, default)
 
@@ -131,19 +133,21 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if category == "ledfx_presets" and preset_id == "reset":
             effect_config = generate_default_config(self._ledfx.effects, effect_id)
         else:
-            if effect_id not in self._ledfx.config[category]:
+            user_presets = self._ledfx.config.user_presets
+            presets = preset_category(user_presets, category)
+            if effect_id not in presets:
                 return await self.invalid_request(
                     f"Effect {effect_id} does not exist in category {category}"
                 )
-            if preset_id not in self._ledfx.config[category][effect_id]:
+            if preset_id not in presets[effect_id]:
                 return await self.invalid_request(
                     f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
                 )
             else:
                 # Create the effect and add it to the virtual
-                effect_config = self._ledfx.config[category][effect_id][preset_id][
-                    "config"
-                ]
+                effect_config = preset_config(
+                    user_presets, category, effect_id, preset_id
+                )
 
         effect = self._ledfx.effects.create(
             ledfx=self._ledfx, type=effect_id, config=effect_config
@@ -157,10 +161,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
 
         virtual.update_effect_config(effect)
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         effect_response = {}
         effect_response["config"] = effect.config
@@ -205,21 +206,12 @@ class VirtualPresetsEndpoint(RestEndpoint):
         preset_id = generate_id(preset_name)
         effect_id = virtual.active_effect.type
 
-        # If no presets for the effect, create a dict to store them
-        if effect_id not in self._ledfx.config["user_presets"]:
-            self._ledfx.config["user_presets"][effect_id] = {}
-
         # Update the preset if it already exists, else create it
-        self._ledfx.config["user_presets"][effect_id][preset_id] = {}
-        self._ledfx.config["user_presets"][effect_id][preset_id]["name"] = preset_name
-        self._ledfx.config["user_presets"][effect_id][preset_id]["config"] = (
-            virtual.active_effect.config
+        self._ledfx.config.user_presets.setdefault(effect_id, {})[preset_id] = Preset(
+            name=preset_name, config=virtual.active_effect.config
         )
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         response = {
             "status": "success",
@@ -250,12 +242,11 @@ class VirtualPresetsEndpoint(RestEndpoint):
         virtual.clear_effect()
 
         # TODO: Add a unit test for deleting a virtual preset effect, once fixed / removed
-        virtual.virtual_cfg.pop("effect", None)
+        entry = virtual.entry
+        if entry is not None:
+            entry.effect = None
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         response = {"status": "success", "effect": {}}
         return await self.bare_request_success(response)

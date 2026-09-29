@@ -10,6 +10,7 @@ from PIL import Image
 from ledfx.api.now_playing import NowPlayingEndpoint
 from ledfx.nowplaying.models import TrackMetadata
 from ledfx.nowplaying.service import NowPlayingService
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 def _make_test_png():
@@ -35,7 +36,9 @@ class _DummyLedFx:
     """Minimal LedFx core stub with Now Playing service."""
 
     def __init__(self, config_dir):
-        self.config = {}
+        fake = fake_ledfx()
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.config_dir = config_dir
         self.now_playing = NowPlayingService(self)
 
@@ -143,8 +146,7 @@ async def test_get_after_clear(endpoint, ledfx):
 async def test_put_gradient_config(endpoint, ledfx):
     """PUT updates gradient configuration."""
     request = _make_request({"gradient": {"enabled": False, "variant": "led_max"}})
-    with patch("ledfx.nowplaying.service.save_config"):
-        response = await endpoint.put(request)
+    response = await endpoint.put(request)
 
     assert response.status == 200
     body = json.loads(response.body.decode())
@@ -165,8 +167,7 @@ async def test_put_track_text_config(endpoint, ledfx):
             }
         }
     )
-    with patch("ledfx.nowplaying.service.save_config"):
-        response = await endpoint.put(request)
+    response = await endpoint.put(request)
 
     assert response.status == 200
     body = json.loads(response.body.decode())
@@ -179,8 +180,7 @@ async def test_put_track_text_config(endpoint, ledfx):
 async def test_put_album_art_config(endpoint, ledfx):
     """PUT updates album_art configuration."""
     request = _make_request({"album_art": {"enabled": True, "virtual_ids": ["m2"]}})
-    with patch("ledfx.nowplaying.service.save_config"):
-        response = await endpoint.put(request)
+    response = await endpoint.put(request)
 
     assert response.status == 200
     body = json.loads(response.body.decode())
@@ -224,8 +224,7 @@ async def test_put_reflects_in_get(endpoint, ledfx):
     request = _make_request(
         {"gradient": {"enabled": False, "virtual_ids": ["v1", "v2"]}}
     )
-    with patch("ledfx.nowplaying.service.save_config"):
-        await endpoint.put(request)
+    await endpoint.put(request)
 
     response = await endpoint.get()
     data = json.loads(response.body.decode())

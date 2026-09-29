@@ -13,10 +13,6 @@ from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
 
-# Fallback defaults (used if config values are missing)
-DEFAULT_DISCOVERY_TIMEOUT = 30
-DEFAULT_BROADCAST_ADDRESS = "255.255.255.255"
-
 # Number of broadcast packets to send (handles packet loss on large networks)
 UDP_BROADCAST_COUNT = 3
 # Delay between broadcast packets (seconds)
@@ -325,12 +321,8 @@ class FindLifxEndpoint(RestEndpoint):
             )
 
         # Read fresh values from global config (allows frontend to update before discovery)
-        config_timeout = self._ledfx.config.get(
-            "lifx_discovery_timeout", DEFAULT_DISCOVERY_TIMEOUT
-        )
-        config_broadcast = self._ledfx.config.get(
-            "lifx_broadcast_address", DEFAULT_BROADCAST_ADDRESS
-        )
+        config_timeout = self._ledfx.config.lifx_discovery_timeout
+        config_broadcast = self._ledfx.config.lifx_broadcast_address
         _LOGGER.debug(
             "LIFX config values: timeout=%s, broadcast=%s",
             config_timeout,

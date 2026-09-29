@@ -1,15 +1,27 @@
 import logging
 
-import voluptuous as vol
-
-from ledfx.config import (
-    configs_match,
-    save_config,
-)
+from ledfx.config import configs_match
+from ledfx.configuration.models import Scene, SceneVirtual
 from ledfx.events import SceneActivatedEvent, SceneDeletedEvent
+from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_default_config, generate_id
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def scene_action(virtual_config: SceneVirtual) -> str:
+    """The scene action, inferring legacy entries (no action field)."""
+    if virtual_config.action is not None:
+        return virtual_config.action
+    # Empty entry, or neither type nor config: ignore (legacy behaviour).
+    if virtual_config.type is None and virtual_config.config is None:
+        return "ignore"
+    return "activate"
+
+
+def is_empty(virtual_config: SceneVirtual) -> bool:
+    """True for an entry with nothing set (a legacy `{}`)."""
+    return not virtual_config.model_dump()
 
 
 class Scenes:
@@ -19,52 +31,21 @@ class Scenes:
 
     def __init__(self, ledfx):
         self._ledfx = ledfx
-        self._scenes = self._ledfx.config["scenes"]
 
-        def virtuals_validator(virtual_ids):
-            return [
-                virtual_id
-                for virtual_id in virtual_ids
-                if self._ledfx.virtuals.get(virtual_id)
-            ]
+    @property
+    def _scenes(self) -> dict[str, Scene]:
+        return self._ledfx.config.scenes
 
-        self.SCENE_SCHEMA = vol.Schema(
-            {
-                vol.Required("name", description="Name of the scene"): str,
-                vol.Optional(
-                    "scene_image",
-                    description="Image or icon to display",
-                    default="Wallpaper",
-                ): str,
-                vol.Optional(
-                    "scene_tags",
-                    description="Tags for filtering",
-                ): str,
-                vol.Optional(
-                    "scene_puturl",
-                    description="On Scene Activate, URL to PUT too",
-                ): str,
-                vol.Optional(
-                    "scene_payload",
-                    description="On Scene Activate, send this payload to scene_puturl",
-                ): str,
-                vol.Optional(
-                    "scene_midiactivate",
-                    description="On MIDI key/note, Activate a scene",
-                ): str,
-                vol.Required(
-                    "virtuals",
-                    description="The effects of these virtuals will be saved",
-                ): virtuals_validator,
-            }
-        )
+    def existing_virtual_ids(self, virtual_ids: list[str]) -> list[str]:
+        """Drop ids of virtuals that do not exist (was SCENE_SCHEMA's validator)."""
+        return [
+            virtual_id
+            for virtual_id in virtual_ids
+            if self._ledfx.virtuals.get(virtual_id)
+        ]
 
     def save_to_config(self):
-        self._ledfx.config["scenes"] = self._scenes
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
     def create_from_config(self, config):
         # maybe use this to sanitise scenes on startup or smth
@@ -72,22 +53,19 @@ class Scenes:
 
     def create(self, scene_config, scene_id=None):
         """Creates a scene of current effects of specified virtuals if no ID given, else updates one with matching id"""
-        scene_config = self.SCENE_SCHEMA(scene_config)
-        scene_id = (
-            scene_id if scene_id in self._scenes else generate_id(scene_config["name"])
-        )
-
         virtual_effects = {}
-        for virtual in scene_config["virtuals"]:
+        for virtual_id in self.existing_virtual_ids(scene_config["virtuals"]):
+            virtual = self._ledfx.virtuals.get(virtual_id)
             effect = {}
             if virtual.active_effect:
                 effect["type"] = virtual.active_effect.type
                 effect["config"] = virtual.active_effect.config
-            virtual_effects[virtual.id] = effect
-        scene_config["virtuals"] = virtual_effects
+            virtual_effects[virtual_id] = effect
+        scene = Scene.model_validate({**scene_config, "virtuals": virtual_effects})
+        scene_id = scene_id if scene_id in self._scenes else generate_id(scene.name)
 
         # Update the scene if it already exists, else create it
-        self._scenes[scene_id] = scene_config
+        self._scenes[scene_id] = scene
         self.save_to_config()
 
     def activate(self, scene_id, save_config_after=True):
@@ -104,24 +82,13 @@ class Scenes:
             _LOGGER.error("No scene found with id: %s", scene_id)
             return False
 
-        for virtual_id in scene["virtuals"]:
+        for virtual_id, virtual_config in scene.virtuals.items():
             virtual = self._ledfx.virtuals.get(virtual_id)
             if not virtual:
                 # virtual has been deleted since scene was created
                 continue
 
-            virtual_config = scene["virtuals"][virtual.id]
-            action = virtual_config.get("action")
-
-            # Legacy support: if no action field, infer from config
-            if action is None:
-                # Empty dict or no type/config means ignore (legacy behavior)
-                if not virtual_config or (
-                    "type" not in virtual_config and "config" not in virtual_config
-                ):
-                    action = "ignore"
-                else:
-                    action = "activate"
+            action = scene_action(virtual_config)
 
             # Process action
             if action == "ignore":
@@ -144,7 +111,7 @@ class Scenes:
 
             elif action == "activate":
                 # Get effect type (required for both preset and explicit config)
-                effect_type = virtual_config.get("type")
+                effect_type = virtual_config.type
                 if not effect_type:
                     _LOGGER.warning(
                         "Invalid activate config for virtual %s, missing required 'type' field",
@@ -153,14 +120,14 @@ class Scenes:
                     continue
 
                 # Check if using preset
-                preset_name = virtual_config.get("preset")
+                preset_name = virtual_config.preset
                 if preset_name:
                     # Resolve preset from current library for this effect type
                     # (will fall back to reset preset if not found)
                     effect_config = self._resolve_preset(effect_type, preset_name)
                 else:
                     # Use explicit config
-                    effect_config = virtual_config.get("config")
+                    effect_config = virtual_config.config
                     if effect_config is None:
                         _LOGGER.warning(
                             "Invalid activate config for virtual %s, missing 'config' field",
@@ -180,13 +147,7 @@ class Scenes:
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
 
         if save_config_after:
-            try:
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
-            except Exception:
-                _LOGGER.exception("Failed to save config after scene activation")
+            self._ledfx.config_store.request_save()
 
         return True
 
@@ -207,14 +168,13 @@ class Scenes:
             return generate_default_config(self._ledfx.effects, effect_type)
 
         # Check ledfx_presets first
-        ledfx_presets = self._ledfx.config.get("ledfx_presets", {})
         if effect_type in ledfx_presets and preset_name in ledfx_presets[effect_type]:
             return ledfx_presets[effect_type][preset_name].get("config", {})
 
         # Check user_presets
-        user_presets = self._ledfx.config.get("user_presets", {})
+        user_presets = self._ledfx.config.user_presets
         if effect_type in user_presets and preset_name in user_presets[effect_type]:
-            return user_presets[effect_type][preset_name].get("config", {})
+            return user_presets[effect_type][preset_name].config
 
         # Preset not found, fall back to reset preset
         _LOGGER.warning(
@@ -231,24 +191,18 @@ class Scenes:
             _LOGGER.error("No scene found with id: %s", scene_id)
             return False
 
-        for virtual_id in scene["virtuals"]:
+        for virtual_id, virtual_config in scene.virtuals.items():
             virtual = self._ledfx.virtuals.get(virtual_id)
             if not virtual:
                 # virtual has been deleted since scene was created
                 continue
 
             # If the scene has an effect entry for this virtual, clear it
-            if scene["virtuals"][virtual.id]:
+            if not is_empty(virtual_config):
                 virtual.clear_effect()
 
         # Persist the change so that clearing effects is saved
-        try:
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-        except Exception:
-            _LOGGER.exception("Failed to save config after scene deactivation")
+        self._ledfx.config_store.request_save()
 
         return True
 
@@ -272,24 +226,13 @@ class Scenes:
         if not scene:
             return False
 
-        virtuals = scene.get("virtuals") or {}
-        for virtual_id, virtual_config in virtuals.items():
+        for virtual_id, virtual_config in scene.virtuals.items():
             virtual = self._ledfx.virtuals.get(virtual_id)
             if virtual is None:
                 return False
 
             current_effect = virtual.active_effect
-            action = virtual_config.get("action")
-
-            # Legacy support: if no action field, infer from config
-            if action is None:
-                # Empty dict or no type/config means ignore (legacy behavior)
-                if not virtual_config or (
-                    "type" not in virtual_config and "config" not in virtual_config
-                ):
-                    action = "ignore"
-                else:
-                    action = "activate"
+            action = scene_action(virtual_config)
 
             # Process action
             if action == "ignore":
@@ -313,7 +256,7 @@ class Scenes:
 
             elif action == "activate":
                 # Virtual should have matching effect type and config
-                expected_type = virtual_config.get("type")
+                expected_type = virtual_config.type
                 if not expected_type:
                     # Invalid config, can't be active
                     return False
@@ -325,11 +268,11 @@ class Scenes:
                     return False
 
                 # For preset-based activation, resolve the preset to compare configs
-                preset_name = virtual_config.get("preset")
+                preset_name = virtual_config.preset
                 if preset_name:
                     expected_config = self._resolve_preset(expected_type, preset_name)
                 else:
-                    expected_config = virtual_config.get("config")
+                    expected_config = virtual_config.config
                     if expected_config is None:
                         # Invalid config, can't be active
                         return False

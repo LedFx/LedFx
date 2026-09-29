@@ -2,7 +2,16 @@ from unittest.mock import patch
 
 import pytest
 
+import ledfx.scenes as scenes_module
 from ledfx.scenes import Scenes
+from tests.test_utilities.fake_ledfx import fake_ledfx
+
+
+@pytest.fixture(autouse=True)
+def builtin_presets():
+    """An empty built-in preset library per test; _DummyLedFx fills it."""
+    with patch.dict("ledfx.scenes.ledfx_presets", clear=True):
+        yield
 
 
 @pytest.fixture(autouse=True)
@@ -36,11 +45,15 @@ class _DummyEffects:
 class _DummyLedFx:
     def __init__(self, scenes=None, virtuals=None, presets=None, user_presets=None):
         self.config_dir = ""
-        self.config = {
-            "scenes": scenes or {},
-            "ledfx_presets": presets or {},
-            "user_presets": user_presets or {},
-        }
+        fake = fake_ledfx(
+            {
+                "scenes": scenes or {},
+                "user_presets": user_presets or {},
+            }
+        )
+        self.config = fake.config
+        self.config_store = fake.config_store
+        scenes_module.ledfx_presets.update(presets or {})
         self.virtuals = virtuals or {}
         self.events = _DummyEvents()
         self.effects = _DummyEffects()

@@ -4,7 +4,7 @@ import json
 import logging
 
 from aiohttp import web
-from voluptuous import Invalid
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 
@@ -48,7 +48,7 @@ class NowPlayingEndpoint(RestEndpoint):
 
         try:
             validated = np_service.update_config(data)
-        except Invalid as exc:
+        except ValidationError as exc:
             _LOGGER.warning("Invalid now_playing config: %s", exc)
             return await self.invalid_request(str(exc))
 

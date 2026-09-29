@@ -6,7 +6,7 @@ import logging
 from collections.abc import Callable
 from enum import IntEnum
 
-# from ledfx.config import save_config
+from ledfx.configuration.models import IntegrationEntry
 from ledfx.events import Event
 from ledfx.utils import BaseRegistry, RegistryLoader, async_fire_and_forget
 
@@ -109,6 +109,11 @@ class Integration(BaseRegistry):
     def data(self):
         return self._data
 
+    @property
+    def stored_data(self):
+        """The data as config.json keeps it (data may add display fields)."""
+        return self._data
+
 
 class Integrations(RegistryLoader):
     """Thin wrapper around the integration registry that manages integrations"""
@@ -126,17 +131,17 @@ class Integrations(RegistryLoader):
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
 
-    def create_from_config(self, config):
+    def create_from_config(self, config: list[IntegrationEntry]) -> None:
         for integration in config:
-            name = integration["config"]["name"]
+            name = integration.config.get("name")
             _LOGGER.debug("Loading integration from config: %s", name)
             try:
                 self._ledfx.integrations.create(
-                    id=integration["id"],
-                    type=integration["type"],
-                    active=integration["active"],
-                    config=integration["config"],
-                    data=integration["data"],
+                    id=integration.id,
+                    type=integration.type,
+                    active=integration.active,
+                    config=integration.config,
+                    data=integration.data,
                     ledfx=self._ledfx,
                 )
             except Exception as e:  # noqa: BLE001

@@ -72,8 +72,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
 
         # Annotate with already_configured flag
         configured_urls = {
-            cfg.get("server_url")
-            for cfg in self._ledfx.config.get("sendspin_servers", {}).values()
+            cfg.server_url for cfg in self._ledfx.config.sendspin_servers.values()
         }
         for entry in discovered:
             entry["already_configured"] = entry["server_url"] in configured_urls

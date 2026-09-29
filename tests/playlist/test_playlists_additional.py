@@ -6,12 +6,15 @@ from aiohttp import web
 
 from ledfx.api.playlists import PlaylistsEndpoint
 from ledfx.playlists import PlaylistManager
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class DummyCoreWithEvents:
     def __init__(self, tmpdir):
         self.config_dir = tmpdir
-        self.config = {"playlists": {}, "scenes": {}}
+        fake = fake_ledfx({"playlists": {}, "scenes": {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.scenes = type(
             "S",
             (),
@@ -77,7 +80,9 @@ async def test_delete_emits_stopped_event(tmp_path):
 def make_minimal_ledfx_for_endpoint(tmp_path):
     # minimal object with config used by PlaylistManager
     ledfx = type("L", (), {})()
-    ledfx.config = {"playlists": {}}
+    fake = fake_ledfx({"playlists": {}})
+    ledfx.config = fake.config
+    ledfx.config_store = fake.config_store
     ledfx.config_dir = str(tmp_path)
     return ledfx
 
@@ -119,7 +124,11 @@ async def test_empty_playlist_resolves_to_all_scenes(tmp_path):
     """Empty items list should resolve to all available scenes at start time."""
     core = DummyCoreWithEvents(str(tmp_path))
     # Add some scenes to the config (matches real LedFx structure)
-    core.config["scenes"] = {"scene1": {}, "scene2": {}, "scene3": {}}
+    core.config.scenes = {
+        "scene1": {"name": "scene1"},
+        "scene2": {"name": "scene2"},
+        "scene3": {"name": "scene3"},
+    }
     manager = PlaylistManager(core)
 
     await manager.create_or_replace({"id": "empty", "name": "Empty", "items": []})
@@ -139,7 +148,7 @@ async def test_empty_playlist_fails_when_no_scenes(tmp_path):
     """Empty items list should fail if there are no scenes available."""
     core = DummyCoreWithEvents(str(tmp_path))
     # No scenes available
-    core.config["scenes"] = {}
+    core.config.scenes.clear()
     manager = PlaylistManager(core)
 
     await manager.create_or_replace({"id": "empty", "name": "Empty", "items": []})
@@ -175,10 +184,10 @@ async def test_empty_playlist_get_state_returns_scenes(tmp_path):
     """get_state should return the resolved scenes list for empty playlists."""
     core = DummyCoreWithEvents(str(tmp_path))
     # Add scenes in a specific order
-    core.config["scenes"] = {
-        "scene-alpha": {},
-        "scene-beta": {},
-        "scene-gamma": {},
+    core.config.scenes = {
+        "scene-alpha": {"name": "scene-alpha"},
+        "scene-beta": {"name": "scene-beta"},
+        "scene-gamma": {"name": "scene-gamma"},
     }
     manager = PlaylistManager(core)
 

@@ -216,10 +216,8 @@ def origin_middleware(ledfx):
 
         # Checked for every request: over plain HTTP a browser sends neither
         # Origin nor Sec-Fetch-Site on a same-origin GET.
-        own_names = machine_names | {_host_name(config.get("host") or "")}
-        if not is_host_allowed(
-            request.host, config.get("allowed_hosts", ()), own_names
-        ):
+        own_names = machine_names | {_host_name(config.host or "")}
+        if not is_host_allowed(request.host, config.allowed_hosts, own_names):
             name = _host_name(request.host) or request.host
             _report(
                 f"host {name}",
@@ -249,9 +247,9 @@ def origin_middleware(ledfx):
                 return _forbidden(f"Cross-site request not allowed: {request.path}")
             return await handler(request)
 
-        allow_null = config.get("allow_null_origin", False)
+        allow_null = config.allow_null_origin
         allowed = is_origin_allowed(
-            origin, request.host, config.get("allowed_origins", ()), allow_null
+            origin, request.host, config.allowed_origins, allow_null
         )
         preflight = (
             request.method == hdrs.METH_OPTIONS

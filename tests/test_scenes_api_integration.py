@@ -7,24 +7,32 @@ import pytest
 
 from ledfx.api.scenes import ScenesEndpoint
 from ledfx.api.scenes_id import SceneEndpoint
+from ledfx.configuration.models import Scene
+from tests.test_utilities.fake_ledfx import fake_ledfx
+
+BUILTIN_PRESETS = {
+    "scroll": {
+        "rainbow-scroll": {
+            "name": "Rainbow Scroll",
+            "config": {"speed": 2, "gradient": "rainbow"},
+        }
+    }
+}
+
+
+@pytest.fixture(autouse=True)
+def builtin_presets():
+    with patch("ledfx.api.scenes.ledfx_presets", BUILTIN_PRESETS):
+        yield
 
 
 class MockLedFx:
     """Mock LedFx instance for testing."""
 
     def __init__(self):
-        self.config = {
-            "scenes": {},
-            "ledfx_presets": {
-                "scroll": {
-                    "rainbow-scroll": {
-                        "name": "Rainbow Scroll",
-                        "config": {"speed": 2, "gradient": "rainbow"},
-                    }
-                }
-            },
-            "user_presets": {},
-        }
+        fake = fake_ledfx({"scenes": {}, "user_presets": {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.config_dir = "/tmp/test"
         self.virtuals = {}
         self.effects = MagicMock()
@@ -60,22 +68,21 @@ async def test_post_scene_preserves_action_fields():
     mock_request = AsyncMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):
-        response = await endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    response = await endpoint.post(mock_request)
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        scene_config = data["scene"]["config"]
+    assert data["status"] == "success"
+    scene_config = data["scene"]["config"]
 
-        # Verify all action fields are preserved
-        assert scene_config["virtuals"]["v1"]["action"] == "activate"
-        assert scene_config["virtuals"]["v1"]["type"] == "bars"
-        assert scene_config["virtuals"]["v2"]["action"] == "stop"
-        assert scene_config["virtuals"]["v3"]["action"] == "forceblack"
-        assert scene_config["virtuals"]["v4"]["action"] == "ignore"
-        assert scene_config["virtuals"]["v5"]["action"] == "activate"
-        assert scene_config["virtuals"]["v5"]["type"] == "scroll"
-        assert scene_config["virtuals"]["v5"]["preset"] == "rainbow-scroll"
+    # Verify all action fields are preserved
+    assert scene_config["virtuals"]["v1"]["action"] == "activate"
+    assert scene_config["virtuals"]["v1"]["type"] == "bars"
+    assert scene_config["virtuals"]["v2"]["action"] == "stop"
+    assert scene_config["virtuals"]["v3"]["action"] == "forceblack"
+    assert scene_config["virtuals"]["v4"]["action"] == "ignore"
+    assert scene_config["virtuals"]["v5"]["action"] == "activate"
+    assert scene_config["virtuals"]["v5"]["type"] == "scroll"
+    assert scene_config["virtuals"]["v5"]["preset"] == "rainbow-scroll"
 
 
 @pytest.mark.asyncio
@@ -95,17 +102,16 @@ async def test_post_scene_preserves_legacy_format():
     mock_request = AsyncMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):
-        response = await endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    response = await endpoint.post(mock_request)
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        scene_config = data["scene"]["config"]
+    assert data["status"] == "success"
+    scene_config = data["scene"]["config"]
 
-        # Legacy format should be preserved (no action field added)
-        assert scene_config["virtuals"]["v1"]["type"] == "energy"
-        assert "action" not in scene_config["virtuals"]["v1"]
-        assert scene_config["virtuals"]["v2"] == {}
+    # Legacy format should be preserved (no action field added)
+    assert scene_config["virtuals"]["v1"]["type"] == "energy"
+    assert "action" not in scene_config["virtuals"]["v1"]
+    assert scene_config["virtuals"]["v2"] == {}
 
 
 @pytest.mark.asyncio
@@ -131,29 +137,28 @@ async def test_post_scene_mixed_legacy_and_new():
     mock_request = AsyncMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):
-        response = await endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    response = await endpoint.post(mock_request)
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        scene_config = data["scene"]["config"]
+    assert data["status"] == "success"
+    scene_config = data["scene"]["config"]
 
-        # Legacy entries preserved
-        assert scene_config["virtuals"]["v1"]["type"] == "bars"
-        assert "action" not in scene_config["virtuals"]["v1"]
-        assert scene_config["virtuals"]["v3"] == {}
+    # Legacy entries preserved
+    assert scene_config["virtuals"]["v1"]["type"] == "bars"
+    assert "action" not in scene_config["virtuals"]["v1"]
+    assert scene_config["virtuals"]["v3"] == {}
 
-        # New format preserved
-        assert scene_config["virtuals"]["v2"]["action"] == "stop"
-        assert scene_config["virtuals"]["v4"]["action"] == "activate"
-        assert scene_config["virtuals"]["v4"]["preset"] == "rainbow-scroll"
+    # New format preserved
+    assert scene_config["virtuals"]["v2"]["action"] == "stop"
+    assert scene_config["virtuals"]["v4"]["action"] == "activate"
+    assert scene_config["virtuals"]["v4"]["preset"] == "rainbow-scroll"
 
 
 @pytest.mark.asyncio
 async def test_get_scenes_includes_preset_detection():
     """Test that GET /api/scenes includes preset detection."""
     mock_ledfx = MockLedFx()
-    mock_ledfx.config["scenes"] = {
+    mock_ledfx.config.scenes = {
         "scene-1": {
             "name": "Scene 1",
             "virtuals": {
@@ -185,7 +190,7 @@ async def test_get_scenes_includes_preset_detection():
 async def test_get_scene_by_id_includes_preset_detection():
     """Test that GET /api/scenes/{id} includes preset detection."""
     mock_ledfx = MockLedFx()
-    mock_ledfx.config["scenes"] = {
+    mock_ledfx.config.scenes = {
         "my-scene": {
             "name": "My Scene",
             "virtuals": {
@@ -215,23 +220,19 @@ async def test_get_scene_by_id_includes_preset_detection():
 async def test_delete_scene_by_id_restful():
     """Test that DELETE /api/scenes/{id} works."""
     mock_ledfx = MockLedFx()
-    mock_ledfx.config["scenes"]["test-scene"] = {
-        "name": "Test Scene",
-        "virtuals": {},
-    }
+    mock_ledfx.config.scenes["test-scene"] = Scene(name="Test Scene")
 
     endpoint = SceneEndpoint(mock_ledfx)
 
-    with patch("ledfx.api.scenes_id.save_config") as mock_save:
-        response = await endpoint.delete("test-scene")
-        data = json.loads(response.body.decode())
+    response = await endpoint.delete("test-scene")
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        assert "test-scene" in data["payload"]["reason"]
+    assert data["status"] == "success"
+    assert "test-scene" in data["payload"]["reason"]
 
-        # Verify scene was deleted
-        assert "test-scene" not in mock_ledfx.config["scenes"]
-        mock_save.assert_called_once()
+    # Verify scene was deleted
+    assert "test-scene" not in mock_ledfx.config.scenes
+    mock_ledfx.config_store.request_save.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -262,59 +263,58 @@ async def test_post_scene_with_upsert():
     mock_request = AsyncMock()
     mock_request.json = AsyncMock(return_value=request_data)
 
-    with patch("ledfx.api.scenes.save_config"):
-        response = await endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    response = await endpoint.post(mock_request)
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        scene_id = data["scene"]["id"]
-        assert data["scene"]["config"]["name"] == "Original Scene"
+    assert data["status"] == "success"
+    scene_id = data["scene"]["id"]
+    assert data["scene"]["config"]["name"] == "Original Scene"
 
-        # Now upsert with same id and new name
-        request_data_2 = {
-            "id": scene_id,
-            "name": "Updated Scene",
-            "virtuals": {"v1": {"action": "forceblack"}},
-        }
+    # Now upsert with same id and new name
+    request_data_2 = {
+        "id": scene_id,
+        "name": "Updated Scene",
+        "virtuals": {"v1": {"action": "forceblack"}},
+    }
 
-        mock_request.json = AsyncMock(return_value=request_data_2)
-        response = await endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    mock_request.json = AsyncMock(return_value=request_data_2)
+    response = await endpoint.post(mock_request)
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        assert data["scene"]["id"] == scene_id
-        assert data["scene"]["config"]["name"] == "Updated Scene"
-        assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "forceblack"
+    assert data["status"] == "success"
+    assert data["scene"]["id"] == scene_id
+    assert data["scene"]["config"]["name"] == "Updated Scene"
+    assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "forceblack"
 
-        # Test upsert without name (name should remain unchanged)
-        request_data_3 = {
-            "id": scene_id,
-            "virtuals": {"v1": {"action": "ignore"}},
-        }
+    # Test upsert without name (name should remain unchanged)
+    request_data_3 = {
+        "id": scene_id,
+        "virtuals": {"v1": {"action": "ignore"}},
+    }
 
-        mock_request.json = AsyncMock(return_value=request_data_3)
-        response = await endpoint.post(mock_request)
-        data = json.loads(response.body.decode())
+    mock_request.json = AsyncMock(return_value=request_data_3)
+    response = await endpoint.post(mock_request)
+    data = json.loads(response.body.decode())
 
-        assert data["status"] == "success"
-        assert data["scene"]["id"] == scene_id
-        assert (
-            data["scene"]["config"]["name"] == "Updated Scene"
-        )  # Name preserved from previous update
-        assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "ignore"
+    assert data["status"] == "success"
+    assert data["scene"]["id"] == scene_id
+    assert (
+        data["scene"]["config"]["name"] == "Updated Scene"
+    )  # Name preserved from previous update
+    assert data["scene"]["config"]["virtuals"]["v1"]["action"] == "ignore"
 
 
 @pytest.mark.asyncio
 async def test_get_scenes_handles_virtuals_without_type_or_config():
     """Test that GET handles virtuals with only action field."""
     mock_ledfx = MockLedFx()
-    mock_ledfx.config["scenes"] = {
+    mock_ledfx.config.scenes = {
         "scene-1": {
             "name": "Scene 1",
             "virtuals": {
                 "v1": {"action": "stop"},
                 "v2": {"action": "ignore"},
-                "v3": {},  # Legacy empty
+                "v3": dict[str, object](),  # Legacy empty
             },
         },
     }
@@ -353,7 +353,6 @@ async def test_post_scene_warns_preset_without_type():
     mock_request.json = AsyncMock(return_value=request_data)
 
     with (
-        patch("ledfx.api.scenes.save_config"),
         patch("ledfx.api.scenes._LOGGER") as mock_logger,
     ):
         response = await endpoint.post(mock_request)

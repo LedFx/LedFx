@@ -5,7 +5,6 @@ import numpy as np
 import voluptuous as vol
 import xled
 
-from ledfx.config import save_config
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -101,16 +100,15 @@ class TwinklySquaresDevice(NetworkedDevice):
                         self.matrix_height,
                     )
                     virtual.config = {"rows": self.matrix_height}
-                    virtual.virtual_cfg["config"]["rows"] = self.matrix_height
+                    entry = virtual.entry
+                    if entry is not None:
+                        entry.config.rows = self.matrix_height
                     config_changed = True
                 break  # Only one virtual can be is_device for this device
 
         # Save config only once if anything changed
         if config_changed:
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+            self._ledfx.config_store.request_save()
 
         super().activate()
 

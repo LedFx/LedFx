@@ -5,9 +5,8 @@ import urllib.parse
 from collections.abc import Callable, Mapping, Sequence
 from typing import TYPE_CHECKING, Protocol
 
-import voluptuous as vol
-
 if TYPE_CHECKING:
+    from ledfx.configuration.models import LedFxConfig
     from ledfx.effects.audio import AudioAnalysisSource
 
 _LOGGER = logging.getLogger(__name__)
@@ -31,18 +30,9 @@ class _LedFx(Protocol):
     """Core state needed by Sendspin's always-on startup helper."""
 
     @property
-    def config(self) -> Mapping[str, object]: ...
+    def config(self) -> "LedFxConfig": ...
 
     audio: "AudioAnalysisSource | None"
-
-
-# Sendspin configuration schema
-SENDSPIN_CONFIG_SCHEMA = vol.Schema(
-    {
-        vol.Required("server_url", default=DEFAULT_SERVER_URL): str,
-        vol.Optional("client_name", default=DEFAULT_CLIENT_NAME): str,
-    }
-)
 
 
 def validate_sendspin_server_url(url: object) -> tuple[bool, str]:
@@ -139,22 +129,19 @@ def eager_start(ledfx: _LedFx) -> None:
     Sendspin audio stream begins immediately, even when no audio-reactive
     effect is active yet.
     """
-    if not ledfx.config.get("sendspin_always_on", True):
+    config = ledfx.config
+    if not config.sendspin_always_on:
         return
 
-    audio_config_value = ledfx.config.get("audio", {})
-    audio_config: Mapping[str, object] = {}
-    if isinstance(audio_config_value, Mapping):
-        audio_config = audio_config_value
-    device_idx = audio_config.get("audio_device")
-    device_name_value = audio_config.get("audio_device_name", "")
-    device_name = device_name_value if isinstance(device_name_value, str) else ""
+    audio_config = config.audio.model_dump()
+    device_idx = config.audio.audio_device
+    device_name = config.audio.audio_device_name
 
     _LOGGER.debug(
         "eager_start: audio_device=%s audio_device_name=%r sendspin_always_on=%s",
         device_idx,
         device_name,
-        ledfx.config.get("sendspin_always_on"),
+        config.sendspin_always_on,
     )
 
     # Lazy import to break circular dependency:

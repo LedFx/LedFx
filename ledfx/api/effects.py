@@ -10,7 +10,6 @@ from ledfx.color import (
     validate_color,
     validate_gradient,
 )
-from ledfx.config import save_config
 from ledfx.virtuals import Virtuals, apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
@@ -171,13 +170,7 @@ class EffectsEndpoint(RestEndpoint):
 
         # Persist configuration changes
         if updated > 0:
-            try:
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
-            except Exception as e:  # noqa: BLE001
-                _LOGGER.warning("Failed to save config after apply_global: %s", e)
+            self._ledfx.config_store.request_save()
 
         return await self.request_success(
             "success",
@@ -260,15 +253,7 @@ class EffectsEndpoint(RestEndpoint):
 
         # Persist configuration changes if anything applied
         if applied > 0:
-            try:
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
-            except Exception as e:  # noqa: BLE001
-                _LOGGER.warning(
-                    "Failed to save config after apply_global_effect: %s", e
-                )
+            self._ledfx.config_store.request_save()
 
         return await self.request_success(
             "success",

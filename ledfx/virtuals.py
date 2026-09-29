@@ -6,9 +6,14 @@ from functools import cached_property
 import numpy as np
 import voluptuous as vol
 
-from ledfx.config import save_config
+from ledfx.config import preset_config
 from ledfx.configuration.fields import EnumSource, register_enum_source
-from ledfx.configuration.models import VirtualConfig, validate_dict
+from ledfx.configuration.models import (
+    EffectEntry,
+    VirtualConfig,
+    VirtualEntry,
+    validate_dict,
+)
 from ledfx.effects import DummyEffect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
@@ -284,8 +289,9 @@ class Virtual:
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]
             # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
-            if hasattr(self, "virtual_cfg") and self.virtual_cfg is not None:
-                self.virtual_cfg["segments"] = self._segments
+            entry = self.entry
+            if entry is not None:
+                entry.segments = self._segments
 
             _LOGGER.debug(
                 "Virtual %s: updated with %s segments, totalling %s pixels",
@@ -393,7 +399,9 @@ class Virtual:
 
         # Create the effect and add it to the virtual
         try:
-            effect_config = self._ledfx.config[category][effect_id][preset_id]["config"]
+            effect_config = preset_config(
+                self._ledfx.config.user_presets, category, effect_id, preset_id
+            )
         except KeyError:
             _LOGGER.error("Cannot find preset: %s", preset_info)
             return
@@ -421,12 +429,11 @@ class Virtual:
                 # there was no active effect when the fallback effect started
                 self.clear_effect()
                 # and make sure we save the config with the effect removed
-                self.virtual_cfg.pop("effect", None)
+                entry = self.entry
+                if entry is not None:
+                    entry.effect = None
 
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+            self._ledfx.config_store.request_save()
             self.fallback_clear()
 
     def fallback_clear(self):
@@ -816,7 +823,7 @@ class Virtual:
                     self.clear_transition_effect()
 
             np.multiply(frame, self._config["max_brightness"], frame)
-            np.multiply(frame, self._ledfx.config["global_brightness"], frame)
+            np.multiply(frame, self._ledfx.config.global_brightness, frame)
         return frame
 
     def activate(self):
@@ -1210,17 +1217,14 @@ class Virtual:
             None
         """
         # Store as both the active effect to protect existing code, and one of effects
-        self.virtual_cfg.setdefault("effects", {})
-        self.virtual_cfg["effects"][effect.type] = {
-            "type": effect.type,
-            "config": effect.config,
-        }
-        self.virtual_cfg.setdefault("effect", {})
-        self.virtual_cfg["effect"] = {
-            "type": effect.type,
-            "config": effect.config,
-        }
-        self.virtual_cfg["last_effect"] = effect.type
+        entry = self.entry
+        if entry is not None:
+            entry.effects[effect.type] = EffectEntry(
+                type=effect.type, config=effect.config
+            )
+            entry.effect = EffectEntry(type=effect.type, config=effect.config)
+            entry.last_effect = effect.type
+            self._ledfx.config_store.request_save()
 
     def get_effects_config(self, effect_type):
         """
@@ -1232,9 +1236,15 @@ class Virtual:
         Returns:
             effect config or empty dict {}
         """
-        return (
-            self.virtual_cfg.get("effects", {}).get(effect_type, {}).get("config", {})
-        )
+        entry = self.entry
+        if entry is None or effect_type not in entry.effects:
+            return {}
+        return entry.effects[effect_type].config
+
+    @property
+    def entry(self) -> VirtualEntry | None:
+        """This virtual's persisted entry (looked up by id; never cached)."""
+        return self._ledfx.config_store.virtual_entry(self.id)
 
     @property
     def config(self) -> dict:
@@ -1267,7 +1277,7 @@ class Virtual:
                 or _config["transition_time"] != self._config["transition_time"]
             ):
                 self.frame_transitions = self.transitions[_config["transition_mode"]]
-                if self._ledfx.config["global_transitions"]:
+                if self._ledfx.config.global_transitions:
                     for virtual_id in self._ledfx.virtuals:
                         if virtual_id == self.id:
                             continue
@@ -1282,6 +1292,15 @@ class Virtual:
                             virtual._config["transition_mode"] = _config[
                                 "transition_mode"
                             ]
+                            # Persist it too (the entry no longer shares _config).
+                            entry = virtual.entry
+                            if entry is not None:
+                                entry.config.transition_time = _config[
+                                    "transition_time"
+                                ]
+                                entry.config.transition_mode = _config[
+                                    "transition_mode"
+                                ]
                         else:
                             _LOGGER.info("virtual of %s has no transitions", virtual_id)
             if "frequency_min" in new_config or "frequency_max" in new_config:
@@ -1420,37 +1439,36 @@ class Virtuals:
 
             self._ledfx.events.add_listener(cleanup_effects, Event.LEDFX_SHUTDOWN)
 
-    def create_from_config(self, config, pause_all=False):
-        for virtual_cfg in config:
-            _LOGGER.debug("Loading virtual from config: %s", virtual_cfg)
+    def create_from_config(
+        self, config: list[VirtualEntry], pause_all: bool = False
+    ) -> None:
+        for entry in config:
+            _LOGGER.debug("Loading virtual from config: %s", entry)
             new_virtual = self._ledfx.virtuals.create(
-                id=virtual_cfg["id"],
-                config=virtual_cfg["config"],
-                is_device=virtual_cfg["is_device"],
-                auto_generated=virtual_cfg["auto_generated"],
+                id=entry.id,
+                config=entry.config.model_dump(),
+                is_device=entry.is_device,
+                auto_generated=entry.auto_generated,
                 ledfx=self._ledfx,
             )
 
-            # set the virtual up to have a reference into the cfg directly, so elsewhere we do not have to discover it
-            # used for effect, effects, last_effect etc
-            new_virtual.virtual_cfg = virtual_cfg
+            # Update the entry with the validated config in case initialization
+            # adjusted frequencies
+            entry.config = VirtualConfig.model_validate(new_virtual.config)
 
-            # Update virtual_cfg with validated config in case initialization adjusted frequencies
-            virtual_cfg["config"] = new_virtual.config
-
-            if "segments" in virtual_cfg:
+            if "segments" in entry.model_fields_set:
                 try:
-                    new_virtual.update_segments(virtual_cfg["segments"])
+                    new_virtual.update_segments(entry.segments)
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Virtual %s: segment schema changed, not restoring segment",
-                        virtual_cfg["id"],
+                        entry.id,
                     )
                     continue
                 except (RuntimeError, ValueError) as e:
                     _LOGGER.warning(
                         "Virtual %s: failed to restore segments: %s",
-                        virtual_cfg["id"],
+                        entry.id,
                         e,
                     )
                     continue
@@ -1459,35 +1477,35 @@ class Virtuals:
             # device segments.  This prevents a ValueError crash when a
             # poisoned config (e.g. virtual whose device was deleted) is
             # loaded at startup.
-            if "effect" in virtual_cfg and not new_virtual._devices:
+            if entry.effect is not None and not new_virtual._devices:
                 _LOGGER.warning(
                     "Virtual %s has no device segments; skipping "
                     "effect restore to avoid startup crash",
-                    virtual_cfg["id"],
+                    entry.id,
                 )
-            elif "effect" in virtual_cfg:
+            elif entry.effect is not None:
                 try:
                     effect = self._ledfx.effects.create(
                         ledfx=self._ledfx,
-                        type=virtual_cfg["effect"]["type"],
-                        config=virtual_cfg["effect"]["config"],
+                        type=entry.effect.type,
+                        config=entry.effect.config,
                     )
                     new_virtual.set_effect(effect)
                 except vol.MultipleInvalid:
                     _LOGGER.warning(
                         "Virtual %s: effect schema changed, not restoring effect",
-                        virtual_cfg["id"],
+                        entry.id,
                     )
                 except (RuntimeError, ValueError) as e:
                     _LOGGER.warning(
                         "Virtual %s: failed to restore effect: %s",
-                        virtual_cfg["id"],
+                        entry.id,
                         e,
                     )
 
             # This adds support for configs that are configured as paused
             # via the active key if it exists. Let the setter deal with it
-            if "active" in virtual_cfg and not virtual_cfg["active"]:
+            if entry.active is False:
                 new_virtual.active = False
 
             # global pause is handled differently to virtual pause
@@ -1495,7 +1513,7 @@ class Virtuals:
                 new_virtual._paused = True
 
             self._ledfx.events.fire_event(
-                VirtualConfigUpdateEvent(virtual_cfg["id"], virtual_cfg["config"])
+                VirtualConfigUpdateEvent(entry.id, new_virtual.config)
             )
 
     def create(self, id=None, *args, **kwargs):

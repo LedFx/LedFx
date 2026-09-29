@@ -4,8 +4,9 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.jsonutil import dumps
 from ledfx.api.virtual import make_virtual_response
-from ledfx.config import save_config
+from ledfx.configuration.models import VirtualConfig, VirtualEntry
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ class VirtualsEndpoint(RestEndpoint):
         for virtual in self._ledfx.virtuals.values():
             response["virtuals"][virtual.id] = make_virtual_response(virtual)
 
-        return web.json_response(data=response, status=200)
+        return web.json_response(data=response, status=200, dumps=dumps)
 
     async def put(self) -> web.Response:
         """
@@ -79,7 +80,9 @@ class VirtualsEndpoint(RestEndpoint):
             virtual.config = virtual_config
             _LOGGER.info("Updated virtual %s config to %s", virtual.id, virtual_config)
 
-            virtual.virtual_cfg["config"] = virtual.config
+            entry = virtual.entry
+            if entry is not None:
+                entry.config = VirtualConfig.model_validate(virtual.config)
 
             response = {
                 "status": "success",
@@ -109,16 +112,16 @@ class VirtualsEndpoint(RestEndpoint):
             )
 
             # Update the configuration
-            self._ledfx.config["virtuals"].append(
-                {
-                    "id": virtual.id,
-                    "config": virtual.config,
-                    "is_device": virtual.is_device,
-                    "auto_generated": virtual.auto_generated,
-                }
+            self._ledfx.config.virtuals.append(
+                VirtualEntry.model_validate(
+                    {
+                        "id": virtual.id,
+                        "config": virtual.config,
+                        "is_device": virtual.is_device,
+                        "auto_generated": virtual.auto_generated,
+                    }
+                )
             )
-
-            virtual.virtual_cfg = self._ledfx.config["virtuals"][-1]
 
             response = {
                 "status": "success",
@@ -135,8 +138,5 @@ class VirtualsEndpoint(RestEndpoint):
             }
 
         # Save config
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.bare_request_success(response)
