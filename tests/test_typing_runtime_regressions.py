@@ -13,13 +13,15 @@ import pytest
 import voluptuous as vol
 from aiohttp import MultipartWriter, WSMessage, WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
+from pydantic import BaseModel, Field
 
 from ledfx.api import RestEndpoint
 from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.config import ConfigEndpoint
-from ledfx.api.virtual_effects import EffectsEndpoint
+from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
 from ledfx.api.websocket import WebsocketConnection, websocket_handlers
 from ledfx.config import load_logger
+from ledfx.configuration.fields import CoercedFloat, CoercedInt
 from ledfx.configuration.migrations.legacy import legacy_to_v1
 from ledfx.configuration.plugin import vol_to_model
 from ledfx.devices import Devices
@@ -98,6 +100,28 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     assert set(generated) == {"flag", "count"}
     assert isinstance(generated["flag"], bool)
     assert 2 <= generated["count"] <= 5
+
+
+class _Bounded(BaseModel):
+    one: CoercedInt = Field(1, gt=0, lt=2)  # 1 is the only integer
+    empty: CoercedInt | None = Field(None, gt=0, lt=1)  # no integer: skipped
+    ratio: CoercedFloat = Field(0.5, gt=0.0, lt=1.0)
+
+
+@pytest.mark.parametrize("pick", ["low", "high"])
+def test_randomize_honours_exclusive_bounds(
+    monkeypatch: pytest.MonkeyPatch, pick: str
+) -> None:
+    def endpoint(low: float, high: float) -> float:
+        return low if pick == "low" else high
+
+    # uniform() may return either endpoint; an exclusive one must not be used.
+    monkeypatch.setattr("ledfx.api.virtual_effects.random.uniform", endpoint)
+    for _ in range(20):
+        result = randomize_effect_config(_Bounded, ())
+        assert set(result) == {"one", "ratio"} and result["one"] == 1
+        ratio = result["ratio"]
+        assert isinstance(ratio, float) and 0.0 < ratio < 1.0
 
 
 def test_migration_discards_effect_without_type_and_keeps_virtual() -> None:

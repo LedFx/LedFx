@@ -74,21 +74,25 @@ def _choices(info: FieldInfo) -> list[object]:
     return []
 
 
-def _bounds(info: FieldInfo) -> tuple[float, float] | None:
+def _bounds(info: FieldInfo) -> tuple[float, bool, float, bool] | None:
+    """(lower, lower_exclusive, upper, upper_exclusive), or None if not bounded."""
     lower: float | None = None
     upper: float | None = None
+    lower_open = upper_open = False
     for meta in _field_metadata(info):
         if isinstance(meta, (annotated_types.Ge, annotated_types.Gt)):
             value = meta.ge if isinstance(meta, annotated_types.Ge) else meta.gt
             if isinstance(value, (int, float)):
-                lower = value
+                lower, lower_open = value, isinstance(meta, annotated_types.Gt)
         elif isinstance(meta, (annotated_types.Le, annotated_types.Lt)):
             value = meta.le if isinstance(meta, annotated_types.Le) else meta.lt
             if isinstance(value, (int, float)):
-                upper = value
+                upper, upper_open = value, isinstance(meta, annotated_types.Lt)
     if lower is None or upper is None or lower > upper:
         return None
-    return lower, upper
+    if lower == upper and (lower_open or upper_open):
+        return None
+    return lower, lower_open, upper, upper_open
 
 
 def randomize_effect_config(
@@ -118,10 +122,20 @@ def randomize_effect_config(
             bounds = _bounds(info)
             if bounds is None:
                 continue
+            lower, lower_open, upper, upper_open = bounds
             if base is int:
-                value = random.randint(math.ceil(bounds[0]), math.floor(bounds[1]))
+                low = math.floor(lower) + 1 if lower_open else math.ceil(lower)
+                high = math.ceil(upper) - 1 if upper_open else math.floor(upper)
+                if low > high:
+                    continue
+                value = random.randint(low, high)
             else:
-                value = random.uniform(*bounds)
+                value = random.uniform(lower, upper)
+                # uniform() can return an endpoint; step inside an exclusive one.
+                if lower_open and value <= lower:
+                    value = math.nextafter(lower, upper)
+                if upper_open and value >= upper:
+                    value = math.nextafter(upper, lower)
         else:
             continue
         try:
