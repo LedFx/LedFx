@@ -3,9 +3,11 @@ import struct
 from socket import socket
 
 import numpy as np
-import voluptuous as vol
 from numpy import ndarray
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import UDPDevice
 from ledfx.events import DevicesUpdatedEvent
 
@@ -35,38 +37,41 @@ class DDPDevice(UDPDevice):
     SOURCE = 0x01
     TIMEOUT = 1
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Required(
-                "port",
-                description="Port for the UDP device",
-                default=4048,
-            ): vol.All(int, vol.Range(min=1, max=65535)),
-            vol.Optional(
-                "destination_id",
-                description="DDP destination ID (1=default, 2-249=custom, 250=config, 251=status, 254=DMX, 255=all)",
-                default=1,
-            ): vol.All(int, vol.Range(min=1, max=255)),
-        }
-    )
+    class Config(UDPDevice.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: int = Field(
+            4048,
+            description="Port for the UDP device",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        destination_id: int = Field(
+            1,
+            description="DDP destination ID (1=default, 2-249=custom, 250=config, 251=status, 254=DMX, 255=all)",
+            ge=1,
+            le=255,
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "DDP"
         self.frame_count = 0
         self.connection_warning = False
-        self.destination_port = self._config["port"]
-        self.destination_id = self._config["destination_id"]
+        self.destination_port = self.config.port
+        self.destination_id = self.config.destination_id
 
     def config_updated(self, config):
         """Update cached values when config changes"""
-        self.destination_port = config["port"]
-        self.destination_id = config["destination_id"]
+        self.destination_port = self.config.port
+        self.destination_id = self.config.destination_id
 
     def flush(self, data: ndarray) -> None:
         """

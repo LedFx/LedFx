@@ -2,8 +2,10 @@ import logging
 import socket
 import struct
 
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -12,29 +14,31 @@ _LOGGER = logging.getLogger(__name__)
 class OpenPixelControl(NetworkedDevice):
     """OpenPixelControl device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Required(
-                "channel",
-                description="Channel to send pixel data",
-                default=0,
-            ): vol.All(int, vol.Range(min=0, max=255)),
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        channel: int = Field(
+            0,
+            description="Channel to send pixel data",
+            ge=0,
+            le=255,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info("Open Pixel Control sender for %s started.", self.config["name"])
+        _LOGGER.info("Open Pixel Control sender for %s started.", self.config.name)
         super().activate()
 
     def deactivate(self):
         super().deactivate()
-        _LOGGER.info("Open Pixel Control sender for %s stopped.", self.config["name"])
+        _LOGGER.info("Open Pixel Control sender for %s stopped.", self.config.name)
         self._sock = None
 
     def flush(self, data):
@@ -58,7 +62,7 @@ class OpenPixelControl(NetworkedDevice):
         data,
     ):
         header = struct.pack(
-            ">BBH", self.config["channel"], 0, self.config["pixel_count"] * 3
+            ">BBH", self.config.channel, 0, self.config.pixel_count * 3
         )
         pieces = [
             struct.pack(

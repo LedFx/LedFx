@@ -1,11 +1,14 @@
 import logging
 import socket
 import struct
+from typing import Literal
 
 import requests
-import voluptuous as vol
+from pydantic import Field
 from requests import ConnectTimeout, ReadTimeout
 
+from ledfx.configuration.fields import X_OMIT_DEFAULT, X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -21,25 +24,21 @@ class NanoleafDevice(NetworkedDevice):
     at launch, and lets the user choose a sync mode to use.
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
-            ): str,
-            vol.Optional("port", description="port", default=16021): int,
-            vol.Optional("udp_port", description="port", default=60222): int,
-            vol.Optional(
-                "auth_token",
-                description="Auth token",
-            ): str,
-            vol.Optional(
-                "sync_mode",
-                description="Streaming protocol to Nanoleaf device",
-                default="UDP",
-            ): vol.In(["TCP", "UDP"]),
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        ip_address: str = Field(
+            description="Hostname or IP address of the device",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: int = Field(16021, description="port")
+        udp_port: int = Field(60222, description="port")
+        auth_token: str | None = Field(
+            None, description="Auth token", json_schema_extra={X_OMIT_DEFAULT: True}
+        )
+        sync_mode: Literal["TCP", "UDP"] = Field(
+            "UDP", description="Streaming protocol to Nanoleaf device"
+        )
+
+    config = TypedConfig(Config)
 
     status: dict[int, tuple[int, int, int]]
     _sock: socket.socket | None = None
@@ -56,12 +55,8 @@ class NanoleafDevice(NetworkedDevice):
             self.setup_subdevice()
             self._built_settings = self._output_settings()
 
-    def url(self, token: str) -> str:
-        return "http://{}:{}/api/v1/{}".format(
-            self._config["ip_address"],
-            self._config["port"],
-            token,
-        )
+    def url(self, token: str | None) -> str:
+        return f"http://{self.config.ip_address}:{self.config.port}/api/v1/{token}"
 
     def setup_subdevice(self):
         _LOGGER.debug("setup_subdevice")
@@ -70,7 +65,7 @@ class NanoleafDevice(NetworkedDevice):
         self.activate()
 
     def activate(self):
-        if self.config["sync_mode"] == "UDP":
+        if self.config.sync_mode == "UDP":
             _LOGGER.info("Activating UDP stream mode...")
             payload = {
                 "write": {
@@ -79,12 +74,12 @@ class NanoleafDevice(NetworkedDevice):
                     "extControlVersion": "v2",
                 }
             }
-            if self._config["model"] == LightPanelModel:
+            if getattr(self.config, "model") == LightPanelModel:  # noqa: B009 - stored extra, not a declared field
                 payload["write"]["extControlVersion"] = "v1"
 
             try:
                 response = requests.put(
-                    self.url(self._config["auth_token"]) + "/effects",
+                    self.url(self.config.auth_token) + "/effects",
                     json=payload,
                     timeout=2.0,
                 )
@@ -103,7 +98,7 @@ class NanoleafDevice(NetworkedDevice):
                 return
 
             self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._sock.connect((self._config["ip_address"], self._config["udp_port"]))
+            self._sock.connect((self.config.ip_address, self.config.udp_port))
 
         super().activate()
 
@@ -116,7 +111,7 @@ class NanoleafDevice(NetworkedDevice):
         super().deactivate()
 
     def write_udp(self):
-        if self._config["model"] == LightPanelModel:
+        if getattr(self.config, "model") == LightPanelModel:  # noqa: B009 - stored extra, not a declared field
             send_data = struct.pack(">B", len(self.status.items()))
             w = 0
             transition = 1
@@ -145,7 +140,7 @@ class NanoleafDevice(NetworkedDevice):
 
         try:
             response = requests.put(
-                self.url(self._config["auth_token"]) + "/effects",
+                self.url(self.config.auth_token) + "/effects",
                 json={
                     "write": {
                         "command": "display",
@@ -170,14 +165,13 @@ class NanoleafDevice(NetworkedDevice):
             return
 
     def flush(self, data):
-        for panel, col in zip(
-            self.config["pixel_layout"], data.astype(int).clip(0, 255)
-        ):
+        pixel_layout = getattr(self.config, "pixel_layout")  # noqa: B009 - stored extra, not a declared field
+        for panel, col in zip(pixel_layout, data.astype(int).clip(0, 255)):
             self.status[panel["panelId"]] = col.tolist()
 
-        if self.config["sync_mode"] == "TCP":
+        if self.config.sync_mode == "TCP":
             self.write_tcp()
-        elif self.config["sync_mode"] == "UDP":
+        elif self.config.sync_mode == "UDP":
             self.write_udp()
 
     def get_token(self):
@@ -194,7 +188,7 @@ class NanoleafDevice(NetworkedDevice):
     async def async_initialize(self):
         await super().async_initialize()
 
-        auth_token = self.config.get("auth_token")
+        auth_token = self.config.auth_token
 
         if not auth_token:
             auth_token = self.get_token()
@@ -202,7 +196,7 @@ class NanoleafDevice(NetworkedDevice):
 
         _LOGGER.info("fetching nanoleaf's device info...")
 
-        nanoleaf_config = requests.get(self.url(self.config["auth_token"])).json()  # noqa: ASYNC210
+        nanoleaf_config = requests.get(self.url(self.config.auth_token)).json()  # noqa: ASYNC210
 
         _LOGGER.debug("nanoleaf config response: %s", nanoleaf_config)
 
@@ -224,7 +218,7 @@ class NanoleafDevice(NetworkedDevice):
             _LOGGER.info("no panelLayout found, falling back to /length endpoint...")
             try:
                 length_response = requests.get(  # noqa: ASYNC210
-                    self.url(self.config["auth_token"]) + "/length",
+                    self.url(self.config.auth_token) + "/length",
                     timeout=2.0,
                 ).json()
             except (ConnectTimeout, ReadTimeout) as e:
@@ -235,7 +229,7 @@ class NanoleafDevice(NetworkedDevice):
             panels = [{"x": i, "y": 0, "panelId": i} for i in range(num_leds)]
 
         config = {
-            "name": self.config["name"],
+            "name": self.config.name,
             "pixel_count": len(panels),
             "pixel_layout": panels,
             "refresh_rate": 30,  # problems with too fast udp packets

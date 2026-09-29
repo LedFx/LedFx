@@ -48,19 +48,19 @@ class Integration(BaseRegistry):
             async_fire_and_forget(self.deactivate(), self._ledfx.loop)
 
     async def activate(self):
-        _LOGGER.info("Activating %s integration", self._config["name"])
+        _LOGGER.info("Activating %s integration", getattr(self.config, "name"))  # noqa: B009 - declared by subclasses
         self._active = True
         self._status = Status.CONNECTING
         async_fire_and_forget(self.connect(), self._ledfx.loop)
 
     async def deactivate(self):
-        _LOGGER.info("Deactivating %s integration", self._config["name"])
+        _LOGGER.info("Deactivating %s integration", getattr(self.config, "name"))  # noqa: B009 - declared by subclasses
         self._active = False
         self._status = Status.DISCONNECTING
         async_fire_and_forget(self.disconnect(), self._ledfx.loop)
 
     async def reconnect(self):
-        _LOGGER.info("Reconnecting %s integration", self._config["name"])
+        _LOGGER.info("Reconnecting %s integration", getattr(self.config, "name"))  # noqa: B009 - declared by subclasses
         self._status = Status.DISCONNECTING
         await self.disconnect()
         self._status = Status.CONNECTING
@@ -94,11 +94,11 @@ class Integration(BaseRegistry):
 
     @property
     def name(self):
-        return self._config["name"]
+        return getattr(self.config, "name")  # noqa: B009 - declared by subclasses
 
     @property
     def description(self):
-        return self._config["description"]
+        return getattr(self.config, "description")  # noqa: B009 - declared by subclasses
 
     @property
     def status(self):

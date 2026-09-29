@@ -293,7 +293,9 @@ async def test_launchpad_segments_skipped_without_device() -> None:
     from ledfx.devices.launchpad import LaunchpadDevice
 
     device = object.__new__(LaunchpadDevice)
-    device._config = {"create_segments": True}
+    device._config = LaunchpadDevice.config_model().model_construct(
+        create_segments=True
+    )
     device.lp = None
     with patch.object(LaunchpadDevice, "set_class"):
         await device.add_postamble()
@@ -327,7 +329,7 @@ def test_osc_device_deactivates_twice() -> None:
 
     device = object.__new__(OSCServerDevice)
     device._device_type = "OSC"
-    device._config = {"name": "osc"}
+    device._config = OSCServerDevice.config_model().model_construct(name="osc")
     device._client = None
     with patch.object(Device, "deactivate"):
         device.deactivate()
@@ -340,13 +342,13 @@ def test_wled_sync_mode_change_activates_new_subdevice() -> None:
     device._ledfx = MagicMock()
     device._active = True
     device._destination = "10.0.0.2"
-    device._config = {
-        "sync_mode": "E131",
-        "name": "wled",
-        "ip_address": "10.0.0.2",
-        "pixel_count": 10,
-        "refresh_rate": 60,
-    }
+    device._config = WLEDDevice.config_model().model_construct(
+        sync_mode="E131",
+        name="wled",
+        ip_address="10.0.0.2",
+        pixel_count=10,
+        refresh_rate=60,
+    )
     device.device_configs = {"E131": {}}
     device.subdevice = MagicMock()
     new_sender = MagicMock()
@@ -394,13 +396,13 @@ def test_e131_waits_for_destination_before_starting_sender() -> None:
     device.device_lock = threading.Lock()
     device._destination = None
     device._sacn = None
-    device._config = {
-        "name": "e131",
-        "ip_address": "10.0.0.3",
-        "universe": 1,
-        "universe_end": 1,
-        "packet_priority": 100,
-    }
+    device._config = E131Device.config_model().model_construct(
+        name="e131",
+        ip_address="10.0.0.3",
+        universe=1,
+        universe_end=1,
+        packet_priority=100,
+    )
     with (
         patch("ledfx.devices.e131.sacn.sACNsender") as sender,
         patch("ledfx.devices.async_fire_and_forget"),

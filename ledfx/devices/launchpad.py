@@ -1,9 +1,11 @@
 import logging
 
-import voluptuous as vol
 from numpy import zeros
+from pydantic import Field
 
 import ledfx.devices.launchpad_lib as launchpad
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import MidiDevice
 
 # import timeit
@@ -89,43 +91,29 @@ def dump_methods(instance):
 class LaunchpadDevice(MidiDevice):
     """Launchpad device support"""
 
-    @staticmethod
-    @property
-    def CONFIG_SCHEMA():
-        return vol.Schema(
-            {
-                vol.Required(
-                    "pixel_count",
-                    description="Number of individual pixels",
-                    default=81,
-                ): vol.All(int, vol.Range(min=1)),
-                vol.Required(
-                    "rows",
-                    description="Number of individual rows",
-                    default=9,
-                ): vol.All(int, vol.Range(min=1)),
-                vol.Optional(
-                    "icon_name",
-                    description="Icon for the device*",
-                    default="launchpad",
-                ): str,
-                vol.Optional(
-                    "create_segments",
-                    description="Auto-Generate a virtual for each segments",
-                    default=False,
-                ): bool,
-                vol.Optional(
-                    "alpha_options",
-                    description="Dark and dangerous features of the damned",
-                    default=False,
-                ): bool,
-                vol.Optional(
-                    "diag",
-                    description="enable timing diagnostics in logger",
-                    default=False,
-                ): bool,
-            }
+    class Config(MidiDevice.Config):
+        pixel_count: int = Field(
+            81,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
         )
+        rows: int = Field(
+            9,
+            description="Number of individual rows",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        icon_name: str = Field("launchpad", description="Icon for the device*")
+        create_segments: bool = Field(
+            False, description="Auto-Generate a virtual for each segments"
+        )
+        alpha_options: bool = Field(
+            False, description="Dark and dangerous features of the damned"
+        )
+        diag: bool = Field(False, description="enable timing diagnostics in logger")
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -135,9 +123,7 @@ class LaunchpadDevice(MidiDevice):
         _LOGGER.info("Launchpad device created")
 
     def flush(self, data):
-        success = self.lp.flush(
-            data, self._config["alpha_options"], self._config["diag"]
-        )
+        success = self.lp.flush(data, self.config.alpha_options, self.config.diag)
         if not success:
             _LOGGER.warning(
                 "Error in Launchpad %s flush, setting offline", self.lp_name
@@ -178,8 +164,8 @@ class LaunchpadDevice(MidiDevice):
         if self.lp is not None:
             self.lp.flush(
                 zeros((self.pixel_count, 3)),
-                self._config["alpha_options"],
-                self._config["diag"],
+                self.config.alpha_options,
+                self.config.diag,
             )
             _LOGGER.info("Closing Launchpad")
             self.lp.Close()
@@ -188,7 +174,7 @@ class LaunchpadDevice(MidiDevice):
 
     async def add_postamble(self):
         _LOGGER.info("Doing post creation things")
-        if self.config["create_segments"]:
+        if self.config.create_segments:
             if self.lp is None:
                 self.set_class()
             if self.lp is None:

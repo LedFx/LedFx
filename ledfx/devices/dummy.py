@@ -1,8 +1,10 @@
 import logging
 
-import voluptuous as vol
 from numpy import ndarray
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import Device
 from ledfx.utils import BaseRegistry
 
@@ -19,15 +21,15 @@ class DeviceWrapper(Device):
 class DummyDevice(DeviceWrapper):
     """Dummy device for browser render only"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-        }
-    )
+    class Config(DeviceWrapper.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)

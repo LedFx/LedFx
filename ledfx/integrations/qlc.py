@@ -8,7 +8,10 @@ from collections.abc import Callable
 from typing import ClassVar
 
 import aiohttp
-import voluptuous as vol
+from pydantic import Field
+
+from ledfx.configuration.fields import X_REQUIRED, CoercedInt
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 
 # from ledfx.events import Event
 from ledfx.integrations import Integration
@@ -30,28 +33,31 @@ class QLC(Integration):
     NAME = "QLC+"
     DESCRIPTION = "Web Api Integration for Q Light Controller Plus"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name",
-                description="Name of this integration instance and associated settings",
-                default="QLC+",
-            ): str,
-            vol.Required(
-                "description",
-                description="Description of this integration",
-                default="Web Api Integration for Q Light Controller Plus",
-            ): str,
-            vol.Required(
-                "ip_address",
-                description="QLC+ ip address",
-                default="127.0.0.1",
-            ): str,
-            vol.Required("port", description="QLC+ port", default=9999): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
-        }
-    )
+    class Config(PluginConfig):
+        name: str = Field(
+            "QLC+",
+            description="Name of this integration instance and associated settings",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        description: str = Field(
+            "Web Api Integration for Q Light Controller Plus",
+            description="Description of this integration",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        ip_address: str = Field(
+            "127.0.0.1",
+            description="QLC+ ip address",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: CoercedInt = Field(
+            9999,
+            description="QLC+ port",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config, active, data):
         super().__init__(ledfx, config, active, data)
@@ -231,9 +237,9 @@ class QLC(Integration):
         resolved_ip = await resolve_destination(
             self._ledfx.loop,
             self._ledfx.thread_executor,
-            self._config["ip_address"],
+            self.config.ip_address,
         )
-        domain = f"{resolved_ip}:{self._config['port']}"
+        domain = f"{resolved_ip}:{self.config.port}"
         url = f"http://{domain}/qlcplusWS"
         if self._client is None:
             self._client = QLCWebsocketClient(url, domain)

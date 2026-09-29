@@ -4,11 +4,13 @@ import socket
 from typing import ClassVar
 
 import paho.mqtt.client as mqtt
-import voluptuous as vol
+from pydantic import Field
 
 from ledfx.api.jsonutil import dumps
 from ledfx.color import parse_color
+from ledfx.configuration.fields import X_REQUIRED, CoercedInt
 from ledfx.configuration.models import EffectEntry, VirtualConfig
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import Event
@@ -48,43 +50,36 @@ class MQTT_HASS(Integration):
     NAME = "Home Assistant MQTT"
     DESCRIPTION = "MQTT Integration for Home Assistant"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name",
-                description="Name of this HomeAssistant instance",
-                default="Home Assistant",
-            ): str,
-            vol.Required(
-                "topic",
-                description="HomeAssistant's discovery prefix",
-                default="homeassistant",
-            ): str,
-            vol.Required(
-                "ip_address",
-                description="MQTT ip address",
-                default="127.0.0.1",
-            ): str,
-            vol.Required("port", description="MQTT port", default=1883): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
-            vol.Optional(
-                "username",
-                description="MQTT username",
-                default="",
-            ): str,
-            vol.Optional(
-                "password",
-                description="MQTT password",
-                default="",
-            ): str,
-            vol.Optional(
-                "description",
-                description="Internal Description",
-                default="MQTT Integration with auto-discovery",
-            ): str,
-        }
-    )
+    class Config(PluginConfig):
+        name: str = Field(
+            "Home Assistant",
+            description="Name of this HomeAssistant instance",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        topic: str = Field(
+            "homeassistant",
+            description="HomeAssistant's discovery prefix",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        ip_address: str = Field(
+            "127.0.0.1",
+            description="MQTT ip address",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: CoercedInt = Field(
+            1883,
+            description="MQTT port",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        username: str = Field("", description="MQTT username")
+        password: str = Field("", description="MQTT password")
+        description: str = Field(
+            "MQTT Integration with auto-discovery", description="Internal Description"
+        )
+
+    config = TypedConfig(Config)
 
     TRANSITION_MAPPING: ClassVar[dict[str, str]] = {
         "ledfxtransitiontype": "transition_mode",
@@ -103,7 +98,7 @@ class MQTT_HASS(Integration):
     def publish_virtual_config(self, virtual_id, client):
         virtual = self._ledfx.virtuals.get(virtual_id)
         client.publish(
-            f"{self._config['topic']}/light/{virtual_id}/meta",
+            f"{self.config.topic}/light/{virtual_id}/meta",
             dumps(virtual.config),
         )
 
@@ -113,13 +108,13 @@ class MQTT_HASS(Integration):
         if virtual.active:
             paused_state = "ON"
         client.publish(
-            f"{self._config['topic']}/light/{virtual_id}/state",
+            f"{self.config.topic}/light/{virtual_id}/state",
             json.dumps({"state": paused_state}),
         )
 
     def publish_audio_input_changed(self, client, event):
         client.publish(
-            f"{self._config['topic']}/select/ledfxaudio/state",
+            f"{self.config.topic}/select/ledfxaudio/state",
             event.audio_input_device_name,
         )
 
@@ -144,7 +139,7 @@ class MQTT_HASS(Integration):
         # Events
         def publish_scene_actived(event):
             client.publish(
-                f"{self._config['topic']}/select/ledfxsceneselect/state",
+                f"{self.config.topic}/select/ledfxsceneselect/state",
                 event.scene_id,
             )
 
@@ -155,7 +150,7 @@ class MQTT_HASS(Integration):
             else:
                 paused_state = "ON"
             client.publish(
-                f"{self._config['topic']}/switch/ledfxplay/state",
+                f"{self.config.topic}/switch/ledfxplay/state",
                 paused_state,
             )
 
@@ -164,7 +159,7 @@ class MQTT_HASS(Integration):
             effect = virtual.active_effect
             color = parse_color(effect.config.get("color"))
             client.publish(
-                f"{self._config['topic']}/light/{event.virtual_id}/state",
+                f"{self.config.topic}/light/{event.virtual_id}/state",
                 json.dumps(
                     {
                         "state": "on",
@@ -180,7 +175,7 @@ class MQTT_HASS(Integration):
             if virtual.active:
                 paused_state = "ON"
             client.publish(
-                f"{self._config['topic']}/light/{event.virtual_id}/state",
+                f"{self.config.topic}/light/{event.virtual_id}/state",
                 json.dumps({"state": paused_state}),
             )
 
@@ -234,12 +229,12 @@ class MQTT_HASS(Integration):
         }
 
         # SENSOR
-        client.subscribe(f"{self._config['topic']}/sensor/ledfxpixelsensor/set")
+        client.subscribe(f"{self.config.topic}/sensor/ledfxpixelsensor/set")
         client.publish(
-            f"{self._config['topic']}/sensor/ledfxpixelsensor/config",
+            f"{self.config.topic}/sensor/ledfxpixelsensor/config",
             json.dumps(
                 {
-                    "~": f"{self._config['topic']}/sensor/ledfxpixelsensor",
+                    "~": f"{self.config.topic}/sensor/ledfxpixelsensor",
                     "name": "Used Pixels",
                     "unique_id": "ledfxpixelsensor",
                     "entity_category": "diagnostic",
@@ -252,12 +247,12 @@ class MQTT_HASS(Integration):
         )
 
         # SCENE SELECTOR
-        client.subscribe(f"{self._config['topic']}/select/ledfxsceneselect/set")
+        client.subscribe(f"{self.config.topic}/select/ledfxsceneselect/set")
         client.publish(
-            f"{self._config['topic']}/select/ledfxsceneselect/config",
+            f"{self.config.topic}/select/ledfxsceneselect/config",
             json.dumps(
                 {
-                    "~": f"{self._config['topic']}/select/ledfxsceneselect",
+                    "~": f"{self.config.topic}/select/ledfxsceneselect",
                     "name": "Scene Selector",
                     "unique_id": "ledfxsceneselect",
                     "cmd_t": "~/set",
@@ -271,12 +266,12 @@ class MQTT_HASS(Integration):
         )
 
         # AUDIO SELECTOR
-        client.subscribe(f"{self._config['topic']}/select/ledfxaudio/set")
+        client.subscribe(f"{self.config.topic}/select/ledfxaudio/set")
         client.publish(
-            f"{self._config['topic']}/select/ledfxaudio/config",
+            f"{self.config.topic}/select/ledfxaudio/config",
             json.dumps(
                 {
-                    "~": f"{self._config['topic']}/select/ledfxaudio",
+                    "~": f"{self.config.topic}/select/ledfxaudio",
                     "name": "Audio Selector",
                     "unique_id": "ledfxaudio",
                     "cmd_t": "~/set",
@@ -290,12 +285,12 @@ class MQTT_HASS(Integration):
         )
 
         # TRANSITION TYPE
-        client.subscribe(f"{self._config['topic']}/select/ledfxtransitiontype/set")
+        client.subscribe(f"{self.config.topic}/select/ledfxtransitiontype/set")
         client.publish(
-            f"{self._config['topic']}/select/ledfxtransitiontype/config",
+            f"{self.config.topic}/select/ledfxtransitiontype/config",
             json.dumps(
                 {
-                    "~": f"{self._config['topic']}/select/ledfxtransitiontype",
+                    "~": f"{self.config.topic}/select/ledfxtransitiontype",
                     "name": "Transition Type",
                     "unique_id": "ledfxtransitiontype",
                     "cmd_t": "~/set",
@@ -318,12 +313,12 @@ class MQTT_HASS(Integration):
         )
 
         # TRANSITION TIME
-        client.subscribe(f"{self._config['topic']}/number/ledfxtransitiontime/set")
+        client.subscribe(f"{self.config.topic}/number/ledfxtransitiontime/set")
         client.publish(
-            f"{self._config['topic']}/number/ledfxtransitiontime/config",
+            f"{self.config.topic}/number/ledfxtransitiontime/config",
             json.dumps(
                 {
-                    "~": f"{self._config['topic']}/number/ledfxtransitiontime",
+                    "~": f"{self.config.topic}/number/ledfxtransitiontime",
                     "name": "Transition_Time",
                     "unique_id": "ledfxtransitiontime",
                     "cmd_t": "~/set",
@@ -340,12 +335,12 @@ class MQTT_HASS(Integration):
         )
 
         # SWITCH
-        client.subscribe(f"{self._config['topic']}/switch/ledfxplay/set")
+        client.subscribe(f"{self.config.topic}/switch/ledfxplay/set")
         client.publish(
-            f"{self._config['topic']}/switch/ledfxplay/config",
+            f"{self.config.topic}/switch/ledfxplay/config",
             json.dumps(
                 {
-                    "~": f"{self._config['topic']}/switch/ledfxplay",
+                    "~": f"{self.config.topic}/switch/ledfxplay",
                     "name": "Play / Pause",
                     "unique_id": "ledfxplay",
                     "cmd_t": "~/set",
@@ -369,10 +364,10 @@ class MQTT_HASS(Integration):
             else:
                 icon = "mdi:led-strip"
             client.publish(
-                f"{self._config['topic']}/light/{virtual.id}/config",
+                f"{self.config.topic}/light/{virtual.id}/config",
                 json.dumps(
                     {
-                        "~": f"{self._config['topic']}/light/{virtual.id}",
+                        "~": f"{self.config.topic}/light/{virtual.id}",
                         "name": "⮑ " + name,
                         "unique_id": virtual.id,
                         "cmd_t": "~/set",
@@ -398,7 +393,7 @@ class MQTT_HASS(Integration):
                 ),
             )
 
-            client.subscribe(f"{self._config['topic']}/light/{virtual.id}/set")
+            client.subscribe(f"{self.config.topic}/light/{virtual.id}/set")
         client.publish("ledfx/state", "HomeAssistant initialized")
 
     def on_message(self, client, userdata, msg):
@@ -438,28 +433,28 @@ class MQTT_HASS(Integration):
             if payload == "HomeAssistant initialized":
                 virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
                 client.publish(
-                    f"{self._config['topic']}/select/ledfxtransitiontype/state",
+                    f"{self.config.topic}/select/ledfxtransitiontype/state",
                     virtual.config["transition_mode"],
                 )
                 client.publish(
-                    f"{self._config['topic']}/number/ledfxtransitiontime/state",
+                    f"{self.config.topic}/number/ledfxtransitiontime/state",
                     virtual.config["transition_time"],
                 )
                 # PausedState
                 client.publish(
-                    f"{self._config['topic']}/switch/ledfxplay/state",
+                    f"{self.config.topic}/switch/ledfxplay/state",
                     paused_state,
                 )
                 # AudioSelector
                 client.publish(
-                    f"{self._config['topic']}/select/ledfxaudio/state",
+                    f"{self.config.topic}/select/ledfxaudio/state",
                     AudioInputSource.input_devices()[
                         self._ledfx.config.audio.audio_device
                     ],
                 )
                 # Pixel-Sensor
                 client.publish(
-                    f"{self._config['topic']}/sensor/ledfxpixelsensor/state",
+                    f"{self.config.topic}/sensor/ledfxpixelsensor/state",
                     str(active_pixels) + " / " + str(total_pixels),
                 )
                 # publish all virtual data on connect (meta)
@@ -483,7 +478,7 @@ class MQTT_HASS(Integration):
             else:
                 paused_state = "ON"
             client.publish(
-                f"{self._config['topic']}/switch/{virtualid}/state",
+                f"{self.config.topic}/switch/{virtualid}/state",
                 paused_state,
             )
             return
@@ -632,10 +627,10 @@ class MQTT_HASS(Integration):
                         "sw_version": f"{PROJECT_VERSION}",
                     }
                     client.publish(
-                        f"{self._config['topic']}/light/{virtual.id}/config",
+                        f"{self.config.topic}/light/{virtual.id}/config",
                         json.dumps(
                             {
-                                "~": f"{self._config['topic']}/light/{virtual.id}",
+                                "~": f"{self.config.topic}/light/{virtual.id}",
                                 "name": "⮑ " + name,
                                 "unique_id": virtual.id,
                                 "cmd_t": "~/set",
@@ -671,7 +666,7 @@ class MQTT_HASS(Integration):
                     self._ledfx.config_store.request_save()
 
         # client.publish(
-        #     f"{self._config['topic']}/light/{virtualid}/state",
+        #     f"{self.config.topic}/light/{virtualid}/state",
         #     msg.payload,
         # )
 
@@ -681,37 +676,37 @@ class MQTT_HASS(Integration):
         if self._client is None:
             return
         self._client.publish(
-            f"{self._config['topic']}/light/ledfxscene/config", json.dumps({})
+            f"{self.config.topic}/light/ledfxscene/config", json.dumps({})
         )
         self._client.publish(
-            f"{self._config['topic']}/light/ledfxtransition/config",
+            f"{self.config.topic}/light/ledfxtransition/config",
             json.dumps({}),
         )
         self._client.publish(
-            f"{self._config['topic']}/select/ledfxaudio/config", json.dumps({})
+            f"{self.config.topic}/select/ledfxaudio/config", json.dumps({})
         )
         self._client.publish(
-            f"{self._config['topic']}/select/ledfxsceneselect/config",
+            f"{self.config.topic}/select/ledfxsceneselect/config",
             json.dumps({}),
         )
         self._client.publish(
-            f"{self._config['topic']}/select/ledfxtransitiontype/config",
+            f"{self.config.topic}/select/ledfxtransitiontype/config",
             json.dumps({}),
         )
         self._client.publish(
-            f"{self._config['topic']}/number/ledfxtransitiontime/config",
+            f"{self.config.topic}/number/ledfxtransitiontime/config",
             json.dumps({}),
         )
         self._client.publish(
-            f"{self._config['topic']}/sensor/ledfxpixelsensor/config",
+            f"{self.config.topic}/sensor/ledfxpixelsensor/config",
             json.dumps({}),
         )
         self._client.publish(
-            f"{self._config['topic']}/switch/ledfxplay/config", json.dumps({})
+            f"{self.config.topic}/switch/ledfxplay/config", json.dumps({})
         )
         for virtual in self._ledfx.virtuals.values():
             self._client.publish(
-                f"{self._config['topic']}/light/{virtual.id}/config",
+                f"{self.config.topic}/light/{virtual.id}/config",
                 json.dumps({}),
             )
 
@@ -725,9 +720,7 @@ class MQTT_HASS(Integration):
         client.on_connect = self.on_connect
         client.on_message = self.on_message
         self._client = client
-        if self._config["username"] is not None:
-            client.username_pw_set(
-                self._config["username"], password=self._config["password"]
-            )
-        client.connect_async(self._config["ip_address"], self._config["port"], 60)
+        if self.config.username is not None:
+            client.username_pw_set(self.config.username, password=self.config.password)
+        client.connect_async(self.config.ip_address, self.config.port, 60)
         client.loop_start()

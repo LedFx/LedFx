@@ -1,8 +1,10 @@
 import logging
 
 import paho.mqtt.client as mqtt
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED, CoercedInt
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.events import SceneActivatedEvent
 
 # from ledfx.events import Event
@@ -17,38 +19,33 @@ class MQTT(Integration):
     NAME = "MQTT"
     DESCRIPTION = "MQTT Integration"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name",
-                description="Name of this integration instance and associated settings",
-                default="MQTT",
-            ): str,
-            vol.Required(
-                "topic",
-                description="Description of this integration",
-                default="",
-            ): str,
-            vol.Required(
-                "ip_address",
-                description="MQTT ip address",
-                default="127.0.0.1",
-            ): str,
-            vol.Required("port", description="MQTT port", default=1883): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
-            vol.Optional(
-                "username",
-                description="MQTT username",
-                default="",
-            ): str,
-            vol.Optional(
-                "password",
-                description="MQTT password",
-                default="",
-            ): str,
-        }
-    )
+    class Config(PluginConfig):
+        name: str = Field(
+            "MQTT",
+            description="Name of this integration instance and associated settings",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        topic: str = Field(
+            "",
+            description="Description of this integration",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        ip_address: str = Field(
+            "127.0.0.1",
+            description="MQTT ip address",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: CoercedInt = Field(
+            1883,
+            description="MQTT port",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        username: str = Field("", description="MQTT username")
+        password: str = Field("", description="MQTT password")
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config, active, data):
         super().__init__(ledfx, config, active, data)
@@ -68,15 +65,15 @@ class MQTT(Integration):
         _LOGGER.info("Connecting2")
         _LOGGER.info("Connected with result code %s", rc)
 
-        client.subscribe(f"{self._config['topic']}/#")
-        # client.publish(self._config['topic'], "connected")
-        client.publish(f"{self._config['topic']}/STAT", "online")
+        client.subscribe(f"{self.config.topic}/#")
+        # client.publish(self.config.topic, "connected")
+        client.publish(f"{self.config.topic}/STAT", "online")
         client.publish(
-            f"{self._config['topic']}/SCENES",
+            f"{self.config.topic}/SCENES",
             str({sid: s.model_dump() for sid, s in self._ledfx.config.scenes.items()}),
         )
         client.publish(
-            f"{self._config['topic']}/DEVICES",
+            f"{self.config.topic}/DEVICES",
             str([v.model_dump() for v in self._ledfx.config.virtuals]),
         )
 
@@ -87,7 +84,7 @@ class MQTT(Integration):
     def _handle_message(self, msg):
         _LOGGER.info("%s %s", msg.topic, msg.payload)
 
-        if msg.topic == f"{self._config['topic']}/SCENE":
+        if msg.topic == f"{self.config.topic}/SCENE":
             scene_id = msg.payload.decode("utf8")
             # SET SCENE not_matt plz do a callable function like set_scene(scene_id)
             if scene_id is None:
@@ -140,10 +137,8 @@ class MQTT(Integration):
         client = mqtt.Client()
         client.on_connect = self.on_connect
         client.on_message = self.on_message
-        if self._config["username"] is not None:
-            client.username_pw_set(
-                self._config["username"], password=self._config["password"]
-            )
-        client.connect_async(self._config["ip_address"], self._config["port"], 60)
+        if self.config.username is not None:
+            client.username_pw_set(self.config.username, password=self.config.password)
+        client.connect_async(self.config.ip_address, self.config.port, 60)
         client.loop_start()
         _LOGGER.info("%s", client)

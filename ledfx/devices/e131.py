@@ -3,8 +3,10 @@ import threading
 
 import numpy as np
 import sacn
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,60 +15,46 @@ _LOGGER = logging.getLogger(__name__)
 class E131Device(NetworkedDevice):
     """E1.31 device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Optional(
-                "universe",
-                description="DMX universe for the device",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Optional(
-                "universe_size",
-                description="Size of each DMX universe",
-                default=510,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Optional(
-                "channel_offset",
-                description="Channel offset within the DMX universe",
-                default=0,
-            ): vol.All(int, vol.Range(min=0)),
-            vol.Optional(
-                "packet_priority",
-                description="Priority given to the sACN packets for this device",
-                default=100,
-            ): vol.All(int, vol.Range(min=0, max=200)),
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        universe: int = Field(1, description="DMX universe for the device", ge=1)
+        universe_size: int = Field(510, description="Size of each DMX universe", ge=1)
+        channel_offset: int = Field(
+            0, description="Channel offset within the DMX universe", ge=0
+        )
+        packet_priority: int = Field(
+            100,
+            description="Priority given to the sACN packets for this device",
+            ge=0,
+            le=200,
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         # Since RGBW data is 4 packets, we can use 512 for RGBW LEDs; 512/4 = 128
         # The 129th pixels data will span into the next universe correctly
         # If it's not, we lose nothing by using a smaller universe size and keeping things easy for the end user (and us!)
-        # if self._config["rgbw_led"] is True:
-        #     self._config["universe_size"] = 512
+        # if self.config.rgbw_led is True:
+        #     self._set_config_values(universe_size=512)
         # else:
-        #     self._config["universe_size"] = 510
-        # Allow for configuring in terms of "pixels" or "channels"
+        #     self._set_config_values(universe_size=510)
 
         self._device_type = "e131"
-        if "pixel_count" in self._config:
-            pixel_count = self._config["pixel_count"]
-            channel_count = pixel_count * 3
-        else:
-            channel_count = self._config["channel_count"]
-            pixel_count = channel_count // 3
+        # pixel_count is a field with a default, so it is always present and
+        # the old channel_count-only branch could never run.
+        pixel_count = self.config.pixel_count
+        channel_count = pixel_count * 3
 
-        span = self._config["channel_offset"] + channel_count - 1
-        universe_end = self._config["universe"] + int(
-            span / self._config["universe_size"]
-        )
-        if span % self._config["universe_size"] == 0:
+        span = self.config.channel_offset + channel_count - 1
+        universe_end = self.config.universe + int(span / self.config.universe_size)
+        if span % self.config.universe_size == 0:
             universe_end -= 1
         self._set_config_values(
             channel_count=channel_count,
@@ -79,7 +67,7 @@ class E131Device(NetworkedDevice):
 
     def activate(self):
         with self.device_lock:
-            if self._config["ip_address"].lower() == "multicast":
+            if self.config.ip_address.lower() == "multicast":
                 multicast = True
             else:
                 multicast = False
@@ -97,11 +85,12 @@ class E131Device(NetworkedDevice):
             self._sacn = sacn.sACNsender(source_name=self.name)
 
             for universe in range(
-                self._config["universe"], self._config["universe_end"] + 1
+                self.config.universe,
+                getattr(self.config, "universe_end") + 1,  # noqa: B009 - stored extra, not a declared field
             ):
                 _LOGGER.info("sACN activating universe %s", universe)
                 self._sacn.activate_output(universe)
-                self._sacn[universe].priority = self._config["packet_priority"]
+                self._sacn[universe].priority = self.config.packet_priority
                 self._sacn[universe].multicast = multicast
                 if not multicast:
                     self._sacn[universe].destination = self.destination
@@ -109,7 +98,7 @@ class E131Device(NetworkedDevice):
             self._sacn.start()
             self._sacn.manual_flush = True
 
-            _LOGGER.info("sACN sender for %s started.", self.config["name"])
+            _LOGGER.info("sACN sender for %s started.", self.config.name)
             super().activate()
 
     def deactivate(self):
@@ -120,51 +109,52 @@ class E131Device(NetworkedDevice):
             # _LOGGER.warning("sACN sender not started.")
             return
 
-        self.flush(np.zeros(self._config["channel_count"]))
+        self.flush(np.zeros(getattr(self.config, "channel_count")))  # noqa: B009 - stored extra, not a declared field
 
         with self.device_lock:
             self._sacn.stop()
             self._sacn = None
-            _LOGGER.info("sACN sender for %s stopped.", self.config["name"])
+            _LOGGER.info("sACN sender for %s stopped.", self.config.name)
 
     def flush(self, data):
         """Flush the data to all the E1.31 channels account for spanning universes"""
 
         with self.device_lock:
             if self._sacn is not None:
-                if data.size != self._config["channel_count"]:
+                if data.size != getattr(self.config, "channel_count"):  # noqa: B009 - stored extra, not a declared field
                     raise Exception(  # noqa: TRY002
-                        f"Invalid buffer size. {data.size} != {self._config['channel_count']}"
+                        f"Invalid buffer size. {data.size} != {getattr(self.config, 'channel_count')}"  # noqa: B009 - stored extra, not a declared field
                     )
 
                 data = data.flatten()
                 current_index = 0
                 for universe in range(
-                    self._config["universe"], self._config["universe_end"] + 1
+                    self.config.universe,
+                    getattr(self.config, "universe_end") + 1,  # noqa: B009 - stored extra, not a declared field
                 ):
                     # Calculate offset into the provide input buffer for the channel. There are some
                     # cleaner ways this can be done... This is just the quick and dirty
                     universe_start = (
-                        universe - self._config["universe"]
-                    ) * self._config["universe_size"]
+                        universe - self.config.universe
+                    ) * self.config.universe_size
                     universe_end = (
-                        universe - self._config["universe"] + 1
-                    ) * self._config["universe_size"]
+                        universe - self.config.universe + 1
+                    ) * self.config.universe_size
 
                     dmx_start = (
-                        max(universe_start, self._config["channel_offset"])
-                        % self._config["universe_size"]
+                        max(universe_start, self.config.channel_offset)
+                        % self.config.universe_size
                     )
                     dmx_end = (
                         min(
                             universe_end,
-                            self._config["channel_offset"]
-                            + self._config["channel_count"],
+                            self.config.channel_offset
+                            + getattr(self.config, "channel_count"),  # noqa: B009 - stored extra, not a declared field
                         )
-                        % self._config["universe_size"]
+                        % self.config.universe_size
                     )
                     if dmx_end == 0:
-                        dmx_end = self._config["universe_size"]
+                        dmx_end = self.config.universe_size
 
                     input_start = current_index
                     input_end = current_index + dmx_end - dmx_start

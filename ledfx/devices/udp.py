@@ -1,9 +1,12 @@
 import logging
 import time
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import UDPDevice, packets
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,35 +25,37 @@ SUPPORTED_PACKETS = [
 class UDPRealtimeDevice(UDPDevice):
     """Generic UDP Realtime device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Required(
-                "port",
-                description="Port for the UDP device",
-                default=21324,
-            ): vol.All(int, vol.Range(min=1, max=65535)),
-            vol.Required(
-                "udp_packet_type",
-                description="RGB packet encoding",
-                default="DRGB",
-            ): vol.In(list(SUPPORTED_PACKETS)),
-            vol.Optional(
-                "timeout",
-                description="Seconds to wait after the last received packet to yield device control",
-                default=1,
-            ): vol.All(int, vol.Range(min=1, max=255)),
-            vol.Optional(
-                "minimise_traffic",
-                description="Won't send updates if nothing has changed on the LED device",
-                default=True,
-            ): bool,
-        }
-    )
+    class Config(UDPDevice.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: int = Field(
+            21324,
+            description="Port for the UDP device",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        udp_packet_type: Annotated[str, OneOf(list(SUPPORTED_PACKETS))] = Field(
+            "DRGB",
+            description="RGB packet encoding",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        timeout: int = Field(
+            1,
+            description="Seconds to wait after the last received packet to yield device control",
+            ge=1,
+            le=255,
+        )
+        minimise_traffic: bool = Field(
+            True,
+            description="Won't send updates if nothing has changed on the LED device",
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -62,7 +67,7 @@ class UDPRealtimeDevice(UDPDevice):
         try:
             self.choose_and_send_packet(
                 data,
-                self._config["timeout"],
+                self.config.timeout,
             )
             self.last_frame = np.copy(data)
         except AttributeError:
@@ -75,23 +80,23 @@ class UDPRealtimeDevice(UDPDevice):
     ):
         frame_size = len(data)
 
-        frame_is_equal_to_last = self._config["minimise_traffic"] and np.array_equal(
+        frame_is_equal_to_last = self.config.minimise_traffic and np.array_equal(
             data, self.last_frame
         )
 
-        if self._config["udp_packet_type"] == "DRGB" and frame_size <= 490:
+        if self.config.udp_packet_type == "DRGB" and frame_size <= 490:
             udpData = packets.build_drgb_packet(data, timeout)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 
-        elif self._config["udp_packet_type"] == "WARLS" and frame_size <= 255:
+        elif self.config.udp_packet_type == "WARLS" and frame_size <= 255:
             udpData = packets.build_warls_packet(data, timeout, self.last_frame)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 
-        elif self._config["udp_packet_type"] == "DRGBW" and frame_size <= 367:
+        elif self.config.udp_packet_type == "DRGBW" and frame_size <= 367:
             udpData = packets.build_drgbw_packet(data, timeout)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 
-        elif self._config["udp_packet_type"] == "DNRGB":
+        elif self.config.udp_packet_type == "DNRGB":
             number_of_packets = int(np.ceil(frame_size / 489))
             for i in range(number_of_packets):
                 start_index = i * 489
@@ -101,9 +106,7 @@ class UDPRealtimeDevice(UDPDevice):
                 )
                 self.transmit_packet(udpData, frame_is_equal_to_last)
 
-        elif (
-            self._config["udp_packet_type"] == "adaptive_smallest" and frame_size <= 255
-        ):
+        elif self.config.udp_packet_type == "adaptive_smallest" and frame_size <= 255:
             # compare potential size of WARLS packet to DRGB packet
             if (
                 np.count_nonzero(np.any(data != self.last_frame, axis=1)) * 4
@@ -115,16 +118,14 @@ class UDPRealtimeDevice(UDPDevice):
                 udpData = packets.build_drgb_packet(data, timeout)
                 self.transmit_packet(udpData, frame_is_equal_to_last)
 
-        elif (
-            self._config["udp_packet_type"] == RGB_HYPERHDR_PACKET and frame_size <= 500
-        ):
+        elif self.config.udp_packet_type == RGB_HYPERHDR_PACKET and frame_size <= 500:
             udpData = packets.build_rgb_packet(data)
             self.transmit_packet(udpData, frame_is_equal_to_last)
 
         else:  # fallback
             _LOGGER.warning(
                 "UDP packet is configured incorrectly (please choose a packet that supports %s LEDs): https://kno.wled.ge/interfaces/udp-realtime/#udp-realtime \n Falling back to supported udp packet.",
-                self._config["pixel_count"],
+                self.config.pixel_count,
             )
             if frame_size <= 490:  # DRGB
                 udpData = packets.build_drgb_packet(data, timeout)
@@ -143,19 +144,15 @@ class UDPRealtimeDevice(UDPDevice):
         timestamp = time.time()
         if frame_is_equal_to_last:
             half_of_timeout = (
-                ((self._config["timeout"] * self._config["refresh_rate"]) - 1) // 2
-            ) / self._config["refresh_rate"]
+                ((self.config.timeout * self.config.refresh_rate) - 1) // 2
+            ) / self.config.refresh_rate
             if (
                 timestamp > self.last_frame_sent_time + half_of_timeout
                 and self._destination is not None
             ):
-                self._sock.sendto(
-                    bytes(packet), (self.destination, self._config["port"])
-                )
+                self._sock.sendto(bytes(packet), (self.destination, self.config.port))
                 self.last_frame_sent_time = timestamp
         else:
             if self._destination is not None:
-                self._sock.sendto(
-                    bytes(packet), (self.destination, self._config["port"])
-                )
+                self._sock.sendto(bytes(packet), (self.destination, self.config.port))
                 self.last_frame_sent_time = timestamp

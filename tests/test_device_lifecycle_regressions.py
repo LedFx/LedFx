@@ -1,14 +1,13 @@
 """Regressions for device lifecycle and render-loop fixes."""
 
 import threading
-from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
 
 from ledfx.api.device import DeviceEndpoint
-from ledfx.configuration.plugin import PluginConfig
+from ledfx.configuration.plugin import ConfigShimWarning, PluginConfig
 from ledfx.devices import Device
 from ledfx.devices.artnet import ArtNetDevice
 from ledfx.devices.ddp import DDPDevice
@@ -64,7 +63,7 @@ async def test_device_put_persists_merged_config() -> None:
 
 def test_ip_change_forces_address_re_resolution() -> None:
     device = object.__new__(DDPDevice)
-    device._config = {"ip_address": "10.0.0.1"}
+    device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
     device._destination = "10.0.0.1"
     with patch.object(Device, "update_config"):
         device.update_config({"pixel_count": 10})
@@ -73,18 +72,39 @@ def test_ip_change_forces_address_re_resolution() -> None:
     assert device._destination is None
 
 
+def test_update_config_merges_into_model_and_keeps_stored_extras() -> None:
+    device = object.__new__(WLEDDevice)
+    device._ledfx = MagicMock()
+    device._segments = []
+    device._destination = "10.0.0.2"
+    device.lock = threading.Lock()
+    device._config = WLEDDevice.config_model().model_validate(
+        {"name": "wled", "ip_address": "10.0.0.2", "pixel_count": 20}
+    )
+    # {**self._config, ...} goes through the mapping shim; layer 13 must convert it.
+    with (
+        patch.object(WLEDDevice, "setup_subdevice"),
+        pytest.warns(ConfigShimWarning),
+    ):
+        device.update_config({"sync_mode": "UDP"})
+    assert device.config.sync_mode == "UDP"
+    assert device.config.name == "wled"
+    assert device.config.model_extra == {"pixel_count": 20}
+    assert device._destination == "10.0.0.2"
+
+
 def test_wled_rebuilds_subdevice_on_pixel_count_change() -> None:
     device = object.__new__(WLEDDevice)
     device._ledfx = MagicMock()
     device._active = False
     device._destination = "10.0.0.2"
-    device._config = {
-        "sync_mode": "UDP",
-        "name": "wled",
-        "ip_address": "10.0.0.2",
-        "pixel_count": 20,
-        "refresh_rate": 60,
-    }
+    device._config = WLEDDevice.config_model().model_construct(
+        sync_mode="UDP",
+        name="wled",
+        ip_address="10.0.0.2",
+        pixel_count=20,
+        refresh_rate=60,
+    )
     device.device_configs = {"UDP": {}}
     device._built_settings = ("UDP", "wled", "10.0.0.2", 10, 60)
     old = MagicMock()
@@ -99,18 +119,19 @@ def test_wled_rebuilds_subdevice_on_pixel_count_change() -> None:
 
 def test_wled_keeps_its_sender_when_only_the_icon_changes() -> None:
     device = object.__new__(WLEDDevice)
-    device._config = {
+    settings = {
         "sync_mode": "E131",
         "name": "wled",
         "ip_address": "10.0.0.2",
         "pixel_count": 20,
         "refresh_rate": 60,
-        "icon_name": "wled",
     }
+    model = WLEDDevice.config_model()
+    device._config = model.model_construct(**settings, icon_name="wled")
     device._built_settings = device._output_settings()
     live = MagicMock()
     device.subdevice = live
-    device._config = {**device._config, "icon_name": "mdi:lamp"}
+    device._config = model.model_construct(**settings, icon_name="mdi:lamp")
     device.config_updated(device._config)
     live.deactivate.assert_not_called()
     assert device.subdevice is live
@@ -129,9 +150,9 @@ def _output_device(
 ) -> tuple[Device, MagicMock, MagicMock]:
     """A device of cls with its output start/stop replaced by mocks."""
     ledfx = MagicMock()
-    validate = cast(vol.Schema, cls.schema())
+    config = cls.config_model().model_validate({"name": "strip", **settings})
     with patch.object(cls, "activate"):  # rpi_ws281x starts its strip in __init__
-        device = cls(ledfx, validate({"name": "strip", **settings}))
+        device = cls(ledfx, config)
     activate, deactivate = MagicMock(), MagicMock()
     vars(device).update(activate=activate, deactivate=deactivate)
     return device, activate, deactivate
@@ -143,7 +164,7 @@ def test_cosmetic_change_keeps_the_output_running(
 ) -> None:
     device, activate, deactivate = _output_device(cls, settings)
     device.update_config({"name": "renamed", "icon_name": "mdi:lamp"})
-    assert device._config["name"] == "renamed"
+    assert device.config.name == "renamed"
     deactivate.assert_not_called()
     activate.assert_not_called()
 
@@ -183,7 +204,7 @@ def test_failed_effect_hook_keeps_the_running_config() -> None:
 
 def test_rejected_update_keeps_the_resolved_address() -> None:
     device = object.__new__(DDPDevice)
-    device._config = {"ip_address": "10.0.0.1"}
+    device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
     device._destination = "10.0.0.1"
     with (
         patch.object(Device, "update_config", side_effect=vol.Invalid("bad ip")),
@@ -221,11 +242,11 @@ async def test_mdns_keeps_a_service_known_only_by_hostname() -> None:
 
 def test_hue_stops_handshaking_after_success() -> None:
     device = object.__new__(HueDevice)
-    device._config = {
-        "entertainment_id": "e",
-        "ip_address": "10.0.0.4",
-        "udp_port": 2100,
-    }
+    device._config = HueDevice.config_model().model_construct(
+        entertainment_id="e",
+        ip_address="10.0.0.4",
+        udp_port=2100,
+    )
     device._dtls_client_context = MagicMock()
     with (
         patch.object(HueDevice, "_hue_request"),
@@ -240,7 +261,7 @@ def test_hue_stops_handshaking_after_success() -> None:
 
 def test_govee_second_deactivate_does_not_release_socket_again() -> None:
     device = object.__new__(Govee)
-    device._config = {"name": "govee"}
+    device._config = Govee.config_model().model_construct(name="govee")
     server = MagicMock()
     device.udp_server = server
     with (

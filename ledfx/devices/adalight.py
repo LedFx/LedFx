@@ -1,8 +1,11 @@
 import logging
+from typing import Annotated
 
 import serial
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import SerialDevice, packets
 from ledfx.events import DevicesUpdatedEvent
 
@@ -21,26 +24,23 @@ COLOR_ORDERS = [
 class AdalightDevice(SerialDevice):
     """Adalight device support"""
 
-    @staticmethod
-    @property
-    def CONFIG_SCHEMA():
-        return vol.Schema(
-            {
-                vol.Required(
-                    "pixel_count",
-                    description="Number of individual pixels",
-                    default=1,
-                ): vol.All(int, vol.Range(min=1)),
-                vol.Required(
-                    "color_order", description="Color order", default="RGB"
-                ): vol.In(list(COLOR_ORDERS)),
-            }
+    class Config(SerialDevice.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
         )
+        color_order: Annotated[str, OneOf(list(COLOR_ORDERS))] = Field(
+            "RGB", description="Color order", json_schema_extra={X_REQUIRED: True}
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "Adalight"
-        self.color_order = self._config["color_order"]
+        self.color_order = self.config.color_order
 
     def flush(self, data):
         try:

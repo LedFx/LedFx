@@ -2,9 +2,11 @@ import logging
 import socket
 
 import numpy as np
-import voluptuous as vol
 from openrgb import OpenRGBClient
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice, packets
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,29 +15,32 @@ _LOGGER = logging.getLogger(__name__)
 class OpenRGB(NetworkedDevice):
     """OpenRGB protocol device support"""
 
-    @staticmethod
-    @property
-    def CONFIG_SCHEMA():
-        return vol.Schema(
-            {
-                vol.Required("name", description="Friendly name for the device"): str,
-                vol.Required(
-                    "openrgb_id",
-                    description="ID of OpenRGB device (within OpenRGB).",
-                    default=0,
-                ): vol.All(int, vol.Range(min=0)),
-                vol.Required(
-                    "pixel_count",
-                    description="Number of individual pixels",
-                    default=1,
-                ): vol.All(int, vol.Range(min=1)),
-                vol.Required(
-                    "port",
-                    description="Port for the UDP device",
-                    default=6742,
-                ): vol.All(int, vol.Range(min=1, max=65535)),
-            }
+    class Config(NetworkedDevice.Config):
+        name: str = Field(
+            description="Friendly name for the device",
+            json_schema_extra={X_REQUIRED: True},
         )
+        openrgb_id: int = Field(
+            0,
+            description="ID of OpenRGB device (within OpenRGB).",
+            ge=0,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: int = Field(
+            6742,
+            description="Port for the UDP device",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         """
@@ -54,9 +59,9 @@ class OpenRGB(NetworkedDevice):
         super().__init__(ledfx, config)
         self._device_type = "OpenRGB"
         self._ledfx = ledfx
-        self.ip_address = self._config["ip_address"]
-        self.port = self._config["port"]
-        self.openrgb_device_id = self._config["openrgb_id"]
+        self.ip_address = self.config.ip_address
+        self.port = self.config.port
+        self.openrgb_device_id = self.config.openrgb_id
 
     def activate(self):
         """

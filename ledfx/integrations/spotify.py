@@ -6,9 +6,11 @@ import logging
 
 # import aiohttp
 # import asyncio
-import voluptuous as vol
+from pydantic import Field
 from typing_extensions import override
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.integrations import Integration
 
 # import numpy as np
@@ -31,20 +33,19 @@ class Spotify(Integration):
         "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium."
     )
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name",
-                description="Name of this integration instance and associated settings",
-                default="Spotify",
-            ): str,
-            vol.Required(
-                "description",
-                description="Description of this integration",
-                default="Activate scenes with Spotify",
-            ): str,
-        }
-    )
+    class Config(PluginConfig):
+        name: str = Field(
+            "Spotify",
+            description="Name of this integration instance and associated settings",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        description: str = Field(
+            "Activate scenes with Spotify",
+            description="Description of this integration",
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config, active, data):
         super().__init__(ledfx, config, active, data)

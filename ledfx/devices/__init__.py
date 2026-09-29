@@ -4,15 +4,15 @@ import socket
 import threading
 from abc import abstractmethod
 from functools import cached_property, partial
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 import numpy as np
 import serial
 import serial.tools.list_ports
-import voluptuous as vol
+from pydantic import Field
 from sacn.sending.sender_socket_base import DEFAULT_PORT
 
-from ledfx.configuration.fields import fps_validator
+from ledfx.configuration.fields import X_REQUIRED, Fps, OneOf
 from ledfx.configuration.models import DeviceEntry, VirtualEntry
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.events import (
@@ -40,34 +40,27 @@ _LOGGER = logging.getLogger(__name__)
 
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
-    config = TypedConfig(PluginConfig)
-
-    @staticmethod
-    @property
-    def CONFIG_SCHEMA():
-        return vol.Schema(
-            {
-                vol.Required("name", description="Friendly name for the device"): str,
-                vol.Optional(
-                    "icon_name",
-                    description="https://material-ui.com/components/material-icons/",
-                    default="mdi:led-strip",
-                ): str,
-                vol.Optional(
-                    "center_offset",
-                    description="Number of pixels from the perceived center of the device",
-                    default=0,
-                ): int,
-                vol.Optional(
-                    "refresh_rate",
-                    description="Target rate that pixels are sent to the device",
-                    default=next(
-                        (f for f in AVAILABLE_FPS if f >= 60),
-                        list(AVAILABLE_FPS)[-1],
-                    ),
-                ): fps_validator,
-            }
+    class Config(PluginConfig):
+        name: str = Field(
+            description="Friendly name for the device",
+            json_schema_extra={X_REQUIRED: True},
         )
+        icon_name: str = Field(
+            "mdi:led-strip",
+            description="https://material-ui.com/components/material-icons/",
+        )
+        center_offset: int = Field(
+            0, description="Number of pixels from the perceived center of the device"
+        )
+        refresh_rate: Fps = Field(
+            next(
+                (f for f in AVAILABLE_FPS if f >= 60),
+                list(AVAILABLE_FPS)[-1],
+            ),
+            description="Target rate that pixels are sent to the device",
+        )
+
+    config = TypedConfig(Config)
 
     _active = False
     # Config keys the running output is built from. config_updated hooks
@@ -134,14 +127,15 @@ class Device(BaseRegistry):
         """
 
     def _output_settings(self) -> tuple[object, ...]:
-        return tuple((self._config or {}).get(key) for key in self.OUTPUT_KEYS)
+        # Some keys (pixel_count) are stored extras, so read each one by name.
+        return tuple(getattr(self.config, key, None) for key in self.OUTPUT_KEYS)
 
     def _output_changed(self) -> bool:
         return self._output_settings() != self._built_settings
 
     @property
     def pixel_count(self):
-        return int(self._config["pixel_count"])
+        return int(getattr(self.config, "pixel_count"))  # noqa: B009 - declared by subclasses
 
     def is_active(self):
         return self._active
@@ -202,8 +196,8 @@ class Device(BaseRegistry):
         """
         frame = self._pixels
 
-        if self._config["center_offset"]:
-            frame = np.roll(frame, self._config["center_offset"], axis=0)
+        if self.config.center_offset:
+            frame = np.roll(frame, self.config.center_offset, axis=0)
         return frame
 
     def activate(self):
@@ -229,11 +223,11 @@ class Device(BaseRegistry):
 
     @property
     def name(self):
-        return self._config["name"]
+        return self.config.name
 
     @property
     def max_refresh_rate(self):
-        return self._config["refresh_rate"]
+        return self.config.refresh_rate
 
     @property
     def refresh_rate(self):
@@ -595,14 +589,13 @@ class NetworkedDevice(Device):
     Networked device, handles resolving IP
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
-            ): str,
-        }
-    )
+    class Config(Device.Config):
+        ip_address: str = Field(
+            description="Hostname or IP address of the device",
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
     _destination: str | None
 
     async def async_initialize(self):
@@ -628,7 +621,7 @@ class NetworkedDevice(Device):
             self._destination = await resolve_destination(
                 self._ledfx.loop,
                 self._ledfx.thread_executor,
-                self._config["ip_address"],
+                self.config.ip_address,
             )
             _LOGGER.info(
                 "Device %s: Resolved destination to %s",
@@ -669,21 +662,22 @@ class NetworkedDevice(Device):
 
 @BaseRegistry.no_registration
 class UDPDevice(NetworkedDevice):
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "port",
-                description="Port for the UDP device",
-            ): vol.All(int, vol.Range(min=1, max=65535)),
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        port: int = Field(
+            description="Port for the UDP device",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def activate(self):
         self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         _LOGGER.debug(
             "%s sender for %s started.",
             self._device_type,
-            self._config["name"],
+            self.config.name,
         )
         super().activate()
 
@@ -692,7 +686,7 @@ class UDPDevice(NetworkedDevice):
         _LOGGER.debug(
             "%s sender for %s stopped.",
             self._device_type,
-            self._config["name"],
+            self.config.name,
         )
         self._sock = None
 
@@ -709,24 +703,29 @@ class AvailableCOMPorts:
 @BaseRegistry.no_registration
 class SerialDevice(Device):
     RUNTIME_CHOICE_KEYS: ClassVar[frozenset[str]] = frozenset({"com_port"})
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "com_port",
+
+    class Config(Device.Config):
+        com_port: Annotated[str, OneOf(list(AvailableCOMPorts.available_ports))] = (
+            Field(
+                "",
                 description="COM port for Adalight compatible device",
-                default="",
-            ): vol.In(list(AvailableCOMPorts.available_ports)),
-            vol.Required("baudrate", description="baudrate", default=500000): vol.All(
-                int, vol.Range(min=115200)
-            ),
-        }
-    )
+                json_schema_extra={X_REQUIRED: True},
+            )
+        )
+        baudrate: int = Field(
+            500000,
+            description="baudrate",
+            ge=115200,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.serial = None
-        self.baudrate = self._config["baudrate"]
-        self.com_port = self._config["com_port"]
+        self.baudrate = self.config.baudrate
+        self.com_port = self.config.com_port
 
     def activate(self):
         try:
