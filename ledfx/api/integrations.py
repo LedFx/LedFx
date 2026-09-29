@@ -182,6 +182,7 @@ class IntegrationsEndpoint(RestEndpoint):
             return await self.invalid_request("'id' must be a string")
 
         new = not bool(integration_id)
+        was_active = False
         if integration_id is None:
             # Create new integration if no id is given
             integration_id = generate_id(integration_config.get("name"))
@@ -209,6 +210,10 @@ class IntegrationsEndpoint(RestEndpoint):
                 integration_id,
             )
 
+            # Stop the old instance now rather than whenever it is collected.
+            was_active = existing_integration.active
+            if was_active:
+                await existing_integration.deactivate()
             self._ledfx.integrations.destroy(integration_id)
 
         # An update keeps the stored data (QLC events, Spotify triggers).
@@ -224,6 +229,9 @@ class IntegrationsEndpoint(RestEndpoint):
             data=None if new or stored is None else copy.deepcopy(stored.data),
             ledfx=self._ledfx,
         )
+        # The stored entry keeps its "active"; keep the runtime state with it.
+        if was_active:
+            await integration.activate()
 
         # Update and save the configuration
         if new:

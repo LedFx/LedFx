@@ -22,6 +22,7 @@ from ledfx.api.find_openrgb import FindOpenRGBDevicesEndpoint
 from ledfx.api.get_gif_frames import GetGifFramesEndpoint
 from ledfx.api.integration_qlc import QLCEndpoint
 from ledfx.api.integration_spotify import QLCEndpoint as SpotifyEndpoint
+from ledfx.api.integrations import IntegrationsEndpoint
 from ledfx.api.power import MAX_POWER_TIMEOUT
 from ledfx.api.power import InfoEndpoint as PowerEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
@@ -683,3 +684,24 @@ async def test_unknown_integration_is_named_in_the_reason(
         200,
         f"nope was not found or was not type {kind}",
     )
+
+
+@pytest.mark.parametrize("was_active", [True, False])
+async def test_integration_update_keeps_it_as_active_as_it_was(
+    was_active: bool,
+) -> None:
+    ledfx = fake_ledfx(
+        {"integrations": [{"id": "sp", "type": "spotify", "active": was_active}]}
+    )
+    ledfx.integrations.get_class.return_value = Spotify
+    old = MagicMock(type="spotify", active=was_active, deactivate=AsyncMock())
+    ledfx.integrations.get.return_value = old
+    new = ledfx.integrations.create.return_value
+    new.activate = AsyncMock()
+    body = {"id": "sp", "type": "spotify", "config": {"name": "Renamed"}}
+
+    _, reply = await _call(IntegrationsEndpoint(ledfx), "POST", body)
+
+    assert reply == {"status": "success"}
+    assert old.deactivate.await_count == new.activate.await_count == int(was_active)
+    assert ledfx.config.integrations[0].active is was_active
