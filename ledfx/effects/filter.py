@@ -1,10 +1,12 @@
 import logging
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, Color, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.utils import aggressive_top_end_bias
@@ -25,48 +27,41 @@ class Filter(AudioReactiveEffect, GradientEffect):
         "gradient_roll",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "color",
-                description="Simple color selector",
-                default="#FF0000",
-            ): validate_color,
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for derived brightness",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "use_gradient",
-                description="Use gradient instead of color",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "roll_speed",
-                description="0= no gradient roll, range 60 secs to 1 sec",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "boost",
-                description="Boost the brightness of the effect on a parabolic curve",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        }
-    )
+    class Config(GradientEffect.Config):
+        color: Color = Field("#FF0000", description="Simple color selector")
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for derived brightness"
+        )
+        use_gradient: bool = Field(False, description="Use gradient instead of color")
+        roll_speed: CoercedFloat = Field(
+            0.0,
+            description="0= no gradient roll, range 60 secs to 1 sec",
+            ge=0.0,
+            le=1.0,
+        )
+        boost: CoercedFloat = Field(
+            0.0,
+            description="Boost the brightness of the effect on a parabolic curve",
+            ge=0.0,
+            le=1.0,
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.filtered_power = 0
 
     def config_updated(self, config):
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.color = np.array(parse_color(self._config["color"]))
-        self.use_gradient = self._config["use_gradient"]
-        self.roll_speed = self._config["roll_speed"]
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.color = np.array(parse_color(self.config.color))
+        self.use_gradient = self.config.use_gradient
+        self.roll_speed = self.config.roll_speed
         if self.roll_speed > 0:
             # ranging time from 20 to 1 seconds
             self.roll_time = (1 - self.roll_speed) * 59 + 1
-        self.boost = self._config["boost"]
+        self.boost = self.config.boost
 
     def audio_data_updated(self, data):
         self.filtered_power = getattr(data, self.power_func)()

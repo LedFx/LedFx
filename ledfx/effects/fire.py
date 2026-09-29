@@ -1,6 +1,8 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -9,22 +11,13 @@ class Fire(AudioReactiveEffect, HSVEffect):
     NAME = "Fire"
     CATEGORY = "Atmospheric"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional("speed", default=0.04): vol.All(
-                vol.Coerce(float), vol.Range(min=0.00001, max=0.5)
-            ),
-            vol.Optional("color_shift", default=0.15): vol.All(
-                vol.Coerce(float), vol.Range(min=0, max=1)
-            ),
-            vol.Optional("intensity", default=8): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=30)
-            ),
-            vol.Optional("fade_chance", default=0.5): vol.All(
-                vol.Coerce(float), vol.Range(min=0.05, max=1.0)
-            ),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(0.04, ge=0.00001, le=0.5)
+        color_shift: CoercedFloat = Field(0.15, ge=0, le=1)
+        intensity: CoercedInt = Field(8, ge=1, le=30)
+        fade_chance: CoercedFloat = Field(0.5, ge=0.05, le=1.0)
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.spark_pixels = np.zeros(pixel_count, dtype=np.float32)
@@ -33,14 +26,14 @@ class Fire(AudioReactiveEffect, HSVEffect):
         self.v = np.zeros(pixel_count, dtype=np.float32)
 
     def config_updated(self, config):
-        self.speed = self._config["speed"]
+        self.speed = self.config.speed
         self.cooling = 0.95
         self.accel = 0.03
-        self.fade_chance = self._config["fade_chance"] / 10
+        self.fade_chance = self.config.fade_chance / 10
         self._lows_filter = self.create_filter(alpha_decay=0.05, alpha_rise=0.99)
 
-        self.spark_count = self._config["intensity"]
-        self.color_shift = self._config["color_shift"]
+        self.spark_count = self.config.intensity
+        self.color_shift = self.config.color_shift
         self.sparks = np.zeros(self.spark_count, dtype=np.float32)
         self.sparkX = np.random.uniform(0, 5, size=self.spark_count).astype(np.float32)
 
@@ -48,7 +41,7 @@ class Fire(AudioReactiveEffect, HSVEffect):
         _lows_power = self._lows_filter.update(np.mean(data.lows_power(filtered=False)))
         self.cooling = 0.75 + _lows_power * 0.25
         self.accel = 0.02 + _lows_power * 0.1
-        self.speed = self._config["speed"] + _lows_power * 0.01
+        self.speed = self.config.speed + _lows_power * 0.01
 
     def render_hsv(self):
         delta_ms = self.passed * 1000

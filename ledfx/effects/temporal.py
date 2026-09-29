@@ -4,8 +4,10 @@ import time
 # from ledfx.effects.audio import AudioReactiveEffect
 from threading import Thread
 
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)
@@ -18,15 +20,12 @@ DEFAULT_RATE = 1.0 / 10.0
 
 @Effect.no_registration
 class TemporalEffect(Effect):
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                default=1.0,
-                description="Speed of the effect",
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
-        }
-    )
+    class Config(Effect.Config):
+        speed: CoercedFloat = Field(
+            1.0, description="Speed of the effect", ge=0.1, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -47,7 +46,7 @@ class TemporalEffect(Effect):
 
             # Calculate the time to sleep accounting for potential heavy
             # frame assembly operations
-            timeToSleep = (sleepInterval / self._config["speed"]) - (
+            timeToSleep = (sleepInterval / self.config.speed) - (
                 time.time() - startTime
             )
             timeToSleep = max(timeToSleep, 0.001)

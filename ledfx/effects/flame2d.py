@@ -2,15 +2,16 @@ import logging
 from collections import namedtuple
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
 from ledfx.color import (
     hsv_to_rgb_vect,
     parse_color,
     rgb_to_hsv_vect,
-    validate_color,
 )
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,33 +81,24 @@ class Flame2d(Twod):
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "spawn_rate", description="Particles spawn rate", default=0.5
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "velocity", description="Trips to top per second", default=0.3
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
-            vol.Optional(
-                "intensity",
-                description="Application of the audio power input",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "blur_amount", description="Blur radius in pixels", default=2
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
-            vol.Optional(
-                "low_band", description="low band flame", default="#FF0000"
-            ): validate_color,
-            vol.Optional(
-                "mid_band", description="mid band flame", default="#00FF00"
-            ): validate_color,
-            vol.Optional(
-                "high_band", description="high band flame", default="#0000FF"
-            ): validate_color,
-        }
-    )
+    class Config(Twod.Config):
+        spawn_rate: CoercedFloat = Field(
+            0.5, description="Particles spawn rate", ge=0.0, le=1.0
+        )
+        velocity: CoercedFloat = Field(
+            0.3, description="Trips to top per second", ge=0.1, le=1.0
+        )
+        intensity: CoercedFloat = Field(
+            0.5, description="Application of the audio power input", ge=0.0, le=1.0
+        )
+        blur_amount: CoercedInt = Field(
+            2, description="Blur radius in pixels", ge=0, le=5
+        )
+        low_band: Color = Field("#FF0000", description="low band flame")
+        mid_band: Color = Field("#00FF00", description="mid band flame")
+        high_band: Color = Field("#0000FF", description="high band flame")
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         """
@@ -140,15 +132,15 @@ class Flame2d(Twod):
         Pull configurable parameters and parse base band colors.
         """
         super().config_updated(config)
-        self.spawn_rate = self._config["spawn_rate"]
+        self.spawn_rate = self.config.spawn_rate
         self.min_lifespan = MIN_LIFESPAN
         self.max_lifespan = MAX_LIFESPAN
-        self.velocity = self._config["velocity"]
-        self.blur_amount = self._config["blur_amount"]
-        self.low_color = np.array(parse_color(self._config["low_band"]), dtype=float)
-        self.mid_color = np.array(parse_color(self._config["mid_band"]), dtype=float)
-        self.high_color = np.array(parse_color(self._config["high_band"]), dtype=float)
-        self.intensity = self._config["intensity"]
+        self.velocity = self.config.velocity
+        self.blur_amount = self.config.blur_amount
+        self.low_color = np.array(parse_color(self.config.low_band), dtype=float)
+        self.mid_color = np.array(parse_color(self.config.mid_band), dtype=float)
+        self.high_color = np.array(parse_color(self.config.high_band), dtype=float)
+        self.intensity = self.config.intensity
 
     def _empty_cap(self, n: int) -> ParticleGroup:
         """

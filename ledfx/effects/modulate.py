@@ -1,8 +1,11 @@
 import logging
+from typing import Literal
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,28 +23,19 @@ class ModulateEffect(Effect):
     # _thread_active = False
     # _thread = None
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "modulate",
-                description="Brightness modulation",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "modulation_effect",
-                default="sine",
-                description="Choose an animation",
-            ): vol.In(["sine", "breath"]),
-            vol.Optional(
-                "modulation_speed",
-                default=0.5,
-                description="Animation speed",
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1)),
-        }
-    )
+    class Config(Effect.Config):
+        modulate: bool = Field(False, description="Brightness modulation")
+        modulation_effect: Literal["sine", "breath"] = Field(
+            "sine", description="Choose an animation"
+        )
+        modulation_speed: CoercedFloat = Field(
+            0.5, description="Animation speed", ge=0.01, le=1
+        )
+
+    config = TypedConfig(Config)
 
     def config_updated(self, config):
-        self._counter = 0
+        self._counter: float = 0
 
         # temporal array for breathing cycle
         self._breath_cycle = np.linspace(0, 9, 9 * _rate)
@@ -56,11 +50,11 @@ class ModulateEffect(Effect):
         """
         Call this function from the effect
         """
-        if not self._config["modulate"]:
+        if not self.config.modulate:
             return pixels
 
-        if self._config["modulation_effect"] == "sine":
-            self._counter += 0.1 * self._config["modulation_speed"] / np.pi
+        if self.config.modulation_effect == "sine":
+            self._counter += 0.1 * self.config.modulation_speed / np.pi
             if self._counter >= 2 * np.pi:
                 self._counter = 0
             overlay = np.linspace(
@@ -69,8 +63,8 @@ class ModulateEffect(Effect):
             overlay = np.tile(0.3 * np.sin(overlay) + 0.4, (3, 1)).T
             return pixels * overlay
 
-        elif self._config["modulation_effect"] == "breath":
-            self._counter += self._config["modulation_speed"]
+        elif self.config.modulation_effect == "breath":
+            self._counter += self.config.modulation_speed
             if int(self._counter) >= 9 * _rate - 1:
                 self._counter = 0
 

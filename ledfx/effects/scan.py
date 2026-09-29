@@ -1,7 +1,11 @@
-import numpy as np
-import voluptuous as vol
+from typing import Annotated
 
-from ledfx.color import parse_color, validate_color
+import numpy as np
+from pydantic import Field
+
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.modulate import ModulateEffect
@@ -21,64 +25,39 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
 
     clear = np.array([0.0, 0.0, 0.0])
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "blur",
-                description="Amount to blur the effect",
-                default=3.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "bounce",
-                description="bounce the scan",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "scan_width", description="Width of scan eye in %", default=30
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
-            vol.Optional(
-                "speed", description="Scan base % per second", default=50
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=100)),
-            vol.Optional(
-                "color_scan",
-                description="Color of scan",
-                default="#FF0000",
-            ): validate_color,
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the beat detection",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "multiplier",
-                description="Speed impact multiplier",
-                default=3.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
-            vol.Optional(
-                "color_intensity",
-                description="Adjust color intensity based on audio power",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "use_grad",
-                description="Use colors from gradient selector",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "full_grad",
-                description="spread the gradient colors across the scan",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "count", description="Number of scan to render", default=1
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
-        }
-    )
+    class Config(GradientEffect.Config, ModulateEffect.Config):
+        blur: CoercedFloat = Field(
+            3.0, description="Amount to blur the effect", ge=0.0, le=10
+        )
+        mirror: bool = Field(False, description="Mirror the effect")
+        bounce: bool = Field(True, description="bounce the scan")
+        scan_width: CoercedInt = Field(
+            30, description="Width of scan eye in %", ge=1, le=100
+        )
+        speed: CoercedInt = Field(
+            50, description="Scan base % per second", ge=0, le=100
+        )
+        color_scan: Color = Field("#FF0000", description="Color of scan")
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the beat detection"
+        )
+        multiplier: CoercedFloat = Field(
+            3.0, description="Speed impact multiplier", ge=0.0, le=5.0
+        )
+        color_intensity: bool = Field(
+            True, description="Adjust color intensity based on audio power"
+        )
+        use_grad: bool = Field(False, description="Use colors from gradient selector")
+        full_grad: bool = Field(
+            False, description="spread the gradient colors across the scan"
+        )
+        count: CoercedInt = Field(
+            1, description="Number of scan to render", ge=1, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.scan_pos = 0.0
@@ -89,32 +68,32 @@ class ScanAudioEffect(AudioReactiveEffect, GradientEffect, ModulateEffect):
 
     def config_updated(self, config):
         self.background_color = np.array(
-            parse_color(self._config["background_color"]), dtype=float
+            parse_color(self.config.background_color), dtype=float
         )
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
         self.color_scan_cache = np.array(
-            parse_color(self._config["color_scan"]), dtype=float
+            parse_color(self.config.color_scan), dtype=float
         )
         self.color_scan = self.color_scan_cache
         self.set_values()
-        self.color_intensity = self._config["color_intensity"]
-        self.use_grad = self._config["use_grad"]
-        self.multiplier = self._config["multiplier"]
+        self.color_intensity = self.config.color_intensity
+        self.use_grad = self.config.use_grad
+        self.multiplier = self.config.multiplier
 
     def set_values(self):
         if hasattr(self, "pixels"):  # protect against calling too early
-            self.block = self.pixel_count / self._config["count"]
-            self.step_per_sec = self.pixel_count / 100.0 * self._config["speed"]
+            self.block = self.pixel_count / self.config.count
+            self.step_per_sec = self.pixel_count / 100.0 * self.config.speed
 
             self.scan_width_pixels = int(
-                max(1, int(self.block / 100.0 * self._config["scan_width"]))
+                max(1, int(self.block / 100.0 * self.config.scan_width))
             )
 
-            self.bounce = self._config["bounce"]
-            self.full_grad = self._config["full_grad"]
+            self.bounce = self.config.bounce
+            self.full_grad = self.config.full_grad
             self.blocks = []
 
-            for idx in range(self._config["count"]):
+            for idx in range(self.config.count):
                 # a block is start, mid, end index
                 self.blocks.append(
                     [

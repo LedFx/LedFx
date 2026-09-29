@@ -2,9 +2,11 @@ import itertools
 import logging
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import RGB, parse_gradient, validate_gradient
+from ledfx.color import RGB, parse_gradient
+from ledfx.configuration.fields import CoercedFloat, Gradient
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 from ledfx.effects.modulate import ModulateEffect
 from ledfx.effects.temporal import TemporalEffect
@@ -20,23 +22,19 @@ class GradientEffect(Effect):
     colors based upon some configured color pallet.
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "gradient",
-                description="Color gradient to display",
-                default="linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
-            ): validate_gradient,
-            vol.Optional(
-                "gradient_roll",
-                description="Amount to shift the gradient",
-                default=0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
-        }
-    )
+    class Config(Effect.Config):
+        gradient: Gradient = Field(
+            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(255, 120, 0) 14%, rgb(255, 200, 0) 28%, rgb(0, 255, 0) 42%, rgb(0, 199, 140) 56%, rgb(0, 0, 255) 70%, rgb(128, 0, 128) 84%, rgb(255, 0, 178) 98%)",
+            description="Color gradient to display",
+        )
+        gradient_roll: CoercedFloat = Field(
+            0, description="Amount to shift the gradient", ge=0, le=10
+        )
+
+    config = TypedConfig(Config)
 
     _gradient_curve = None
-    _gradient_roll_counter = 0
+    _gradient_roll_counter: float = 0
 
     def _comb(self, N, k):
         N = int(N)
@@ -127,18 +125,18 @@ class GradientEffect(Effect):
             != self.gradient_pixel_count  # Incorrect size
         ):
             self._generate_gradient_curve(
-                self._config["gradient"],
+                self.config.gradient,
                 self.gradient_pixel_count,
             )
 
     def roll_gradient(self):
-        if self._config["gradient_roll"] == 0:
+        if self.config.gradient_roll == 0:
             return
 
         self._assert_gradient()
 
         increment = (
-            self._config["gradient_roll"] / self.pixel_count * self.gradient_pixel_count
+            self.config.gradient_roll / self.pixel_count * self.gradient_pixel_count
         )
         self._gradient_roll_counter += increment
 
@@ -213,6 +211,11 @@ class TemporalGradientEffect(TemporalEffect, GradientEffect, ModulateEffect):
     A simple effect that just applies a gradient to the channel. This
     is essentially just the temporal exposure of gradients.
     """
+
+    class Config(TemporalEffect.Config, GradientEffect.Config, ModulateEffect.Config):
+        pass
+
+    config = TypedConfig(Config)
 
     NAME = "Gradient"
     CATEGORY = "Non-Reactive"

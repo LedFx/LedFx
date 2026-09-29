@@ -1,7 +1,8 @@
 import logging
 
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 from ledfx.effects.twod import Twod
 
@@ -24,15 +25,10 @@ class Template2d(Twod):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "a_switch",
-                description="Does a boolean thing",
-                default=False,
-            ): bool,
-        }
-    )
+    class Config(Twod.Config):
+        a_switch: bool = Field(False, description="Does a boolean thing")
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         # set any default values first, as config_updated will be called
@@ -43,7 +39,7 @@ class Template2d(Twod):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.a_switch = self._config["a_switch"]
+        self.a_switch = self.config.a_switch
 
     def do_once(self):
         super().do_once()

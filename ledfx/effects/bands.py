@@ -1,6 +1,10 @@
-import numpy as np
-import voluptuous as vol
+from typing import Literal
 
+import numpy as np
+from pydantic import Field
+
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -10,18 +14,13 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "2D"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "band_count", description="Number of bands", default=6
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-            vol.Optional(
-                "align",
-                description="Alignment of bands",
-                default="left",
-            ): vol.In(["left", "right", "invert", "center"]),
-        }
-    )
+    class Config(GradientEffect.Config):
+        band_count: CoercedInt = Field(6, description="Number of bands", ge=1, le=16)
+        align: Literal["left", "right", "invert", "center"] = Field(
+            "left", description="Alignment of bands"
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
@@ -34,7 +33,7 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
         self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
-        bands_active = min(self._config["band_count"], self.pixel_count)
+        bands_active = min(self.config.band_count, self.pixel_count)
         out = np.tile(self.r, (3, 1)).T
         np.clip(out, 0, 1, out=out)
         out_split = np.array_split(out, bands_active, axis=0)
@@ -45,13 +44,13 @@ class BandsAudioEffect(AudioReactiveEffect, GradientEffect):
             out_split[i][:] = self.bkg_color
             if vol:
                 out_split[i][:vol] = color
-            if self._config["align"] == "center":
+            if self.config.align == "center":
                 out_split[i] = np.roll(out_split[i], (band_width - vol) // 2, axis=0)
-            elif self._config["align"] == "invert":
+            elif self.config.align == "invert":
                 out_split[i] = np.roll(out_split[i], -vol // 2, axis=0)
-            elif self._config["align"] == "right":
+            elif self.config.align == "right":
                 out_split[i] = np.flip(out_split[i], axis=0)
-            elif self._config["align"] == "left":
+            elif self.config.align == "left":
                 pass
 
         self.pixels = np.vstack(out_split)

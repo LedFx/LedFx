@@ -1,7 +1,11 @@
-import numpy as np
-import voluptuous as vol
-from PIL import Image, ImageFilter
+from typing import Annotated
 
+import numpy as np
+from PIL import Image, ImageFilter
+from pydantic import Field
+
+from ledfx.configuration.fields import CoercedFloat, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -23,59 +27,43 @@ class Concentric(Twod, GradientEffect):
         "test",
     )
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for beat detection",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "invert",
-                description="Invert propagation direction",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "power_multiplier",
-                description="Frequency range's power multiplier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "gradient_scale",
-                description="Scales the gradient",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
-            vol.Optional(
-                "stretch_height",
-                description="Stretches the gradient vertically",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
-            vol.Optional(
-                "center_smoothing",
-                description="Soften the center point",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=5.0)),
-            vol.Optional(
-                "idle_speed",  # To avoid static during breaks etc...
-                description="Idle motion speed",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field("Lows (beat+bass)", description="Frequency range for beat detection")
+        invert: bool = Field(False, description="Invert propagation direction")
+        power_multiplier: CoercedFloat = Field(
+            0.5, description="Frequency range's power multiplier", ge=0.0, le=1.0
+        )
+        gradient_scale: CoercedFloat = Field(
+            1, description="Scales the gradient", ge=0.1, le=10.0
+        )
+        stretch_height: CoercedFloat = Field(
+            1, description="Stretches the gradient vertically", ge=0.1, le=5.0
+        )
+        center_smoothing: CoercedFloat = Field(
+            0.5, description="Soften the center point", ge=0.0, le=5.0
+        )
+        # To avoid static during breaks etc...
+        idle_speed: CoercedFloat = Field(
+            1, description="Idle motion speed", ge=0.0, le=1
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         super().on_activate(pixel_count)
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.power_multiplier = self._config["power_multiplier"]
-        self.gscale = self._config["gradient_scale"]
-        self.h_stretch = self._config["stretch_height"]
-        self.smoothing = self._config["center_smoothing"]
-        self.idle_speed = self._config["idle_speed"]
-        self.invert = self._config["invert"]
-        self.offset = 0
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.power_multiplier = self.config.power_multiplier
+        self.gscale = self.config.gradient_scale
+        self.h_stretch = self.config.stretch_height
+        self.smoothing = self.config.center_smoothing
+        self.idle_speed = self.config.idle_speed
+        self.invert = self.config.invert
+        self.offset: float = 0
         self.power = 0.0
 
     def audio_data_updated(self, data):

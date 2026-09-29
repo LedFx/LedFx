@@ -1,9 +1,12 @@
 import logging
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -25,40 +28,30 @@ class Plasmawled(Twod, GradientEffect):
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the beat detection",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "speed",
-                description="Speed multiplier",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            vol.Optional(
-                "stretch_horizontal",
-                description="Smaller is less block in horizontal dimension",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            vol.Optional(
-                "stretch_vertical",
-                description="Smaller is less block in vertical dimension",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            vol.Optional(
-                "size_multiplication",
-                description="Sound to size multiplier",
-                default=0.4,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "speed_multiplication",
-                description="Sound to speed multiplier",
-                default=0.4,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the beat detection"
+        )
+        speed: CoercedInt = Field(128, description="Speed multiplier", ge=0, le=255)
+        stretch_horizontal: CoercedInt = Field(
+            128,
+            description="Smaller is less block in horizontal dimension",
+            ge=0,
+            le=255,
+        )
+        stretch_vertical: CoercedInt = Field(
+            128, description="Smaller is less block in vertical dimension", ge=0, le=255
+        )
+        size_multiplication: CoercedFloat = Field(
+            0.4, description="Sound to size multiplier", ge=0.0, le=1.0
+        )
+        speed_multiplication: CoercedFloat = Field(
+            0.4, description="Sound to speed multiplier", ge=0.0, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -91,12 +84,12 @@ class Plasmawled(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.configured_speed = self._config["speed"]
-        self.stretch_horizontal = self._config["stretch_horizontal"]
-        self.stretch_vertical = self._config["stretch_vertical"]
-        self.speed_multiplication = self._config["speed_multiplication"]
-        self.size_multiplication = self._config["size_multiplication"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.configured_speed = self.config.speed
+        self.stretch_horizontal = self.config.stretch_horizontal
+        self.stretch_vertical = self.config.stretch_vertical
+        self.speed_multiplication = self.config.speed_multiplication
+        self.size_multiplication = self.config.size_multiplication
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
         self.speedb = 0
         self.sizeb = 0
         self.time_modifier = 0

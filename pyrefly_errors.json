@@ -5664,13 +5664,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/effects/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/effects/__init__.py",
       "name": "bad-argument-type",
@@ -6273,20 +6266,6 @@
       "severity": "error"
     },
     {
-      "column": 28,
-      "path": "ledfx/effects/bands.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/bands.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/effects/bands_matrix.py",
       "name": "implicit-any-parameter",
@@ -6364,20 +6343,6 @@
       "severity": "error"
     },
     {
-      "column": 36,
-      "path": "ledfx/effects/bar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/bar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/bar.py",
       "name": "missing-override-decorator",
@@ -6385,87 +6350,10 @@
       "severity": "error"
     },
     {
-      "column": 12,
-      "path": "ledfx/effects/bar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/bar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/bar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/bar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 40,
       "path": "ledfx/effects/bar.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `numpy._core.fromnumeric.shape` called with arguments: (ndarray | Unknown | None)",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`bar_start` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 72,
-      "path": "ledfx/effects/bar.py",
-      "name": "unbound-name",
-      "concise_description": "`bar_end` may be uninitialized",
       "severity": "error"
     },
     {
@@ -6497,13 +6385,6 @@
       "severity": "error"
     },
     {
-      "column": 52,
-      "path": "ledfx/effects/blade_power_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/blade_power_plus.py",
       "name": "missing-override-decorator",
@@ -6515,13 +6396,6 @@
       "path": "ledfx/effects/blade_power_plus.py",
       "name": "implicit-any-parameter",
       "concise_description": "`audio_data_updated` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 55,
-      "path": "ledfx/effects/blade_power_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -6560,24 +6434,10 @@
       "severity": "error"
     },
     {
-      "column": 33,
-      "path": "ledfx/effects/blade_power_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/blade_power_plus.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/blade_power_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -6742,55 +6602,6 @@
       "severity": "error"
     },
     {
-      "column": 23,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 44,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/bleep.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/bleep.py",
       "name": "missing-override-decorator",
@@ -6903,62 +6714,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 56,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/blender.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/blender.py",
       "name": "missing-override-decorator",
@@ -7043,48 +6798,6 @@
       "severity": "error"
     },
     {
-      "column": 28,
-      "path": "ledfx/effects/block_reflections.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/effects/block_reflections.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/block_reflections.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/block_reflections.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/block_reflections.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/block_reflections.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/block_reflections.py",
       "name": "unsupported-operation",
@@ -7134,13 +6847,6 @@
       "severity": "error"
     },
     {
-      "column": 29,
-      "path": "ledfx/effects/blocks.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/effects/clone.py",
       "name": "implicit-any-parameter",
@@ -7180,41 +6886,6 @@
       "path": "ledfx/effects/clone.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/clone.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "ledfx/effects/clone.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "ledfx/effects/clone.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/clone.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/clone.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -7278,55 +6949,6 @@
       "path": "ledfx/effects/concentric.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/concentric.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -7404,83 +7026,6 @@
       "path": "ledfx/effects/crawler.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Crawler.render_hsv` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/effects/crawler.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -7638,94 +7183,10 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/digitalrain2d.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `DigitalRain2d.do_once` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 44,
-      "path": "ledfx/effects/digitalrain2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -7771,48 +7232,6 @@
       "severity": "error"
     },
     {
-      "column": 30,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/energy.py",
       "name": "missing-override-decorator",
@@ -7831,20 +7250,6 @@
       "path": "ledfx/effects/energy.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `EnergyAudioEffect.render` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/energy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -7880,27 +7285,6 @@
       "path": "ledfx/effects/energy2.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Energy2.render_hsv` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/energy2.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/energy2.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/energy2.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -7950,20 +7334,6 @@
       "path": "ledfx/effects/equalizer.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `EQAudioEffect.render` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/equalizer.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/equalizer.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -8034,111 +7404,6 @@
       "path": "ledfx/effects/equalizer2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/equalizer2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -8261,41 +7526,6 @@
       "severity": "error"
     },
     {
-      "column": 52,
-      "path": "ledfx/effects/filter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "ledfx/effects/filter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/filter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/filter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/filter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/filter.py",
       "name": "missing-override-decorator",
@@ -8352,34 +7582,6 @@
       "severity": "error"
     },
     {
-      "column": 22,
-      "path": "ledfx/effects/fire.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/fire.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/fire.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/fire.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/fire.py",
       "name": "missing-override-decorator",
@@ -8391,13 +7593,6 @@
       "path": "ledfx/effects/fire.py",
       "name": "implicit-any-parameter",
       "concise_description": "`audio_data_updated` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/fire.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -8482,55 +7677,6 @@
       "path": "ledfx/effects/flame2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/flame2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -8779,13 +7925,6 @@
       "severity": "error"
     },
     {
-      "column": 52,
-      "path": "ledfx/effects/game_of_life.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/game_of_life.py",
       "name": "missing-override-decorator",
@@ -8989,13 +8128,6 @@
       "severity": "error"
     },
     {
-      "column": 57,
-      "path": "ledfx/effects/gifbase.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 5,
       "path": "ledfx/effects/gifplayer.py",
       "name": "bad-override",
@@ -9031,20 +8163,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/effects/gifplayer.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/gifplayer.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/gifplayer.py",
       "name": "missing-override-decorator",
@@ -9063,13 +8181,6 @@
       "path": "ledfx/effects/gifplayer.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `GifPlayer.do_once` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/gifplayer.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -9161,76 +8272,6 @@
       "path": "ledfx/effects/glitch.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Glitch.render_hsv` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 61,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 57,
-      "path": "ledfx/effects/glitch.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -9336,20 +8377,6 @@
       "path": "ledfx/effects/gradient.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_generate_gradient_curve` is missing an annotation for parameter `gradient_length`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/effects/gradient.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/gradient.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -9462,55 +8489,6 @@
       "path": "ledfx/effects/hierarchy.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/hierarchy.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -9641,13 +8619,6 @@
     },
     {
       "column": 13,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
       "path": "ledfx/effects/hsv_effect.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",
@@ -9801,55 +8772,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "missing-attribute",
-      "concise_description": "No attribute `BILINEAR` in module `PIL.Image`",
-      "severity": "error"
-    },
-    {
-      "column": 41,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 71,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "missing-attribute",
-      "concise_description": "No attribute `NEAREST` in module `PIL.Image`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/imagespin.py",
       "name": "missing-override-decorator",
@@ -9864,31 +8786,10 @@
       "severity": "error"
     },
     {
-      "column": 55,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/imagespin.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Imagespin.do_once` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/imagespin.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -9983,90 +8884,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/effects/keybeat2d.py",
       "name": "implicit-any-attribute",
@@ -10085,27 +8902,6 @@
       "path": "ledfx/effects/keybeat2d.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `close`",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10200,20 +8996,6 @@
       "severity": "error"
     },
     {
-      "column": 22,
-      "path": "ledfx/effects/lava_lamp.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/lava_lamp.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/lava_lamp.py",
       "name": "missing-override-decorator",
@@ -10232,20 +9014,6 @@
       "path": "ledfx/effects/lava_lamp.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Lavalamp.render_hsv` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/lava_lamp.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/lava_lamp.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11376,34 +10144,6 @@
       "severity": "error"
     },
     {
-      "column": 16,
-      "path": "ledfx/effects/modulate.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/modulate.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/modulate.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/modulate.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 5,
       "path": "ledfx/effects/multiBar.py",
       "name": "bad-override",
@@ -11548,62 +10288,6 @@
       "path": "ledfx/effects/noise2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/noise2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12209,48 +10893,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/effects/plasma2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/plasma2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/plasma2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/plasma2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/plasma2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/plasma2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/plasma2d.py",
       "name": "missing-override-decorator",
@@ -12353,48 +10995,6 @@
       "path": "ledfx/effects/plasmawled.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/plasmawled.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/plasmawled.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/plasmawled.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/plasmawled.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/plasmawled.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/plasmawled.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -13060,90 +11660,6 @@
       "path": "ledfx/effects/scan.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 60,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/scan.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -13931,13 +12447,6 @@
       "severity": "error"
     },
     {
-      "column": 43,
-      "path": "ledfx/effects/singleColor.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/singleColor.py",
       "name": "missing-override-decorator",
@@ -13991,55 +12500,6 @@
       "path": "ledfx/effects/smoke2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/smoke2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -14159,34 +12619,6 @@
       "path": "ledfx/effects/soap2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/soap2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/soap2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/soap2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/soap2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -14666,41 +13098,6 @@
       "severity": "error"
     },
     {
-      "column": 28,
-      "path": "ledfx/effects/template1d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/template1d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/template1d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/template1d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/template1d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/template1d.py",
       "name": "missing-override-decorator",
@@ -14757,13 +13154,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/effects/template2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/template2d.py",
       "name": "missing-override-decorator",
@@ -14810,13 +13200,6 @@
       "path": "ledfx/effects/temporal.py",
       "name": "implicit-any-attribute",
       "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 44,
-      "path": "ledfx/effects/temporal.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -14897,104 +13280,6 @@
       "severity": "error"
     },
     {
-      "column": 22,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/texter2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/texter2d.py",
       "name": "missing-override-decorator",
@@ -15058,13 +13343,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/effects/twod.py",
       "name": "implicit-any-parameter",
@@ -15093,48 +13371,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/effects/twod.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `_config`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 32,
       "path": "ledfx/effects/twod.py",
       "name": "missing-attribute",
@@ -15160,20 +13396,6 @@
       "path": "ledfx/effects/twod.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/twod.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -16196,48 +14418,6 @@
       "path": "ledfx/effects/waterfall2d.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/waterfall2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/waterfall2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/waterfall2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/waterfall2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/waterfall2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/waterfall2d.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {

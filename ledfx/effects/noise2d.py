@@ -2,10 +2,12 @@ import logging
 import random
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 from pyfastnoiselite import pyfastnoiselite as fnl
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.events import GeneralDiagEvent
@@ -29,40 +31,26 @@ class Noise2d(Twod, GradientEffect):
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Speed of the effect",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
-            vol.Optional(
-                "intensity",
-                description="intensity of the effect",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=255)),
-            vol.Optional(
-                "stretch",
-                description="Stretch of the effect",
-                default=1.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=1.5)),
-            vol.Optional(
-                "zoom",
-                description="zoom density",
-                default=2,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=20)),
-            vol.Optional(
-                "impulse_decay",
-                description="Decay filter applied to the impulse for development",
-                default=0.06,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "multiplier",
-                description="audio injection multiplier, 0 is none",
-                default=2.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=4.0)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        speed: CoercedFloat = Field(1, description="Speed of the effect", ge=0, le=5)
+        intensity: CoercedInt = Field(
+            128, description="intensity of the effect", ge=0, le=255
+        )
+        stretch: CoercedFloat = Field(
+            1.5, description="Stretch of the effect", ge=0.5, le=1.5
+        )
+        zoom: CoercedFloat = Field(2, description="zoom density", ge=0.5, le=20)
+        impulse_decay: CoercedFloat = Field(
+            0.06,
+            description="Decay filter applied to the impulse for development",
+            ge=0.01,
+            le=0.3,
+        )
+        multiplier: CoercedFloat = Field(
+            2.0, description="audio injection multiplier, 0 is none", ge=0.0, le=4.0
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         self.first_run = True
@@ -72,21 +60,21 @@ class Noise2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.speed = self._config["speed"]
-        self.intensity = self._config["intensity"]
-        self.stretch = self._config["stretch"]
-        self.zoom = self._config["zoom"]
-        self.multiplier = self._config["multiplier"]
+        self.speed = self.config.speed
+        self.intensity = self.config.intensity
+        self.stretch = self.config.stretch
+        self.zoom = self.config.zoom
+        self.multiplier = self.config.multiplier
 
         self.lows_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
         self.lows_impulse = 0
 
-        if self.last_rotate != self._config["rotate"]:
+        if self.last_rotate != self.config.rotate:
             # as rotate could be non symetrical we better reseed everything
             self.first_run = True
-            self.last_rotate = self._config["rotate"]
+            self.last_rotate = self.config.rotate
 
     def do_once(self):
         super().do_once()

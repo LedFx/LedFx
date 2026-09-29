@@ -1,11 +1,14 @@
 import itertools
 import logging
 import timeit
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image, ImageDraw
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -208,45 +211,28 @@ class Bleep(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "mirror_effect",
-                description="mirror effect",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "grad_power",
-                description="Use gradient in power dimension instead of time",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "scroll_time",
-                description="Time to scroll the bleep",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the beat detection",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "draw",
-                description="How to plot the data",
-                default="Lines",
-            ): vol.In(list(RENDER_MAPPINGS.keys())),
-            vol.Optional(
-                "points",
-                description="How many historical points to capture",
-                default=64,
-            ): vol.All(vol.Coerce(int), vol.Range(min=2, max=64)),
-            vol.Optional(
-                "size",
-                description="Line width only",
-                default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=8)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        mirror_effect: bool = Field(False, description="mirror effect")
+        grad_power: bool = Field(
+            False, description="Use gradient in power dimension instead of time"
+        )
+        scroll_time: CoercedFloat = Field(
+            1.0, description="Time to scroll the bleep", ge=0.1, le=5.0
+        )
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the beat detection"
+        )
+        draw: Annotated[str, OneOf(list(RENDER_MAPPINGS.keys()))] = Field(
+            "Lines", description="How to plot the data"
+        )
+        points: CoercedInt = Field(
+            64, description="How many historical points to capture", ge=2, le=64
+        )
+        size: CoercedInt = Field(1, description="Line width only", ge=1, le=8)
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -254,13 +240,13 @@ class Bleep(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.points = self._config["points"]
-        self.mirror_effect = self._config["mirror_effect"]
-        self.grad_power = self._config["grad_power"]
-        self.scroll_time = self._config["scroll_time"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.render_func = RENDER_MAPPINGS[self._config["draw"]]
-        self.size = self._config["size"]
+        self.points = self.config.points
+        self.mirror_effect = self.config.mirror_effect
+        self.grad_power = self.config.grad_power
+        self.scroll_time = self.config.scroll_time
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.render_func = RENDER_MAPPINGS[self.config.draw]
+        self.size = self.config.size
 
     def do_once(self):
         """

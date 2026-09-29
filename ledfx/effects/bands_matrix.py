@@ -1,6 +1,8 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -10,28 +12,13 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "2D"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "band_count", description="Number of bands", default=6
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "flip_gradient",
-                description="Flip Gradient",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "flip_horizontal",
-                description="Flip horizontally",
-                default=False,
-            ): bool,
-        }
-    )
+    class Config(GradientEffect.Config):
+        band_count: CoercedInt = Field(6, description="Number of bands", ge=1, le=16)
+        mirror: bool = Field(False, description="Mirror the effect")
+        flip_gradient: bool = Field(False, description="Flip Gradient")
+        flip_horizontal: bool = Field(False, description="Flip horizontally")
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
@@ -39,9 +26,9 @@ class BandsMatrixAudioEffect(AudioReactiveEffect, GradientEffect):
     def config_updated(self, config):
         # Create the filters used for the effect
         self.bkg_color = np.array((0, 0, 0), dtype=float)
-        self.flip_gradient = config["flip_gradient"]
-        self.flip_horizontal = config["flip_horizontal"]
-        self.band_count = config["band_count"]
+        self.flip_gradient = self.config.flip_gradient
+        self.flip_horizontal = self.config.flip_horizontal
+        self.band_count = self.config.band_count
 
     def audio_data_updated(self, data):
         # Grab the filtered melbank

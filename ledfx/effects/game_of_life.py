@@ -2,12 +2,14 @@ import logging
 import random
 from collections import deque
 from enum import Enum
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 
@@ -81,40 +83,34 @@ class GameOfLifeVisualiser(Twod):
         dtype=np.uint8,
     )
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "health_checks",
-                description="Check for and correct common unhealthy states",
-                default=HealthOptions.ALL.value,
-            ): vol.In([option.value for option in HealthOptions]),
-            vol.Optional(
-                "base_game_speed",
-                description="Base number of steps per second to run",
-                default=30,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
-            vol.Optional(
-                "health_check_interval",
-                description="Number of seconds between health checks",
-                default=5,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=30)),
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for life generation impulse",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "beat_inject",
-                description="Generate entities on beat",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "impulse_decay",
-                description="Decay filter applied to the life generation impulse",
-                default=0.05,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.1)),
-        }
-    )
+    class Config(Twod.Config):
+        health_checks: Annotated[
+            str, OneOf([option.value for option in HealthOptions])
+        ] = Field(
+            HealthOptions.ALL.value,
+            description="Check for and correct common unhealthy states",
+        )
+        base_game_speed: CoercedInt = Field(
+            30, description="Base number of steps per second to run", ge=1, le=60
+        )
+        health_check_interval: CoercedInt = Field(
+            5, description="Number of seconds between health checks", ge=1, le=30
+        )
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)",
+            description="Frequency range for life generation impulse",
+        )
+        beat_inject: bool = Field(True, description="Generate entities on beat")
+        impulse_decay: CoercedFloat = Field(
+            0.05,
+            description="Decay filter applied to the life generation impulse",
+            ge=0.01,
+            le=0.1,
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -125,18 +121,18 @@ class GameOfLifeVisualiser(Twod):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.inject = config["beat_inject"]
+        self.inject = self.config.beat_inject
         self.health_check_options = self.HEALTH_CHECK_OPTIONS_VALUES[
-            config["health_checks"]
+            self.config.health_checks
         ]
-        self.base_game_speed = config["base_game_speed"]
-        self.health_check_interval = config["health_check_interval"]
+        self.base_game_speed = self.config.base_game_speed
+        self.health_check_interval = self.config.health_check_interval
         if any(self.health_check_options.values()):
             self.check_health = True
         else:
             self.check_health = False
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.decay = config["impulse_decay"]
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.decay = self.config.impulse_decay
         self.impulse_filter = self.create_filter(
             alpha_decay=self.decay, alpha_rise=0.99
         )

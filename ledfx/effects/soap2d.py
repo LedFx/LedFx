@@ -1,10 +1,13 @@
 import logging
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 from pyfastnoiselite import pyfastnoiselite as fnl
 
+from ledfx.configuration.fields import CoercedFloat, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -24,28 +27,26 @@ class Soap2D(Twod, GradientEffect):
         "test",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "density", description="Smear amplitude [0..1]", default=0.5
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "speed",
-                description="Motion speed (time-invariant) [0..1]",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "intensity",
-                description="Audio injection to speed [0..2] 0 = free run",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the audio impulse",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        density: CoercedFloat = Field(
+            0.5, description="Smear amplitude [0..1]", ge=0.0, le=1.0
+        )
+        speed: CoercedFloat = Field(
+            0.5, description="Motion speed (time-invariant) [0..1]", ge=0.0, le=1.0
+        )
+        intensity: CoercedFloat = Field(
+            1.0,
+            description="Audio injection to speed [0..2] 0 = free run",
+            ge=0.0,
+            le=2.0,
+        )
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the audio impulse"
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -75,10 +76,10 @@ class Soap2D(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         self.smooth = 0.5  # removed slider, not worth it
-        self.density = self._config["density"]
-        self.speed = self._config["speed"]
-        self.intensity = self._config["intensity"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
+        self.density = self.config.density
+        self.speed = self.config.speed
+        self.intensity = self.config.intensity
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
 
     # ---------- lifecycle ----------
 

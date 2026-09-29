@@ -1,10 +1,12 @@
 import logging
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image, ImageOps
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 
 _LOGGER = logging.getLogger(__name__)
@@ -95,50 +97,39 @@ class Blender(AudioReactiveEffect):
         "blur",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "mask_stretch",
-                description="How to stretch the mask source pixles to the effect pixels",
-                default="2d full",
-            ): vol.In(list(STRETCH_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "background_stretch",
-                description="How to stretch the background source pixles to the effect pixels",
-                default="2d full",
-            ): vol.In(list(STRETCH_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "foreground_stretch",
-                description="How to stretch the foreground source pixles to the effect pixels",
-                default="2d full",
-            ): vol.In(list(STRETCH_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "mask",
-                description="The virtual from which to source the mask",
-                default="",
-            ): str,
-            vol.Optional(
-                "foreground",
-                description="The virtual from which to source the foreground",
-                default="",
-            ): str,
-            vol.Optional(
-                "background",
-                description="The virtual from which to source the background",
-                default="",
-            ): str,
-            vol.Optional(
-                "invert_mask",
-                description="Switch Foreground and Background",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "mask_cutoff",
-                description="1 default = luminance as alpha, anything below 1 is mask cutoff",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        mask_stretch: Annotated[str, OneOf(list(STRETCH_FUNCS_MAPPING.keys()))] = Field(
+            "2d full",
+            description="How to stretch the mask source pixles to the effect pixels",
+        )
+        background_stretch: Annotated[
+            str, OneOf(list(STRETCH_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "2d full",
+            description="How to stretch the background source pixles to the effect pixels",
+        )
+        foreground_stretch: Annotated[
+            str, OneOf(list(STRETCH_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "2d full",
+            description="How to stretch the foreground source pixles to the effect pixels",
+        )
+        mask: str = Field("", description="The virtual from which to source the mask")
+        foreground: str = Field(
+            "", description="The virtual from which to source the foreground"
+        )
+        background: str = Field(
+            "", description="The virtual from which to source the background"
+        )
+        invert_mask: bool = Field(False, description="Switch Foreground and Background")
+        mask_cutoff: CoercedFloat = Field(
+            1.0,
+            description="1 default = luminance as alpha, anything below 1 is mask cutoff",
+            ge=0.01,
+            le=1.0,
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         # TODO: refactor to shape tuples instead of rows and columns
@@ -149,18 +140,18 @@ class Blender(AudioReactiveEffect):
     def config_updated(self, config):
         # TODO: Ensure virtual names are mangled the same as during virtual creation,
         # for now rely on exactness from user or front end
-        self.mask = self._config["mask"]
-        self.foreground = self._config["foreground"]
-        self.background = self._config["background"]
-        self.invert_mask = self._config["invert_mask"]
-        self.mask_cutoff = self._config["mask_cutoff"]
+        self.mask = self.config.mask
+        self.foreground = self.config.foreground
+        self.background = self.config.background
+        self.invert_mask = self.config.invert_mask
+        self.mask_cutoff = self.config.mask_cutoff
 
-        self.mask_stretch_func = STRETCH_FUNCS_MAPPING[self._config["mask_stretch"]]
+        self.mask_stretch_func = STRETCH_FUNCS_MAPPING[self.config.mask_stretch]
         self.foreground_stretch_func = STRETCH_FUNCS_MAPPING[
-            self._config["foreground_stretch"]
+            self.config.foreground_stretch
         ]
         self.background_stretch_func = STRETCH_FUNCS_MAPPING[
-            self._config["background_stretch"]
+            self.config.background_stretch
         ]
 
     def audio_data_updated(self, data):

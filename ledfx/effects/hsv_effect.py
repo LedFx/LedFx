@@ -1,8 +1,9 @@
 import time
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 from ledfx.effects.gradient import GradientEffect
 
@@ -29,15 +30,12 @@ plt.plot(_triangle)
 
 @Effect.no_registration
 class HSVEffect(GradientEffect):
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "fix_hues",
-                description="Use perceptually even hue distribution",
-                default=True,
-            ): bool
-        }
-    )
+    class Config(GradientEffect.Config):
+        fix_hues: bool = Field(
+            True, description="Use perceptually even hue distribution"
+        )
+
+    config = TypedConfig(Config)
 
     _start_time = time.time_ns()
     # 65.536 s expressed in ns
@@ -74,7 +72,7 @@ class HSVEffect(GradientEffect):
         s = self.hsv_array[:, 1]
         v = self.hsv_array[:, 2]
 
-        if self._config["fix_hues"]:
+        if self.config.fix_hues:
             # fix_hue_fast modifies h in place
             self.fix_hue_fast(h)
 

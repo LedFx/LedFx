@@ -1,9 +1,11 @@
 import logging
 
 import mss
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.twod import Twod
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,35 +21,18 @@ class Clone(Twod):
         "background_mode",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "screen",
-                description="Source screen for grab",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=4)),
-            vol.Optional(
-                "down",
-                description="pixels down offset of grab",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=1080)),
-            vol.Optional(
-                "across",
-                description="pixels across offset of grab",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=1920)),
-            vol.Optional(
-                "width",
-                description="width of grab",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1920)),
-            vol.Optional(
-                "height",
-                description="height of grab",
-                default=128,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=1080)),
-        }
-    )
+    class Config(Twod.Config):
+        screen: CoercedInt = Field(0, description="Source screen for grab", ge=0, le=4)
+        down: CoercedInt = Field(
+            0, description="pixels down offset of grab", ge=0, le=1080
+        )
+        across: CoercedInt = Field(
+            0, description="pixels across offset of grab", ge=0, le=1920
+        )
+        width: CoercedInt = Field(128, description="width of grab", ge=1, le=1920)
+        height: CoercedInt = Field(128, description="height of grab", ge=1, le=1080)
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -57,11 +42,11 @@ class Clone(Twod):
     def config_updated(self, config):
         super().config_updated(config)
 
-        self.screen = self._config["screen"]
-        self.x = self._config["down"]
-        self.y = self._config["across"]
-        self.width = self._config["width"]
-        self.height = self._config["height"]
+        self.screen = self.config.screen
+        self.x = self.config.down
+        self.y = self.config.across
+        self.width = self.config.width
+        self.height = self.config.height
         self.grab = None
         self.sct = None
         self.fails = 0

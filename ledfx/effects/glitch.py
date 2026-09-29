@@ -1,8 +1,10 @@
 import time
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -11,25 +13,18 @@ class Glitch(AudioReactiveEffect, HSVEffect):
     NAME = "Glitch"
     CATEGORY = "Atmospheric"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=10.0)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.2,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-            vol.Optional(
-                "saturation_threshold",
-                description="Ensure the saturation is above this value",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(
+            0.5, description="Effect Speed modifier", ge=0.00001, le=10.0
+        )
+        reactivity: CoercedFloat = Field(
+            0.2, description="Audio Reactive modifier", ge=0.00001, le=1.0
+        )
+        saturation_threshold: CoercedFloat = Field(
+            1, description="Ensure the saturation is above this value", ge=0.0, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.i = np.arange(pixel_count, dtype=np.float64)
@@ -38,7 +33,7 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         np.subtract(self.i, pixel_count / 2, out=self.i)
         np.divide(self.i, pixel_count, out=self.i)
 
-        self.timestep = 0
+        self.timestep: float = 0
         self.last_time = time.time_ns()
         self.dt = 0
 
@@ -52,16 +47,16 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         self.dt = time.time_ns() - self.last_time
         self.timestep += self.dt
         self.timestep += (
-            self._lows_power * self._config["reactivity"] / self._config["speed"] * 1e9
+            self._lows_power * self.config.reactivity / self.config.speed * 1e9
         )
         self.last_time = time.time_ns()
 
-        t1 = self.time(self._config["speed"] * 0.5, timestep=self.timestep) * np.pi * 2
-        t2 = self.time(self._config["speed"] * 0.5, timestep=self.timestep)
-        t3 = self.time(self._config["speed"] * 2.5, timestep=self.timestep)
-        t4 = self.time(self._config["speed"] * 1.0, timestep=self.timestep) * np.pi * 2
-        t5 = self.time(self._config["speed"] * 0.25, timestep=self.timestep)
-        t6 = self.time(self._config["speed"] * 10, timestep=self.timestep)
+        t1 = self.time(self.config.speed * 0.5, timestep=self.timestep) * np.pi * 2
+        t2 = self.time(self.config.speed * 0.5, timestep=self.timestep)
+        t3 = self.time(self.config.speed * 2.5, timestep=self.timestep)
+        t4 = self.time(self.config.speed * 1.0, timestep=self.timestep) * np.pi * 2
+        t5 = self.time(self.config.speed * 0.25, timestep=self.timestep)
+        t6 = self.time(self.config.speed * 10, timestep=self.timestep)
 
         h = np.copy(self.i)
         s1 = np.copy(self.i2)
@@ -85,9 +80,7 @@ class Glitch(AudioReactiveEffect, HSVEffect):
         self.array_triangle(s1)
         np.subtract(1, s1, out=s1)
         # np.clip is slower than array slicing on large arrays
-        s1[s1 < self._config["saturation_threshold"]] = self._config[
-            "saturation_threshold"
-        ]
+        s1[s1 < self.config.saturation_threshold] = self.config.saturation_threshold
         s1[s1 > 1] = 1
         self.hsv_array[:, 0] = h
         self.hsv_array[:, 1] = s1

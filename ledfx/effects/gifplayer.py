@@ -1,9 +1,11 @@
 import logging
 import os
 
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
@@ -25,31 +27,22 @@ class GifPlayer(Twod, GifBase):
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["blur", "resize_method"]
     DEFAULT_GIF_PATH = f"{os.path.join(LEDFX_ASSETS_PATH, 'animated.gif')}"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "image_location",
-                description="Load GIF from URL/local file",
-                default="",
-            ): str,
-            vol.Optional(
-                "bounce",
-                description="Bounce the GIF instead of looping",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "gif_fps", description="How fast to play the gif", default=10
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=60)),
-        }
-    )
+    class Config(Twod.Config, GifBase.Config):
+        image_location: str = Field("", description="Load GIF from URL/local file")
+        bounce: bool = Field(False, description="Bounce the GIF instead of looping")
+        gif_fps: CoercedInt = Field(
+            10, description="How fast to play the gif", ge=1, le=60
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.gif_fps = self._config["gif_fps"]
-        self.bounce = self._config["bounce"]
+        self.gif_fps = self.config.gif_fps
+        self.bounce = self.config.bounce
         self.frames = []
         self.current_frame = 0
         self.init = True
@@ -61,7 +54,7 @@ class GifPlayer(Twod, GifBase):
     def do_once(self):
         super().do_once()
 
-        gif_path = self._config["image_location"]
+        gif_path = self.config.image_location
         config_dir = self._ledfx.config_dir
         # If for some unknown reason the url_path is blank (someone saved a preset with no string)/
         if gif_path == "":

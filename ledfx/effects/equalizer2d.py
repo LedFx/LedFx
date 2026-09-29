@@ -1,10 +1,13 @@
 import logging
+from typing import Annotated, Literal
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image, ImageDraw
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -33,80 +36,45 @@ class Equalizer2d(Twod, GradientEffect):
         "filtered",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "peak_percent",
-                description="Size of the tracer bar that follows a filtered value",
-                default=1.0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
-            vol.Optional(
-                "peak_decay",
-                description="Decay filter applied to the peak value",
-                default=0.03,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.1)),
-            vol.Optional(
-                "peak_marks",
-                description="Turn on white peak markers that follow a freq value filtered with decay",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "peak_color",
-                description="Peak mark color",
-                default="#FFFFFF",
-            ): validate_color,
-            vol.Optional(
-                "center",
-                description="Center the equalizer bar",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "max_vs_mean",
-                description="Use max or mean value for bar size",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "ring",
-                description="Why be so square?",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "spin",
-                description="Weeeeeeeeeee",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "bands",
-                description="Number of freq bands",
-                default=16,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=64)),
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for spin impulse",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "spin_multiplier",
-                description="Spin impulse multiplier",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=5)),
-            vol.Optional(
-                "spin_decay",
-                description="Decay filter applied to the spin impulse",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "power_gradient",
-                description="Color bars by power level: various algorithms",
-                default="Off",
-            ): vol.In(["Off", "Solid", "Progressive", "Stretch"]),
-            vol.Optional(
-                "filtered",
-                description="Enable default melbank pipeline filtering",
-                default=True,
-            ): bool,
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        peak_percent: CoercedInt = Field(
+            1,
+            description="Size of the tracer bar that follows a filtered value",
+            ge=0,
+            le=5,
+        )
+        peak_decay: CoercedFloat = Field(
+            0.03, description="Decay filter applied to the peak value", ge=0.01, le=0.1
+        )
+        peak_marks: bool = Field(
+            False,
+            description="Turn on white peak markers that follow a freq value filtered with decay",
+        )
+        peak_color: Color = Field("#FFFFFF", description="Peak mark color")
+        center: bool = Field(False, description="Center the equalizer bar")
+        max_vs_mean: bool = Field(
+            False, description="Use max or mean value for bar size"
+        )
+        ring: bool = Field(False, description="Why be so square?")
+        spin: bool = Field(False, description="Weeeeeeeeeee")
+        bands: CoercedInt = Field(16, description="Number of freq bands", ge=1, le=64)
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field("Lows (beat+bass)", description="Frequency range for spin impulse")
+        spin_multiplier: CoercedFloat = Field(
+            1.0, description="Spin impulse multiplier", ge=0, le=5
+        )
+        spin_decay: CoercedFloat = Field(
+            0.1, description="Decay filter applied to the spin impulse", ge=0.01, le=0.3
+        )
+        power_gradient: Literal["Off", "Solid", "Progressive", "Stretch"] = Field(
+            "Off", description="Color bars by power level: various algorithms"
+        )
+        filtered: bool = Field(
+            True, description="Enable default melbank pipeline filtering"
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -117,23 +85,23 @@ class Equalizer2d(Twod, GradientEffect):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.bands = self._config["bands"]
-        self.center = self._config["center"]
-        self.grad_roll = self._config["gradient_roll"]
-        self.max = self._config["max_vs_mean"]
-        self.peak = self._config["peak_marks"]
-        self.peak_per = self._config["peak_percent"]
-        self.peak_decay = self._config["peak_decay"]
-        self.ring = self._config["ring"]
-        self.spin = self._config["spin"]
-        self.filtered = self._config["filtered"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.power_multiplier = self._config["spin_multiplier"]
+        self.bands = self.config.bands
+        self.center = self.config.center
+        self.grad_roll = self.config.gradient_roll
+        self.max = self.config.max_vs_mean
+        self.peak = self.config.peak_marks
+        self.peak_per = self.config.peak_percent
+        self.peak_decay = self.config.peak_decay
+        self.ring = self.config.ring
+        self.spin = self.config.spin
+        self.filtered = self.config.filtered
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.power_multiplier = self.config.spin_multiplier
         self.impulse_filter = self.create_filter(
-            alpha_decay=self._config["spin_decay"], alpha_rise=0.99
+            alpha_decay=self.config.spin_decay, alpha_rise=0.99
         )
-        self.peak_color = parse_color(self._config["peak_color"])
-        self.power_gradient = self._config["power_gradient"]
+        self.peak_color = parse_color(self.config.peak_color)
+        self.power_gradient = self.config.power_gradient
 
     def calc_ring_segments(self, rotation):
         # we want coordinates for self.bands around an oval defined by self.r_width and self.r_height

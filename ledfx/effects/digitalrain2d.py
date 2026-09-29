@@ -2,9 +2,10 @@ import logging
 import random
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import validate_gradient
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Gradient
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
@@ -114,55 +115,46 @@ class DigitalRain2d(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + ["gradient_roll"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["tail_segments", "impulse_decay"]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "gradient",
-                description="Color gradient to display",
-                default="linear-gradient(90deg, rgb(0, 199, 140) 0%, rgb(0, 255, 50) 100%)",
-            ): validate_gradient,
-            vol.Optional(
-                "count",
-                description="Number of code lines in the matrix as a multiplier of matrix pixel width",
-                default=1.9,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=4.0)),
-            vol.Optional(
-                "add_speed",
-                description="Number of code lines to add per second",
-                default=30.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=30.0)),
-            vol.Optional(
-                "width",
-                description="Width of code lines as % of matrix",
-                default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=30)),
-            vol.Optional(
-                "run_seconds",
-                description="Minimum number of seconds for a code line to run from top to bottom",
-                default=2.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=1, max=10.0)),
-            vol.Optional(
-                "tail",
-                description="Code line tail length as a % of the matrix",
-                default=67,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
-            vol.Optional(
-                "tail_segments",
-                description="Number of tail segments",
-                default=10,
-            ): vol.All(vol.Coerce(int), vol.Range(min=2, max=30)),
-            vol.Optional(
-                "impulse_decay",
-                description="Decay filter applied to the impulse for development",
-                default=0.01,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "multiplier",
-                description="audio injection multiplier, 0 is none",
-                default=10,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        gradient: Gradient = Field(
+            "linear-gradient(90deg, rgb(0, 199, 140) 0%, rgb(0, 255, 50) 100%)",
+            description="Color gradient to display",
+        )
+        count: CoercedFloat = Field(
+            1.9,
+            description="Number of code lines in the matrix as a multiplier of matrix pixel width",
+            ge=0.01,
+            le=4.0,
+        )
+        add_speed: CoercedFloat = Field(
+            30.0, description="Number of code lines to add per second", ge=0.1, le=30.0
+        )
+        width: CoercedInt = Field(
+            1, description="Width of code lines as % of matrix", ge=1, le=30
+        )
+        run_seconds: CoercedFloat = Field(
+            2.0,
+            description="Minimum number of seconds for a code line to run from top to bottom",
+            ge=1,
+            le=10.0,
+        )
+        tail: CoercedInt = Field(
+            67, description="Code line tail length as a % of the matrix", ge=1, le=100
+        )
+        tail_segments: CoercedInt = Field(
+            10, description="Number of tail segments", ge=2, le=30
+        )
+        impulse_decay: CoercedFloat = Field(
+            0.01,
+            description="Decay filter applied to the impulse for development",
+            ge=0.01,
+            le=0.3,
+        )
+        multiplier: CoercedFloat = Field(
+            10, description="audio injection multiplier, 0 is none", ge=0.0, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -174,23 +166,23 @@ class DigitalRain2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.add_speed = self._config["add_speed"]
+        self.add_speed = self.config.add_speed
         self.last_added = 0.0
-        self.width = self._config["width"]
-        self.run_seconds = self._config["run_seconds"]
-        self.tail = self._config["tail"] / 100.0
-        self.multiplier = self._config["multiplier"]
+        self.width = self.config.width
+        self.run_seconds = self.config.run_seconds
+        self.tail = self.config.tail / 100.0
+        self.multiplier = self.config.multiplier
 
         self.lows_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
 
         self.mids_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
 
         self.high_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
 
         self.lows_impulse = 0
@@ -199,16 +191,16 @@ class DigitalRain2d(Twod, GradientEffect):
 
     def do_once(self):
         super().do_once()
-        self.count = max(1, int(self._config["count"] * self.r_width))
+        self.count = max(1, int(self.config.count * self.r_width))
         # Pre-calculate fade multipliers for line tail segments based on config
-        num_segments = max(2, self._config["tail_segments"])
+        num_segments = max(2, self.config.tail_segments)
         self.fade_multipliers = np.array(
             [1.0 - i / (num_segments - 1) for i in range(num_segments)]
         )
 
         # Pre-calculate line geometry based on current dimensions
-        self.line_width = max(1, int(self.r_width * (self._config["width"] / 100.0)))
-        tail_length = int(self.r_height * (self._config["tail"] / 100.0))
+        self.line_width = max(1, int(self.r_width * (self.config.width / 100.0)))
+        tail_length = int(self.r_height * (self.config.tail / 100.0))
         self.tail_pixels = tail_length - self.line_width
 
         # Calculate segment size for tail rendering (guard against degenerate geometry)

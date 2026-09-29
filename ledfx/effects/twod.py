@@ -1,10 +1,12 @@
 import logging
-from typing import ClassVar
+from typing import ClassVar, Literal
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image, ImageDraw, ImageEnhance
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
 
@@ -23,42 +25,19 @@ class Twod(AudioReactiveEffect):
         "background_mode",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "flip_horizontal",
-                description="flip the image horizontally",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "flip_vertical",
-                description="flip the image vertically",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "rotate",
-                description="90 Degree rotations",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3)),
-            vol.Optional(
-                "test",
-                description="ignore audio input",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "dump",
-                description="dump image",
-                default=False,
-            ): bool,
-            vol.Optional("background_mode", default="additive"): vol.In(
-                ["additive", "overwrite"]
-            ),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        flip_horizontal: bool = Field(False, description="flip the image horizontally")
+        flip_vertical: bool = Field(False, description="flip the image vertically")
+        rotate: CoercedInt = Field(0, description="90 Degree rotations", ge=0, le=3)
+        test: bool = Field(False, description="ignore audio input")
+        dump: bool = Field(False, description="dump image")
+        background_mode: Literal["additive", "overwrite"] = Field("additive")
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.last_dump = self._config["dump"]
+        self.last_dump = self.config.dump
 
     def on_activate(self, pixel_count):
         self.current_pixel = 0
@@ -69,8 +48,8 @@ class Twod(AudioReactiveEffect):
         self.init = True
 
     def config_updated(self, config):
-        self.test = self._config["test"]
-        self.background_mode = self._config["background_mode"]
+        self.test = self.config.test
+        self.background_mode = self.config.background_mode
 
         # rotation and mirror has to be dealt with in the do_once so that the virtual is known
         self.init = True
@@ -97,11 +76,12 @@ class Twod(AudioReactiveEffect):
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
         # composite the virtual rotate with the effect level rotate
-        self.rotate = (self._config["rotate"] + self._virtual._config["rotate"]) % 4
+        virtual_rotate = self._virtual._config["rotate"] if self._virtual else 0
+        self.rotate = (self.config.rotate + virtual_rotate) % 4
 
         self.rotate_t = 0
-        self.flip2d = self._config["flip_vertical"]
-        self.mirror2d = self._config["flip_horizontal"]
+        self.flip2d = self.config.flip_vertical
+        self.mirror2d = self.config.flip_horizontal
 
         if self.rotate == 1:
             self.rotate_t = Image.Transpose.ROTATE_90
@@ -155,8 +135,8 @@ class Twod(AudioReactiveEffect):
         self.pixels[:copy_length, :] = rgb_array[:copy_length, :]
 
     def try_dump(self):
-        if self.last_dump != self._config["dump"]:
-            self.last_dump = self._config["dump"]
+        if self.last_dump != self.config.dump:
+            self.last_dump = self.config.dump
             # show image on screen
             self.matrix.show()
             _LOGGER.info(
