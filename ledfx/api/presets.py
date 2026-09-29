@@ -43,7 +43,7 @@ class PresetsEndpoint(RestEndpoint):
 
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             return await self.invalid_effect_id(effect_id)
 
         default = generate_defaults(ledfx_presets, self._ledfx.effects, effect_id)
@@ -107,7 +107,7 @@ class PresetsEndpoint(RestEndpoint):
 
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             return await self.invalid_effect_id(effect_id)
 
         presets = preset_category(self._ledfx.config.user_presets, category)
@@ -153,7 +153,7 @@ class PresetsEndpoint(RestEndpoint):
 
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             return await self.invalid_effect_id(effect_id)
 
         presets = preset_category(self._ledfx.config.user_presets, category)
