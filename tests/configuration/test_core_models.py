@@ -4,7 +4,6 @@ from pydantic import ValidationError
 from ledfx.configuration.lenient import Quarantine, lenient_validate
 from ledfx.configuration.models import (
     RESTART_FIELDS,
-    WRITABLE_CORE_FIELDS,
     Jitter,
     LedFxConfig,
     MelbanksConfig,
@@ -51,10 +50,7 @@ def test_playlist_jitter_bounds() -> None:
         )
 
 
-def test_writable_and_restart_fields_match_legacy_lists() -> None:
-    from ledfx.api.utils import PERMITTED_KEYS
-
-    assert WRITABLE_CORE_FIELDS == set(PERMITTED_KEYS["core"])
+def test_restart_fields_match_legacy_list() -> None:
     assert RESTART_FIELDS == {
         "host",
         "port",

@@ -17,7 +17,6 @@ from ledfx.configuration.fields import (
     OneOf,
     coerce,
     fps_validator,
-    register_enum_source,
 )
 from ledfx.configuration.models import LedFxModel, validate_dict
 from ledfx.utils import AVAILABLE_FPS
@@ -95,19 +94,15 @@ def test_constraints_emit_standard_keywords() -> None:
 
 
 @pytest.fixture
-def audio_source():
+def audio_source(monkeypatch: pytest.MonkeyPatch) -> None:
     from ledfx.configuration import fields
+    from ledfx.effects import audio  # noqa: F401 - registers the real source first
 
-    previous = fields._ENUM_SOURCES.get("audio_devices")
-    register_enum_source(
+    monkeypatch.setitem(
+        fields._ENUM_SOURCES,
         "audio_devices",
         EnumSource(options=lambda: {0: "Default"}, validate=lambda v: 0),
     )
-    yield
-    if previous is None:
-        fields._ENUM_SOURCES.pop("audio_devices", None)
-    else:
-        register_enum_source("audio_devices", previous)
 
 
 def test_enum_source_hook_runs_only_at_runtime(audio_source: None) -> None:
@@ -130,3 +125,30 @@ def test_unset_optionals_are_dropped_from_every_dump() -> None:
 
 def test_titles_use_generate_title() -> None:
     assert Sample.model_json_schema()["properties"]["count"]["title"] == "Count"
+
+
+def test_runtime_audio_hook_sees_the_coerced_int(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from ledfx.configuration.models import AudioInputConfig
+    from ledfx.effects.audio import AudioInputSource
+
+    devices = {1: "One", 4: "Four"}
+    monkeypatch.setattr(
+        AudioInputSource, "input_devices", staticmethod(lambda: devices)
+    )
+    monkeypatch.setattr(
+        AudioInputSource, "default_device_index", staticmethod(lambda: 1)
+    )
+
+    def device(value: object, runtime: bool) -> object:
+        context = RUNTIME_CONTEXT if runtime else None
+        config = AudioInputConfig.model_validate(
+            {"audio_device": value}, context=context
+        )
+        return config.audio_device
+
+    assert device("4", runtime=True) == 4  # was the default: checked before int()
+    # The rest is as before: load keeps the value, runtime falls back to default.
+    results = [device(v, rt) for v in (None, 4, 99, True) for rt in (False, True)]
+    assert results == [None, 1, 4, 4, 99, 1, 1, 1]

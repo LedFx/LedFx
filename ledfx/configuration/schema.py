@@ -8,8 +8,8 @@ from pydantic.json_schema import JsonSchemaValue
 
 from ledfx.configuration.fields import (
     BACKEND_ONLY_KEYS,
-    X_ENUM_SOURCE,
     X_LEGACY,
+    X_LEGACY_SOURCE,
     X_OMIT_DEFAULT,
     X_REQUIRED,
     get_enum_source,
@@ -24,7 +24,7 @@ DRAFT = "https://json-schema.org/draft/2020-12/schema"
 
 def _source_values(
     name: str,
-) -> tuple[list[object] | dict[object, str], list[str] | None]:
+) -> tuple[Sequence[object] | dict[object, str], list[str] | None]:
     source = get_enum_source(name)
     if source is None:
         _LOGGER.warning("Enum source %r is not registered", name)
@@ -32,52 +32,22 @@ def _source_values(
     return source.options(), (source.names() if source.names else None)
 
 
-def _resolve(node: object, resolve: bool) -> object:
+def _strip(node: object) -> object:
     if isinstance(node, dict):
-        if not resolve:
-            # Build-time export: keep the source name, never bake in this machine's values.
-            return {
-                k: _resolve(v, resolve)
-                for k, v in node.items()
-                if k == X_ENUM_SOURCE or k not in BACKEND_ONLY_KEYS
-            }
-        out = {
-            k: _resolve(v, resolve)
-            for k, v in node.items()
-            if k not in BACKEND_ONLY_KEYS
-        }
-        if X_ENUM_SOURCE in node:
-            options, names = _source_values(str(node[X_ENUM_SOURCE]))
-            # An empty enum can't be satisfied: keep only the source name then.
-            if options:
-                # Nullable field: constrain only the non-null branch so null stays valid.
-                target = next(
-                    (
-                        _obj(b)
-                        for b in _items(out.get("anyOf"))
-                        if _obj(b).get("type") != "null"
-                    ),
-                    out,
-                )
-                target["enum"] = list(options)
-                if isinstance(options, dict):
-                    out["x-ledfx-enum-names"] = list(options.values())
-                elif names is not None:
-                    out["x-ledfx-enum-names"] = names
-        return out
+        return {k: _strip(v) for k, v in node.items() if k not in BACKEND_ONLY_KEYS}
     if isinstance(node, list):
-        return [_resolve(v, resolve) for v in node]
+        return [_strip(v) for v in node]
     return node
 
 
-def export_schema(model: type[BaseModel], *, resolve: bool = True) -> JsonSchemaValue:
-    """Draft 2020-12 schema; x-ledfx-* UI hints kept.
+def export_schema(model: type[BaseModel]) -> JsonSchemaValue:
+    """model.model_json_schema() as draft 2020-12, minus the legacy-only markers.
 
-    resolve=True (the HTTP API) fills runtime enum sources into `enum`.
-    resolve=False (--dump-schemas, for TS generation) keeps `x-ledfx-enum-source`
-    instead, so build output never depends on the build machine's hardware.
+    Shape only: no runtime lookups, so the dump and the live response match.
+    Fields holding a live instance carry x-ledfx-enum-source, and the frontend
+    reads their options from that instance's endpoint.
     """
-    return {"$schema": DRAFT, **_obj(_resolve(model.model_json_schema(), resolve))}
+    return {"$schema": DRAFT, **_obj(_strip(model.model_json_schema()))}
 
 
 # ---- legacy (pre-overhaul convertToJsonSchema) shape --------------------------
@@ -122,8 +92,9 @@ def _legacy_value(
 ) -> dict[str, object]:
     prop = _deref(prop, defs)
     out: dict[str, object] = {}
-    if X_ENUM_SOURCE in prop:
-        out.update(_legacy_source(str(prop[X_ENUM_SOURCE])))
+    source = prop.get(X_LEGACY_SOURCE)
+    if source is not None:
+        out.update(_legacy_source(str(source)))
     elif prop.get("format") in ("color", "gradient"):
         out.update({"type": "color", "gradient": prop["format"] == "gradient"})
     elif "enum" in prop or "const" in prop:

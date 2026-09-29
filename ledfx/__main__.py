@@ -222,7 +222,7 @@ def main():
         from ledfx.api.schemas import build_schemas
 
         with open(args.dump_schemas, "w", encoding="utf-8") as file:
-            json.dump(build_schemas(None, resolve=False), file, indent=2)
+            json.dump(build_schemas(None), file, indent=2)
         return 0
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel, config_dir=args.config)

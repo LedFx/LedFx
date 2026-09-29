@@ -10,6 +10,7 @@ from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 from pydantic import ValidationError
 
+import ledfx.devices.adalight
 import ledfx.devices.dummy
 import ledfx.devices.e131  # noqa: F401 - registers the e131 device
 from ledfx.api import RestEndpoint
@@ -38,7 +39,7 @@ from ledfx.api.virtual_effects_delete import EffectsEndpoint as EffectsDeleteEnd
 from ledfx.api.virtual_presets import VirtualPresetsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.configuration.models import Preset, VirtualEntry
-from ledfx.devices import Device, Devices
+from ledfx.devices import Device, Devices, SerialDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
 from ledfx.playlists import PlaylistManager
@@ -141,6 +142,106 @@ async def test_device_without_name_is_a_validation_error() -> None:
     assert status == 400
     assert [e["loc"] for e in response["errors"]] == [["name"]]
     assert not ledfx.config.devices
+
+
+@pytest.fixture
+def no_serial_ports(monkeypatch: pytest.MonkeyPatch) -> None:
+    import serial.tools.list_ports
+
+    monkeypatch.setattr(serial.tools.list_ports, "comports", list)
+
+
+async def test_creating_a_device_on_an_absent_port_is_a_400(
+    no_serial_ports: None,
+) -> None:
+    ledfx = fake_ledfx()
+    _devices(ledfx)
+    config = {"name": "Strip", "pixel_count": 10, "com_port": "/dev/absent"}
+    body = {"type": "adalight", "config": config}
+    status, response = await _call(DevicesEndpoint(ledfx), "POST", body)
+    assert status == 400
+    assert [e["loc"] for e in response["errors"]] == [["com_port"]]
+
+
+def _serial_device(ledfx: MagicMock, com_port: str) -> SerialDevice:
+    from ledfx.utils import RegistryLoader
+
+    config = {"name": "Strip", "pixel_count": 10, "com_port": com_port}
+    device = RegistryLoader(ledfx, Device, "ledfx.devices").create(
+        type="adalight", id="strip", config=config, ledfx=ledfx
+    )  # a load: the stored port is not checked
+    assert isinstance(device, SerialDevice)
+    ledfx.devices.get = MagicMock(return_value=device)
+    return device
+
+
+@pytest.mark.parametrize("full_body", [False, True], ids=["partial", "full"])
+async def test_moving_a_device_to_an_absent_port_is_a_400(
+    no_serial_ports: None, full_body: bool
+) -> None:
+    ledfx = fake_ledfx()
+    device = _serial_device(ledfx, "")
+    config = device.config.as_dict() if full_body else {}
+    body = {"config": {**config, "com_port": "/dev/absent"}}
+    status, response = await _call(
+        DeviceEndpoint(ledfx), "PUT", body, device_id="strip"
+    )
+    assert status == 400
+    assert [e["loc"] for e in response["errors"]] == [["com_port"]]
+    assert device.config.com_port == ""
+
+
+async def test_moving_a_device_to_a_present_port_succeeds(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import types
+
+    import serial.tools.list_ports
+
+    ports = [types.SimpleNamespace(device="/dev/ttyUSB0")]
+    monkeypatch.setattr(serial.tools.list_ports, "comports", lambda: ports)
+    ledfx = fake_ledfx()
+    device = _serial_device(ledfx, "")
+    body = {"config": {"com_port": "/dev/ttyUSB0"}}
+    status, _ = await _call(DeviceEndpoint(ledfx), "PUT", body, device_id="strip")
+    assert status == 200
+    assert device.config.com_port == "/dev/ttyUSB0"
+
+
+@pytest.mark.parametrize("full_body", [False, True], ids=["partial", "full"])
+async def test_renaming_a_device_whose_port_is_unplugged_succeeds(
+    no_serial_ports: None, full_body: bool
+) -> None:
+    # Only a com_port the request changes is checked, not the stored one. The
+    # frontend's edit dialog sends the whole stored config with the new name.
+    stored = {"name": "Strip", "pixel_count": 10, "com_port": "/dev/unplugged"}
+    ledfx = fake_ledfx(
+        {"devices": [{"id": "strip", "type": "adalight", "config": stored}]}
+    )
+    device = _serial_device(ledfx, "/dev/unplugged")
+    entry = ledfx.config_store.device_entry("strip")
+    assert entry is not None
+    config = device.config.as_dict() if full_body else {}
+    body = {"config": {**config, "name": "Renamed"}}
+    status, _ = await _call(DeviceEndpoint(ledfx), "PUT", body, device_id="strip")
+    assert status == 200
+    assert device.config.name == "Renamed"
+    assert device.config.com_port == "/dev/unplugged"
+    assert entry.config["name"] == "Renamed"
+    ledfx.config_store.request_save.assert_called()
+
+
+async def test_comports_lists_only_the_ports(monkeypatch: pytest.MonkeyPatch) -> None:
+    import types
+
+    import serial.tools.list_ports
+
+    from ledfx.api.com_ports import InfoEndpoint as ComPortsEndpoint
+
+    ports = [types.SimpleNamespace(device=d) for d in ("/dev/ttyUSB0", "COM3")]
+    monkeypatch.setattr(serial.tools.list_ports, "comports", lambda: ports)
+    status, body = await _call(ComPortsEndpoint(fake_ledfx()), "GET")
+    assert (status, body) == (200, ["/dev/ttyUSB0", "COM3"])  # no "" (none)
 
 
 async def test_integration_config_that_is_not_an_object_is_a_validation_error() -> None:

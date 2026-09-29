@@ -16,7 +16,6 @@ from ledfx.configuration.migrations import (
 from ledfx.configuration.migrations.v2 import strip_envelope
 from ledfx.configuration.models import (
     RESTART_FIELDS,
-    WRITABLE_CORE_FIELDS,
     AudioConfig,
     LedFxConfig,
     MelbanksConfig,
@@ -176,7 +175,7 @@ class ConfigEndpoint(RestEndpoint):
         _check_keys(wled, "wled_preferences")
         _check_keys(melbanks, "melbanks")
         for key in patch:
-            if key not in WRITABLE_CORE_FIELDS and key != "user_presets":
+            if key not in PERMITTED_KEYS["core"] and key != "user_presets":
                 raise KeyError(f"Unknown/forbidden core config key: '{key}'")
 
         candidate = cfg.model_copy(deep=True)

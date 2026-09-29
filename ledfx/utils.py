@@ -19,6 +19,7 @@ import urllib.request
 from abc import ABC
 from collections import deque
 from collections.abc import Callable, MutableMapping
+from contextlib import suppress
 from datetime import UTC
 from functools import lru_cache
 from importlib import metadata
@@ -801,11 +802,6 @@ class BaseRegistry(ABC):
         @Effect.no_registration
     """
 
-    # Keys whose valid choices come from this machine (serial ports). At startup a
-    # stored value that is not available here skips the plugin, as before, instead
-    # of being reset to the default and later persisted.
-    RUNTIME_CHOICE_KEYS: ClassVar[frozenset[str]] = frozenset()
-
     @classmethod
     def config_model(cls) -> "type[PluginConfig]":
         """The pydantic model for this class's config (its declared ``Config``)."""
@@ -994,21 +990,8 @@ class RegistryLoader:
         from ledfx.configuration.lenient import lenient_validate
 
         model = _cls.config_model()
-        try:
+        with suppress(ValidationError):
             return model.model_validate(raw)
-        except ValidationError as err:
-            missing = sorted(
-                {str(e["loc"][0]) for e in err.errors() if e["loc"]}
-                & _cls.RUNTIME_CHOICE_KEYS
-            )
-            if missing:
-                _LOGGER.warning(
-                    "Skipping %s '%s': %s not available on this machine.",
-                    type,
-                    id,
-                    missing,
-                )
-                return None
         path = path or f"{self._cls.__name__.lower()}s.{id}.config"
         repairs = 0
 

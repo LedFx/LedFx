@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 from pydantic import Field
 
-from ledfx.configuration.fields import CoercedFloat, CoercedInt, OneOf, VirtualId
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, FromSource, OneOf
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
@@ -30,7 +30,7 @@ class Radial2d(Twod):
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
     class Config(Twod.Config):
-        source_virtual: VirtualId = Field(
+        source_virtual: Annotated[str, FromSource("virtuals", legacy=True)] = Field(
             "unknown", description="The virtual from which to source the 1d pixels"
         )
         edges: CoercedInt = Field(0, description="Edges count of mapping", ge=0, le=8)

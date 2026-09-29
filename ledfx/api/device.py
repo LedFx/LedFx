@@ -61,7 +61,7 @@ class DeviceEndpoint(RestEndpoint):
         _LOGGER.debug("Updating device %s with config %s", device_id, device_config)
 
         try:
-            device.update_config(device_config)
+            device.update_config(device_config, runtime=True)
         except ValidationError as err:
             return await self.validation_error(err)
         except ValueError as msg:

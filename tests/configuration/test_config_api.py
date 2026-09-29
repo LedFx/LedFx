@@ -45,6 +45,34 @@ async def test_put_readonly_key_is_rejected() -> None:
     assert body["status"] == "failed" and "instance_id" in body["payload"]["reason"]
 
 
+# Core keys PUT /api/config rejects: everything outside PERMITTED_KEYS["core"],
+# except the sections it merges (audio, melbanks, wled_preferences) and
+# user_presets, which it replaces whole.
+@pytest.mark.parametrize(
+    "key",
+    [
+        "devices",
+        "virtuals",
+        "scenes",
+        "playlists",
+        "integrations",
+        "user_colors",
+        "user_gradients",
+        "sendspin_servers",
+        "now_playing",
+        "image_cache",
+        "debug_asyncio",
+        "instance_id",
+    ],
+)
+async def test_put_non_permitted_core_key_is_rejected(key: str) -> None:
+    endpoint, ledfx = _endpoint()
+    response = await endpoint.put(_request("PUT", {key: None}))
+    body = json.loads(response.text or "")
+    assert body["status"] == "failed" and key in body["payload"]["reason"]
+    ledfx.config_store.request_save.assert_not_called()
+
+
 async def test_put_invalid_value_returns_structured_errors_and_changes_nothing() -> (
     None
 ):

@@ -12,7 +12,14 @@ import serial.tools.list_ports
 from pydantic import Field
 from sacn.sending.sender_socket_base import DEFAULT_PORT
 
-from ledfx.configuration.fields import X_REQUIRED, Fps, OneOf
+from ledfx.configuration.fields import (
+    RUNTIME_CONTEXT,
+    X_REQUIRED,
+    EnumSource,
+    Fps,
+    FromSource,
+    register_enum_source,
+)
 from ledfx.configuration.models import DeviceEntry, VirtualEntry
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.events import (
@@ -36,6 +43,7 @@ from ledfx.utils import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+_MISSING = object()  # a key absent from the stored config
 
 
 @BaseRegistry.no_registration
@@ -83,16 +91,27 @@ class Device(BaseRegistry):
         if self._active:
             self.deactivate()
 
-    def update_config(self, config):
+    def update_config(self, config, *, runtime=False):
+        """runtime=True for API writes: also check the live choices (serial ports)
+        this update changes. Unchanged ones are not rechecked, as a port may be
+        unplugged, and the frontend sends the whole stored config back."""
         with self.lock:
             # TODO: Sync locks to ensure everything is thread safe
             # self.lock has been added, but is not used presently outside of
             # artnet
             old_config = self._config
-            if old_config is not None:
-                config = old_config.as_dict() | config
+            stored = (
+                old_config.as_dict() if old_config is not None else dict[str, object]()
+            )
+            changed = frozenset(
+                k for k, v in config.items() if stored.get(k, _MISSING) != v
+            )
+            context = {**RUNTIME_CONTEXT, "fields": changed} if runtime else None
+            config = stored | config
 
-            validated_config = type(self).config_model().model_validate(config)
+            validated_config = (
+                type(self).config_model().model_validate(config, context=context)
+            )
             self._config = validated_config
 
             # Iterate all the base classes and check to see if there is a custom
@@ -602,7 +621,7 @@ class NetworkedDevice(Device):
         self._destination = None
         await self.resolve_address()
 
-    def update_config(self, config):
+    def update_config(self, config, *, runtime=False):
         old_config = self._config
         old_destination = getattr(self, "_destination", None)
         old_ip = getattr(old_config, "ip_address", None)
@@ -610,7 +629,7 @@ class NetworkedDevice(Device):
             # Reactivation during update_config re-resolves the new address.
             self._destination = None
         try:
-            super().update_config(config)
+            super().update_config(config, runtime=runtime)
         except Exception:
             if self._config is old_config:  # rejected; the old address stays live
                 self._destination = old_destination
@@ -691,26 +710,30 @@ class UDPDevice(NetworkedDevice):
         self._sock = None
 
 
-class AvailableCOMPorts:
-    ports = serial.tools.list_ports.comports()
+def available_com_ports() -> list[str]:
+    """No port ("") plus the serial ports present now."""
+    return ["", *(p.device for p in serial.tools.list_ports.comports())]
 
-    available_ports: ClassVar[list[str]] = [""]
 
-    for p in ports:
-        available_ports.append(p.device)
+def _available_com_port(value: object) -> object:
+    if value not in available_com_ports():
+        raise ValueError(f"{value!r} is not an available serial port")
+    return value
+
+
+register_enum_source(
+    "com_ports",
+    EnumSource(options=available_com_ports, validate=_available_com_port),
+)
 
 
 @BaseRegistry.no_registration
 class SerialDevice(Device):
-    RUNTIME_CHOICE_KEYS: ClassVar[frozenset[str]] = frozenset({"com_port"})
-
     class Config(Device.Config):
-        com_port: Annotated[str, OneOf(list(AvailableCOMPorts.available_ports))] = (
-            Field(
-                "",
-                description="COM port for Adalight compatible device",
-                json_schema_extra={X_REQUIRED: True},
-            )
+        com_port: Annotated[str, FromSource("com_ports", legacy=True)] = Field(
+            "",
+            description="COM port for Adalight compatible device",
+            json_schema_extra={X_REQUIRED: True},
         )
         baudrate: int = Field(
             500000,
@@ -892,7 +915,12 @@ class Devices(RegistryLoader):
             device_config.update(wled_config)
 
         # Validate before anything is created, so a bad config changes nothing.
-        device_class.config_model().model_validate(device_config)
+        # A new device (POST /api/devices, mDNS discovery, find_lifx): live choices
+        # such as a serial port must exist now. Nothing is stored yet, so every
+        # key is new; the default com_port "" (no port) always passes.
+        device_class.config_model().model_validate(
+            device_config, context=RUNTIME_CONTEXT
+        )
         device_id = generate_id(device_config["name"])
 
         # Create the device
