@@ -1,9 +1,11 @@
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 
 
@@ -16,63 +18,46 @@ class VuMeterAudioEffect(AudioReactiveEffect):
         "blur",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "peak_decay",
-                description="Decay filter applied to raw volume to track peak, 0 is None",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "color_min",
-                description="Color of min volume cutoff",
-                default="#0000FF",
-            ): validate_color,
-            vol.Optional(
-                "color_max",
-                description="Color of max volume warning",
-                default="#FF0000",
-            ): validate_color,
-            vol.Optional(
-                "color_mid",
-                description="Color of heathy volume range",
-                default="#00FF00",
-            ): validate_color,
-            vol.Optional(
-                "color_peak",
-                description="Color of peak inidicator",
-                default="#FFFFFF",
-            ): validate_color,
-            vol.Optional(
-                "peak_percent",
-                description="% size of peak indicator that follows the filtered volume",
-                default=1.0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
-            vol.Optional(
-                "max_volume",
-                description="Cut off limit for max volume warning",
-                default=0.8,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        peak_decay: CoercedFloat = Field(
+            0.1,
+            description="Decay filter applied to raw volume to track peak, 0 is None",
+            ge=0.01,
+            le=0.3,
+        )
+        color_min: Color = Field("#0000FF", description="Color of min volume cutoff")
+        color_max: Color = Field("#FF0000", description="Color of max volume warning")
+        color_mid: Color = Field("#00FF00", description="Color of heathy volume range")
+        color_peak: Color = Field("#FFFFFF", description="Color of peak inidicator")
+        peak_percent: CoercedInt = Field(
+            1,
+            description="% size of peak indicator that follows the filtered volume",
+            ge=0,
+            le=5,
+        )
+        max_volume: CoercedFloat = Field(
+            0.8, description="Cut off limit for max volume warning", ge=0, le=1
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         pass
 
     def config_updated(self, config):
         self.volume_peak_filter = self.create_filter(
-            alpha_decay=self._config["peak_decay"], alpha_rise=0.99
+            alpha_decay=self.config.peak_decay, alpha_rise=0.99
         )
         self.volume_min_peak_filter = self.create_filter(
-            alpha_decay=self._config["peak_decay"], alpha_rise=0.99
+            alpha_decay=self.config.peak_decay, alpha_rise=0.99
         )
 
-        self.color_peak = parse_color(self._config["color_peak"])
-        self.color_min = parse_color(self._config["color_min"])
-        self.color_max = parse_color(self._config["color_max"])
-        self.color_mid = parse_color(self._config["color_mid"])
-        self.peak_percent = self._config["peak_percent"]
-        self.vol_max = self._config["max_volume"]
+        self.color_peak = parse_color(self.config.color_peak)
+        self.color_min = parse_color(self.config.color_min)
+        self.color_max = parse_color(self.config.color_max)
+        self.color_mid = parse_color(self.config.color_mid)
+        self.peak_percent = self.config.peak_percent
+        self.vol_max = self.config.max_volume
         self.volume = 0
         self.volume_peak = 0
         self.volume_min_peak = 0

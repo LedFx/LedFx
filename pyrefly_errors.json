@@ -9059,13 +9059,6 @@
       "severity": "error"
     },
     {
-      "column": 52,
-      "path": "ledfx/effects/magnitude.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/magnitude.py",
       "name": "missing-override-decorator",
@@ -9119,27 +9112,6 @@
       "path": "ledfx/effects/marching.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Marching.render_hsv` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/marching.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/marching.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/marching.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -9717,34 +9689,6 @@
       "severity": "error"
     },
     {
-      "column": 15,
-      "path": "ledfx/effects/melt.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/melt.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/melt.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/melt.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/melt.py",
       "name": "unsupported-operation",
@@ -9808,41 +9752,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/melt_and_sparkle.py",
       "name": "missing-override-decorator",
@@ -9868,55 +9777,6 @@
       "path": "ledfx/effects/melt_and_sparkle.py",
       "name": "bad-assignment",
       "concise_description": "`float` is not assignable to attribute `timestep` with type `int`",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 42,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/melt_and_sparkle.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10011,45 +9871,10 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 26,
       "path": "ledfx/effects/metro.py",
       "name": "bad-assignment",
       "concise_description": "`int | None` is not assignable to attribute `cores` with type `int`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10074,31 +9899,10 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 17,
       "path": "ledfx/effects/metro.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10113,13 +9917,6 @@
       "path": "ledfx/effects/metro.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/metro.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10179,13 +9976,6 @@
       "severity": "error"
     },
     {
-      "column": 31,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/multiBar.py",
       "name": "missing-override-decorator",
@@ -10193,59 +9983,10 @@
       "severity": "error"
     },
     {
-      "column": 12,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unbound-name",
-      "concise_description": "`x` may be uninitialized",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/multiBar.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/effects/multiBar.py",
-      "name": "unbound-name",
-      "concise_description": "`idx` may be uninitialized",
       "severity": "error"
     },
     {
@@ -10347,48 +10088,6 @@
       "severity": "error"
     },
     {
-      "column": 30,
-      "path": "ledfx/effects/number.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/number.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/number.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 32,
       "path": "ledfx/effects/number.py",
       "name": "implicit-any-parameter",
@@ -10480,20 +10179,6 @@
       "severity": "error"
     },
     {
-      "column": 47,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/number.py",
       "name": "missing-override-decorator",
@@ -10501,24 +10186,10 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/number.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Number.draw` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/effects/number.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10676,20 +10347,6 @@
       "severity": "error"
     },
     {
-      "column": 40,
-      "path": "ledfx/effects/pitchSpectrum.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/pitchSpectrum.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/pitchSpectrum.py",
       "name": "missing-override-decorator",
@@ -10715,13 +10372,6 @@
       "path": "ledfx/effects/pitchSpectrum.py",
       "name": "no-matching-overload",
       "concise_description": "No matching overload found for function `numpy._typing._ufunc._UFunc_Nin2_Nout1.__call__` called with arguments: (ndarray | Unknown | None, Unknown)",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/pitchSpectrum.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10774,38 +10424,10 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/effects/pixels.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/pixels.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/pixels.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `PixelsEffect.effect_loop` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/effects/pixels.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/effects/pixels.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -10820,20 +10442,6 @@
       "path": "ledfx/effects/pixels.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 42,
-      "path": "ledfx/effects/pixels.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/pixels.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11047,27 +10655,6 @@
       "severity": "error"
     },
     {
-      "column": 41,
-      "path": "ledfx/effects/power.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/power.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/power.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/power.py",
       "name": "missing-override-decorator",
@@ -11138,69 +10725,6 @@
       "severity": "error"
     },
     {
-      "column": 22,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/radial.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/radial.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/radial.py",
       "name": "missing-override-decorator",
@@ -11226,13 +10750,6 @@
       "path": "ledfx/effects/radial.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Radial2d.draw` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/effects/radial.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11299,90 +10816,6 @@
       "severity": "error"
     },
     {
-      "column": 15,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/rain.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/rainbow.py",
       "name": "missing-override-decorator",
@@ -11401,13 +10834,6 @@
       "path": "ledfx/effects/rainbow.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `RainbowEffect.effect_loop` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/rainbow.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11460,27 +10886,6 @@
       "severity": "error"
     },
     {
-      "column": 47,
-      "path": "ledfx/effects/random_flash.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/effects/random_flash.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/random_flash.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/random_flash.py",
       "name": "missing-override-decorator",
@@ -11499,13 +10904,6 @@
       "path": "ledfx/effects/random_flash.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `RandomFlashEffect.effect_loop` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/random_flash.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11569,48 +10967,6 @@
       "path": "ledfx/effects/real_strobe.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/real_strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/real_strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/real_strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/effects/real_strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/real_strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "ledfx/effects/real_strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11803,27 +11159,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/scan_and_flare.py",
       "name": "missing-override-decorator",
@@ -11838,73 +11173,10 @@
       "severity": "error"
     },
     {
-      "column": 33,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/scan_and_flare.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `ScanAndFlareAudioEffect.render` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 51,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 51,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 12,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -11926,13 +11198,6 @@
       "path": "ledfx/effects/scan_and_flare.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/scan_and_flare.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12006,52 +11271,10 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 13,
       "path": "ledfx/effects/scan_multi.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `Scan` has no attribute `_p_filter`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12069,45 +11292,10 @@
       "severity": "error"
     },
     {
-      "column": 12,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/effects/scan_multi.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `Scan` has no attribute `_p_filter`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12118,20 +11306,6 @@
       "severity": "error"
     },
     {
-      "column": 51,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 51,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/scan_multi.py",
       "name": "unsupported-operation",
@@ -12139,13 +11313,6 @@
       "severity": "error"
     },
     {
-      "column": 16,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 13,
       "path": "ledfx/effects/scan_multi.py",
       "name": "unsupported-operation",
@@ -12157,13 +11324,6 @@
       "path": "ledfx/effects/scan_multi.py",
       "name": "unsupported-operation",
       "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/scan_multi.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12199,48 +11359,6 @@
       "path": "ledfx/effects/scroll.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/scroll.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/scroll.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/scroll.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/scroll.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/scroll.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/scroll.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12297,62 +11415,6 @@
       "path": "ledfx/effects/scroll_plus.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/scroll_plus.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12720,13 +11782,6 @@
       "severity": "error"
     },
     {
-      "column": 39,
-      "path": "ledfx/effects/spectrum.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/spectrum.py",
       "name": "missing-override-decorator",
@@ -12738,13 +11793,6 @@
       "path": "ledfx/effects/spectrum.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/spectrum.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -12801,69 +11849,6 @@
       "path": "ledfx/effects/spotlight.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/effects/spotlight.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `get`",
       "severity": "error"
     },
     {
@@ -13011,34 +11996,6 @@
       "path": "ledfx/effects/strobe.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/strobe.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -13959,62 +12916,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/effects/vumeter.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/vumeter.py",
       "name": "missing-override-decorator",
@@ -14099,20 +13000,6 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/effects/water.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/effects/water.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/water.py",
       "name": "missing-override-decorator",
@@ -14169,35 +13056,7 @@
       "severity": "error"
     },
     {
-      "column": 54,
-      "path": "ledfx/effects/water.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 53,
-      "path": "ledfx/effects/water.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 57,
-      "path": "ledfx/effects/water.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/effects/water.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 57,
       "path": "ledfx/effects/water.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",

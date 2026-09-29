@@ -2,9 +2,11 @@ import timeit
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import Graph
 
@@ -38,45 +40,26 @@ class MetroEffect(AudioReactiveEffect):
 
     start_time = timeit.default_timer()
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "pulse_period",
-                description="Time between flash in seconds",
-                default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
-            vol.Optional(
-                "pulse_ratio",
-                description="Flash to blank ratio",
-                default=0.3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=0.9)),
-            vol.Optional(
-                "steps",
-                description="Steps of pattern division to loop",
-                default=4,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=6)),
-            vol.Optional(
-                "background_color",
-                description="Background color",
-                default="#000000",
-            ): validate_color,
-            vol.Optional(
-                "flash_color",
-                description="Flash color",
-                default="#FFFFFF",
-            ): validate_color,
-            vol.Optional(
-                "capture",
-                description="graph capture, on to start, off to dump",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "cpu_secs",
-                description="Window over which to measure CPU usage",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        pulse_period: CoercedInt = Field(
+            1, description="Time between flash in seconds", ge=1, le=10
+        )
+        pulse_ratio: CoercedFloat = Field(
+            0.3, description="Flash to blank ratio", ge=0.1, le=0.9
+        )
+        steps: CoercedInt = Field(
+            4, description="Steps of pattern division to loop", ge=1, le=6
+        )
+        background_color: Color = Field("#000000", description="Background color")
+        flash_color: Color = Field("#FFFFFF", description="Flash color")
+        capture: bool = Field(
+            True, description="graph capture, on to start, off to dump"
+        )
+        cpu_secs: CoercedFloat = Field(
+            1.0, description="Window over which to measure CPU usage", ge=0.1, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         self.was_flash = False
@@ -91,16 +74,12 @@ class MetroEffect(AudioReactiveEffect):
 
     def config_updated(self, config):
         self.background_color = np.array(
-            parse_color(self._config["background_color"]), dtype=float
+            parse_color(self.config.background_color), dtype=float
         )
-        self.flash_color = np.array(
-            parse_color(self._config["flash_color"]), dtype=float
-        )
+        self.flash_color = np.array(parse_color(self.config.flash_color), dtype=float)
 
-        self.cycle_threshold = (
-            self._config["pulse_period"] * (self._config["pulse_ratio"])
-        )
-        if self._config["capture"] and self.graph_callbacks is None:
+        self.cycle_threshold = self.config.pulse_period * (self.config.pulse_ratio)
+        if self.config.capture and self.graph_callbacks is None:
             # start a capture sequence, generate base graphs
             self.graph_callbacks = Graph(
                 "Metro Callback Timing", ["Audio", "Render"], points=5000
@@ -117,13 +96,13 @@ class MetroEffect(AudioReactiveEffect):
                 y_title="CPU %",
                 y_axis_max=100.0,
             )
-        elif not self._config["capture"] and self.graph_callbacks is not None:
+        elif not self.config.capture and self.graph_callbacks is not None:
             self.graph_callbacks.dump_graph(only_jitter=True)
             with self.lock:
                 if self.graph_cpu:
                     self.graph_cpu.dump_graph(
                         jitter=True,
-                        sub_title=f"{self._config['cpu_secs']} secs",
+                        sub_title=f"{self.config.cpu_secs} secs",
                     )
             self.graph_callbacks = None
             self.graph_cpu = None
@@ -144,7 +123,7 @@ class MetroEffect(AudioReactiveEffect):
             self.graph_callbacks.append_by_key("Render", 1.0)
 
         pass_time = now - self.start_time
-        cycle_time = pass_time % self._config["pulse_period"]
+        cycle_time = pass_time % self.config.pulse_period
 
         if cycle_time > self.cycle_threshold:
             if self.was_flash:
@@ -153,8 +132,7 @@ class MetroEffect(AudioReactiveEffect):
         else:
             if not self.was_flash:
                 step_count = (
-                    int(pass_time / self._config["pulse_period"])
-                    % self._config["steps"]
+                    int(pass_time / self.config.pulse_period) % self.config.steps
                 )
                 if step_count == 0:
                     self.pixels[0 : self.pixel_count] = self.flash_color
@@ -167,10 +145,7 @@ class MetroEffect(AudioReactiveEffect):
                         self.pixels[start_pixel : end_pixel - 1] = self.flash_color
                 self.was_flash = True
 
-        if (
-            self.graph_cpu is not None
-            and now - self.last_cpu > self._config["cpu_secs"]
-        ):
+        if self.graph_cpu is not None and now - self.last_cpu > self.config.cpu_secs:
             cpu = psutil.cpu_percent(percpu=True)
             for i in range(self.cores):
                 self.graph_cpu.append_by_key(f"CPU {i}", cpu[i])

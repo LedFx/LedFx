@@ -1,8 +1,10 @@
 import time
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -11,26 +13,21 @@ class Melt(AudioReactiveEffect, HSVEffect):
     NAME = "Melt"
     CATEGORY = "Atmospheric"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.001, max=1)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0001, max=1)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(
+            0.5, description="Effect Speed modifier", ge=0.001, le=1
+        )
+        reactivity: CoercedFloat = Field(
+            0.5, description="Audio Reactive modifier", ge=0.0001, le=1
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.hl = pixel_count
         self.c1 = np.linspace(0, 1, pixel_count)
 
-        self.timestep = 0
+        self.timestep: float = 0
         self.last_time = time.time_ns()
         self.dt = 0
 
@@ -45,15 +42,12 @@ class Melt(AudioReactiveEffect, HSVEffect):
         self.dt = time.time_ns() - self.last_time
         self.timestep += self.dt
         self.timestep += (
-            self._lows_power
-            * self._config["reactivity"]
-            / self._config["speed"]
-            * 1000000000.0
+            self._lows_power * self.config.reactivity / self.config.speed * 1000000000.0
         )
         self.last_time = time.time_ns()
 
-        t1 = self.time(self._config["speed"] * 5, timestep=self.timestep)
-        t2 = self.time(self._config["speed"] * 6.5, timestep=self.timestep)
+        t1 = self.time(self.config.speed * 5, timestep=self.timestep)
+        t2 = self.time(self.config.speed * 6.5, timestep=self.timestep)
 
         self.c1[:] = np.linspace(0, 1, self.pixel_count)
         # np.subtract(self.c1, self.hl, out=self.c1)

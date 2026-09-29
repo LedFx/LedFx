@@ -2,8 +2,10 @@ import queue
 import time
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import smooth
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
@@ -15,55 +17,45 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
     CATEGORY = "Atmospheric"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.001, max=1)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0001, max=1)),
-            vol.Optional(
-                "bg_bright",
-                description="Brightness of the melt effect",
-                default=0.4,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "lava_width",
-                description="Size of the melting lava sections",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "strobe_threshold",
-                description="Cutoff for quiet sounds. Higher -> only loud sounds are detected",
-                default=0.75,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "strobe_rate",
-                description="Higher numbers -> more strobes",
-                default=0.75,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "strobe_width",
-                description="Percussive strobe width, from one pixel to the full length",
-                default=0.3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "strobe_decay_rate",
-                description="Percussive strobe decay rate. Higher -> decays faster.",
-                default=0.25,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "strobe_blur",
-                description="How much to blur the strobes",
-                default=3.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(
+            0.5, description="Effect Speed modifier", ge=0.001, le=1
+        )
+        reactivity: CoercedFloat = Field(
+            0.5, description="Audio Reactive modifier", ge=0.0001, le=1
+        )
+        bg_bright: CoercedFloat = Field(
+            0.4, description="Brightness of the melt effect", ge=0, le=1
+        )
+        lava_width: CoercedFloat = Field(
+            0.5, description="Size of the melting lava sections", ge=0, le=1
+        )
+        strobe_threshold: CoercedFloat = Field(
+            0.75,
+            description="Cutoff for quiet sounds. Higher -> only loud sounds are detected",
+            ge=0,
+            le=1,
+        )
+        strobe_rate: CoercedFloat = Field(
+            0.75, description="Higher numbers -> more strobes", ge=0, le=1
+        )
+        strobe_width: CoercedFloat = Field(
+            0.3,
+            description="Percussive strobe width, from one pixel to the full length",
+            ge=0.0,
+            le=1.0,
+        )
+        strobe_decay_rate: CoercedFloat = Field(
+            0.25,
+            description="Percussive strobe decay rate. Higher -> decays faster.",
+            ge=0,
+            le=1,
+        )
+        strobe_blur: CoercedFloat = Field(
+            3.5, description="How much to blur the strobes", ge=0, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -90,13 +82,13 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
         self._mids_power = 0
         self._mids_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.1)
 
-        self.bg_bright = self._config["bg_bright"]
+        self.bg_bright = self.config.bg_bright
 
-        self.strobe_cutoff = self._config["strobe_threshold"] / 10.0
+        self.strobe_cutoff = self.config.strobe_threshold / 10.0
         self.last_strobe_time = 0
-        self.strobe_wait_time = 1.0 - self._config["strobe_rate"]
-        self.strobe_decay_rate = 1.0 - self._config["strobe_decay_rate"]
-        self.strobe_blur = self._config["strobe_blur"]
+        self.strobe_wait_time = 1.0 - self.config.strobe_rate
+        self.strobe_decay_rate = 1.0 - self.config.strobe_decay_rate
+        self.strobe_blur = self.config.strobe_blur
 
     def audio_data_updated(self, data):
         self._last_lows_power = self._lows_power
@@ -128,16 +120,13 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
 
         self.timestep += self.dt * self._direction
         self.timestep += (
-            self._lows_power
-            * self._config["reactivity"]
-            * self._config["speed"]
-            * 500000000.0
+            self._lows_power * self.config.reactivity * self.config.speed * 500000000.0
         ) * self._direction
 
         # t1 is used to animate the lava in time. If the direction is reversed
         # we'll go backwards (because the timestep counting down instead of up).
-        t1 = self.time(self._config["speed"] * 20, timestep=self.timestep)
-        bass_factor = self._lows_power * self._config["reactivity"] * 0.5
+        t1 = self.time(self.config.speed * 20, timestep=self.timestep)
+        bass_factor = self._lows_power * self.config.reactivity * 0.5
 
         # Initialization: Hue is a ramp of the gradient from beginning to end,
         # Saturation is full, and Value is a sine version of the hue ramp.
@@ -149,7 +138,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
 
         # Use the bass to roll the hue gradient, then use repeated sine
         # calls to have the hues cycle more often.
-        np.add(self.h, bass_factor * self._config["speed"] * 5, out=self.h)
+        np.add(self.h, bass_factor * self.config.speed * 5, out=self.h)
         self.h = triangle(self.h)
         self.h = triangle(self.h)
 
@@ -165,7 +154,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
 
         # The power operation effectively adjusts the amount of black between
         # lava chunks.  We use a power() operation because the
-        width_factor = np.power(1 - self._config["lava_width"], 2)
+        width_factor = np.power(1 - self.config.lava_width, 2)
         power = 30 * width_factor - (self._mids_power * width_factor)
         np.power(self.v, power, out=self.v)
 
@@ -177,7 +166,7 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
             self.onsets_queue.get()
             # If the config is at 0, we still clip to a minimum of 1 pixel.
             strobe_width = np.clip(
-                int(self._config["strobe_width"] ** 3 * self.pixel_count),
+                int(self.config.strobe_width**3 * self.pixel_count),
                 1,
                 self.pixel_count - 1,
             )

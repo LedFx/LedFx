@@ -1,9 +1,12 @@
 from random import randint
+from typing import Annotated, Literal
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, Color, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.droplets import DROPLET_NAMES, load_droplet
 
@@ -13,58 +16,33 @@ class RainAudioEffect(AudioReactiveEffect):
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=True,
-            ): bool,
-            # TODO drops should be controlled by some sort of effectlet class,
-            # which will provide a list of available drop names rather than just
-            # this static range
-            vol.Optional(
-                "lows_color",
-                description="color for low sounds, ie beats",
-                default="white",
-            ): validate_color,
-            vol.Optional(
-                "pulse_strip",
-                description="Pulse the entire strip to the beat",
-                default="Off",
-            ): vol.In(["Off", "Lows", "Mids", "Highs"]),
-            vol.Optional(
-                "mids_color",
-                description="color for mid sounds, ie vocals",
-                default="red",
-            ): validate_color,
-            vol.Optional(
-                "high_color",
-                description="color for high sounds, ie hi hat",
-                default="blue",
-            ): validate_color,
-            vol.Optional(
-                "lows_sensitivity",
-                description="Sensitivity to low sounds",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
-            vol.Optional(
-                "mids_sensitivity",
-                description="Sensitivity to mid sounds",
-                default=0.05,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
-            vol.Optional(
-                "high_sensitivity",
-                description="Sensitivity to high sounds",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.03, max=0.3)),
-            vol.Optional(
-                "raindrop_animation",
-                description="Droplet animation style",
-                default="Ripple",
-            ): vol.In(DROPLET_NAMES),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        mirror: bool = Field(True, description="Mirror the effect")
+        # TODO drops should be controlled by some sort of effectlet class,
+        # which will provide a list of available drop names rather than just
+        # this static range
+        lows_color: Color = Field("white", description="color for low sounds, ie beats")
+        pulse_strip: Literal["Off", "Lows", "Mids", "Highs"] = Field(
+            "Off", description="Pulse the entire strip to the beat"
+        )
+        mids_color: Color = Field("red", description="color for mid sounds, ie vocals")
+        high_color: Color = Field(
+            "blue", description="color for high sounds, ie hi hat"
+        )
+        lows_sensitivity: CoercedFloat = Field(
+            0.1, description="Sensitivity to low sounds", ge=0.03, le=0.3
+        )
+        mids_sensitivity: CoercedFloat = Field(
+            0.05, description="Sensitivity to mid sounds", ge=0.03, le=0.3
+        )
+        high_sensitivity: CoercedFloat = Field(
+            0.1, description="Sensitivity to high sounds", ge=0.03, le=0.3
+        )
+        raindrop_animation: Annotated[str, OneOf(DROPLET_NAMES)] = Field(
+            "Ripple", description="Droplet animation style"
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.drop_frames = np.zeros(self.pixel_count, dtype=int)
@@ -72,7 +50,7 @@ class RainAudioEffect(AudioReactiveEffect):
         self.pulse_pixels = np.zeros((self.pixel_count, 3))
 
     def config_updated(self, config):
-        self.drop_animation = load_droplet(config["raindrop_animation"])
+        self.drop_animation = load_droplet(self.config.raindrop_animation)
 
         self.n_frames, self.frame_width = np.shape(self.drop_animation)
         self.frame_centre_index = self.frame_width // 2
@@ -142,38 +120,29 @@ class RainAudioEffect(AudioReactiveEffect):
 
         self.update_drop_frames()
 
-        if (
-            intensities[0] - self.filtered_intensities[0]
-            > self._config["lows_sensitivity"]
-        ):
-            if self._config["pulse_strip"] == "Lows":
-                self.strip_pulse(parse_color(self._config["lows_color"]))
+        if intensities[0] - self.filtered_intensities[0] > self.config.lows_sensitivity:
+            if self.config.pulse_strip == "Lows":
+                self.strip_pulse(parse_color(self.config.lows_color))
             else:
                 self.new_drop(
                     randint(0, self.pixel_count - 1),
-                    parse_color(self._config["lows_color"]),
+                    parse_color(self.config.lows_color),
                 )
-        if (
-            intensities[1] - self.filtered_intensities[1]
-            > self._config["mids_sensitivity"]
-        ):
-            if self._config["pulse_strip"] == "Mids":
-                self.strip_pulse(parse_color(self._config["mids_color"]))
+        if intensities[1] - self.filtered_intensities[1] > self.config.mids_sensitivity:
+            if self.config.pulse_strip == "Mids":
+                self.strip_pulse(parse_color(self.config.mids_color))
             else:
                 self.new_drop(
                     randint(0, self.pixel_count - 1),
-                    parse_color(self._config["mids_color"]),
+                    parse_color(self.config.mids_color),
                 )
-        if (
-            intensities[2] - self.filtered_intensities[2]
-            > self._config["high_sensitivity"]
-        ):
-            if self._config["pulse_strip"] == "Highs":
-                self.strip_pulse(parse_color(self._config["high_color"]))
+        if intensities[2] - self.filtered_intensities[2] > self.config.high_sensitivity:
+            if self.config.pulse_strip == "Highs":
+                self.strip_pulse(parse_color(self.config.high_color))
             else:
                 self.new_drop(
                     randint(0, self.pixel_count - 1),
-                    parse_color(self._config["high_color"]),
+                    parse_color(self.config.high_color),
                 )
 
         self.filtered_intensities = self.intensity_filter.update(intensities)

@@ -1,7 +1,9 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 
 
@@ -10,65 +12,46 @@ class ScrollAudioEffect(AudioReactiveEffect):
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "blur",
-                description="Amount to blur the effect",
-                default=3.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "scroll_per_sec",
-                description="Device width to scroll per second",
-                default=0.7,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=2)),
-            vol.Optional(
-                "decay_per_sec",
-                description="Decay rate of the scroll per second, kind of",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=2.0)),
-            vol.Optional(
-                "threshold",
-                description="Cutoff for quiet sounds. Higher -> only loud sounds are detected",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "color_lows",
-                description="Color of low, bassy sounds",
-                default="#FF0000",
-            ): validate_color,
-            vol.Optional(
-                "color_mids",
-                description="Color of midrange sounds",
-                default="#00FF00",
-            ): validate_color,
-            vol.Optional(
-                "color_high",
-                description="Color of high sounds",
-                default="#0000FF",
-            ): validate_color,
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        blur: CoercedFloat = Field(
+            3.0, description="Amount to blur the effect", ge=0.0, le=10
+        )
+        mirror: bool = Field(True, description="Mirror the effect")
+        scroll_per_sec: CoercedFloat = Field(
+            0.7, description="Device width to scroll per second", ge=0.01, le=2
+        )
+        decay_per_sec: CoercedFloat = Field(
+            0.5,
+            description="Decay rate of the scroll per second, kind of",
+            ge=0.0,
+            le=2.0,
+        )
+        threshold: CoercedFloat = Field(
+            0.0,
+            description="Cutoff for quiet sounds. Higher -> only loud sounds are detected",
+            ge=0,
+            le=1,
+        )
+        color_lows: Color = Field("#FF0000", description="Color of low, bassy sounds")
+        color_mids: Color = Field("#00FF00", description="Color of midrange sounds")
+        color_high: Color = Field("#0000FF", description="Color of high sounds")
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.intensities = np.zeros(3)
-        self.pixels_incremental = 0
+        self.pixels_incremental: float = 0
 
     def config_updated(self, config):
-        self.lows_color = np.array(parse_color(self._config["color_lows"]), dtype=float)
-        self.mids_color = np.array(parse_color(self._config["color_mids"]), dtype=float)
-        self.high_color = np.array(parse_color(self._config["color_high"]), dtype=float)
+        self.lows_color = np.array(parse_color(self.config.color_lows), dtype=float)
+        self.mids_color = np.array(parse_color(self.config.color_mids), dtype=float)
+        self.high_color = np.array(parse_color(self.config.color_high), dtype=float)
 
-        self.lows_cutoff = self._config["threshold"] / 10
-        self.mids_cutoff = self._config["threshold"] / 8
-        self.high_cutoff = self._config["threshold"] / 7
-        self.speed = self._config["scroll_per_sec"]
-        self.decay = self._config["decay_per_sec"]
+        self.lows_cutoff = self.config.threshold / 10
+        self.mids_cutoff = self.config.threshold / 8
+        self.high_cutoff = self.config.threshold / 7
+        self.speed = self.config.scroll_per_sec
+        self.decay = self.config.decay_per_sec
 
     def audio_data_updated(self, data):
         # Divide the melbank into lows, mids and highs

@@ -1,16 +1,26 @@
 import logging
 from datetime import datetime
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
 import numpy as np
-import voluptuous as vol
 from PIL import ImageFont
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.texter2d import Texter2d
 from ledfx.effects.utils.words import FONT_MAPPINGS, Sentence
 from ledfx.utils import Teleplot
 
 _LOGGER = logging.getLogger(__name__)
+
+# Mapping of display value options to their respective update methods
+NUMBER_VALUE_SOURCES: dict[str, str] = {
+    "BPM": "update_bpm",
+    "BPM Confidence": "update_bpm_confidence",
+    "Time (HH:MM)": "update_time_hhmm",
+    "Time (HH:MM:SS)": "update_time_hhmmss",
+}
 
 
 class Number(Texter2d):
@@ -27,13 +37,7 @@ class Number(Texter2d):
     NAME = "Number"
     CATEGORY = "Diagnostic"
 
-    # Mapping of display value options to their respective update methods
-    VALUE_SOURCE_MAPPING: ClassVar[dict[str, str]] = {
-        "BPM": "update_bpm",
-        "BPM Confidence": "update_bpm_confidence",
-        "Time (HH:MM)": "update_time_hhmm",
-        "Time (HH:MM:SS)": "update_time_hhmmss",
-    }
+    VALUE_SOURCE_MAPPING: ClassVar[dict[str, str]] = NUMBER_VALUE_SOURCES
 
     # Hide parent effect-specific options that don't apply to numeric display
     HIDDEN_KEYS = Texter2d.HIDDEN_KEYS + [
@@ -61,30 +65,29 @@ class Number(Texter2d):
         "background_color",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "value_source",
-                description="Source of the value to display",
-                default=list(VALUE_SOURCE_MAPPING.keys())[0],  # noqa: RUF015
-            ): vol.In(list(VALUE_SOURCE_MAPPING.keys())),
-            vol.Optional(
-                "whole_digits",
-                description="Number of digits to reserve before decimal point (for stable text size)",
-                default=3,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10)),
-            vol.Optional(
-                "decimal_digits",
-                description="Number of digits to display after decimal point (for stable text size)",
-                default=2,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=6)),
-            vol.Optional(
-                "negative",
-                description="Support negative values (include negative sign in sizing)",
-                default=False,
-            ): bool,
-        },
-    )
+    class Config(Texter2d.Config):
+        value_source: Annotated[str, OneOf(list(NUMBER_VALUE_SOURCES.keys()))] = Field(
+            list(NUMBER_VALUE_SOURCES.keys())[0],  # noqa: RUF015
+            description="Source of the value to display",
+        )
+        whole_digits: CoercedInt = Field(
+            3,
+            description="Number of digits to reserve before decimal point (for stable text size)",
+            ge=1,
+            le=10,
+        )
+        decimal_digits: CoercedInt = Field(
+            2,
+            description="Number of digits to display after decimal point (for stable text size)",
+            ge=0,
+            le=6,
+        )
+        negative: bool = Field(
+            False,
+            description="Support negative values (include negative sign in sizing)",
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         # Initialize display value that can be set externally
@@ -95,15 +98,13 @@ class Number(Texter2d):
         """Update configuration and regenerate sentence with formatted number."""
         super().config_updated(config)
 
-        self.digits_before = self._config.get("whole_digits", 3)
-        self.digits_after = self._config.get("decimal_digits", 2)
-        self.negative = self._config.get("negative", False)
+        self.digits_before = self.config.whole_digits
+        self.digits_after = self.config.decimal_digits
+        self.negative = self.config.negative
 
-        self.value_update_method = self.VALUE_SOURCE_MAPPING[
-            self._config["value_source"]
-        ]
-        self.is_time_hhmm = self._config["value_source"] == "Time (HH:MM)"
-        self.is_time_hhmmss = self._config["value_source"] == "Time (HH:MM:SS)"
+        self.value_update_method = self.VALUE_SOURCE_MAPPING[self.config.value_source]
+        self.is_time_hhmm = self.config.value_source == "Time (HH:MM)"
+        self.is_time_hhmmss = self.config.value_source == "Time (HH:MM:SS)"
         # A time string left over from a time mode cannot be formatted as a number.
         if not (self.is_time_hhmm or self.is_time_hhmmss) and isinstance(
             self.display_value, str
@@ -209,11 +210,11 @@ class Number(Texter2d):
             if self.negative:
                 template_text = "-" + template_text
 
-        target_height = round(self.r_height * self._config["height_percent"] / 100)
+        target_height = round(self.r_height * self.config.height_percent / 100)
         min_size = 4
         max_size = target_height
         best_size = min_size
-        font_path = FONT_MAPPINGS[self._config["font"]]
+        font_path = FONT_MAPPINGS[self.config.font]
         for size in range(max_size, min_size - 1, -1):
             try:
                 font = ImageFont.truetype(font_path, size)
@@ -243,7 +244,7 @@ class Number(Texter2d):
         # Recreate the sentence with the optimal font size
         self.sentence = Sentence(
             self._display_text,
-            self._config["font"],
+            self.config.font,
             self._font_size,
             (self.r_width, self.r_height),
         )
@@ -268,7 +269,7 @@ class Number(Texter2d):
             self._display_text = new_text
             self.sentence = Sentence(
                 self._display_text,
-                self._config["font"],
+                self.config.font,
                 self._font_size,
                 (self.r_width, self.r_height),
             )

@@ -1,13 +1,15 @@
 import logging
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, OneOf, VirtualId
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
 from ledfx.utils import nonlinear_log
-from ledfx.virtuals import virtual_id_validator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,60 +29,38 @@ class Radial2d(Twod):
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "source_virtual",
-                description="The virtual from which to source the 1d pixels",
-                default="unknown",
-            ): virtual_id_validator,
-            vol.Optional(
-                "edges",
-                description="Edges count of mapping",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=8)),
-            vol.Optional(
-                "x_offset",
-                description="X offset for center point",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "y_offset",
-                description="Y offset for center point",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "twist",
-                description="twist that thing",
-                default=0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-4, max=4)),
-            vol.Optional(
-                "polygon",
-                description="Use polygonal or radial lobes",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "rotation",
-                description="static rotation",
-                default=0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-0.5, max=0.5)),
-            vol.Optional(
-                "spin",
-                description="Spin the radial effect to the audio impulse",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the spin impulse",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "star",
-                description="pull polygon points to star shape",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-1.0, max=1.0)),
-        }
-    )
+    class Config(Twod.Config):
+        source_virtual: VirtualId = Field(
+            "unknown", description="The virtual from which to source the 1d pixels"
+        )
+        edges: CoercedInt = Field(0, description="Edges count of mapping", ge=0, le=8)
+        x_offset: CoercedFloat = Field(
+            0.5, description="X offset for center point", ge=0.0, le=1.0
+        )
+        y_offset: CoercedFloat = Field(
+            0.5, description="Y offset for center point", ge=0.0, le=1.0
+        )
+        twist: CoercedFloat = Field(0, description="twist that thing", ge=-4, le=4)
+        polygon: bool = Field(True, description="Use polygonal or radial lobes")
+        rotation: CoercedFloat = Field(
+            0, description="static rotation", ge=-0.5, le=0.5
+        )
+        spin: CoercedFloat = Field(
+            0.0,
+            description="Spin the radial effect to the audio impulse",
+            ge=-1.0,
+            le=1.0,
+        )
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the spin impulse"
+        )
+        star: CoercedFloat = Field(
+            0.0, description="pull polygon points to star shape", ge=-1.0, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         self.bar = 0
@@ -92,18 +72,18 @@ class Radial2d(Twod):
     def config_updated(self, config):
         super().config_updated(config)
         self.source_virtual = None
-        self.edges = self._config.get("edges")
-        self.x_offset = self._config.get("x_offset")
-        self.y_offset = self._config.get("y_offset")
-        self.twist = self._config.get("twist")
-        self.polygon = self._config.get("polygon")
-        self.rotation = self._config.get("rotation")
+        self.edges = self.config.edges
+        self.x_offset = self.config.x_offset
+        self.y_offset = self.config.y_offset
+        self.twist = self.config.twist
+        self.polygon = self.config.polygon
+        self.rotation = self.config.rotation
         # bring impulse spin injection into a reasonable range of control
-        self.spin = nonlinear_log(self._config.get("spin"), 2) / 10.0
+        self.spin = nonlinear_log(self.config.spin, 2) / 10.0
         self.power_func = AudioReactiveEffect.POWER_FUNCS_MAPPING[
-            self._config["frequency_range"]
+            self.config.frequency_range
         ]
-        self.star = self._config.get("star")
+        self.star = self.config.star
 
     def audio_data_updated(self, data):
         self.impulse = getattr(data, self.power_func)()
@@ -135,7 +115,7 @@ class Radial2d(Twod):
         if not self.source_virtual:
             # Try to fetch source_virtual (e.g. on startup race)
             self.source_virtual = self._ledfx.virtuals._virtuals.get(
-                self._config["source_virtual"]
+                self.config.source_virtual
             )
 
         if self.source_virtual and hasattr(self.source_virtual, "assembled_frame"):

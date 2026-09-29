@@ -2,9 +2,11 @@ import random
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.temporal import TemporalEffect
 
 
@@ -19,28 +21,19 @@ class RandomFlashEffect(TemporalEffect):
     # based on fixed speed of 5.0
     RUNS_PER_SEC = 50.0
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "hit_color", description="Hit color", default="#FFFFFF"
-            ): validate_color,
-            vol.Optional(
-                "hit_duration",
-                description="Hit duration",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=5.0)),
-            vol.Optional(
-                "hit_probability_per_sec",
-                description="Probability of hit per second",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
-            vol.Optional(
-                "hit_relative_size",
-                description="Hit size relative to LED strip",
-                default=10,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=100)),
-        }
-    )
+    class Config(TemporalEffect.Config):
+        hit_color: Color = Field("#FFFFFF", description="Hit color")
+        hit_duration: CoercedFloat = Field(
+            0.5, description="Hit duration", ge=0.1, le=5.0
+        )
+        hit_probability_per_sec: CoercedFloat = Field(
+            0.1, description="Probability of hit per second", ge=0.01, le=1.0
+        )
+        hit_relative_size: CoercedInt = Field(
+            10, description="Hit size relative to LED strip", ge=1, le=100
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         # overriding speed (from TemporalEffect) to achieve smooth fade
@@ -49,9 +42,9 @@ class RandomFlashEffect(TemporalEffect):
         self.last_hit_pixels = None
 
     def config_updated(self, config):
-        self.hit_color = np.array(parse_color(self._config["hit_color"]), dtype=float)
-        self.hit_relative_size = self._config["hit_relative_size"]
-        self.hit_duration = self._config["hit_duration"]
+        self.hit_color = np.array(parse_color(self.config.hit_color), dtype=float)
+        self.hit_relative_size = self.config.hit_relative_size
+        self.hit_duration = self.config.hit_duration
         self.probability_per_sec = self.__balance_hit_probability_based_on_speed()
 
     def on_activate(self, pixel_count):
@@ -85,6 +78,4 @@ class RandomFlashEffect(TemporalEffect):
 
     def __balance_hit_probability_based_on_speed(self) -> float:
         # this is the probability per effect run
-        return 1 - (1 - self._config["hit_probability_per_sec"]) ** (
-            1 / self.RUNS_PER_SEC
-        )
+        return 1 - (1 - self.config.hit_probability_per_sec) ** (1 / self.RUNS_PER_SEC)

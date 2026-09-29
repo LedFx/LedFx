@@ -1,7 +1,9 @@
 import numpy as np  # noqa: N999
-import voluptuous as vol
+from pydantic import Field
 
 from ledfx.color import RGB
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import MAX_MIDI, MIN_MIDI, AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -11,30 +13,19 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "blur",
-                description="Amount to blur the effect",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "fade_rate",
-                description="Rate at which notes fade",
-                default=0.15,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "responsiveness",
-                description="Responsiveness to note changes",
-                default=0.15,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        }
-    )
+    class Config(GradientEffect.Config):
+        blur: CoercedFloat = Field(
+            1.0, description="Amount to blur the effect", ge=0.0, le=10
+        )
+        mirror: bool = Field(True, description="Mirror the effect")
+        fade_rate: CoercedFloat = Field(
+            0.15, description="Rate at which notes fade", ge=0.0, le=1.0
+        )
+        responsiveness: CoercedFloat = Field(
+            0.15, description="Responsiveness to note changes", ge=0.0, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         # protect from changes to the pixel count during segment edits
@@ -56,8 +47,8 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         # Average out the midi values to be a little more stable
         if midi_value >= MIN_MIDI:
             self.avg_midi = (
-                self.avg_midi * (1.0 - self._config["responsiveness"])
-                + midi_value * self._config["responsiveness"]
+                self.avg_midi * (1.0 - self.config.responsiveness)
+                + midi_value * self.config.responsiveness
             )
 
     def render(self):
@@ -81,7 +72,7 @@ class PitchSpectrumAudioEffect(AudioReactiveEffect, GradientEffect):
         ) + np.multiply(note_color, self.filtered_melbank[:, np.newaxis])
 
         # Apply fade_rate
-        fade_rate = self._config["fade_rate"]
+        fade_rate = self.config.fade_rate
         black = np.zeros((self.pixel_count, 3))
         new_colors = np.multiply(new_colors, (1 - fade_rate)) + np.multiply(
             black, fade_rate

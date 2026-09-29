@@ -3,9 +3,11 @@ import time
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color, validate_gradient
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color, Gradient
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -15,45 +17,39 @@ class Strobe(AudioReactiveEffect, GradientEffect):
     CATEGORY = "Classic"
     HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "gradient",
-                description="Color scheme for bass strobe to cycle through",
-                default="Dancefloor",
-            ): validate_gradient,
-            vol.Optional(
-                "color_step",
-                description="Amount of color change per bass strobe",
-                default=0.0625,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=0.25)),
-            vol.Optional(
-                "bass_strobe_decay_rate",
-                description="Bass strobe decay rate. Higher -> decays faster.",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "strobe_color",
-                description="color for percussive strobes",
-                default="#FFFFFF",
-            ): validate_color,
-            vol.Optional(
-                "strobe_width",
-                description="Percussive strobe width, in pixels",
-                default=10,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=1000)),
-            vol.Optional(
-                "strobe_decay_rate",
-                description="Percussive strobe decay rate. Higher -> decays faster.",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "color_shift_delay",
-                description="color shift delay for percussive strobes. Lower -> more shifts",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        }
-    )
+    class Config(GradientEffect.Config):
+        gradient: Gradient = Field(
+            "Dancefloor", description="Color scheme for bass strobe to cycle through"
+        )
+        color_step: CoercedFloat = Field(
+            0.0625, description="Amount of color change per bass strobe", ge=0, le=0.25
+        )
+        bass_strobe_decay_rate: CoercedFloat = Field(
+            0.5,
+            description="Bass strobe decay rate. Higher -> decays faster.",
+            ge=0,
+            le=1,
+        )
+        strobe_color: Color = Field(
+            "#FFFFFF", description="color for percussive strobes"
+        )
+        strobe_width: CoercedInt = Field(
+            10, description="Percussive strobe width, in pixels", ge=0, le=1000
+        )
+        strobe_decay_rate: CoercedFloat = Field(
+            0.5,
+            description="Percussive strobe decay rate. Higher -> decays faster.",
+            ge=0,
+            le=1,
+        )
+        color_shift_delay: CoercedFloat = Field(
+            1,
+            description="color shift delay for percussive strobes. Lower -> more shifts",
+            ge=0,
+            le=1,
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -65,23 +61,21 @@ class Strobe(AudioReactiveEffect, GradientEffect):
         self.onsets_queue = queue.Queue()
 
     def config_updated(self, config):
-        self.color_shift_step = self._config["color_step"]
+        self.color_shift_step = self.config.color_step
 
-        self.strobe_color = np.array(
-            parse_color(self._config["strobe_color"]), dtype=float
-        )
+        self.strobe_color = np.array(parse_color(self.config.strobe_color), dtype=float)
         self.last_color_shift_time = 0
-        self.strobe_width = self._config["strobe_width"]
-        self.color_shift_delay_in_seconds = self._config["color_shift_delay"]
+        self.strobe_width = self.config.strobe_width
+        self.color_shift_delay_in_seconds = self.config.color_shift_delay
         self.color_idx = 0
 
         self.last_strobe_time = 0
         self.strobe_wait_time = 0
-        self.strobe_decay_rate = 1 - self._config["strobe_decay_rate"]
+        self.strobe_decay_rate = 1 - self.config.strobe_decay_rate
 
         self.last_bass_strobe_time = 0
         self.bass_strobe_wait_time = 0.2
-        self.bass_strobe_decay_rate = 1 - self._config["bass_strobe_decay_rate"]
+        self.bass_strobe_decay_rate = 1 - self.config.bass_strobe_decay_rate
 
     def render(self):
         pixels = np.copy(self.bass_strobe_overlay)
