@@ -10,7 +10,8 @@ repos:
       - id: trailing-whitespace
   # ruff runs from the locked version (uv.lock, bumped by Renovate) rather than
   # ruff-pre-commit's own rev, so there is a single ruff pin. Needs
-  # `uv sync --group dev`, as in CI. Args and filters match ruff-pre-commit.
+  # `uv` on PATH (CI and the shared autofix workflow install it). Args and
+  # filters match ruff-pre-commit.
   - repo: local
     hooks:
       - id: ruff-check
