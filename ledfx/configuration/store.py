@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import shutil
+import stat
 import tempfile
 import threading
 from collections.abc import Callable
@@ -37,6 +38,7 @@ BACKUP_REASONS = {
     "DOWNGRADE": "config.json was written by a newer LedFx.",
     "IMPORT": "Replacing config.json with an imported config.",
     "DELETE": "Resetting config.json to defaults.",
+    "INVALID": "Invalid config values could not be quarantined.",
 }
 
 Validator = Callable[[dict[str, object]], dict[str, object]]
@@ -93,7 +95,10 @@ class ConfigStore:
         self.config_dir = config_dir
         self.data = data
         self.error: str | None = None
+        # config.json exists but could not be read at load (OSERROR safe mode).
+        self.unreadable = False
         self.quarantined = 0  # records written; load() saves the repaired data
+        self.quarantine_failed = False  # a dropped value has no record on disk
         self._validate = validate
         self._blocked_logged = False
         self._write_lock = threading.Lock()
@@ -124,6 +129,7 @@ class ConfigStore:
             store._enter_safe_mode("DECODE", f"config.json is not valid JSON: {err}")
             return store
         except OSError as err:
+            store.unreadable = True
             store._enter_safe_mode("OSERROR", f"config.json could not be read: {err}")
             return store
 
@@ -155,7 +161,18 @@ class ConfigStore:
         except vol.Invalid as err:
             store._enter_safe_mode(None, f"config.json failed validation: {err}")
             return store
-        if migrated or store.quarantined:
+        if (
+            store.quarantine_failed
+            and version == CURRENT_SCHEMA_VERSION  # otherwise already backed up
+            and store.backup("INVALID") is None
+        ):
+            # The dropped values exist only in config.json; never overwrite it.
+            store.error = (
+                "invalid config values could not be quarantined or backed up; "
+                "changes will not be saved"
+            )
+            _LOGGER.error(store.error)
+        if migrated or store.quarantined or store.quarantine_failed:
             store.save_now()  # persist the defaulted values, not the bad ones
         return store
 
@@ -198,7 +215,6 @@ class ConfigStore:
 
     def quarantine(self, path: str, value: object, errors: list[str]) -> None:
         _LOGGER.warning("Quarantined invalid config at %s: %s", path, "; ".join(errors))
-        self.quarantined += 1
         record = {
             "time": datetime.datetime.now().astimezone().isoformat(),
             "path": path,
@@ -213,7 +229,10 @@ class ConfigStore:
             ) as file:
                 file.write(json.dumps(record, ensure_ascii=False, default=repr) + "\n")
         except OSError as err:
+            self.quarantine_failed = True
             _LOGGER.error("Could not write quarantine record: %s", err)
+            return
+        self.quarantined += 1
 
     # ---- saving --------------------------------------------------------
     def serialise(self) -> str:
@@ -247,9 +266,11 @@ class ConfigStore:
                     file.write(text)
                     file.flush()
                     os.fsync(file.fileno())
-                # mkstemp creates 0600; keep the existing mode (or the usual 0644).
+                # mkstemp creates 0600; keep the existing mode (or the usual 0644),
+                # plus owner read, so replacing an unreadable file fixes it.
                 if os.path.exists(self.path):
-                    shutil.copymode(self.path, tmp)
+                    mode = stat.S_IMODE(os.stat(self.path).st_mode) | stat.S_IRUSR
+                    os.chmod(tmp, mode)
                 else:
                     os.chmod(tmp, 0o644)
                 os.replace(tmp, self.path)

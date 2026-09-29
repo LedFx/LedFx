@@ -141,6 +141,32 @@ def test_quarantined_key_is_saved_as_default_so_it_is_not_quarantined_again(
     assert quarantine_file.read_text() == first  # no new record on the next boot
 
 
+def test_unwritable_quarantine_backs_up_before_repairing(tmp_path: Path) -> None:
+    _write(tmp_path, {"schema_version": CURRENT_SCHEMA_VERSION, "port": "nope"})
+    (tmp_path / QUARANTINE_FILE_NAME).mkdir()  # appending to it fails
+    store = ConfigStore.load(str(tmp_path), SCHEMA)
+    assert store.quarantined == 0 and store.error is None
+    (backup,) = _backups(tmp_path, "INVALID")
+    assert json.loads((tmp_path / backup).read_text())["port"] == "nope"
+    assert json.loads((tmp_path / "config.json").read_text())["port"] == 8888
+
+
+def test_unwritable_quarantine_and_backup_never_overwrites(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = _write(tmp_path, {"schema_version": CURRENT_SCHEMA_VERSION, "port": "nope"})
+    original = path.read_text()
+    (tmp_path / QUARANTINE_FILE_NAME).mkdir()
+
+    def no_backup(config_dir: str, reason: str, move: bool = False) -> None:
+        return None
+
+    monkeypatch.setattr("ledfx.configuration.store.backup_config_file", no_backup)
+    store = ConfigStore.load(str(tmp_path), SCHEMA)
+    assert store.error is not None and store.data["port"] == 8888
+    assert path.read_text() == original
+
+
 def test_backup_names_never_collide(tmp_path: Path) -> None:
     _write(tmp_path, {"port": 1})
     names = {backup_config_file(str(tmp_path), "IMPORT") for _ in range(3)}

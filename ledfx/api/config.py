@@ -91,7 +91,13 @@ class ConfigEndpoint(RestEndpoint):
             web.Response: The response indicating the success of the operation.
         """
         store = self._ledfx.config_store
-        if os.path.exists(store.path) and store.backup("DELETE") is None:
+        # An unreadable config.json can't be copied (load already tried); reset
+        # and import are how safe mode recovers from it, so go ahead.
+        if (
+            os.path.exists(store.path)
+            and store.backup("DELETE") is None
+            and not store.unreadable
+        ):
             return await self.internal_error(BACKUP_FAILED)
         if not await store.replace(CORE_CONFIG_SCHEMA({})):
             return await self.internal_error(WRITE_FAILED)
@@ -121,7 +127,11 @@ class ConfigEndpoint(RestEndpoint):
                 return await self.internal_error(msg, "error")
 
             store = self._ledfx.config_store
-            if os.path.exists(store.path) and store.backup("IMPORT") is None:
+            if (
+                os.path.exists(store.path)
+                and store.backup("IMPORT") is None
+                and not store.unreadable
+            ):
                 return await self.internal_error(BACKUP_FAILED)
 
             audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(

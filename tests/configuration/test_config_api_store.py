@@ -134,3 +134,32 @@ async def test_aborts_and_keeps_config_when_write_fails(
     assert store.data["port"] == 1234  # replace() rolled back
     assert store.error is None
     core.loop.call_soon_threadsafe.assert_not_called()
+
+
+@pytest.mark.skipif(
+    os.name == "nt" or (hasattr(os, "geteuid") and os.geteuid() == 0),
+    reason="needs POSIX permissions and a non-root user",
+)
+@pytest.mark.parametrize("method", ["delete", "post"])
+async def test_unreadable_config_can_be_reset_or_imported(
+    tmp_path: Path, method: str
+) -> None:
+    path = tmp_path / "config.json"
+    path.write_text("{}")
+    path.chmod(0)
+    try:
+        store = ConfigStore.load(str(tmp_path), CORE_CONFIG_SCHEMA)
+        assert store.error
+        core = MagicMock()
+        core.config_store = store
+
+        response = await _call(ConfigEndpoint(core), method)
+        readable = os.access(path, os.R_OK)
+    finally:
+        path.chmod(0o644)
+
+    assert response.status == 200
+    assert readable  # the new file must not inherit the unreadable mode
+    assert _disk(tmp_path)["schema_version"] == CURRENT_SCHEMA_VERSION
+    assert store.error is None
+    core.loop.call_soon_threadsafe.assert_called_once_with(core.stop, 4)
