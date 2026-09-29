@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from ledfx.api.config import ConfigEndpoint
-from ledfx.configuration.models import LedFxConfig
+from ledfx.configuration.models import AudioConfig, LedFxConfig
 from ledfx.core import LedFxCore
 from ledfx.effects.audio import AudioInputSource
 from ledfx.sendspin.config import eager_start
@@ -22,10 +22,9 @@ def test_sendspin_always_on_default_true():
 def test_audio_should_keep_active_for_sendspin_name_even_if_index_invalid():
     ais = object.__new__(AudioInputSource)
     ais._ledfx = SimpleNamespace(config=fake_ledfx({"sendspin_always_on": True}).config)
-    ais._config = {
-        "audio_device": 999,
-        "audio_device_name": "SENDSPIN: living-room",
-    }
+    ais._config = AudioConfig(
+        audio_device=999, audio_device_name="SENDSPIN: living-room"
+    )
 
     assert ais._should_always_keep_active() is True
 

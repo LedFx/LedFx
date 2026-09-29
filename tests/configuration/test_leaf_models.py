@@ -58,7 +58,7 @@ def test_melbank_name_absent_when_not_given() -> None:
 def test_melbanks_max_frequencies_items_are_coerced_and_bounded() -> None:
     assert validate_dict(MelbanksConfig, {"max_frequencies": [1.9]})[
         "max_frequencies"
-    ] == [1]
+    ] == (1,)
     with pytest.raises(ValidationError):
         MelbanksConfig.model_validate({"max_frequencies": [20000]})
 
