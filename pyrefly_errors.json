@@ -295,13 +295,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/api/effect.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `effect_id`",
-      "severity": "error"
-    },
-    {
       "column": 41,
       "path": "ledfx/api/effects.py",
       "name": "implicit-any-type-argument",

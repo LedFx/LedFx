@@ -153,7 +153,7 @@ DELETE /api/cache/images
 
 Clear a cached image to force re-download on next access.
 
-This endpoint removes the specified URL from the cache. The next time the image is requested via `/api/get_image` or `/api/get_gif_frames`, it will be re-downloaded from the origin server and cached again.
+By default this endpoint removes only the cache entry for the URL itself, so the next request for the full image (for example via `/api/get_gif_frames` or `/api/assets/download`) re-downloads it from the origin server. Thumbnails from `/api/assets/thumbnail` are cached as separate size/dimension variants of the URL and are left in place; pass `all_variants: true` to clear those too.
 
 **Endpoint:** `POST /api/cache/images/refresh`
 
@@ -220,136 +220,6 @@ This endpoint removes the specified URL from the cache. The next time the image 
 ---
 
 ## Image Request Endpoints
-
-### /api/get_image
-
-A RESTful endpoint designed for retrieving an image. Clients can request
-a file by providing either the URL or the local file path of the image
-resource. The image is returned in JPEG format for efficient data
-transmission.
-
-**Security Features:**
-- ✅ File type validation (triple-layer: extension + MIME + PIL format)
-  - Remote URLs may omit extensions (e.g., `https://cdn.example.com/image/abc123`)
-  - Local files must have valid image extensions
-- ✅ Size limits (10MB max file size, 4096×4096 pixels max)
-- ✅ Path traversal protection (local files restricted to config dir and assets dir)
-- ✅ SSRF protection (blocks private networks, loopback, link-local, cloud metadata endpoints)
-- ✅ URL scheme validation (only http/https for remote, no schemes for local files)
-- ✅ Download timeout (30 seconds)
-- ✅ Automatic caching with corruption recovery
-
-#### Endpoint Details
-
--   **Endpoint Path**: `/api/get_image`
-
-#### Request
-
--   **Method**: POST
--   **Request Body** (JSON):
-    -   `path_url` (String, required): The URL or local file path of the image to be opened.
-        - **Remote URLs**: Only `http://` or `https://` URLs are allowed. Downloaded and cached automatically.
-        - **Local files**: Plain file paths only (no URL schemes). Must be within config directory or LEDFX_ASSETS_PATH.
-
-#### Response
-
-All responses return **Status Code 200** with JSON body (for frontend snackbar compatibility).
-
--   **Success**:
-    -   Body:
-        -   `status` (String): `"success"`
-        -   `image` (String): Base64-encoded JPEG image data
-
--   **Failure**:
-    -   Body:
-        -   `status` (String): `"error"` or `"failed"`
-        -   `reason` (String): Error description (e.g., "Failed to open image from: <path_url>")
-
-#### Error Handling
-
-The endpoint returns status code 200 for all responses (success and error) to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
-
-**Common error reasons:**
-- `"Required attribute "path_url" was not provided"` - Missing required parameter
-- `"Failed to open image from: <path>"` - Image validation failed, file not found, or path traversal blocked
-- Invalid JSON body
-
-Error response structure:
-
-``` json
-{
-  "status": "failed",
-  "reason": "<error description>"
-}
-```
-
-#### Usage Example
-
-##### Requesting Remote Image
-
-To request an image from a URL, send a POST request with JSON body:
-
-``` json
-{
-  "path_url": "https://example.com/image.gif"
-}
-```
-
-**Note:** Remote images are automatically cached. Subsequent requests for the same URL will use the cached version unless explicitly refreshed via the cache API.
-
-##### Requesting Local File
-
-For a local file (must be within config directory or assets directory):
-
-``` json
-{
-  "path_url": "/path/to/local/image.gif"
-}
-```
-
-Windows example:
-
-``` json
-{
-  "path_url": "C:\\Users\\username\\.ledfx\\images\\custom.gif"
-}
-```
-
-**Security Note:**
-
-Local file paths are restricted to:
-- Config directory (e.g., `~/.ledfx/` or `C:\Users\username\.ledfx\`)
-- LEDFX_ASSETS_PATH (built-in preset assets)
-
-Remote URLs are protected against SSRF attacks by blocking:
-- Private networks (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7)
-- Loopback addresses (127.0.0.0/8, ::1/128)
-- Link-local addresses (169.254.0.0/16, fe80::/10)
-- Cloud metadata endpoints (169.254.169.254, metadata.google.internal)
-
-URL schemes other than http/https are rejected (file://, ftp://, javascript:, etc.).
-
-Attempts to access blocked resources (e.g., `/etc/passwd`, `C:\Windows\System32\*`, `http://127.0.0.1/`, `file:///etc/passwd`) will be blocked with error response.
-
-##### Sample Success Response
-
-``` json
-{
-  "status": "success",
-  "image": "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a..."
-}
-```
-
-##### Sample Error Response
-
-``` json
-{
-  "status": "failed",
-  "reason": "Failed to open image from: /invalid/path.gif"
-}
-```
-
----
 
 ### /api/get_gif_frames
 
@@ -492,7 +362,7 @@ A successful response with two extracted frames:
 ## Cache Workflow
 
 ### First Access
-1. User requests image via `POST /api/get_image` with JSON body `{"path_url": "https://example.com/image.gif"}`
+1. User requests image via `POST /api/get_gif_frames` with JSON body `{"path_url": "https://example.com/image.gif"}`
 2. Image not in cache → download from URL
 3. Validate file type (extension optional for remote URLs, MIME, PIL format)
 4. Validate size (max 10MB, max 4096×4096 pixels)

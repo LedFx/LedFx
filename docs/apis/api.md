@@ -454,7 +454,7 @@ return an error message
 }
 ```
 
-## /api/get_image and /api/get_gif_frames
+## /api/get_gif_frames
 
 See the [Images and Cache APIs](cache.md) documentation for complete details on image retrieval endpoints, security features, and cache management.
 
@@ -469,23 +469,6 @@ Returns all the effects currently created in LedFx as JSON
 **POST (upcoming)**
 
 Create a new Effect based on the provided JSON configuration
-
-## /api/effects/\<effect_id\>
-
-Query and manage a specific effect with the matching *effect_id* as JSON
-
-**GET**
-
-Returns information about the effect
-
-**PUT (upcoming)**
-
-Modifies the configuration of the effect and returns the new
-configuration as JSON
-
-**DELETE (upcoming)**
-
-Deletes the effect with the matching *effect_id*.
 
 ## /api/colors
 

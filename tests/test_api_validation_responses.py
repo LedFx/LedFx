@@ -22,11 +22,9 @@ from ledfx.api.colors import ColorEndpoint
 from ledfx.api.config import ConfigEndpoint
 from ledfx.api.device import DeviceEndpoint
 from ledfx.api.devices import DevicesEndpoint
-from ledfx.api.effect import EffectEndpoint
 from ledfx.api.find_lifx import FindLifxEndpoint
 from ledfx.api.find_openrgb import FindOpenRGBDevicesEndpoint
 from ledfx.api.get_gif_frames import GetGifFramesEndpoint
-from ledfx.api.get_image import GetImageEndpoint
 from ledfx.api.integrations import IntegrationsEndpoint
 from ledfx.api.log import LogWebsocket
 from ledfx.api.ping import InfoEndpoint as PingEndpoint
@@ -445,13 +443,6 @@ async def test_ping_explains_a_device_without_an_address() -> None:
     assert _reason(response) == "Device d1 has no IP address"
 
 
-async def test_unknown_effect_schema_is_named() -> None:
-    ledfx = fake_ledfx()
-    ledfx.effects.get_class.side_effect = KeyError("nosuch")
-    _, response = await _call(EffectEndpoint(ledfx), "GET", effect_id="nosuch")
-    assert _reason(response) == "Effect nosuch was not found"
-
-
 # Integrations
 
 
@@ -790,12 +781,6 @@ async def test_asset_upload_must_be_multipart() -> None:
             "POST",
             {"path": 5},
             'Required string attribute "path" was not provided',
-        ),
-        (
-            GetImageEndpoint,
-            "POST",
-            {"path_url": 5},
-            'Required string attribute "path_url" was not provided',
         ),
         (
             GetGifFramesEndpoint,
