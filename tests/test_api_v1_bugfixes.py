@@ -577,3 +577,10 @@ async def test_openrgb_connects_off_the_loop(method: str) -> None:
         },
     )
     assert threads and threading.get_ident() not in threads
+
+
+async def test_openrgb_disconnects_after_listing() -> None:
+    client = MagicMock(devices=[])
+    with patch("ledfx.api.find_openrgb.OpenRGBClient", return_value=client):
+        await _call(FindOpenRGBDevicesEndpoint(fake_ledfx()), "GET")
+    client.disconnect.assert_called_once_with()

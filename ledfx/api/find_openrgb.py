@@ -13,15 +13,18 @@ _LOGGER = logging.getLogger(__name__)
 def _list_devices(server: str, port: int) -> list[dict[str, object]]:
     """Connect to an OpenRGB server and list its devices. Blocking."""
     client = OpenRGBClient(address=server, port=port)
-    return [
-        {
-            "name": device.name,
-            "type": device.type,
-            "id": device.id,
-            "leds": len(device.leds),
-        }
-        for device in client.devices
-    ]
+    try:
+        return [
+            {
+                "name": device.name,
+                "type": device.type,
+                "id": device.id,
+                "leds": len(device.leds),
+            }
+            for device in client.devices
+        ]
+    finally:
+        client.disconnect()
 
 
 class FindOpenRGBDevicesEndpoint(RestEndpoint):
