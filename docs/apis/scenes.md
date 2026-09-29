@@ -85,7 +85,7 @@ A **Scene** is a snapshot of effect configurations across multiple virtual LED d
 - `scene_tags` *(string, optional)*: Comma-separated tags for categorization.
 - `scene_puturl` *(string, optional)*: HTTP endpoint to call when scene activates.
 - `scene_payload` *(string, optional)*: Payload to send to `scene_puturl`.
-- `scene_midiactivate` *(object, optional)*: MIDI activation configuration.
+- `scene_midiactivate` *(string, optional)*: MIDI activation configuration.
 - `active` *(boolean)*: Indicates if the scene's configuration matches the current state of all virtuals.
 
 ### Virtual Action Behavior
@@ -162,7 +162,7 @@ If any virtual referenced in the scene no longer exists, the scene is not active
 - Responses are snackbar-friendly and follow LedFx standard format:
   - Success: `{"status":"success", ...}` or with snackbar: `{"status":"success", "payload":{"type":"success", "reason":"message"}}`
   - Error: `{"status":"failed", "payload":{"type":"error", "reason":"message"}}`
-- Status codes: `200 OK` for all responses (to ensure snackbar functionality works).
+- Status codes: `200 OK` for success and for other failures (to ensure snackbar functionality works). Pydantic validation failures on POST and PUT are `400 Bad Request` with `{"status":"failed", "payload":{"type":"error", "reason":"N invalid value(s)"}, "errors":[...]}`, where each error has pydantic's `type`, `loc`, `msg` and the rejected `input`.
 - Scene IDs are auto-generated from names (lowercase, hyphenated) if not provided.
 
 ---
@@ -396,7 +396,17 @@ Action-based controller for scenes. All actions require an `id` to specify which
 }
 ```
 
-Activates the scene after 5 seconds. Despite its name, `ms` is in seconds.
+Activates the scene after 5 seconds. Despite its name, `ms` is in seconds
+(the name is kept for compatibility). It must be a number from 0 to 86400
+(24 hours), and nothing is scheduled if it is not:
+
+-   `ms` missing or `null`: `Required attribute "ms" was not provided`
+-   a boolean, a non-number or out of range:
+    `"ms" must be a number of seconds from 0 to 86400`
+
+A scene has at most one pending delayed activation. It is cancelled when the
+scene is activated, deactivated or deleted, and replaced when `activate_in`
+is sent again for the same scene.
 
 **Response:**
 ```json

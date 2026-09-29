@@ -264,24 +264,27 @@ All responses return **Status Code 200** with JSON body (for frontend snackbar c
 
 -   **Failure**:
     -   Body:
-        -   `status` (String): `"error"` or `"failed"`
-        -   `reason` (String): Error description (e.g., "Failed to open gif from: <path_url>")
+        -   `status` (String): `"failed"`
+        -   `payload` (Object): `{"type": "error", "reason": <error description>}`, for example `"Failed to open GIF image from: <path_url>"`
 
 #### Error Handling
 
-The endpoint returns status code 200 for all responses (success and error) to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
+The endpoint returns status code 200 for all responses except invalid JSON (400), to support frontend snackbar notifications. Check the `status` field in the JSON response to determine success/failure.
 
 **Common error reasons:**
-- `"Required attribute "path_url" was not provided"` - Missing required parameter
-- `"Failed to open gif from: <path>"` - Image validation failed, file not found, or path traversal blocked
-- Invalid JSON body
+- `Required string attribute "path_url" was not provided` - Missing or non-string parameter
+- `Failed to open GIF image from: <path_url>` - Image validation failed, file not found, or path traversal blocked
+- Invalid JSON body (HTTP 400, `Request body is not valid JSON`)
 
 Error response structure:
 
 ``` json
 {
   "status": "failed",
-  "reason": "<error description>"
+  "payload": {
+    "type": "error",
+    "reason": "<error description>"
+  }
 }
 ```
 
