@@ -1,0 +1,1931 @@
+{
+ "audio": {
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": true,
+   "description": "Persisted audio section: input and analysis settings together.",
+   "properties": {
+    "pitch_method": {
+     "default": "yinfft",
+     "description": "Method to detect pitch",
+     "enum": [
+      "yinfft",
+      "yin",
+      "yinfast",
+      "schmitt",
+      "specacf"
+     ],
+     "title": "Pitch Method",
+     "type": "string"
+    },
+    "onset_method": {
+     "default": "hfc",
+     "description": "Method used to detect onsets",
+     "enum": [
+      "energy",
+      "hfc",
+      "complex",
+      "phase",
+      "wphase",
+      "specdiff",
+      "kl",
+      "mkl",
+      "specflux"
+     ],
+     "title": "Onset Method",
+     "type": "string"
+    },
+    "pitch_tolerance": {
+     "default": 0.8,
+     "description": "Pitch detection tolerance",
+     "maximum": 2,
+     "minimum": 0.0,
+     "title": "Pitch Tolerance",
+     "type": "number"
+    },
+    "sample_rate": {
+     "default": 60,
+     "readOnly": true,
+     "title": "Sample Rate",
+     "type": "integer"
+    },
+    "mic_rate": {
+     "default": 44100,
+     "readOnly": true,
+     "title": "Mic Rate",
+     "type": "integer"
+    },
+    "fft_size": {
+     "default": 4096,
+     "readOnly": true,
+     "title": "Fft Size",
+     "type": "integer"
+    },
+    "min_volume": {
+     "default": 0.2,
+     "maximum": 1.0,
+     "minimum": 0.0,
+     "title": "Min Volume",
+     "type": "number"
+    },
+    "audio_device": {
+     "anyOf": [
+      {
+       "type": "integer"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Audio Device",
+     "x-ledfx-enum-source": "audio_devices"
+    },
+    "audio_device_name": {
+     "default": "",
+     "readOnly": true,
+     "title": "Audio Device Name",
+     "type": "string"
+    },
+    "delay_ms": {
+     "default": 0,
+     "description": "Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
+     "maximum": 5000,
+     "minimum": 0,
+     "title": "Delay Ms",
+     "type": "integer"
+    }
+   },
+   "title": "AudioConfig",
+   "type": "object"
+  }
+ },
+ "melbanks": {
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": true,
+   "properties": {
+    "samples": {
+     "default": 24,
+     "maximum": 100,
+     "minimum": 0,
+     "title": "Samples",
+     "type": "integer"
+    },
+    "peak_isolation": {
+     "default": 0.4,
+     "maximum": 0.99,
+     "minimum": 0.0,
+     "title": "Peak Isolation",
+     "type": "number"
+    },
+    "coeffs_type": {
+     "default": "matt_mel",
+     "enum": [
+      "matt_mel",
+      "triangle",
+      "bark",
+      "mel",
+      "htk",
+      "scott",
+      "scott_mel"
+     ],
+     "title": "Coeffs Type",
+     "type": "string"
+    },
+    "max_frequencies": {
+     "default": [
+      350,
+      2000,
+      15000
+     ],
+     "items": {
+      "maximum": 15000,
+      "minimum": 0,
+      "type": "integer"
+     },
+     "title": "Max Frequencies",
+     "type": "array"
+    },
+    "min_frequency": {
+     "default": 20,
+     "maximum": 15000,
+     "minimum": 0,
+     "title": "Min Frequency",
+     "type": "integer"
+    }
+   },
+   "title": "MelbanksConfig",
+   "type": "object"
+  }
+ },
+ "melbank_collection": {
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": true,
+   "properties": {
+    "name": {
+     "anyOf": [
+      {
+       "type": "string"
+      },
+      {
+       "type": "null"
+      }
+     ],
+     "default": null,
+     "title": "Name"
+    },
+    "min_frequency": {
+     "default": 20,
+     "maximum": 15000,
+     "minimum": 20,
+     "title": "Min Frequency",
+     "type": "integer"
+    },
+    "max_frequency": {
+     "default": 15000,
+     "maximum": 15000,
+     "minimum": 20,
+     "title": "Max Frequency",
+     "type": "integer"
+    }
+   },
+   "title": "MelbankConfig",
+   "type": "object"
+  }
+ },
+ "wled_preferences": {
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "$defs": {
+    "WledBoolSetting": {
+     "additionalProperties": false,
+     "properties": {
+      "setting": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Setting"
+      },
+      "user_enabled": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "User Enabled"
+      }
+     },
+     "title": "WledBoolSetting",
+     "type": "object"
+    },
+    "WledIntSetting": {
+     "additionalProperties": false,
+     "properties": {
+      "setting": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Setting"
+      },
+      "user_enabled": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "User Enabled"
+      }
+     },
+     "title": "WledIntSetting",
+     "type": "object"
+    },
+    "WledStrSetting": {
+     "additionalProperties": false,
+     "properties": {
+      "setting": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Setting"
+      },
+      "user_enabled": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "User Enabled"
+      }
+     },
+     "title": "WledStrSetting",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "properties": {
+    "wled_preferred_mode": {
+     "$ref": "#/$defs/WledStrSetting",
+     "default": {
+      "setting": "UDP",
+      "user_enabled": false
+     },
+     "title": "Wled Preferred Mode"
+    },
+    "realtime_gamma_enabled": {
+     "$ref": "#/$defs/WledBoolSetting",
+     "default": {
+      "setting": false,
+      "user_enabled": false
+     },
+     "title": "Realtime Gamma Enabled"
+    },
+    "force_max_brightness": {
+     "$ref": "#/$defs/WledBoolSetting",
+     "default": {
+      "setting": false,
+      "user_enabled": false
+     },
+     "title": "Force Max Brightness"
+    },
+    "realtime_dmx_mode": {
+     "$ref": "#/$defs/WledStrSetting",
+     "default": {
+      "setting": "MultiRGB",
+      "user_enabled": false
+     },
+     "title": "Realtime Dmx Mode"
+    },
+    "start_universe_setting": {
+     "$ref": "#/$defs/WledIntSetting",
+     "default": {
+      "setting": 1,
+      "user_enabled": false
+     },
+     "title": "Start Universe Setting"
+    },
+    "dmx_address_start": {
+     "$ref": "#/$defs/WledIntSetting",
+     "default": {
+      "setting": 1,
+      "user_enabled": false
+     },
+     "title": "Dmx Address Start"
+    },
+    "inactivity_timeout": {
+     "$ref": "#/$defs/WledIntSetting",
+     "default": {
+      "setting": 1,
+      "user_enabled": false
+     },
+     "title": "Inactivity Timeout"
+    }
+   },
+   "title": "WledPreferences",
+   "type": "object"
+  }
+ },
+ "virtuals": {
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "additionalProperties": false,
+   "properties": {
+    "name": {
+     "description": "Friendly name for the device",
+     "title": "Name",
+     "type": "string"
+    },
+    "mapping": {
+     "default": "span",
+     "description": "Span: Effect spans all segments. Copy: Effect copied on each segment",
+     "enum": [
+      "span",
+      "copy"
+     ],
+     "title": "Mapping",
+     "type": "string"
+    },
+    "complex_segments": {
+     "default": false,
+     "description": "Use complex segment mapping mode for performance",
+     "title": "Complex Segments",
+     "type": "boolean"
+    },
+    "grouping": {
+     "default": 1,
+     "description": "Number of physical pixels to combine into larger virtual pixel groups",
+     "minimum": 0,
+     "title": "Grouping",
+     "type": "integer"
+    },
+    "icon_name": {
+     "default": "mdi:led-strip-variant",
+     "description": "Icon for the device*",
+     "title": "Icon Name",
+     "type": "string"
+    },
+    "max_brightness": {
+     "default": 1.0,
+     "description": "Max brightness for the device",
+     "maximum": 1,
+     "minimum": 0,
+     "title": "Max Brightness",
+     "type": "number"
+    },
+    "center_offset": {
+     "default": 0,
+     "description": "Number of pixels from the perceived center of the device",
+     "title": "Center Offset",
+     "type": "integer"
+    },
+    "preview_only": {
+     "default": false,
+     "description": "Preview the pixels without updating the devices",
+     "title": "Preview Only",
+     "type": "boolean"
+    },
+    "transition_time": {
+     "default": 0.4,
+     "description": "Length of transition between effects",
+     "maximum": 5,
+     "minimum": 0,
+     "title": "Transition Time",
+     "type": "number"
+    },
+    "transition_mode": {
+     "default": "Add",
+     "description": "Type of transition between effects",
+     "enum": [
+      "Add",
+      "Dissolve",
+      "Push",
+      "Slide",
+      "Iris",
+      "Through White",
+      "Through Black",
+      "None"
+     ],
+     "title": "Transition Mode",
+     "type": "string"
+    },
+    "frequency_min": {
+     "default": 20,
+     "description": "Lowest frequency for this virtual's audio reactive effects",
+     "maximum": 15000,
+     "minimum": 20,
+     "title": "Frequency Min",
+     "type": "integer"
+    },
+    "frequency_max": {
+     "default": 15000,
+     "description": "Highest frequency for this virtual's audio reactive effects",
+     "maximum": 15000,
+     "minimum": 20,
+     "title": "Frequency Max",
+     "type": "integer"
+    },
+    "rows": {
+     "default": 1,
+     "description": "Amount of rows. > 1 if this virtual is a matrix",
+     "minimum": 1,
+     "title": "Rows",
+     "type": "integer"
+    },
+    "rotate": {
+     "default": 0,
+     "description": "90 Degree rotations",
+     "maximum": 3,
+     "minimum": 0,
+     "title": "Rotate",
+     "type": "integer"
+    }
+   },
+   "required": [
+    "name"
+   ],
+   "title": "VirtualConfig",
+   "type": "object"
+  }
+ },
+ "core": {
+  "schema": {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
+   "$defs": {
+    "AudioConfig": {
+     "additionalProperties": true,
+     "description": "Persisted audio section: input and analysis settings together.",
+     "properties": {
+      "pitch_method": {
+       "default": "yinfft",
+       "description": "Method to detect pitch",
+       "enum": [
+        "yinfft",
+        "yin",
+        "yinfast",
+        "schmitt",
+        "specacf"
+       ],
+       "title": "Pitch Method",
+       "type": "string"
+      },
+      "onset_method": {
+       "default": "hfc",
+       "description": "Method used to detect onsets",
+       "enum": [
+        "energy",
+        "hfc",
+        "complex",
+        "phase",
+        "wphase",
+        "specdiff",
+        "kl",
+        "mkl",
+        "specflux"
+       ],
+       "title": "Onset Method",
+       "type": "string"
+      },
+      "pitch_tolerance": {
+       "default": 0.8,
+       "description": "Pitch detection tolerance",
+       "maximum": 2,
+       "minimum": 0.0,
+       "title": "Pitch Tolerance",
+       "type": "number"
+      },
+      "sample_rate": {
+       "default": 60,
+       "readOnly": true,
+       "title": "Sample Rate",
+       "type": "integer"
+      },
+      "mic_rate": {
+       "default": 44100,
+       "readOnly": true,
+       "title": "Mic Rate",
+       "type": "integer"
+      },
+      "fft_size": {
+       "default": 4096,
+       "readOnly": true,
+       "title": "Fft Size",
+       "type": "integer"
+      },
+      "min_volume": {
+       "default": 0.2,
+       "maximum": 1.0,
+       "minimum": 0.0,
+       "title": "Min Volume",
+       "type": "number"
+      },
+      "audio_device": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Audio Device",
+       "x-ledfx-enum-source": "audio_devices"
+      },
+      "audio_device_name": {
+       "default": "",
+       "readOnly": true,
+       "title": "Audio Device Name",
+       "type": "string"
+      },
+      "delay_ms": {
+       "default": 0,
+       "description": "Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
+       "maximum": 5000,
+       "minimum": 0,
+       "title": "Delay Ms",
+       "type": "integer"
+      }
+     },
+     "title": "AudioConfig",
+     "type": "object"
+    },
+    "DeviceEntry": {
+     "additionalProperties": false,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "type": {
+       "title": "Type",
+       "type": "string"
+      },
+      "config": {
+       "additionalProperties": true,
+       "title": "Config",
+       "type": "object"
+      }
+     },
+     "required": [
+      "id",
+      "type",
+      "config"
+     ],
+     "title": "DeviceEntry",
+     "type": "object"
+    },
+    "EffectEntry": {
+     "additionalProperties": false,
+     "properties": {
+      "type": {
+       "title": "Type",
+       "type": "string"
+      },
+      "config": {
+       "additionalProperties": true,
+       "default": {},
+       "title": "Config",
+       "type": "object"
+      }
+     },
+     "required": [
+      "type"
+     ],
+     "title": "EffectEntry",
+     "type": "object"
+    },
+    "ImageCacheConfig": {
+     "additionalProperties": true,
+     "properties": {
+      "max_size_mb": {
+       "default": 500,
+       "title": "Max Size Mb",
+       "type": "integer"
+      },
+      "max_items": {
+       "default": 500,
+       "title": "Max Items",
+       "type": "integer"
+      }
+     },
+     "title": "ImageCacheConfig",
+     "type": "object"
+    },
+    "IntegrationEntry": {
+     "additionalProperties": false,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "type": {
+       "title": "Type",
+       "type": "string"
+      },
+      "active": {
+       "default": false,
+       "title": "Active",
+       "type": "boolean"
+      },
+      "data": {
+       "anyOf": [
+        {
+         "items": {},
+         "type": "array"
+        },
+        {
+         "additionalProperties": true,
+         "type": "object"
+        }
+       ],
+       "default": {},
+       "title": "Data"
+      },
+      "config": {
+       "additionalProperties": true,
+       "default": {},
+       "title": "Config",
+       "type": "object"
+      }
+     },
+     "required": [
+      "id",
+      "type"
+     ],
+     "title": "IntegrationEntry",
+     "type": "object"
+    },
+    "Jitter": {
+     "additionalProperties": true,
+     "properties": {
+      "enabled": {
+       "default": false,
+       "title": "Enabled",
+       "type": "boolean"
+      },
+      "factor_min": {
+       "default": 1.0,
+       "minimum": 0.0,
+       "title": "Factor Min",
+       "type": "number"
+      },
+      "factor_max": {
+       "default": 1.0,
+       "minimum": 0.0,
+       "title": "Factor Max",
+       "type": "number"
+      }
+     },
+     "title": "Jitter",
+     "type": "object"
+    },
+    "MelbankCollectionEntry": {
+     "additionalProperties": false,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "config": {
+       "$ref": "#/$defs/MelbankConfig",
+       "title": "Config"
+      }
+     },
+     "required": [
+      "id",
+      "config"
+     ],
+     "title": "MelbankCollectionEntry",
+     "type": "object"
+    },
+    "MelbankConfig": {
+     "additionalProperties": true,
+     "properties": {
+      "name": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Name"
+      },
+      "min_frequency": {
+       "default": 20,
+       "maximum": 15000,
+       "minimum": 20,
+       "title": "Min Frequency",
+       "type": "integer"
+      },
+      "max_frequency": {
+       "default": 15000,
+       "maximum": 15000,
+       "minimum": 20,
+       "title": "Max Frequency",
+       "type": "integer"
+      }
+     },
+     "title": "MelbankConfig",
+     "type": "object"
+    },
+    "MelbanksConfig": {
+     "additionalProperties": true,
+     "properties": {
+      "samples": {
+       "default": 24,
+       "maximum": 100,
+       "minimum": 0,
+       "title": "Samples",
+       "type": "integer"
+      },
+      "peak_isolation": {
+       "default": 0.4,
+       "maximum": 0.99,
+       "minimum": 0.0,
+       "title": "Peak Isolation",
+       "type": "number"
+      },
+      "coeffs_type": {
+       "default": "matt_mel",
+       "enum": [
+        "matt_mel",
+        "triangle",
+        "bark",
+        "mel",
+        "htk",
+        "scott",
+        "scott_mel"
+       ],
+       "title": "Coeffs Type",
+       "type": "string"
+      },
+      "max_frequencies": {
+       "default": [
+        350,
+        2000,
+        15000
+       ],
+       "items": {
+        "maximum": 15000,
+        "minimum": 0,
+        "type": "integer"
+       },
+       "title": "Max Frequencies",
+       "type": "array"
+      },
+      "min_frequency": {
+       "default": 20,
+       "maximum": 15000,
+       "minimum": 0,
+       "title": "Min Frequency",
+       "type": "integer"
+      }
+     },
+     "title": "MelbanksConfig",
+     "type": "object"
+    },
+    "NowPlayingAlbumArt": {
+     "additionalProperties": false,
+     "properties": {
+      "enabled": {
+       "default": true,
+       "title": "Enabled",
+       "type": "boolean"
+      },
+      "duration": {
+       "default": 10,
+       "maximum": 60,
+       "minimum": 0,
+       "title": "Duration",
+       "type": "integer"
+      },
+      "virtual_ids": {
+       "default": [],
+       "items": {
+        "type": "string",
+        "x-ledfx-enum-source": "virtuals"
+       },
+       "title": "Virtual Ids",
+       "type": "array"
+      }
+     },
+     "title": "NowPlayingAlbumArt",
+     "type": "object"
+    },
+    "NowPlayingConfig": {
+     "additionalProperties": false,
+     "properties": {
+      "gradient": {
+       "$ref": "#/$defs/NowPlayingGradient",
+       "default": {
+        "enabled": false,
+        "variant": "led_punchy",
+        "virtual_ids": []
+       },
+       "title": "Gradient"
+      },
+      "track_text": {
+       "$ref": "#/$defs/NowPlayingTrackText",
+       "default": {
+        "enabled": true,
+        "duration": 60,
+        "virtual_ids": [],
+        "preset": ""
+       },
+       "title": "Track Text"
+      },
+      "album_art": {
+       "$ref": "#/$defs/NowPlayingAlbumArt",
+       "default": {
+        "enabled": true,
+        "duration": 10,
+        "virtual_ids": []
+       },
+       "title": "Album Art"
+      }
+     },
+     "title": "NowPlayingConfig",
+     "type": "object"
+    },
+    "NowPlayingGradient": {
+     "additionalProperties": false,
+     "properties": {
+      "enabled": {
+       "default": false,
+       "title": "Enabled",
+       "type": "boolean"
+      },
+      "variant": {
+       "default": "led_punchy",
+       "enum": [
+        "led_safe",
+        "led_punchy",
+        "led_max"
+       ],
+       "title": "Variant",
+       "type": "string"
+      },
+      "virtual_ids": {
+       "default": [],
+       "items": {
+        "type": "string",
+        "x-ledfx-enum-source": "virtuals"
+       },
+       "title": "Virtual Ids",
+       "type": "array"
+      }
+     },
+     "title": "NowPlayingGradient",
+     "type": "object"
+    },
+    "NowPlayingTrackText": {
+     "additionalProperties": false,
+     "properties": {
+      "enabled": {
+       "default": true,
+       "title": "Enabled",
+       "type": "boolean"
+      },
+      "duration": {
+       "default": 60,
+       "maximum": 60,
+       "minimum": 0,
+       "title": "Duration",
+       "type": "integer"
+      },
+      "virtual_ids": {
+       "default": [],
+       "items": {
+        "type": "string",
+        "x-ledfx-enum-source": "virtuals"
+       },
+       "title": "Virtual Ids",
+       "type": "array"
+      },
+      "preset": {
+       "default": "",
+       "title": "Preset",
+       "type": "string"
+      }
+     },
+     "title": "NowPlayingTrackText",
+     "type": "object"
+    },
+    "Playlist": {
+     "additionalProperties": true,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "items": {
+       "items": {
+        "$ref": "#/$defs/PlaylistItem"
+       },
+       "title": "Items",
+       "type": "array"
+      },
+      "default_duration_ms": {
+       "default": 500,
+       "minimum": 500,
+       "title": "Default Duration Ms",
+       "type": "integer"
+      },
+      "mode": {
+       "default": "sequence",
+       "enum": [
+        "sequence",
+        "shuffle"
+       ],
+       "title": "Mode",
+       "type": "string"
+      },
+      "timing": {
+       "$ref": "#/$defs/PlaylistTiming",
+       "default": {
+        "jitter": {
+         "enabled": false,
+         "factor_max": 1.0,
+         "factor_min": 1.0
+        }
+       },
+       "title": "Timing"
+      },
+      "tags": {
+       "default": [],
+       "items": {},
+       "title": "Tags",
+       "type": "array"
+      },
+      "image": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": "Wallpaper",
+       "title": "Image"
+      }
+     },
+     "required": [
+      "id",
+      "name",
+      "items"
+     ],
+     "title": "Playlist",
+     "type": "object"
+    },
+    "PlaylistItem": {
+     "additionalProperties": false,
+     "properties": {
+      "scene_id": {
+       "title": "Scene Id",
+       "type": "string",
+       "x-ledfx-enum-source": "scenes"
+      },
+      "duration_ms": {
+       "anyOf": [
+        {
+         "minimum": 500,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Duration Ms"
+      }
+     },
+     "required": [
+      "scene_id"
+     ],
+     "title": "PlaylistItem",
+     "type": "object"
+    },
+    "PlaylistTiming": {
+     "additionalProperties": true,
+     "properties": {
+      "jitter": {
+       "$ref": "#/$defs/Jitter",
+       "default": {
+        "enabled": false,
+        "factor_min": 1.0,
+        "factor_max": 1.0
+       }
+      }
+     },
+     "title": "PlaylistTiming",
+     "type": "object"
+    },
+    "Preset": {
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "config": {
+       "additionalProperties": true,
+       "default": {},
+       "title": "Config",
+       "type": "object"
+      }
+     },
+     "required": [
+      "name"
+     ],
+     "title": "Preset",
+     "type": "object"
+    },
+    "Scene": {
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "title": "Name",
+       "type": "string"
+      },
+      "scene_image": {
+       "default": "Wallpaper",
+       "title": "Scene Image",
+       "type": "string"
+      },
+      "scene_tags": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Scene Tags"
+      },
+      "scene_puturl": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Scene Puturl"
+      },
+      "scene_payload": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Scene Payload"
+      },
+      "scene_midiactivate": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Scene Midiactivate"
+      },
+      "virtuals": {
+       "additionalProperties": {
+        "$ref": "#/$defs/SceneVirtual"
+       },
+       "default": {},
+       "propertyNames": {
+        "x-ledfx-enum-source": "virtuals"
+       },
+       "title": "Virtuals",
+       "type": "object"
+      }
+     },
+     "required": [
+      "name"
+     ],
+     "title": "Scene",
+     "type": "object"
+    },
+    "SceneVirtual": {
+     "additionalProperties": false,
+     "properties": {
+      "type": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Type"
+      },
+      "config": {
+       "anyOf": [
+        {
+         "additionalProperties": true,
+         "type": "object"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Config"
+      },
+      "action": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Action"
+      },
+      "preset": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Preset"
+      }
+     },
+     "title": "SceneVirtual",
+     "type": "object"
+    },
+    "SendspinServerConfig": {
+     "additionalProperties": false,
+     "properties": {
+      "server_url": {
+       "default": "ws://192.168.1.12:8927/sendspin",
+       "title": "Server Url",
+       "type": "string"
+      },
+      "client_name": {
+       "default": "LedFx",
+       "title": "Client Name",
+       "type": "string"
+      }
+     },
+     "title": "SendspinServerConfig",
+     "type": "object"
+    },
+    "VirtualConfig": {
+     "additionalProperties": false,
+     "properties": {
+      "name": {
+       "description": "Friendly name for the device",
+       "title": "Name",
+       "type": "string"
+      },
+      "mapping": {
+       "default": "span",
+       "description": "Span: Effect spans all segments. Copy: Effect copied on each segment",
+       "enum": [
+        "span",
+        "copy"
+       ],
+       "title": "Mapping",
+       "type": "string"
+      },
+      "complex_segments": {
+       "default": false,
+       "description": "Use complex segment mapping mode for performance",
+       "title": "Complex Segments",
+       "type": "boolean"
+      },
+      "grouping": {
+       "default": 1,
+       "description": "Number of physical pixels to combine into larger virtual pixel groups",
+       "minimum": 0,
+       "title": "Grouping",
+       "type": "integer"
+      },
+      "icon_name": {
+       "default": "mdi:led-strip-variant",
+       "description": "Icon for the device*",
+       "title": "Icon Name",
+       "type": "string"
+      },
+      "max_brightness": {
+       "default": 1.0,
+       "description": "Max brightness for the device",
+       "maximum": 1,
+       "minimum": 0,
+       "title": "Max Brightness",
+       "type": "number"
+      },
+      "center_offset": {
+       "default": 0,
+       "description": "Number of pixels from the perceived center of the device",
+       "title": "Center Offset",
+       "type": "integer"
+      },
+      "preview_only": {
+       "default": false,
+       "description": "Preview the pixels without updating the devices",
+       "title": "Preview Only",
+       "type": "boolean"
+      },
+      "transition_time": {
+       "default": 0.4,
+       "description": "Length of transition between effects",
+       "maximum": 5,
+       "minimum": 0,
+       "title": "Transition Time",
+       "type": "number"
+      },
+      "transition_mode": {
+       "default": "Add",
+       "description": "Type of transition between effects",
+       "enum": [
+        "Add",
+        "Dissolve",
+        "Push",
+        "Slide",
+        "Iris",
+        "Through White",
+        "Through Black",
+        "None"
+       ],
+       "title": "Transition Mode",
+       "type": "string"
+      },
+      "frequency_min": {
+       "default": 20,
+       "description": "Lowest frequency for this virtual's audio reactive effects",
+       "maximum": 15000,
+       "minimum": 20,
+       "title": "Frequency Min",
+       "type": "integer"
+      },
+      "frequency_max": {
+       "default": 15000,
+       "description": "Highest frequency for this virtual's audio reactive effects",
+       "maximum": 15000,
+       "minimum": 20,
+       "title": "Frequency Max",
+       "type": "integer"
+      },
+      "rows": {
+       "default": 1,
+       "description": "Amount of rows. > 1 if this virtual is a matrix",
+       "minimum": 1,
+       "title": "Rows",
+       "type": "integer"
+      },
+      "rotate": {
+       "default": 0,
+       "description": "90 Degree rotations",
+       "maximum": 3,
+       "minimum": 0,
+       "title": "Rotate",
+       "type": "integer"
+      }
+     },
+     "required": [
+      "name"
+     ],
+     "title": "VirtualConfig",
+     "type": "object"
+    },
+    "VirtualEntry": {
+     "additionalProperties": false,
+     "properties": {
+      "id": {
+       "title": "Id",
+       "type": "string"
+      },
+      "config": {
+       "$ref": "#/$defs/VirtualConfig",
+       "title": "Config"
+      },
+      "segments": {
+       "default": [],
+       "items": {
+        "items": {},
+        "type": "array"
+       },
+       "title": "Segments",
+       "type": "array"
+      },
+      "is_device": {
+       "anyOf": [
+        {
+         "type": "string",
+         "x-ledfx-enum-source": "devices"
+        },
+        {
+         "const": false,
+         "type": "boolean"
+        }
+       ],
+       "default": false,
+       "title": "Is Device"
+      },
+      "auto_generated": {
+       "default": false,
+       "title": "Auto Generated",
+       "type": "boolean"
+      },
+      "active": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Active"
+      },
+      "effect": {
+       "anyOf": [
+        {
+         "$ref": "#/$defs/EffectEntry"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Effect"
+      },
+      "effects": {
+       "additionalProperties": {
+        "$ref": "#/$defs/EffectEntry"
+       },
+       "default": {},
+       "title": "Effects",
+       "type": "object"
+      },
+      "last_effect": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Last Effect"
+      }
+     },
+     "required": [
+      "id",
+      "config"
+     ],
+     "title": "VirtualEntry",
+     "type": "object"
+    },
+    "WledBoolSetting": {
+     "additionalProperties": false,
+     "properties": {
+      "setting": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Setting"
+      },
+      "user_enabled": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "User Enabled"
+      }
+     },
+     "title": "WledBoolSetting",
+     "type": "object"
+    },
+    "WledIntSetting": {
+     "additionalProperties": false,
+     "properties": {
+      "setting": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Setting"
+      },
+      "user_enabled": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "User Enabled"
+      }
+     },
+     "title": "WledIntSetting",
+     "type": "object"
+    },
+    "WledPreferences": {
+     "additionalProperties": false,
+     "properties": {
+      "wled_preferred_mode": {
+       "$ref": "#/$defs/WledStrSetting",
+       "default": {
+        "setting": "UDP",
+        "user_enabled": false
+       },
+       "title": "Wled Preferred Mode"
+      },
+      "realtime_gamma_enabled": {
+       "$ref": "#/$defs/WledBoolSetting",
+       "default": {
+        "setting": false,
+        "user_enabled": false
+       },
+       "title": "Realtime Gamma Enabled"
+      },
+      "force_max_brightness": {
+       "$ref": "#/$defs/WledBoolSetting",
+       "default": {
+        "setting": false,
+        "user_enabled": false
+       },
+       "title": "Force Max Brightness"
+      },
+      "realtime_dmx_mode": {
+       "$ref": "#/$defs/WledStrSetting",
+       "default": {
+        "setting": "MultiRGB",
+        "user_enabled": false
+       },
+       "title": "Realtime Dmx Mode"
+      },
+      "start_universe_setting": {
+       "$ref": "#/$defs/WledIntSetting",
+       "default": {
+        "setting": 1,
+        "user_enabled": false
+       },
+       "title": "Start Universe Setting"
+      },
+      "dmx_address_start": {
+       "$ref": "#/$defs/WledIntSetting",
+       "default": {
+        "setting": 1,
+        "user_enabled": false
+       },
+       "title": "Dmx Address Start"
+      },
+      "inactivity_timeout": {
+       "$ref": "#/$defs/WledIntSetting",
+       "default": {
+        "setting": 1,
+        "user_enabled": false
+       },
+       "title": "Inactivity Timeout"
+      }
+     },
+     "title": "WledPreferences",
+     "type": "object"
+    },
+    "WledStrSetting": {
+     "additionalProperties": false,
+     "properties": {
+      "setting": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "Setting"
+      },
+      "user_enabled": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "default": null,
+       "title": "User Enabled"
+      }
+     },
+     "title": "WledStrSetting",
+     "type": "object"
+    }
+   },
+   "additionalProperties": false,
+   "description": "The persisted config.json (minus schema_version/configuration_version).",
+   "properties": {
+    "host": {
+     "default": "0.0.0.0",
+     "title": "Host",
+     "type": "string"
+    },
+    "port": {
+     "default": 8888,
+     "title": "Port",
+     "type": "integer"
+    },
+    "port_s": {
+     "default": 8443,
+     "title": "Port S",
+     "type": "integer"
+    },
+    "dev_mode": {
+     "default": false,
+     "title": "Dev Mode",
+     "type": "boolean"
+    },
+    "devices": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/DeviceEntry"
+     },
+     "title": "Devices",
+     "type": "array"
+    },
+    "virtuals": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/VirtualEntry"
+     },
+     "title": "Virtuals",
+     "type": "array"
+    },
+    "audio": {
+     "$ref": "#/$defs/AudioConfig",
+     "default": {
+      "pitch_method": "yinfft",
+      "tempo_method": "default",
+      "onset_method": "hfc",
+      "pitch_tolerance": 0.8,
+      "sample_rate": 60,
+      "mic_rate": 44100,
+      "fft_size": 4096,
+      "min_volume": 0.2,
+      "audio_device": null,
+      "audio_device_name": "",
+      "delay_ms": 0
+     },
+     "title": "Audio"
+    },
+    "melbank_collection": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/MelbankCollectionEntry"
+     },
+     "title": "Melbank Collection",
+     "type": "array"
+    },
+    "melbanks": {
+     "$ref": "#/$defs/MelbanksConfig",
+     "default": {
+      "samples": 24,
+      "peak_isolation": 0.4,
+      "coeffs_type": "matt_mel",
+      "max_frequencies": [
+       350,
+       2000,
+       15000
+      ],
+      "min_frequency": 20
+     },
+     "title": "Melbanks"
+    },
+    "user_presets": {
+     "additionalProperties": {
+      "additionalProperties": {
+       "$ref": "#/$defs/Preset"
+      },
+      "type": "object"
+     },
+     "default": {},
+     "title": "User Presets",
+     "type": "object"
+    },
+    "scenes": {
+     "additionalProperties": {
+      "$ref": "#/$defs/Scene"
+     },
+     "default": {},
+     "title": "Scenes",
+     "type": "object"
+    },
+    "playlists": {
+     "additionalProperties": {
+      "$ref": "#/$defs/Playlist"
+     },
+     "default": {},
+     "title": "Playlists",
+     "type": "object"
+    },
+    "integrations": {
+     "default": [],
+     "items": {
+      "$ref": "#/$defs/IntegrationEntry"
+     },
+     "title": "Integrations",
+     "type": "array"
+    },
+    "transmission_mode": {
+     "default": "compressed",
+     "enum": [
+      "compressed",
+      "uncompressed"
+     ],
+     "title": "Transmission Mode",
+     "type": "string"
+    },
+    "visualisation_fps": {
+     "default": 30,
+     "maximum": 60,
+     "minimum": 1,
+     "title": "Visualisation Fps",
+     "type": "integer"
+    },
+    "visualisation_maxlen": {
+     "default": 81,
+     "maximum": 65536,
+     "minimum": 5,
+     "title": "Visualisation Maxlen",
+     "type": "integer"
+    },
+    "global_transitions": {
+     "default": true,
+     "description": "Changes to any virtual's transitions apply to all other virtuals",
+     "title": "Global Transitions",
+     "type": "boolean"
+    },
+    "user_colors": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "default": {},
+     "title": "User Colors",
+     "type": "object"
+    },
+    "user_gradients": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "default": {},
+     "title": "User Gradients",
+     "type": "object"
+    },
+    "scan_on_startup": {
+     "default": false,
+     "title": "Scan On Startup",
+     "type": "boolean"
+    },
+    "create_segments": {
+     "default": false,
+     "title": "Create Segments",
+     "type": "boolean"
+    },
+    "flush_on_deactivate": {
+     "default": false,
+     "title": "Flush On Deactivate",
+     "type": "boolean"
+    },
+    "wled_preferences": {
+     "$ref": "#/$defs/WledPreferences",
+     "default": {
+      "wled_preferred_mode": {
+       "setting": "UDP",
+       "user_enabled": false
+      },
+      "realtime_gamma_enabled": {
+       "setting": false,
+       "user_enabled": false
+      },
+      "force_max_brightness": {
+       "setting": false,
+       "user_enabled": false
+      },
+      "realtime_dmx_mode": {
+       "setting": "MultiRGB",
+       "user_enabled": false
+      },
+      "start_universe_setting": {
+       "setting": 1,
+       "user_enabled": false
+      },
+      "dmx_address_start": {
+       "setting": 1,
+       "user_enabled": false
+      },
+      "inactivity_timeout": {
+       "setting": 1,
+       "user_enabled": false
+      }
+     },
+     "title": "Wled Preferences"
+    },
+    "global_brightness": {
+     "default": 1.0,
+     "maximum": 1.0,
+     "minimum": 0,
+     "title": "Global Brightness",
+     "type": "number"
+    },
+    "ui_brightness_boost": {
+     "default": 0.0,
+     "maximum": 1.0,
+     "minimum": 0,
+     "title": "Ui Brightness Boost",
+     "type": "number"
+    },
+    "startup_scene_id": {
+     "default": "",
+     "title": "Startup Scene Id",
+     "type": "string",
+     "x-ledfx-enum-source": "scenes"
+    },
+    "startup_playlist_id": {
+     "default": "",
+     "title": "Startup Playlist Id",
+     "type": "string",
+     "x-ledfx-enum-source": "playlists"
+    },
+    "lifx_broadcast_address": {
+     "default": "255.255.255.255",
+     "format": "ipv4",
+     "title": "Lifx Broadcast Address",
+     "type": "string"
+    },
+    "lifx_discovery_timeout": {
+     "default": 30,
+     "maximum": 120,
+     "minimum": 1,
+     "title": "Lifx Discovery Timeout",
+     "type": "integer"
+    },
+    "instance_id": {
+     "default": "",
+     "readOnly": true,
+     "title": "Instance Id",
+     "type": "string"
+    },
+    "sendspin_servers": {
+     "additionalProperties": {
+      "$ref": "#/$defs/SendspinServerConfig"
+     },
+     "default": {},
+     "title": "Sendspin Servers",
+     "type": "object"
+    },
+    "sendspin_always_on": {
+     "default": true,
+     "title": "Sendspin Always On",
+     "type": "boolean"
+    },
+    "now_playing": {
+     "$ref": "#/$defs/NowPlayingConfig",
+     "default": {
+      "gradient": {
+       "enabled": false,
+       "variant": "led_punchy",
+       "virtual_ids": []
+      },
+      "track_text": {
+       "duration": 60,
+       "enabled": true,
+       "preset": "",
+       "virtual_ids": []
+      },
+      "album_art": {
+       "duration": 10,
+       "enabled": true,
+       "virtual_ids": []
+      }
+     },
+     "title": "Now Playing"
+    },
+    "allowed_origins": {
+     "default": [],
+     "description": "Extra web origins (e.g. \"https://ledfx.example.com\") allowed to use the API from a browser. \"*\" allows every origin",
+     "items": {
+      "type": "string"
+     },
+     "title": "Allowed Origins",
+     "type": "array"
+    },
+    "allowed_hosts": {
+     "default": [],
+     "description": "Extra host names (e.g. \"ledfx.example.com\") that browsers may use to reach LedFx. \"*\" allows every name",
+     "items": {
+      "type": "string"
+     },
+     "title": "Allowed Hosts",
+     "type": "array"
+    },
+    "allow_null_origin": {
+     "default": false,
+     "description": "Accept browser requests whose Origin is \"null\"",
+     "title": "Allow Null Origin",
+     "type": "boolean"
+    },
+    "debug_asyncio": {
+     "default": false,
+     "readOnly": true,
+     "title": "Debug Asyncio",
+     "type": "boolean"
+    },
+    "image_cache": {
+     "$ref": "#/$defs/ImageCacheConfig",
+     "default": {
+      "max_size_mb": 500,
+      "max_items": 500
+     },
+     "title": "Image Cache"
+    }
+   },
+   "title": "LedFxConfig",
+   "type": "object"
+  }
+ }
+}
