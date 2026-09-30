@@ -26,6 +26,7 @@ from pydantic import (
     create_model,
 )
 
+from ledfx.api.v2.core.partial import Patch, aliased_field, partial_model
 from ledfx.api.v2.core.problem import (
     ProblemDetailError,
     ProblemError,
@@ -80,6 +81,7 @@ class BoundRoute:
     list_params: frozenset[str] = frozenset()
     body_type: object = None  # the body annotation; M for Partial[M]
     return_type: object = None  # the return annotation
+    patch_model: type[BaseModel] | None = None  # M for a Partial[M] body
 
     async def __call__(self, request: web.Request) -> web.StreamResponse:
         self._check_media_type(request)
@@ -136,6 +138,14 @@ class BoundRoute:
         self, request: web.Request, name: str, kwargs: dict[str, object]
     ) -> list[ProblemDetailError]:
         raw = await request.read()
+        if self.patch_model is not None:
+            try:
+                kwargs[name] = Patch.parse(self.patch_model, raw)
+            except ProblemError as err:
+                if err.status != 422 or err.errors is None:
+                    raise
+                return err.errors
+            return []
         if self.body_adapter is None:
             raise AssertionError("a body parameter always has an adapter")
         json_body(raw)  # a 400 for invalid JSON, NaN and Infinity
@@ -255,6 +265,7 @@ def bind(spec: RouteSpec) -> BoundRoute:
     body_param: str | None = None
     body_type: object = None
     body_adapter: TypeAdapter[object] | None = None
+    patch_model: type[BaseModel] | None = None
     for param_name, param in signature.parameters.items():
         if param.kind not in (
             inspect.Parameter.POSITIONAL_OR_KEYWORD,
@@ -287,7 +298,7 @@ def bind(spec: RouteSpec) -> BoundRoute:
             _check_not_a_model_attribute(where, param_name)
             path_params.append(param_name)
             fields[param_name] = (annotation, ...)
-        elif _is_body(annotation):
+        elif partial_model(annotation) is not None or _is_body(annotation):
             if spec.method in _NO_BODY_METHODS:
                 raise BuildError(
                     f"{where}: {spec.method} can't take a body ({param_name})"
@@ -296,8 +307,18 @@ def bind(spec: RouteSpec) -> BoundRoute:
                 raise BuildError(
                     f"{where}: two body parameters ({body_param}, {param_name})"
                 )
-            body_param, body_type = param_name, annotation
-            body_adapter = _adapter(annotation, where)
+            body_param = param_name
+            patch_model = partial_model(annotation)
+            if patch_model is not None:
+                if (aliased := aliased_field(patch_model)) is not None:
+                    raise BuildError(
+                        f"{where}: Partial[{patch_model.__name__}] can't take "
+                        f"aliases ({aliased}); patch by field name"
+                    )
+                body_type = patch_model
+            else:
+                body_type = annotation
+                body_adapter = _adapter(annotation, where)
         elif _is_scalar(annotation) or _list_item(annotation) is not None:
             item = _list_item(annotation)
             if item is not None:
@@ -341,7 +362,7 @@ def bind(spec: RouteSpec) -> BoundRoute:
         params_model=params_model,
         body_param=body_param,
         body_adapter=body_adapter,
-        body_is_patch=False,
+        body_is_patch=patch_model is not None,
         dep_params=deps,
         request_param=request_param,
         return_adapter=return_adapter,
@@ -350,6 +371,7 @@ def bind(spec: RouteSpec) -> BoundRoute:
         list_params=frozenset(list_params),
         body_type=body_type,
         return_type=returns,
+        patch_model=patch_model,
     )
 
 
