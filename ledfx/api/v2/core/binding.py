@@ -16,6 +16,7 @@ from typing import (
     get_args,
     get_origin,
 )
+from urllib.parse import quote
 
 from aiohttp import web
 from pydantic import (
@@ -26,6 +27,7 @@ from pydantic import (
     create_model,
 )
 
+from ledfx.api.v2.core.encode import encode, validate_responses_enabled
 from ledfx.api.v2.core.partial import Patch, aliased_field, partial_model
 from ledfx.api.v2.core.problem import (
     ProblemDetailError,
@@ -82,6 +84,7 @@ class BoundRoute:
     body_type: object = None  # the body annotation; M for Partial[M]
     return_type: object = None  # the return annotation
     patch_model: type[BaseModel] | None = None  # M for a Partial[M] body
+    location: bool = False  # set by link_locations: 201s answer with Location
 
     async def __call__(self, request: web.Request) -> web.StreamResponse:
         self._check_media_type(request)
@@ -158,15 +161,40 @@ class BoundRoute:
         return []
 
     def _respond(self, request: web.Request, result: object) -> web.StreamResponse:
-        if isinstance(result, web.StreamResponse):
+        check = validate_responses_enabled()
+        if self.spec.status in self.spec.responses:  # Binary
+            if not isinstance(result, web.StreamResponse):
+                raise TypeError(f"{self.operation_id} must return a web.StreamResponse")
+            declared = result.status == self.spec.status
+            if check and not declared and result.status not in self.spec.responses:
+                raise AssertionError(
+                    f"{self.operation_id} answered {result.status}, "
+                    "which its route does not declare"
+                )
             return result
-        if self.return_adapter is None:
+        if self.return_adapter is None:  # -> None
+            if check and result is not None:
+                raise AssertionError(f"{self.operation_id} is -> None but returned")
             return web.Response(status=self.spec.status)
-        return web.Response(
-            status=self.spec.status,
-            body=self.return_adapter.dump_json(result, by_alias=True),
-            content_type="application/json",
+        body = encode(self.return_adapter, result)
+        if check:
+            # Round-trip what we send: this also catches a model instance that
+            # was built without validation.
+            try:
+                self.return_adapter.validate_json(body, strict=True)
+            except ValidationError as err:
+                raise AssertionError(
+                    f"{self.operation_id} returned a body that is not its "
+                    f"declared type: {err}"
+                ) from err
+        response = web.Response(
+            status=self.spec.status, body=body, content_type="application/json"
         )
+        item_id = getattr(result, "id", None)
+        if self.location and item_id is not None:
+            base = request.rel_url.raw_path.rstrip("/")
+            response.headers["Location"] = f"{base}/{quote(str(item_id), safe='')}"
+        return response
 
 
 def _unwrap(annotation: object) -> object:
@@ -393,3 +421,14 @@ def check_unique(routes: Sequence[BoundRoute]) -> None:
             )
         by_path[key] = route.operation_id
         by_operation[route.operation_id] = where
+
+
+def link_locations(routes: Sequence[BoundRoute]) -> None:
+    """Mark each 201 route whose created item has a GET route one level down
+    (POST /things → GET /things/{thing_id}): its response carries Location."""
+    item_gets = {
+        _PLACEHOLDER.sub("{}", r.spec.path) for r in routes if r.spec.method == "GET"
+    }
+    for route in routes:
+        shape = _PLACEHOLDER.sub("{}", route.spec.path) + "/{}"
+        route.location = route.spec.status == 201 and shape in item_gets

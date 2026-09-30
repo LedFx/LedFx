@@ -1,4 +1,5 @@
 import asyncio
+import os
 import subprocess
 import threading
 import time
@@ -13,6 +14,10 @@ from tests.test_definitions.all_effects import get_ledfx_effects
 from tests.test_definitions.audio_configs import get_ledfx_audio_configs
 from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.test_utils import EnvironmentCleanup
+
+# Every v2 response is checked against its declared type and status. Set
+# before the LedFx subprocess starts, so the live server checks too.
+os.environ["LEDFX_API_VALIDATE_RESPONSES"] = "1"
 
 # LIFX emulator globals
 lifx_emulator_thread = None
