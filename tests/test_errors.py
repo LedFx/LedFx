@@ -1,12 +1,17 @@
 """Domain errors (ledfx.errors), safe mode, and their v1 mapping."""
 
 import copy
+import json
+import logging
 import pickle
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+from aiohttp import web
+from aiohttp.test_utils import make_mocked_request
 
+from ledfx.api import RestEndpoint
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.store import ConfigStore
 from ledfx.errors import (
@@ -92,3 +97,61 @@ def test_ensure_writable_raises_safe_mode_with_the_store_error() -> None:
         ensure_writable(ledfx)
     assert info.value.reason == "config.json could not be read"
     assert info.value.status == 409
+
+
+@RestEndpoint.no_registration
+class _Raises(RestEndpoint):
+    """A v1 endpoint whose GET raises the error it is given."""
+
+    def __init__(self, error: Exception) -> None:
+        super().__init__(fake_ledfx())
+        self.error = error
+
+    async def get(self) -> web.Response:
+        raise self.error
+
+
+async def _v1_call(error: Exception) -> tuple[int, object]:
+    response = await _Raises(error).handler(make_mocked_request("GET", "/api/x"))
+    assert isinstance(response, web.Response)
+    return response.status, json.loads(response.text or "")
+
+
+async def test_v1_maps_domain_errors_to_invalid_request() -> None:
+    status, body = await _v1_call(NotFound("Virtual", "kitchen"))
+    assert status == 200
+    assert body == {
+        "status": "failed",
+        "payload": {"type": "error", "reason": "Virtual 'kitchen' not found"},
+    }
+
+
+async def test_v1_maps_safe_mode_to_invalid_request() -> None:
+    status, body = await _v1_call(SafeMode("config.json is not valid JSON"))
+    assert status == 200
+    assert body == {
+        "status": "failed",
+        "payload": {
+            "type": "error",
+            "reason": "Config changes are disabled in safe mode: "
+            "config.json is not valid JSON",
+        },
+    }
+
+
+async def test_v1_other_exceptions_keep_the_202_catch_all() -> None:
+    status, body = await _v1_call(RuntimeError("boom"))
+    assert status == 202
+    assert body == {"status": "failed", "payload": {"type": "error", "reason": "boom"}}
+
+
+async def test_v1_logs_server_side_domain_errors_but_not_client_ones(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    with caplog.at_level(logging.ERROR, logger="ledfx.api"):
+        await _v1_call(NotFound("Virtual", "kitchen"))
+        assert caplog.records == []
+        status, _ = await _v1_call(LedFxError("disk on fire"))
+    assert status == 200
+    assert [r.levelno for r in caplog.records] == [logging.ERROR]
+    assert "disk on fire" in caplog.text

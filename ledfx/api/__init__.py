@@ -8,6 +8,7 @@ from aiohttp import web
 from pydantic import ValidationError
 
 from ledfx.api.jsonutil import dumps
+from ledfx.errors import LedFxError
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -87,6 +88,14 @@ class RestEndpoint(BaseRegistry):
             )
         except ValidationError as e:
             return await self.validation_error(e)
+        except LedFxError as err:
+            # v1 keeps its default failure shape (HTTP 200) for every domain
+            # error, internal ones included; handlers whose legacy status
+            # differs catch the error themselves. Server-side failures are
+            # logged because the response hides them.
+            if err.status >= 500:
+                _LOGGER.error("%s: %s", type(err).__name__, err)
+            return await self.invalid_request(str(err))
         except web.HTTPException:
             raise
         except Exception as e:  # noqa: BLE001
