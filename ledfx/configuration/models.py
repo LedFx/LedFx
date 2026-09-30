@@ -28,7 +28,9 @@ from ledfx.configuration.fields import (
     IPv4,
     OneOf,
     PlaylistId,
+    PlaylistIdStr,
     SceneId,
+    SceneIdStr,
     VirtualId,
     coerce,
 )
@@ -495,8 +497,8 @@ class LedFxConfig(LedFxModel):
     )
     global_brightness: CoercedFloat = Field(1.0, ge=0, le=1.0)
     ui_brightness_boost: CoercedFloat = Field(0.0, ge=0, le=1.0)
-    startup_scene_id: SceneId = ""
-    startup_playlist_id: PlaylistId = ""
+    startup_scene_id: SceneId = SceneIdStr("")
+    startup_playlist_id: PlaylistId = PlaylistIdStr("")
     lifx_broadcast_address: IPv4 = "255.255.255.255"
     lifx_discovery_timeout: int = Field(30, ge=1, le=120)
     instance_id: str = Field("", json_schema_extra=_RO)

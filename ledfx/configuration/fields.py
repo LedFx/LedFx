@@ -7,7 +7,7 @@ BeforeValidator, or pydantic emits raw ge/le instead of minimum/maximum.
 import ipaddress
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, NewType
 
 from pydantic import (
     AfterValidator,
@@ -194,8 +194,18 @@ Fps = Annotated[
     Field(examples=list(_utils.AVAILABLE_FPS)),
     JsonExtra({X_LEGACY_SOURCE: "fps"}),
 ]
-VirtualId = Annotated[str, FromSource("virtuals")]
 AudioDeviceIndex = Annotated[int | None, FromSource("audio_devices", legacy=True)]
-SceneId = Annotated[str, FromSource("scenes")]
-PlaylistId = Annotated[str, FromSource("playlists")]
-DeviceId = Annotated[str, FromSource("devices")]
+
+# Typed ids: a NewType per kind, so a type checker keeps a scene id out of a
+# virtual id's place. At runtime each is a plain str: stored configs and v1
+# see no change. No constraints here; the v2 API adds them at its boundary
+# (ledfx.api.v2.models.ids).
+VirtualIdStr = NewType("VirtualIdStr", str)
+SceneIdStr = NewType("SceneIdStr", str)
+PlaylistIdStr = NewType("PlaylistIdStr", str)
+DeviceIdStr = NewType("DeviceIdStr", str)
+VirtualId = Annotated[VirtualIdStr, FromSource("virtuals")]
+SceneId = Annotated[SceneIdStr, FromSource("scenes")]
+PlaylistId = Annotated[PlaylistIdStr, FromSource("playlists")]
+DeviceId = Annotated[DeviceIdStr, FromSource("devices")]
+JobId = NewType("JobId", str)  # a uuid4 string
