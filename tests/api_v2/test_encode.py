@@ -20,7 +20,7 @@ class Thing(BaseModel):
 
 
 class Aliased(BaseModel):
-    kind: str = Field(serialization_alias="type")
+    kind: str = Field(alias="type")
 
 
 def test_the_test_session_validates_responses() -> None:
@@ -37,9 +37,9 @@ def test_validation_is_off_unless_the_variable_is_1(
     assert not validate_responses_enabled()
 
 
-def test_encode_uses_serialization_aliases() -> None:
+def test_encode_uses_aliases() -> None:
     adapter = TypeAdapter[object](Aliased)
-    assert encode(adapter, Aliased(kind="x")) == b'{"type":"x"}'
+    assert encode(adapter, Aliased(type="x")) == b'{"type":"x"}'
 
 
 @pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf")])
@@ -122,7 +122,7 @@ async def test_a_none_route_that_returns_something_raises() -> None:
     async def poke() -> None:
         return "surprise"  # pyrefly: ignore[bad-return]
 
-    with pytest.raises(AssertionError, match="returned"):
+    with pytest.raises(AssertionError, match="-> None but returned"):
         await bind(router.routes[0])(_request_for(router))
 
 
@@ -196,3 +196,47 @@ async def test_a_201_carries_a_percent_encoded_location() -> None:
 
     response = await create_widget(make_mocked_request("POST", "/api/v2/widgets"))
     assert "Location" not in response.headers
+
+
+async def test_an_aliased_model_round_trips_under_validation(
+    serve_routes: ServeRoutes,
+) -> None:
+    router = Router(tag="t")
+
+    @router.get("/aliased")
+    async def get_aliased() -> Aliased:
+        return Aliased(type="x")
+
+    client = await serve_routes(router)
+    response = await client.get("/aliased")
+    assert response.status == 200
+    assert await response.json() == {"type": "x"}
+
+
+@pytest.mark.parametrize("validate", ["1", "0"])
+async def test_a_binary_route_must_return_a_stream_response(
+    monkeypatch: pytest.MonkeyPatch, validate: str
+) -> None:
+    monkeypatch.setenv("LEDFX_API_VALIDATE_RESPONSES", validate)
+    router = Router(tag="t")
+
+    @router.get("/thing.png", responses={200: Binary("image/png")})
+    async def not_a_response() -> bytes:
+        return b"\x89PNG"
+
+    with pytest.raises(TypeError, match="must return a web.StreamResponse"):
+        await bind(router.routes[0])(_request_for(router))
+
+
+async def test_a_binary_route_may_answer_another_declared_status() -> None:
+    router = Router(tag="t")
+
+    @router.get(
+        "/spec.json",
+        responses={200: Binary("application/json"), 304: Binary("application/json")},
+    )
+    async def spec_json() -> web.Response:
+        return web.Response(status=304)
+
+    response = await bind(router.routes[0])(_request_for(router))
+    assert response.status == 304

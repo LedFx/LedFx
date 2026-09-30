@@ -1,4 +1,8 @@
-"""Response encoding and response validation."""
+"""Response encoding and response validation.
+
+Response models use alias=, never serialization_alias= alone: validated
+responses are round-tripped through their declared type.
+"""
 
 import json
 import os
