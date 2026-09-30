@@ -21,6 +21,7 @@ served, but without CORS headers, so the calling page cannot read them.
 import ipaddress
 import logging
 import socket
+from collections.abc import Callable
 from urllib.parse import urlsplit
 
 from aiohttp import hdrs, web
@@ -76,7 +77,7 @@ STATE_CHANGING_GETS = frozenset(
         "/api/ping/{device_id}",  # sends pings to a device
     }
 )
-CORS_METHODS = "GET, PUT, POST, DELETE"
+CORS_METHODS = "GET, PUT, POST, PATCH, DELETE"
 
 _reported_origins: set[str] = set()
 
@@ -184,7 +185,14 @@ def _machine_names() -> frozenset[str]:
     return frozenset(names)
 
 
-def _forbidden(reason: str) -> web.Response:
+# Set by mount_v2: answers a refusal on a /api/v2 path with a Problem, or
+# returns None to leave the v1 JSON. A hook, so this module never imports v2.
+ORIGIN_REFUSAL: Callable[[web.Request, str], web.Response | None] | None = None
+
+
+def _forbidden(request: web.Request, reason: str) -> web.Response:
+    if ORIGIN_REFUSAL is not None and (response := ORIGIN_REFUSAL(request, reason)):
+        return response
     return web.json_response(
         {"status": "failed", "payload": {"type": "error", "reason": reason}},
         status=403,
@@ -226,8 +234,9 @@ def origin_middleware(ledfx):
                 name,
             )
             return _forbidden(
+                request,
                 f"Host not allowed: {name}. "
-                "Add it to allowed_hosts in the LedFx config."
+                "Add it to allowed_hosts in the LedFx config.",
             )
 
         route = getattr(request.match_info.route.resource, "canonical", None)
@@ -244,7 +253,9 @@ def origin_middleware(ledfx):
                 and fetch_site in ("cross-site", "same-site")
                 and headers.get("Sec-Fetch-Mode") != "cors"
             ):
-                return _forbidden(f"Cross-site request not allowed: {request.path}")
+                return _forbidden(
+                    request, f"Cross-site request not allowed: {request.path}"
+                )
             return await handler(request)
 
         allow_null = config.allow_null_origin
@@ -272,8 +283,9 @@ def origin_middleware(ledfx):
                 origin,
             )
             return _forbidden(
+                request,
                 f"Origin not allowed: {origin}. "
-                "Add it to allowed_origins in the LedFx config."
+                "Add it to allowed_origins in the LedFx config.",
             )
 
         if allow_null and origin.strip().lower() == "null":

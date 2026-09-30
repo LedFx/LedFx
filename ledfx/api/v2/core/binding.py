@@ -404,8 +404,10 @@ def bind(spec: RouteSpec) -> BoundRoute:
 
 
 def check_unique(routes: Sequence[BoundRoute]) -> None:
-    """No two routes share a method and path shape, or an operationId."""
+    """No two routes share a method and path shape, or an operationId, and
+    each path shape has one placeholder spelling (mount_v2 groups by it)."""
     by_path: dict[tuple[str, str], str] = {}
+    spelling: dict[str, tuple[str, str]] = {}
     by_operation: dict[str, str] = {}
     for route in routes:
         where = f"{route.spec.method} {route.spec.path}"
@@ -413,6 +415,13 @@ def check_unique(routes: Sequence[BoundRoute]) -> None:
         if key in by_path:
             raise BuildError(
                 f"duplicate route {where}: {by_path[key]} and {route.operation_id}"
+            )
+        shape = key[1]
+        seen = spelling.setdefault(shape, (route.spec.path, route.operation_id))
+        if seen[0] != route.spec.path:
+            raise BuildError(
+                f"{route.operation_id} ({route.spec.path}) and {seen[1]} "
+                f"({seen[0]}) spell the same path with different placeholder names"
             )
         if route.operation_id in by_operation:
             raise BuildError(

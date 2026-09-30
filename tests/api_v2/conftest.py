@@ -1,11 +1,15 @@
 """Shared fixtures for the v2 API tests."""
 
 from collections.abc import AsyncIterator, Awaitable, Callable
+from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 
+from ledfx.api.origin_policy import origin_middleware
+from ledfx.api.v2 import mount_v2
+from ledfx.api.v2.core import router as router_module
 from ledfx.api.v2.core.binding import LEDFX_KEY, bind
 from ledfx.api.v2.core.problem import problem_for, problem_response
 from ledfx.api.v2.core.router import Router
@@ -48,3 +52,30 @@ async def serve_routes() -> AsyncIterator[ServeRoutes]:
     yield serve
     for client in clients:
         await client.close()
+
+
+@pytest.fixture
+def v2_ledfx() -> MagicMock:
+    """The core behind v2_client. Override it in a test module to seed state."""
+    return fake_ledfx()
+
+
+@pytest.fixture
+def v2_routers() -> list[Router]:
+    """Extra routers v2_client mounts as extensions. Override to add some."""
+    return []
+
+
+@pytest.fixture
+async def v2_client(
+    v2_ledfx: MagicMock, v2_routers: list[Router], monkeypatch: pytest.MonkeyPatch
+) -> AsyncIterator[Client]:
+    """The real v2 mount (built-in routes + v2_routers) on a bare app, with
+    the same body limit and origin middleware as HttpServer."""
+    monkeypatch.setattr(router_module, "_EXTENSIONS", list(v2_routers))
+    app = web.Application(
+        client_max_size=5 * 1024 * 1024, middlewares=[origin_middleware(v2_ledfx)]
+    )
+    mount_v2(app, v2_ledfx)
+    async with Client(TestServer(app)) as client:
+        yield client

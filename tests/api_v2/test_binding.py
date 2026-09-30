@@ -408,38 +408,6 @@ def test_binary_routes_need_no_adapter() -> None:
     assert _bind_last(router).return_adapter is None
 
 
-def test_a_get_or_delete_cannot_take_a_body() -> None:
-    router = Router(tag="t")
-
-    @router.get("/x")
-    async def get_with_body(body: Item) -> Item:
-        return body
-
-    @router.delete("/y")
-    async def delete_with_body(body: Item) -> None:
-        return None
-
-    for spec in router.routes:
-        with pytest.raises(BuildError, match="can't take a body"):
-            bind(spec)
-
-
-def test_a_parameter_named_like_a_pydantic_attribute_is_a_build_error() -> None:
-    router = Router(tag="t")
-
-    @router.get("/x")
-    async def get_query(model_config: str) -> int:
-        return 1
-
-    @router.get("/y/{json}")
-    async def get_path(json: str) -> int:
-        return 1
-
-    for spec in router.routes:
-        with pytest.raises(BuildError, match="clashes with a pydantic"):
-            bind(spec)
-
-
 def test_positional_only_parameter() -> None:
     router = Router(tag="t")
 
@@ -495,6 +463,38 @@ def test_204_cannot_return_a_body() -> None:
         _bind_last(router)
 
 
+def test_a_get_or_delete_cannot_take_a_body() -> None:
+    router = Router(tag="t")
+
+    @router.get("/x")
+    async def get_with_body(body: Item) -> Item:
+        return body
+
+    @router.delete("/y")
+    async def delete_with_body(body: Item) -> None:
+        return None
+
+    for spec in router.routes:
+        with pytest.raises(BuildError, match="can't take a body"):
+            bind(spec)
+
+
+def test_a_parameter_named_like_a_pydantic_attribute_is_a_build_error() -> None:
+    router = Router(tag="t")
+
+    @router.get("/x")
+    async def get_query(model_config: str) -> int:
+        return 1
+
+    @router.get("/y/{json}")
+    async def get_path(json: str) -> int:
+        return 1
+
+    for spec in router.routes:
+        with pytest.raises(BuildError, match="clashes with a pydantic"):
+            bind(spec)
+
+
 def test_bound_route_records_its_parts() -> None:
     router = Router(tag="t")
 
@@ -533,6 +533,33 @@ def test_check_unique_rejects_duplicate_method_and_path() -> None:
 
     with pytest.raises(BuildError, match="duplicate route GET /items/"):
         check_unique([bind(spec) for spec in router.routes])
+
+
+def test_check_unique_wants_one_placeholder_spelling_per_path() -> None:
+    router = Router(tag="t")
+
+    @router.get("/n/{a}")
+    async def get_n(a: str) -> str:
+        return a
+
+    @router.patch("/n/{b}")
+    async def patch_n(b: str) -> str:
+        return b
+
+    with pytest.raises(BuildError, match=r"patch_n .*/n/\{b\}.*get_n .*/n/\{a\}"):
+        check_unique([bind(spec) for spec in router.routes])
+
+    same = Router(tag="s")
+
+    @same.get("/n/{a}")
+    async def get_same(a: str) -> str:
+        return a
+
+    @same.patch("/n/{a}")
+    async def patch_same(a: str) -> str:
+        return a
+
+    check_unique([bind(spec) for spec in same.routes])
 
 
 def test_check_unique_rejects_duplicate_operation_ids() -> None:
