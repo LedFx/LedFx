@@ -5,9 +5,10 @@ from collections.abc import Iterator
 
 from pydantic import Field
 
-from ledfx.configuration.fields import X_OMIT_DEFAULT
+from ledfx.configuration.fields import X_LEGACY, X_OMIT_DEFAULT, X_REQUIRED
 from ledfx.configuration.models import LedFxModel, MelbankConfig, omits_default
 from ledfx.configuration.plugin import PluginConfig
+from ledfx.configuration.schema import strip_backend_keys
 from tests.configuration.model_schema import _registry_by_kind
 
 
@@ -87,3 +88,18 @@ def test_forward_reference_does_not_break_class_definition() -> None:
     assert _EarlyRef().model_dump() == {"child": None}
     assert _EarlyRef(note="n").model_dump() == {"note": "n", "child": None}
 
+
+def test_strip_backend_keys_removes_backend_markers_at_any_depth() -> None:
+    schema = {
+        "properties": {
+            "name": {"type": "string", X_OMIT_DEFAULT: True},
+            "ids": {"items": [{"x-ledfx-enum-source": "virtuals", X_REQUIRED: True}]},
+        },
+        X_LEGACY: {"omit": True},
+    }
+    assert strip_backend_keys(schema) == {
+        "properties": {
+            "name": {"type": "string"},
+            "ids": {"items": [{"x-ledfx-enum-source": "virtuals"}]},
+        }
+    }
