@@ -97,6 +97,8 @@ class PresetsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 'Required attribute "name" was not provided'
             )
+        if not isinstance(preset_id, str) or not isinstance(name, str):
+            return await self.invalid_request('"preset_id" and "name" must be strings')
 
         if category not in ["ledfx_presets", "user_presets"]:
             return await self.invalid_request(
@@ -109,7 +111,7 @@ class PresetsEndpoint(RestEndpoint):
             return await self.invalid_effect_id(effect_id)
 
         presets = preset_category(self._ledfx.config.user_presets, category)
-        if preset_id not in presets[effect_id]:
+        if preset_id not in presets.get(effect_id, {}):
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
@@ -160,7 +162,7 @@ class PresetsEndpoint(RestEndpoint):
                 f"Effect {effect_id} does not exist in category {category}"
             )
 
-        if preset_id is None:
+        if not isinstance(preset_id, str):
             return await self.invalid_request(
                 'Required attribute "preset_id" was not provided'
             )

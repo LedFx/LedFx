@@ -194,9 +194,23 @@ async def test_put_invalid_variant(endpoint, ledfx):
     request = _make_request({"gradient": {"variant": "not_valid"}})
     response = await endpoint.put(request)
 
-    assert response.status == 200
+    assert response.status == 400
     body = json.loads(response.body.decode())
     assert body["status"] == "failed"
+    assert [e["loc"] for e in body["errors"]] == [["gradient", "variant"]]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("section", ["x", [1], 5])
+async def test_put_section_that_is_not_an_object(
+    endpoint: NowPlayingEndpoint, section: object
+) -> None:
+    """A section that is not an object is a validation error, not a 500."""
+    response = await endpoint.put(_make_request({"gradient": section}))
+
+    assert response.status == 400
+    body = json.loads(response.text or "")
+    assert [e["loc"] for e in body["errors"]] == [["gradient"]]
 
 
 @pytest.mark.asyncio
@@ -209,10 +223,13 @@ async def test_put_invalid_json(endpoint, ledfx):
 
 @pytest.mark.asyncio
 async def test_put_non_dict_body(endpoint, ledfx):
-    """PUT with non-dict body returns error."""
+    """PUT with non-dict body returns error (RestEndpoint.handler enforces it)."""
     request = _make_request()
     request.json = AsyncMock(return_value="not a dict")
-    response = await endpoint.put(request)
+    request.method = "PUT"
+    request.headers = dict[str, str]()
+    request.match_info = dict[str, str]()
+    response = await endpoint.handler(request)
 
     body = json.loads(response.body.decode())
     assert body["status"] == "failed"

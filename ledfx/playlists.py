@@ -177,7 +177,7 @@ class PlaylistManager:
         # ensure it's unique within current playlists.
         p = dict(playlist)  # work on a shallow copy
         if not p.get("id"):
-            if not p.get("name"):
+            if not p.get("name") or not isinstance(p["name"], str):
                 raise ValueError("Playlist must include 'id' or 'name' when creating")
             base = generate_id(p["name"])
             new_id = base

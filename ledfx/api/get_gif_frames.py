@@ -31,9 +31,9 @@ class GetGifFramesEndpoint(RestEndpoint):
 
         path_url = data.get("path_url")
 
-        if path_url is None:
+        if not isinstance(path_url, str):
             return await self.invalid_request(
-                'Required attribute "path_url" was not provided'
+                'Required string attribute "path_url" was not provided'
             )
 
         gif_image = open_gif(path_url, config_dir=self._ledfx.config_dir)

@@ -161,9 +161,16 @@ class Virtual:
         valid = True
         msg = None
 
-        if len(segment) != 4:
+        if not (
+            isinstance(segment, (list, tuple))
+            and len(segment) == 4
+            and isinstance(segment[0], str)
+            and isinstance(segment[1], int)
+            and isinstance(segment[2], int)
+        ):
             msg = f"Invalid segment format: {segment}, should be [device_id, start, end, invert]"
-            valid = False
+            _LOGGER.error(msg)
+            raise ValueError(msg)
 
         device_id, start_pixel, end_pixel, invert = segment
 
@@ -247,7 +254,14 @@ class Virtual:
             None
         """
         with self.lock:
-            segments_config = [list(item) for item in segments_config]
+            if not isinstance(segments_config, (list, tuple)):
+                raise ValueError(  # noqa: TRY004 - callers catch ValueError
+                    f"Invalid segments: {segments_config}, should be a list of segments"
+                )
+            segments_config = [
+                list(item) if isinstance(item, (list, tuple)) else item
+                for item in segments_config
+            ]
             _segments = [self.validate_segment(s) for s in segments_config]
 
             _pixel_count = self.pixel_count
@@ -264,6 +278,7 @@ class Virtual:
                         self.activate_segments(self._segments)
                         raise
 
+                old_segments = self._segments
                 self._segments = _segments
 
                 self.invalidate_cached_props()
@@ -276,7 +291,21 @@ class Virtual:
                 # so no need to restart the effect
                 if self.pixel_count != _pixel_count:
                     # chenging segments is a deep edit, just flush any transition
-                    self._reactivate_effect()
+                    try:
+                        self._reactivate_effect()
+                    except Exception:
+                        # Roll back fully: device segments, our segments, and
+                        # the effect restarted at the old size.
+                        if self._active:
+                            self.deactivate_segments()
+                            self.activate_segments(old_segments)
+                        self._segments = old_segments
+                        self.invalidate_cached_props()
+                        self._compile_device_remap()
+                        self._reactivate_effect()
+                        # Turn off devices only the new segments activated.
+                        self._ledfx.virtuals.check_and_deactivate_devices()
+                        raise
 
                 mode = self._config["transition_mode"]
                 self.frame_transitions = self.transitions[mode]

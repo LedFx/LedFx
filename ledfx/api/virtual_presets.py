@@ -6,6 +6,7 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 from ledfx.configuration.models import Preset
 from ledfx.configuration.presets import configs_match, preset_category, preset_config
+from ledfx.effects import DummyEffect
 from ledfx.presets import ledfx_presets
 from ledfx.utils import (
     generate_default_config,
@@ -55,7 +56,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if virtual is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        if not virtual.active_effect:
+        if not virtual.active_effect or isinstance(virtual.active_effect, DummyEffect):
             return await self.invalid_request(
                 f"Virtual {virtual_id} has no active effect"
             )
@@ -124,6 +125,12 @@ class VirtualPresetsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
+        if not all(isinstance(v, str) for v in (category, effect_id, preset_id)):
+            return await self.invalid_request(
+                "category, effect_id and preset_id must be strings"
+            )
+        if effect_id not in self._ledfx.effects.types():
+            return await self.invalid_request(f"Unknown effect type: {effect_id}")
 
         if category not in ["ledfx_presets", "user_presets"]:
             return await self.invalid_request(
@@ -157,7 +164,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         except (ValueError, RuntimeError) as msg:
             error_message = f"Unable to set effect on virtual {virtual.id}: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error(error_message, "error")
+            return await self.invalid_request(error_message)
 
         virtual.update_effect_config(effect)
 
@@ -188,7 +195,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if virtual is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        if not virtual.active_effect:
+        if not virtual.active_effect or isinstance(virtual.active_effect, DummyEffect):
             return await self.invalid_request(
                 f"Virtual {virtual_id} has no active effect"
             )
@@ -202,14 +209,14 @@ class VirtualPresetsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 'Required attribute "name" was not provided'
             )
+        # Validate before touching user_presets.
+        preset = Preset(name=preset_name, config=virtual.active_effect.config.as_dict())
 
         preset_id = generate_id(preset_name)
         effect_id = virtual.active_effect.type
 
         # Update the preset if it already exists, else create it
-        self._ledfx.config.user_presets.setdefault(effect_id, {})[preset_id] = Preset(
-            name=preset_name, config=virtual.active_effect.config.as_dict()
-        )
+        self._ledfx.config.user_presets.setdefault(effect_id, {})[preset_id] = preset
 
         self._ledfx.config_store.request_save()
 

@@ -840,3 +840,50 @@ class TestVirtualsPostValidation:
         assert response.status == 400
         assert virtual.config["max_brightness"] == 1.0
         ledfx.config_store.request_save.assert_not_called()
+
+
+class TestSegmentUpdateRollback:
+    """A failed effect restart after a segment change restores the old segments."""
+
+    @pytest.mark.parametrize("active", [False, True])
+    def test_failed_effect_restart_restores_segments(self, active: bool) -> None:
+        device = _DummyDevice("dev-1", pixel_count=100)
+        ledfx = _make_ledfx(devices=[device])
+        device._ledfx = ledfx
+        old = [["dev-1", 0, 49, False]]
+        virtual = _make_virtual(ledfx, "v-1", "V1", old)
+        if active:  # registered on the device, without starting the render thread
+            virtual._active = True
+            virtual.activate_segments(old)
+        effect = MagicMock()
+        effect.activate.side_effect = [ValueError("too many pixels"), None]
+        virtual._active_effect = effect
+
+        with pytest.raises(ValueError, match="too many pixels"):
+            virtual.update_segments([["dev-1", 0, 99, False]])
+
+        assert virtual.segments == old
+        assert virtual.pixel_count == 50
+        # The effect was restarted at the old size.
+        assert effect.activate.call_count == 2
+        assert virtual.effective_pixel_count == 50
+        assert device._segments == ([("v-1", 0, 49)] if active else [])
+
+    def test_failed_effect_restart_deactivates_newly_activated_device(self) -> None:
+        dev_a = _DummyDevice("dev-a", pixel_count=100)
+        dev_b = _DummyDevice("dev-b", pixel_count=100)
+        ledfx = _make_ledfx(devices=[dev_a, dev_b])
+        old = [["dev-a", 0, 49, False]]
+        virtual = _make_virtual(ledfx, "v-1", "V1", old)
+        virtual._active = True
+        virtual.activate_segments(old)
+        effect = MagicMock()
+        effect.activate.side_effect = [ValueError("too many pixels"), None]
+        virtual._active_effect = effect
+
+        with pytest.raises(ValueError, match="too many pixels"):
+            virtual.update_segments([["dev-b", 0, 99, False]])
+
+        assert virtual.segments == old
+        assert dev_a.is_active() and dev_a._segments == [("v-1", 0, 49)]
+        assert not dev_b.is_active() and dev_b._segments == []

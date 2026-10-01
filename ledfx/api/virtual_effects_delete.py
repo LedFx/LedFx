@@ -31,7 +31,7 @@ class EffectsEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
         effect_type = data.get("type", None)
-        if effect_type is None:
+        if not isinstance(effect_type, str):
             return await self.invalid_request(
                 "Required attribute 'type' was not provided"
             )

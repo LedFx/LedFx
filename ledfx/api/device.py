@@ -45,7 +45,7 @@ class DeviceEndpoint(RestEndpoint):
         """
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            return await self.invalid_request(f"{device} was not found")
+            return await self.invalid_request(f"Device with ID {device_id} not found")
 
         try:
             data = await request.json()
@@ -56,6 +56,8 @@ class DeviceEndpoint(RestEndpoint):
             return await self.invalid_request(
                 "Required attribute 'config' was not provided"
             )
+        if not isinstance(device_config, dict):
+            return await self.invalid_request("'config' must be an object")
         _LOGGER.debug("Updating device %s with config %s", device_id, device_config)
 
         try:
@@ -65,7 +67,7 @@ class DeviceEndpoint(RestEndpoint):
         except ValueError as msg:
             error_message = f"Error updating device {device_id}: {msg}"
             _LOGGER.warning(error_message)
-            return await self.internal_error(error_message, "error")
+            return await self.invalid_request(error_message)
         # Update and save the configuration
         # Persist the merged, validated config: a partial PUT must not drop keys.
         entry = self._ledfx.config_store.device_entry(device_id)

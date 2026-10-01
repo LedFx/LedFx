@@ -804,10 +804,21 @@ class Devices(RegistryLoader):
     async def add_new_device(self, device_type, device_config):
         """
         Creates a new device.
+
+        Raises ValueError (a pydantic ValidationError for a bad config) when
+        the device can't be created.
         """
+        if not isinstance(device_config, dict):
+            raise ValueError("Device config must be an object")  # noqa: TRY004 - callers catch ValueError
+        try:
+            device_class = self.get_class(device_type)
+        except (KeyError, TypeError):
+            raise ValueError(f"Unknown device type: {device_type}") from None
         # First, we try to make sure this device doesn't share a destination with any existing device
         resolved_dest: str | None = None
-        if "ip_address" in device_config:
+        if device_config.get("ip_address") is not None:
+            if not isinstance(device_config["ip_address"], str):
+                raise ValueError("ip_address must be a string")
             device_config["ip_address"] = clean_ip(device_config["ip_address"])
             device_ip = device_config["ip_address"]
             try:
@@ -816,10 +827,17 @@ class Devices(RegistryLoader):
                 )
             except ValueError:
                 _LOGGER.warning(
-                    "Discarding device %s as it could not be resolved.",
-                    device_ip,
+                    "Discarding device %s as it could not be resolved.", device_ip
                 )
-                return
+                raise ValueError(f"Could not resolve {device_ip}") from None
+            # The IP tests read type-specific keys (universe, port...), so give
+            # them the validated config with its defaults. WLED fills its
+            # config from the device below and only compares the address.
+            checked = (
+                device_config
+                if device_type == "wled"
+                else device_class.config_model().model_validate(device_config).as_dict()
+            )
 
             for existing_device in self._ledfx.devices.values():
                 existing_ip = getattr(existing_device.config, "ip_address", None)
@@ -828,9 +846,7 @@ class Devices(RegistryLoader):
                     or existing_ip == resolved_dest
                     or resolved_dest == getattr(existing_device, "_destination", None)
                 ):
-                    self.run_device_ip_tests(
-                        device_type, device_config, existing_device
-                    )
+                    self.run_device_ip_tests(device_type, checked, existing_device)
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
@@ -875,6 +891,8 @@ class Devices(RegistryLoader):
 
             device_config.update(wled_config)
 
+        # Validate before anything is created, so a bad config changes nothing.
+        device_class.config_model().model_validate(device_config)
         device_id = generate_id(device_config["name"])
 
         # Create the device
@@ -891,7 +909,13 @@ class Devices(RegistryLoader):
         )
 
         if hasattr(device, "async_initialize"):
-            await device.async_initialize()
+            try:
+                await device.async_initialize()
+            except BaseException:
+                # Not saved yet: leaving it registered would list a device
+                # that disappears on restart, and push a retry to "<id>-1".
+                self._ledfx.devices.destroy(device.id)
+                raise
 
         device_config = device.config.as_dict()
         if device_type == "wled":
@@ -1042,7 +1066,7 @@ class Devices(RegistryLoader):
             "artnet",
         ]:
             if new_config["universe"] == pre_device.config.universe:
-                msg = f"Ignoring {new_config['ip_address']}: Shares IP and port {new_config['port']} and starting universe with existing device {pre_device.name}"
+                msg = f"Ignoring {new_config['ip_address']}: Shares IP and port {new_config.get('port', DEFAULT_PORT)} and starting universe with existing device {pre_device.name}"
                 _LOGGER.info(msg)
                 raise ValueError(msg)
             return True

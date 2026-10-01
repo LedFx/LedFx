@@ -76,9 +76,9 @@ class AssetsDownloadEndpoint(RestEndpoint):
 
         asset_path = data.get("path")
 
-        if not asset_path:
+        if not asset_path or not isinstance(asset_path, str):
             return await self.invalid_request(
-                message='Required attribute "path" was not provided',
+                message='Required string attribute "path" was not provided',
                 type="error",
             )
 

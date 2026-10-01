@@ -71,16 +71,17 @@ class ScenesEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        scene_id = generate_id(data.get("id"))
-        if scene_id is None:
+        scene_id = data.get("id")
+        if not isinstance(scene_id, str):
             return await self.invalid_request(
                 'Required attribute "id" was not provided'
             )
+        scene_id = generate_id(scene_id)
 
         if scene_id not in self._ledfx.config.scenes:
             error_message = f"Scene {scene_id} does not exist"
             _LOGGER.warning(error_message)
-            return await self.invalid_request()
+            return await self.invalid_request(error_message)
 
         # Delete the scene from configuration
         del self._ledfx.config.scenes[scene_id]
@@ -114,11 +115,12 @@ class ScenesEndpoint(RestEndpoint):
         if action not in ["activate", "activate_in", "deactivate", "rename"]:
             return await self.invalid_request(f'Invalid action "{action}"')
 
-        scene_id = generate_id(data.get("id"))
-        if scene_id is None:
+        scene_id = data.get("id")
+        if not isinstance(scene_id, str):
             return await self.invalid_request(
                 'Required attribute "id" was not provided'
             )
+        scene_id = generate_id(scene_id)
 
         if scene_id not in self._ledfx.config.scenes:
             return await self.invalid_request(f"Scene {scene_id} does not exist")
@@ -131,9 +133,11 @@ class ScenesEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     'Required attribute "ms" was not provided'
                 )
+            if not isinstance(ms, int | float) or isinstance(ms, bool) or ms < 0:
+                return await self.invalid_request('"ms" must be a non-negative number')
             self._ledfx.loop.call_later(ms, self._ledfx.scenes.activate, scene_id)
             return await self.request_success(
-                "info", f"Scene {scene.name} will activate in {ms}ms"
+                "info", f"Scene {scene.name} will activate in {ms}s"
             )
 
         if action == "activate":
@@ -192,6 +196,14 @@ class ScenesEndpoint(RestEndpoint):
         scene_snapshot = data.get("snapshot", False)
         scene_id = data.get("id")
 
+        if scene_id is not None and not isinstance(scene_id, str):
+            return await self.invalid_request('"id" must be a string')
+        if scene_name is not None and not isinstance(scene_name, str):
+            return await self.invalid_request('"name" must be a string')
+        virtuals = data.get("virtuals")
+        if virtuals is not None and not isinstance(virtuals, dict):
+            return await self.invalid_request('"virtuals" must be an object')
+
         # Determine operation: update if ID provided, create if not
         if scene_id:
             # ID provided - must be an update
@@ -239,7 +251,7 @@ class ScenesEndpoint(RestEndpoint):
             if scene_image is None:
                 scene_image = "Wallpaper"
 
-            if data.get("virtuals") is None:
+            if virtuals is None:
                 scene_snapshot = True
 
             scene_config = {
@@ -256,13 +268,12 @@ class ScenesEndpoint(RestEndpoint):
         # if not a snapshot replace with provided, or keep existing
         # if a snapshot grab current
         if not scene_snapshot:
-            if data.get("virtuals") is None:
+            if virtuals is None:
                 # preserve existing virtuals if none provided
                 pass
             else:
-                scene_config["virtuals"] = {}
-                virtuals = data.get("virtuals")
-
+                scene_virtuals: dict[str, object] = {}
+                scene_config["virtuals"] = scene_virtuals
                 for virtualid in virtuals:
                     virtual_data = virtuals[virtualid]
                     if not isinstance(virtual_data, dict):
@@ -293,10 +304,11 @@ class ScenesEndpoint(RestEndpoint):
                                 virtualid,
                             )
 
-                    scene_config["virtuals"][virtualid] = virtual_config
+                    scene_virtuals[virtualid] = virtual_config
         else:
             # Force a snapshot of current virtual effects
-            scene_config["virtuals"] = {}
+            snapshot: dict[str, object] = {}
+            scene_config["virtuals"] = snapshot
             for virtual in self._ledfx.virtuals.values():
                 effect = {}
                 if virtual.active_effect:
@@ -307,7 +319,7 @@ class ScenesEndpoint(RestEndpoint):
                         effect["config"] = virtual.active_effect.config.as_dict()
                     else:
                         _LOGGER.debug("Skipping DummyEffect for virtual %s", virtual.id)
-                scene_config["virtuals"][virtual.id] = effect
+                snapshot[virtual.id] = effect
 
         # Update the scene if it already exists, else create it
         try:

@@ -43,6 +43,8 @@ class IntegrationsEndpoint(RestEndpoint):
                 data = await request.json()
             except JSONDecodeError:
                 return await self.json_decode_error()
+            if not isinstance(data, dict):
+                return await self.invalid_request("Request body must be a JSON object")
             info = data.get("info")
             for integration in self._ledfx.integrations.values():
                 if info not in response["integrations"][integration.id]:
@@ -68,7 +70,7 @@ class IntegrationsEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
         integration_id = data.get("id")
-        if integration_id is None:
+        if not isinstance(integration_id, str):
             return await self.invalid_request(
                 "Required attribute 'id' was not provided"
             )
@@ -77,7 +79,7 @@ class IntegrationsEndpoint(RestEndpoint):
 
         if integration is None:
             return await self.invalid_request(
-                "Required attribute 'integration_id' was not provided"
+                f"Integration with id {integration_id} not found"
             )
 
         # Toggle the integration
@@ -113,7 +115,7 @@ class IntegrationsEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
         integration_id = data.get("id")
-        if integration_id is None:
+        if not isinstance(integration_id, str):
             return await self.invalid_request(
                 "Required attribute 'id' was not provided"
             )
@@ -121,7 +123,7 @@ class IntegrationsEndpoint(RestEndpoint):
         integration = self._ledfx.integrations.get(integration_id)
         if integration is None:
             return await self.invalid_request(
-                "Required attribute 'integration_id' was not provided"
+                f"Integration with id {integration_id} not found"
             )
 
         if hasattr(integration, "on_delete"):
@@ -154,7 +156,7 @@ class IntegrationsEndpoint(RestEndpoint):
             )
 
         integration_type = data.get("type")
-        if integration_type is None:
+        if not isinstance(integration_type, str):
             return await self.invalid_request(
                 'Required attribute "type" was not provided'
             )
@@ -176,6 +178,8 @@ class IntegrationsEndpoint(RestEndpoint):
 
         # Allow for id be None for new integrations
         integration_id = data.get("id")
+        if integration_id is not None and not isinstance(integration_id, str):
+            return await self.invalid_request("'id' must be a string")
 
         new = not bool(integration_id)
         if integration_id is None:
@@ -192,6 +196,11 @@ class IntegrationsEndpoint(RestEndpoint):
             if existing_integration is None:
                 return await self.invalid_request(
                     f"Integration with id {integration_id} not found"
+                )
+            if existing_integration.type != integration_type:
+                return await self.invalid_request(
+                    f"Integration {integration_id} is a {existing_integration.type} "
+                    f"integration, not {integration_type}"
                 )
 
             _LOGGER.info(

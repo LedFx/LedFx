@@ -361,7 +361,7 @@ Action-based controller for scenes. All actions require an `id` to specify which
 
 - `activate` — Activates the specified scene, applying its effect configurations to all virtuals.
 - `deactivate` — Deactivates the specified scene, clearing effects from its virtuals.
-- `activate_in` — Schedules scene activation after a delay (requires `ms` field).
+- `activate_in` — Schedules scene activation after a delay (requires `ms`, a delay in seconds despite its name).
 - `rename` — Renames the scene (requires `name` field).
 
 ### Action Details
@@ -392,11 +392,11 @@ Action-based controller for scenes. All actions require an `id` to specify which
 {
   "id": "living-room",
   "action": "activate_in",
-  "ms": 5000
+  "ms": 5
 }
 ```
 
-Activates the scene after 5000ms (5 seconds).
+Activates the scene after 5 seconds. Despite its name, `ms` is in seconds.
 
 **Response:**
 ```json
@@ -404,7 +404,7 @@ Activates the scene after 5000ms (5 seconds).
   "status": "success",
   "payload": {
     "type": "info",
-    "reason": "Scene Living Room will activate in 5000ms"
+    "reason": "Scene Living Room will activate in 5s"
   }
 }
 ```
@@ -745,7 +745,7 @@ curl -X PUT http://localhost:8888/api/scenes \
 ```bash
 curl -X PUT http://localhost:8888/api/scenes \
   -H "Content-Type: application/json" \
-  -d '{ "id":"living-room", "action":"activate_in", "ms":5000 }'
+  -d '{ "id":"living-room", "action":"activate_in", "ms":5 }'
 ```
 
 **Deactivate a scene**

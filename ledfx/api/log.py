@@ -145,8 +145,10 @@ class LogWebsocket:
         if self._socket is not None:
             await self._socket.close()
 
-        socket = self._socket = web.WebSocketResponse()
+        socket = web.WebSocketResponse()
         await socket.prepare(request)
+        # Only a prepared socket can be closed by the next connection.
+        self._socket = socket
         _LOGGER.info("Logging websocket opened")
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)

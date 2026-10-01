@@ -24,9 +24,10 @@ class EffectEndpoint(RestEndpoint):
             return await self.invalid_request(
                 "Required attribute 'effect_id' was not provided"
             )
-        effect = self._ledfx.effects.get_class(effect_id)
-        if effect is None:
-            return await self.invalid_request(f"{effect_id} was not found")
+        try:
+            effect = self._ledfx.effects.get_class(effect_id)
+        except KeyError:
+            return await self.invalid_request(f"Effect {effect_id} was not found")
 
         response = {"schema": str(effect.config_model().model_json_schema())}
         return await self.bare_request_success(response)

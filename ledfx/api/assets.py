@@ -51,6 +51,10 @@ class AssetsEndpoint(RestEndpoint):
         file_data = None
         asset_path = None
 
+        if not request.content_type.startswith("multipart/"):
+            return await self.invalid_request(
+                message="Upload must be multipart/form-data"
+            )
         # Read multipart data
         reader = await request.multipart()
         while True:
@@ -122,7 +126,7 @@ class AssetsEndpoint(RestEndpoint):
             except Exception:  # noqa: BLE001, S110
                 pass
 
-        if not asset_path:
+        if not asset_path or not isinstance(asset_path, str):
             return await self.invalid_request(
                 message="No path provided for deletion",
                 type="error",

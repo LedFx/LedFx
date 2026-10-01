@@ -23,7 +23,7 @@ from ledfx.configuration.fields import X_OMIT_DEFAULT, CoercedFloat, CoercedInt
 from ledfx.configuration.migrations.legacy import legacy_to_v1
 from ledfx.configuration.paths import load_logger
 from ledfx.configuration.plugin import PluginConfig
-from ledfx.devices import Devices
+from ledfx.devices import Device, Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
 from ledfx.utils import WLED, get_local_ip
 
@@ -83,6 +83,7 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     effect.config = dict[str, object]()
     virtual.active_effect = effect
     ledfx.effects.create.return_value = effect
+    ledfx.effects.types.return_value = ["test-effect"]
     ledfx.effects.get_class.return_value.config_model.return_value = DemoEffectConfig
     request = MagicMock()
     request.json = AsyncMock(
@@ -179,8 +180,11 @@ async def test_qlc_dispatches_each_message_to_the_supplied_callback() -> None:
 
 
 async def test_wled_without_address_fails_before_discovery() -> None:
+    import ledfx.devices.wled  # noqa: F401 - registers the wled type
+
     devices = object.__new__(Devices)
     devices._ledfx = MagicMock()
+    devices._cls = Device
     with pytest.raises(ValueError, match="ip_address"):
         await devices.add_new_device("wled", {"name": "Missing address"})
 

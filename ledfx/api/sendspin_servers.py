@@ -51,7 +51,7 @@ class SendspinServersEndpoint(RestEndpoint):
             _LOGGER.warning("POST /api/sendspin/servers: invalid JSON body")
             return await self.json_decode_error()
 
-        if "id" not in data:
+        if not isinstance(data.get("id"), str):
             _LOGGER.warning("POST /api/sendspin/servers: missing required field 'id'")
             return await self.invalid_request("Required key not provided: 'id'")
 
