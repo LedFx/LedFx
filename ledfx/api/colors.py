@@ -1,12 +1,34 @@
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.color import validate_color
+from ledfx.color import validate_color, validate_gradient
+
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
+    from ledfx.utils import UserDefaultCollection
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _deletable(collection: "UserDefaultCollection", key: str) -> bool:
+    # An old config can hold a user entry named like a built-in of the same
+    # collection; that name is still the built-in and cannot be deleted.
+    builtin, user = collection.get_all()
+    return key in user and key not in builtin
+
+
+def deletion_error(ledfx: "LedFxCore", key: str) -> str | None:
+    """Why a color or gradient cannot be deleted, or None if it can."""
+    collections = (ledfx.colors, ledfx.gradients)
+    if any(_deletable(c, key) for c in collections):
+        return None
+    if any(key in c.get_all()[0] for c in collections):
+        return f"Cannot delete built-in color or gradient: {key}"
+    return f"Color or gradient {key} not found"
 
 
 class ColorEndpoint(RestEndpoint):
@@ -52,10 +74,12 @@ class ColorEndpoint(RestEndpoint):
             )
 
         for key in data:
-            if key in self._ledfx.colors:
-                del self._ledfx.colors[key]
-            if key in self._ledfx.gradients:
-                del self._ledfx.gradients[key]
+            if reason := deletion_error(self._ledfx, key):
+                return await self.invalid_request(reason)
+        for key in data:
+            for collection in (self._ledfx.colors, self._ledfx.gradients):
+                if _deletable(collection, key):
+                    del collection[key]
 
         keys_str = ", ".join(data)
         return await self.request_success("success", f"Deleted {keys_str}")
@@ -89,18 +113,27 @@ class ColorEndpoint(RestEndpoint):
         if data is None:
             return await self.invalid_request("Required attribute was not provided")
 
-        # TODO: Handle instances where neither color nor gradient is provided
-        saved_keys = []
+        # Check every entry first, so a rejected request saves nothing.
+        staged = []
         for key, val in data.items():
             try:
-                is_color = validate_color(val)
+                validate_color(val)
+                collection, noun = self._ledfx.colors, "color"
             except ValueError:
-                is_color = False
-            if is_color:
-                self._ledfx.colors[key] = val
-            else:
-                self._ledfx.gradients[key] = val
-            saved_keys.append(key)
+                try:
+                    validate_gradient(val)
+                except ValueError:
+                    return await self.invalid_request(
+                        f"{key} is not a valid color or gradient"
+                    )
+                collection, noun = self._ledfx.gradients, "gradient"
+            if key in collection.get_all()[0]:
+                return await self.invalid_request(
+                    f"Cannot overwrite built-in {noun}: {key}"
+                )
+            staged.append((collection, key, val))
+        for collection, key, val in staged:
+            collection[key] = val
 
-        keys_str = ", ".join(saved_keys)
+        keys_str = ", ".join(data)
         return await self.request_success("success", f"Saved {keys_str}")

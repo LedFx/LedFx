@@ -43,7 +43,7 @@ from ledfx.devices import Device, Devices, SerialDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
 from ledfx.playlists import PlaylistManager
-from ledfx.utils import BaseRegistry
+from ledfx.utils import BaseRegistry, UserDefaultCollection
 from ledfx.virtuals import Virtual
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -275,14 +275,15 @@ async def test_a_body_that_is_not_an_object_is_rejected(body: object) -> None:
 
 async def test_colors_delete_still_takes_a_list() -> None:
     ledfx = fake_ledfx()
-    ledfx.colors = {"my_red": "#ff0000", "keep": "#00ff00"}
-    ledfx.gradients = dict[str, str]()
+    user_colors = {"my_red": "#ff0000", "keep": "#00ff00"}
+    ledfx.colors = UserDefaultCollection(ledfx, "Colors", {}, user_colors)
+    ledfx.gradients = UserDefaultCollection(ledfx, "Gradients", {}, {})
     status, response = await _call(ColorEndpoint(ledfx), "DELETE", ["my_red"])
     assert status == 200 and response["status"] == "success"
-    assert ledfx.colors == {"keep": "#00ff00"}
+    assert user_colors == {"keep": "#00ff00"}
     _, response = await _call(ColorEndpoint(ledfx), "DELETE", {"keep": 1})
     assert _reason(response) == "Request body must be a JSON list of color names"
-    assert ledfx.colors == {"keep": "#00ff00"}
+    assert user_colors == {"keep": "#00ff00"}
 
 
 async def test_a_get_body_may_still_be_a_list() -> None:

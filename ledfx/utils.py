@@ -747,23 +747,22 @@ class UserDefaultCollection(MutableMapping):
         # _LOGGER.error("Unknown %s: %s", self._collection_name, name)
 
     def __delitem__(self, key):
+        noun = self._collection_name.lower().rstrip("s")
         if key in self._default_vals:
-            _LOGGER.error("Cannot delete LedFx %s: %s", self._collection_name, key)
-            return
-        if key in self._user_vals:
-            del self._user_vals[key]
-        _LOGGER.info("Deleted %s: %s", self._collection_name.lower().rstrip("s"), key)
+            raise ValueError(f"Cannot delete built-in {noun}: {key}")
+        del self._user_vals[key]
+        _LOGGER.info("Deleted %s: %s", noun, key)
         self._ledfx.config_store.request_save()
         # Fire event if colors or gradients were deleted
         if self._collection_name in ("Colors", "Gradients"):
             self._ledfx.events.fire_event(ColorsUpdatedEvent())
 
     def __setitem__(self, key, value):
+        noun = self._collection_name.lower().rstrip("s")
         if key in self._default_vals:
-            _LOGGER.error("Cannot overwrite LedFx %s: %s", self._collection_name, key)
-            return
+            raise ValueError(f"Cannot overwrite built-in {noun}: {key}")
         self._user_vals[key] = self._validator(value)
-        _LOGGER.info("Saved %s: %s", self._collection_name.lower().rstrip("s"), key)
+        _LOGGER.info("Saved %s: %s", noun, key)
         self._ledfx.config_store.request_save()
         # Fire event if colors or gradients were updated
         if self._collection_name in ("Colors", "Gradients"):

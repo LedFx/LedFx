@@ -4,7 +4,6 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.configuration.presets import preset_category
 from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_defaults, inject_missing_default_keys
 
@@ -43,7 +42,7 @@ class PresetsEndpoint(RestEndpoint):
 
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             return await self.invalid_effect_id(effect_id)
 
         default = generate_defaults(ledfx_presets, self._ledfx.effects, effect_id)
@@ -104,23 +103,21 @@ class PresetsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 f'Category {category} is not "ledfx_presets" or "user_presets"'
             )
+        if category == "ledfx_presets":
+            return await self.invalid_request("Built-in LedFx presets are read-only")
 
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             return await self.invalid_effect_id(effect_id)
 
-        presets = preset_category(self._ledfx.config.user_presets, category)
+        presets = self._ledfx.config.user_presets
         if preset_id not in presets.get(effect_id, {}):
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
 
-        # Update and save config
-        if category == "user_presets":
-            self._ledfx.config.user_presets[effect_id][preset_id].name = name
-        else:
-            ledfx_presets[effect_id][preset_id]["name"] = name
+        presets[effect_id][preset_id].name = name
         self._ledfx.config_store.request_save()
         return await self.request_success()
 
@@ -150,13 +147,15 @@ class PresetsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 f'Category {category} is not "ledfx_presets" or "user_presets"'
             )
+        if category == "ledfx_presets":
+            return await self.invalid_request("Built-in LedFx presets are read-only")
 
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             return await self.invalid_effect_id(effect_id)
 
-        presets = preset_category(self._ledfx.config.user_presets, category)
+        presets = self._ledfx.config.user_presets
         if effect_id not in presets:
             return await self.invalid_request(
                 f"Effect {effect_id} does not exist in category {category}"
@@ -172,12 +171,6 @@ class PresetsEndpoint(RestEndpoint):
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
 
-        # Delete the preset from configuration
-        if category == "user_presets":
-            del self._ledfx.config.user_presets[effect_id][preset_id]
-        else:
-            del ledfx_presets[effect_id][preset_id]
-
-        # Save the config
+        del presets[effect_id][preset_id]
         self._ledfx.config_store.request_save()
         return await self.request_success()

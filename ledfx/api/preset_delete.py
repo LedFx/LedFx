@@ -25,7 +25,7 @@ class PresetDeleteEndpoint(RestEndpoint):
         # Validate effect exists
         try:
             self._ledfx.effects.get_class(effect_id)
-        except BaseException:  # noqa: BLE001
+        except KeyError:
             error_message = f"Effect {effect_id} does not exist"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
