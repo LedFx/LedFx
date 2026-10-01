@@ -105,6 +105,11 @@ class Number(Texter2d):
         ]
         self.is_time_hhmm = self._config["value_source"] == "Time (HH:MM)"
         self.is_time_hhmmss = self._config["value_source"] == "Time (HH:MM:SS)"
+        # A time string left over from a time mode cannot be formatted as a number.
+        if not (self.is_time_hhmm or self.is_time_hhmmss) and isinstance(
+            self.display_value, str
+        ):
+            self.display_value = 0.0
 
     def update_time_hhmm(self, data=None):
         """Update display value with current time as HH:MM string."""

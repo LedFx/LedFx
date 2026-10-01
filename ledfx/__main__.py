@@ -35,6 +35,8 @@ from ledfx.utils import (
     read_ledfx_dotenv,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def reset_logging():
     manager = logging.root.manager

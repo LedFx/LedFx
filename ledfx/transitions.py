@@ -102,7 +102,12 @@ class Transitions(metaclass=IterClass):
         else:
             np.clip(x1, None, 255 * 2 * (weight - 0.5), x1)
 
-    NAMED_FUNCTIONS: ClassVar[dict[str, Callable | str]] = {
+    def none(self, x1: np.ndarray, x2: np.ndarray, weight: float) -> None:
+        """
+        leaves x1 unchanged: switching to "None" mid-transition cuts to the new effect
+        """
+
+    NAMED_FUNCTIONS: ClassVar[dict[str, Callable]] = {
         "Add": add,
         "Dissolve": dissolve,
         "Push": push,
@@ -110,5 +115,5 @@ class Transitions(metaclass=IterClass):
         "Iris": iris,
         "Through White": throughWhite,
         "Through Black": throughBlack,
-        "None": "None",
+        "None": none,
     }
