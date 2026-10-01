@@ -111,8 +111,10 @@ class ZeroConfRunner:
             name (str): The service name.
         """
         info = AsyncServiceInfo(service_type, name)
+        # async_request returns False on timeout. An SRV record alone still sets
+        # info.server, and add_new_device resolves that hostname itself.
         await info.async_request(zeroconf, 3000)
-        if info:
+        if info.server:
             hostname = str(info.server).rstrip(".")
             _LOGGER.info("Found WLED device: %s", hostname)
 

@@ -407,6 +407,26 @@ class TestSaveAsset:
         with open(abs_path, "rb") as f:
             assert f.read() == sample_png_data
 
+    def test_save_makes_the_asset_durable(
+        self, temp_config_dir, sample_png_data, monkeypatch
+    ):
+        """The data and the rename are fsynced before save_asset reports success."""
+        synced_dirs: list[str] = []
+        synced_files: list[int] = []
+        real_fsync = os.fsync
+
+        def fsync(fd: int) -> None:
+            synced_files.append(os.fstat(fd).st_ino)
+            real_fsync(fd)
+
+        monkeypatch.setattr("ledfx.assets.fsync_directory", synced_dirs.append)
+        monkeypatch.setattr(os, "fsync", fsync)
+        success, abs_path, _ = save_asset(temp_config_dir, "icon.png", sample_png_data)
+
+        assert success is True and abs_path is not None
+        assert os.stat(abs_path).st_ino in synced_files
+        assert synced_dirs == [os.path.dirname(abs_path)]
+
     def test_save_nested_path(self, temp_config_dir, sample_jpeg_data):
         """Test saving asset in nested directory."""
         success, abs_path, error = save_asset(

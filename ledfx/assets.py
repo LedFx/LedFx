@@ -25,6 +25,7 @@ from datetime import UTC, datetime
 from PIL import Image
 
 from ledfx.consts import LEDFX_ASSETS_PATH
+from ledfx.fsutil import fsync_directory
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
 from ledfx.utilities.security_utils import (
@@ -387,6 +388,7 @@ def save_asset(
 
         # Write data to temp file
         os.write(temp_fd, data)
+        os.fsync(temp_fd)
         os.close(temp_fd)
         temp_fd = None  # Mark as closed
 
@@ -397,6 +399,7 @@ def save_asset(
 
         os.rename(temp_path, absolute_path)
         temp_path = None  # Mark as moved
+        fsync_directory(parent_dir)  # persist the rename itself
 
         _LOGGER.info("Saved asset: %s (%s bytes)", relative_path, len(data))
 

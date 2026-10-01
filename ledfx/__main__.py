@@ -38,29 +38,6 @@ from ledfx.utils import (
 _LOGGER = logging.getLogger(__name__)
 
 
-def reset_logging():
-    manager = logging.root.manager
-    manager.disabled = logging.NOTSET
-    for logger in manager.loggerDict.values():
-        if isinstance(logger, logging.Logger):
-            logger.setLevel(logging.NOTSET)
-            logger.propagate = True
-            logger.disabled = False
-            logger.filters.clear()
-            handlers = logger.handlers.copy()
-            for handler in handlers:
-                # Copied from `logging.shutdown`.
-                try:
-                    handler.acquire()
-                    handler.flush()
-                    handler.close()
-                except (OSError, ValueError):
-                    pass
-                finally:
-                    handler.release()
-                logger.removeHandler(handler)
-
-
 def setup_logging(loglevel, config_dir):
     console_loglevel = loglevel or logging.WARNING
     console_logformat = "[%(levelname)-8s] %(name)-30s : %(message)s"
