@@ -1,5 +1,6 @@
 """Regressions for device lifecycle and render-loop fixes."""
 
+import asyncio
 import json
 import threading
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -307,3 +308,37 @@ def test_govee_second_deactivate_does_not_release_socket_again() -> None:
         device.deactivate()
         device.deactivate()
     server.close.assert_called_once()
+
+
+async def test_mdns_rescan_close_survives_cancellation() -> None:
+    runner = ZeroConfRunner(MagicMock())
+    old_zc = MagicMock(async_close=AsyncMock())
+    cancelling = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_cancel() -> None:
+        cancelling.set()
+        await release.wait()
+
+    runner.aiozc = old_zc
+    runner.aiobrowser = MagicMock(async_cancel=slow_cancel)
+    with (
+        patch("ledfx.mdns_manager.AsyncZeroconf"),
+        patch("ledfx.mdns_manager.AsyncServiceBrowser"),
+    ):
+        scan = asyncio.create_task(runner.discover_wled_devices())
+        await cancelling.wait()
+        scan.cancel()  # e.g. the client went away mid-scan
+        with pytest.raises(asyncio.CancelledError):
+            await scan
+        release.set()
+        await asyncio.gather(*runner._closing)
+    old_zc.async_close.assert_awaited_once()
+
+
+async def test_mdns_close_still_closes_zeroconf_if_cancel_fails() -> None:
+    zc = MagicMock(async_close=AsyncMock())
+    browser = MagicMock(async_cancel=AsyncMock(side_effect=RuntimeError("boom")))
+    with pytest.raises(RuntimeError):
+        await ZeroConfRunner._close(browser, zc)
+    zc.async_close.assert_awaited_once()
