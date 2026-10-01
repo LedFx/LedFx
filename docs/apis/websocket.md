@@ -574,24 +574,36 @@ The `virtual_pause` event is emitted when the active state of a virtual changes.
 - `virtual_id`: Identifier of the virtual entity.
 - `paused`: Current paused state of virtual entity.
 
-### virtual_update
-The `virtual_update` event is emitted when a virtual's pixels are updated.
+### visualisation_update
+The `visualisation_update` event carries the pixels of a virtual or device. It
+is sent at most `visualisation_fps` times a second per virtual or device, and
+is downsampled to at most `visualisation_maxlen` pixels.
+
+The internal `virtual_update` and `device_update` events fire on every frame
+and cannot be subscribed to over the websocket; subscribing to them returns
+an error. Use `visualisation_update` instead, filtered to one virtual with
+`"event_filter": {"vis_id": "my_virtual_id"}`.
 
 **Payload Example:**
 ```json
 {
-  "event_type": "virtual_update",
-  "virtual_id": "my_virtual_id",
-  "pixels": [
-    // Array of pixel state
-  ]
+  "event_type": "visualisation_update",
+  "is_device": false,
+  "vis_id": "my_virtual_id",
+  "pixels": "AAAA/wAA...",
+  "shape": [1, 81]
 }
 ```
 
 **Fields:**
-- `event_type`: Always `"virtual_update"`.
-- `virtual_id`: Identifier of the virtual entity.
-- `pixels`: Array of current pixel state.
+- `event_type`: Always `"visualisation_update"`.
+- `is_device`: `true` for a device, `false` for a virtual.
+- `vis_id`: Identifier of the virtual or device.
+- `pixels`: The pixels, encoded by the `transmission_mode` setting. With
+  `compressed` (the default), a base64 string of `uint8` RGB bytes, one pixel
+  after another. With `uncompressed`, three lists of `uint8` values: red,
+  green and blue.
+- `shape`: `[rows, columns]` of the pixels.
 
 ### virtual_config_update
 The `virtual_config_update` event is emitted when a virtual's configuration is updated.
