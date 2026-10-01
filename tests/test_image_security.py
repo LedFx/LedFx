@@ -586,3 +586,75 @@ class TestPathTraversalNaughtyStrings:
             assert result is None, (
                 f"Special filename should be rejected or fail: {naughty_filename}"
             )
+
+
+def _animated_gif(n_frames, size=(1, 1)):
+    # Alternate colours so Pillow does not merge identical frames.
+    frames = [
+        Image.new("RGB", size, color=(255 * (i % 2), 0, 0)) for i in range(n_frames)
+    ]
+    buf = io.BytesIO()
+    frames[0].save(buf, "GIF", save_all=True, append_images=frames[1:])
+    buf.seek(0)
+    return buf
+
+
+class TestAnimationLimits:
+    """Frame-count and total-pixel caps for animated images."""
+
+    def test_frame_cap_is_enforced(self):
+        from ledfx.utilities.security_utils import (
+            MAX_IMAGE_FRAMES,
+            validate_pil_image,
+        )
+
+        assert validate_pil_image(Image.open(_animated_gif(MAX_IMAGE_FRAMES)))
+        assert not validate_pil_image(Image.open(_animated_gif(MAX_IMAGE_FRAMES + 1)))
+
+    def test_total_pixel_cap_is_enforced(self):
+        from ledfx.utilities import security_utils
+
+        with patch.object(security_utils, "MAX_ANIMATION_PIXELS", 3 * 50 * 50):
+            assert security_utils.validate_pil_image(
+                Image.open(_animated_gif(3, (50, 50)))
+            )
+            assert not security_utils.validate_pil_image(
+                Image.open(_animated_gif(4, (50, 50)))
+            )
+
+    def test_validation_keeps_frame_position(self):
+        from ledfx.utilities.security_utils import validate_pil_image
+
+        img = Image.open(_animated_gif(5))
+        assert validate_pil_image(img)
+        assert img.tell() == 0
+
+    def test_open_gif_rejects_too_many_frames(self, tmp_path):
+        from ledfx.utilities.security_utils import MAX_IMAGE_FRAMES
+
+        init_image_cache(str(tmp_path))
+        gif_path = os.path.join(tmp_path, "long.gif")
+        with open(gif_path, "wb") as f:
+            f.write(_animated_gif(MAX_IMAGE_FRAMES + 1).getvalue())
+        assert open_gif(gif_path) is None
+
+    def test_upload_rejects_too_many_frames(self):
+        from ledfx.assets import validate_asset_content
+        from ledfx.utilities.security_utils import MAX_IMAGE_FRAMES
+
+        data = _animated_gif(MAX_IMAGE_FRAMES + 1).getvalue()
+        ok, _, _ = validate_asset_content(data, "long.gif")
+        assert not ok
+
+    def test_bundled_animations_pass(self):
+        from pathlib import Path
+
+        import ledfx
+        from ledfx.utilities.security_utils import validate_pil_image
+
+        root = Path(ledfx.__file__).parent.parent / "ledfx_assets"
+        paths = [*root.rglob("*.gif"), *root.rglob("*.webp")]
+        assert paths
+        for path in paths:
+            with Image.open(path) as img:
+                assert validate_pil_image(img), path

@@ -850,6 +850,40 @@ class TestAssetsAPIThumbnail:
         # Cleanup
         requests.delete(ASSETS_API_URL, params={"path": "test_animated.gif"}, timeout=5)
 
+    def test_thumbnail_refuses_oversized_animation_on_disk(self):
+        """An asset placed on disk past the frame cap gets no animated thumbnail."""
+        from ledfx.utilities.security_utils import MAX_IMAGE_FRAMES
+
+        frames = [
+            Image.new("RGB", (1, 1), color=(255 * (i % 2), 0, 0))
+            for i in range(MAX_IMAGE_FRAMES + 1)
+        ]
+        path = os.path.join("debug_config", "assets", "test_too_many_frames.gif")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        frames[0].save(path, "GIF", save_all=True, append_images=frames[1:])
+        try:
+            resp = requests.post(
+                ASSETS_THUMBNAIL_API_URL,
+                json={"path": "test_too_many_frames.gif", "size": 64},
+                timeout=5,
+            )
+            assert resp.json()["status"] == "failed"
+
+            # The static first-frame thumbnail still works.
+            resp = requests.post(
+                ASSETS_THUMBNAIL_API_URL,
+                json={
+                    "path": "test_too_many_frames.gif",
+                    "size": 64,
+                    "animated": False,
+                },
+                timeout=5,
+            )
+            assert resp.status_code == 200
+            assert resp.headers["Content-Type"] == "image/png"
+        finally:
+            os.remove(path)
+
     def test_thumbnail_animated_gif_explicit_true(self, sample_animated_gif_bytes):
         """Test generating animated WebP thumbnail with explicit animated=true."""
         # Upload animated GIF asset

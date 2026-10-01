@@ -8,6 +8,7 @@ from PIL import Image
 
 from ledfx import assets
 from ledfx.api import RestEndpoint
+from ledfx.utilities.security_utils import validate_pil_image
 from ledfx.utils import get_image_cache
 
 _LOGGER = logging.getLogger(__name__)
@@ -357,6 +358,13 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     n_frames = getattr(img, "n_frames", 1)
 
                     if animated and is_animated_image and n_frames > 1:
+                        # Assets on disk may predate the upload-time frame
+                        # caps, so check before decoding every frame.
+                        if not validate_pil_image(img):
+                            return await self.invalid_request(
+                                message="Animation exceeds frame or size limits",
+                                type="error",
+                            )
                         # Process animated image - create WebP thumbnail
                         frames = []
                         durations = []

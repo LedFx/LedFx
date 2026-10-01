@@ -66,6 +66,11 @@ ALLOWED_PIL_FORMATS = {
 
 MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 MAX_IMAGE_PIXELS = 4096 * 4096  # Prevent decompression bombs
+# Animated images: every consumer (gif frames API, animated thumbnails,
+# GIF effects) decodes every frame, so cap the work as well as one frame.
+# Bundled animations peak at 281 frames and ~22M total pixels.
+MAX_IMAGE_FRAMES = 1000
+MAX_ANIMATION_PIXELS = 16 * MAX_IMAGE_PIXELS  # ~268M: 1000 x 512x512, 128 x 1080p
 DOWNLOAD_TIMEOUT = 30  # seconds
 
 # =============================================================================
@@ -558,7 +563,8 @@ def validate_image_mime_type(file_path: str) -> bool:
 
 def validate_pil_image(image: Image.Image) -> bool:
     """
-    Validate PIL image format and dimensions.
+    Validate PIL image format, dimensions and, for animations, frame count
+    (MAX_IMAGE_FRAMES) and total pixels across frames (MAX_ANIMATION_PIXELS).
 
     Args:
         image: PIL Image object
@@ -578,6 +584,25 @@ def validate_pil_image(image: Image.Image) -> bool:
             image.width,
             image.height,
             MAX_IMAGE_PIXELS,
+        )
+        return False
+
+    # Counting frames only walks frame headers; n_frames restores the position.
+    try:
+        n_frames = getattr(image, "n_frames", 1)
+    except Exception:  # noqa: BLE001
+        _LOGGER.warning("Could not count image frames")
+        return False
+    if n_frames > MAX_IMAGE_FRAMES:
+        _LOGGER.warning("Too many frames: %s (max %s)", n_frames, MAX_IMAGE_FRAMES)
+        return False
+    if n_frames * image.width * image.height > MAX_ANIMATION_PIXELS:
+        _LOGGER.warning(
+            "Animation too large: %s frames of %sx%s (max %s total pixels)",
+            n_frames,
+            image.width,
+            image.height,
+            MAX_ANIMATION_PIXELS,
         )
         return False
 
