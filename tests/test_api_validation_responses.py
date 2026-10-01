@@ -39,6 +39,7 @@ from ledfx.api.virtual_presets import VirtualPresetsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.configuration.models import Preset, VirtualEntry
 from ledfx.devices import Device, Devices
+from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
 from ledfx.playlists import PlaylistManager
 from ledfx.utils import BaseRegistry
@@ -279,6 +280,20 @@ async def test_an_unresolvable_device_address_is_an_error_not_none(
         await devices.add_new_device("dummy", {"name": "d", "ip_address": "nowhere"})
     # mDNS discovery swallows the exception, so the warning is its only trace.
     assert "nowhere as it could not be resolved" in caplog.text
+
+
+async def test_a_device_that_fails_to_initialise_is_not_left_registered() -> None:
+    ledfx = fake_ledfx()
+    devices = _devices(ledfx)
+    devices._objects = {}
+    failing = AsyncMock(side_effect=ValueError("unreachable"))
+    with (
+        patch.object(DummyDevice, "async_initialize", failing, create=True),
+        pytest.raises(ValueError, match="unreachable"),
+    ):
+        await devices.add_new_device("dummy", {"name": "d", "pixel_count": 10})
+    assert list(devices.values()) == []
+    assert not ledfx.config.devices
 
 
 async def test_shared_ip_checks_use_config_defaults() -> None:

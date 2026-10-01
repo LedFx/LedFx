@@ -909,7 +909,13 @@ class Devices(RegistryLoader):
         )
 
         if hasattr(device, "async_initialize"):
-            await device.async_initialize()
+            try:
+                await device.async_initialize()
+            except BaseException:
+                # Not saved yet: leaving it registered would list a device
+                # that disappears on restart, and push a retry to "<id>-1".
+                self._ledfx.devices.destroy(device.id)
+                raise
 
         device_config = device.config.as_dict()
         if device_type == "wled":
