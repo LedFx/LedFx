@@ -82,11 +82,30 @@ class ArtNetDevice(NetworkedDevice):
         self.config_use(config)
         self.init = True
 
+    OUTPUT_KEYS = (
+        "ip_address",
+        "port",
+        "universe",
+        "refresh_rate",
+        "pixel_count",
+        "packet_size",
+        "even_packet_size",
+        "pixels_per_device",
+        "dmx_start_address",
+        "rgb_order",
+        "white_mode",
+        "pre_amble",
+        "post_amble",
+    )
+
     def config_updated(self, config):
+        if not self._output_changed():
+            return
         self.config_use(config)
         self.deactivate()
         self.init = True
         self.activate()
+        self._built_settings = self._output_settings()
 
     def config_use(self, config):
         # get the preamble string, strip it and convert to np.arry of unint8

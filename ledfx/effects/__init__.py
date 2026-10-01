@@ -396,6 +396,8 @@ class Effect(BaseRegistry):
                 _LOGGER.warning("Error updating effect %s config: %s", self.NAME, err)
                 return
 
+            # A failing config_updated hook restores this, derived state included.
+            old_state, old_diag = dict(vars(self)), self.logsec.diag
             self._config = validated_config
 
             bg_color = parse_color(self._config["background_color"])
@@ -422,9 +424,14 @@ class Effect(BaseRegistry):
             # implementation of config updates. If to notify the base class.
             valid_classes = list(type(self).__bases__)
             valid_classes.append(type(self))
-            for base in valid_classes:
-                if base.config_updated != super(base, base).config_updated:
-                    base.config_updated(self, self._config)
+            try:
+                for base in valid_classes:
+                    if "config_updated" in vars(base):  # base's own override
+                        base.config_updated(self, self._config)
+            except Exception:
+                vars(self).update(old_state)
+                self.logsec.diag = old_diag
+                raise
 
             _LOGGER.debug(
                 "Effect %s config updated to %s.", self.NAME, validated_config

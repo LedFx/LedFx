@@ -123,6 +123,8 @@ class Govee(NetworkedDevice):
         if self.udp_server is not None:
             self.send_deactivate()
             self.udp_server.close()
+            # A second deactivate must not release the shared socket again.
+            self.udp_server = None
         super().deactivate()
 
     def activate(self):

@@ -66,9 +66,10 @@ class DeviceEndpoint(RestEndpoint):
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
         # Update and save the configuration
-        for device in self._ledfx.config["devices"]:
-            if device["id"] == device_id:
-                device["config"] = device_config
+        # Persist the merged, validated config: a partial PUT must not drop keys.
+        for saved in self._ledfx.config["devices"]:
+            if saved["id"] == device_id:
+                saved["config"] = device.config
                 break
         save_config(
             config=self._ledfx.config,

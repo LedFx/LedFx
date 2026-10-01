@@ -139,6 +139,7 @@ class Virtual:
     _transition_effect = None
 
     _min_time = time.get_clock_info("perf_counter").resolution
+    _last_render_error = float("-inf")
 
     def _validate_and_set_frequency_range(self, config):
         """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""
@@ -814,27 +815,34 @@ class Virtual:
                 self.set_fallback()
                 self.fallback_fire = False
 
-            # we need to lock before we test, or we could deactivate
-            # between test and execution
-            with self.lock:
-                if (
-                    self._active_effect
-                    and self._active_effect.is_active
-                    and hasattr(self._active_effect, "pixels")
-                ):
-                    # self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                    #     self._ledfx.thread_executor, self.assemble_frame
-                    # )
-                    self.assembled_frame = self.assemble_frame()
-                    if self.assembled_frame is not None and not self._paused:
-                        if not self._config["preview_only"]:
-                            # self._ledfx.thread_executor.submit(self.flush)
-                            # await self._ledfx.loop.run_in_executor(
-                            #     self._ledfx.thread_executor, self.flush
-                            # )
-                            self.flush()
+            # An exception here would end the thread and freeze the virtual
+            # while it still reports active; log it (rate-limited) and carry on.
+            try:
+                # we need to lock before we test, or we could deactivate
+                # between test and execution
+                with self.lock:
+                    if (
+                        self._active_effect
+                        and self._active_effect.is_active
+                        and hasattr(self._active_effect, "pixels")
+                    ):
+                        # self.assembled_frame = await self._ledfx.loop.run_in_executor(
+                        #     self._ledfx.thread_executor, self.assemble_frame
+                        # )
+                        self.assembled_frame = self.assemble_frame()
+                        if self.assembled_frame is not None and not self._paused:
+                            if not self._config["preview_only"]:
+                                # self._ledfx.thread_executor.submit(self.flush)
+                                # await self._ledfx.loop.run_in_executor(
+                                #     self._ledfx.thread_executor, self.flush
+                                # )
+                                self.flush()
 
-                        self._fire_update_event()
+                            self._fire_update_event()
+            except Exception:
+                if start_time - self._last_render_error >= 5:
+                    self._last_render_error = start_time
+                    _LOGGER.exception("Virtual %s: frame render failed", self.id)
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
