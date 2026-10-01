@@ -13,6 +13,7 @@ import pytest
 import voluptuous as vol
 from aiohttp import MultipartWriter, WSMessage, WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
+from pydantic import BaseModel, Field
 
 from ledfx.api import RestEndpoint
 from ledfx.api.assets import AssetsEndpoint
@@ -20,7 +21,9 @@ from ledfx.api.config import ConfigEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
 from ledfx.api.websocket import WebsocketConnection, websocket_handlers
 from ledfx.config import load_logger
+from ledfx.configuration.fields import CoercedFloat, CoercedInt
 from ledfx.configuration.migrations.legacy import legacy_to_v1
+from ledfx.configuration.plugin import vol_to_model
 from ledfx.devices import Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
 from ledfx.utils import WLED, get_local_ip
@@ -79,7 +82,9 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     effect.config = dict[str, object]()
     virtual.active_effect = effect
     ledfx.effects.create.return_value = effect
-    ledfx.effects.get_class.return_value.schema.return_value = schema
+    ledfx.effects.get_class.return_value.config_model.return_value = vol_to_model(
+        "TestEffect", schema
+    )
     request = MagicMock()
     request.json = AsyncMock(
         return_value={"config": "RANDOMIZE", "type": "test-effect"}
@@ -97,20 +102,26 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     assert 2 <= generated["count"] <= 5
 
 
-def test_randomize_int_respects_exclusive_bounds() -> None:
-    def exclusive(low: int, high: int) -> vol.All:
-        return vol.All(
-            vol.Coerce(int),
-            vol.Range(min=low, max=high, min_included=False, max_included=False),
-        )
+class _Bounded(BaseModel):
+    one: CoercedInt = Field(1, gt=0, lt=2)  # 1 is the only integer
+    empty: CoercedInt | None = Field(None, gt=0, lt=1)  # no integer: skipped
+    ratio: CoercedFloat = Field(0.5, gt=0.0, lt=1.0)
 
-    schema: dict[object, object] = {
-        vol.Optional("one"): exclusive(0, 2),
-        vol.Optional("none"): exclusive(0, 1),
-    }
-    for _ in range(50):
-        # 1 is the only integer in (0, 2); (0, 1) holds none, so it is skipped.
-        assert randomize_effect_config(schema, ()) == {"one": 1}
+
+@pytest.mark.parametrize("pick", ["low", "high"])
+def test_randomize_honours_exclusive_bounds(
+    monkeypatch: pytest.MonkeyPatch, pick: str
+) -> None:
+    def endpoint(low: float, high: float) -> float:
+        return low if pick == "low" else high
+
+    # uniform() may return either endpoint; an exclusive one must not be used.
+    monkeypatch.setattr("ledfx.api.virtual_effects.random.uniform", endpoint)
+    for _ in range(20):
+        result = randomize_effect_config(_Bounded, ())
+        assert set(result) == {"one", "ratio"} and result["one"] == 1
+        ratio = result["ratio"]
+        assert isinstance(ratio, float) and 0.0 < ratio < 1.0
 
 
 def test_migration_discards_effect_without_type_and_keeps_virtual() -> None:

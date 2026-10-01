@@ -1,4 +1,5 @@
 # from ledfx.events import Event
+import copy
 import logging
 from json import JSONDecodeError
 
@@ -18,7 +19,7 @@ class QLCEndpoint(RestEndpoint):
     def _save_triggers(self, integration: Spotify) -> None:
         for entry in self._ledfx.config.integrations:
             if entry.id == integration.id:
-                entry.data = integration.triggers
+                entry.data = copy.deepcopy(integration.triggers)
         self._ledfx.config_store.request_save()
 
     async def get(self, integration_id) -> web.Response:

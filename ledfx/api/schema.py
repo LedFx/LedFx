@@ -6,7 +6,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.jsonutil import dumps
-from ledfx.api.utils import PERMITTED_KEYS, convertToJsonSchema
+from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.configuration.models import (
     AudioAnalysisConfig,
     AudioInputConfig,
@@ -95,7 +95,7 @@ class SchemaEndpoint(RestEndpoint):
                     device,
                 ) in self._ledfx.devices.classes().items():
                     response["devices"][device_type] = {
-                        "schema": convertToJsonSchema(device.schema()),
+                        "schema": legacy_schema(device.config_model()),
                         "id": device_type,
                     }
 
@@ -107,7 +107,7 @@ class SchemaEndpoint(RestEndpoint):
                     effect,
                 ) in self._ledfx.effects.classes().items():
                     response["effects"][effect_type] = {
-                        "schema": convertToJsonSchema(effect.schema()),
+                        "schema": legacy_schema(effect.config_model()),
                         "id": effect_type,
                         "name": effect.NAME,
                         "category": effect.CATEGORY,
@@ -135,7 +135,7 @@ class SchemaEndpoint(RestEndpoint):
                     integration,
                 ) in self._ledfx.integrations.classes().items():
                     response["integrations"][integration_type] = {
-                        "schema": convertToJsonSchema(integration.schema()),
+                        "schema": legacy_schema(integration.config_model()),
                         "id": integration_type,
                         "name": integration.NAME,
                         "description": integration.DESCRIPTION,

@@ -14,6 +14,7 @@ from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 from ledfx.configuration.fields import fps_validator
 from ledfx.configuration.models import DeviceEntry, VirtualEntry
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.events import (
     DeviceCreatedEvent,
     DevicesUpdatedEvent,
@@ -39,6 +40,8 @@ _LOGGER = logging.getLogger(__name__)
 
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
+    config = TypedConfig(PluginConfig)
+
     @staticmethod
     @property
     def CONFIG_SCHEMA():
@@ -96,7 +99,7 @@ class Device(BaseRegistry):
             if old_config is not None:
                 config = {**old_config, **config}
 
-            validated_config = type(self).schema()(config)
+            validated_config = type(self).config_model().model_validate(config)
             self._config = validated_config
 
             # Iterate all the base classes and check to see if there is a custom
@@ -705,6 +708,7 @@ class AvailableCOMPorts:
 
 @BaseRegistry.no_registration
 class SerialDevice(Device):
+    RUNTIME_CHOICE_KEYS: ClassVar[frozenset[str]] = frozenset({"com_port"})
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Required(
@@ -768,6 +772,8 @@ class Devices(RegistryLoader):
                     type=device.type,
                     config=device.config,
                     ledfx=self._ledfx,
+                    lenient=self._ledfx.config_store.quarantine,
+                    lenient_entry=device,
                 )
             except Exception as e:  # noqa: BLE001
                 # be very prolific on ignoring devices if they are bad
@@ -887,7 +893,7 @@ class Devices(RegistryLoader):
         if hasattr(device, "async_initialize"):
             await device.async_initialize()
 
-        device_config = device.config
+        device_config = device.config.as_dict()
         if device_type == "wled":
             device_config["name"] = wled_name
         # Update and save the configuration

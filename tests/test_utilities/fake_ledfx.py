@@ -12,6 +12,7 @@ def fake_ledfx(config: dict[str, object] | None = None) -> MagicMock:
     ledfx.config_store = MagicMock(spec=ConfigStore)
     ledfx.config_store.data = LedFxConfig.model_validate(config or {})
     ledfx.config = ledfx.config_store.data
+    ledfx.config_store.quarantine_failed = False
     # The real lookups, reading the mocked store's real data.
     ledfx.config_store.virtual_entry.side_effect = partial(
         ConfigStore.virtual_entry, ledfx.config_store

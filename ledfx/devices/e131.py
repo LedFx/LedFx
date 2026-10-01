@@ -56,16 +56,23 @@ class E131Device(NetworkedDevice):
 
         self._device_type = "e131"
         if "pixel_count" in self._config:
-            self._config["channel_count"] = self._config["pixel_count"] * 3
+            pixel_count = self._config["pixel_count"]
+            channel_count = pixel_count * 3
         else:
-            self._config["pixel_count"] = self._config["channel_count"] // 3
+            channel_count = self._config["channel_count"]
+            pixel_count = channel_count // 3
 
-        span = self._config["channel_offset"] + self._config["channel_count"] - 1
-        self._config["universe_end"] = self._config["universe"] + int(
+        span = self._config["channel_offset"] + channel_count - 1
+        universe_end = self._config["universe"] + int(
             span / self._config["universe_size"]
         )
         if span % self._config["universe_size"] == 0:
-            self._config["universe_end"] -= 1
+            universe_end -= 1
+        self._set_config_values(
+            channel_count=channel_count,
+            pixel_count=pixel_count,
+            universe_end=universe_end,
+        )
 
         self._sacn = None
         self.device_lock = threading.Lock()

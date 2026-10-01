@@ -28,5 +28,5 @@ class EffectEndpoint(RestEndpoint):
         if effect is None:
             return await self.invalid_request(f"{effect_id} was not found")
 
-        response = {"schema": str(effect.schema())}
+        response = {"schema": str(effect.config_model().model_json_schema())}
         return await self.bare_request_success(response)

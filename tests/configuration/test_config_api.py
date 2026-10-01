@@ -1,6 +1,7 @@
 import json
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from aiohttp import web
 from aiohttp.test_utils import make_mocked_request
 
@@ -178,10 +179,24 @@ async def test_invalid_integration_update_keeps_the_running_integration() -> Non
     ledfx.integrations.create.assert_not_called()
 
 
+@pytest.mark.parametrize("config", ["abc", 5, [["name", "x"]]])
+async def test_non_object_integration_config_is_a_validation_error(
+    config: object,
+) -> None:
+    ledfx = fake_ledfx()
+    ledfx.integrations.get_class.return_value = Spotify
+    body = {"type": "spotify", "config": config}
+    response = await IntegrationsEndpoint(ledfx).post(_request("POST", body))
+    assert response.status == 400
+    ledfx.integrations.create.assert_not_called()
+
+
 async def test_new_integration_stores_raw_data_not_display_data() -> None:
-    _, spotify, ledfx = _spotify_endpoint()
+    ledfx = fake_ledfx({"scenes": {"s1": {"name": "S1"}}})
+    config = Spotify.config_model().model_validate({"name": "Spotify"})
+    spotify = Spotify(ledfx, config, False, None)
+    vars(spotify).update(_id="sp", _type="spotify")  # set by the registry
     spotify.add_trigger("s1", "abc", "Song", 1000)
-    ledfx.config.integrations.clear()
     ledfx.integrations.get_class.return_value = Spotify
     ledfx.integrations.create.return_value = spotify
     body = {"type": "spotify", "config": {"name": "Spotify"}}

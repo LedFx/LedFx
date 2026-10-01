@@ -104,7 +104,10 @@ class WLEDDevice(NetworkedDevice):
         config["pixel_count"] = self._config["pixel_count"]
         config["refresh_rate"] = self._config["refresh_rate"]
 
-        self.subdevice = device(self._ledfx, config)
+        # Subdevices are built directly, not through RegistryLoader.create.
+        self.subdevice = device(
+            self._ledfx, device.config_model().model_validate(config)
+        )
         self._built_settings = self._output_settings()
         self.subdevice._destination = self._destination
         # A sync_mode change on a live device must not leave the new sender idle.
@@ -157,18 +160,12 @@ class WLEDDevice(NetworkedDevice):
         wled_config = await self.wled.get_config()
 
         led_info = wled_config["leds"]
-        wled_name = wled_config["name"]
         wled_count = led_info["count"]
         wled_rgbmode = led_info["rgbw"]
         wled_build = wled_config["vid"]
 
-        wled_config = {
-            "name": wled_name,
-            "pixel_count": wled_count,
-            "rgbw_led": wled_rgbmode,
-        }
-
-        self._config.update(wled_config)
+        # Not the firmware name: the stored name is the user's choice.
+        self._set_config_values(pixel_count=wled_count, rgbw_led=wled_rgbmode)
         self.setup_subdevice()
 
         # Currently *assuming* that this PR gets released in 0.13

@@ -2262,13 +2262,6 @@
       "severity": "error"
     },
     {
-      "column": 32,
-      "path": "ledfx/devices/__init__.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `tuple[Unknown, ...]`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
@@ -5657,31 +5650,10 @@
       "severity": "error"
     },
     {
-      "column": 27,
-      "path": "ledfx/effects/__init__.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/effects/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`merge_schema` is missing an annotation for parameter `c`",
-      "severity": "error"
-    },
-    {
       "column": 29,
       "path": "ledfx/effects/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`update_config` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/__init__.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `tuple[Unknown, ...]`",
       "severity": "error"
     },
     {
@@ -18698,104 +18670,6 @@
       "severity": "error"
     },
     {
-      "column": 27,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get_class_name_for_ts` is missing an annotation for parameter `name_parts`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "unexpected-keyword",
-      "concise_description": "Unexpected keyword argument `for_universal`",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`voluptuous_validator_to_ts_type` is missing an annotation for parameter `validator`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`voluptuous_validator_to_ts_type` is missing an annotation for parameter `for_universal`",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "not-iterable",
-      "concise_description": "Type `Container` is not iterable",
-      "severity": "error"
-    },
-    {
-      "column": 61,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "not-iterable",
-      "concise_description": "Type `Container` is not iterable",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "not-iterable",
-      "concise_description": "Type `Container` is not iterable",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "not-iterable",
-      "concise_description": "Type `Container` is not iterable",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_T` for generic class `set[_T]`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/tools/ts_generator.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/transitions.py",
       "name": "missing-attribute",
@@ -19937,31 +19811,10 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/utils.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/utils.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
       "column": 16,
       "path": "ledfx/utils.py",
       "name": "bad-return",
       "concise_description": "Returned type `Any | None` is not assignable to declared return type `dict[Unknown, Unknown]`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/utils.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `tuple[Unknown, ...]`",
       "severity": "error"
     },
     {
@@ -21327,20 +21180,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_T` for generic class `set[_T]`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
       "severity": "error"
     },
     {
@@ -25170,13 +25009,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_make_mock_effect` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-lambda",
-      "concise_description": "Type of lambda parameter `cls` is unknown",
       "severity": "error"
     },
     {

@@ -1219,10 +1219,9 @@ class Virtual:
         # Store as both the active effect to protect existing code, and one of effects
         entry = self.entry
         if entry is not None:
-            entry.effects[effect.type] = EffectEntry(
-                type=effect.type, config=effect.config
-            )
-            entry.effect = EffectEntry(type=effect.type, config=effect.config)
+            config = effect.config.as_dict()
+            entry.effects[effect.type] = EffectEntry(type=effect.type, config=config)
+            entry.effect = EffectEntry(type=effect.type, config=config)
             entry.last_effect = effect.type
             self._ledfx.config_store.request_save()
 
@@ -1455,6 +1454,7 @@ class Virtuals:
             # Update the entry with the validated config in case initialization
             # adjusted frequencies
             entry.config = VirtualConfig.model_validate(new_virtual.config)
+            self._repair_effect_history(entry)
 
             if "segments" in entry.model_fields_set:
                 try:
@@ -1489,13 +1489,12 @@ class Virtuals:
                         ledfx=self._ledfx,
                         type=entry.effect.type,
                         config=entry.effect.config,
+                        lenient=self._ledfx.config_store.quarantine,
+                        lenient_path=f"virtuals.{entry.id}.effect.config",
+                        lenient_entry=entry.effect,
                     )
-                    new_virtual.set_effect(effect)
-                except vol.MultipleInvalid:
-                    _LOGGER.warning(
-                        "Virtual %s: effect schema changed, not restoring effect",
-                        entry.id,
-                    )
+                    if effect is not None:
+                        new_virtual.set_effect(effect)
                 except (RuntimeError, ValueError) as e:
                     _LOGGER.warning(
                         "Virtual %s: failed to restore effect: %s",
@@ -1514,6 +1513,24 @@ class Virtuals:
 
             self._ledfx.events.fire_event(
                 VirtualConfigUpdateEvent(entry.id, new_virtual.config)
+            )
+
+    def _repair_effect_history(self, entry: VirtualEntry) -> None:
+        """Startup: validate each stored effect config leniently, as the active
+        one is, so switching back to an effect never meets a bad value. A slot
+        whose effect type is no longer registered is left untouched."""
+        effects = self._ledfx.effects
+        for effect_type, slot in entry.effects.items():
+            if effect_type not in effects.types():
+                continue
+            effects.validate_leniently(
+                effects.get_class(effect_type),
+                effect_type,
+                entry.id,
+                dict(slot.config),
+                self._ledfx.config_store.quarantine,
+                f"virtuals.{entry.id}.effects.{effect_type}.config",
+                slot,
             )
 
     def create(self, id=None, *args, **kwargs):
@@ -1734,21 +1751,8 @@ def apply_config_to_active_effects(
         if eff is None or isinstance(eff, DummyEffect):
             continue
 
-        # Get effect schema and hidden keys
-        try:
-            schema = type(eff).schema().schema
-            hidden_keys = getattr(eff, "HIDDEN_KEYS", []) or []
-        except Exception:  # noqa: BLE001
-            schema = {}
-            hidden_keys = []
-
-        # Normalise schema keys (handle vol.Optional/Required wrappers)
-        normalized_keys = set()
-        for schema_key in schema:
-            if hasattr(schema_key, "schema"):
-                normalized_keys.add(schema_key.schema)
-            else:
-                normalized_keys.add(str(schema_key))
+        normalized_keys = set(type(eff).config_model().model_fields)
+        hidden_keys = getattr(eff, "HIDDEN_KEYS", []) or []
 
         # Build per-effect update
         effect_config_update = {}
