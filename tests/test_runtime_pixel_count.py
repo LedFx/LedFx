@@ -70,3 +70,33 @@ def test_transition_follows_effective_pixel_count() -> None:
 
     virtual.assemble_frame()
     assert virtual.transitions.pixel_count == 1
+
+
+def test_shrinking_an_active_device_clears_its_old_segment() -> None:
+    # Shrinking resizes the buffer before the old segment is cleared.
+    device = _e131(4)
+    device._ledfx.config.flush_on_deactivate = True
+    Device.activate(device)  # the buffer only; no sACN sender
+    device._segments = [["v", 0, 3]]
+    device.update_config({"pixel_count": 2})
+    device.clear_virtual_segments("v")
+
+    assert device._pixels is not None
+    assert device._pixels.shape == (2, 3)
+
+
+def test_e131_ip_address_change_rebuilds_the_sender() -> None:
+    # The old sender keeps its destination; a new address must replace it.
+    device = _e131(100)
+    with (
+        patch("ledfx.devices.e131.sacn.sACNsender") as sender,
+        patch("ledfx.devices.NetworkedDevice.activate") as resolve_then_activate,
+    ):
+        device.activate()
+        device.update_config({"ip_address": "10.0.0.2"})
+
+    sender.return_value.stop.assert_called_once()
+    assert device._sacn is None
+    # Activation resolves the new address, then builds the new sender.
+    assert device._destination is None
+    assert resolve_then_activate.call_count == 2  # first activate, then this one

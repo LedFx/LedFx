@@ -37,6 +37,7 @@ class E131Device(NetworkedDevice):
     config = TypedConfig(Config)
 
     OUTPUT_KEYS = (
+        "ip_address",
         "pixel_count",
         "universe",
         "universe_size",
