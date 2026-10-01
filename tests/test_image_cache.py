@@ -623,3 +623,18 @@ def test_get_does_not_wait_for_another_threads_image_work(
         reader.join(5)
     assert not blocked
     assert cache.get("https://example.com/slow.png") is not None
+
+
+def test_put_with_a_new_content_type_leaves_one_file_for_the_url(
+    cache: ImageCache, sample_image_data: bytes
+) -> None:
+    # Same URL, new content type: the old file would otherwise be orphaned,
+    # outside total_size and out of eviction's reach.
+    url = "https://example.com/art"
+    cache.put(url, sample_image_data, "image/png")
+    cache.put(url, sample_image_data, "image/jpeg")
+    files = sorted(os.listdir(cache.cache_dir))
+    assert [f for f in files if f != "metadata.json"] == [
+        f"{cache._generate_cache_key(url)}.jpg"
+    ]
+    assert cache.metadata["total_size"] == len(sample_image_data)

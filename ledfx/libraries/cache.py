@@ -1,5 +1,6 @@
 """Image caching system for LedFx."""
 
+import contextlib
 import functools
 import hashlib
 import json
@@ -177,10 +178,13 @@ class ImageCache:
         extension = extension_map.get(content_type, ".jpg")
 
         cache_path = self._get_cache_path(cache_key, extension)
+        # A private file per call: concurrent puts for one key must not
+        # interleave bytes. The rename under the lock publishes it together
+        # with its metadata entry.
+        tmp_path = f"{cache_path}.{threading.get_ident()}.tmp"
 
-        # Write file
         try:
-            with open(cache_path, "wb") as f:
+            with open(tmp_path, "wb") as f:
                 f.write(data)
         except Exception as e:  # noqa: BLE001
             _LOGGER.error("Failed to write cache file %s: %s", cache_path, e)
@@ -190,16 +194,14 @@ class ImageCache:
         now = datetime.now(UTC).isoformat()
 
         # Extract image metadata (dimensions, frame count, animation status)
-        width, height, img_format, n_frames, is_animated = get_image_metadata(
-            cache_path
-        )
+        width, height, img_format, n_frames, is_animated = get_image_metadata(tmp_path)
 
         # Extract gradient metadata only for original images, not thumbnails
         # Thumbnails have params, original images don't
         gradient_data = None
         if params is None:
             try:
-                gradient_data = extract_gradient_metadata(cache_path)
+                gradient_data = extract_gradient_metadata(tmp_path)
             except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to extract gradients for %s: %s",
@@ -231,11 +233,24 @@ class ImageCache:
         # Only the shared metadata is locked: the event loop calls get()
         # directly, so it must never wait on the image work above.
         with self._lock:
+            try:
+                os.replace(tmp_path, cache_path)
+            except OSError as e:
+                _LOGGER.error("Failed to write cache file %s: %s", cache_path, e)
+                with contextlib.suppress(OSError):
+                    os.remove(tmp_path)
+                return
+
             # Remove old entry size if updating
-            if cache_key in self.metadata["cache_entries"]:
-                old_size = self.metadata["cache_entries"][cache_key]["file_size"]
-                self.metadata["total_size"] -= old_size
+            old = self.metadata["cache_entries"].get(cache_key)
+            if old is not None:
+                self.metadata["total_size"] -= old["file_size"]
                 self.metadata["total_count"] -= 1
+                if old["extension"] != extension:
+                    # Same URL, new content type: the old file is no longer
+                    # referenced by any entry, so eviction would never reach it.
+                    with contextlib.suppress(OSError):
+                        os.remove(self._get_cache_path(cache_key, old["extension"]))
 
             self.metadata["cache_entries"][cache_key] = entry
             self.metadata["total_size"] += len(data)
