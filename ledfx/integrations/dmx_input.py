@@ -25,6 +25,7 @@ integration pattern) as a list of dicts. See ``MAPPING_SCHEMA`` for the shape.
 """
 
 import asyncio
+import copy
 import logging
 import os
 import random
@@ -287,7 +288,7 @@ def _channel(dmx: bytes, ch: int) -> int:
     return 0
 
 
-def compute_dmx_mapped(ledfx):
+def compute_dmx_mapped(ledfx: "LedFxCore") -> tuple[set[str], set[str]]:
     """Cross-reference every ``dmx_input`` integration's mappings to find
     which virtuals and venues are currently targeted by DMX Input.
 
@@ -302,8 +303,8 @@ def compute_dmx_mapped(ledfx):
         included if any mapping targets it directly, or targets a venue it
         belongs to.
     """
-    mapped_virtual_ids = set()
-    mapped_venue_ids = set()
+    mapped_virtual_ids: set[str] = set()
+    mapped_venue_ids: set[str] = set()
 
     integrations = getattr(ledfx, "integrations", None)
     if integrations is not None:
@@ -326,7 +327,7 @@ def compute_dmx_mapped(ledfx):
     venues = getattr(ledfx, "venues", None)
     if venues is not None:
         for venue_id, cfg in venues.list_venues().items():
-            virtual_ids = cfg.get("virtual_ids", [])
+            virtual_ids = cfg.virtual_ids
             if venue_id in mapped_venue_ids:
                 mapped_virtual_ids.update(virtual_ids)
             elif mapped_virtual_ids.intersection(virtual_ids):
@@ -404,6 +405,8 @@ class DMXInput(Integration):
         # ``{"mappings": [...], "paused": bool}`` so the global pause flag
         # can survive restarts alongside the mappings. Old-format (bare
         # list) configs are transparently migrated on load.
+        self._data: list[DMXMapping]
+        self._paused: bool
         if isinstance(data, dict):
             self._data = data.get("mappings", [])
             self._paused = bool(data.get("paused", False))
@@ -434,9 +437,15 @@ class DMXInput(Integration):
     # ------------------------------------------------------------------
 
     @property
-    def data(self):
+    @override
+    def data(self) -> dict[str, object]:
         """Persisted state: mapping list plus the global pause flag."""
         return {"mappings": self._data, "paused": self._paused}
+
+    @property
+    @override
+    def stored_data(self) -> dict[str, object]:
+        return self.data
 
     def get_mappings(self) -> list[DMXMapping]:
         return self._data
@@ -457,7 +466,7 @@ class DMXInput(Integration):
     def paused(self) -> bool:
         return self._paused
 
-    def set_paused(self, paused: bool):
+    def set_paused(self, paused: bool) -> None:
         """Globally mute (or unmute) this integration's DMX takeover.
 
         The Art-Net UDP listener keeps running and still replies to
@@ -473,19 +482,16 @@ class DMXInput(Integration):
             self._release_all()
         self._persist()
 
-    def _persist(self):
+    def _persist(self) -> None:
         """Save this integration's persisted state (mirrors the API's
         ``_persist`` helper in ``ledfx.api.integration_dmx_input``), so
         toggling pause is instant and durable without triggering a
         reconnect (unlike a ``CONFIG_SCHEMA`` change)."""
-        for integration in self._ledfx.config.get("integrations", []):
-            if integration["id"] == self.id:
-                integration["data"] = self.data
+        for entry in self._ledfx.config.integrations:
+            if entry.id == self.id:
+                entry.data = copy.deepcopy(self.data)
                 break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
     # ------------------------------------------------------------------
     # Connection lifecycle
@@ -848,7 +854,7 @@ class DMXInput(Integration):
                 if v is not None and not v.is_dmx_paused():
                     yield v
 
-    def _activate_venue_pad(self, venue_id, pad_index):
+    def _activate_venue_pad(self, venue_id: str, pad_index: int) -> None:
         """Apply a venue color pad, honoring per-device DMX pause.
 
         Mirrors ``VenueManager.activate_override`` but routes virtual
@@ -859,22 +865,20 @@ class DMXInput(Integration):
         if not cfg:
             raise KeyError(f"Venue '{venue_id}' not found")
 
-        pads = cfg["color_pads"]["pads"]
+        pads = cfg.color_pads.pads
         if pad_index < 0 or pad_index >= len(pads):
-            raise IndexError(
-                f"Pad index {pad_index} out of range (0-{len(pads) - 1})"
-            )
+            raise IndexError(f"Pad index {pad_index} out of range (0-{len(pads) - 1})")
 
         pad = pads[pad_index]
-        color_or_gradient = pad.get("gradient") or pad.get("color", "#ffffff")
+        color_or_gradient = pad.gradient or pad.color or "#ffffff"
 
         for v in self._targets({"venue_id": venue_id}):
             v.set_color_override(color_or_gradient)
 
-    def _clear_venue_pad(self, venue_id):
+    def _clear_venue_pad(self, venue_id: str) -> None:
         try:
             self._ledfx.venues.clear_override(venue_id)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - best-effort release
             _LOGGER.warning("DMX Input clear_override: %s", e)
 
     def _release_mapping(

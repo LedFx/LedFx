@@ -10,7 +10,7 @@ from ledfx.integrations.dmx_input import compute_dmx_mapped
 _LOGGER = logging.getLogger(__name__)
 
 
-def make_virtual_response(virtual, dmx_mapped_ids=None):
+def make_virtual_response(virtual, dmx_mapped_ids: set[str] | None = None):
     if dmx_mapped_ids is None:
         dmx_mapped_ids, _ = compute_dmx_mapped(virtual._ledfx)
     entry = virtual.entry

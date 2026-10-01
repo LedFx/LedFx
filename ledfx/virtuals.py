@@ -908,7 +908,7 @@ class Virtual:
     def wash_active(self) -> bool:
         return self._wash_active
 
-    def set_dmx_paused(self, paused: bool):
+    def set_dmx_paused(self, paused: bool) -> None:
         """Mute (or unmute) DMX Input takeover for this virtual.
 
         While paused, the DMX Input integration must not apply any mapping
@@ -1782,7 +1782,7 @@ class Virtuals:
                 new_virtual.active = False
 
             # Restore persisted DMX Input device-level pause flag.
-            if virtual_cfg.get("dmx_paused"):
+            if entry.dmx_paused:
                 new_virtual.set_dmx_paused(True)
 
             # global pause is handled differently to virtual pause

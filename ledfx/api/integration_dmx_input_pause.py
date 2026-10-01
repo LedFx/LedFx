@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.integrations.dmx_input import DMXInput
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,13 +21,13 @@ class DMXInputPauseEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/integrations/dmx_input/{integration_id}/pause"
 
-    def _get_integration(self, integration_id):
+    def _get_integration(self, integration_id: str) -> DMXInput | None:
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "dmx_input"):
             return None
         return integration
 
-    async def put(self, integration_id, request: web.Request) -> web.Response:
+    async def put(self, integration_id: str, request: web.Request) -> web.Response:
         integration = self._get_integration(integration_id)
         if integration is None:
             return await self.invalid_request(

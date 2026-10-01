@@ -4,7 +4,6 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,12 +21,10 @@ class VirtualDMXPauseEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/dmx_pause"
 
-    async def put(self, virtual_id, request: web.Request) -> web.Response:
+    async def put(self, virtual_id: str, request: web.Request) -> web.Response:
         virtual = self._ledfx.virtuals.get(virtual_id)
         if virtual is None:
-            return await self.invalid_request(
-                f"Virtual with ID {virtual_id} not found"
-            )
+            return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
             data = await request.json()
@@ -41,12 +38,11 @@ class VirtualDMXPauseEndpoint(RestEndpoint):
             )
 
         virtual.set_dmx_paused(bool(paused))
-        virtual.virtual_cfg["dmx_paused"] = virtual.is_dmx_paused()
+        entry = virtual.entry
+        if entry is not None:
+            entry.dmx_paused = virtual.is_dmx_paused()
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         return await self.request_success(
             type="success",

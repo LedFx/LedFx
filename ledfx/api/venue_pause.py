@@ -1,15 +1,19 @@
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager
+from ledfx.venues import VenueManager, venue_payload
+
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _ensure_manager(ledfx) -> VenueManager:
+def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
     if not hasattr(ledfx, "venues"):
         ledfx.venues = VenueManager(ledfx)
     return ledfx.venues
@@ -26,7 +30,7 @@ class VenuePauseEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/venues/{venue_id}/pause"
 
-    async def put(self, venue_id, request: web.Request) -> web.Response:
+    async def put(self, venue_id: str, request: web.Request) -> web.Response:
         try:
             data = await request.json()
         except JSONDecodeError:
@@ -46,6 +50,6 @@ class VenuePauseEndpoint(RestEndpoint):
 
         return await self.request_success(
             type="success",
-            message=f"Venue '{venue_id}' {'paused' if venue['paused'] else 'resumed'}",
-            data={"venue": venue},
+            message=f"Venue '{venue_id}' {'paused' if venue.paused else 'resumed'}",
+            data={"venue": venue_payload(venue_id, venue)},
         )

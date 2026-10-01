@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from ledfx.configuration.models import LedFxConfig, Venue
 from ledfx.integrations.dmx_input import DMXInput, _channel, parse_artdmx
 
 
@@ -91,13 +92,9 @@ def _make_dmx_input(
     # `is_dmx_paused()` would look "paused" to `_targets` and silently
     # filter the virtual out. Default every fake virtual to unpaused.
     virtual.is_dmx_paused.return_value = False
-    # A real (empty) integrations list so `set_paused`'s `_persist()` can
-    # iterate/find this integration's config entry without special-casing
-    # MagicMock defaults; `save_config` itself is stubbed out below.
-    ledfx.config = {"integrations": []}
-    monkeypatch.setattr(
-        "ledfx.integrations.dmx_input.save_config", lambda **kwargs: None
-    )
+    # A real (empty) config so `set_paused`'s `_persist()` can iterate/find
+    # this integration's entry; `config_store` is a MagicMock.
+    ledfx.config = LedFxConfig()
     config = {
         "name": "test",
         "description": "test",
@@ -312,33 +309,32 @@ def test_mapping_type_changed_fixture_to_color_releases_wash(
     virtual.set_color_override.assert_called_with("#0a141e")
 
 
-def _base_config(stale_timeout=2.0):
-    return {
-        "name": "test",
-        "description": "test",
-        "bind_address": "127.0.0.1",
-        "port": 6454,
-        "update_fps": 60,
-        "stale_timeout": stale_timeout,
-        "hold_last_look": False,
-    }
+def _base_config(stale_timeout: float = 2.0) -> DMXInput.Config:
+    return DMXInput.Config(
+        name="test",
+        description="test",
+        bind_address="127.0.0.1",
+        port=6454,
+        update_fps=60,
+        stale_timeout=stale_timeout,
+        hold_last_look=False,
+    )
 
 
 def _make_venue_mapped_dmx_input(
-    monkeypatch, virtuals_by_id, venue_id="venue-1"
-):
+    virtuals_by_id: dict[str, MagicMock], venue_id: str = "venue-1"
+) -> tuple[DMXInput, MagicMock]:
     """Build a DMXInput whose single fixture mapping targets a venue (rather
     than a single virtual_id), with a mocked VenueManager, so venue/device
     pause precedence can be exercised without real venue persistence."""
     ledfx = MagicMock()
-    ledfx.virtuals.get.side_effect = lambda vid: virtuals_by_id.get(vid)
-    ledfx.config = {"integrations": []}
-    monkeypatch.setattr(
-        "ledfx.integrations.dmx_input.save_config", lambda **kwargs: None
-    )
+    ledfx.virtuals.get.side_effect = virtuals_by_id.get
+    ledfx.config = LedFxConfig()
 
     venue_mgr = MagicMock()
-    venue_mgr.get.return_value = {"virtual_ids": list(virtuals_by_id.keys())}
+    venue_mgr.get.return_value = Venue(
+        name="venue", virtual_ids=list(virtuals_by_id.keys())
+    )
     venue_mgr.is_paused.return_value = False
     ledfx.venues = venue_mgr
 
@@ -357,7 +353,9 @@ def _make_venue_mapped_dmx_input(
     return integration, venue_mgr
 
 
-def test_global_pause_releases_wash_immediately_and_resumes(monkeypatch):
+def test_global_pause_releases_wash_immediately_and_resumes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Global pause instantly releases an engaged wash (no waiting for the
     next stale-stream tick), and stops any further reapplication while
     paused. Unpausing needs no special action — the next `_process()` with
@@ -400,13 +398,13 @@ def test_global_pause_releases_wash_immediately_and_resumes(monkeypatch):
     virtual.set_dmx_wash.assert_called_with((10, 20, 30), 1.0)
 
 
-def test_venue_pause_stops_mapped_virtuals_from_receiving_washes(monkeypatch):
+def test_venue_pause_stops_mapped_virtuals_from_receiving_washes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A paused venue must stop a venue-targeted mapping from reapplying to
     any of its member virtuals."""
     v1, v2 = MagicMock(), MagicMock()
-    integration, venue_mgr = _make_venue_mapped_dmx_input(
-        monkeypatch, {"v1": v1, "v2": v2}
-    )
+    integration, venue_mgr = _make_venue_mapped_dmx_input({"v1": v1, "v2": v2})
 
     fake_time = [1000.0]
     monkeypatch.setattr(
@@ -436,13 +434,13 @@ def test_venue_pause_stops_mapped_virtuals_from_receiving_washes(monkeypatch):
     v2.set_dmx_wash.assert_not_called()
 
 
-def test_device_pause_releases_only_that_virtual(monkeypatch):
+def test_device_pause_releases_only_that_virtual(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Pausing one virtual (of two sharing a venue-targeted mapping) must
     only stop that one from receiving washes, leaving the other engaged."""
     v1, v2 = MagicMock(), MagicMock()
-    integration, _venue_mgr = _make_venue_mapped_dmx_input(
-        monkeypatch, {"v1": v1, "v2": v2}
-    )
+    integration, _venue_mgr = _make_venue_mapped_dmx_input({"v1": v1, "v2": v2})
 
     fake_time = [1000.0]
     monkeypatch.setattr(
@@ -471,14 +469,12 @@ def test_device_pause_releases_only_that_virtual(monkeypatch):
 
 
 def test_pause_precedence_global_wins_over_unpaused_venue_and_device(
-    monkeypatch,
-):
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Global pause must block dispatch even when the venue and device are
     both unpaused."""
     v1 = MagicMock()
-    integration, venue_mgr = _make_venue_mapped_dmx_input(
-        monkeypatch, {"v1": v1}
-    )
+    integration, venue_mgr = _make_venue_mapped_dmx_input({"v1": v1})
     venue_mgr.is_paused.return_value = False  # venue unpaused
     v1.is_dmx_paused.return_value = False  # device unpaused
 
@@ -497,13 +493,13 @@ def test_pause_precedence_global_wins_over_unpaused_venue_and_device(
     v1.set_dmx_wash.assert_not_called()
 
 
-def test_pause_precedence_venue_wins_over_unpaused_device(monkeypatch):
+def test_pause_precedence_venue_wins_over_unpaused_device(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A paused venue must block dispatch to a member virtual even when
     that virtual's own device-level pause flag is False."""
     v1 = MagicMock()
-    integration, venue_mgr = _make_venue_mapped_dmx_input(
-        monkeypatch, {"v1": v1}
-    )
+    integration, venue_mgr = _make_venue_mapped_dmx_input({"v1": v1})
     venue_mgr.is_paused.return_value = True  # venue paused
     v1.is_dmx_paused.return_value = False  # device unpaused
 

@@ -305,13 +305,15 @@ class VirtualEntry(LedFxModel):
     )
     effects: dict[str, EffectEntry] = {}
     last_effect: str | None = Field(None, json_schema_extra=_UNSET)
+    # DMX Input device-level mute; None (never toggled) is not written.
+    dmx_paused: bool | None = Field(None, json_schema_extra=_UNSET)
 
 
 class IntegrationEntry(LedFxModel):
     id: str
     type: str
     active: bool = False
-    # qlc/mqtt/mqtt_hass/dmx_input keep a list here; other integrations a dict.
+    # qlc/mqtt/mqtt_hass keep a list here; other integrations a dict.
     data: list[object] | dict[str, object] = {}
     config: dict[str, object] = {}
 
@@ -435,6 +437,7 @@ class VenueColorPads(LedFxModel):
 class Venue(LedFxModel):
     name: str
     virtual_ids: list[VirtualId] = []
+    paused: bool = False  # mutes DMX Input takeover for this venue
     color_pads: VenueColorPads = VenueColorPads()
 
 

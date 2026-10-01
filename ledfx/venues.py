@@ -248,7 +248,7 @@ class VenueManager:
     # DMX pause
     # ------------------------------------------------------------------
 
-    def set_paused(self, venue_id: str, paused: bool) -> dict:
+    def set_paused(self, venue_id: str, paused: bool) -> Venue:
         """Mute (or unmute) DMX Input takeover for all virtuals in a venue.
 
         Pausing also clears any active color-pad override on the venue,
@@ -259,14 +259,14 @@ class VenueManager:
         if cfg is None:
             raise KeyError(f"Venue '{venue_id}' not found")
 
-        cfg["paused"] = bool(paused)
-        if cfg["paused"]:
+        cfg.paused = bool(paused)
+        if cfg.paused:
             self.clear_override(venue_id)
         self._save()
-        return {"id": venue_id, **cfg}
+        return cfg
 
     def is_paused(self, venue_id: str) -> bool:
         cfg = self._venues.get(venue_id)
         if cfg is None:
             return False
-        return bool(cfg.get("paused", False))
+        return cfg.paused
