@@ -255,8 +255,10 @@ class QLC(Integration):
         except ValueError as e:
             # A host that does not resolve is a config error: report it and
             # stop, rather than staying on "connecting".
-            _LOGGER.warning("QLC+ %s: %s", self.name, e)
-            await super().disconnect()
+            # A newer attempt may have connected meanwhile; leave its status.
+            if generation == self._connect_generation:
+                _LOGGER.warning("QLC+ %s: %s", self.name, e)
+                await super().disconnect()
             return
         if generation != self._connect_generation:
             return

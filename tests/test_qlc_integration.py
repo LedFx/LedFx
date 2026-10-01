@@ -144,3 +144,22 @@ async def test_client_disconnect_closes_the_session_when_close_hangs() -> None:
         await client.disconnect()
 
     session_cls.return_value.close.assert_awaited_once()
+
+
+async def test_stale_resolution_failure_keeps_the_newer_status() -> None:
+    integration = make_qlc()
+    release = asyncio.Event()
+
+    async def resolve(*_: object) -> str:
+        await release.wait()
+        raise ValueError("Failed to resolve destination")
+
+    with patch("ledfx.integrations.qlc.resolve_destination", resolve):
+        stale = asyncio.create_task(integration.connect())
+        await asyncio.sleep(0)
+        integration._connect_generation += 1  # a newer attempt started...
+        integration._status = Status.CONNECTED  # ...and connected
+        release.set()
+        await stale
+
+    assert integration.status == Status.CONNECTED
