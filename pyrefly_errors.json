@@ -239,20 +239,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/api/audio_devices.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 65,
-      "path": "ledfx/api/audio_devices.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
       "column": 28,
       "path": "ledfx/api/colors_delete.py",
       "name": "implicit-any-parameter",
@@ -274,59 +260,10 @@
       "severity": "error"
     },
     {
-      "column": 46,
-      "path": "ledfx/api/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`validate_and_trim_config` is missing an annotation for parameter `node`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/config.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 67,
-      "path": "ledfx/api/config.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/api/config.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 69,
-      "path": "ledfx/api/config.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
       "column": 29,
       "path": "ledfx/api/config.py",
       "name": "implicit-any-parameter",
       "concise_description": "`update_config` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/api/config.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/api/config.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
       "severity": "error"
     },
     {
@@ -943,20 +880,6 @@
       "path": "ledfx/api/schema.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/api/schema.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 62,
-      "path": "ledfx/api/schema.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
       "severity": "error"
     },
     {
@@ -1982,27 +1905,6 @@
       "severity": "error"
     },
     {
-      "column": 32,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`parse_default_wled_setting` is missing an annotation for parameter `setting`",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`wled_validator_generator` is missing an annotation for parameter `data_type`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`wled_optional_generator` is missing an annotation for parameter `setting`",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/config.py",
       "name": "implicit-any-parameter",
@@ -2077,27 +1979,6 @@
       "path": "ledfx/config.py",
       "name": "implicit-any-parameter",
       "concise_description": "`migrate_config` is missing an annotation for parameter `old_config`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get_matching_effect_id` is missing an annotation for parameter `dirty_effect_id`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`clean_effect_id` is missing an annotation for parameter `effect_id`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`sanitise_effect_config` is missing an annotation for parameter `effect_type`",
       "severity": "error"
     },
     {
@@ -2434,13 +2315,6 @@
       "path": "ledfx/core.py",
       "name": "implicit-any-parameter",
       "concise_description": "`async_stop` is missing an annotation for parameter `exit_code`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`fps_validator` is missing an annotation for parameter `value`",
       "severity": "error"
     },
     {
@@ -6053,13 +5927,6 @@
       "path": "ledfx/effects/audio.py",
       "name": "implicit-any-parameter",
       "concise_description": "`update_config` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/effects/audio.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `Schema` has no attribute `fget`",
       "severity": "error"
     },
     {
@@ -23773,20 +23640,6 @@
       "severity": "error"
     },
     {
-      "column": 18,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
       "column": 15,
       "path": "tests/test_audio_device_persistence.py",
       "name": "implicit-any-parameter",
@@ -23805,20 +23658,6 @@
       "path": "tests/test_audio_device_persistence.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_legacy_config_empty_audio_dict` is missing an annotation for parameter `mock_devices`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
       "severity": "error"
     },
     {
@@ -23976,20 +23815,6 @@
       "severity": "error"
     },
     {
-      "column": 18,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
       "column": 53,
       "path": "tests/test_audio_device_persistence.py",
       "name": "implicit-any-parameter",
@@ -24144,20 +23969,6 @@
       "severity": "error"
     },
     {
-      "column": 18,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
       "column": 45,
       "path": "tests/test_audio_device_persistence.py",
       "name": "implicit-any-parameter",
@@ -24176,20 +23987,6 @@
       "path": "tests/test_audio_device_persistence.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_schema_allows_extra_keys` is missing an annotation for parameter `mock_devices`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
       "severity": "error"
     },
     {
@@ -24232,20 +24029,6 @@
       "path": "tests/test_audio_device_persistence.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_config_roundtrip_preserves_all_fields` is missing an annotation for parameter `mock_devices`",
-      "severity": "error"
-    },
-    {
-      "column": 18,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "tests/test_audio_device_persistence.py",
-      "name": "bad-argument-count",
-      "concise_description": "Expected 1 more positional argument",
       "severity": "error"
     },
     {

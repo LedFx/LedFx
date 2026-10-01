@@ -186,6 +186,14 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--dump-schemas",
+        dest="dump_schemas",
+        metavar="PATH",
+        help="Write every config JSON Schema (as served by /api/schemas) to PATH and exit",
+        default=None,
+    )
+
+    parser.add_argument(
         "--clear-config",
         dest="clear_config",
         action="store_true",
@@ -215,6 +223,14 @@ def main():
     """
 
     args = parse_args()
+    if args.dump_schemas:
+        import json
+
+        from ledfx.api.schemas import build_schemas
+
+        with open(args.dump_schemas, "w", encoding="utf-8") as file:
+            json.dump(build_schemas(None, resolve=False), file, indent=2)
+        return 0
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel, config_dir=args.config)
     config_helpers.load_logger()

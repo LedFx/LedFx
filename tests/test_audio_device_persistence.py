@@ -7,6 +7,7 @@ Strategy doc: docs/developer/dev_notes/audio-device-persistence-strategy.md
 import logging
 from unittest.mock import MagicMock, patch
 
+from ledfx.configuration.models import AudioInputConfig, validate_dict
 from ledfx.core import LedFxCore
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import AudioDeviceListChangedEvent
@@ -245,8 +246,7 @@ class TestLegacyUpgradePath:
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
     def test_legacy_config_no_name_field(self, mock_default, mock_valid, mock_devices):
         """#11: Config with only audio_device — schema defaults audio_device_name to ''."""
-        schema = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
-        config = schema({"audio_device": 17})
+        config = validate_dict(AudioInputConfig, {"audio_device": 17}, runtime=True)
 
         assert config["audio_device"] == 17
         assert config["audio_device_name"] == ""
@@ -262,8 +262,7 @@ class TestLegacyUpgradePath:
         self, mock_default, mock_valid, mock_devices
     ):
         """#12: Empty audio config — default device chosen, no name."""
-        schema = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
-        config = schema({})
+        config = validate_dict(AudioInputConfig, {}, runtime=True)
 
         assert config["audio_device"] == 0  # default_device_index
         assert config["audio_device_name"] == ""
@@ -452,8 +451,11 @@ class TestSendspinDeviceListEvent:
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
     def test_api_get_returns_name(self, mock_default, mock_valid, mock_devices):
         """#18: GET response includes active_device_name."""
-        schema = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
-        audio_config = schema({"audio_device": 17, "audio_device_name": LOOPBACK_NAME})
+        audio_config = validate_dict(
+            AudioInputConfig,
+            {"audio_device": 17, "audio_device_name": LOOPBACK_NAME},
+            runtime=True,
+        )
 
         response = {}
         response["active_device_index"] = audio_config["audio_device"]
@@ -655,8 +657,7 @@ class TestRegressionGuards:
         self, mock_default, mock_valid, mock_devices
     ):
         """#31: Schema validation doesn't reject old configs without audio_device_name."""
-        schema = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
-        config = schema({"audio_device": 17})
+        config = validate_dict(AudioInputConfig, {"audio_device": 17}, runtime=True)
 
         assert "audio_device" in config
         assert "audio_device_name" in config
@@ -671,8 +672,11 @@ class TestRegressionGuards:
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
     def test_schema_allows_extra_keys(self, mock_default, mock_valid, mock_devices):
         """#32: ALLOW_EXTRA still works — other audio config fields not lost."""
-        schema = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
-        config = schema({"audio_device": 17, "custom_field": "preserved"})
+        config = validate_dict(
+            AudioInputConfig,
+            {"audio_device": 17, "custom_field": "preserved"},
+            runtime=True,
+        )
 
         assert config["custom_field"] == "preserved"
 
@@ -708,9 +712,8 @@ class TestRegressionGuards:
         self, mock_default, mock_valid, mock_devices
     ):
         """#35: Save → load cycle preserves both audio_device and audio_device_name."""
-        schema = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()
         original = {"audio_device": 17, "audio_device_name": LOOPBACK_NAME}
-        config = schema(original)
+        config = validate_dict(AudioInputConfig, original, runtime=True)
 
         assert config["audio_device"] == 17
         assert config["audio_device_name"] == LOOPBACK_NAME
@@ -752,7 +755,7 @@ class TestRegressionGuards:
 class TestPartialUpdatePreservesDevice:
     """A partial audio update (e.g. delay-only) must keep the selected device.
 
-    update_config() re-validates the incoming dict through AUDIO_CONFIG_SCHEMA.
+    update_config() re-validates the incoming dict through AudioInputConfig.
     When the caller passes only the field they changed (the UI sends
     ``{"delay_ms": N}``), the schema injects defaults for every absent key:
     ``audio_device`` falls back to the default device and ``audio_device_name``

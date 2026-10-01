@@ -4,18 +4,25 @@ from json import JSONDecodeError
 
 import voluptuous as vol
 from aiohttp import web
+from pydantic import BaseModel, ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.config import (
     CORE_CONFIG_KEYS_NO_RESTART,
     CORE_CONFIG_SCHEMA,
-    WLED_CONFIG_SCHEMA,
     save_config,
 )
 from ledfx.configuration.migrations import run_migrations
-from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
-from ledfx.effects.melbank import Melbanks
+from ledfx.configuration.models import (
+    AudioAnalysisConfig,
+    AudioConfig,
+    AudioInputConfig,
+    MelbanksConfig,
+    WledPreferences,
+    validate_dict,
+)
+from ledfx.effects.audio import AudioInputSource
 from ledfx.events import BaseConfigUpdateEvent
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,12 +32,14 @@ BACKUP_FAILED = "Could not back up config.json; nothing was changed."
 WRITE_FAILED = "Could not write config.json; nothing was changed."
 
 
-def validate_and_trim_config(config, schema, node):
+def validate_and_trim_config(config, model, node: str):
     for key in config:
         if key not in PERMITTED_KEYS[node] and key != "user_presets":
             raise KeyError(f"Unknown/forbidden {node} config key: '{key}'")
-
-    validated_config = schema(config)
+    if isinstance(model, type) and issubclass(model, BaseModel):
+        validated_config = validate_dict(model, config, runtime=True)
+    else:
+        validated_config = model(config)  # CORE_CONFIG_SCHEMA until layer 8
     return {key: validated_config[key] for key in config}
 
 
@@ -74,11 +83,11 @@ class ConfigEndpoint(RestEndpoint):
             config = self._ledfx.config.get(key)
 
             if key == "audio":
-                config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(config)
+                config = validate_dict(AudioConfig, config, runtime=True)
             elif key == "melbanks":
-                config = Melbanks.CONFIG_SCHEMA(config)
+                config = validate_dict(MelbanksConfig, config)
             elif key == "wled_preferences":
-                config = WLED_CONFIG_SCHEMA(config)
+                config = validate_dict(WledPreferences, config)
 
             response[key] = config
         return await self.bare_request_success(response)
@@ -134,11 +143,13 @@ class ConfigEndpoint(RestEndpoint):
             ):
                 return await self.internal_error(BACKUP_FAILED)
 
-            audio_config = AudioInputSource.AUDIO_CONFIG_SCHEMA.fget()(
-                config.pop("audio", {})
+            audio_config = validate_dict(
+                AudioConfig, config.pop("audio", {}), runtime=True
             )
-            wled_config = WLED_CONFIG_SCHEMA(config.pop("wled_preferences", {}))
-            melbanks_config = Melbanks.CONFIG_SCHEMA(config.pop("melbanks", {}))
+            wled_config = validate_dict(
+                WledPreferences, config.pop("wled_preferences", {})
+            )
+            melbanks_config = validate_dict(MelbanksConfig, config.pop("melbanks", {}))
             core_config = CORE_CONFIG_SCHEMA(config)
 
             core_config["audio"] = audio_config
@@ -154,7 +165,7 @@ class ConfigEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        except vol.MultipleInvalid as msg:
+        except (vol.MultipleInvalid, ValidationError) as msg:
             error_message = f"Error loading config: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
@@ -193,7 +204,7 @@ class ConfigEndpoint(RestEndpoint):
             return await self.request_success(
                 type="success", message="Configuration Updated"
             )
-        except (KeyError, vol.MultipleInvalid) as msg:
+        except (KeyError, vol.MultipleInvalid, ValidationError) as msg:
             error_message = f"Error updating config: {msg}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
@@ -214,22 +225,22 @@ class ConfigEndpoint(RestEndpoint):
 
         audio_config = validate_and_trim_config(
             audio_config,
-            AudioInputSource.AUDIO_CONFIG_SCHEMA.fget(),
+            AudioInputConfig,
             "audio",
         )
 
         audio_config = validate_and_trim_config(
             audio_config,
-            AudioAnalysisSource.CONFIG_SCHEMA,
+            AudioAnalysisConfig,
             "audio",
         )
         wled_config = validate_and_trim_config(
             config.pop("wled_preferences", {}),
-            WLED_CONFIG_SCHEMA,
+            WledPreferences,
             "wled_preferences",
         )
         melbanks_config = validate_and_trim_config(
-            config.pop("melbanks", {}), Melbanks.CONFIG_SCHEMA, "melbanks"
+            config.pop("melbanks", {}), MelbanksConfig, "melbanks"
         )
         core_config = validate_and_trim_config(config, CORE_CONFIG_SCHEMA, "core")
 

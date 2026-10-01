@@ -8,8 +8,7 @@ import aubio
 import numpy as np
 
 # import sounddevice as sd
-import voluptuous as vol
-
+from ledfx.configuration.models import MelbankConfig, MelbanksConfig, validate_dict
 from ledfx.effects import fast_blur_array, mel
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
@@ -79,23 +78,10 @@ MELBANK_COEFFS_TYPES = (
 class Melbank:
     """A single melbank"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional("name"): str,
-            vol.Optional("min_frequency", default=MIN_FREQ): vol.All(
-                vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
-            ),
-            vol.Optional("max_frequency", default=MAX_FREQ): vol.All(
-                vol.Coerce(int), vol.Range(MIN_FREQ, MAX_FREQ)
-            ),
-        },
-        extra=vol.ALLOW_EXTRA,
-    )
-
     def __init__(self, audio, config):
         """Initialize all the melbank related variables"""
         self._audio = audio
-        self._config = self.CONFIG_SCHEMA(config)
+        self._config = validate_dict(MelbankConfig, config)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
         # a=0.4  -> roughly equivalent to filter_banks ** 2.0
@@ -375,32 +361,7 @@ class Melbanks:
     with a high number of virtuals.
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            # "max_frequencies" specifies the number of melbanks, and the highest frequency they each go to.
-            # eg. [100,1000,10000] will create:
-            # Frequency: 1Hz          100Hz          1000Hz            10000Hz            20000Hz
-            # melbank 1: [--------------]
-            # melbank 2: [------------------------------]
-            # melbank 3: [-------------------------------------------------]
-            vol.Optional("samples", default=24): vol.All(
-                vol.Coerce(int), vol.Range(0, 100)
-            ),
-            vol.Optional("peak_isolation", default=0.4): float,
-            vol.Optional("coeffs_type", default="matt_mel"): vol.In(
-                MELBANK_COEFFS_TYPES
-            ),
-            vol.Optional("max_frequencies", default=MEL_MAX_FREQS): [
-                vol.All(vol.Coerce(int), vol.Range(0, MAX_FREQ))
-            ],
-            vol.Optional("min_frequency", default=MIN_FREQ): vol.All(
-                vol.Coerce(int), vol.Range(0, MAX_FREQ)
-            ),
-        },
-        extra=vol.ALLOW_EXTRA,
-    )
-
-    DEFAULT_MELBANK_CONFIG = Melbank.CONFIG_SCHEMA({})
+    DEFAULT_MELBANK_CONFIG = validate_dict(MelbankConfig, {})
 
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
@@ -409,7 +370,7 @@ class Melbanks:
         self.dev_enabled = self._ledfx.dev_enabled()
 
     def update_config(self, config):
-        self.melbanks_config = self.CONFIG_SCHEMA(config)
+        self.melbanks_config = validate_dict(MelbanksConfig, config)
         self.melbank_collection = self._ledfx.config.get("melbank_collection", [])
         # set up the melbanks
         self.melbank_processors = []
