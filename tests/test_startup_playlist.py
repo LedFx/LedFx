@@ -1,6 +1,6 @@
 """Tests for startup_playlist_id configuration and activation logic."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -95,17 +95,3 @@ class TestStartupPlaylistActivation:
         await core._handle_startup_playlist()
 
         core.playlists.start.assert_called_once_with("nonexistent")
-
-    @pytest.mark.asyncio
-    async def test_creates_playlist_manager_if_missing(self, core):
-        # Remove playlists attribute so hasattr check triggers
-        del core.playlists
-
-        with patch("ledfx.core.PlaylistManager", autospec=True) as MockPM:
-            mock_manager = MockPM.return_value
-            mock_manager.start = AsyncMock(return_value=True)
-
-            await core._handle_startup_playlist()
-
-            MockPM.assert_called_once_with(core)
-            mock_manager.start.assert_called_once_with("test-playlist")

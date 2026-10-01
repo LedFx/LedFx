@@ -8,7 +8,6 @@ from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.configuration.models import PlaylistTiming, validate_dict
-from ledfx.playlists import PlaylistManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,12 +17,7 @@ class PlaylistsEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/playlists"
 
-    async def _ensure_manager(self):
-        if not hasattr(self._ledfx, "playlists"):
-            self._ledfx.playlists = PlaylistManager(self._ledfx)
-
     async def get(self) -> web.Response:
-        await self._ensure_manager()
         return await self.bare_request_success(
             {"playlists": self._ledfx.playlists.list_playlists()}
         )
@@ -35,7 +29,6 @@ class PlaylistsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         try:
-            await self._ensure_manager()
             playlist = await self._ledfx.playlists.create_or_replace(data)
             return await self.request_success(data={"playlist": playlist})
         except ValidationError as err:
@@ -55,8 +48,6 @@ class PlaylistsEndpoint(RestEndpoint):
             return await self.invalid_request("action required")
 
         try:
-            await self._ensure_manager()
-
             # Playlist Selection Actions (require id)
             if action == "start":
                 pid = data.get("id")
@@ -157,7 +148,6 @@ class PlaylistsEndpoint(RestEndpoint):
                 "id required in JSON body, or use DELETE /api/playlists/{id}"
             )
 
-        await self._ensure_manager()
         ok = await self._ledfx.playlists.delete(pid)
         if ok:
             return await self.request_success(
