@@ -44,13 +44,11 @@ def _registry_classes() -> list[tuple[str, type[BaseRegistry]]]:
 def _normalise(schema: JsonSchemaValue) -> JsonSchemaValue:
     schema = json.loads(json.dumps(schema))
     schema.pop("title", None)  # class name: auto "<type>" vs source "Config"
-    for name, prop in schema.get("properties", {}).items():
-        if prop.get("x-ledfx-enum-source") == "fps" and "default" in prop:
-            prop["default"] = "<fps>"
-        if name == "com_port":
-            for key in ("enum", "default"):
+    for prop in schema.get("properties", {}).values():
+        if prop.get("x-ledfx-legacy-source") == "fps":  # rates depend on the clock
+            for key in ("default", "examples"):
                 if key in prop:
-                    prop[key] = "<com_port>"
+                    prop[key] = "<fps>"
     return schema
 
 

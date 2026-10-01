@@ -767,19 +767,22 @@
     "default": "",
     "description": "The virtual from which to source the mask",
     "title": "Mask",
-    "type": "string"
+    "type": "string",
+    "x-ledfx-enum-source": "virtuals"
    },
    "foreground": {
     "default": "",
     "description": "The virtual from which to source the foreground",
     "title": "Foreground",
-    "type": "string"
+    "type": "string",
+    "x-ledfx-enum-source": "virtuals"
    },
    "background": {
     "default": "",
     "description": "The virtual from which to source the background",
     "title": "Background",
-    "type": "string"
+    "type": "string",
+    "x-ledfx-enum-source": "virtuals"
    },
    "invert_mask": {
     "default": false,
@@ -2116,7 +2119,7 @@
     "type": "string"
    },
    "peak_percent": {
-    "default": 1.0,
+    "default": 1,
     "description": "Size of the tracer bar that follows a filtered value",
     "maximum": 5,
     "minimum": 0,
@@ -6001,7 +6004,8 @@
     "description": "The virtual from which to source the 1d pixels",
     "title": "Source Virtual",
     "type": "string",
-    "x-ledfx-enum-source": "virtuals"
+    "x-ledfx-enum-source": "virtuals",
+    "x-ledfx-legacy-source": "virtuals"
    },
    "edges": {
     "default": 0,
@@ -8480,7 +8484,7 @@
     "type": "string"
    },
    "peak_percent": {
-    "default": 1.0,
+    "default": 1,
     "description": "% size of peak indicator that follows the filtered volume",
     "maximum": 5,
     "minimum": 0,
@@ -8911,16 +8915,18 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "com_port": {
-    "default": "<com_port>",
+    "default": "",
     "description": "COM port for Adalight compatible device",
-    "enum": "<com_port>",
     "title": "Com Port",
     "type": "string",
+    "x-ledfx-enum-source": "com_ports",
+    "x-ledfx-legacy-source": "com_ports",
     "x-ledfx-required": true
    },
    "baudrate": {
@@ -8984,9 +8990,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9113,9 +9120,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9179,9 +9187,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "pixel_count": {
     "default": 1,
@@ -9221,9 +9230,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9313,9 +9323,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ignore_status": {
     "default": false,
@@ -9360,9 +9371,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the Hue bridge",
@@ -9408,9 +9420,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "pixel_count": {
     "default": 81,
@@ -9495,9 +9508,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    }
   },
   "required": [
@@ -9530,9 +9544,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9607,9 +9622,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9659,9 +9675,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9731,9 +9748,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9817,9 +9835,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "pixel_count": {
     "default": 1,
@@ -9899,9 +9918,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -9948,9 +9968,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -10029,9 +10050,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",
@@ -10101,9 +10123,10 @@
    "refresh_rate": {
     "default": "<fps>",
     "description": "Target rate that pixels are sent to the device",
+    "examples": "<fps>",
     "title": "Refresh Rate",
     "type": "integer",
-    "x-ledfx-enum-source": "fps"
+    "x-ledfx-legacy-source": "fps"
    },
    "ip_address": {
     "description": "Hostname or IP address of the device",

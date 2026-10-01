@@ -13,7 +13,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.fields import ComputedFieldInfo, FieldInfo
-from pydantic.json_schema import JsonDict
+from pydantic.json_schema import JsonDict, SkipJsonSchema
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
@@ -25,11 +25,19 @@ from ledfx.configuration.fields import (
     AudioDeviceIndex,
     CoercedFloat,
     CoercedInt,
+    DeviceId,
     IPv4,
     OneOf,
+    PlaylistId,
+    SceneId,
+    VirtualId,
     coerce,
 )
 from ledfx.utils import generate_title
+
+# JSON Schema readOnly: the UI shows the value but must not edit it. What the API
+# accepts is ledfx.api.utils.PERMITTED_KEYS, per /api/config section.
+_RO: JsonDict = {X_READONLY: True}
 
 
 def _field_title(name: str, _info: FieldInfo | ComputedFieldInfo) -> str:
@@ -81,12 +89,12 @@ def _transition_modes() -> list[str]:
 class AudioInputConfig(LedFxModel):
     model_config = ConfigDict(extra="allow")
 
-    sample_rate: int = 60
-    mic_rate: int = 44100
-    fft_size: int = 4096
+    sample_rate: int = Field(60, json_schema_extra=_RO)
+    mic_rate: int = Field(44100, json_schema_extra=_RO)
+    fft_size: int = Field(4096, json_schema_extra=_RO)
     min_volume: CoercedFloat = Field(0.2, ge=0.0, le=1.0)
     audio_device: AudioDeviceIndex = None
-    audio_device_name: str = ""
+    audio_device_name: str = Field("", json_schema_extra=_RO)
     delay_ms: CoercedInt = Field(
         0,
         ge=0,
@@ -102,7 +110,9 @@ class AudioAnalysisConfig(LedFxModel):
     pitch_method: Literal["yinfft", "yin", "yinfast", "schmitt", "specacf"] = Field(
         "yinfft", description="Method to detect pitch"
     )
-    tempo_method: str = "default"
+    # Hidden from every schema, as the legacy /api/schema always did: the UI would
+    # offer free text, and a bad value crashes aubio.tempo() on audio restart.
+    tempo_method: SkipJsonSchema[str] = "default"
     onset_method: Literal[
         "energy",
         "hfc",
@@ -246,7 +256,6 @@ class VirtualConfig(LedFxModel):
     rotate: CoercedInt = Field(0, ge=0, le=3, description="90 Degree rotations")
 
 
-_RO: JsonDict = {X_READONLY: True}
 # Optional-without-default: absent from config.json when None (never "null").
 _UNSET: JsonDict = {X_OMIT_DEFAULT: True}
 
@@ -275,7 +284,7 @@ class VirtualEntry(LedFxModel):
     id: str
     config: VirtualConfig
     segments: list[list[object]] = []
-    is_device: str | Literal[False] = False
+    is_device: DeviceId | Literal[False] = False
     auto_generated: bool = False
     # None (never toggled) is not written, so a save never pauses virtuals.
     active: bool | None = Field(None, json_schema_extra=_UNSET)
@@ -310,11 +319,11 @@ class Scene(LedFxModel):
     scene_puturl: str | None = Field(None, json_schema_extra=_UNSET)
     scene_payload: str | None = Field(None, json_schema_extra=_UNSET)
     scene_midiactivate: str | None = Field(None, json_schema_extra=_UNSET)
-    virtuals: dict[str, SceneVirtual] = {}
+    virtuals: dict[VirtualId, SceneVirtual] = {}
 
 
 class PlaylistItem(LedFxModel):
-    scene_id: str
+    scene_id: SceneId
     duration_ms: int | None = Field(None, ge=500, json_schema_extra=_UNSET)
 
 
@@ -371,20 +380,20 @@ class SendspinServerConfig(LedFxModel):
 class NowPlayingGradient(LedFxModel):
     enabled: bool = False
     variant: Literal["led_safe", "led_punchy", "led_max"] = "led_punchy"
-    virtual_ids: list[str] = []
+    virtual_ids: list[VirtualId] = []
 
 
 class NowPlayingTrackText(LedFxModel):
     enabled: bool = True
     duration: CoercedInt = Field(60, ge=0, le=60)
-    virtual_ids: list[str] = []
+    virtual_ids: list[VirtualId] = []
     preset: str = ""
 
 
 class NowPlayingAlbumArt(LedFxModel):
     enabled: bool = True
     duration: CoercedInt = Field(10, ge=0, le=60)
-    virtual_ids: list[str] = []
+    virtual_ids: list[VirtualId] = []
 
 
 class NowPlayingConfig(LedFxModel):
@@ -408,33 +417,33 @@ class LedFxConfig(LedFxModel):
     port_s: int = Field(8443, json_schema_extra={X_RESTART: True})
     dev_mode: bool = Field(False, json_schema_extra={X_RESTART: True})
     devices: list[DeviceEntry] = Field(
-        list[DeviceEntry](), json_schema_extra={**_RO, **_legacy_type("array", [])}
+        list[DeviceEntry](), json_schema_extra=_legacy_type("array", [])
     )
     virtuals: list[VirtualEntry] = Field(
-        list[VirtualEntry](), json_schema_extra={**_RO, **_legacy_type("array", [])}
+        list[VirtualEntry](), json_schema_extra=_legacy_type("array", [])
     )
     audio: AudioConfig = Field(
-        AudioConfig(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        AudioConfig(), json_schema_extra=_legacy_type("dict", {})
     )
     melbank_collection: list[MelbankCollectionEntry] = Field(
         list[MelbankCollectionEntry](),
         json_schema_extra={X_RESTART: True, **_legacy_type("array", [])},
     )
     melbanks: MelbanksConfig = Field(
-        MelbanksConfig(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        MelbanksConfig(), json_schema_extra=_legacy_type("dict", {})
     )
     user_presets: dict[str, dict[str, Preset]] = Field(
         dict[str, dict[str, Preset]](),
-        json_schema_extra={**_RO, **_legacy_type("dict", {})},
+        json_schema_extra=_legacy_type("dict", {}),
     )
     scenes: dict[str, Scene] = Field(
-        dict[str, Scene](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        dict[str, Scene](), json_schema_extra=_legacy_type("dict", {})
     )
     playlists: dict[str, Playlist] = Field(
-        dict[str, Playlist](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        dict[str, Playlist](), json_schema_extra=_legacy_type("dict", {})
     )
     integrations: list[IntegrationEntry] = Field(
-        list[IntegrationEntry](), json_schema_extra={**_RO, **_legacy_type("array", [])}
+        list[IntegrationEntry](), json_schema_extra=_legacy_type("array", [])
     )
     transmission_mode: Literal["compressed", "uncompressed"] = Field(
         "compressed", json_schema_extra={X_RESTART: True}
@@ -447,31 +456,31 @@ class LedFxConfig(LedFxModel):
         json_schema_extra={X_RESTART: True},
     )
     user_colors: dict[str, str] = Field(
-        dict[str, str](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        dict[str, str](), json_schema_extra=_legacy_type("dict", {})
     )
     user_gradients: dict[str, str] = Field(
-        dict[str, str](), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        dict[str, str](), json_schema_extra=_legacy_type("dict", {})
     )
     scan_on_startup: bool = False
     create_segments: bool = False
     flush_on_deactivate: bool = False
     wled_preferences: WledPreferences = Field(
-        WledPreferences(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        WledPreferences(), json_schema_extra=_legacy_type("dict", {})
     )
     global_brightness: CoercedFloat = Field(1.0, ge=0, le=1.0)
     ui_brightness_boost: CoercedFloat = Field(0.0, ge=0, le=1.0)
-    startup_scene_id: str = ""
-    startup_playlist_id: str = ""
+    startup_scene_id: SceneId = ""
+    startup_playlist_id: PlaylistId = ""
     lifx_broadcast_address: IPv4 = "255.255.255.255"
     lifx_discovery_timeout: int = Field(30, ge=1, le=120)
     instance_id: str = Field("", json_schema_extra=_RO)
     sendspin_servers: dict[str, SendspinServerConfig] = Field(
         dict[str, SendspinServerConfig](),
-        json_schema_extra={**_RO, **_legacy_type("dict", {})},
+        json_schema_extra=_legacy_type("dict", {}),
     )
     sendspin_always_on: bool = True
     now_playing: NowPlayingConfig = Field(
-        NowPlayingConfig(), json_schema_extra={**_RO, **_legacy_type("dict", {})}
+        NowPlayingConfig(), json_schema_extra=_legacy_type("dict", {})
     )
     allowed_origins: list[str] = Field(
         list[str](),
@@ -489,7 +498,7 @@ class LedFxConfig(LedFxModel):
         False, json_schema_extra={**_RO, X_LEGACY: {"omit": True}}
     )
     image_cache: ImageCacheConfig = Field(
-        ImageCacheConfig(), json_schema_extra={**_RO, X_LEGACY: {"omit": True}}
+        ImageCacheConfig(), json_schema_extra={X_LEGACY: {"omit": True}}
     )
 
 
@@ -501,5 +510,4 @@ def _marked(key: str) -> frozenset[str]:
     )
 
 
-WRITABLE_CORE_FIELDS = frozenset(LedFxConfig.model_fields) - _marked(X_READONLY)
 RESTART_FIELDS = _marked(X_RESTART)

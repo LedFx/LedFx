@@ -5,13 +5,14 @@ BeforeValidator, or pydantic emits raw ge/le instead of minimum/maximum.
 """
 
 import ipaddress
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import Annotated
 
 from pydantic import (
     AfterValidator,
     BeforeValidator,
+    Field,
     GetJsonSchemaHandler,
     ValidationInfo,
 )
@@ -25,9 +26,10 @@ X_ENUM_SOURCE = "x-ledfx-enum-source"
 X_REQUIRED = "x-ledfx-required"  # legacy: key listed as required although defaulted
 X_OMIT_DEFAULT = "x-ledfx-omit-default"  # legacy: optional key without a default
 X_LEGACY = "x-ledfx-legacy"  # legacy: overrides for the legacy property
-X_READONLY = "x-ledfx-readonly"  # core field the API may not write
+X_READONLY = "readOnly"  # JSON Schema 2020-12: shown in the UI, not editable
 X_RESTART = "x-ledfx-restart"  # changing this core field requires a restart
-BACKEND_ONLY_KEYS = (X_REQUIRED, X_OMIT_DEFAULT, X_LEGACY, X_RESTART)
+X_LEGACY_SOURCE = "x-ledfx-legacy-source"  # legacy: list this EnumSource's options
+BACKEND_ONLY_KEYS = (X_REQUIRED, X_OMIT_DEFAULT, X_LEGACY, X_RESTART, X_LEGACY_SOURCE)
 
 
 @dataclass(frozen=True)
@@ -70,9 +72,8 @@ class OneOf:
     def __get_pydantic_json_schema__(
         self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
-        json_schema = handler(schema)
-        json_schema["enum"] = self.values()
-        return json_schema
+        # What pydantic emits for Literal[*options]: enum, or const for one option.
+        return handler(core_schema.literal_schema(self.values()))
 
 
 def coerce(target: Callable[[object], object]) -> BeforeValidator:
@@ -92,10 +93,10 @@ def coerce(target: Callable[[object], object]) -> BeforeValidator:
 
 @dataclass(frozen=True)
 class EnumSource:
-    """Runtime-dependent choices (audio devices, virtuals, fps)."""
+    """Runtime-dependent choices, read by validation and the legacy /api/schema."""
 
-    options: Callable[[], list[object] | dict[object, str]]
-    names: Callable[[], list[str]] | None = None
+    options: Callable[[], Sequence[object] | dict[object, str]]
+    names: Callable[[], list[str]] | None = None  # legacy /api/schema only
     validate: Callable[[object], object] | None = None
 
 
@@ -113,23 +114,52 @@ def get_enum_source(name: str) -> EnumSource | None:
 RUNTIME_CONTEXT = {"runtime": True}
 
 
-def _via_source(name: str) -> Callable[[object, ValidationInfo], object]:
-    """Apply a source's validate hook only when validating for runtime use.
+@dataclass(frozen=True)
+class FromSource:
+    """Annotated metadata: the value is one of the live instances named name.
 
-    Loading config.json must not query hardware or rewrite stored values (the
-    old core schema never validated audio at load); runtime sites pass
-    context=RUNTIME_CONTEXT (see validate_dict(..., runtime=True)).
+    JSON Schema: the base type plus x-ledfx-enum-source; the frontend reads the
+    options from that instance's own endpoint, so the schema never depends on
+    the running system. Validation runs only the source's validate hook, and only
+    for runtime use: loading config.json must not query hardware or reject a
+    stored value that is absent now (an unplugged port, a removed sound card);
+    API writes pass context=RUNTIME_CONTEXT (see validate_dict(..., runtime=True));
+    an update adds "fields" (the keys it changes) so stored values stay unchecked.
+    The hook sees the value after type validation ("4" arrives as 4).
+    legacy=True: the legacy /api/schema lists the source's options, as it did.
     """
 
-    def check(value: object, info: ValidationInfo) -> object:
-        source = _ENUM_SOURCES.get(name)
+    name: str
+    legacy: bool = False
+
+    def __get_pydantic_core_schema__(
+        self, source: object, handler: Callable[[object], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.with_info_after_validator_function(
+            self._validate, handler(source)
+        )
+
+    def _validate(self, value: object, info: ValidationInfo) -> object:
+        source = _ENUM_SOURCES.get(self.name)
         if source is None or source.validate is None:
             return value
-        if not (info.context or {}).get("runtime"):
+        context = info.context or {}
+        if not context.get("runtime"):
+            return value
+        # An update checks only the keys it changes, not stored ones. "fields"
+        # holds top-level keys only: a sourced field nested inside another model
+        # would need a path-aware rule.
+        if info.field_name not in context.get("fields", (info.field_name,)):
             return value
         return source.validate(value)
 
-    return check
+    def __get_pydantic_json_schema__(
+        self, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = {**handler(schema), X_ENUM_SOURCE: self.name}
+        if self.legacy:
+            json_schema[X_LEGACY_SOURCE] = self.name
+        return json_schema
 
 
 def fps_validator(value: object) -> int:
@@ -156,10 +186,16 @@ CoercedFloat = Annotated[float, coerce(float)]
 Color = Annotated[str, coerce(validate_color), JsonExtra({"format": "color"})]
 Gradient = Annotated[str, coerce(validate_gradient), JsonExtra({"format": "gradient"})]
 IPv4 = Annotated[str, AfterValidator(validate_ipv4), JsonExtra({"format": "ipv4"})]
-Fps = Annotated[int, BeforeValidator(fps_validator), JsonExtra({X_ENUM_SOURCE: "fps"})]
-VirtualId = Annotated[str, JsonExtra({X_ENUM_SOURCE: "virtuals"})]
-AudioDeviceIndex = Annotated[
-    int | None,
-    BeforeValidator(_via_source("audio_devices")),
-    JsonExtra({X_ENUM_SOURCE: "audio_devices"}),
+# A platform constant, not an instance: any int is accepted and clamped up, so
+# the rates are examples (slider marks), not an enum.
+Fps = Annotated[
+    int,
+    BeforeValidator(fps_validator),
+    Field(examples=list(_utils.AVAILABLE_FPS)),
+    JsonExtra({X_LEGACY_SOURCE: "fps"}),
 ]
+VirtualId = Annotated[str, FromSource("virtuals")]
+AudioDeviceIndex = Annotated[int | None, FromSource("audio_devices", legacy=True)]
+SceneId = Annotated[str, FromSource("scenes")]
+PlaylistId = Annotated[str, FromSource("playlists")]
+DeviceId = Annotated[str, FromSource("devices")]

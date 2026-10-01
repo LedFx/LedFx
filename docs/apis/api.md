@@ -224,6 +224,65 @@ virtual frequency range, so `frequency_min` and `frequency_max` controls are
 meaningful for that effect. When `false`, frontends can hide those virtual
 frequency controls for the selected effect.
 
+The legacy /api/schema shape above is kept for older frontends. New clients
+should use /api/schemas.
+
+## /api/schemas
+
+LedFx JSON Schema Api
+
+**GET /api/schemas**
+
+Returns the config schemas as plain pydantic JSON Schema (draft 2020-12): the
+*audio*, *melbanks*, *melbank_collection*, *wled_preferences*, *virtuals* and
+*core* schemas, plus one entry per device, effect and integration type. Each
+kind is `{"schema": ...}`; the plugin kinds (*devices*, *effects*,
+*integrations*) are keyed by type, and each entry adds metadata such as `id`,
+`name` and `category`. The schemas describe shape only (types, ranges,
+defaults and static enums). They do not depend on connected hardware or
+configured instances, so a running LedFx returns the same schemas on every
+request. Only the frame rate `examples` and defaults depend on the machine's
+clock. `ledfx --dump-schemas <file>` writes the same content.
+
+A field that holds the id of a live instance has no `enum`. It carries
+`x-ledfx-enum-source` instead; read its options from the matching endpoint.
+The marker can also sit on array `items` (a list of ids) or on
+`propertyNames` (the keys of a map, such as a scene's virtuals), so clients
+must check those as well as properties:
+
+| x-ledfx-enum-source | Options from |
+|---------------------|--------------|
+| `audio_devices` | GET /api/audio/devices |
+| `virtuals` | GET /api/virtuals |
+| `com_ports` | GET /api/comports |
+| `scenes` | GET /api/scenes |
+| `playlists` | GET /api/playlists |
+| `devices` | GET /api/devices |
+
+For these string fields `""` means none: no COM port, no blender layer, no
+startup scene or playlist.
+
+Frame rates (`refresh_rate`) are an integer with `examples` listing the rates
+this machine can deliver. Any integer is accepted: below the fastest rate it
+is rounded up to the next available rate, and above it it is clamped down to
+the fastest rate.
+
+A field with `readOnly: true` is shown but not editable. For *audio*,
+*melbanks*, *melbank_collection*, *wled_preferences* and *core* this replaces
+the legacy `permitted_keys` list: every other scalar field there is editable
+through /api/config. Of the non-scalar core fields, only `melbank_collection`,
+`user_presets` and the *audio*, *melbanks* and *wled_preferences* sections are
+written through /api/config; the other collections (devices, virtuals, scenes,
+playlists, integrations, …) have their own endpoints. Effects keep `permitted_keys`, `hidden_keys` and
+`advanced_keys` as metadata on their entry.
+
+## /api/schemas/\<kind\>
+
+**GET /api/schemas/\<kind\>**
+
+Returns one kind from /api/schemas, for example *effects* or *core*, as
+`{kind: entry}`, where entry is that kind's value in /api/schemas.
+
 ## /api/devices
 
 Query and manage devices connected to LedFx

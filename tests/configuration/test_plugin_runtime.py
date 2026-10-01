@@ -85,8 +85,9 @@ def test_strict_create_raises() -> None:
         Effects(ledfx).create(ledfx=ledfx, type="rainbow", config={"brightness": 7})
 
 
-def test_unavailable_serial_port_skips_device_and_keeps_stored_value() -> None:
-    # A port unplugged at startup must not be reset to "" and later persisted.
+def test_unavailable_serial_port_still_loads_and_keeps_stored_value() -> None:
+    # A port unplugged at startup is not checked at load: the device loads
+    # (offline until the port returns) and the stored value is left alone.
     from ledfx.configuration.models import DeviceEntry
     from ledfx.devices import Device
     from ledfx.utils import RegistryLoader
@@ -103,10 +104,9 @@ def test_unavailable_serial_port_skips_device_and_keeps_stored_value() -> None:
         lenient=quarantine,
         lenient_entry=entry,
     )
-    assert device is None
+    assert device is not None
+    assert device.config.com_port == "COM-UNPLUGGED"
     assert records == []
-    assert stored["com_port"] == "COM-UNPLUGGED"
-    # A runtime-choice skip is not a repair: the entry is left alone.
     assert entry.config == stored
     ledfx.config_store.request_save.assert_not_called()
 

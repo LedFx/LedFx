@@ -1,7 +1,6 @@
 """GET /api/schemas[/{kind}]: standard JSON Schema for config models."""
 
 from aiohttp import web
-from pydantic import BaseModel
 from pydantic.json_schema import JsonSchemaValue
 
 from ledfx.api import RestEndpoint
@@ -17,16 +16,14 @@ from ledfx.configuration.models import (
 from ledfx.configuration.schema import export_schema
 
 
-def build_schemas(ledfx: object, *, resolve: bool = True) -> dict[str, JsonSchemaValue]:
+def build_schemas(ledfx: object) -> dict[str, JsonSchemaValue]:
     """All exported schemas: core kinds plus one entry per plugin type."""
     from ledfx.devices import Device
     from ledfx.effects import Effect
     from ledfx.integrations import Integration
     from ledfx.utils import RegistryLoader
 
-    def ex(model: type[BaseModel]) -> JsonSchemaValue:
-        return export_schema(model, resolve=resolve)
-
+    ex = export_schema
     out: dict[str, JsonSchemaValue] = {
         "audio": {"schema": ex(AudioConfig)},
         "melbanks": {"schema": ex(MelbanksConfig)},
@@ -35,11 +32,12 @@ def build_schemas(ledfx: object, *, resolve: bool = True) -> dict[str, JsonSchem
         "virtuals": {"schema": ex(VirtualConfig)},
         "core": {"schema": ex(LedFxConfig)},
     }
-    devices = RegistryLoader(ledfx, Device, "ledfx.devices").classes()
-    out["devices"] = {
-        t: {"schema": ex(c.config_model()), "id": t} for t, c in devices.items()
-    }
-    integrations = RegistryLoader(ledfx, Integration, "ledfx.integrations").classes()
+    # Sorted: registry order follows import order, which differs in a running server.
+    devices = sorted(RegistryLoader(ledfx, Device, "ledfx.devices").classes().items())
+    out["devices"] = {t: {"schema": ex(c.config_model()), "id": t} for t, c in devices}
+    integrations = sorted(
+        RegistryLoader(ledfx, Integration, "ledfx.integrations").classes().items()
+    )
     out["integrations"] = {
         t: {
             "schema": ex(c.config_model()),
@@ -48,10 +46,12 @@ def build_schemas(ledfx: object, *, resolve: bool = True) -> dict[str, JsonSchem
             "description": c.DESCRIPTION,
             "beta": c.beta,
         }
-        for t, c in integrations.items()
+        for t, c in integrations
     }
     effects: JsonSchemaValue = {}
-    for t, c in RegistryLoader(ledfx, Effect, "ledfx.effects").classes().items():
+    for t, c in sorted(
+        RegistryLoader(ledfx, Effect, "ledfx.effects").classes().items()
+    ):
         entry: JsonSchemaValue = {
             "schema": ex(c.config_model()),
             "id": t,
