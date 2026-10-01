@@ -7,6 +7,7 @@ import logging
 # import aiohttp
 # import asyncio
 import voluptuous as vol
+from typing_extensions import override
 
 from ledfx.integrations import Integration
 
@@ -50,16 +51,33 @@ class Spotify(Integration):
 
         self._ledfx = ledfx
         self._config = config
-        self._data = {}
-
-        self.restore_from_data(self._ledfx.config["scenes"])
+        # {scene_id: {trigger_id: [song_id, song_name, song_position]}},
+        # persisted as this integration's entry data.
+        self.restore_from_data(data)
 
     def restore_from_data(self, data):
-        """Might be used in future"""
-        self._data = data
+        self._data: dict[str, dict[str, object]] = (
+            data if isinstance(data, dict) else {}
+        )
+
+    @property
+    def triggers(self):
+        """The raw trigger dict, as stored in the integration entry."""
+        return self._data
+
+    @property
+    @override
+    def data(self):
+        return self.get_triggers()
 
     def get_triggers(self):
-        return self._data
+        """Triggers per existing scene, with the scene name (the UI reads it)."""
+        scenes = self._ledfx.config.scenes
+        return {
+            scene_id: {"name": scenes[scene_id].name, **triggers}
+            for scene_id, triggers in self._data.items()
+            if scene_id in scenes
+        }
 
     def add_trigger(self, scene_id, song_id, song_name, song_position):
         """Add a trigger to saved triggers"""

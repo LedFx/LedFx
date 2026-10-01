@@ -14,10 +14,10 @@ import sounddevice as sd
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
-from ledfx.config import save_config
 from ledfx.configuration.fields import EnumSource, register_enum_source
 from ledfx.configuration.models import (
     AudioAnalysisConfig,
+    AudioConfig,
     AudioInputConfig,
     validate_dict,
 )
@@ -132,12 +132,9 @@ class AudioInputSource:
         """
         if not (hasattr(self, "_ledfx") and self._ledfx):
             return False
-        self._ledfx.config["audio"] = self._config
         try:
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
+            self._ledfx.config.audio = AudioConfig.model_validate(self._config)
+            self._ledfx.config_store.request_save()
             return True
         except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Failed to persist audio config: %s", e)
@@ -601,7 +598,7 @@ class AudioInputSource:
                     )
                 )
 
-        self._ledfx.config["audio"] = self._config
+        self._ledfx.config.audio = AudioConfig.model_validate(self._config)
 
     def activate(self):
         # Re-entry guard - must be atomic with _class_lock so concurrent
@@ -719,9 +716,7 @@ class AudioInputSource:
         # Setup a pre-emphasis filter to balance the input volume of lows to highs
         self.pre_emphasis = aubio.digital_filter(3)
         # depending on the coeffs type, we need to use different pre_emphasis values to make em work better. allegedly.
-        selected_coeff = self._ledfx.config.get("melbanks", {}).get(
-            "coeffs_type", "matt_mel"
-        )
+        selected_coeff = self._ledfx.config.melbanks.coeffs_type
         if selected_coeff == "matt_mel":
             _LOGGER.debug("Using matt_mel settings for pre-emphasis.")
             self.pre_emphasis.set_biquad(0.8268, -1.6536, 0.8268, -1.6536, 0.6536)
@@ -821,7 +816,7 @@ class AudioInputSource:
                 AudioInputSource._stream = SendspinAudioStream(
                     device["sendspin_config"],
                     self._audio_sample_callback,
-                    instance_id=self._ledfx.config.get("instance_id", ""),
+                    instance_id=self._ledfx.config.instance_id,
                     ledfx=self._ledfx,
                 )
             else:
@@ -948,7 +943,7 @@ class AudioInputSource:
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
-        sendspin_always_on = self._ledfx.config.get("sendspin_always_on", True)
+        sendspin_always_on = self._ledfx.config.sendspin_always_on
         if not sendspin_always_on:
             return False
 
@@ -1198,7 +1193,7 @@ class AudioAnalysisSource(AudioInputSource):
         # melbanks
         if not hasattr(self, "melbanks"):
             self.melbanks = Melbanks(
-                self._ledfx, self, self._ledfx.config.get("melbanks", {})
+                self._ledfx, self, self._ledfx.config.melbanks.model_dump()
             )
 
         fft_params = (
@@ -1483,7 +1478,7 @@ class AudioReactiveEffect(Effect):
             self._ledfx.audio.__class__
         ):
             self._ledfx.audio = AudioAnalysisSource(
-                self._ledfx, self._ledfx.config.get("audio", {})
+                self._ledfx, self._ledfx.config.audio.model_dump()
             )
 
         self.audio = self._ledfx.audio

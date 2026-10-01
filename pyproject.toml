@@ -23,6 +23,7 @@ dependencies = [
     "sounddevice>=0.4.6",
     "icmplib>=3.0.4",
     "pydantic>=2.13,<3",
+    "typing-extensions>=4.4",
     "voluptuous>=0.14.1",
     "zeroconf>=0.131.0",
     "pillow>=10.1.0",

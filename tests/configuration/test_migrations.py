@@ -9,6 +9,8 @@ from ledfx.configuration.migrations import (
     schema_version_of,
 )
 from ledfx.configuration.migrations.legacy import LEGACY_EFFECT_IDS, legacy_to_v1
+from ledfx.configuration.migrations.v2 import SCENE_FIELDS
+from ledfx.configuration.models import Scene
 
 LEGACY_DIR = os.path.join(os.path.dirname(__file__), "legacy")
 CURRENT_FIXTURES = os.path.join(os.path.dirname(__file__), "..", "configs")
@@ -160,4 +162,73 @@ def test_run_migrations_from_version_skips_applied_steps() -> None:
     raw: dict[str, object] = {"devices": ["junk"], "crossfade": 1}
     out = run_migrations(raw, from_version=CURRENT_SCHEMA_VERSION)
     assert out == raw
-    assert run_migrations(raw, from_version=0)["schema_version"] == 1
+    assert (
+        run_migrations(raw, from_version=0)["schema_version"] == CURRENT_SCHEMA_VERSION
+    )
+
+
+def test_v2_drops_runtime_keys() -> None:
+    out = run_migrations(
+        {"schema_version": 1, "hosts": ["1.2.3.4"], "ledfx_presets": {}, "port": 1}
+    )
+    assert out == {"schema_version": 2, "port": 1}
+
+
+def test_v2_scene_fields_match_the_scene_model() -> None:
+    assert SCENE_FIELDS == frozenset(Scene.model_fields)
+
+
+def _spotify_v1(integrations: list[object]) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "scenes": {
+            "s1": {
+                "name": "S1",
+                "virtuals": {},
+                "abc-1000": ["abc", "Song", 1000],
+                "x": [1],
+            },
+            "s2": {"name": "S2", "virtuals": {}},
+        },
+        "integrations": integrations,
+    }
+
+
+def test_v2_moves_spotify_triggers_replacing_the_stale_copy() -> None:
+    stale: dict[str, object] = {
+        "s1": {"name": "S1", "virtuals": {"v": 1}, "abc-1000": ["abc", "Song", 1]}
+    }
+    out = run_migrations(
+        _spotify_v1(
+            [
+                {"id": "spotify", "type": "spotify", "data": stale},
+                {"id": "qlc", "type": "qlc", "data": [1]},
+            ]
+        )
+    )
+    # "x" is not a trigger: it stays for the loader to quarantine.
+    assert out["scenes"] == {
+        "s1": {"name": "S1", "virtuals": {}, "x": [1]},
+        "s2": {"name": "S2", "virtuals": {}},
+    }
+    assert out["integrations"] == [
+        {
+            "id": "spotify",
+            "type": "spotify",
+            "data": {"s1": {"abc-1000": ["abc", "Song", 1000]}},
+        },
+        {"id": "qlc", "type": "qlc", "data": [1]},
+    ]
+
+
+def test_v2_strips_and_logs_triggers_without_a_spotify_entry(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level("INFO")
+    out = run_migrations(_spotify_v1([]))
+    assert out["scenes"] == {
+        "s1": {"name": "S1", "virtuals": {}, "x": [1]},
+        "s2": {"name": "S2", "virtuals": {}},
+    }
+    assert out["integrations"] == []
+    assert "abc-1000" in caplog.text

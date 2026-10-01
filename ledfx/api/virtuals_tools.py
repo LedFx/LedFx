@@ -5,7 +5,6 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.color import parse_color, validate_color
-from ledfx.config import save_config
 from ledfx.effects.oneshots.oneshot import Flash
 
 _LOGGER = logging.getLogger(__name__)
@@ -189,10 +188,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 updated += 1
 
             if updated > 0:
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
+                self._ledfx.config_store.request_save()
             else:
                 return await self.invalid_request(
                     "Virtual copy failed, no valid targets"

@@ -4,7 +4,8 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.config import preset_category
+from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_defaults, inject_missing_default_keys
 
 _LOGGER = logging.getLogger(__name__)
@@ -45,14 +46,14 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:  # noqa: BLE001
             return await self.invalid_effect_id(effect_id)
 
-        default = generate_defaults(
-            self._ledfx.config["ledfx_presets"], self._ledfx.effects, effect_id
-        )
+        default = generate_defaults(ledfx_presets, self._ledfx.effects, effect_id)
 
-        if effect_id in self._ledfx.config["user_presets"]:
-            custom = self._ledfx.config["user_presets"][effect_id]
-        else:
-            custom = {}
+        custom = {
+            preset_id: preset.model_dump()
+            for preset_id, preset in self._ledfx.config.user_presets.get(
+                effect_id, {}
+            ).items()
+        }
 
         custom = inject_missing_default_keys(custom, default)
 
@@ -107,17 +108,18 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:  # noqa: BLE001
             return await self.invalid_effect_id(effect_id)
 
-        if preset_id not in self._ledfx.config[category][effect_id]:
+        presets = preset_category(self._ledfx.config.user_presets, category)
+        if preset_id not in presets[effect_id]:
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
 
         # Update and save config
-        self._ledfx.config[category][effect_id][preset_id]["name"] = name
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        if category == "user_presets":
+            self._ledfx.config.user_presets[effect_id][preset_id].name = name
+        else:
+            ledfx_presets[effect_id][preset_id]["name"] = name
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def delete(self, effect_id, request) -> web.Response:
@@ -152,7 +154,8 @@ class PresetsEndpoint(RestEndpoint):
         except BaseException:  # noqa: BLE001
             return await self.invalid_effect_id(effect_id)
 
-        if effect_id not in self._ledfx.config[category]:
+        presets = preset_category(self._ledfx.config.user_presets, category)
+        if effect_id not in presets:
             return await self.invalid_request(
                 f"Effect {effect_id} does not exist in category {category}"
             )
@@ -162,17 +165,17 @@ class PresetsEndpoint(RestEndpoint):
                 'Required attribute "preset_id" was not provided'
             )
 
-        if preset_id not in self._ledfx.config[category][effect_id]:
+        if preset_id not in presets[effect_id]:
             return await self.invalid_request(
                 f"Preset {preset_id} does not exist for effect {effect_id} in category {category}"
             )
 
         # Delete the preset from configuration
-        del self._ledfx.config[category][effect_id][preset_id]
+        if category == "user_presets":
+            del self._ledfx.config.user_presets[effect_id][preset_id]
+        else:
+            del ledfx_presets[effect_id][preset_id]
 
         # Save the config
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()

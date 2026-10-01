@@ -5,19 +5,43 @@ from typing import ClassVar
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.jsonutil import dumps
 from ledfx.api.utils import PERMITTED_KEYS, convertToJsonSchema
-from ledfx.config import CORE_CONFIG_SCHEMA
 from ledfx.configuration.models import (
     AudioAnalysisConfig,
     AudioInputConfig,
+    LedFxConfig,
     MelbankConfig,
     MelbanksConfig,
     VirtualConfig,
     WledPreferences,
 )
 from ledfx.configuration.schema import legacy_schema
+from ledfx.consts import LEGACY_CONFIGURATION_VERSION
 
 _LOGGER = logging.getLogger(__name__)
+
+# Pre-overhaul core schema key order and runtime-only keys (legacy endpoint only).
+LEGACY_CORE_ORDER = (
+    "host", "hosts", "port", "port_s", "dev_mode", "devices", "virtuals", "audio",
+    "melbank_collection", "melbanks", "ledfx_presets", "user_presets", "scenes",
+    "playlists", "integrations", "transmission_mode", "visualisation_fps",
+    "visualisation_maxlen", "global_transitions", "user_colors", "user_gradients",
+    "scan_on_startup", "create_segments", "flush_on_deactivate", "wled_preferences",
+    "configuration_version", "global_brightness", "ui_brightness_boost",
+    "startup_scene_id", "startup_playlist_id", "lifx_broadcast_address",
+    "lifx_discovery_timeout", "instance_id", "sendspin_servers",
+    "sendspin_always_on", "now_playing",
+)  # fmt: skip
+LEGACY_CORE_EXTRAS: dict[str, dict[str, object]] = {
+    "hosts": {"type": "array", "title": "Hosts", "default": []},
+    "ledfx_presets": {"type": "dict", "title": "Ledfx Presets", "default": {}},
+    "configuration_version": {
+        "type": "string",
+        "title": "Configuration Version",
+        "default": LEGACY_CONFIGURATION_VERSION,
+    },
+}
 
 
 class SchemaEndpoint(RestEndpoint):
@@ -166,12 +190,15 @@ class SchemaEndpoint(RestEndpoint):
                 }
 
             elif schema == "core":
-                # Get core config schema
                 response["core"] = {
                     "schema": {
-                        **convertToJsonSchema(CORE_CONFIG_SCHEMA),
+                        **legacy_schema(
+                            LedFxConfig,
+                            order=LEGACY_CORE_ORDER,
+                            extra_properties=LEGACY_CORE_EXTRAS,
+                        ),
                         "permitted_keys": PERMITTED_KEYS["core"],
                     },
                 }
 
-        return web.json_response(data=response, status=200)
+        return web.json_response(data=response, status=200, dumps=dumps)

@@ -5,7 +5,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.integrations.spotify import Spotify
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,6 +14,12 @@ class QLCEndpoint(RestEndpoint):
     """REST end-point for querying and managing a Spotify integration"""
 
     ENDPOINT_PATH = "/api/integrations/spotify/{integration_id}"
+
+    def _save_triggers(self, integration: Spotify) -> None:
+        for entry in self._ledfx.config.integrations:
+            if entry.id == integration.id:
+                entry.data = integration.triggers
+        self._ledfx.config_store.request_save()
 
     async def get(self, integration_id) -> web.Response:
         """
@@ -106,12 +112,11 @@ class QLCEndpoint(RestEndpoint):
                 f"Required attributes {', '.join(missing_attributes)} were not provided"
             )
 
-        if scene_id not in self._ledfx.config["scenes"]:
+        if scene_id not in self._ledfx.config.scenes:
             return await self.invalid_request(f"Scene {scene_id} does not exist")
 
         integration.add_trigger(scene_id, song_id, song_name, song_position)
-
-        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+        self._save_triggers(integration)
         return await self.request_success()
 
     async def delete(self, integration_id, request) -> web.Response:
@@ -142,7 +147,5 @@ class QLCEndpoint(RestEndpoint):
             )
 
         integration.delete_trigger(trigger_id)
-
-        # Update and save the config
-        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+        self._save_triggers(integration)
         return await self.request_success()

@@ -15,6 +15,7 @@ import voluptuous as vol
 from aiohttp import WSMsgType, web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.jsonutil import default, dumps
 from ledfx.events import (
     ClientBroadcastEvent,
     ClientConnectedEvent,
@@ -268,7 +269,7 @@ class WebsocketConnection:
                     _LOGGER.info("Stopped websocket sender.")
                     return
                 try:
-                    await self._socket.send_json(message, dumps=json.dumps)
+                    await self._socket.send_json(message, dumps=dumps)
                 except TypeError as err:
                     _LOGGER.error(
                         "Unable to serialize to JSON: %s\n%s",
@@ -285,7 +286,7 @@ class WebsocketConnection:
                 self._vis_slots.clear()
                 for message in frames.values():
                     try:
-                        await self._socket.send_json(message, dumps=json.dumps)
+                        await self._socket.send_json(message, dumps=dumps)
                     except TypeError as err:
                         _LOGGER.error(
                             "Unable to serialize to JSON: %s\n%s",
@@ -718,7 +719,9 @@ class WebsocketConnection:
 
         # Validate payload size
         payload = validated_data["payload"]
-        payload_bytes = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        payload_bytes = json.dumps(payload, ensure_ascii=False, default=default).encode(
+            "utf-8"
+        )
         payload_size = len(payload_bytes)
         if payload_size > MAX_PAYLOAD_SIZE:
             self.send_error(

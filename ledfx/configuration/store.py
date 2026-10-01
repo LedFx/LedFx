@@ -10,16 +10,17 @@ import shutil
 import stat
 import tempfile
 import threading
-from collections.abc import Callable
+from collections.abc import AsyncIterator
 from typing import ClassVar
 
-import voluptuous as vol
-
+from ledfx.configuration.lenient import lenient_validate
 from ledfx.configuration.migrations import (
     CURRENT_SCHEMA_VERSION,
     run_migrations,
     schema_version_of,
 )
+from ledfx.configuration.migrations.v2 import strip_envelope
+from ledfx.configuration.models import DeviceEntry, LedFxConfig, VirtualEntry
 from ledfx.consts import LEGACY_CONFIGURATION_VERSION
 from ledfx.fsutil import fsync_directory
 
@@ -28,8 +29,6 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_FILE_NAME = "config.json"
 QUARANTINE_FILE_NAME = "config.quarantine.jsonl"
 SAVE_DELAY_SECONDS = 1.0
-# Runtime-only keys that must never reach disk.
-UNSAVED_KEYS = ("ledfx_presets",)
 
 BACKUP_REASONS = {
     "DECODE": "config.json is not valid JSON.",
@@ -38,10 +37,8 @@ BACKUP_REASONS = {
     "DOWNGRADE": "config.json was written by a newer LedFx.",
     "IMPORT": "Replacing config.json with an imported config.",
     "DELETE": "Resetting config.json to defaults.",
-    "INVALID": "Invalid config values could not be quarantined.",
+    "QUARANTINE": "Removing invalid entries from config.json.",
 }
-
-Validator = Callable[[dict[str, object]], dict[str, object]]
 
 
 def backup_config_file(config_dir: str, reason: str, move: bool = False) -> str | None:
@@ -89,9 +86,7 @@ class ConfigStore:
 
     _registry: ClassVar[dict[str, "ConfigStore"]] = {}
 
-    def __init__(
-        self, config_dir: str, data: dict[str, object], validate: Validator
-    ) -> None:
+    def __init__(self, config_dir: str, data: LedFxConfig) -> None:
         self.config_dir = config_dir
         self.data = data
         self.error: str | None = None
@@ -99,9 +94,9 @@ class ConfigStore:
         self.unreadable = False
         self.quarantined = 0  # records written; load() saves the repaired data
         self.quarantine_failed = False  # a dropped value has no record on disk
-        self._validate = validate
         self._blocked_logged = False
         self._write_lock = threading.Lock()
+        self._lock = asyncio.Lock()  # mutate()/replace(); binds a loop on first wait
         self._seq = 0
         self._written_seq = 0
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -113,11 +108,10 @@ class ConfigStore:
 
     # ---- loading -------------------------------------------------------
     @classmethod
-    def load(cls, config_dir: str, validate: Validator) -> "ConfigStore":
+    def load(cls, config_dir: str) -> "ConfigStore":
         os.makedirs(config_dir, exist_ok=True)
-        store = cls(config_dir, {}, validate)
+        store = cls(config_dir, LedFxConfig())
         if not os.path.isfile(store.path):
-            store.data = validate({})
             store.save_now()
             return store
         try:
@@ -156,52 +150,37 @@ class ConfigStore:
                 "changes will not be saved"
             )
             _LOGGER.error(store.error)
-        try:
-            store.data = store._lenient_validate(raw)
-        except vol.Invalid as err:
-            store._enter_safe_mode(None, f"config.json failed validation: {err}")
+        # Also after a downgrade and re-upgrade: old builds write hosts back but keep
+        # schema_version 2, so the v2 step alone would not strip it.
+        strip_envelope(raw)
+        config = lenient_validate(LedFxConfig, raw, "", store.quarantine)
+        if config is None:
+            store._enter_safe_mode(None, "config.json is not a LedFx config")
             return store
+        store.data = config
+        # No VERSION/DOWNGRADE backup was taken, and the rewrite below drops the
+        # invalid entries; keep the original file first. That includes values
+        # whose quarantine record could not be written: the file is then their
+        # only copy.
+        dropped = store.quarantined or store.quarantine_failed
         if (
-            store.quarantine_failed
-            and version == CURRENT_SCHEMA_VERSION  # otherwise already backed up
-            and store.backup("INVALID") is None
+            dropped
+            and version == CURRENT_SCHEMA_VERSION
+            and store.backup("QUARANTINE") is None
         ):
-            # The dropped values exist only in config.json; never overwrite it.
             store.error = (
-                "invalid config values could not be quarantined or backed up; "
-                "changes will not be saved"
+                "config.json could not be backed up before removing invalid "
+                "entries; changes will not be saved"
             )
             _LOGGER.error(store.error)
-        if migrated or store.quarantined or store.quarantine_failed:
+        if migrated or dropped:
             store.save_now()  # persist the defaulted values, not the bad ones
         return store
-
-    def _lenient_validate(self, raw: dict[str, object]) -> dict[str, object]:
-        """Validate; quarantine and default each failing top-level key."""
-        data = dict(raw)
-        for _ in range(len(data) + 1):
-            try:
-                return self._validate(data)
-            except vol.MultipleInvalid as err:
-                bad = {str(e.path[0]) for e in err.errors if e.path}
-                if not bad:
-                    raise
-                for key in bad:
-                    self.quarantine(
-                        key,
-                        data.pop(key, None),
-                        [
-                            str(e)
-                            for e in err.errors
-                            if e.path and str(e.path[0]) == key
-                        ],
-                    )
-        return self._validate(data)
 
     def _enter_safe_mode(self, reason: str | None, message: str) -> None:
         if reason is not None:
             self.backup(reason)
-        self.data = self._validate({})
+        self.data = LedFxConfig()
         self.error = message
         _LOGGER.error(
             "%s LedFx is running on default settings and will not save until "
@@ -236,7 +215,7 @@ class ConfigStore:
 
     # ---- saving --------------------------------------------------------
     def serialise(self) -> str:
-        view = {k: v for k, v in self.data.items() if k not in UNSAVED_KEYS}
+        view = self.data.model_dump(mode="json")
         view["schema_version"] = CURRENT_SCHEMA_VERSION
         view["configuration_version"] = LEGACY_CONFIGURATION_VERSION
         return json.dumps(view, ensure_ascii=False, sort_keys=True, indent=4)
@@ -352,22 +331,39 @@ class ConfigStore:
         """Shutdown path: cancel the timer and write synchronously."""
         self.save_now()
 
-    async def replace(self, data: dict[str, object]) -> bool:
+    async def replace(self, data: LedFxConfig) -> bool:
         """Swap in a whole new config (import/reset), leave safe mode, write now.
 
         On a failed write the previous data and safe-mode state are restored,
         so memory never holds a config that is not on disk. Returns success.
+        Never call inside mutate(): the lock is not re-entrant.
         """
-        previous = (self.data, self.error, self._blocked_logged)
-        self.data = data
-        self.error = None
-        self._blocked_logged = False
-        if await self.flush():
-            return True
-        self.data, self.error, self._blocked_logged = previous
-        return False
+        async with self._lock:
+            previous = (self.data, self.error, self._blocked_logged)
+            self.data = data
+            self.error = None
+            self._blocked_logged = False
+            if await self.flush():
+                return True
+            self.data, self.error, self._blocked_logged = previous
+            return False
 
-    # ---- registry for the legacy save_config() shim -----------------------
+    @contextlib.asynccontextmanager
+    async def mutate(self) -> AsyncIterator[LedFxConfig]:
+        """For changes that await between read and write; saves on clean exit."""
+        async with self._lock:
+            yield self.data
+        self.request_save()
+
+    # ---- lookups ---------------------------------------------------------
+    def device_entry(self, id: str) -> DeviceEntry | None:
+        return next((e for e in self.data.devices if e.id == id), None)
+
+    def virtual_entry(self, id: str) -> VirtualEntry | None:
+        # ponytail: linear scan; index by id if virtual counts reach the thousands
+        return next((e for e in self.data.virtuals if e.id == id), None)
+
+    # ---- registry for the legacy save_config shim -----------------------
     @classmethod
     def registered(cls, config_dir: str) -> "ConfigStore | None":
         return cls._registry.get(os.path.abspath(config_dir))

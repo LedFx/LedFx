@@ -3,11 +3,16 @@ import ipaddress
 import logging
 import os
 import sys
-import uuid
+from collections.abc import Mapping
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
 
 from ledfx.consts import CONFIGURATION_VERSION
+from ledfx.presets import ledfx_presets
+
+if TYPE_CHECKING:  # ledfx.configuration.models imports ledfx.utils, which imports us
+    from ledfx.configuration.models import LedFxConfig, Preset
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -168,19 +173,6 @@ CORE_CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def ensure_instance_id(config):
-    """
-    Ensure the config has a persistent LedFx instance UUID.
-
-    Generates a random UUID if ``instance_id`` is missing or empty and
-    stores it back in *config* so it is saved on the next
-    :func:`save_config` call.  The value is stable across restarts and
-    uniquely identifies this LedFx installation.
-    """
-    if not config.get("instance_id"):
-        config["instance_id"] = str(uuid.uuid4())
-
-
 def load_logger():
     """
     Load the logger for the current module.
@@ -300,7 +292,7 @@ def create_backup(config_dir: str, backup_reason: str) -> None:
     backup_config_file(config_dir, backup_reason, move=True)
 
 
-def save_config(config: dict, config_dir: str) -> None:
+def save_config(config: "LedFxConfig", config_dir: str) -> None:
     """Persist config.
 
     Routes to the live ConfigStore (debounced, atomic) when one is registered for
@@ -311,11 +303,11 @@ def save_config(config: dict, config_dir: str) -> None:
     store = ConfigStore.registered(config_dir)
     if store is not None:
         if config is not store.data:
-            _LOGGER.debug("save_config called with a dict that is not the live config")
+            _LOGGER.debug("save_config called with a config that is not the live one")
         store.request_save()
         return
     ensure_config_directory(config_dir)
-    ConfigStore(config_dir, config, CORE_CONFIG_SCHEMA).save_now()
+    ConfigStore(config_dir, config).save_now()
 
 
 def filter_config_for_comparison(config):
@@ -386,27 +378,29 @@ def find_matching_preset(
         if configs_match(preset_config, effect_config):
             return preset_id, "ledfx_presets"
 
-    # Check user_presets
+    # Check user_presets (config.user_presets: Preset models)
     if effect_type in user_presets:
         for preset_id, preset_data in user_presets[effect_type].items():
-            preset_config = preset_data.get("config", {})
-            if configs_match(preset_config, effect_config):
+            if configs_match(preset_data.config, effect_config):
                 return preset_id, "user_presets"
 
     return None, None
 
 
-def remove_virtuals_active_effects(config: dict) -> None:
-    """
-    Removes active effects from virtuals
-    All effects configs will remain in the virtuals, but the active effect will be removed
-    This allows for recovery from scenarios where an effect configuration is poisened
-    The user retains all their other settings.
-    The poisoned effect config will still be present in the virtuals effects list and will crash the app if it is selected
-    This may be addreessed by future fixes in the application or manual removal
-    of the effect from virtuals effects list once it is identified
-    This can only be identified via selective activation of effects to the point of crash
-    """
+def preset_category(
+    user_presets: "dict[str, dict[str, Preset]]", category: str
+) -> Mapping[str, Mapping[str, object]]:
+    """The presets of a category: the built-in dicts or config.user_presets."""
+    return user_presets if category == "user_presets" else ledfx_presets
 
-    for virtual in config["virtuals"]:
-        virtual.pop("effect", None)
+
+def preset_config(
+    user_presets: "dict[str, dict[str, Preset]]",
+    category: str,
+    effect_id: str,
+    preset_id: str,
+) -> dict[str, object]:
+    """A stored preset's effect config. Raises KeyError if it does not exist."""
+    if category == "user_presets":
+        return user_presets[effect_id][preset_id].config
+    return ledfx_presets[effect_id][preset_id]["config"]

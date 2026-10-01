@@ -1,10 +1,11 @@
 import logging
 from json import JSONDecodeError
 
+import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.configuration.models import IntegrationEntry
 
 # from ledfx.api.websocket import WebsocketConnection
 from ledfx.utils import generate_id
@@ -87,14 +88,11 @@ class IntegrationsEndpoint(RestEndpoint):
             await integration.deactivate()
 
         # Update and save the configuration
-        for _integration in self._ledfx.config["integrations"]:
-            if _integration["id"] == integration.id:
-                _integration["active"] = not active
+        for _integration in self._ledfx.config.integrations:
+            if _integration.id == integration.id:
+                _integration.active = not active
                 break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def delete(self, request: web.Request) -> web.Response:
@@ -130,14 +128,14 @@ class IntegrationsEndpoint(RestEndpoint):
 
         self._ledfx.integrations.destroy(integration_id)
 
-        self._ledfx.config["integrations"] = [
+        self._ledfx.config.integrations = [
             integration
-            for integration in self._ledfx.config["integrations"]
-            if integration["id"] != integration_id
+            for integration in self._ledfx.config.integrations
+            if integration.id != integration_id
         ]
 
         # Save the config
-        save_config(config=self._ledfx.config, config_dir=self._ledfx.config_dir)
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def post(self, request: web.Request) -> web.Response:
@@ -159,6 +157,18 @@ class IntegrationsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 'Required attribute "type" was not provided'
             )
+        # Validate before an update destroys the running integration.
+        try:
+            integration_class = self._ledfx.integrations.get_class(integration_type)
+        except KeyError:
+            return await self.invalid_request(
+                f"Unknown integration type: {integration_type}"
+            )
+        try:
+            integration_config = integration_class.schema()(integration_config)
+        except vol.Invalid as err:
+            return await self.invalid_request(f"Invalid integration config: {err}")
+
         # Allow for id be None for new integrations
         integration_id = data.get("id")
 
@@ -187,35 +197,39 @@ class IntegrationsEndpoint(RestEndpoint):
 
             self._ledfx.integrations.destroy(integration_id)
 
+        # An update keeps the stored data (QLC events, Spotify triggers).
+        stored = next(
+            (e for e in self._ledfx.config.integrations if e.id == integration_id),
+            None,
+        )
         integration = self._ledfx.integrations.create(
             id=integration_id,
             type=integration_type,
             active=False,
             config=integration_config,
-            data=None,
+            data=None if new or stored is None else stored.data,
             ledfx=self._ledfx,
         )
 
         # Update and save the configuration
         if new:
-            self._ledfx.config["integrations"].append(
-                {
-                    "id": integration.id,
-                    "type": integration.type,
-                    "active": integration.active,
-                    "data": integration.data,
-                    "config": integration.config,
-                }
+            entry = {
+                "id": integration.id,
+                "type": integration.type,
+                "active": integration.active,
+                "config": integration.config,
+            }
+            if integration.stored_data is not None:
+                entry["data"] = integration.stored_data
+            self._ledfx.config.integrations.append(
+                IntegrationEntry.model_validate(entry)
             )
         else:
-            for integration in self._ledfx.config["integrations"]:
-                if integration["id"] == integration_id:
-                    integration["config"] = integration_config
+            for integration in self._ledfx.config.integrations:
+                if integration.id == integration_id:
+                    integration.config = integration_config
                     break
                     # Update and save the configuration
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()

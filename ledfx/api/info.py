@@ -26,7 +26,7 @@ class InfoEndpoint(RestEndpoint):
             "version": PROJECT_VERSION,
             "github_sha": os.getenv("GITHUB_SHA", "unknown"),
             "is_release": os.getenv("IS_RELEASE", "false").lower(),
-            "developer_mode": self._ledfx.config["dev_mode"],
+            "developer_mode": self._ledfx.config.dev_mode,
             "config_error": self._ledfx.config_store.error,
             "features": {
                 "sendspin": SENDSPIN_AVAILABLE,

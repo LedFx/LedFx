@@ -539,7 +539,9 @@ class LifxDevice(NetworkedDevice):
                         self._matrix_height,
                     )
                     virtual.config["rows"] = self._matrix_height
-                    virtual.virtual_cfg["config"]["rows"] = self._matrix_height
+                    entry = virtual.entry
+                    if entry is not None:
+                        entry.config.rows = self._matrix_height
                 break
 
     async def _async_disconnect(self):

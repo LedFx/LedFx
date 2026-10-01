@@ -1,14 +1,44 @@
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.config import find_matching_preset, save_config
+from ledfx.config import find_matching_preset
+from ledfx.configuration.models import Scene
 from ledfx.effects import DummyEffect
+from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_id
 
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
+
 _LOGGER = logging.getLogger(__name__)
+
+
+def scene_payload(ledfx: "LedFxCore", scene_id: str, scene: Scene) -> dict[str, object]:
+    """A scene as the API shows it: active state and matched presets added."""
+    payload = scene.model_dump()
+    payload["active"] = ledfx.scenes.is_active(scene_id)
+    virtuals_with_presets = {}
+    for virtual_id, effect_data in scene.virtuals.items():
+        virtual_payload = effect_data.model_dump()
+        if effect_data.type is not None and effect_data.config:
+            preset_id, category = find_matching_preset(
+                ledfx_presets,
+                ledfx.config.user_presets,
+                ledfx.effects,
+                effect_data.type,
+                effect_data.config,
+            )
+            if preset_id:
+                virtual_payload["preset"] = preset_id
+                virtual_payload["preset_category"] = category
+        virtuals_with_presets[virtual_id] = virtual_payload
+    payload["virtuals"] = virtuals_with_presets
+    return payload
 
 
 class ScenesEndpoint(RestEndpoint):
@@ -23,37 +53,10 @@ class ScenesEndpoint(RestEndpoint):
         Returns:
             web.Response: The response containing the scenes.
         """
-        scenes_with_state = {}
-        for scene_id, scene_config in self._ledfx.config["scenes"].items():
-            scene_payload = dict(scene_config)
-            scene_payload["active"] = self._ledfx.scenes.is_active(scene_id)
-
-            # Add preset matching for each virtual's effect
-            if "virtuals" in scene_payload:
-                virtuals_with_presets = {}
-                for virtual_id, effect_data in scene_payload["virtuals"].items():
-                    virtual_payload = dict(effect_data)
-                    if (
-                        "type" in effect_data
-                        and "config" in effect_data
-                        and effect_data["config"]
-                    ):
-                        effect_type = effect_data["type"]
-                        effect_config = effect_data["config"]
-                        preset_id, category = find_matching_preset(
-                            self._ledfx.config["ledfx_presets"],
-                            self._ledfx.config["user_presets"],
-                            self._ledfx.effects,
-                            effect_type,
-                            effect_config,
-                        )
-                        if preset_id:
-                            virtual_payload["preset"] = preset_id
-                            virtual_payload["preset_category"] = category
-                    virtuals_with_presets[virtual_id] = virtual_payload
-                scene_payload["virtuals"] = virtuals_with_presets
-
-            scenes_with_state[scene_id] = scene_payload
+        scenes_with_state = {
+            scene_id: scene_payload(self._ledfx, scene_id, scene)
+            for scene_id, scene in self._ledfx.config.scenes.items()
+        }
 
         response = {
             "status": "success",
@@ -74,19 +77,16 @@ class ScenesEndpoint(RestEndpoint):
                 'Required attribute "id" was not provided'
             )
 
-        if scene_id not in self._ledfx.config["scenes"]:
+        if scene_id not in self._ledfx.config.scenes:
             error_message = f"Scene {scene_id} does not exist"
             _LOGGER.warning(error_message)
             return await self.invalid_request()
 
         # Delete the scene from configuration
-        del self._ledfx.config["scenes"][scene_id]
+        del self._ledfx.config.scenes[scene_id]
 
         # Save the config
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
         return await self.request_success()
 
     async def put(self, request: web.Request) -> web.Response:
@@ -120,10 +120,10 @@ class ScenesEndpoint(RestEndpoint):
                 'Required attribute "id" was not provided'
             )
 
-        if scene_id not in self._ledfx.config["scenes"]:
+        if scene_id not in self._ledfx.config.scenes:
             return await self.invalid_request(f"Scene {scene_id} does not exist")
 
-        scene = self._ledfx.config["scenes"][scene_id]
+        scene = self._ledfx.config.scenes[scene_id]
 
         if action == "activate_in":
             ms = data.get("ms")
@@ -133,7 +133,7 @@ class ScenesEndpoint(RestEndpoint):
                 )
             self._ledfx.loop.call_later(ms, self._ledfx.scenes.activate, scene_id)
             return await self.request_success(
-                "info", f"Scene {scene['name']} will activate in {ms}ms"
+                "info", f"Scene {scene.name} will activate in {ms}ms"
             )
 
         if action == "activate":
@@ -142,14 +142,14 @@ class ScenesEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     f"Scene {scene_id} could not be activated"
                 )
-            return await self.request_success("info", f"Activated {scene['name']}")
+            return await self.request_success("info", f"Activated {scene.name}")
         elif action == "deactivate":
             deactivated = self._ledfx.scenes.deactivate(scene_id)
             if not deactivated:
                 return await self.invalid_request(
                     f"Scene {scene_id} could not be deactivated"
                 )
-            return await self.request_success("info", f"Deactivated {scene['name']}")
+            return await self.request_success("info", f"Deactivated {scene.name}")
 
         elif action == "rename":
             name = data.get("name")
@@ -159,14 +159,13 @@ class ScenesEndpoint(RestEndpoint):
                 )
 
             # Update and save config
-            self._ledfx.config["scenes"][scene_id]["name"] = name
-            save_config(
-                config=self._ledfx.config,
-                config_dir=self._ledfx.config_dir,
-            )
-            return await self.request_success(
-                "info", f"Renamed {scene['name']} to {name}"
-            )
+            old_name = scene.name
+            try:
+                scene.name = name
+            except ValidationError as err:
+                return await self.validation_error(err)
+            self._ledfx.config_store.request_save()
+            return await self.request_success("info", f"Renamed {old_name} to {name}")
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -197,7 +196,7 @@ class ScenesEndpoint(RestEndpoint):
         if scene_id:
             # ID provided - must be an update
             sanitized_id = generate_id(scene_id)
-            if sanitized_id not in self._ledfx.config["scenes"]:
+            if sanitized_id not in self._ledfx.config.scenes:
                 error_message = f"Scene with id '{scene_id}' does not exist. To create a new scene, omit the 'id' field."
                 _LOGGER.warning(error_message)
                 return await self.invalid_request(error_message)
@@ -213,7 +212,7 @@ class ScenesEndpoint(RestEndpoint):
         if is_update:
             # Update existing scene - sanitize scene_id and preserve existing config
             scene_id = generate_id(scene_id)
-            scene_config = dict(self._ledfx.config["scenes"][scene_id])
+            scene_config = self._ledfx.config.scenes[scene_id].model_dump()
 
             # Only update fields that were explicitly provided
             if scene_name is not None:
@@ -233,7 +232,7 @@ class ScenesEndpoint(RestEndpoint):
             dupe_id = generate_id(scene_name)
             dupe_index = 1
             scene_id = dupe_id
-            while scene_id in self._ledfx.config["scenes"]:
+            while scene_id in self._ledfx.config.scenes:
                 scene_id = f"{dupe_id}-{dupe_index}"
                 dupe_index = dupe_index + 1
 
@@ -311,15 +310,16 @@ class ScenesEndpoint(RestEndpoint):
                 scene_config["virtuals"][virtual.id] = effect
 
         # Update the scene if it already exists, else create it
-        self._ledfx.config["scenes"][scene_id] = scene_config
+        try:
+            scene = Scene.model_validate(scene_config)
+        except ValidationError as err:
+            return await self.validation_error(err)
+        self._ledfx.config.scenes[scene_id] = scene
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         response = {
             "status": "success",
-            "scene": {"id": scene_id, "config": scene_config},
+            "scene": {"id": scene_id, "config": scene},
         }
         return await self.bare_request_success(response)

@@ -7,7 +7,6 @@ import voluptuous as vol
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
 from ledfx.effects import DummyEffect
 
 _LOGGER = logging.getLogger(__name__)
@@ -218,10 +217,7 @@ class EffectsEndpoint(RestEndpoint):
 
         virtual.update_effect_config(effect)
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         effect_response = {}
         effect_response["config"] = effect.config
@@ -289,10 +285,7 @@ class EffectsEndpoint(RestEndpoint):
 
         virtual.update_effect_config(effect)
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         effect_response = {}
         effect_response["config"] = effect.config
@@ -318,12 +311,11 @@ class EffectsEndpoint(RestEndpoint):
 
         virtual.clear_effect()
 
-        virtual.virtual_cfg.pop("effect", None)
+        entry = virtual.entry
+        if entry is not None:
+            entry.effect = None
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         response = {"status": "success", "effect": {}}
         return await self.bare_request_success(response)

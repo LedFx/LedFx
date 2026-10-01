@@ -4,9 +4,10 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.configuration.models import SendspinServerConfig
 from ledfx.sendspin.config import (
     DEFAULT_CLIENT_NAME,
     validate_sendspin_server_url,
@@ -34,7 +35,7 @@ class SendspinServersEndpoint(RestEndpoint):
                 "Sendspin is not available. Requires Python 3.12+ and aiosendspin package."
             )
 
-        servers = self._ledfx.config.get("sendspin_servers", {})
+        servers = self._ledfx.config.sendspin_servers
         return await self.bare_request_success({"servers": servers})
 
     async def post(self, request: web.Request) -> web.Response:
@@ -73,7 +74,7 @@ class SendspinServersEndpoint(RestEndpoint):
             return await self.invalid_request(reason)
 
         server_id = generate_id(data["id"])
-        servers = self._ledfx.config.setdefault("sendspin_servers", {})
+        servers = self._ledfx.config.sendspin_servers
 
         if server_id in servers:
             _LOGGER.warning(
@@ -84,13 +85,18 @@ class SendspinServersEndpoint(RestEndpoint):
                 f"Server '{server_id}' already exists. Use PUT to update."
             )
 
-        entry = {
-            "server_url": server_url,
-            "client_name": data.get("client_name", DEFAULT_CLIENT_NAME),
-        }
+        try:
+            entry = SendspinServerConfig.model_validate(
+                {
+                    "server_url": server_url,
+                    "client_name": data.get("client_name", DEFAULT_CLIENT_NAME),
+                }
+            )
+        except ValidationError as err:
+            return await self.validation_error(err)
         servers[server_id] = entry
 
-        save_config(self._ledfx.config, self._ledfx.config_dir)
+        self._ledfx.config_store.request_save()
         self._ledfx._load_sendspin_servers()
 
         return await self.request_success(

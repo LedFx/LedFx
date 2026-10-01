@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import voluptuous as vol
 from PIL import Image
+from pydantic import ValidationError
 
 from ledfx.effects import DummyEffect
 from ledfx.events import Event
@@ -17,6 +18,7 @@ from ledfx.nowplaying.models import (
     TrackMetadata,
 )
 from ledfx.nowplaying.service import NowPlayingService
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class _DummyEvents:
@@ -33,7 +35,9 @@ class _DummyLedFx:
     """Minimal LedFx core stub for testing."""
 
     def __init__(self, config_dir=None):
-        self.config = {}
+        fake = fake_ledfx()
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.events = _DummyEvents()
         self.config_dir = config_dir
 
@@ -818,9 +822,8 @@ class TestApplyGradientToVirtuals:
             "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
         )
 
-        with patch("ledfx.nowplaying.service.save_config") as mock_save:
-            service_v.apply_gradient_to_virtuals()
-            mock_save.assert_called_once()
+        service_v.apply_gradient_to_virtuals()
+        ledfx_with_virtuals.config_store.request_save.assert_called_once()
 
     def test_no_config_save_when_nothing_updated(self, service_v, ledfx_with_virtuals):
         # No virtuals, no updates
@@ -828,9 +831,8 @@ class TestApplyGradientToVirtuals:
             "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
         )
 
-        with patch("ledfx.nowplaying.service.save_config") as mock_save:
-            service_v.apply_gradient_to_virtuals()
-            mock_save.assert_not_called()
+        service_v.apply_gradient_to_virtuals()
+        ledfx_with_virtuals.config_store.request_save.assert_not_called()
 
 
 class TestGradientAutoApplication:
@@ -857,7 +859,6 @@ class TestGradientAutoApplication:
                     }
                 },
             ),
-            patch("ledfx.nowplaying.service.save_config"),
         ):
             service_v.set_artwork_bytes("sendspin", data, "image/png")
 
@@ -925,12 +926,12 @@ class TestGradientAutoApplication:
 
 
 class TestNowPlayingConfigSchema:
-    """Tests for NOW_PLAYING_CONFIG_SCHEMA validation."""
+    """Tests for NowPlayingConfig validation."""
 
     def test_default_config_is_valid(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        result = NOW_PLAYING_CONFIG_SCHEMA({})
+        result = NowPlayingConfig.model_validate({}).model_dump()
         assert result["gradient"]["enabled"] is False
         assert result["gradient"]["variant"] == "led_punchy"
         assert result["gradient"]["virtual_ids"] == []
@@ -943,38 +944,50 @@ class TestNowPlayingConfigSchema:
         assert result["album_art"]["virtual_ids"] == []
 
     def test_invalid_variant_rejected(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"gradient": {"variant": "not_a_variant"}})
+        with pytest.raises(ValidationError):
+            NowPlayingConfig.model_validate(
+                {"gradient": {"variant": "not_a_variant"}}
+            ).model_dump()
 
     def test_invalid_enabled_rejected(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"enabled": "not_a_bool"}})
+        with pytest.raises(ValidationError):
+            NowPlayingConfig.model_validate(
+                {"track_text": {"enabled": "not_a_bool"}}
+            ).model_dump()
 
     def test_duration_out_of_range(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": -1}})
+        with pytest.raises(ValidationError):
+            NowPlayingConfig.model_validate(
+                {"track_text": {"duration": -1}}
+            ).model_dump()
 
-        with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 999}})
+        with pytest.raises(ValidationError):
+            NowPlayingConfig.model_validate(
+                {"album_art": {"duration": 999}}
+            ).model_dump()
 
     def test_all_variants_accepted(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
         for v in ("led_safe", "led_punchy", "led_max"):
-            result = NOW_PLAYING_CONFIG_SCHEMA({"gradient": {"variant": v}})
+            result = NowPlayingConfig.model_validate(
+                {"gradient": {"variant": v}}
+            ).model_dump()
             assert result["gradient"]["variant"] == v
 
     def test_enabled_flag_accepted(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
         for v in (True, False):
-            result = NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"enabled": v}})
+            result = NowPlayingConfig.model_validate(
+                {"track_text": {"enabled": v}}
+            ).model_dump()
             assert result["track_text"]["enabled"] is v
 
 
@@ -991,21 +1004,23 @@ class TestServiceConfigFromInit:
 
     def test_persisted_config_loaded(self, tmp_path):
         ldfx = _DummyLedFx(config_dir=str(tmp_path))
-        ldfx.config = {
-            "now_playing": {
-                "gradient": {
-                    "enabled": False,
-                    "variant": "led_max",
-                    "virtual_ids": ["v1", "v2"],
-                },
-                "track_text": {
-                    "enabled": False,
-                    "duration": 5,
-                    "virtual_ids": ["matrix1"],
-                    "preset": "scroll_text",
-                },
+        ldfx.config = fake_ledfx(
+            {
+                "now_playing": {
+                    "gradient": {
+                        "enabled": False,
+                        "variant": "led_max",
+                        "virtual_ids": ["v1", "v2"],
+                    },
+                    "track_text": {
+                        "enabled": False,
+                        "duration": 5,
+                        "virtual_ids": ["matrix1"],
+                        "preset": "scroll_text",
+                    },
+                }
             }
-        }
+        ).config
         svc = NowPlayingService(ldfx)
 
         assert svc.gradient_enabled is False
@@ -1019,11 +1034,13 @@ class TestServiceConfigFromInit:
 
     def test_variant_applied_to_state(self, tmp_path):
         ldfx = _DummyLedFx(config_dir=str(tmp_path))
-        ldfx.config = {
-            "now_playing": {
-                "gradient": {"variant": "led_safe"},
+        ldfx.config = fake_ledfx(
+            {
+                "now_playing": {
+                    "gradient": {"variant": "led_safe"},
+                }
             }
-        }
+        ).config
         svc = NowPlayingService(ldfx)
         assert svc.get_current().selected_gradient_variant == "led_safe"
 
@@ -1032,8 +1049,7 @@ class TestUpdateConfig:
     """Tests for update_config() method."""
 
     def test_partial_update_gradient(self, service, ledfx):
-        with patch("ledfx.nowplaying.service.save_config"):
-            result = service.update_config({"gradient": {"enabled": False}})
+        result = service.update_config({"gradient": {"enabled": False}})
         assert result["gradient"]["enabled"] is False
         # Other gradient fields retain defaults
         assert result["gradient"]["variant"] == "led_punchy"
@@ -1041,19 +1057,17 @@ class TestUpdateConfig:
         assert service.gradient_enabled is False
 
     def test_partial_update_track_text(self, service, ledfx):
-        with patch("ledfx.nowplaying.service.save_config"):
-            result = service.update_config(
-                {"track_text": {"enabled": False, "duration": 12}}
-            )
+        result = service.update_config(
+            {"track_text": {"enabled": False, "duration": 12}}
+        )
         assert result["track_text"]["enabled"] is False
         assert result["track_text"]["duration"] == 12
         assert result["track_text"]["preset"] == ""
 
     def test_partial_update_album_art(self, service, ledfx):
-        with patch("ledfx.nowplaying.service.save_config"):
-            result = service.update_config(
-                {"album_art": {"enabled": False, "virtual_ids": ["m1"]}}
-            )
+        result = service.update_config(
+            {"album_art": {"enabled": False, "virtual_ids": ["m1"]}}
+        )
         assert result["album_art"]["enabled"] is False
         assert result["album_art"]["virtual_ids"] == ["m1"]
 
@@ -1076,23 +1090,21 @@ class TestUpdateConfig:
                 "virtual_ids": ["m2"],
             },
         }
-        with patch("ledfx.nowplaying.service.save_config"):
-            result = service.update_config(new_cfg)
+        result = service.update_config(new_cfg)
 
         assert result == new_cfg
         assert service.gradient_enabled is False
         assert service.gradient_virtual_ids == ["v1"]
 
     def test_invalid_config_raises(self, service):
-        with pytest.raises(vol.Invalid):
+        with pytest.raises(ValidationError):
             service.update_config({"gradient": {"variant": "bad"}})
 
     def test_config_persisted_to_disk(self, service, ledfx):
-        with patch("ledfx.nowplaying.service.save_config") as mock_save:
-            service.update_config({"gradient": {"enabled": False}})
-            mock_save.assert_called_once()
+        service.update_config({"gradient": {"enabled": False}})
+        ledfx.config_store.request_save.assert_called_once()
 
-        assert ledfx.config["now_playing"]["gradient"]["enabled"] is False
+        assert ledfx.config.now_playing.gradient.enabled is False
 
     def test_variant_change_re_resolves_gradient(self, service, ledfx):
         """Changing variant re-resolves gradient from cached artwork."""
@@ -1114,23 +1126,20 @@ class TestUpdateConfig:
         service._update_current_gradient()
         assert "255,0,0" in service.get_current().current_gradient
 
-        with patch("ledfx.nowplaying.service.save_config"):
-            service.update_config({"gradient": {"variant": "led_max"}})
+        service.update_config({"gradient": {"variant": "led_max"}})
 
         assert "0,255,0" in service.get_current().current_gradient
 
     def test_variant_change_no_re_resolve_when_unchanged(self, service, ledfx):
         """No re-resolve when variant doesn't change."""
         with patch.object(service, "_update_current_gradient") as mock_update:
-            with patch("ledfx.nowplaying.service.save_config"):
-                service.update_config({"gradient": {"variant": "led_punchy"}})
+            service.update_config({"gradient": {"variant": "led_punchy"}})
             mock_update.assert_not_called()
 
     def test_update_preserves_unrelated_sections(self, service, ledfx):
         """Updating gradient section preserves track_text and album_art."""
-        with patch("ledfx.nowplaying.service.save_config"):
-            service.update_config({"track_text": {"enabled": False, "duration": 5}})
-            service.update_config({"gradient": {"enabled": False}})
+        service.update_config({"track_text": {"enabled": False, "duration": 5}})
+        service.update_config({"gradient": {"enabled": False}})
 
         cfg = service.config
         assert cfg["gradient"]["enabled"] is False
@@ -1384,7 +1393,6 @@ class TestAlbumArtAutoApplication:
                 "ledfx.nowplaying.service.extract_gradient_metadata",
                 return_value={},
             ),
-            patch("ledfx.nowplaying.service.save_config"),
         ):
             service_aa.set_artwork_bytes("sendspin", data, "image/png")
 
@@ -1405,7 +1413,6 @@ class TestAlbumArtAutoApplication:
                 "ledfx.nowplaying.service.extract_gradient_metadata",
                 return_value={},
             ),
-            patch("ledfx.nowplaying.service.save_config"),
         ):
             service_aa.set_artwork_url("sendspin", "https://example.com/art.png")
 
@@ -1423,7 +1430,6 @@ class TestAlbumArtAutoApplication:
                 "ledfx.nowplaying.service.extract_gradient_metadata",
                 return_value={},
             ),
-            patch("ledfx.nowplaying.service.save_config"),
         ):
             service_aa.set_artwork_bytes("sendspin", data, "image/png")
 
@@ -1441,7 +1447,6 @@ class TestAlbumArtAutoApplication:
                 "ledfx.nowplaying.service.extract_gradient_metadata",
                 return_value={},
             ),
-            patch("ledfx.nowplaying.service.save_config"),
         ):
             service_aa.set_artwork_bytes("sendspin", data, "image/png")
 
@@ -1452,19 +1457,25 @@ class TestAlbumArtDurationSchema:
     """Tests that the duration=0 schema change works correctly."""
 
     def test_duration_zero_accepted_for_album_art(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        result = NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 0}})
+        result = NowPlayingConfig.model_validate(
+            {"album_art": {"duration": 0}}
+        ).model_dump()
         assert result["album_art"]["duration"] == 0
 
     def test_duration_negative_still_invalid_for_track_text(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"track_text": {"duration": -1}})
+        with pytest.raises(ValidationError):
+            NowPlayingConfig.model_validate(
+                {"track_text": {"duration": -1}}
+            ).model_dump()
 
     def test_album_art_duration_max_still_enforced(self):
-        from ledfx.nowplaying.service import NOW_PLAYING_CONFIG_SCHEMA
+        from ledfx.configuration.models import NowPlayingConfig
 
-        with pytest.raises(vol.Invalid):
-            NOW_PLAYING_CONFIG_SCHEMA({"album_art": {"duration": 61}})
+        with pytest.raises(ValidationError):
+            NowPlayingConfig.model_validate(
+                {"album_art": {"duration": 61}}
+            ).model_dump()

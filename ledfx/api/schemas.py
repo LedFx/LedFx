@@ -5,8 +5,10 @@ from pydantic import BaseModel
 from pydantic.json_schema import JsonSchemaValue
 
 from ledfx.api import RestEndpoint
+from ledfx.api.jsonutil import dumps
 from ledfx.configuration.models import (
     AudioConfig,
+    LedFxConfig,
     MelbankConfig,
     MelbanksConfig,
     VirtualConfig,
@@ -27,6 +29,7 @@ def build_schemas(ledfx: object, *, resolve: bool = True) -> dict[str, JsonSchem
         "melbank_collection": {"schema": ex(MelbankConfig)},
         "wled_preferences": {"schema": ex(WledPreferences)},
         "virtuals": {"schema": ex(VirtualConfig)},
+        "core": {"schema": ex(LedFxConfig)},
     }
 
 
@@ -34,4 +37,6 @@ class SchemasEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/schemas"
 
     async def get(self, request: web.Request) -> web.Response:
-        return web.json_response(data=build_schemas(self._ledfx), status=200)
+        return web.json_response(
+            data=build_schemas(self._ledfx), status=200, dumps=dumps
+        )

@@ -1,4 +1,12 @@
-ledfx_presets = {
+from typing import TypedDict
+
+
+class BuiltinPreset(TypedDict):
+    name: str
+    config: dict[str, object]
+
+
+ledfx_presets: dict[str, dict[str, BuiltinPreset]] = {
     "bleep": {
         "pipe": {
             "config": {

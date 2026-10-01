@@ -17,6 +17,7 @@ from ledfx.api.origin_policy import (
     is_origin_allowed,
     origin_middleware,
 )
+from ledfx.configuration.models import LedFxConfig
 from tests.test_utilities.consts import BASE_PORT
 
 HOST = "ledfx.example.com:8888"
@@ -205,14 +206,7 @@ LOCAL = "http://192.168.1.20:8888"
 
 @pytest.fixture
 async def client():
-    ledfx = SimpleNamespace(
-        config={
-            "host": "0.0.0.0",
-            "allowed_origins": [],
-            "allowed_hosts": [],
-            "allow_null_origin": False,
-        }
-    )
+    ledfx = SimpleNamespace(config=LedFxConfig())
 
     async def thing(request):
         return web.json_response({"method": request.method})
@@ -266,7 +260,7 @@ async def test_unsafe_method_from_allowed_origin_gets_cors_headers(client):
 
 
 async def test_same_origin_by_host_header(client):
-    client.ledfx.config["allowed_hosts"] = ["ledfx.example.com"]
+    client.ledfx.config.allowed_hosts = ["ledfx.example.com"]
     headers = {"Host": HOST, "Origin": "http://ledfx.example.com:8888"}
     assert (await client.post("/api/thing", headers=headers)).status == 200
     headers["Origin"] = "http://ledfx.example.com:9999"
@@ -331,16 +325,16 @@ async def test_websocket_from_disallowed_origin_is_rejected(client, origin):
 
 async def test_config_changes_apply_without_restart(client):
     assert (await client.post("/api/thing", headers={"Origin": EVIL})).status == 403
-    client.ledfx.config["allowed_origins"] = [EVIL]
+    client.ledfx.config.allowed_origins = [EVIL]
     assert (await client.post("/api/thing", headers={"Origin": EVIL})).status == 200
-    client.ledfx.config["allowed_origins"] = ["*"]
+    client.ledfx.config.allowed_origins = ["*"]
     resp = await client.put("/api/thing", headers={"Origin": "https://other.example"})
     assert resp.status == 200
 
 
 async def test_null_origin_setting(client):
     assert (await client.post("/api/thing", headers={"Origin": "null"})).status == 403
-    client.ledfx.config["allow_null_origin"] = True
+    client.ledfx.config.allow_null_origin = True
     resp = await client.post("/api/thing", headers={"Origin": "null"})
     assert resp.status == 200
     assert resp.headers["Access-Control-Allow-Origin"] == "null"
@@ -396,15 +390,15 @@ async def test_local_host_without_browser_headers_is_allowed(client, host):
 
 
 async def test_script_using_allowed_dns_name(client):
-    client.ledfx.config["allowed_hosts"] = ["ledfx.mydomain.example"]
+    client.ledfx.config.allowed_hosts = ["ledfx.mydomain.example"]
     headers = {"Host": "ledfx.mydomain.example"}
     assert (await client.post("/api/thing", headers=headers)).status == 200
 
 
 async def test_allowed_hosts_config(client):
-    client.ledfx.config["allowed_hosts"] = ["evil.example"]
+    client.ledfx.config.allowed_hosts = ["evil.example"]
     assert (await client.post("/api/thing", headers=REBIND)).status == 200
-    client.ledfx.config["allowed_hosts"] = ["*"]
+    client.ledfx.config.allowed_hosts = ["*"]
     headers = {"Host": "other.example", "Origin": "http://other.example"}
     assert (await client.post("/api/thing", headers=headers)).status == 200
 
@@ -413,7 +407,7 @@ async def test_own_hostname_and_bind_host_are_allowed(client):
     name = socket.gethostname()
     headers = {"Host": f"{name}:8888", "Sec-Fetch-Site": "same-origin"}
     assert (await client.get("/api/thing", headers=headers)).status == 200
-    client.ledfx.config["host"] = "ledfx-box.example.net"
+    client.ledfx.config.host = "ledfx-box.example.net"
     headers = {"Host": "ledfx-box.example.net", "Sec-Fetch-Site": "same-origin"}
     assert (await client.get("/api/thing", headers=headers)).status == 200
 

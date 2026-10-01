@@ -4,7 +4,6 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
 from ledfx.configuration.models import AudioInputConfig, validate_dict
 from ledfx.effects.audio import AudioInputSource
 
@@ -26,7 +25,7 @@ class AudioDevicesEndpoint(RestEndpoint):
             web.Response: The response containing the list of audio devices and the active device index.
         """
         audio_config = validate_dict(
-            AudioInputConfig, self._ledfx.config.get("audio", {}), runtime=True
+            AudioInputConfig, self._ledfx.config.audio.model_dump(), runtime=True
         )
 
         response = {}
@@ -65,22 +64,23 @@ class AudioDevicesEndpoint(RestEndpoint):
             return await self.invalid_request(f"Invalid device index [{index}]")
 
         # Update and save config
-        new_config = self._ledfx.config.get("audio", {})
-        new_config["audio_device"] = int(index)
         # When user explicitly selects a new device via API, replace any stale
         # stored name with the current name for that selected index. This keeps
         # the live selection consistent now and preserves boot-time name-based
         # recovery if indices drift before the next restart.
-        new_config["audio_device_name"] = AudioInputSource.input_devices().get(
-            int(index), ""
+        cfg = self._ledfx.config
+        cfg.audio = cfg.audio.model_copy(
+            update={
+                "audio_device": int(index),
+                "audio_device_name": AudioInputSource.input_devices().get(
+                    int(index), ""
+                ),
+            }
         )
 
         if self._ledfx.audio:
-            self._ledfx.audio.update_config(new_config)
+            self._ledfx.audio.update_config(cfg.audio.model_dump())
 
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
         return await self.request_success()

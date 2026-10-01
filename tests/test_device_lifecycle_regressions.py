@@ -20,6 +20,7 @@ from ledfx.devices.wled import WLEDDevice
 from ledfx.effects.fire import Fire
 from ledfx.mdns_manager import ZeroConfRunner
 from ledfx.virtuals import Virtual
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 def test_render_thread_survives_frame_exception() -> None:
@@ -46,15 +47,16 @@ def test_render_thread_survives_frame_exception() -> None:
 
 
 async def test_device_put_persists_merged_config() -> None:
-    ledfx = MagicMock()
+    ledfx = fake_ledfx(
+        {"devices": [{"id": "d", "type": "ddp", "config": {"ip_address": "10.0.0.5"}}]}
+    )
     device = ledfx.devices.get.return_value
     device.config = {"ip_address": "10.0.0.5", "sync_mode": "E131"}
-    ledfx.config = {"devices": [{"id": "d", "config": {"ip_address": "10.0.0.5"}}]}
     request = MagicMock()
     request.json = AsyncMock(return_value={"config": {"sync_mode": "E131"}})
-    with patch("ledfx.api.device.save_config"):
-        await DeviceEndpoint(ledfx).put("d", request)
-    assert ledfx.config["devices"][0]["config"] == device.config
+    await DeviceEndpoint(ledfx).put("d", request)
+    assert ledfx.config.devices[0].config == device.config
+    ledfx.config_store.request_save.assert_called_once()
 
 
 def test_ip_change_forces_address_re_resolution() -> None:

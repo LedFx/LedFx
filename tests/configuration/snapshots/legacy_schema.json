@@ -195,6 +195,8 @@
     },
     "peak_isolation": {
      "type": "number",
+     "minimum": 0.0,
+     "maximum": 0.99,
      "title": "Peak Isolation",
      "default": 0.4
     },
@@ -344,6 +346,7 @@
     },
     "rows": {
      "type": "integer",
+     "minimum": 1,
      "title": "Rows",
      "description": "Amount of rows. > 1 if this virtual is a matrix",
      "default": 1

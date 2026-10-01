@@ -14,6 +14,7 @@ from ledfx.nowplaying.providers.sendspin import (
     LedFxNowPlaying,
     SendspinNowPlayingProvider,
 )
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 # ------------------------------------------------------------------
 # Stubs mimicking aiosendspin models
@@ -63,7 +64,9 @@ class _DummyEvents:
 
 class _DummyLedFx:
     def __init__(self) -> None:
-        self.config: dict[str, object] = {}
+        fake = fake_ledfx()
+        self.config = fake.config
+        self.config_store = fake.config_store
         self.events = _DummyEvents()
 
         from ledfx.nowplaying.service import NowPlayingService

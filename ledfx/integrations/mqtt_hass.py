@@ -6,12 +6,14 @@ from typing import ClassVar
 import paho.mqtt.client as mqtt
 import voluptuous as vol
 
+from ledfx.api.jsonutil import dumps
 from ledfx.color import parse_color
-from ledfx.config import save_config
+from ledfx.configuration.models import EffectEntry, VirtualConfig
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import Event
 from ledfx.integrations import Integration
+from ledfx.presets import ledfx_presets
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -102,7 +104,7 @@ class MQTT_HASS(Integration):
         virtual = self._ledfx.virtuals.get(virtual_id)
         client.publish(
             f"{self._config['topic']}/light/{virtual_id}/meta",
-            json.dumps(virtual.config),
+            dumps(virtual.config),
         )
 
     def publish_virtual_paused(self, virtual_id, client):
@@ -452,7 +454,7 @@ class MQTT_HASS(Integration):
                 client.publish(
                     f"{self._config['topic']}/select/ledfxaudio/state",
                     AudioInputSource.input_devices()[
-                        self._ledfx.config.get("audio", {}).get("audio_device", {})
+                        self._ledfx.config.audio.audio_device
                     ],
                 )
                 # Pixel-Sensor
@@ -489,8 +491,8 @@ class MQTT_HASS(Integration):
         # React to Transition-Type
         if virtualid in self.TRANSITION_MAPPING:
             # _LOGGER.info("Transitions: %s", payload)
-            prior_state = self._ledfx.config["global_transitions"]
-            self._ledfx.config["global_transitions"] = True
+            prior_state = self._ledfx.config.global_transitions
+            self._ledfx.config.global_transitions = True
             virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
             key = self.TRANSITION_MAPPING[virtualid]
             if key == "transition_time":
@@ -503,7 +505,11 @@ class MQTT_HASS(Integration):
                 val = payload
 
             virtual.update_config({key: val})
-            self._ledfx.config["global_transitions"] = prior_state
+            self._ledfx.config.global_transitions = prior_state
+            entry = virtual.entry
+            if entry is not None:
+                entry.config = VirtualConfig.model_validate(virtual.config)
+            self._ledfx.config_store.request_save()
 
         # React to Scene-Selector
         elif virtualid == "ledfxsceneselect":
@@ -519,14 +525,10 @@ class MQTT_HASS(Integration):
                     if str(payload) == value:
                         index = key
 
-                new_config = self._ledfx.config.get("audio", {})
-                new_config["audio_device"] = int(index)
-                self._ledfx.config["audio"] = new_config
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
-                self._ledfx.audio.update_config(new_config)
+                cfg = self._ledfx.config
+                cfg.audio = cfg.audio.model_copy(update={"audio_device": int(index)})
+                self._ledfx.config_store.request_save()
+                self._ledfx.audio.update_config(cfg.audio.model_dump())
             return
 
         # React to Virtuals
@@ -564,15 +566,15 @@ class MQTT_HASS(Integration):
                         effect_list = list(self._ledfx.effects.classes().keys())
                     elif selected_effect_or_preset in self._ledfx.effects.classes():
                         # If an effect is selected, show its presets
-                        ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(
+                        system_presets = ledfx_presets.get(
                             selected_effect_or_preset, {}
                         )
-                        user_presets = self._ledfx.config.get("user_presets", {}).get(
+                        user_presets = self._ledfx.config.user_presets.get(
                             selected_effect_or_preset, {}
                         )
                         effect_list = (
                             ["back"]
-                            + list(ledfx_presets.keys())
+                            + list(system_presets.keys())
                             + list(user_presets.keys())
                         )
                         effect = self._ledfx.effects.create(
@@ -583,25 +585,31 @@ class MQTT_HASS(Integration):
                         virtual.set_effect(effect)
                     else:
                         # If a preset is selected, apply it
-                        ledfx_presets = self._ledfx.config.get("ledfx_presets", {}).get(
-                            getattr(virtual.active_effect, "type", ""), {}
+                        effect_type = getattr(virtual.active_effect, "type", "")
+                        system_presets = ledfx_presets.get(effect_type, {})
+                        user_presets = self._ledfx.config.user_presets.get(
+                            effect_type, {}
                         )
-                        user_presets = self._ledfx.config.get("user_presets", {}).get(
-                            getattr(virtual.active_effect, "type", ""), {}
-                        )
-                        preset_config = ledfx_presets.get(
-                            selected_effect_or_preset
-                        ) or user_presets.get(selected_effect_or_preset)
+                        if selected_effect_or_preset in system_presets:
+                            preset_config = system_presets[selected_effect_or_preset][
+                                "config"
+                            ]
+                        elif selected_effect_or_preset in user_presets:
+                            preset_config = user_presets[
+                                selected_effect_or_preset
+                            ].config
+                        else:
+                            preset_config = None
                         effect_list = (
                             ["back"]
-                            + list(ledfx_presets.keys())
+                            + list(system_presets.keys())
                             + list(user_presets.keys())
                         )
-                        if preset_config:
+                        if preset_config is not None:
                             effect = self._ledfx.effects.create(
                                 ledfx=self._ledfx,
                                 type=virtual.active_effect.type,
-                                config=preset_config["config"],
+                                config=preset_config,
                             )
                             virtual.set_effect(effect)
                         return
@@ -654,15 +662,13 @@ class MQTT_HASS(Integration):
                     )
 
                 # TODO: Stare at this to convince self, not writing unit test for this
-                virtual.virtual_cfg["active"] = virtual.active
-                virtual.virtual_cfg["effect"] = {}
-                virtual.virtual_cfg["effect"]["type"] = "singleColor"
-                virtual.virtual_cfg["effect"]["config"] = {"color": color}
-
-                save_config(
-                    config=self._ledfx.config,
-                    config_dir=self._ledfx.config_dir,
-                )
+                entry = virtual.entry
+                if entry is not None:
+                    entry.active = virtual.active
+                    entry.effect = EffectEntry(
+                        type="singleColor", config={"color": color}
+                    )
+                    self._ledfx.config_store.request_save()
 
         # client.publish(
         #     f"{self._config['topic']}/light/{virtualid}/state",

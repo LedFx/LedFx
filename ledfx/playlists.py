@@ -10,12 +10,11 @@ from __future__ import annotations
 import asyncio
 import copy
 import random
-import sys
 import time
 
 import voluptuous as vol
 
-from ledfx.config import save_config
+from ledfx.configuration.models import Playlist
 from ledfx.events import (
     PlaylistAdvancedEvent,
     PlaylistPausedEvent,
@@ -140,15 +139,10 @@ class PlaylistManager:
         self._runtime_items: list | None = None
 
         # load playlists from config (validate)
-        raw = copy.deepcopy(core.config.get("playlists", {})) or {}
-        self._playlists: dict[str, dict] = {}
-        for pid, p in raw.items():
-            try:
-                validated = PlaylistSchema(p)
-                self._playlists[pid] = validated
-            except vol.MultipleInvalid:
-                # ignore invalid entries but log to stderr
-                sys.stderr.write(f"[playlists] invalid playlist in config: {pid}\n")
+        # (already validated: the store quarantines invalid playlists on load)
+        self._playlists: dict[str, dict] = {
+            pid: p.model_dump() for pid, p in core.config.playlists.items()
+        }
 
     def list_playlists(self) -> dict[str, dict]:
         return copy.deepcopy(self._playlists)
@@ -275,13 +269,14 @@ class PlaylistManager:
                 idx += 1
             p["id"] = new_id
 
-        validated = PlaylistSchema(p)
+        playlist_model = Playlist.model_validate(p)
+        validated = playlist_model.model_dump()
         pid = validated["id"]
         async with self._lock:
             self._playlists[pid] = validated
             # persist to core config
-            self._core.config["playlists"] = copy.deepcopy(self._playlists)
-            save_config(self._core.config, self._core.config_dir)
+            self._core.config.playlists[pid] = playlist_model
+            self._core.config_store.request_save()
         return copy.deepcopy(validated)
 
     async def delete(self, pid: str) -> bool:
@@ -298,8 +293,8 @@ class PlaylistManager:
         async with self._lock:
             if pid in self._playlists:
                 del self._playlists[pid]
-                self._core.config["playlists"] = copy.deepcopy(self._playlists)
-                save_config(self._core.config, self._core.config_dir)
+                self._core.config.playlists.pop(pid, None)
+                self._core.config_store.request_save()
                 return True
             return False
 
@@ -461,8 +456,8 @@ class PlaylistManager:
         # always includes the latest scenes.
         if not items:
             # Access scenes from config since Scenes class stores them there
-            if hasattr(self._core, "config") and "scenes" in self._core.config:
-                all_scene_ids = list(self._core.config["scenes"].keys())
+            if hasattr(self._core, "config"):
+                all_scene_ids = list(self._core.config.scenes.keys())
                 if not all_scene_ids:
                     # No scenes available, reject start
                     return False

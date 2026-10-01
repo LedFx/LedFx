@@ -9,7 +9,6 @@ import pytest
 from aiohttp import web
 
 from ledfx.api.config import ConfigEndpoint
-from ledfx.config import CORE_CONFIG_SCHEMA
 from ledfx.configuration.migrations import CURRENT_SCHEMA_VERSION
 from ledfx.configuration.store import ConfigStore
 
@@ -25,8 +24,8 @@ def _backups(tmp_path: Path, reason: str) -> list[Path]:
 
 
 def _setup(tmp_path: Path) -> tuple[ConfigEndpoint, ConfigStore, MagicMock]:
-    store = ConfigStore.load(str(tmp_path), CORE_CONFIG_SCHEMA)
-    store.data["port"] = 1234  # marks the pre-request config
+    store = ConfigStore.load(str(tmp_path))
+    store.data.port = 1234  # marks the pre-request config
     assert store.save_now()
     core = MagicMock()
     core.config_store = store
@@ -50,7 +49,7 @@ async def test_delete_backs_up_writes_defaults_and_leaves_safe_mode(
     tmp_path: Path,
 ) -> None:
     (tmp_path / "config.json").write_text("{bad")
-    store = ConfigStore.load(str(tmp_path), CORE_CONFIG_SCHEMA)
+    store = ConfigStore.load(str(tmp_path))
     assert store.error
     core = MagicMock()
     core.config_store = store
@@ -92,7 +91,7 @@ async def test_post_migrates_legacy_import_backs_up_and_writes(
     assert isinstance(virtuals, list)
     # legacy_to_v1 inverts equalizer2d flip_vertical for 2.3.5 files
     assert virtuals[0]["effect"]["config"]["flip_vertical"] is True
-    assert store.data["virtuals"] == virtuals
+    assert json.loads(store.serialise())["virtuals"] == virtuals
     core.loop.call_soon_threadsafe.assert_called_once_with(core.stop, 4)
 
 
@@ -111,7 +110,7 @@ async def test_aborts_when_backup_fails(
 
     assert response.status == 500
     assert _disk(tmp_path)["port"] == 1234
-    assert store.data["port"] == 1234
+    assert store.data.port == 1234
     core.loop.call_soon_threadsafe.assert_not_called()
 
 
@@ -131,7 +130,7 @@ async def test_aborts_and_keeps_config_when_write_fails(
     assert response.status == 500
     assert response.text is not None and "success" not in response.text
     assert _disk(tmp_path)["port"] == 1234
-    assert store.data["port"] == 1234  # replace() rolled back
+    assert store.data.port == 1234  # replace() rolled back
     assert store.error is None
     core.loop.call_soon_threadsafe.assert_not_called()
 
@@ -148,7 +147,7 @@ async def test_unreadable_config_can_be_reset_or_imported(
     path.write_text("{}")
     path.chmod(0)
     try:
-        store = ConfigStore.load(str(tmp_path), CORE_CONFIG_SCHEMA)
+        store = ConfigStore.load(str(tmp_path))
         assert store.error
         core = MagicMock()
         core.config_store = store

@@ -9,11 +9,15 @@ import copy
 from collections.abc import Callable
 
 from ledfx.configuration.migrations.legacy import legacy_to_v1
+from ledfx.configuration.migrations.v2 import v1_to_v2
 
 Migration = Callable[[dict[str, object]], dict[str, object]]
 
 # (target schema_version, step). Append only; never edit a released step.
-MIGRATIONS: list[tuple[int, Migration]] = [(1, legacy_to_v1)]
+MIGRATIONS: list[tuple[int, Migration]] = [
+    (1, legacy_to_v1),
+    (2, v1_to_v2),
+]
 CURRENT_SCHEMA_VERSION = MIGRATIONS[-1][0]
 
 

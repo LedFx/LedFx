@@ -8,7 +8,12 @@ import aubio
 import numpy as np
 
 # import sounddevice as sd
-from ledfx.configuration.models import MelbankConfig, MelbanksConfig, validate_dict
+from ledfx.configuration.models import (
+    MelbankCollectionEntry,
+    MelbankConfig,
+    MelbanksConfig,
+    validate_dict,
+)
 from ledfx.effects import fast_blur_array, mel
 from ledfx.effects.math import ExpFilter
 from ledfx.events import GraphUpdateEvent
@@ -371,7 +376,10 @@ class Melbanks:
 
     def update_config(self, config):
         self.melbanks_config = validate_dict(MelbanksConfig, config)
-        self.melbank_collection = self._ledfx.config.get("melbank_collection", [])
+        self.melbank_collection = [
+            {"id": entry.id, "config": entry.config.model_dump()}
+            for entry in self._ledfx.config.melbank_collection
+        ]
         # set up the melbanks
         self.melbank_processors = []
 
@@ -422,8 +430,13 @@ class Melbanks:
             for melbank in self.melbank_collection
         ]
 
-        self._ledfx.config["melbank_collection"] = self.cleaned_melbank_collection
-        self._ledfx.config["melbanks"] = self.melbanks_config
+        self._ledfx.config.melbank_collection = [
+            MelbankCollectionEntry.model_validate(entry)
+            for entry in self.cleaned_melbank_collection
+        ]
+        self._ledfx.config.melbanks = MelbanksConfig.model_validate(
+            self.melbanks_config
+        )
         # some useful info that will be accessed faster as variables
         self.mel_count = len(self.melbanks_config["max_frequencies"])
         self.mel_len = self.melbanks_config["samples"]

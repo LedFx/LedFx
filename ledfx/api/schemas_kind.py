@@ -3,6 +3,7 @@
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.jsonutil import dumps
 from ledfx.api.schemas import build_schemas
 
 
@@ -14,4 +15,4 @@ class SchemasKindEndpoint(RestEndpoint):
         kind = request.match_info["kind"]
         if kind not in schemas:
             return await self.invalid_request(f"Unknown schema kind: {kind}")
-        return web.json_response(data={kind: schemas[kind]}, status=200)
+        return web.json_response(data={kind: schemas[kind]}, status=200, dumps=dumps)
