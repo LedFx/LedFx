@@ -2,7 +2,7 @@
 
 import logging
 
-from aiohttp import web
+from aiohttp import BodyPartReader, web
 
 from ledfx import assets
 from ledfx.api import RestEndpoint
@@ -57,6 +57,12 @@ class AssetsEndpoint(RestEndpoint):
             part = await reader.next()
             if part is None:
                 break
+
+            if not isinstance(part, BodyPartReader):
+                return await self.invalid_request(
+                    message="Nested multipart uploads are not supported",
+                    resp_code=400,
+                )
 
             if part.name == "file":
                 file_data = await part.read(decode=False)

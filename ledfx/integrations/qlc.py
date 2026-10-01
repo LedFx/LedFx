@@ -4,6 +4,7 @@ import asyncio
 # import importlib
 # import pkgutil
 import logging
+from collections.abc import Callable
 from typing import ClassVar
 
 import aiohttp
@@ -309,18 +310,21 @@ class QLCWebsocketClient:
 
         return (await self.websocket.receive()).data
 
-    async def read(self, callback):
+    async def read(self, callback: Callable[[aiohttp.WSMessage], None]) -> None:
         """Read messages from the WebSocket."""
-        if self.websocket is None:
+        websocket = self.websocket
+        if websocket is None:
             _LOGGER.error("Websocket not yet established")
             return
 
-        while await self.websocket.receive():
-            message = await self.receive()
+        while True:
+            message = await websocket.receive()
             if message.type == aiohttp.WSMsgType.TEXT:
-                self.callback(message)
-            elif (
-                message.type == aiohttp.WSMsgType.CLOSED
-                or message.type == aiohttp.WSMsgType.ERROR
+                callback(message)
+            elif message.type in (
+                aiohttp.WSMsgType.CLOSE,
+                aiohttp.WSMsgType.CLOSING,
+                aiohttp.WSMsgType.CLOSED,
+                aiohttp.WSMsgType.ERROR,
             ):
                 break
