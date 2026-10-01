@@ -77,8 +77,13 @@ class E131Device(NetworkedDevice):
             else:
                 multicast = False
 
+            if not multicast and self._destination is None:
+                # Resolves the address, then retries activate; no sender until then.
+                return super().activate()
+
             if self._sacn:
                 _LOGGER.warning("sACN sender already started for device %s", self.id)
+                self._sacn.stop()
 
             # Configure sACN and start the dedicated thread to flush the buffer
             # Some variables are immutable and must be called here

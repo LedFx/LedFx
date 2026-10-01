@@ -117,6 +117,9 @@ class GifPlayer(Twod, GifBase):
         Returns:
             None
         """
+        # do_once re-runs on matrix/rotation changes; start from an empty frame list.
+        self.frames = []
+        self.current_frame = 0
         black_background = Image.new("RGBA", self.gif.size, (0, 0, 0))
         # For every frame
         for frame_index in range(self.gif.n_frames):

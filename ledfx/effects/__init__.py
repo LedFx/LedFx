@@ -388,17 +388,15 @@ class Effect(BaseRegistry):
     def update_config(self, config):
         with self.lock:
             try:
-                validated_config = type(self).schema()(config)
+                # Validate the merged config so coerced values are what we store.
+                validated_config = type(self).schema()(
+                    {**(self._config or {}), **config}
+                )
             except vol.Invalid as err:
                 _LOGGER.warning("Error updating effect %s config: %s", self.NAME, err)
                 return
 
-            prior_config = self._config
-
-            if self._config != {}:
-                self._config = {**prior_config, **config}
-            else:
-                self._config = validated_config
+            self._config = validated_config
 
             bg_color = parse_color(self._config["background_color"])
             # if bg color is black then flag we don't need to run at render time

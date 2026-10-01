@@ -191,8 +191,10 @@ class LaunchpadDevice(MidiDevice):
         if self.config["create_segments"]:
             if self.lp is None:
                 self.set_class()
-            if len(self.lp.segments) == 0:
-                _LOGGER.warning("No segments defined in {self.lp.__class__.__name__}")
+            if self.lp is None:
+                _LOGGER.warning("No Launchpad available, not creating segments")
+            elif len(self.lp.segments) == 0:
+                _LOGGER.warning("No segments defined in %s", self.lp.__class__.__name__)
             else:
                 for segment in self.lp.segments:
                     self.sub_v(segment[0], segment[1], segment[2], segment[3])

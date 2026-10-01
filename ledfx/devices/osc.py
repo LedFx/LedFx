@@ -79,7 +79,7 @@ class OSCServerDevice(NetworkedDevice):
             self._device_type,
             self._config["name"],
         )
-        if "_client" in dir(self):
+        if getattr(self, "_client", None) is not None:
             self._client._sock.close()
             self._client = None
 

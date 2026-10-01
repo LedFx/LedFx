@@ -50,13 +50,6 @@
       "severity": "error"
     },
     {
-      "column": 8,
-      "path": "ledfx/__main__.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/__main__.py",
       "name": "missing-attribute",
@@ -66,43 +59,8 @@
     {
       "column": 17,
       "path": "ledfx/__main__.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/__main__.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/__main__.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/__main__.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/__main__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`entry_point` is missing an annotation for parameter `icon`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/__main__.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
       "severity": "error"
     },
     {
@@ -2108,13 +2066,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
       "column": 16,
       "path": "ledfx/config.py",
       "name": "bad-return",
@@ -2126,13 +2077,6 @@
       "path": "ledfx/config.py",
       "name": "bad-return",
       "concise_description": "Returned type `None` is not assignable to declared return type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
       "severity": "error"
     },
     {
@@ -2150,34 +2094,6 @@
       "severity": "error"
     },
     {
-      "column": 5,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/config.py",
       "name": "implicit-any-empty-container",
@@ -2189,13 +2105,6 @@
       "path": "ledfx/config.py",
       "name": "implicit-any-parameter",
       "concise_description": "`migrate_config` is missing an annotation for parameter `old_config`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
       "severity": "error"
     },
     {
@@ -2227,69 +2136,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
       "column": 46,
       "path": "ledfx/config.py",
       "name": "implicit-any-parameter",
@@ -2297,34 +2143,6 @@
       "severity": "error"
     },
     {
-      "column": 17,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
       "column": 25,
       "path": "ledfx/config.py",
       "name": "implicit-any-type-argument",
@@ -2339,20 +2157,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
       "column": 26,
       "path": "ledfx/config.py",
       "name": "implicit-any-type-argument",
@@ -2364,13 +2168,6 @@
       "path": "ledfx/config.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 5,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
       "severity": "error"
     },
     {
@@ -2973,13 +2770,6 @@
       "path": "ledfx/devices/__init__.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `SerialDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/devices/__init__.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `Serial` has no attribute `isOpen`",
       "severity": "error"
     },
     {
@@ -3813,13 +3603,6 @@
       "path": "ledfx/devices/launchpad.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `segments`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/devices/launchpad.py",
-      "name": "not-iterable",
-      "concise_description": "Type `object` is not iterable",
       "severity": "error"
     },
     {
@@ -6186,13 +5969,6 @@
       "path": "ledfx/effects/__init__.py",
       "name": "not-callable",
       "concise_description": "Expected a callable, got `tuple[Unknown, ...]`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/effects/__init__.py",
-      "name": "invalid-argument",
-      "concise_description": "Expected a mapping, got Unknown | None",
       "severity": "error"
     },
     {
@@ -10750,13 +10526,6 @@
       "path": "ledfx/effects/keybeat2d.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Keybeat2d.draw` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/effects/keybeat2d.py",
-      "name": "unbound-name",
-      "concise_description": "`frame_progress` may be uninitialized",
       "severity": "error"
     },
     {
@@ -17592,69 +17361,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `publish`",
-      "severity": "error"
-    },
-    {
       "column": 15,
       "path": "ledfx/integrations/mqtt_hass.py",
       "name": "bad-override",
@@ -17837,20 +17543,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `query`",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `query`",
-      "severity": "error"
-    },
-    {
       "column": 35,
       "path": "ledfx/integrations/qlc.py",
       "name": "implicit-any-parameter",
@@ -17928,13 +17620,6 @@
       "severity": "error"
     },
     {
-      "column": 16,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `lstrip`",
-      "severity": "error"
-    },
-    {
       "column": 26,
       "path": "ledfx/integrations/qlc.py",
       "name": "implicit-any-parameter",
@@ -17946,13 +17631,6 @@
       "path": "ledfx/integrations/qlc.py",
       "name": "implicit-any-parameter",
       "concise_description": "`read` is missing an annotation for parameter `callback`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `type`",
       "severity": "error"
     },
     {
@@ -20259,13 +19937,6 @@
       "severity": "error"
     },
     {
-      "column": 22,
-      "path": "ledfx/utils.py",
-      "name": "bad-index",
-      "concise_description": "Cannot index into `Coroutine[Unknown, Unknown, Unknown]`",
-      "severity": "error"
-    },
-    {
       "column": 37,
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
@@ -21635,13 +21306,6 @@
       "path": "ledfx/virtuals.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `get_pixels`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/virtuals.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `str`",
       "severity": "error"
     },
     {

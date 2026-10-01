@@ -101,6 +101,9 @@ class WLEDDevice(NetworkedDevice):
 
         self.subdevice = device(self._ledfx, config)
         self.subdevice._destination = self._destination
+        # A sync_mode change on a live device must not leave the new sender idle.
+        if self._active:
+            self.subdevice.activate()
 
     def activate(self):
         if self.subdevice is None:
