@@ -238,5 +238,10 @@ class ConfigEndpoint(RestEndpoint):
             # The request fails, so none of the patch may stay (audio writes too).
             for name, value in previous.items():
                 setattr(cfg, name, value)
+            # The providers already followed the new value; bring them back.
+            if "now_playing_enabled" in previous and hasattr(
+                self._ledfx, "reconcile_now_playing_runtime"
+            ):
+                self._ledfx.reconcile_now_playing_runtime("config_rollback")
             raise
         return changed
