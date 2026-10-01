@@ -11,8 +11,12 @@ from ledfx.api import RestEndpoint
 from ledfx.api.colors import ColorEndpoint
 from ledfx.api.colors_delete import ColorDeleteEndpoint
 from ledfx.api.device import DeviceEndpoint
+from ledfx.api.power import MAX_POWER_TIMEOUT
+from ledfx.api.power import InfoEndpoint as PowerEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
 from ledfx.api.presets import PresetsEndpoint
+from ledfx.api.scenes import MAX_SCENE_DELAY, ScenesEndpoint
+from ledfx.api.scenes_id import SceneEndpoint as ScenesIdEndpoint
 from ledfx.api.virtual_tools import VirtualToolsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.color import (
@@ -24,6 +28,7 @@ from ledfx.color import (
     validate_gradient,
 )
 from ledfx.presets import ledfx_presets
+from ledfx.scenes import Scenes
 from ledfx.utils import UserDefaultCollection
 from tests.test_api_validation_responses import _call, _reason
 from tests.test_utilities.fake_ledfx import fake_ledfx
@@ -287,3 +292,89 @@ async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
     assert status == 200
     assert _reason(reply) == "Invalid color: notacolor"
     virtual.force_frame.assert_not_called()
+
+
+@pytest.mark.parametrize("timeout", ["5", True, -1, 1.5, MAX_POWER_TIMEOUT + 1])
+async def test_power_rejects_a_bad_timeout(timeout: object) -> None:
+    ledfx = fake_ledfx()
+    status, reply = await _call(
+        PowerEndpoint(ledfx), "POST", {"action": "restart", "timeout": timeout}
+    )
+    assert status == 200
+    assert _reason(reply) == (
+        f"Timeout must be a whole number of seconds from 0 to {MAX_POWER_TIMEOUT}"
+    )
+    ledfx.loop.call_later.assert_not_called()
+    ledfx.stop.assert_not_called()
+
+
+async def test_power_answers_at_once_and_stops_later() -> None:
+    ledfx = fake_ledfx()
+    status, reply = await asyncio.wait_for(
+        _call(PowerEndpoint(ledfx), "POST", {"action": "restart", "timeout": 5}),
+        timeout=1,
+    )
+    assert (status, reply) == (200, {"status": "success"})
+    ledfx.loop.call_later.assert_called_once_with(5, ledfx.stop, 4)
+    ledfx.stop.assert_not_called()
+
+
+def _with_scene() -> MagicMock:
+    ledfx = fake_ledfx({"scenes": {"s1": {"name": "S1"}}})
+    ledfx.scenes = Scenes(ledfx)
+    return ledfx
+
+
+async def _activate_in(ledfx: MagicMock, delay: object):
+    body = {"id": "s1", "action": "activate_in", "ms": delay}
+    return await _call(ScenesEndpoint(ledfx), "PUT", body)
+
+
+@pytest.mark.parametrize("delay", ["soon", True, -1, MAX_SCENE_DELAY + 1])
+async def test_scene_delay_must_be_seconds_within_the_cap(delay: object) -> None:
+    ledfx = _with_scene()
+    status, reply = await _activate_in(ledfx, delay)
+    assert status == 200
+    assert _reason(reply) == (
+        f'"ms" must be a number of seconds from 0 to {MAX_SCENE_DELAY}'
+    )
+    ledfx.loop.call_later.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("method", "body", "extra", "endpoint"),
+    [
+        ("PUT", {"id": "s1", "action": "deactivate"}, {}, ScenesEndpoint),
+        ("PUT", {"id": "s1", "action": "activate"}, {}, ScenesEndpoint),
+        ("PUT", {"id": "s1", "action": "activate_in", "ms": 9}, {}, ScenesEndpoint),
+        ("DELETE", {"id": "s1"}, {}, ScenesEndpoint),
+        ("DELETE", {}, {"scene_id": "s1"}, ScenesIdEndpoint),
+    ],
+)
+async def test_a_pending_scene_activation_can_be_cancelled(
+    method: str,
+    body: dict[str, object],
+    extra: dict[str, str],
+    endpoint: type[RestEndpoint],
+) -> None:
+    ledfx = _with_scene()
+    status, reply = await _activate_in(ledfx, 5)
+    assert (status, _reason(reply)) == (200, "Scene S1 will activate in 5s")
+    (delay, *_), _ = ledfx.loop.call_later.call_args
+    assert delay == 5
+    pending = ledfx.loop.call_later.return_value
+
+    status, reply = await _call(endpoint(ledfx), method, body, **extra)
+
+    assert reply["status"] == "success"
+    pending.cancel.assert_called_once_with()
+
+
+async def test_a_pending_scene_activation_runs_once() -> None:
+    ledfx = _with_scene()
+    ledfx.loop = asyncio.get_running_loop()
+    ledfx.scenes.activate = MagicMock(return_value=True)
+    await _activate_in(ledfx, 0)
+    await asyncio.sleep(0.01)
+    ledfx.scenes.activate.assert_called_once_with("s1")
+    assert not ledfx.scenes._pending

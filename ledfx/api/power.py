@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from json import JSONDecodeError
 from typing import ClassVar
@@ -8,6 +7,9 @@ from aiohttp import web
 from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
+
+# Longest delay, in seconds, a shutdown or restart may be scheduled for.
+MAX_POWER_TIMEOUT = 3600
 
 
 class InfoEndpoint(RestEndpoint):
@@ -43,13 +45,15 @@ class InfoEndpoint(RestEndpoint):
                 f"Action {action} not in {list(self.exit_codes.keys())}"
             )
 
-        if timeout < 0 or not isinstance(timeout, int):
-            return await self.invalid_request("Timeout must be a positive integer")
+        # bool is an int subclass, so rule it out first.
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, int)
+            or not 0 <= timeout <= MAX_POWER_TIMEOUT
+        ):
+            return await self.invalid_request(
+                f"Timeout must be a whole number of seconds from 0 to {MAX_POWER_TIMEOUT}"
+            )
 
-        # This is an ugly hack.
-        # We probably should have a better way of doing this but o well.
-        try:
-            return await self.request_success()
-        finally:
-            await asyncio.sleep(timeout)
-            self._ledfx.stop(self.exit_codes[action])
+        self._ledfx.loop.call_later(timeout, self._ledfx.stop, self.exit_codes[action])
+        return await self.request_success()

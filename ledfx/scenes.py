@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from ledfx.configuration.models import Scene, SceneVirtual
@@ -31,6 +32,8 @@ class Scenes:
 
     def __init__(self, ledfx):
         self._ledfx = ledfx
+        # Delayed activations from activate_in, by scene id.
+        self._pending: dict[str, asyncio.TimerHandle] = {}
 
     @property
     def _scenes(self) -> dict[str, Scene]:
@@ -68,6 +71,22 @@ class Scenes:
         self._scenes[scene_id] = scene
         self.save_to_config()
 
+    def activate_in(self, scene_id: str, delay: float) -> None:
+        """Activate a scene after delay seconds, replacing any pending one."""
+        self.cancel_pending(scene_id)
+        self._pending[scene_id] = self._ledfx.loop.call_later(
+            delay, self._activate_pending, scene_id
+        )
+
+    def _activate_pending(self, scene_id: str) -> None:
+        del self._pending[scene_id]
+        self.activate(scene_id)
+
+    def cancel_pending(self, scene_id: str) -> None:
+        """Cancel a delayed activation of scene_id, if there is one."""
+        if handle := self._pending.pop(scene_id, None):
+            handle.cancel()
+
     def activate(self, scene_id, save_config_after=True):
         """Activate a scene with support for action field
 
@@ -77,6 +96,7 @@ class Scenes:
                               Set to False for playlist-driven activations to reduce disk I/O.
                               Defaults to True for backward compatibility.
         """
+        self.cancel_pending(scene_id)
         scene = self.get(scene_id)
         if not scene:
             _LOGGER.error("No scene found with id: %s", scene_id)
@@ -186,6 +206,7 @@ class Scenes:
 
     def deactivate(self, scene_id):
         """Deactivate the effects defined in a scene by clearing those virtuals."""
+        self.cancel_pending(scene_id)
         scene = self.get(scene_id)
         if not scene:
             _LOGGER.error("No scene found with id: %s", scene_id)
@@ -209,6 +230,7 @@ class Scenes:
     def destroy(self, scene_id):
         """Deletes a scene"""
 
+        self.cancel_pending(scene_id)
         if not self._scenes.pop(scene_id, None):
             _LOGGER.warning("Cannot delete non-existent scene id: %s", scene_id)
             return

@@ -43,6 +43,7 @@ from ledfx.devices import Device, Devices, SerialDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
 from ledfx.playlists import PlaylistManager
+from ledfx.scenes import Scenes
 from ledfx.utils import BaseRegistry, UserDefaultCollection
 from ledfx.virtuals import Virtual
 from tests.test_utilities.fake_ledfx import fake_ledfx
@@ -718,16 +719,9 @@ async def test_bad_scene_posts_are_named(body: object, reason: str) -> None:
     assert not ledfx.config.scenes
 
 
-async def test_scene_delay_must_be_a_number() -> None:
-    ledfx = fake_ledfx({"scenes": {"s1": {"name": "S1"}}})
-    body = {"id": "s1", "action": "activate_in", "ms": "soon"}
-    _, response = await _call(ScenesEndpoint(ledfx), "PUT", body)
-    assert _reason(response) == '"ms" must be a non-negative number'
-    ledfx.loop.call_later.assert_not_called()
-
-
 async def test_scene_delay_is_in_seconds() -> None:
     ledfx = fake_ledfx({"scenes": {"s1": {"name": "S1"}}})
+    ledfx.scenes = Scenes(ledfx)
     body = {"id": "s1", "action": "activate_in", "ms": 5}
     _, response = await _call(ScenesEndpoint(ledfx), "PUT", body)
     assert _reason(response) == "Scene S1 will activate in 5s"
