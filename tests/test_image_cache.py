@@ -593,3 +593,48 @@ def test_concurrent_puts_keep_metadata_consistent(
     with open(cache.metadata_file) as file:
         saved = json.load(file)
     assert saved["total_count"] == len(saved["cache_entries"]) == 160
+
+
+def test_get_does_not_wait_for_another_threads_image_work(
+    temp_cache_dir: str, sample_image_data: bytes
+) -> None:
+    # The event loop calls get() directly; a worker's put() must not hold the
+    # cache lock through its slow image analysis.
+    cache = ImageCache(temp_cache_dir, max_size_mb=100, max_items=1000)
+    inside, release = threading.Event(), threading.Event()
+
+    def slow_gradients(path: str) -> None:
+        inside.set()
+        release.wait(5)
+
+    with patch("ledfx.libraries.cache.extract_gradient_metadata", slow_gradients):
+        writer = threading.Thread(
+            target=cache.put,
+            args=("https://example.com/slow.png", sample_image_data, "image/png"),
+        )
+        writer.start()
+        assert inside.wait(5)
+        reader = threading.Thread(target=cache.get, args=("https://example.com/x",))
+        reader.start()
+        reader.join(1)
+        blocked = reader.is_alive()
+        release.set()
+        writer.join(5)
+        reader.join(5)
+    assert not blocked
+    assert cache.get("https://example.com/slow.png") is not None
+
+
+def test_put_with_a_new_content_type_leaves_one_file_for_the_url(
+    cache: ImageCache, sample_image_data: bytes
+) -> None:
+    # Same URL, new content type: the old file would otherwise be orphaned,
+    # outside total_size and out of eviction's reach.
+    url = "https://example.com/art"
+    cache.put(url, sample_image_data, "image/png")
+    cache.put(url, sample_image_data, "image/jpeg")
+    files = sorted(os.listdir(cache.cache_dir))
+    assert [f for f in files if f != "metadata.json"] == [
+        f"{cache._generate_cache_key(url)}.jpg"
+    ]
+    assert cache.metadata["total_size"] == len(sample_image_data)

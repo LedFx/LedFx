@@ -279,7 +279,8 @@ def parse_color(color: (str, list, tuple)) -> RGB:
             return RGB(*int(color, 16).to_bytes(3, "big"))
         # Failing that, try to parse it using ImageColor
         return RGB(*ImageColor.getrgb(color))
-    except (ValueError, AssertionError):
+    # OverflowError: a hex value too long for three bytes (#1000000).
+    except (ValueError, AssertionError, OverflowError):
         msg = f"Invalid color: {color}"
         # _LOGGER.error(msg)
         raise ValueError(msg)
