@@ -859,9 +859,16 @@ class WebsocketConnection:
 
         if ACTIVE_AUDIO_STREAM.client != client:
             return
-        ACTIVE_AUDIO_STREAM.data = np.fromiter(
-            message.get("data").values(), dtype=np.float32
-        )
+        data = message.get("data")
+        # The frontend sends a list; older ones sent a {"0": ...} dict
+        if isinstance(data, dict):
+            data = data.values()
+        try:
+            samples = np.fromiter(data, dtype=np.float32)
+        except (TypeError, ValueError):
+            _LOGGER.warning("Malformed audio_stream_data from client %s", client)
+            return
+        ACTIVE_AUDIO_STREAM.data = samples
 
     @websocket_handler("audio_stream_data_v2")
     def audio_stream_data_base64_handler(self, message):
