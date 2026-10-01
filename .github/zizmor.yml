@@ -11,12 +11,17 @@
 #   never checks out or executes PR code, and PR-controlled values only ever
 #   reach `gh` as API arguments. See the comment block at the top of the
 #   workflow for the full argument.
+# - dangerous-triggers/pr-title.yml: pull_request_target in the same safe
+#   shape, so the bot can comment on fork PRs: the default-branch workflow
+#   and script run, PR code is never checked out, and the title reaches the
+#   script only as an environment variable.
 rules:
   superfluous-actions:
     disable: true
   dangerous-triggers:
     ignore:
       - lint-notify.yml
+      - pr-title.yml
   secrets-outside-env:
     # Deliberate, not an oversight:
     # - ci.yml (docker / docker-edge): these jobs run on every PR, and any
@@ -25,6 +30,11 @@ rules:
     #   login step is gated on PUBLISH, so fork PRs never touch the creds.
     # - lint-notify.yml: AUTOMATION_APP_* is a comment-only app token minted
     #   per run; there is no environment worth gating a notification behind.
+    #   pr-title.yml mints the same comment-only token.
+    # - release-please.yml: contents/PR/label token for the release PR, tag
+    #   and draft release only; publishing stays behind production in ci.yml.
     ignore:
       - ci.yml
       - lint-notify.yml
+      - pr-title.yml
+      - release-please.yml
