@@ -26,8 +26,9 @@ concurrency:
 jobs:
   check:
     name: Conventional PR title
-    # "edited" also fires for body and base changes; only a title edit matters.
-    if: github.event.action != 'edited' || github.event.changes.title
+    # No job-level condition: this is a required check, and a skipped run
+    # counts as passing, so a description edit after a failed title would
+    # otherwise turn it green. Re-checking an unchanged title is cheap.
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
