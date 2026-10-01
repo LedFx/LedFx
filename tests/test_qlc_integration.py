@@ -85,3 +85,62 @@ async def test_unresolvable_host_warns_and_leaves_the_integration_disconnected(
     assert [
         r.levelname for r in caplog.records if r.name == "ledfx.integrations.qlc"
     ] == ["WARNING"]
+
+
+async def test_disconnect_during_a_widget_query_stops_the_query() -> None:
+    integration = make_qlc()
+    client = MagicMock(disconnect=AsyncMock())
+
+    async def query(message: str) -> str:
+        if message.endswith("getWidgetsList"):
+            return "getWidgetsList|1|Fader|2|Button"
+        await integration.disconnect()  # the integration is torn down mid-query
+        return "getWidgetType|Slider"
+
+    client.query = AsyncMock(side_effect=query)
+    integration._client = client
+
+    assert await integration.get_widgets() == []
+    assert client.query.await_count == 2
+
+
+async def test_delete_during_host_resolution_does_not_connect() -> None:
+    integration = make_qlc()
+    resolving = asyncio.Event()
+    release = asyncio.Event()
+
+    async def resolve(*_: object) -> str:
+        resolving.set()
+        await release.wait()
+        return "127.0.0.1"
+
+    with (
+        patch("ledfx.integrations.qlc.resolve_destination", resolve),
+        patch("ledfx.integrations.qlc.QLCWebsocketClient") as client_cls,
+    ):
+        connecting = asyncio.create_task(integration.connect())
+        await resolving.wait()
+        await integration.on_delete()
+        release.set()
+        await connecting
+
+    client_cls.assert_not_called()
+    assert integration._client is None
+    assert integration.status == Status.DISCONNECTED
+
+
+async def test_client_disconnect_closes_the_session_when_close_hangs() -> None:
+    with patch("ledfx.integrations.qlc.aiohttp.ClientSession") as session_cls:
+        session_cls.return_value.close = AsyncMock()
+        client = QLCWebsocketClient("http://127.0.0.1:9999/qlcplusWS", "x")
+    client.websocket = MagicMock(close=AsyncMock(side_effect=asyncio.Event().wait))
+
+    real_timeout = asyncio.timeout
+
+    def expire_now(_: float) -> asyncio.Timeout:
+        return real_timeout(0)
+
+    with patch("asyncio.timeout", expire_now):
+        await client.disconnect()
+
+    session_cls.return_value.close.assert_awaited_once()

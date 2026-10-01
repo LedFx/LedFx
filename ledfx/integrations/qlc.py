@@ -68,6 +68,9 @@ class QLC(Integration):
         self._data = []
         self._listeners = []
         self._connect_task = None
+        # Bumped by every connect and disconnect: a connect that resumes after
+        # a newer one started, or after a disconnect, gives up.
+        self._connect_generation = 0
 
         self.restore_from_data(data)
 
@@ -215,14 +218,18 @@ class QLC(Integration):
         """Returns a list of widgets as tuples: [(ID, Type, Name),...]"""
         # First get list of widgets (ID, Name)
         widgets: list[tuple[str, str, str]] = []
-        if self._client is None:
+        client = self._client
+        if client is None:
             return widgets
         # query() already strips the "QLC+API|" prefix from responses.
-        response = await self._client.query("QLC+API|getWidgetsList")
+        response = await client.query("QLC+API|getWidgetsList")
         widgets_list = response.removeprefix("getWidgetsList|").split("|")
         # Then get the type for each widget (in individual requests bc QLC api be like that)
         for widget_id, widget_name in zip(widgets_list[::2], widgets_list[1::2]):
-            response = await self._client.query(f"QLC+API|getWidgetType|{widget_id}")
+            if self._client is not client:  # disconnected meanwhile
+                widgets.clear()
+                break
+            response = await client.query(f"QLC+API|getWidgetType|{widget_id}")
             widget_type = response.removeprefix("getWidgetType|")
             if widget_type in self._widget_types:
                 widgets.append((widget_id, widget_type, widget_name))
@@ -230,12 +237,15 @@ class QLC(Integration):
 
     async def _send_payload(self, qlc_payload):
         """Sends payload of {id:value, ...} pairs to QLC"""
-        if self._client is None:
-            return
+        client = self._client
         for widget_id, value in qlc_payload.items():
-            await self._client.send(f"{int(widget_id)}|{value}")
+            if client is None or self._client is not client:
+                return
+            await client.send(f"{int(widget_id)}|{value}")
 
     async def connect(self):
+        self._connect_generation += 1
+        generation = self._connect_generation
         try:
             resolved_ip = await resolve_destination(
                 self._ledfx.loop,
@@ -248,16 +258,19 @@ class QLC(Integration):
             _LOGGER.warning("QLC+ %s: %s", self.name, e)
             await super().disconnect()
             return
+        if generation != self._connect_generation:
+            return
         domain = f"{resolved_ip}:{self.config.port}"
         url = f"http://{domain}/qlcplusWS"
         if self._client is None:
             self._client = QLCWebsocketClient(url, domain)
         self._cancel_connect()
         self._connect_task = asyncio.create_task(self._client.connect())
-        if await self._connect_task:
+        if await self._connect_task and generation == self._connect_generation:
             await super().connect(f"Connected to QLC+ websocket at {domain}")
 
     async def disconnect(self):
+        self._connect_generation += 1
         self._cancel_connect()
         if self._client is not None:
             # fire and forget bc for some reason close() never returns... -o-
@@ -303,7 +316,12 @@ class QLCWebsocketClient:
     async def disconnect(self):
         try:
             if self.websocket is not None:
-                await self.websocket.close()
+                # close() can wait on the transport indefinitely; the session
+                # must be closed either way.
+                async with asyncio.timeout(5):
+                    await self.websocket.close()
+        except TimeoutError:
+            _LOGGER.warning("Timed out closing the QLC+ websocket at %s", self.domain)
         finally:
             await self.session.close()
 
