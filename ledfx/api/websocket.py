@@ -864,8 +864,11 @@ class WebsocketConnection:
         if isinstance(data, dict):
             data = list(data.values())
         try:
-            # Check the type: np.fromiter would turn a string into samples.
-            if not isinstance(data, list):
+            # np.fromiter would also take a string, or numeric strings, as
+            # samples; the frontend only ever sends a list of numbers.
+            if not isinstance(data, list) or not all(
+                isinstance(sample, (int, float)) for sample in data
+            ):
                 raise TypeError(type(data).__name__)
             samples = np.fromiter(data, dtype=np.float32)
         except (TypeError, ValueError, OverflowError):

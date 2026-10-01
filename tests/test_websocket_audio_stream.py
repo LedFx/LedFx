@@ -32,7 +32,8 @@ def test_audio_stream_data_accepts_list_and_dict(payload: object) -> None:
 
 
 @pytest.mark.parametrize(
-    "payload", [None, 3, "123", "", ["a", "b"], [[1.0], [2.0]], [10**400]]
+    "payload",
+    [None, 3, "123", "", ["a", "b"], ["0.25", "0.5"], [[1.0], [2.0]], [10**400]],
 )
 def test_audio_stream_data_rejects_malformed_payload(payload: object) -> None:
     callback = MagicMock()
