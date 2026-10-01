@@ -305,6 +305,8 @@ class VirtualEntry(LedFxModel):
     )
     effects: dict[str, EffectEntry] = {}
     last_effect: str | None = Field(None, json_schema_extra=_UNSET)
+    # DMX Input device-level mute; None (never toggled) is not written.
+    dmx_paused: bool | None = Field(None, json_schema_extra=_UNSET)
 
 
 class IntegrationEntry(LedFxModel):
@@ -414,6 +416,31 @@ class NowPlayingConfig(LedFxModel):
     album_art: NowPlayingAlbumArt = NowPlayingAlbumArt()
 
 
+class VenuePad(LedFxModel):
+    """A color-override pad: a solid color or a gradient string."""
+
+    color: str | None = Field(None, json_schema_extra=_UNSET)
+    gradient: str | None = Field(None, json_schema_extra=_UNSET)
+
+
+# The frontend's pad-grid editor caps each axis at 16. The bound also stops a
+# huge grid from allocating rows*cols pads (see VenueManager.create/update).
+VENUE_GRID_MAX = 16
+
+
+class VenueColorPads(LedFxModel):
+    rows: int = Field(4, ge=1, le=VENUE_GRID_MAX)
+    cols: int = Field(4, ge=1, le=VENUE_GRID_MAX)
+    pads: list[VenuePad] = []  # row-major
+
+
+class Venue(LedFxModel):
+    name: str
+    virtual_ids: list[VirtualId] = []
+    paused: bool = False  # mutes DMX Input takeover for this venue
+    color_pads: VenueColorPads = VenueColorPads()
+
+
 class ImageCacheConfig(LedFxModel):
     model_config = ConfigDict(extra="allow")
 
@@ -493,6 +520,9 @@ class LedFxConfig(LedFxModel):
     sendspin_always_on: bool = True
     now_playing: NowPlayingConfig = Field(
         NowPlayingConfig(), json_schema_extra=_legacy_type("dict", {})
+    )
+    venues: dict[str, Venue] = Field(
+        dict[str, Venue](), json_schema_extra=_legacy_type("dict", {})
     )
     allowed_origins: list[str] = Field(
         list[str](),

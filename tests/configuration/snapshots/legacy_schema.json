@@ -181,6 +181,70 @@
    "name": "Spotify",
    "description": "Activate scenes with Spotify Connect [BETA]. Requires Spotify Premium.",
    "beta": false
+  },
+  "dmx_input": {
+   "schema": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name",
+      "description": "Name of this integration instance",
+      "default": "DMX Input"
+     },
+     "description": {
+      "type": "string",
+      "title": "Description",
+      "description": "Description of this integration",
+      "default": "Art-Net DMX input bridge"
+     },
+     "bind_address": {
+      "type": "string",
+      "title": "Bind Address",
+      "description": "Local address to listen on. Use 0.0.0.0 to accept Art-Net from any machine on the network (e.g. SoundSwitch on a separate PC). Use 127.0.0.1 to accept only from the same machine.",
+      "default": "0.0.0.0"
+     },
+     "port": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65535,
+      "title": "Port",
+      "description": "Art-Net UDP port",
+      "default": 6454
+     },
+     "update_fps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 120,
+      "title": "Update Fps",
+      "description": "How often incoming DMX is applied to LedFx",
+      "default": 60
+     },
+     "stale_timeout": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 60.0,
+      "title": "Stale Timeout",
+      "description": "Seconds without DMX before owned overrides are released (0 disables)",
+      "default": 2.0
+     },
+     "hold_last_look": {
+      "type": "boolean",
+      "title": "Hold Last Look",
+      "description": "Keep the last look when the DMX stream stops instead of releasing it",
+      "default": false
+     }
+    },
+    "required": [
+     "name",
+     "description",
+     "bind_address",
+     "port"
+    ]
+   },
+   "id": "dmx_input",
+   "name": "DMX Input",
+   "description": "Control LedFx from a DMX source (e.g. SoundSwitch via Art-Net): venue color overrides, live color passthrough, and DMX wash fixtures.",
+   "beta": false
   }
  },
  "melbanks": {
@@ -9732,6 +9796,11 @@
     "now_playing": {
      "type": "dict",
      "title": "Now Playing",
+     "default": {}
+    },
+    "venues": {
+     "type": "dict",
+     "title": "Venues",
      "default": {}
     },
     "allowed_origins": {
