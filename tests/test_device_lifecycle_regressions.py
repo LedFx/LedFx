@@ -1,5 +1,6 @@
 """Regressions for device lifecycle and render-loop fixes."""
 
+import asyncio
 import threading
 from typing import cast
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -213,6 +214,28 @@ async def test_mdns_keeps_a_service_known_only_by_hostname() -> None:
     fire.call_args.args[0].close()  # the add_new_device coroutine was never awaited
 
 
+async def test_mdns_rescan_closes_the_previous_zeroconf() -> None:
+    runner = ZeroConfRunner(MagicMock())
+    with (
+        patch("ledfx.mdns_manager.AsyncZeroconf") as zeroconf,
+        patch("ledfx.mdns_manager.AsyncServiceBrowser") as browser,
+    ):
+        first_zc, second_zc = MagicMock(), MagicMock()
+        first_browser, second_browser = MagicMock(), MagicMock()
+        for mock in (first_zc, second_zc):
+            mock.async_close = AsyncMock()
+        for mock in (first_browser, second_browser):
+            mock.async_cancel = AsyncMock()
+        zeroconf.side_effect = [first_zc, second_zc]
+        browser.side_effect = [first_browser, second_browser]
+        await runner.discover_wled_devices()
+        await runner.discover_wled_devices()
+    first_browser.async_cancel.assert_awaited_once()
+    first_zc.async_close.assert_awaited_once()
+    second_zc.async_close.assert_not_awaited()
+    assert runner.aiozc is second_zc
+
+
 def test_hue_stops_handshaking_after_success() -> None:
     device = object.__new__(HueDevice)
     device._config = {
@@ -248,3 +271,37 @@ def test_govee_second_deactivate_does_not_release_socket_again() -> None:
 
 def test_unextended_schema_returns_own_schema() -> None:
     assert Fire.schema(extended=False) is Fire.CONFIG_SCHEMA
+
+
+async def test_mdns_rescan_close_survives_cancellation() -> None:
+    runner = ZeroConfRunner(MagicMock())
+    old_zc = MagicMock(async_close=AsyncMock())
+    cancelling = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_cancel() -> None:
+        cancelling.set()
+        await release.wait()
+
+    runner.aiozc = old_zc
+    runner.aiobrowser = MagicMock(async_cancel=slow_cancel)
+    with (
+        patch("ledfx.mdns_manager.AsyncZeroconf"),
+        patch("ledfx.mdns_manager.AsyncServiceBrowser"),
+    ):
+        scan = asyncio.create_task(runner.discover_wled_devices())
+        await cancelling.wait()
+        scan.cancel()  # e.g. the client went away mid-scan
+        with pytest.raises(asyncio.CancelledError):
+            await scan
+        release.set()
+        await asyncio.gather(*runner._closing)
+    old_zc.async_close.assert_awaited_once()
+
+
+async def test_mdns_close_still_closes_zeroconf_if_cancel_fails() -> None:
+    zc = MagicMock(async_close=AsyncMock())
+    browser = MagicMock(async_cancel=AsyncMock(side_effect=RuntimeError("boom")))
+    with pytest.raises(RuntimeError):
+        await ZeroConfRunner._close(browser, zc)
+    zc.async_close.assert_awaited_once()
