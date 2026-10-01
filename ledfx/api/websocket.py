@@ -80,7 +80,8 @@ class BroadcastData(BaseModel):
 # Not all events are able to be subscribed to by the websocket
 # This dict show the events that are not subscribable and what event should be used instead
 NON_SUBSCRIBABLE_EVENTS = {
-    "device_update": "Use visualisation_update instead",
+    "device_update": "visualisation_update",
+    "virtual_update": "visualisation_update",
 }
 
 # TODO: Have a more well defined registration and a more componetized solution.
