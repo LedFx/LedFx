@@ -126,7 +126,7 @@ class HueDevice(NetworkedDevice):
 
         # The bridge certificate is signed by the Hue root CA, not a public one, so verification is skipped
         response = getattr(requests, method.lower())(
-            url, json=data, verify=False, headers=headers
+            url, json=data, verify=False, headers=headers, timeout=(5, 10)
         )
 
         return response.json(), response.headers
