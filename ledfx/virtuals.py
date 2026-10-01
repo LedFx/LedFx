@@ -169,7 +169,7 @@ class Virtual:
             and isinstance(segment[2], int)
         ):
             msg = f"Invalid segment format: {segment}, should be [device_id, start, end, invert]"
-            _LOGGER.error(msg)
+            _LOGGER.warning(msg)
             raise ValueError(msg)
 
         device_id, start_pixel, end_pixel, invert = segment
@@ -214,7 +214,7 @@ class Virtual:
             _LOGGER.warning("Fixed to %s", segment)
 
         if not valid:
-            _LOGGER.error(msg)
+            _LOGGER.warning(msg)
             raise ValueError(msg)
         else:
             return segment
