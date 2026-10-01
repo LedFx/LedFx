@@ -1,22 +1,12 @@
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager, venue_payload
-
-if TYPE_CHECKING:
-    from ledfx.core import LedFxCore
+from ledfx.venues import venue_payload
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
-    if not hasattr(ledfx, "venues"):
-        ledfx.venues = VenueManager(ledfx)
-    return ledfx.venues
 
 
 class VenuePauseEndpoint(RestEndpoint):
@@ -42,7 +32,7 @@ class VenuePauseEndpoint(RestEndpoint):
                 'Required attribute "paused" was not provided'
             )
 
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
         try:
             venue = mgr.set_paused(venue_id, bool(paused))
         except KeyError as e:

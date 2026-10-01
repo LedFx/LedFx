@@ -324,14 +324,12 @@ def compute_dmx_mapped(ledfx: "LedFxCore") -> tuple[set[str], set[str]]:
 
     # Expand venue-targeted mappings to their member virtuals, and mark a
     # venue as mapped if it owns a directly-targeted virtual.
-    venues = getattr(ledfx, "venues", None)
-    if venues is not None:
-        for venue_id, cfg in venues.list_venues().items():
-            virtual_ids = cfg.virtual_ids
-            if venue_id in mapped_venue_ids:
-                mapped_virtual_ids.update(virtual_ids)
-            elif mapped_virtual_ids.intersection(virtual_ids):
-                mapped_venue_ids.add(venue_id)
+    for venue_id, cfg in ledfx.venues.list_venues().items():
+        virtual_ids = cfg.virtual_ids
+        if venue_id in mapped_venue_ids:
+            mapped_virtual_ids.update(virtual_ids)
+        elif mapped_virtual_ids.intersection(virtual_ids):
+            mapped_venue_ids.add(venue_id)
 
     return mapped_virtual_ids, mapped_venue_ids
 
