@@ -120,6 +120,11 @@ class Device(BaseRegistry):
                 self._config = old_config
                 raise
 
+            # The pixel buffer is sized on activate; resize a live one here so
+            # segment writes and clears match the new pixel count.
+            if self._pixels is not None and len(self._pixels) != self.pixel_count:
+                self._pixels = np.zeros((self.pixel_count, 3))
+
             _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
             for virtual_id in self._ledfx.virtuals:
@@ -436,12 +441,10 @@ class Device(BaseRegistry):
             if segment[0] != virtual_id:
                 new_segments.append(segment)
             else:
-                if self._pixels is not None and self._ledfx.config.get(
-                    "flush_on_deactivate", False
-                ):
-                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
-                        (segment[2] - segment[1] + 1, 3)
-                    )
+                if self._pixels is not None and self._ledfx.config.get("flush_on_deactivate", False):
+                    # A scalar fill: the buffer may already be resized to a
+                    # pixel count the old segment no longer fits.
+                    self._pixels[segment[1] : segment[2] + 1] = 0
         self._segments = new_segments
 
         if self.priority_virtual and virtual_id == self.priority_virtual.id:
