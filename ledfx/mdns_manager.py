@@ -135,6 +135,7 @@ class ZeroConfRunner:
         """
         Asynchronous function for discovering WLED devices.
         """
+        previous = self.aiobrowser, self.aiozc
         self.aiozc = AsyncZeroconf()
         services = ["_wled._tcp.local."]
         _LOGGER.info("Browsing for WLED devices...")
@@ -143,14 +144,22 @@ class ZeroConfRunner:
             services,
             handlers=[self.on_service_state_change],
         )
+        # Close the previous scan's instance, or its sockets and thread leak.
+        # It is swapped out before the await so overlapping scans can't leak one.
+        await self._close(*previous)
 
     async def async_close(self) -> None:
         """
         Asynchronous function for closing zeroconf listener.
         """
-        # If aiobrowser exists, then aiozc must also exist.
-        if self.aiobrowser:
-            _LOGGER.info("Closing zeroconf listener.")
-            await self.aiobrowser.async_cancel()
-            await self.aiozc.async_close()
-            _LOGGER.info("Zeroconf closed.")
+        await self._close(self.aiobrowser, self.aiozc)
+
+    @staticmethod
+    async def _close(
+        aiobrowser: AsyncServiceBrowser | None, aiozc: AsyncZeroconf | None
+    ) -> None:
+        if aiobrowser and aiozc:
+            _LOGGER.debug("Closing zeroconf listener.")
+            await aiobrowser.async_cancel()
+            await aiozc.async_close()
+            _LOGGER.debug("Zeroconf closed.")

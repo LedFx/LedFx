@@ -254,6 +254,28 @@ async def test_mdns_keeps_a_service_known_only_by_hostname() -> None:
     fire.call_args.args[0].close()  # the add_new_device coroutine was never awaited
 
 
+async def test_mdns_rescan_closes_the_previous_zeroconf() -> None:
+    runner = ZeroConfRunner(MagicMock())
+    with (
+        patch("ledfx.mdns_manager.AsyncZeroconf") as zeroconf,
+        patch("ledfx.mdns_manager.AsyncServiceBrowser") as browser,
+    ):
+        first_zc, second_zc = MagicMock(), MagicMock()
+        first_browser, second_browser = MagicMock(), MagicMock()
+        for mock in (first_zc, second_zc):
+            mock.async_close = AsyncMock()
+        for mock in (first_browser, second_browser):
+            mock.async_cancel = AsyncMock()
+        zeroconf.side_effect = [first_zc, second_zc]
+        browser.side_effect = [first_browser, second_browser]
+        await runner.discover_wled_devices()
+        await runner.discover_wled_devices()
+    first_browser.async_cancel.assert_awaited_once()
+    first_zc.async_close.assert_awaited_once()
+    second_zc.async_close.assert_not_awaited()
+    assert runner.aiozc is second_zc
+
+
 def test_hue_stops_handshaking_after_success() -> None:
     device = object.__new__(HueDevice)
     device._config = HueDevice.config_model().model_construct(
