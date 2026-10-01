@@ -36,6 +36,15 @@ class E131Device(NetworkedDevice):
 
     config = TypedConfig(Config)
 
+    OUTPUT_KEYS = (
+        "ip_address",
+        "pixel_count",
+        "universe",
+        "universe_size",
+        "channel_offset",
+        "packet_priority",
+    )
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         # Since RGBW data is 4 packets, we can use 512 for RGBW LEDs; 512/4 = 128
@@ -47,23 +56,36 @@ class E131Device(NetworkedDevice):
         #     self._set_config_values(universe_size=510)
 
         self._device_type = "e131"
-        # pixel_count is a field with a default, so it is always present and
-        # the old channel_count-only branch could never run.
-        pixel_count = self.config.pixel_count
-        channel_count = pixel_count * 3
-
-        span = self.config.channel_offset + channel_count - 1
-        universe_end = self.config.universe + int(span / self.config.universe_size)
-        if span % self.config.universe_size == 0:
-            universe_end -= 1
-        self._set_config_values(
-            channel_count=channel_count,
-            pixel_count=pixel_count,
-            universe_end=universe_end,
-        )
+        self._set_channel_layout()
 
         self._sacn = None
         self.device_lock = threading.Lock()
+
+    def _set_channel_layout(self) -> None:
+        # pixel_count is a field with a default, so it is always present and
+        # the old channel_count-only branch could never run.
+        channel_count = self.config.pixel_count * 3
+
+        # channel_offset is 0-based, so span is the index of the last channel
+        # and span // universe_size is the universe it lands in.
+        span = self.config.channel_offset + channel_count - 1
+        universe_end = self.config.universe + span // self.config.universe_size
+        self._set_config_values(
+            channel_count=channel_count,
+            universe_end=universe_end,
+        )
+
+    def config_updated(self, config: object) -> None:
+        # The stored channel_count and universe_end are stale until recomputed.
+        self._set_channel_layout()
+        if self._sacn is not None and self._output_changed():
+            # A new sender starts with zeroed universes, so channels the
+            # device no longer drives go dark without a blanking flush.
+            with self.device_lock:
+                self._sacn.stop()
+                self._sacn = None
+            self.activate()
+        self._built_settings = self._output_settings()
 
     def activate(self):
         with self.device_lock:

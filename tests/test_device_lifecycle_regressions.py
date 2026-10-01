@@ -95,6 +95,7 @@ def test_update_config_merges_into_model_and_keeps_stored_extras() -> None:
     device = object.__new__(WLEDDevice)
     device._ledfx = MagicMock()
     device._segments = []
+    device._pixels = None
     device._destination = "10.0.0.2"
     device.lock = threading.Lock()
     device._config = WLEDDevice.config_model().model_validate(
