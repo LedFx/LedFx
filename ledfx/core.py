@@ -570,7 +570,8 @@ class LedFxCore:
             await asyncio.sleep(5)
             self.stop(5)
         if not self.offline_mode:
-            self.check_and_notify_updates()
+            # The check makes a blocking HTTP request.
+            await asyncio.to_thread(self.check_and_notify_updates)
 
         if self.config.startup_scene_id != "":
             if self.scenes.activate(self.config.startup_scene_id):

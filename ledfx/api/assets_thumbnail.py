@@ -1,3 +1,5 @@
+import asyncio
+
 """API endpoint for generating asset thumbnails."""
 
 import io
@@ -125,7 +127,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     message=f"Size must be between {MIN_THUMBNAIL_SIZE} and {MAX_THUMBNAIL_SIZE} pixels",
                     type="error",
                 )
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OverflowError):
             return await self.invalid_request(
                 message="Size must be an integer",
                 type="error",
@@ -197,7 +199,7 @@ class AssetsThumbnailEndpoint(RestEndpoint):
                     message=f"Size must be between {MIN_THUMBNAIL_SIZE} and {MAX_THUMBNAIL_SIZE} pixels",
                     type="error",
                 )
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OverflowError):
             return await self.invalid_request(
                 message="Size must be an integer",
                 type="error",
@@ -312,7 +314,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
 
                 # open_image handles URL validation, download, and caching
                 try:
-                    image = open_image(asset_path, config_dir=self._ledfx.config_dir)
+                    image = await asyncio.to_thread(
+                        open_image, asset_path, config_dir=self._ledfx.config_dir
+                    )
                     if not image:
                         return await self.invalid_request(
                             message=f"Failed to download or validate URL: {asset_path}",

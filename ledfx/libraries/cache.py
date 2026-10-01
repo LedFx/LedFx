@@ -1,15 +1,37 @@
 """Image caching system for LedFx."""
 
+import functools
 import hashlib
 import json
 import logging
 import os
+import threading
+from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import Concatenate, ParamSpec, TypeVar
 
 from ledfx.utilities.gradient_extraction import extract_gradient_metadata
 from ledfx.utilities.image_utils import get_image_metadata
 
 _LOGGER = logging.getLogger(__name__)
+
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+
+def _locked(
+    method: "Callable[Concatenate[ImageCache, _P], _R]",
+) -> "Callable[Concatenate[ImageCache, _P], _R]":
+    """Image loads run in worker threads (asyncio.to_thread) as well as on the
+    loop, and every public method reads or rewrites the shared metadata."""
+
+    @functools.wraps(method)
+    def wrapper(self: "ImageCache", *args: _P.args, **kwargs: _P.kwargs) -> _R:
+        with self._lock:
+            return method(self, *args, **kwargs)
+
+    return wrapper
 
 
 class ImageCache:
@@ -42,6 +64,8 @@ class ImageCache:
         self.metadata_file = os.path.join(self.cache_dir, "metadata.json")
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.max_items = max_items
+        # ponytail: one lock for the whole cache; per-key locks if it contends.
+        self._lock = threading.RLock()
         self.metadata = self._load_metadata()
 
     def _load_metadata(self) -> dict:
@@ -87,6 +111,7 @@ class ImageCache:
         """Get filesystem path for cached image."""
         return os.path.join(self.cache_dir, f"{cache_key}{extension}")
 
+    @_locked
     def get(self, url: str, params: dict | None = None) -> str | None:
         """
         Get cached image if available (no expiration check).
@@ -114,6 +139,7 @@ class ImageCache:
         _LOGGER.debug("Cache miss for %s", url)
         return None
 
+    @_locked
     def put(
         self,
         url: str,
@@ -264,6 +290,7 @@ class ImageCache:
             self.metadata["total_count"] -= 1
             del self.metadata["cache_entries"][cache_key]
 
+    @_locked
     def delete(self, url: str, params: dict | None = None) -> bool:
         """
         Remove specific URL (and params) from cache.
@@ -283,6 +310,7 @@ class ImageCache:
             return True
         return False
 
+    @_locked
     def delete_all_for_url(self, url: str) -> int:
         """
         Remove all cache entries for a given URL (regardless of params).
@@ -313,6 +341,7 @@ class ImageCache:
 
         return deleted_count
 
+    @_locked
     def clear(self) -> dict:
         """
         Clear entire cache.
@@ -335,6 +364,7 @@ class ImageCache:
 
         return {"cleared_count": cleared_count, "freed_bytes": freed_bytes}
 
+    @_locked
     def get_stats(self) -> dict:
         """
         Get cache statistics with image metadata.
@@ -391,6 +421,7 @@ class ImageCache:
             "entries": entries,
         }
 
+    @_locked
     def get_cache_headers(self, url: str, params: dict | None = None) -> dict | None:
         """
         Get stored ETag and Last-Modified headers for conditional requests.

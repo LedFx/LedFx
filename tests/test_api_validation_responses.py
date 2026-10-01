@@ -16,6 +16,7 @@ import ledfx.devices.e131  # noqa: F401 - registers the e131 device
 from ledfx.api import RestEndpoint
 from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.assets_download import AssetsDownloadEndpoint
+from ledfx.api.assets_thumbnail import AssetsThumbnailEndpoint
 from ledfx.api.audio_devices import AudioDevicesEndpoint
 from ledfx.api.colors import ColorEndpoint
 from ledfx.api.config import ConfigEndpoint
@@ -813,6 +814,19 @@ async def test_asset_upload_must_be_multipart() -> None:
             "POST",
             {"port": []},
             "Unable to convert [] to int.",
+        ),
+        # A JSON Infinity is a float inf: int() raises OverflowError.
+        (
+            FindOpenRGBDevicesEndpoint,
+            "POST",
+            {"port": float("inf")},
+            "Unable to convert inf to int.",
+        ),
+        (
+            AssetsThumbnailEndpoint,
+            "POST",
+            {"path": "a.png", "size": float("inf")},
+            "Size must be an integer",
         ),
         (
             AudioDevicesEndpoint,

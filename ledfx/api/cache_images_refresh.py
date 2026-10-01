@@ -1,3 +1,5 @@
+import asyncio
+
 """API endpoint for refreshing cached images."""
 
 import logging
@@ -74,8 +76,8 @@ class CacheRefreshEndpoint(RestEndpoint):
 
             # Immediately re-download and cache (force_refresh=True bypasses cache check)
             _LOGGER.info("Actively refreshing cached URL: %s", url)
-            image = open_image(
-                url, force_refresh=True, config_dir=self._ledfx.config_dir
+            image = await asyncio.to_thread(
+                open_image, url, force_refresh=True, config_dir=self._ledfx.config_dir
             )
 
             if image:

@@ -20,6 +20,10 @@ UDP_BROADCAST_DELAY = 0.3
 # LIFX UDP port
 LIFX_UDP_PORT = 56700
 
+# Extra seconds a discovery may run past discovery_timeout (device queries
+# and adds after the last reply) before it is cancelled.
+DISCOVERY_GRACE = 5
+
 # Valid discovery methods
 DISCOVERY_METHODS = ("udp", "mdns", "both")
 
@@ -70,66 +74,68 @@ class FindLifxEndpoint(RestEndpoint):
         if device.serial in seen_serials:
             await device.close()
             return None
-        seen_serials.add(device.serial)
-
-        lifx_class = type(device).__name__
-        category = LIFX_CATEGORY_MAP.get(lifx_class, "light")
-
         try:
-            label = await device.get_label()
-        except (LifxError, OSError):
-            label = f"LIFX {device.serial[-6:]}"
+            seen_serials.add(device.serial)
 
-        device_info = {
-            "device_type": "lifx",
-            "category": category,
-            "lifx_type": lifx_class,
-            "label": label,
-            "serial": device.serial,
-            "ip": device.ip,
-            "added": False,
-        }
+            lifx_class = type(device).__name__
+            category = LIFX_CATEGORY_MAP.get(lifx_class, "light")
 
-        # Auto-add device if requested
-        if auto_add:
-            existing = self._find_existing_lifx_by_serial(device.serial)
-            if existing:
-                device_info["added"] = False
-                device_info["existing_name"] = existing.name
-                _LOGGER.debug(
-                    "LIFX %s (%s) already exists as %s",
-                    label,
-                    device.serial,
-                    existing.name,
-                )
-            else:
-                try:
-                    device_config = {
-                        "name": label,
-                        "ip_address": device.ip,
-                        "serial": device.serial,
-                    }
-                    await self._ledfx.devices.add_new_device("lifx", device_config)
-                    device_info["added"] = True
-                    _LOGGER.info(
-                        "LIFX added: %s (%s) at %s",
+            try:
+                label = await device.get_label()
+            except (LifxError, OSError):
+                label = f"LIFX {device.serial[-6:]}"
+
+            device_info = {
+                "device_type": "lifx",
+                "category": category,
+                "lifx_type": lifx_class,
+                "label": label,
+                "serial": device.serial,
+                "ip": device.ip,
+                "added": False,
+            }
+
+            # Auto-add device if requested
+            if auto_add:
+                existing = self._find_existing_lifx_by_serial(device.serial)
+                if existing:
+                    device_info["added"] = False
+                    device_info["existing_name"] = existing.name
+                    _LOGGER.debug(
+                        "LIFX %s (%s) already exists as %s",
                         label,
                         device.serial,
-                        device.ip,
+                        existing.name,
                     )
-                except (LifxError, OSError, ValueError) as e:
-                    _LOGGER.warning("LIFX add failed for %s: %s", label, e)
+                else:
+                    try:
+                        device_config = {
+                            "name": label,
+                            "ip_address": device.ip,
+                            "serial": device.serial,
+                        }
+                        await self._ledfx.devices.add_new_device("lifx", device_config)
+                        device_info["added"] = True
+                        _LOGGER.info(
+                            "LIFX added: %s (%s) at %s",
+                            label,
+                            device.serial,
+                            device.ip,
+                        )
+                    except (LifxError, OSError, ValueError) as e:
+                        _LOGGER.warning("LIFX add failed for %s: %s", label, e)
 
-        _LOGGER.info(
-            "LIFX discovered: %s (%s) at %s -> %s",
-            label,
-            device.serial,
-            device.ip,
-            category,
-        )
-
-        await device.close()
-        return device_info
+            _LOGGER.info(
+                "LIFX discovered: %s (%s) at %s -> %s",
+                label,
+                device.serial,
+                device.ip,
+                category,
+            )
+            return device_info
+        finally:
+            # Also on cancellation: the scan deadline can stop us mid-device.
+            await device.close()
 
     async def _discover_udp(self, timeout, broadcast_address, auto_add, seen_serials):
         """
@@ -372,22 +378,41 @@ class FindLifxEndpoint(RestEndpoint):
             auto_add,
         )
 
-        devices = []
         seen_serials: set[str] = set()
-
+        scans = {}
         if method in ("mdns", "both"):
-            mdns_devices = await self._discover_mdns(
-                discovery_timeout, auto_add, seen_serials
+            scans["mDNS"] = asyncio.create_task(
+                self._discover_mdns(discovery_timeout, auto_add, seen_serials)
             )
-            devices.extend(mdns_devices)
-            _LOGGER.info("LIFX mDNS discovery found %d devices", len(mdns_devices))
-
         if method in ("udp", "both"):
-            udp_devices = await self._discover_udp(
-                discovery_timeout, broadcast_address, auto_add, seen_serials
+            scans["UDP"] = asyncio.create_task(
+                self._discover_udp(
+                    discovery_timeout, broadcast_address, auto_add, seen_serials
+                )
             )
-            devices.extend(udp_devices)
-            _LOGGER.info("LIFX UDP discovery found %d devices", len(udp_devices))
+
+        # Run the scans together, and never for much longer than asked.
+        try:
+            _, overran = await asyncio.wait(
+                scans.values(), timeout=discovery_timeout + DISCOVERY_GRACE
+            )
+        finally:
+            for task in scans.values():
+                task.cancel()  # no-op once finished
+        await asyncio.gather(*overran, return_exceptions=True)
+
+        devices = []
+        for name, task in scans.items():
+            if task in overran:
+                _LOGGER.warning("LIFX %s discovery overran and was stopped", name)
+                continue
+            if (err := task.exception()) is not None:
+                # One failed scan must not discard what the other one found.
+                _LOGGER.error("LIFX %s discovery failed", name, exc_info=err)
+                continue
+            found = task.result()
+            devices.extend(found)
+            _LOGGER.info("LIFX %s discovery found %d devices", name, len(found))
 
         return await self.bare_request_success(
             {

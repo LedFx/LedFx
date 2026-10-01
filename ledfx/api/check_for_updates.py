@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -26,7 +27,7 @@ class CheckLedFxUpdatesEndPoint(RestEndpoint):
                 message="This instance of LedFx is not an official release - happy developing!",
             )
         _LOGGER.info("Checking for updates...")
-        if UpdateChecker.get_release_information():
+        if await asyncio.to_thread(UpdateChecker.get_release_information):
             latest_version = UpdateChecker.get_latest_version()
             release_age = UpdateChecker.get_release_age()
             release_url = UpdateChecker.get_release_url()

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from json import JSONDecodeError
 
@@ -7,6 +8,23 @@ from openrgb import OpenRGBClient
 from ledfx.api import RestEndpoint
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _list_devices(server: str, port: int) -> list[dict[str, object]]:
+    """Connect to an OpenRGB server and list its devices. Blocking."""
+    client = OpenRGBClient(address=server, port=port)
+    try:
+        return [
+            {
+                "name": device.name,
+                "type": device.type,
+                "id": device.id,
+                "leds": len(device.leds),
+            }
+            for device in client.devices
+        ]
+    finally:
+        client.disconnect()
 
 
 class FindOpenRGBDevicesEndpoint(RestEndpoint):
@@ -23,31 +41,7 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
         Returns:
             web.Response: The HTTP response object containing either an error, or a dict of OpenRGB devices at localhost:6742.
         """
-
-        try:
-            client = OpenRGBClient(address="127.0.0.1", port=6742)
-        except Exception as e:  # noqa: BLE001
-            error_message = (
-                f"Unable to connect to OpenRGB server at localhost:6742, {e}."
-            )
-            _LOGGER.warning(error_message)
-            return await self.request_success(
-                "warning",
-                error_message,
-            )
-
-        devices = []
-        for device in client.devices:
-            devices.append(
-                {
-                    "name": device.name,
-                    "type": device.type,
-                    "id": device.id,
-                    "leds": len(device.leds),
-                }
-            )
-        response = {"status": "success", "devices": devices}
-        return await self.bare_request_success(response)
+        return await self._find("127.0.0.1", 6742)
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -72,13 +66,16 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
 
         try:
             port = int(port)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             error_message = f"Unable to convert {port} to int."
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
 
+        return await self._find(server, port)
+
+    async def _find(self, server: str, port: int) -> web.Response:
         try:
-            client = OpenRGBClient(address=server, port=port)
+            devices = await asyncio.to_thread(_list_devices, server, port)
         except Exception as e:  # noqa: BLE001
             error_message = (
                 f"Unable to connect to OpenRGB server at {server}:{port}, {e}."
@@ -87,16 +84,6 @@ class FindOpenRGBDevicesEndpoint(RestEndpoint):
             return await self.request_success(
                 "warning",
                 error_message,
-            )
-        devices = []
-        for device in client.devices:
-            devices.append(
-                {
-                    "name": device.name,
-                    "type": device.type,
-                    "id": device.id,
-                    "leds": len(device.leds),
-                }
             )
         response = {"status": "success", "devices": devices}
         return await self.bare_request_success(response)
