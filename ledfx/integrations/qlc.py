@@ -14,7 +14,7 @@ from ledfx.configuration.fields import X_REQUIRED, CoercedInt
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 
 # from ledfx.events import Event
-from ledfx.integrations import Integration
+from ledfx.integrations import Integration, Status
 from ledfx.utils import async_fire_and_forget, resolve_destination
 
 # import time
@@ -274,14 +274,23 @@ class QLC(Integration):
     async def disconnect(self):
         self._connect_generation += 1
         self._cancel_connect()
-        if self._client is not None:
-            # fire and forget bc for some reason close() never returns... -o-
-            async_fire_and_forget(self._client.disconnect(), loop=self._ledfx.loop)
-            # The client's session is closed now; connect() builds a new one.
-            self._client = None
+        # Swapped out before the await, so in-flight operations see it gone.
+        client, self._client = self._client, None
+        if client is not None:
+            # Bounded by the websocket close timeout; the session is closed
+            # by the time this returns, so delete and update can't leak it.
+            await client.disconnect()
             await super().disconnect("Disconnected from QLC+ websocket")
         else:
             await super().disconnect()
+
+    async def deactivate(self):
+        # The base class fires disconnect() and forgets it, but an update
+        # destroys this integration straight after deactivating it.
+        _LOGGER.info("Deactivating %s integration", self.name)
+        self._active = False
+        self._status = Status.DISCONNECTING
+        await self.disconnect()
 
     async def on_delete(self):
         await self.disconnect()

@@ -28,15 +28,13 @@ async def test_client_disconnect_closes_its_session() -> None:
     session_cls.return_value.close.assert_awaited_once()
 
 
-@pytest.mark.parametrize("teardown", ["disconnect", "on_delete"])
+@pytest.mark.parametrize("teardown", ["disconnect", "on_delete", "deactivate"])
 async def test_teardown_disconnects_and_drops_the_client(teardown: str) -> None:
     integration = make_qlc()
     client = MagicMock(disconnect=AsyncMock())
     integration._client = client
 
     await getattr(integration, teardown)()
-    for _ in range(3):  # let the fire-and-forget disconnect run
-        await asyncio.sleep(0)
 
     client.disconnect.assert_awaited_once()
     assert integration._client is None
