@@ -230,6 +230,8 @@ class QLC(Integration):
 
     async def _send_payload(self, qlc_payload):
         """Sends payload of {id:value, ...} pairs to QLC"""
+        if self._client is None:
+            return
         for widget_id, value in qlc_payload.items():
             await self._client.send(f"{int(widget_id)}|{value}")
 
@@ -253,9 +255,14 @@ class QLC(Integration):
         if self._client is not None:
             # fire and forget bc for some reason close() never returns... -o-
             async_fire_and_forget(self._client.disconnect(), loop=self._ledfx.loop)
+            # The client's session is closed now; connect() builds a new one.
+            self._client = None
             await super().disconnect("Disconnected from QLC+ websocket")
         else:
             await super().disconnect()
+
+    async def on_delete(self):
+        await self.disconnect()
 
     def _cancel_connect(self):
         if self._connect_task is not None:
@@ -285,8 +292,11 @@ class QLCWebsocketClient:
                 return False
 
     async def disconnect(self):
-        if self.websocket is not None:
-            await self.websocket.close()
+        try:
+            if self.websocket is not None:
+                await self.websocket.close()
+        finally:
+            await self.session.close()
 
     async def begin(self, callback):
         """Connect and indefinitely read from websocket, returning messages to callback func"""

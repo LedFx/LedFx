@@ -14057,13 +14057,6 @@
       "severity": "error"
     },
     {
-      "column": 19,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send`",
-      "severity": "error"
-    },
-    {
       "column": 15,
       "path": "ledfx/integrations/qlc.py",
       "name": "bad-override",
