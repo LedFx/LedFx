@@ -60,6 +60,9 @@ PERMITTED_KEYS = {
         "lifx_broadcast_address",
         "lifx_discovery_timeout",
         "sendspin_always_on",
+        "allowed_origins",
+        "allowed_hosts",
+        "allow_null_origin",
     ),
 }
 

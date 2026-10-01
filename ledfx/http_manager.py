@@ -8,6 +8,7 @@ from aiohttp import web
 
 import ledfx_frontend
 from ledfx.api import RestApi
+from ledfx.api.origin_policy import origin_middleware
 
 try:
     base_path = sys._MEIPASS
@@ -21,7 +22,10 @@ class HttpServer:
     def __init__(self, ledfx, host, port, port_s):
         """Initialize the HTTP server"""
 
-        self.app = web.Application(client_max_size=5 * 1024 * 1024)  # 5 MB
+        self.app = web.Application(
+            client_max_size=5 * 1024 * 1024,  # 5 MB
+            middlewares=[origin_middleware(ledfx)],
+        )
         self.api = RestApi(ledfx)
 
         self.register_routes()

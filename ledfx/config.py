@@ -53,6 +53,9 @@ CORE_CONFIG_KEYS_NO_RESTART = [
     "lifx_discovery_timeout",
     "sendspin_always_on",
     "now_playing",
+    "allowed_origins",
+    "allowed_hosts",
+    "allow_null_origin",
 ]
 # Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
 VISUALISATION_CONFIG_KEYS = [
@@ -191,6 +194,21 @@ CORE_CONFIG_SCHEMA = vol.Schema(
         vol.Optional("sendspin_servers", default={}): dict,
         vol.Optional("sendspin_always_on", default=True): bool,
         vol.Optional("now_playing", default={}): dict,
+        vol.Optional(
+            "allowed_origins",
+            default=[],
+            description='Extra web origins (e.g. "https://ledfx.example.com") allowed to use the API from a browser. "*" allows every origin',
+        ): [str],
+        vol.Optional(
+            "allowed_hosts",
+            default=[],
+            description='Extra host names (e.g. "ledfx.example.com") that browsers may use to reach LedFx. "*" allows every name',
+        ): [str],
+        vol.Optional(
+            "allow_null_origin",
+            default=False,
+            description='Accept browser requests whose Origin is "null"',
+        ): bool,
     },
     extra=vol.ALLOW_EXTRA,
 )

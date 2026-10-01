@@ -160,18 +160,6 @@ wheels = [
 ]
 
 [[package]]
-name = "aiohttp-cors"
-version = "0.8.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "aiohttp" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/6f/6d/d89e846a5444b3d5eb8985a6ddb0daef3774928e1bfbce8e84ec97b0ffa7/aiohttp_cors-0.8.1.tar.gz", hash = "sha256:ccacf9cb84b64939ea15f859a146af1f662a6b1d68175754a07315e305fb1403", size = 38626, upload-time = "2025-03-31T14:16:20.048Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/3b/40a68de458904bcc143622015fff2352b6461cd92fd66d3527bf1c6f5716/aiohttp_cors-0.8.1-py3-none-any.whl", hash = "sha256:3180cf304c5c712d626b9162b195b1db7ddf976a2a25172b35bb2448b890a80d", size = 25231, upload-time = "2025-03-31T14:16:18.478Z" },
-]
-
-[[package]]
 name = "aiosendspin"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1166,7 +1154,6 @@ version = "2.1.9"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
-    { name = "aiohttp-cors" },
     { name = "aiosendspin", marker = "python_full_version >= '3.12'" },
     { name = "aubio-ledfx" },
     { name = "audio-hotplug" },
@@ -1252,7 +1239,6 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
-    { name = "aiohttp-cors", specifier = ">=0.7.0" },
     { name = "aiosendspin", marker = "python_full_version >= '3.12'", specifier = ">=9.1.1,<9.2.0" },
     { name = "aubio-ledfx", specifier = ">=0.4.11" },
     { name = "audio-hotplug", specifier = ">=0.1.0" },
