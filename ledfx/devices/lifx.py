@@ -146,7 +146,7 @@ class LifxDevice(NetworkedDevice):
         self._perm = None
 
         # Mirror-specific: buffer position of each zone, in zone order
-        self._mirror_positions = None
+        self._mirror_positions: np.ndarray | None = None
         self._front_zone_count = 0
 
         # Animation module for matrix/strip (high performance)
@@ -199,11 +199,11 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type = "mirror"
                     self._device_type = "LIFX Mirror"
                     self._zone_count = device.layout.zone_count
-                    self._config["pixel_count"] = self._zone_count
+                    self._set_config_values(pixel_count=self._zone_count)
                     self._front_zone_count = device.front_zone_count
                     _LOGGER.info(
                         "LIFX %s: Mirror with %d zones (front %d, back %d)",
-                        self._config["name"],
+                        self.config.name,
                         self._zone_count,
                         device.front_zone_count,
                         device.back_zone_count,
@@ -717,9 +717,7 @@ class LifxDevice(NetworkedDevice):
                     # Scatter zone-ordered pixels into the Mirror's buffer;
                     # unused buffer positions stay black
                     positions = self._mirror_positions[: len(pixels)]
-                    canvas = np.zeros(
-                        (self._animator.pixel_count, 3), dtype=np.uint8
-                    )
+                    canvas = np.zeros((self._animator.pixel_count, 3), dtype=np.uint8)
                     canvas[positions] = pixels[: len(positions)]
                     pixels = canvas
                 pixel_count = min(len(pixels), self._animator.pixel_count)
