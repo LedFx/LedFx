@@ -1,23 +1,13 @@
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING
 
 from aiohttp import web
 from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager, venue_payload
-
-if TYPE_CHECKING:
-    from ledfx.core import LedFxCore
+from ledfx.venues import venue_payload
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
-    if not hasattr(ledfx, "venues"):
-        ledfx.venues = VenueManager(ledfx)
-    return ledfx.venues
 
 
 class VenueEndpoint(RestEndpoint):
@@ -27,7 +17,7 @@ class VenueEndpoint(RestEndpoint):
 
     async def get(self, venue_id: str) -> web.Response:
         """Get a venue by ID."""
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
         cfg = mgr.get(venue_id)
         if cfg is None:
             return await self.invalid_request(f"Venue '{venue_id}' not found")
@@ -55,7 +45,7 @@ class VenueEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
 
         action = data.get("action")
 
@@ -107,7 +97,7 @@ class VenueEndpoint(RestEndpoint):
 
     async def delete(self, venue_id: str) -> web.Response:
         """Delete a venue."""
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
         ok = mgr.delete(venue_id)
         if not ok:
             return await self.invalid_request(f"Venue '{venue_id}' not found")

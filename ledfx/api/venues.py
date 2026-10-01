@@ -1,22 +1,13 @@
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager, venue_payload
-
-if TYPE_CHECKING:
-    from ledfx.core import LedFxCore
+from ledfx.venues import venue_payload
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
-    if not hasattr(ledfx, "venues"):
-        ledfx.venues = VenueManager(ledfx)
-    return ledfx.venues
 
 
 class VenuesEndpoint(RestEndpoint):
@@ -26,7 +17,7 @@ class VenuesEndpoint(RestEndpoint):
 
     async def get(self) -> web.Response:
         """List all venues."""
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
         venues = mgr.list_venues()
         result = [venue_payload(vid, cfg) for vid, cfg in venues.items()]
         return await self.bare_request_success({"venues": result})
@@ -47,16 +38,13 @@ class VenuesEndpoint(RestEndpoint):
                 'Required attribute "name" was not provided'
             )
 
-        rows = int(data.get("rows", 4))
-        cols = int(data.get("cols", 4))
-        if rows < 1 or cols < 1:
-            return await self.invalid_request(
-                '"rows" and "cols" must be positive integers'
-            )
-
         try:
-            mgr = _ensure_manager(self._ledfx)
-            venue_id, venue = mgr.create(name=name, rows=rows, cols=cols)
+            mgr = self._ledfx.venues
+            venue_id, venue = mgr.create(
+                name=name, rows=data.get("rows", 4), cols=data.get("cols", 4)
+            )
+        except ValidationError as err:
+            return await self.validation_error(err)
         except Exception as e:  # noqa: BLE001 - reported to the client, as before
             _LOGGER.warning("Failed to create venue: %s", e)
             return await self.invalid_request(str(e))

@@ -1,12 +1,21 @@
 """Tests for the Venues system: CRUD, exclusive virtual membership, and
 color/gradient override activation."""
 
-from unittest.mock import MagicMock
+import json
+import threading
+from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import numpy as np
 import pytest
+from aiohttp import web
+from pydantic import ValidationError
 
-from ledfx.configuration.models import LedFxConfig, VenuePad
+from ledfx.api.venues import VenuesEndpoint
+from ledfx.configuration.models import VENUE_GRID_MAX, LedFxConfig, VenuePad
+from ledfx.core import LedFxCore
 from ledfx.venues import VenueManager, _hsl_auto_palette
+from ledfx.virtuals import Virtual
 
 
 def _make_ledfx() -> MagicMock:
@@ -199,3 +208,95 @@ def test_clear_override_calls_clear_on_all_virtuals(
 def test_clear_override_missing_venue_raises(mgr: VenueManager) -> None:
     with pytest.raises(KeyError):
         mgr.clear_override("nope")
+
+
+# Review-feedback regressions
+
+
+async def _post_venue(ledfx: MagicMock, body: dict[str, object]):
+    request = MagicMock(spec=web.Request, method="POST", path="/api/venues")
+    request.headers = dict[str, str]()
+    request.has_body = True
+    request.content_type = "application/json"
+    request.json = AsyncMock(return_value=body)
+    request.match_info = dict[str, str]()
+    response = await VenuesEndpoint(ledfx).handler(request)
+    return response.status, json.loads(response.text or "")
+
+
+@pytest.mark.parametrize(
+    "grid", [{"rows": "abc"}, {"cols": None}, {"rows": 0}, {"cols": VENUE_GRID_MAX + 1}]
+)
+async def test_create_venue_bad_grid_is_a_validation_error(
+    ledfx: MagicMock, grid: dict[str, object]
+) -> None:
+    ledfx.venues = VenueManager(ledfx)
+    status, body = await _post_venue(ledfx, {"name": "Bad", **grid})
+    assert status == 400
+    assert body["errors"]
+    assert ledfx.config.venues == {}
+
+
+@pytest.mark.parametrize("axis", ["rows", "cols"])
+def test_oversized_grid_is_rejected_before_building_pads(
+    mgr: VenueManager, axis: str
+) -> None:
+    huge = {"rows": 4, "cols": 4, axis: 100_000}
+    venue_id, _ = mgr.create(name="Small")
+    with patch("ledfx.venues._hsl_auto_palette") as palette:
+        with pytest.raises(ValidationError):
+            mgr.create(name="Huge", **huge)
+        with pytest.raises(ValidationError):
+            mgr.update(venue_id, {"color_pads": huge})
+    palette.assert_not_called()
+    venue = mgr.get(venue_id)
+    assert venue is not None and venue.color_pads.rows == 4
+    assert mgr.create(name="Max", rows=VENUE_GRID_MAX, cols=VENUE_GRID_MAX)
+
+
+def test_core_creates_the_venue_manager(tmp_path: Path) -> None:
+    # Deleting a virtual before any venue request must still clean venues.
+    with patch("ledfx.core.HttpServer"):  # other tests register stub endpoints
+        core = LedFxCore(config_dir=str(tmp_path))
+    try:
+        assert isinstance(core.venues, VenueManager)
+    finally:
+        core.loop.close()
+
+
+def test_solid_override_matches_the_grouped_frame_size() -> None:
+    virtual = object.__new__(Virtual)
+    virtual._config = {"grouping": 4, "preview_only": True}
+    virtual.lock = threading.Lock()
+    virtual._active_effect = MagicMock(is_active=True, pixels=None)
+    virtual._paused = False
+    virtual.fallback_fire = False
+    virtual._last_render_error = 0.0
+    virtual._fire_update_event = MagicMock()
+
+    def assemble() -> np.ndarray:
+        virtual._active = False  # render a single frame
+        return np.full((virtual.effective_pixel_count, 3), 255.0)
+
+    virtual.assemble_frame = assemble
+    with (
+        patch.object(Virtual, "pixel_count", 10),
+        patch.object(Virtual, "refresh_rate", 1000),
+        patch.object(Virtual, "id", "v"),
+    ):
+        virtual.set_color_override("#ff0000")
+        virtual._active = True
+        virtual.thread_function()
+        frame = virtual.assembled_frame
+        assert frame is not None
+        np.testing.assert_array_equal(frame, [[255, 0, 0]] * 3)
+
+        # Changing the grouping reactivates the effect; the override follows.
+        virtual._config["grouping"] = 2
+        for prop in ("group_size", "effective_pixel_count"):
+            virtual.__dict__.pop(prop)
+        virtual.clear_transition_effect = MagicMock()
+        with patch("ledfx.virtuals.Transitions"):
+            virtual._reactivate_effect()
+        assert virtual._color_override_frame is not None
+        assert virtual._color_override_frame.shape == (5, 3)

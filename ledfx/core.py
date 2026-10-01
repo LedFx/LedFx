@@ -76,8 +76,6 @@ class LedFxCore:
         4: "Restart request via API - Restarting.",
         5: "Shutdown request via CI testing flag - Shutting down.",
     }
-    # Set on first use by the venue API endpoints (ledfx/api/venue*.py).
-    venues: VenueManager
 
     def __init__(
         self,
@@ -101,6 +99,7 @@ class LedFxCore:
             backup_config_file(config_dir, "DELETE", move=True)
 
         self.config_store = ConfigStore.load(config_dir)
+        self.venues = VenueManager(self)
         if not self.config.instance_id:
             self.config.instance_id = str(uuid.uuid4())
         self.hosts = get_sorted_physical_ips()

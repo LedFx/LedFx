@@ -5,6 +5,7 @@ from functools import cached_property
 
 import numpy as np
 
+from ledfx.color import RGB, Gradient, parse_gradient
 from ledfx.configuration.fields import EnumSource, register_enum_source
 from ledfx.configuration.models import (
     EffectEntry,
@@ -285,6 +286,9 @@ class Virtual:
             self._active_effect._deactivate()
             if self.pixel_count > 0:
                 self._active_effect.activate(self)
+        # Grouping changes the frame size, so rebuild any active override.
+        if self._color_override is not None:
+            self._apply_color_override_to_effect()
 
     def update_segments(self, segments_config):
         """
@@ -757,11 +761,10 @@ class Virtual:
             - gradient_lut: 1024×3 float array sampled uniformly 0→1, or None for
               solid colors. Used at render time: per-pixel hue → LUT index → color.
         """
-        n = self.pixel_count
+        # Frames are assembled at the grouped size, so match it here.
+        n = self.effective_pixel_count
         if self._color_override is None or not n:
             return None, None
-
-        from ledfx.color import RGB, Gradient, parse_gradient
 
         try:
             parsed = parse_gradient(self._color_override)

@@ -421,9 +421,14 @@ class VenuePad(LedFxModel):
     gradient: str | None = Field(None, json_schema_extra=_UNSET)
 
 
+# The frontend's pad-grid editor caps each axis at 16. The bound also stops a
+# huge grid from allocating rows*cols pads (see VenueManager.create/update).
+VENUE_GRID_MAX = 16
+
+
 class VenueColorPads(LedFxModel):
-    rows: int = Field(4, ge=1)
-    cols: int = Field(4, ge=1)
+    rows: int = Field(4, ge=1, le=VENUE_GRID_MAX)
+    cols: int = Field(4, ge=1, le=VENUE_GRID_MAX)
     pads: list[VenuePad] = []  # row-major
 
 

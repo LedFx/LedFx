@@ -1,22 +1,11 @@
 import logging
 from json import JSONDecodeError
-from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager
-
-if TYPE_CHECKING:
-    from ledfx.core import LedFxCore
 
 _LOGGER = logging.getLogger(__name__)
-
-
-def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
-    if not hasattr(ledfx, "venues"):
-        ledfx.venues = VenueManager(ledfx)
-    return ledfx.venues
 
 
 class VenueOverrideEndpoint(RestEndpoint):
@@ -51,7 +40,7 @@ class VenueOverrideEndpoint(RestEndpoint):
         except (TypeError, ValueError):
             return await self.invalid_request('"pad_index" must be an integer')
 
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
         try:
             mgr.activate_override(venue_id, pad_index)
         except KeyError as e:
@@ -69,7 +58,7 @@ class VenueOverrideEndpoint(RestEndpoint):
 
     async def delete(self, venue_id: str) -> web.Response:
         """Clear the color override — running effects immediately resume."""
-        mgr = _ensure_manager(self._ledfx)
+        mgr = self._ledfx.venues
         try:
             mgr.clear_override(venue_id)
         except KeyError as e:

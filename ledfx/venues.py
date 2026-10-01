@@ -100,13 +100,10 @@ class VenueManager:
             venue_id = f"{base_id}-{idx}"
             idx += 1
 
-        n_pads = rows * cols
-        venue_cfg = Venue(
-            name=name,
-            color_pads=VenueColorPads(
-                rows=rows, cols=cols, pads=_hsl_auto_palette(n_pads)
-            ),
-        )
+        # Validate the grid bounds before building rows*cols pads.
+        grid = VenueColorPads(rows=rows, cols=cols)
+        grid.pads = _hsl_auto_palette(grid.rows * grid.cols)
+        venue_cfg = Venue(name=name, color_pads=grid)
         self._venues[venue_id] = venue_cfg
         self._save()
         _LOGGER.info("Created venue '%s' (%s)", name, venue_id)
@@ -133,8 +130,12 @@ class VenueManager:
             cp = data["color_pads"]
             if not isinstance(cp, dict):
                 raise ValueError('"color_pads" must be an object')
-            rows = int(cp.get("rows", cfg.color_pads.rows))
-            cols = int(cp.get("cols", cfg.color_pads.cols))
+            # Validate the grid bounds before building rows*cols pads.
+            grid = VenueColorPads(
+                rows=cp.get("rows", cfg.color_pads.rows),
+                cols=cp.get("cols", cfg.color_pads.cols),
+            )
+            rows, cols = grid.rows, grid.cols
             n_pads = rows * cols
             if "pads" in cp and len(cp["pads"]) == n_pads:
                 pads = list(cp["pads"])
