@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from ledfx.color import parse_gradient
 from ledfx.virtuals import Virtual
 
 
@@ -16,4 +17,10 @@ def test_invalid_segment_logs_a_warning(
     virtual._ledfx = SimpleNamespace(devices={})
     with pytest.raises(ValueError):
         virtual.validate_segment(segment)
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+
+
+def test_invalid_gradient_logs_a_warning(caplog: pytest.LogCaptureFixture) -> None:
+    with pytest.raises(ValueError):
+        parse_gradient("#ff2a2a #ff8c00 #ffd166")
     assert [r.levelno for r in caplog.records] == [logging.WARNING]
