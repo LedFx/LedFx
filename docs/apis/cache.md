@@ -151,9 +151,11 @@ DELETE /api/cache/images
 
 ### Refresh Image
 
-Clear a cached image to force re-download on next access.
+Refresh or clear a cached image.
 
-By default this endpoint removes only the cache entry for the URL itself, so the next request for the full image (for example via `/api/get_gif_frames` or `/api/assets/download`) re-downloads it from the origin server. Thumbnails from `/api/assets/thumbnail` are cached as separate size/dimension variants of the URL and are left in place; pass `all_variants: true` to clear those too.
+By default this endpoint removes only the cache entry for the URL itself. For an `http://` or `https://` URL it then re-downloads the full image straight away, during this request, and replies `{"refreshed": true}`, or fails if the download fails. For a local asset (`asset://`, `builtin://`) it only removes the entry, and `refreshed` says whether there was one. Thumbnails from `/api/assets/thumbnail` are cached as separate size/dimension variants of the URL and are left in place.
+
+With `all_variants: true` it removes every cached entry for the URL, the full image and all thumbnail variants, without re-downloading anything, and replies with `cleared_count`.
 
 **Endpoint:** `POST /api/cache/images/refresh`
 
@@ -356,7 +358,10 @@ A successful response with two extracted frames:
 ``` json
 {
   "status": "failed",
-  "reason": "Failed to open gif from: /invalid/path.gif"
+  "payload": {
+    "type": "error",
+    "reason": "Failed to open GIF image from: /invalid/path.gif"
+  }
 }
 ```
 
