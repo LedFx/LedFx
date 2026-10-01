@@ -46,3 +46,23 @@ async def test_teardown_disconnects_and_drops_the_client(teardown: str) -> None:
 async def test_send_payload_without_a_client_is_a_noop() -> None:
     integration = make_qlc()
     await integration._send_payload({"1": 255})
+
+
+async def test_client_connect_retries_after_a_handshake_error() -> None:
+    websocket = MagicMock()
+    with patch("ledfx.integrations.qlc.aiohttp.ClientSession") as session_cls:
+        session_cls.return_value.ws_connect = AsyncMock(
+            side_effect=[
+                WSServerHandshakeError(
+                    MagicMock(), (), message="Invalid response status"
+                ),
+                websocket,
+            ]
+        )
+        client = QLCWebsocketClient("http://127.0.0.1:9999/qlcplusWS", "x")
+
+    with patch("ledfx.integrations.qlc.asyncio.sleep", AsyncMock()):
+        assert await client.connect() is True
+
+    assert client.websocket is websocket
+    assert session_cls.return_value.ws_connect.await_count == 2

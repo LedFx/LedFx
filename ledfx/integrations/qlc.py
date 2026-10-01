@@ -285,8 +285,10 @@ class QLCWebsocketClient:
                 self.websocket = await self.session.ws_connect(self.url)
                 # self.websocket = await self.ws_connect(self.url)
                 return True
-            except aiohttp.client_exceptions.ClientConnectorError:
-                _LOGGER.info("Connection to %s failed. Retrying in 5s...", self.domain)
+            except aiohttp.ClientError as e:
+                _LOGGER.info(
+                    "Connection to %s failed (%s). Retrying in 5s...", self.domain, e
+                )
                 await asyncio.sleep(5)
             except asyncio.CancelledError:
                 return False
