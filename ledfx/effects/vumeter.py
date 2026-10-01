@@ -68,7 +68,7 @@ class VuMeterAudioEffect(AudioReactiveEffect):
         self.volume = max(0, min(1, self.audio.volume(filtered=False)))
         self.volume_peak = self.volume_peak_filter.update(self.volume)
         self.volume_min_peak = self.volume_min_peak_filter.update(1 - self.volume)
-        self.volume_min = self.audio._config["min_volume"]
+        self.volume_min = self.audio._config.min_volume
 
     def render(self):
         self.pixels = np.zeros(np.shape(self.pixels))

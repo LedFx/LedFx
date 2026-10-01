@@ -1,6 +1,6 @@
 """pydantic models for LedFx configuration."""
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -71,13 +71,22 @@ class LedFxModel(BaseModel):
 
 
 # No return annotation on purpose: pydantic's model_dump() type is kept, so the
-# legacy dict sites (audio, melbank, virtual) read values as untyped, as they did
-# voluptuous output. Typing them needs those sites to read typed models instead.
+# legacy dict site (virtuals) reads values as untyped, as it did voluptuous
+# output. Typing it needs that site to read typed models instead.
 def validate_dict(model: type[BaseModel], data: object, *, runtime: bool = False):
     """Validate data (any mapping; anything else is a ValidationError) and
     return a plain dict shaped like voluptuous output."""
     context = RUNTIME_CONTEXT if runtime else None
     return model.model_validate(data, context=context).model_dump()
+
+
+M = TypeVar("M", bound=BaseModel)
+
+
+def replace_model(model: M, **changes: object) -> M:
+    """A validated copy of model with changes applied: how a frozen model
+    changes. Callers swap the copy in whole, so readers never see half of it."""
+    return model.model_validate({**model.model_dump(), **changes})
 
 
 def _transition_modes() -> list[str]:
@@ -129,14 +138,16 @@ class AudioAnalysisConfig(LedFxModel):
     )
 
 
+# Frozen: LedFxConfig and the live audio/melbank objects share these instances,
+# so a change must replace the model (replace_model), never write into it.
 class AudioConfig(AudioInputConfig, AudioAnalysisConfig):
     """Persisted audio section: input and analysis settings together."""
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", frozen=True)
 
 
 class MelbankConfig(LedFxModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", frozen=True)
 
     name: str | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
     min_frequency: CoercedInt = Field(20, ge=20, le=15000)
@@ -144,7 +155,7 @@ class MelbankConfig(LedFxModel):
 
 
 class MelbanksConfig(LedFxModel):
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", frozen=True)
 
     samples: CoercedInt = Field(24, ge=0, le=100)
     # 1 is infinite power (melbank.py), below 0 the response inverts.
@@ -152,11 +163,12 @@ class MelbanksConfig(LedFxModel):
     coeffs_type: Literal[
         "matt_mel", "triangle", "bark", "mel", "htk", "scott", "scott_mel"
     ] = "matt_mel"
-    max_frequencies: list[Annotated[int, Field(ge=0, le=15000), coerce(int)]] = [
+    # A tuple, so the frozen, shared model can't be changed in place either.
+    max_frequencies: tuple[Annotated[int, Field(ge=0, le=15000), coerce(int)], ...] = (
         350,
         2000,
         15000,
-    ]
+    )
     min_frequency: CoercedInt = Field(20, ge=0, le=15000)
 
 

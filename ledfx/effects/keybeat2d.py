@@ -398,7 +398,7 @@ class Keybeat2d(Twod, GifBase):
             self.begin_time = self.now
 
         self.last_beat_t = self.now
-        self.min_vol = self.audio._config["min_volume"]
+        self.min_vol = self.audio._config.min_volume
 
     def audio_data_updated(self, data):
         if self.half_beat:

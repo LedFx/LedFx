@@ -12,7 +12,7 @@ from ledfx.configuration.models import (
     MelbankCollectionEntry,
     MelbankConfig,
     MelbanksConfig,
-    validate_dict,
+    replace_model,
 )
 from ledfx.effects import fast_blur_array, mel
 from ledfx.effects.math import ExpFilter
@@ -60,55 +60,66 @@ FREQUENCY_RANGES_SIMPLE = {
 _LOGGER = logging.getLogger(__name__)
 
 
+class MelbankProcessorConfig(MelbankConfig):
+    """One melbank's config with the global melbanks settings applied.
+
+    Runtime only: never persisted or served, so it adds no schema. The global
+    settings arrive already checked by MelbanksConfig. Frozen (inherited):
+    changes go through replace_model.
+    """
+
+    samples: int
+    peak_isolation: float
+    coeffs_type: str
+
+
 class Melbank:
     """A single melbank"""
 
     def __init__(self, audio, config):
         """Initialize all the melbank related variables"""
         self._audio = audio
-        self._config = validate_dict(MelbankConfig, config)
+        self._config = MelbankProcessorConfig.model_validate(config)
         # adjustable power (peak isolation) based on parameter a (0-1)
         # a=0    -> linear response (filter bank value maps to itself)
         # a=0.4  -> roughly equivalent to filter_banks ** 2.0
         # a=0.6  -> roughly equivalent to filter_banks ** 3.0
         # a=1    -> no response (infinite power as filter bank value approaches 1)
         # https://www.desmos.com/calculator/xxa2l9radu
-        self.power_factor = np.tan(
-            0.5 * np.pi * (self._config["peak_isolation"] + 1) / 2
-        )
+        self.power_factor = np.tan(0.5 * np.pi * (self._config.peak_isolation + 1) / 2)
 
         # Few difference coefficient types for experimentation
-        if self._config["coeffs_type"] == "triangle":
+        if self._config.coeffs_type == "triangle":
             melbank_mel = np.linspace(
-                aubio.hztomel(self._config["min_frequency"]),
-                aubio.hztomel(self._config["max_frequency"]),
-                self._config["samples"] + 2,
+                aubio.hztomel(self._config.min_frequency),
+                aubio.hztomel(self._config.max_frequency),
+                self._config.samples + 2,
             )
             self.melbank_frequencies = np.array(
                 [aubio.meltohz(mel) for mel in melbank_mel]
             ).astype(np.float32)
 
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_triangle_bands(self.melbank_frequencies, MIC_RATE)
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
-        if self._config["coeffs_type"] == "bark":
+        if self._config.coeffs_type == "bark":
             melbank_bark = np.linspace(
-                6.0 * np.arcsinh(self._config["min_frequency"] / 600.0),
-                6.0 * np.arcsinh(self._config["max_frequency"] / 600.0),
-                self._config["samples"] + 2,
+                6.0 * np.arcsinh(self._config.min_frequency / 600.0),
+                6.0 * np.arcsinh(self._config.max_frequency / 600.0),
+                self._config.samples + 2,
             )
             self.melbank_frequencies = (600.0 * np.sinh(melbank_bark / 6.0)).astype(
                 np.float32
             )
 
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_triangle_bands(self.melbank_frequencies, MIC_RATE)
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
         # Slaney coefficients will always produce 40 samples spanning 133Hz to
         # 6000Hz
-        if self._config["coeffs_type"] == "slaney":
+        if self._config.coeffs_type == "slaney":
             self.filterbank = aubio.filterbank(40, FFT_SIZE)
             self.filterbank.set_mel_coeffs_slaney(MIC_RATE)
 
@@ -127,70 +138,70 @@ class Melbank:
                 logSpacing, np.arange(1, logFilters + 1)
             )
 
-            self._config["samples"] = 40
+            self._config = replace_model(self._config, samples=40)
             self.melbank_frequencies = np.hstack(
                 (linearSpacedFreqs, logSpacedFreqs)
             ).astype(np.float32)
 
         # Standard mel coefficients
-        if self._config["coeffs_type"] == "mel":
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+        if self._config.coeffs_type == "mel":
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_mel_coeffs(
                 MIC_RATE,
-                self._config["min_frequency"],
-                self._config["max_frequency"],
+                self._config.min_frequency,
+                self._config.max_frequency,
             )
 
             # Frequencies wil be linearly spaced in the mel scale
             melbank_mel = np.linspace(
-                aubio.hztomel(self._config["min_frequency"]),
-                aubio.hztomel(self._config["max_frequency"]),
-                self._config["samples"],
+                aubio.hztomel(self._config.min_frequency),
+                aubio.hztomel(self._config.max_frequency),
+                self._config.samples,
             )
             self.melbank_frequencies = np.array(
                 [aubio.meltohz(mel) for mel in melbank_mel]
             )
 
         # HTK mel coefficients
-        if self._config["coeffs_type"] == "htk":
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+        if self._config.coeffs_type == "htk":
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_mel_coeffs_htk(
                 MIC_RATE,
-                self._config["min_frequency"],
-                self._config["max_frequency"],
+                self._config.min_frequency,
+                self._config.max_frequency,
             )
 
             # Frequencies wil be linearly spaced in the mel scale
             melbank_mel = np.linspace(
-                aubio.hztomel(self._config["min_frequency"]),
-                aubio.hztomel(self._config["max_frequency"]),
-                self._config["samples"],
+                aubio.hztomel(self._config.min_frequency),
+                aubio.hztomel(self._config.max_frequency),
+                self._config.samples,
             )
             self.melbank_frequencies = np.array(
                 [aubio.meltohz(mel) for mel in melbank_mel]
             )
 
         # Coefficients based on Scott's audio reactive led project
-        if self._config["coeffs_type"] == "scott":
+        if self._config.coeffs_type == "scott":
             (
                 melmat,
                 center_frequencies_hz,
                 freqs,
             ) = mel.compute_melmat(
-                num_mel_bands=self._config["samples"],
-                freq_min=self._config["min_frequency"],
-                freq_max=self._config["max_frequency"],
+                num_mel_bands=self._config.samples,
+                freq_min=self._config.min_frequency,
+                freq_max=self._config.max_frequency,
                 num_fft_bands=int(FFT_SIZE // 2) + 1,
                 sample_rate=MIC_RATE,
             )
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
 
         # "Mel"-spacing based on Scott's audio reactive led project. This
         # should in theory be the same as the above, but there seems to be
         # slight differences. Leaving both for science!
-        if self._config["coeffs_type"] == "scott_mel":
+        if self._config.coeffs_type == "scott_mel":
 
             def hertz_to_scott(freq):
                 return 3340.0 * log(1 + (freq / 250.0), 9)
@@ -199,21 +210,21 @@ class Melbank:
                 return 250.0 * (9 ** (scott / 3340.0)) - 250.0
 
             melbank_scott = np.linspace(
-                hertz_to_scott(self._config["min_frequency"]),
-                hertz_to_scott(self._config["max_frequency"]),
-                self._config["samples"] + 2,
+                hertz_to_scott(self._config.min_frequency),
+                hertz_to_scott(self._config.max_frequency),
+                self._config.samples + 2,
             )
             self.melbank_frequencies = np.array(
                 [scott_to_hertz(scott) for scott in melbank_scott]
             ).astype(np.float32)
 
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_triangle_bands(self.melbank_frequencies, MIC_RATE)
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
         # Modified scott_mel, spreads out the low range and compresses the
         # highs
-        if self._config["coeffs_type"] == "matt_mel":
+        if self._config.coeffs_type == "matt_mel":
 
             def hertz_to_matt(freq):
                 return 3700.0 * log(1 + (freq / 230.0), 12)
@@ -222,19 +233,19 @@ class Melbank:
                 return 230.0 * (12 ** (matt / 3700.0)) - 230.0
 
             melbank_matt = np.linspace(
-                hertz_to_matt(self._config["min_frequency"]),
-                hertz_to_matt(self._config["max_frequency"]),
-                self._config["samples"] + 2,
+                hertz_to_matt(self._config.min_frequency),
+                hertz_to_matt(self._config.max_frequency),
+                self._config.samples + 2,
             )
             self.melbank_frequencies = np.array(
                 [matt_to_hertz(matt) for matt in melbank_matt]
             ).astype(np.float32)
 
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_triangle_bands(self.melbank_frequencies, MIC_RATE)
             self.melbank_frequencies = self.melbank_frequencies[1:-1]
 
-        if self._config["coeffs_type"] == "fixed":
+        if self._config.coeffs_type == "fixed":
             ranges = FREQUENCY_RANGES.values()
             upper_edges_hz = np.zeros(len(ranges))
             lower_edges_hz = np.zeros(len(ranges))
@@ -253,12 +264,14 @@ class Melbank:
                 sample_rate=MIC_RATE,
             )
 
-            self._config["samples"] = len(center_frequencies_hz)
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self._config = replace_model(
+                self._config, samples=len(center_frequencies_hz)
+            )
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
 
-        if self._config["coeffs_type"] == "fixed_simple":
+        if self._config.coeffs_type == "fixed_simple":
             ranges = FREQUENCY_RANGES_SIMPLE.values()
             upper_edges_hz = np.zeros(len(ranges))
             lower_edges_hz = np.zeros(len(ranges))
@@ -277,8 +290,10 @@ class Melbank:
                 sample_rate=MIC_RATE,
             )
 
-            self._config["samples"] = len(center_frequencies_hz)
-            self.filterbank = aubio.filterbank(self._config["samples"], FFT_SIZE)
+            self._config = replace_model(
+                self._config, samples=len(center_frequencies_hz)
+            )
+            self.filterbank = aubio.filterbank(self._config.samples, FFT_SIZE)
             self.filterbank.set_coeffs(melmat.astype(np.float32))
             self.melbank_frequencies = center_frequencies_hz
 
@@ -287,7 +302,7 @@ class Melbank:
         # Normalize the filterbank triangles to a consistent height, the
         # default coeffs (for types other than legacy) will be normalized
         # by the triangles area which results in an uneven melbank
-        if self._config["coeffs_type"] not in (
+        if self._config.coeffs_type not in (
             "scott",
             "scott_mel",
             "matt_mel",
@@ -346,7 +361,7 @@ class Melbanks:
     with a high number of virtuals.
     """
 
-    DEFAULT_MELBANK_CONFIG = validate_dict(MelbankConfig, {})
+    DEFAULT_MELBANK_CONFIG = MelbankConfig().model_dump()
 
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
@@ -355,7 +370,12 @@ class Melbanks:
         self.dev_enabled = self._ledfx.dev_enabled()
 
     def update_config(self, config):
-        self.melbanks_config = validate_dict(MelbanksConfig, config)
+        self.melbanks_config = MelbanksConfig.model_validate(config)
+        # Global settings every melbank is built with; not editable per melbank,
+        # so they are stripped from the melbank_collection config below.
+        global_settings = self.melbanks_config.model_dump(
+            include={"samples", "peak_isolation", "coeffs_type"}
+        )
         self.melbank_collection = [
             {"id": entry.id, "config": entry.config.model_dump()}
             for entry in self._ledfx.config.melbank_collection
@@ -364,14 +384,12 @@ class Melbanks:
         self.melbank_processors = []
 
         if not self.melbank_collection:  # if melbank_configs is empty
-            for i, freq in enumerate(self.melbanks_config["max_frequencies"]):
+            for i, freq in enumerate(self.melbanks_config.max_frequencies):
                 melbank_config = {
                     **self.DEFAULT_MELBANK_CONFIG,
                     "name": f"Melbank {i}",
                     "max_frequency": freq,
-                    "samples": self.melbanks_config["samples"],
-                    "peak_isolation": self.melbanks_config["peak_isolation"],
-                    "coeffs_type": self.melbanks_config["coeffs_type"],
+                    **global_settings,
                 }
                 melbank_id = generate_id(melbank_config["name"])
                 melbank = Melbank(self._audio, melbank_config)
@@ -386,25 +404,18 @@ class Melbanks:
                 # Load the individual melbank config
                 melbank_config = melbank["config"]
                 # Apply the global melbanks_config to the individual melbank_config
-                melbank_config["samples"] = self.melbanks_config["samples"]
-                melbank_config["peak_isolation"] = self.melbanks_config[
-                    "peak_isolation"
-                ]
-                melbank_config["coeffs_type"] = self.melbanks_config["coeffs_type"]
+                melbank_config.update(global_settings)
                 melbank = Melbank(self._audio, melbank_config)
                 self.melbank_processors.append(melbank)
                 _LOGGER.debug("Melbank %s loaded from config.", melbank_id)
 
-        # some things  we do not want to have in the config for the melbanks - they are not user editable at an individual melbank level
-        melbank_global_settings = ["samples", "peak_isolation", "coeffs_type"]
-        # remove these from the melbank_collection config
         self.cleaned_melbank_collection = [
             {
                 "id": melbank["id"],
                 "config": {
                     k: v
                     for k, v in melbank["config"].items()
-                    if k not in melbank_global_settings
+                    if k not in global_settings
                 },
             }
             for melbank in self.melbank_collection
@@ -414,19 +425,18 @@ class Melbanks:
             MelbankCollectionEntry.model_validate(entry)
             for entry in self.cleaned_melbank_collection
         ]
-        self._ledfx.config.melbanks = MelbanksConfig.model_validate(
-            self.melbanks_config
-        )
+        # Shared, not copied: MelbanksConfig is frozen.
+        self._ledfx.config.melbanks = self.melbanks_config
         # some useful info that will be accessed faster as variables
-        self.mel_count = len(self.melbanks_config["max_frequencies"])
-        self.mel_len = self.melbanks_config["samples"]
+        self.mel_count = len(self.melbanks_config.max_frequencies)
+        self.mel_len = self.melbanks_config.samples
         # set up melbank data buffers.
         # these are stored as numpy arrays in a tuple to allow direct access to the buffers
         self.melbanks = tuple(np.zeros(self.mel_len) for _ in range(self.mel_count))
         self.melbanks_filtered = tuple(
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
-        self.minimum_volume = self._audio._config["min_volume"]
+        self.minimum_volume = self._audio._config.min_volume
 
     def __call__(self):
         # fastest way i could think of.

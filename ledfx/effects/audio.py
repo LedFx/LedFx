@@ -14,13 +14,12 @@ import sounddevice as sd
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
-from ledfx.configuration.fields import EnumSource, register_enum_source
-from ledfx.configuration.models import (
-    AudioAnalysisConfig,
-    AudioConfig,
-    AudioInputConfig,
-    validate_dict,
+from ledfx.configuration.fields import (
+    RUNTIME_CONTEXT,
+    EnumSource,
+    register_enum_source,
 )
+from ledfx.configuration.models import AudioConfig, replace_model
 from ledfx.effects import Effect
 from ledfx.effects.math import ExpFilter
 from ledfx.effects.melbank import MIC_RATE, Melbanks
@@ -133,12 +132,21 @@ class AudioInputSource:
         if not (hasattr(self, "_ledfx") and self._ledfx):
             return False
         try:
-            self._ledfx.config.audio = AudioConfig.model_validate(self._config)
+            self._ledfx.config.audio = self._config
             self._ledfx.config_store.request_save()
             return True
         except Exception as e:  # noqa: BLE001
             _LOGGER.warning("Failed to persist audio config: %s", e)
             return False
+
+    def _set_config(self, **changes):
+        """Swap in a re-validated copy of the (frozen) config with changes.
+
+        Replacing the whole model keeps related fields (device index and name)
+        consistent for readers on other threads. No runtime context: these
+        values come from the device list itself, so the device hook is skipped.
+        """
+        self._config = replace_model(self._config, **changes)
 
     def _update_device_config(self, device_idx):
         """
@@ -147,13 +155,14 @@ class AudioInputSource:
         Args:
             device_idx: The device index to set, or None to clear
         """
-        self._config["audio_device"] = device_idx
         # Also persist the device name for cross-session recovery
         devices = self.input_devices()
-        if device_idx is not None and device_idx in devices:
-            self._config["audio_device_name"] = devices[device_idx]
-        else:
-            self._config["audio_device_name"] = ""
+        self._set_config(
+            audio_device=device_idx,
+            audio_device_name=devices.get(device_idx, "")
+            if device_idx is not None
+            else "",
+        )
         # Persist to disk so recovered device survives restarts
         self._persist_config()
 
@@ -253,7 +262,7 @@ class AudioInputSource:
                 _LOGGER.warning("No fallback device available")
                 self._update_device_config(None)
         else:
-            current_config_idx = self._config.get("audio_device", -1)
+            current_config_idx = self._config.audio_device
             if found_idx != current_config_idx:
                 _LOGGER.info(
                     "Device list changed: '%s' moved from index %s to %s",
@@ -464,8 +473,8 @@ class AudioInputSource:
         3. No name stored (legacy config) — use index as-is
         4. Name not found — fall through to existing index/default logic
         """
-        saved_name = self._config.get("audio_device_name", "")
-        saved_idx = self._config.get("audio_device")
+        saved_name = self._config.audio_device_name
+        saved_idx = self._config.audio_device
 
         if not saved_name:
             # No name stored (legacy config or first run) — use index as-is
@@ -492,7 +501,7 @@ class AudioInputSource:
                 saved_idx,
                 found_idx,
             )
-            self._config["audio_device"] = found_idx
+            self._set_config(audio_device=found_idx)
             # Persist the corrected index
             self._persist_config()
             return
@@ -532,8 +541,7 @@ class AudioInputSource:
             saved_name,
             default_idx,
         )
-        self._config["audio_device"] = default_idx
-        self._config["audio_device_name"] = ""
+        self._set_config(audio_device=default_idx, audio_device_name="")
         # Clear runtime tracking so hotplug won't try to recover the old device
         with AudioInputSource._class_lock:
             AudioInputSource._last_device_name = None
@@ -549,9 +557,9 @@ class AudioInputSource:
         # audio_device_name -> ""), silently resetting the active device. The
         # name-based restore below cannot recover it because the name has
         # already been cleared.
-        if hasattr(self, "_config") and isinstance(self._config, dict):
-            config = {**self._config, **config}
-        new_config = validate_dict(AudioInputConfig, config, runtime=True)
+        if hasattr(self, "_config"):
+            config = {**self._config.model_dump(), **config}
+        new_config = AudioConfig.model_validate(config, context=RUNTIME_CONTEXT)
 
         device_changing = False
         pipeline_changing = False
@@ -561,10 +569,10 @@ class AudioInputSource:
             # Pipeline-affecting keys require rebuilding internal audio objects even when the audio stream should stay active.
             _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size")
             pipeline_changing = any(
-                old_config.get(k) != new_config.get(k) for k in _PIPELINE_KEYS
+                getattr(old_config, k) != getattr(new_config, k) for k in _PIPELINE_KEYS
             )
 
-            if old_config.get("audio_device") != new_config.get("audio_device"):
+            if old_config.audio_device != new_config.audio_device:
                 device_changing = True
         else:
             old_config = None
@@ -594,11 +602,12 @@ class AudioInputSource:
             if last_active != AudioInputSource._last_active:
                 self._ledfx.events.fire_event(
                     AudioDeviceChangeEvent(
-                        self.input_devices()[self._config["audio_device"]]
+                        self.get_index_name(self._config.audio_device)
                     )
                 )
 
-        self._ledfx.config.audio = AudioConfig.model_validate(self._config)
+        # Shared, not copied: AudioConfig is frozen.
+        self._ledfx.config.audio = self._config
 
     def activate(self):
         # Re-entry guard - must be atomic with _class_lock so concurrent
@@ -652,17 +661,17 @@ class AudioInputSource:
                 input_channels,
             )
         _LOGGER.debug("********************************************")
-        device_idx = self._config["audio_device"]
+        device_idx = self._config.audio_device
         _LOGGER.info(
             "_activate_inner: configured audio_device=%s "
             "audio_device_name=%r valid_indexes=%s",
             device_idx,
-            self._config.get("audio_device_name", ""),
+            self._config.audio_device_name,
             valid_device_indexes,
         )
 
         if device_idx not in valid_device_indexes:
-            configured_name = self._config.get("audio_device_name", "")
+            configured_name = self._config.audio_device_name
             # For Sendspin virtual devices, never fall back to a real audio
             # device — notify the frontend so the user can take action.
             if configured_name.startswith("SENDSPIN:"):
@@ -727,19 +736,19 @@ class AudioInputSource:
             _LOGGER.debug("Using generic settings for pre-emphasis")
             self.pre_emphasis.set_biquad(0.85870, -1.71740, 0.85870, -1.71605, 0.71874)
 
-        freq_domain_length = (self._config["fft_size"] // 2) + 1
+        freq_domain_length = (self._config.fft_size // 2) + 1
 
         self._raw_audio_sample = np.zeros(
-            MIC_RATE // self._config["sample_rate"],
+            MIC_RATE // self._config.sample_rate,
             dtype=np.float32,
         )
 
         # Setup the phase vocoder to perform a windowed FFT
         self._phase_vocoder = aubio.pvoc(
-            self._config["fft_size"],
-            MIC_RATE // self._config["sample_rate"],
+            self._config.fft_size,
+            MIC_RATE // self._config.sample_rate,
         )
-        self._frequency_domain_null = aubio.cvec(self._config["fft_size"])
+        self._frequency_domain_null = aubio.cvec(self._config.fft_size)
         self._frequency_domain = self._frequency_domain_null
         self._frequency_domain_x = np.linspace(
             0,
@@ -747,9 +756,7 @@ class AudioInputSource:
             freq_domain_length,
         )
 
-        samples_to_delay = int(
-            0.001 * self._config["delay_ms"] * self._config["sample_rate"]
-        )
+        samples_to_delay = int(0.001 * self._config.delay_ms * self._config.sample_rate)
         if samples_to_delay:
             self.delay_queue = queue.Queue(maxsize=samples_to_delay)
         else:
@@ -827,7 +834,7 @@ class AudioInputSource:
                     dtype=np.float32,
                     latency="low",
                     blocksize=int(
-                        device["default_samplerate"] / self._config["sample_rate"]
+                        device["default_samplerate"] / self._config.sample_rate
                     ),
                     # only pass channels if we set it to something other than None
                     **({"channels": channels} if channels is not None else {}),
@@ -881,12 +888,13 @@ class AudioInputSource:
             if not current_name or current_idx is None:
                 return
 
-            name_changed = self._config.get("audio_device_name", "") != current_name
-            idx_changed = self._config.get("audio_device") != current_idx
+            name_changed = self._config.audio_device_name != current_name
+            idx_changed = self._config.audio_device != current_idx
 
             if name_changed or idx_changed:
-                self._config["audio_device"] = current_idx
-                self._config["audio_device_name"] = current_name
+                self._set_config(
+                    audio_device=current_idx, audio_device_name=current_name
+                )
                 if self._persist_config():
                     _LOGGER.info(
                         "Persisted audio device '%s' (index %s) for cross-session recovery",
@@ -948,14 +956,12 @@ class AudioInputSource:
             return False
 
         configured_name = (
-            self._config.get("audio_device_name") if hasattr(self, "_config") else ""
+            self._config.audio_device_name if hasattr(self, "_config") else ""
         )
         if isinstance(configured_name, str) and configured_name.startswith("SENDSPIN:"):
             return True
 
-        device_idx = (
-            self._config.get("audio_device") if hasattr(self, "_config") else None
-        )
+        device_idx = self._config.audio_device if hasattr(self, "_config") else None
         result = is_sendspin_always_on(
             device_idx,
             self.query_devices,
@@ -1046,7 +1052,7 @@ class AudioInputSource:
         raw_sample = np.frombuffer(in_data, dtype=np.float32)
 
         in_sample_len = len(raw_sample)
-        out_sample_len = MIC_RATE // self._config["sample_rate"]
+        out_sample_len = MIC_RATE // self._config.sample_rate
 
         if in_sample_len != out_sample_len:
             # Simple resampling
@@ -1111,7 +1117,8 @@ class AudioInputSource:
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
-        if self._volume_filter.value > self._config["min_volume"]:
+        volume = self._volume_filter.value
+        if volume is not None and volume > self._config.min_volume:
             self._processed_audio_sample = self._raw_audio_sample
 
             # Perform a pre-emphasis to balance the highs and lows
@@ -1150,7 +1157,6 @@ class AudioAnalysisSource(AudioInputSource):
     ]
 
     def __init__(self, ledfx, config):
-        config = validate_dict(AudioAnalysisConfig, config)
         super().__init__(ledfx, config)
         self.initialise_analysis()
 
@@ -1173,17 +1179,17 @@ class AudioAnalysisSource(AudioInputSource):
             )
 
         fft_params = (
-            self._config["fft_size"],
-            MIC_RATE // self._config["sample_rate"],
+            self._config.fft_size,
+            MIC_RATE // self._config.sample_rate,
             MIC_RATE,
         )
 
         # pitch, tempo, onset
-        self._tempo = aubio.tempo(self._config["tempo_method"], *fft_params)
-        self._onset = aubio.onset(self._config["onset_method"], *fft_params)
-        self._pitch = aubio.pitch(self._config["pitch_method"], *fft_params)
+        self._tempo = aubio.tempo(self._config.tempo_method, *fft_params)
+        self._onset = aubio.onset(self._config.onset_method, *fft_params)
+        self._pitch = aubio.pitch(self._config.pitch_method, *fft_params)
         self._pitch.set_unit("midi")
-        self._pitch.set_tolerance(self._config["pitch_tolerance"])
+        self._pitch.set_tolerance(self._config.pitch_tolerance)
 
         # bar oscillator
         self.beat_counter = 0
@@ -1200,7 +1206,7 @@ class AudioAnalysisSource(AudioInputSource):
         self.freq_mel_indexes = []
 
         for freq in self.freq_max_mels:
-            assert self.melbanks.melbanks_config["max_frequencies"][2] >= freq
+            assert self.melbanks.melbanks_config.max_frequencies[2] >= freq
 
             self.freq_mel_indexes.append(
                 next(
@@ -1230,14 +1236,13 @@ class AudioAnalysisSource(AudioInputSource):
         self.beat_min_percent_diff = 0.5
         self.beat_min_time_since = 0.1
         self.beat_min_amplitude = 0.5
-        self.beat_power_history_len = int(self._config["sample_rate"] * 0.2)
+        self.beat_power_history_len = int(self._config.sample_rate * 0.2)
 
         self.beat_prev_time = time.time()
         self.beat_power_history = deque(maxlen=self.beat_power_history_len)
 
     def update_config(self, config):
-        validated_config = validate_dict(AudioAnalysisConfig, config)
-        super().update_config(validated_config)
+        super().update_config(config)
         self.initialise_analysis()
 
     def _invalidate_caches(self):
@@ -1514,11 +1519,11 @@ class AudioReactiveEffect(Effect):
             (
                 i
                 for i, x in enumerate(
-                    self.audio.melbanks.melbanks_config["max_frequencies"]
+                    self.audio.melbanks.melbanks_config.max_frequencies
                 )
                 if x >= self._virtual.frequency_range.max
             ),
-            len(self.audio.melbanks.melbanks_config["max_frequencies"]),
+            len(self.audio.melbanks.melbanks_config.max_frequencies),
         )
 
     @cached_property

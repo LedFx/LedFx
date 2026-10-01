@@ -7,7 +7,10 @@ Strategy doc: docs/developer/dev_notes/audio-device-persistence-strategy.md
 import logging
 from unittest.mock import MagicMock, patch
 
-from ledfx.configuration.models import AudioInputConfig, validate_dict
+import pytest
+from pydantic import ValidationError
+
+from ledfx.configuration.models import AudioConfig, AudioInputConfig, validate_dict
 from ledfx.core import LedFxCore
 from ledfx.effects.audio import AudioInputSource
 from ledfx.events import AudioDeviceListChangedEvent
@@ -78,7 +81,7 @@ def make_ais(config=None, ledfx=None):
     without running __init__ (which requires a real ledfx + audio hardware).
     """
     ais = object.__new__(AudioInputSource)
-    ais._config = config or {}
+    ais._config = AudioConfig.model_validate(config or {})
     ais._ledfx = ledfx
     return ais
 
@@ -98,8 +101,8 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 17
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config.audio_device == 17
+        assert ais._config.audio_device_name == LOOPBACK_NAME
 
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED
@@ -113,8 +116,8 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config, ledfx=ledfx)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 18
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config.audio_device == 18
+        assert ais._config.audio_device_name == LOOPBACK_NAME
         ledfx.config_store.request_save.assert_called_once()
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_AFTER_REMOVAL)
@@ -130,9 +133,9 @@ class TestResolveDeviceFromName:
             ais._resolve_device_from_name()
 
             # Name should be cleared
-            assert ais._config["audio_device_name"] == ""
+            assert ais._config.audio_device_name == ""
             # Index reset to default so we don't open the wrong device
-            assert ais._config["audio_device"] == 0
+            assert ais._config.audio_device == 0
             # Runtime tracking cleared so hotplug won't recover to old device
             assert AudioInputSource._last_device_name is None
             assert AudioInputSource._last_active is None
@@ -148,7 +151,7 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 17
+        assert ais._config.audio_device == 17
         # input_devices should not even be called when name is empty
         mock_devices.assert_not_called()
 
@@ -159,7 +162,7 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 17
+        assert ais._config.audio_device == 17
         mock_devices.assert_not_called()
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
@@ -171,7 +174,7 @@ class TestResolveDeviceFromName:
         ais._resolve_device_from_name()
 
         # Should find index 17 via partial match
-        assert ais._config["audio_device"] == 17
+        assert ais._config.audio_device == 17
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_SIMILAR_NAMES)
     def test_resolve_prefers_exact_over_partial(self, mock_devices):
@@ -181,7 +184,7 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 1
+        assert ais._config.audio_device == 1
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
     def test_resolve_saved_index_invalid_name_found(self, mock_devices):
@@ -191,7 +194,7 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config, ledfx=ledfx)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 17
+        assert ais._config.audio_device == 17
         ledfx.config_store.request_save.assert_called_once()
 
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
@@ -207,8 +210,8 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device_name"] == ""
-        assert ais._config["audio_device"] == 0
+        assert ais._config.audio_device_name == ""
+        assert ais._config.audio_device == 0
 
     @patch.object(
         AudioInputSource,
@@ -222,7 +225,7 @@ class TestResolveDeviceFromName:
         ais = make_ais(config=config, ledfx=ledfx)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 18
+        assert ais._config.audio_device == 18
         ledfx.config_store.request_save.assert_called_once()
 
 
@@ -274,7 +277,7 @@ class TestLegacyUpgradePath:
         # Simulate _update_device_config which is called during activation
         ais._update_device_config(17)
 
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config.audio_device_name == LOOPBACK_NAME
         ledfx.config_store.request_save.assert_called_once()
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
@@ -285,7 +288,7 @@ class TestLegacyUpgradePath:
 
         ais._update_device_config(999)
 
-        assert ais._config["audio_device_name"] == ""
+        assert ais._config.audio_device_name == ""
 
     @patch.object(
         AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED
@@ -298,7 +301,7 @@ class TestLegacyUpgradePath:
         ais = make_ais(config=config, ledfx=ledfx)
         ais._resolve_device_from_name()
 
-        assert ais._config["audio_device"] == 18
+        assert ais._config.audio_device == 18
 
 
 # ===========================================================================
@@ -472,8 +475,8 @@ class TestUpdateDeviceConfig:
         ais = make_ais(config={"audio_device": 0, "audio_device_name": ""}, ledfx=ledfx)
         ais._update_device_config(17)
 
-        assert ais._config["audio_device"] == 17
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config.audio_device == 17
+        assert ais._config.audio_device_name == LOOPBACK_NAME
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
     def test_update_device_config_clears_name_for_invalid(
@@ -487,8 +490,8 @@ class TestUpdateDeviceConfig:
         )
         ais._update_device_config(999)
 
-        assert ais._config["audio_device"] == 999
-        assert ais._config["audio_device_name"] == ""
+        assert ais._config.audio_device == 999
+        assert ais._config.audio_device_name == ""
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
     def test_update_device_config_saves_to_disk(self, mock_devices):
@@ -505,8 +508,8 @@ class TestUpdateDeviceConfig:
         ais = make_ais(config={"audio_device": 0, "audio_device_name": ""}, ledfx=None)
         ais._update_device_config(17)
 
-        assert ais._config["audio_device"] == 17
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config.audio_device == 17
+        assert ais._config.audio_device_name == LOOPBACK_NAME
 
 
 # ===========================================================================
@@ -532,8 +535,8 @@ class TestHandleDeviceListChangeIntegration:
         # Simulate what handle_device_list_change does when it finds device at new index
         ais._update_device_config(18)
 
-        assert ais._config["audio_device"] == 18
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
+        assert ais._config.audio_device == 18
+        assert ais._config.audio_device_name == LOOPBACK_NAME
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_AFTER_REMOVAL)
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
@@ -548,11 +551,50 @@ class TestHandleDeviceListChangeIntegration:
         # Simulate fallback to default device
         ais._update_device_config(0)
 
-        assert ais._config["audio_device"] == 0
+        assert ais._config.audio_device == 0
         assert (
-            ais._config["audio_device_name"]
+            ais._config.audio_device_name
             == "Windows WASAPI: Microphone (Realtek High Definition Audio)"
         )
+
+    @patch.object(AudioInputSource, "activate")
+    @patch.object(AudioInputSource, "get_device_index_by_name", return_value=-1)
+    @patch.object(AudioInputSource, "refresh_device_list", return_value=True)
+    @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_AFTER_REMOVAL)
+    @patch.object(AudioInputSource, "default_device_index", return_value=0)
+    def test_hotplug_removed_device_falls_back_to_default(
+        self,
+        mock_default: MagicMock,
+        mock_devices: MagicMock,
+        mock_refresh: MagicMock,
+        mock_by_name: MagicMock,
+        mock_activate: MagicMock,
+    ):
+        """handle_device_list_change: the lost device falls back to the default,
+        swapping in a new typed config (never mutating the one readers hold)
+        and persisting it."""
+        ledfx = make_mock_ledfx()
+        ais = make_ais(
+            config={"audio_device": 17, "audio_device_name": LOOPBACK_NAME},
+            ledfx=ledfx,
+        )
+        before = ais._config
+        AudioInputSource._last_device_name = LOOPBACK_NAME
+        AudioInputSource._last_active = 17
+        try:
+            ais.handle_device_list_change()
+        finally:
+            AudioInputSource._last_device_name = None
+            AudioInputSource._last_active = None
+
+        assert isinstance(ais._config, AudioConfig)
+        assert ais._config.audio_device == 0
+        assert ais._config.audio_device_name == DEVICES_AFTER_REMOVAL[0]
+        assert ais._config is not before
+        assert (before.audio_device, before.audio_device_name) == (17, LOOPBACK_NAME)
+        assert ledfx.config.audio is ais._config
+        ledfx.config_store.request_save.assert_called_once()
+        mock_activate.assert_called_once()
 
     def test_hotplug_no_active_stream_no_crash(self):
         """#24: Device change event with no active stream — no error."""
@@ -681,7 +723,7 @@ class TestRegressionGuards:
         ais._resolve_device_from_name()
 
         # No change — index preserved
-        assert ais._config["audio_device"] == 17
+        assert ais._config.audio_device == 17
 
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
     @patch.object(
@@ -712,7 +754,7 @@ class TestRegressionGuards:
         ais = make_ais(config={"audio_device": 0, "audio_device_name": ""})
         ais._update_device_config(0)
 
-        assert ais._config["audio_device_name"] == "WEB AUDIO: browser-client-123"
+        assert ais._config.audio_device_name == "WEB AUDIO: browser-client-123"
 
     @patch.object(
         AudioInputSource,
@@ -726,7 +768,7 @@ class TestRegressionGuards:
         ais = make_ais(config={"audio_device": 0, "audio_device_name": ""})
         ais._update_device_config(0)
 
-        assert ais._config["audio_device_name"] == "SENDSPIN: my-sendspin-server"
+        assert ais._config.audio_device_name == "SENDSPIN: my-sendspin-server"
 
 
 # ===========================================================================
@@ -737,7 +779,7 @@ class TestRegressionGuards:
 class TestPartialUpdatePreservesDevice:
     """A partial audio update (e.g. delay-only) must keep the selected device.
 
-    update_config() re-validates the incoming dict through AudioInputConfig.
+    update_config() re-validates the incoming dict through AudioConfig.
     When the caller passes only the field they changed (the UI sends
     ``{"delay_ms": N}``), the schema injects defaults for every absent key:
     ``audio_device`` falls back to the default device and ``audio_device_name``
@@ -779,6 +821,40 @@ class TestPartialUpdatePreservesDevice:
 
         ais.update_config({"delay_ms": 200})
 
-        assert ais._config["audio_device"] == 17
-        assert ais._config["audio_device_name"] == LOOPBACK_NAME
-        assert ais._config["delay_ms"] == 200
+        assert ais._config.audio_device == 17
+        assert ais._config.audio_device_name == LOOPBACK_NAME
+        assert ais._config.delay_ms == 200
+
+
+class TestSharedAudioConfigIsFrozen:
+    """config.audio is the live source's model: an in-place write would change
+    the source without rebuilding its pipeline, so it must raise."""
+
+    @patch.object(AudioInputSource, "_should_always_keep_active", return_value=False)
+    @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
+    @patch.object(AudioInputSource, "default_device_index", return_value=0)
+    def test_in_place_write_raises_and_updates_reach_live_source(
+        self,
+        mock_default: MagicMock,
+        mock_devices: MagicMock,
+        mock_keep_active: MagicMock,
+    ):
+        ledfx = make_mock_ledfx()
+        ais = make_ais(
+            config={"audio_device": 17, "audio_device_name": LOOPBACK_NAME},
+            ledfx=ledfx,
+        )
+        ais._callbacks = []
+        ais.update_config({})
+        assert ledfx.config.audio is ais._config
+
+        with pytest.raises(ValidationError, match="frozen"):
+            ledfx.config.audio.delay_ms = 200
+        with pytest.raises(ValidationError, match="frozen"):
+            ais._config.audio_device = 5
+        assert ais._config.delay_ms == 0
+
+        ais.update_config({**ledfx.config.audio.model_dump(), "delay_ms": 200})
+
+        assert ais._config.delay_ms == 200
+        assert ledfx.config.audio is ais._config
