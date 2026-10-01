@@ -1,3 +1,5 @@
+import asyncio
+
 """API endpoint for generating asset thumbnails."""
 
 import io
@@ -312,7 +314,9 @@ class AssetsThumbnailEndpoint(RestEndpoint):
 
                 # open_image handles URL validation, download, and caching
                 try:
-                    image = open_image(asset_path, config_dir=self._ledfx.config_dir)
+                    image = await asyncio.to_thread(
+                        open_image, asset_path, config_dir=self._ledfx.config_dir
+                    )
                     if not image:
                         return await self.invalid_request(
                             message=f"Failed to download or validate URL: {asset_path}",

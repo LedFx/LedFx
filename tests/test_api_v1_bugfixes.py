@@ -4,15 +4,22 @@ success response says, or answers with its usual failure response."""
 import asyncio
 import copy
 import json
+import threading
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from ledfx.api import RestEndpoint
+from ledfx.api.assets_download import AssetsDownloadEndpoint
+from ledfx.api.assets_thumbnail import AssetsThumbnailEndpoint
+from ledfx.api.cache_images_refresh import CacheRefreshEndpoint
+from ledfx.api.check_for_updates import CheckLedFxUpdatesEndPoint
 from ledfx.api.colors import ColorEndpoint
 from ledfx.api.colors_delete import ColorDeleteEndpoint
 from ledfx.api.device import DeviceEndpoint
 from ledfx.api.find_lifx import FindLifxEndpoint
+from ledfx.api.find_openrgb import FindOpenRGBDevicesEndpoint
+from ledfx.api.get_gif_frames import GetGifFramesEndpoint
 from ledfx.api.power import MAX_POWER_TIMEOUT
 from ledfx.api.power import InfoEndpoint as PowerEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
@@ -469,3 +476,104 @@ async def test_find_lifx_closes_a_device_when_its_scan_is_cancelled(step: str) -
     with pytest.raises(asyncio.CancelledError):
         await FindLifxEndpoint(ledfx)._process_discovered_device(device, True, set())
     device.close.assert_awaited_once()
+
+
+# Blocking network calls must run off the event loop thread.
+
+
+def _record_thread(result: object) -> tuple[MagicMock, list[int]]:
+    threads: list[int] = []
+
+    def blocking(*_args, **_kwargs):
+        threads.append(threading.get_ident())
+        return result
+
+    return MagicMock(side_effect=blocking), threads
+
+
+_URL = "https://example.com/a.gif"
+
+
+@pytest.mark.parametrize(
+    ("target", "result", "endpoint", "method", "body", "reason"),
+    [
+        (
+            "ledfx.api.get_gif_frames.open_gif",
+            None,
+            GetGifFramesEndpoint,
+            "POST",
+            {"path_url": _URL},
+            f"Failed to open GIF image from: {_URL}",
+        ),
+        (
+            "ledfx.api.assets_download.open_image",
+            None,
+            AssetsDownloadEndpoint,
+            "POST",
+            {"path": _URL},
+            f"Failed to download or validate URL: {_URL}",
+        ),
+        (
+            "ledfx.utils.open_image",
+            None,
+            AssetsThumbnailEndpoint,
+            "POST",
+            {"path": _URL, "force_refresh": True},
+            f"Failed to download or validate URL: {_URL}",
+        ),
+        (
+            "ledfx.api.cache_images_refresh.open_image",
+            None,
+            CacheRefreshEndpoint,
+            "POST",
+            {"url": _URL},
+            f"Failed to refresh URL: {_URL}. Image could not be downloaded.",
+        ),
+        (
+            "ledfx.api.check_for_updates.UpdateChecker.get_release_information",
+            False,
+            CheckLedFxUpdatesEndPoint,
+            "GET",
+            None,
+            "Unable to check for updates",
+        ),
+    ],
+)
+async def test_blocking_calls_run_off_the_loop(
+    target: str,
+    result: object,
+    endpoint: type[RestEndpoint],
+    method: str,
+    body: dict[str, object] | None,
+    reason: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("IS_RELEASE", "true")
+    blocking, threads = _record_thread(result)
+    with (
+        patch(target, blocking),
+        patch("ledfx.api.cache_images_refresh.get_image_cache"),
+    ):
+        _, reply = await _call(endpoint(fake_ledfx()), method, body)
+    assert _reason(reply) == reason
+    assert threads and threading.get_ident() not in threads
+
+
+@pytest.mark.parametrize("method", ["GET", "POST"])
+async def test_openrgb_connects_off_the_loop(method: str) -> None:
+    device = MagicMock(id=0, type=1, leds=[1, 2])
+    device.name = "strip"
+    client = MagicMock(devices=[device])
+    connect, threads = _record_thread(client)
+    with patch("ledfx.api.find_openrgb.OpenRGBClient", connect):
+        status, reply = await _call(
+            FindOpenRGBDevicesEndpoint(fake_ledfx()), method, {}
+        )
+    assert (status, reply) == (
+        200,
+        {
+            "status": "success",
+            "devices": [{"name": "strip", "type": 1, "id": 0, "leds": 2}],
+        },
+    )
+    assert threads and threading.get_ident() not in threads

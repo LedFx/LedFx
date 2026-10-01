@@ -5,7 +5,9 @@ Tests cache operations: hit/miss, LRU eviction, refresh, clear, persistence, met
 """
 
 import io
+import json
 import os
+import threading
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -558,3 +560,36 @@ class TestCacheImageMetadata:
         assert gif_entry["format"] == "GIF"
         assert gif_entry["n_frames"] == 2
         assert gif_entry["is_animated"] is True
+
+
+def test_concurrent_puts_keep_metadata_consistent(
+    temp_cache_dir: str, sample_image_data: bytes, caplog: pytest.LogCaptureFixture
+) -> None:
+    # Thumbnails and downloads call put() from worker threads at once.
+    cache = ImageCache(temp_cache_dir, max_size_mb=100, max_items=1000)
+    done = threading.Event()
+
+    def writer(n: int) -> None:
+        for i in range(40):
+            cache.put(
+                f"https://example.com/{n}/{i}.png", sample_image_data, "image/png"
+            )
+
+    def reader() -> None:
+        while not done.is_set():
+            cache.get_stats()
+
+    writers = [threading.Thread(target=writer, args=(n,)) for n in range(4)]
+    stats = threading.Thread(target=reader)
+    stats.start()
+    for thread in writers:
+        thread.start()
+    for thread in writers:
+        thread.join()
+    done.set()
+    stats.join()
+
+    assert "Failed to save cache metadata" not in caplog.text
+    with open(cache.metadata_file) as file:
+        saved = json.load(file)
+    assert saved["total_count"] == len(saved["cache_entries"]) == 160
