@@ -31,11 +31,20 @@ import random
 import socket
 import struct
 import time
+from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING, TypedDict
 
-import voluptuous as vol
+from pydantic import Field
+from typing_extensions import override
 
+from ledfx.configuration.fields import X_REQUIRED, CoercedFloat, CoercedInt
+from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.integrations import Integration
 from ledfx.venues import VenueManager
+
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
+    from ledfx.virtuals import Virtual
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,6 +64,35 @@ _trace_last_log: dict[int, float] = {}
 _trace_last_nomatch_log: dict[int, float] = {}
 
 
+class DMXMapping(TypedDict, total=False):
+    """A channel mapping as stored in the integration data (unvalidated: the
+    frontend may keep extra keys, e.g. ``_type_field_cache``)."""
+
+    name: str
+    type: str
+    active: bool
+    universe: int
+    channels: list[int] | dict[str, int]
+    virtual_id: str
+    venue_id: str
+    pad_index: int
+    on_threshold: int
+    off_threshold: int
+    strobe_probability: float
+    _type_field_cache: dict[str, object]
+
+
+class _MappingState(TypedDict, total=False):
+    """Per-mapping runtime state, keyed by mapping index."""
+
+    _active_type: str | None
+    triggered: bool
+    last_color: tuple[int, int, int] | None
+    wash_on: bool
+    strobe_pulse_on: bool
+    strobe_pulse_render: bool
+
+
 def _best_local_ip(bind_address: str) -> str:
     """Return the best routable local IP to advertise in ArtPollReply.
 
@@ -69,7 +107,7 @@ def _best_local_ip(bind_address: str) -> str:
         ip = s.getsockname()[0]
         s.close()
         return ip
-    except Exception:
+    except OSError:
         return "0.0.0.0"
 
 
@@ -137,7 +175,7 @@ def _build_artpollreply(local_ip: str, port: int = ARTNET_PORT) -> bytes:
     return bytes(pkt)
 
 
-def parse_artdmx(data: bytes):
+def parse_artdmx(data: bytes) -> tuple[int, bytes] | None:
     """Strictly parse an ArtDMX packet.
 
     Returns ``(universe, dmx_bytes)`` or ``None`` if the packet is not a valid
@@ -171,15 +209,23 @@ class _ArtNetProtocol(asyncio.DatagramProtocol):
     instead of requiring a manually entered IP address.
     """
 
-    def __init__(self, on_dmx, local_ip: str, port: int = ARTNET_PORT):
+    def __init__(
+        self,
+        on_dmx: Callable[[int, bytes], None],
+        local_ip: str,
+        port: int = ARTNET_PORT,
+    ) -> None:
         self._on_dmx = on_dmx
         self._reply = _build_artpollreply(local_ip, port)
-        self._transport = None
+        self._transport: asyncio.DatagramTransport | None = None
 
-    def connection_made(self, transport):
+    @override
+    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        assert isinstance(transport, asyncio.DatagramTransport)
         self._transport = transport
 
-    def datagram_received(self, data, addr):
+    @override
+    def datagram_received(self, data: bytes, addr: tuple[str | object, ...]) -> None:
         if len(data) < 10 or data[:8] != ARTNET_ID:
             if _TRACE:
                 _LOGGER.info(
@@ -221,8 +267,7 @@ class _ArtNetProtocol(asyncio.DatagramProtocol):
                 if now - _trace_last_log.get(universe, 0) > 0.5:
                     _trace_last_log[universe] = now
                     _LOGGER.info(
-                        "DMX Input TRACE: ArtDMX from %s universe=%d len=%d "
-                        "first10=%s",
+                        "DMX Input TRACE: ArtDMX from %s universe=%d len=%d first10=%s",
                         addr[0],
                         universe,
                         len(dmx),
@@ -230,7 +275,8 @@ class _ArtNetProtocol(asyncio.DatagramProtocol):
                     )
             self._on_dmx(universe, dmx)
 
-    def error_received(self, exc):
+    @override
+    def error_received(self, exc: Exception) -> None:
         _LOGGER.debug("Art-Net socket error: %s", exc)
 
 
@@ -253,61 +299,65 @@ class DMXInput(Integration):
         "venue color overrides, live color passthrough, and DMX wash fixtures."
     )
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "name",
-                description="Name of this integration instance",
-                default="DMX Input",
-            ): str,
-            vol.Required(
-                "description",
-                description="Description of this integration",
-                default="Art-Net DMX input bridge",
-            ): str,
-            vol.Required(
-                "bind_address",
-                description="Local address to listen on. Use 0.0.0.0 to accept Art-Net "
-                "from any machine on the network (e.g. SoundSwitch on a separate PC). "
-                "Use 127.0.0.1 to accept only from the same machine.",
-                default="0.0.0.0",
-            ): str,
-            vol.Required(
-                "port",
-                description="Art-Net UDP port",
-                default=6454,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=65535)),
-            vol.Optional(
-                "update_fps",
-                description="How often incoming DMX is applied to LedFx",
-                default=60,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=120)),
-            vol.Optional(
-                "stale_timeout",
-                description="Seconds without DMX before owned overrides are "
-                "released (0 disables)",
-                default=2.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=60.0)),
-            vol.Optional(
-                "hold_last_look",
-                description="Keep the last look when the DMX stream stops "
-                "instead of releasing it",
-                default=False,
-            ): bool,
-        }
-    )
+    class Config(PluginConfig):
+        name: str = Field(
+            "DMX Input",
+            description="Name of this integration instance",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        description: str = Field(
+            "Art-Net DMX input bridge",
+            description="Description of this integration",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        bind_address: str = Field(
+            "0.0.0.0",
+            description="Local address to listen on. Use 0.0.0.0 to accept Art-Net "
+            "from any machine on the network (e.g. SoundSwitch on a separate PC). "
+            "Use 127.0.0.1 to accept only from the same machine.",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        port: CoercedInt = Field(
+            6454,
+            description="Art-Net UDP port",
+            ge=1,
+            le=65535,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        update_fps: CoercedInt = Field(
+            60,
+            description="How often incoming DMX is applied to LedFx",
+            ge=1,
+            le=120,
+        )
+        stale_timeout: CoercedFloat = Field(
+            2.0,
+            description="Seconds without DMX before owned overrides are "
+            "released (0 disables)",
+            ge=0.0,
+            le=60.0,
+        )
+        hold_last_look: bool = Field(
+            False,
+            description="Keep the last look when the DMX stream stops "
+            "instead of releasing it",
+        )
 
-    def __init__(self, ledfx, config, active, data):
+    config = TypedConfig(Config)
+
+    def __init__(
+        self, ledfx: "LedFxCore", config: Config, active: bool, data: object
+    ) -> None:
         super().__init__(ledfx, config, active, data)
 
         self._ledfx = ledfx
         self._config = config
         # data is the list of channel mappings
-        self._data = data if isinstance(data, list) else []
+        self._data: list[DMXMapping] = data if isinstance(data, list) else []
 
-        self._transport = None
-        self._protocol = None
-        self._update_task = None
+        self._transport: asyncio.DatagramTransport | None = None
+        self._protocol: asyncio.DatagramProtocol | None = None
+        self._update_task: asyncio.Task[None] | None = None
 
         # Latest DMX state per universe and when it last arrived
         self._latest_dmx: dict[int, bytes] = {}
@@ -315,7 +365,7 @@ class DMXInput(Integration):
         self._seen_universe: set[int] = set()
 
         # Per-mapping runtime state, keyed by mapping index
-        self._mapping_state: dict[int, dict] = {}
+        self._mapping_state: dict[int, _MappingState] = {}
 
         # Ownership: which mapping index currently owns each venue override
         self._venue_override_owner: dict[str, int] = {}
@@ -327,31 +377,29 @@ class DMXInput(Integration):
     # Mapping management (persisted in self._data)
     # ------------------------------------------------------------------
 
-    def get_mappings(self):
+    def get_mappings(self) -> list[DMXMapping]:
         return self._data
 
-    def add_mapping(self, mapping: dict):
+    def add_mapping(self, mapping: DMXMapping) -> None:
         self._data.append(mapping)
 
-    def delete_mapping(self, index: int):
+    def delete_mapping(self, index: int) -> None:
         if 0 <= index < len(self._data):
             del self._data[index]
             self._mapping_state.pop(index, None)
 
-    def get_live_dmx(self) -> dict:
+    def get_live_dmx(self) -> dict[str, list[int]]:
         """Return the latest DMX values per universe (for monitor / learn UI)."""
-        return {
-            str(universe): list(dmx)
-            for universe, dmx in self._latest_dmx.items()
-        }
+        return {str(universe): list(dmx) for universe, dmx in self._latest_dmx.items()}
 
     # ------------------------------------------------------------------
     # Connection lifecycle
     # ------------------------------------------------------------------
 
-    async def connect(self):
-        bind = self._config["bind_address"]
-        port = self._config["port"]
+    @override
+    async def connect(self, msg: str | None = None) -> None:
+        bind = self.config.bind_address
+        port = self.config.port
         local_ip = _best_local_ip(bind)
         try:
             (
@@ -379,7 +427,8 @@ class DMXInput(Integration):
             f"(bind {bind}) — ArtPoll discovery enabled"
         )
 
-    async def disconnect(self):
+    @override
+    async def disconnect(self, msg: str | None = None) -> None:
         if self._update_task is not None:
             self._update_task.cancel()
             self._update_task = None
@@ -391,14 +440,15 @@ class DMXInput(Integration):
         self._release_all()
         await super().disconnect("DMX Input stopped")
 
-    def on_shutdown(self):
+    @override
+    def on_shutdown(self) -> None:
         self._release_all()
 
     # ------------------------------------------------------------------
     # Art-Net intake (runs on the loop thread, kept tiny)
     # ------------------------------------------------------------------
 
-    def _on_dmx(self, universe: int, dmx: bytes):
+    def _on_dmx(self, universe: int, dmx: bytes) -> None:
         self._latest_dmx[universe] = dmx
         self._last_packet_time[universe] = time.monotonic()
 
@@ -406,22 +456,22 @@ class DMXInput(Integration):
     # Coalesced processing loop
     # ------------------------------------------------------------------
 
-    async def _update_loop(self):
+    async def _update_loop(self) -> None:
         try:
             while True:
-                interval = 1.0 / max(1, self._config.get("update_fps", 60))
+                interval = 1.0 / max(1, self.config.update_fps)
                 await asyncio.sleep(interval)
                 try:
                     self._process()
-                except Exception as e:  # never let the loop die
+                except Exception as e:  # noqa: BLE001 - never let the loop die
                     _LOGGER.warning("DMX Input processing error: %s", e)
         except asyncio.CancelledError:
             pass
 
-    def _process(self):
+    def _process(self) -> None:
         now = time.monotonic()
-        stale_timeout = self._config.get("stale_timeout", 2.0)
-        hold = self._config.get("hold_last_look", False)
+        stale_timeout = self.config.stale_timeout
+        hold = self.config.hold_last_look
 
         for idx, mapping in enumerate(self._data):
             if not mapping.get("active", True):
@@ -430,18 +480,21 @@ class DMXInput(Integration):
             universe = int(mapping.get("universe", 0))
             dmx = self._latest_dmx.get(universe)
             if dmx is None:
-                if _TRACE and self._latest_dmx:
-                    if now - _trace_last_nomatch_log.get(idx, 0) > 2.0:
-                        _trace_last_nomatch_log[idx] = now
-                        _LOGGER.info(
-                            "DMX Input TRACE: mapping '%s' wants universe %d "
-                            "but only received universe(s) %s so far — check "
-                            "SoundSwitch's universe setting matches the "
-                            "mapping.",
-                            mapping.get("name", idx),
-                            universe,
-                            sorted(self._latest_dmx.keys()),
-                        )
+                if (
+                    _TRACE
+                    and self._latest_dmx
+                    and now - _trace_last_nomatch_log.get(idx, 0) > 2.0
+                ):
+                    _trace_last_nomatch_log[idx] = now
+                    _LOGGER.info(
+                        "DMX Input TRACE: mapping '%s' wants universe %d "
+                        "but only received universe(s) %s so far — check "
+                        "SoundSwitch's universe setting matches the "
+                        "mapping.",
+                        mapping.get("name", idx),
+                        universe,
+                        sorted(self._latest_dmx.keys()),
+                    )
                 continue
 
             # On the first packet for a universe, prime baselines so a channel
@@ -491,7 +544,7 @@ class DMXInput(Integration):
     # Per-type handlers
     # ------------------------------------------------------------------
 
-    def _prime_mapping(self, idx, mapping, dmx):
+    def _prime_mapping(self, idx: int, mapping: DMXMapping, dmx: bytes) -> None:
         """Record an initial 'off' baseline so startup does not auto-fire."""
         state = self._mapping_state.setdefault(
             idx, {"triggered": False, "last_color": None, "wash_on": False}
@@ -500,7 +553,7 @@ class DMXInput(Integration):
         # priming has a baseline to detect an in-place type change against.
         state.setdefault("_active_type", mapping.get("type"))
 
-    def _process_trigger(self, idx, mapping, dmx):
+    def _process_trigger(self, idx: int, mapping: DMXMapping, dmx: bytes) -> None:
         # Use setdefault on the specific key, not just the container: if this
         # index previously held state for a *different* mapping type (e.g.
         # the mapping's type was edited in place from "color"/"fixture" to
@@ -509,7 +562,10 @@ class DMXInput(Integration):
         # leave it missing and this handler would KeyError forever.
         state = self._mapping_state.setdefault(idx, {})
         state.setdefault("triggered", False)
-        ch = int(mapping.get("channels", [1])[0])
+        chans = mapping.get("channels", [1])
+        if isinstance(chans, dict):  # a fixture's {dimmer,r,g,b}: not a trigger
+            return
+        ch = int(chans[0])
         value = _channel(dmx, ch)
         on_t = int(mapping.get("on_threshold", 128))
         off_t = int(mapping.get("off_threshold", 96))
@@ -526,7 +582,7 @@ class DMXInput(Integration):
                 if self._venue_override_owner.get(venue_id) == idx:
                     try:
                         mgr.clear_override(venue_id)
-                    except Exception as e:
+                    except Exception as e:  # noqa: BLE001 - one target must not stop the rest
                         _LOGGER.warning("DMX Input clear_override: %s", e)
                     self._venue_override_owner.pop(venue_id, None)
         else:
@@ -541,16 +597,18 @@ class DMXInput(Integration):
                         pad_index,
                         venue_id,
                     )
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 - one target must not stop the rest
                     _LOGGER.warning("DMX Input activate_override: %s", e)
 
-    def _process_color(self, idx, mapping, dmx):
+    def _process_color(self, idx: int, mapping: DMXMapping, dmx: bytes) -> None:
         # See _process_trigger for why we setdefault the key, not just the
         # container dict — guards against a mapping's type having been
         # changed in place at runtime.
         state = self._mapping_state.setdefault(idx, {})
         state.setdefault("last_color", None)
         chans = mapping.get("channels", [1, 2, 3])
+        if isinstance(chans, dict):  # a fixture's {dimmer,r,g,b}: not RGB
+            return
         r = _channel(dmx, int(chans[0]))
         g = _channel(dmx, int(chans[1]))
         b = _channel(dmx, int(chans[2]))
@@ -563,10 +621,10 @@ class DMXInput(Integration):
             try:
                 v.set_color_override(hex_color)
                 self._owned_color.add(v.id)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - one target must not stop the rest
                 _LOGGER.warning("DMX Input set_color_override: %s", e)
 
-    def _process_fixture(self, idx, mapping, dmx):
+    def _process_fixture(self, idx: int, mapping: DMXMapping, dmx: bytes) -> None:
         """Drive a virtual as a continuous DMX wash fixture.
 
         As soon as this mapping's universe is receiving data, the target
@@ -627,9 +685,7 @@ class DMXInput(Integration):
                 # decision until the pulse's falling edge, so a single
                 # intended flash isn't chopped into flicker by re-rolling
                 # every frame.
-                state["strobe_pulse_render"] = (
-                    random.random() < strobe_probability
-                )
+                state["strobe_pulse_render"] = random.random() < strobe_probability
             state["strobe_pulse_on"] = pulse_on
             if pulse_on and not state["strobe_pulse_render"]:
                 dimmer = 0.0
@@ -646,7 +702,7 @@ class DMXInput(Integration):
             try:
                 v.set_dmx_wash(rgb, dimmer)
                 self._owned_washes.add(v.id)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001 - one target must not stop the rest
                 _LOGGER.warning("DMX Input set_dmx_wash: %s", e)
 
     # ------------------------------------------------------------------
@@ -658,7 +714,7 @@ class DMXInput(Integration):
             self._ledfx.venues = VenueManager(self._ledfx)
         return self._ledfx.venues
 
-    def _targets(self, mapping):
+    def _targets(self, mapping: DMXMapping) -> Iterator["Virtual"]:
         """Yield target virtuals for a color/fixture mapping.
 
         A mapping targets either a single ``virtual_id`` or every virtual in a
@@ -675,12 +731,14 @@ class DMXInput(Integration):
             cfg = self._venues().get(venue_id)
             if not cfg:
                 return
-            for v_id in cfg.get("virtual_ids", []):
+            for v_id in cfg.virtual_ids:
                 v = self._ledfx.virtuals.get(v_id)
                 if v is not None:
                     yield v
 
-    def _release_mapping(self, idx, mapping, mtype=None):
+    def _release_mapping(
+        self, idx: int, mapping: DMXMapping, mtype: str | None = None
+    ) -> None:
         """Release whatever a single mapping currently owns.
 
         Args:
@@ -701,7 +759,7 @@ class DMXInput(Integration):
             if venue_id and self._venue_override_owner.get(venue_id) == idx:
                 try:
                     self._venues().clear_override(venue_id)
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 - best-effort release
                     pass
                 self._venue_override_owner.pop(venue_id, None)
         elif mtype == "color" and state.get("last_color") is not None:
@@ -709,7 +767,7 @@ class DMXInput(Integration):
             for v in self._targets(mapping):
                 try:
                     v.clear_color_override()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 - best-effort release
                     pass
                 self._owned_color.discard(v.id)
         elif mtype == "fixture" and state.get("wash_on"):
@@ -721,16 +779,16 @@ class DMXInput(Integration):
             for v in self._targets(mapping):
                 try:
                     v.clear_dmx_wash()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 - best-effort release
                     pass
                 self._owned_washes.discard(v.id)
 
-    def _release_all(self):
+    def _release_all(self) -> None:
         """Release every override / takeover this integration owns."""
         for venue_id in list(self._venue_override_owner.keys()):
             try:
                 self._venues().clear_override(venue_id)
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - best-effort release
                 pass
         self._venue_override_owner.clear()
 
@@ -739,7 +797,7 @@ class DMXInput(Integration):
             if v is not None:
                 try:
                     v.clear_color_override()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 - best-effort release
                     pass
         self._owned_color.clear()
 
@@ -748,7 +806,7 @@ class DMXInput(Integration):
             if v is not None:
                 try:
                     v.clear_dmx_wash()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110 - best-effort release
                     pass
         self._owned_washes.clear()
 

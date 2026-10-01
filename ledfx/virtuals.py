@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+from collections.abc import Sequence
 from functools import cached_property
 
 import numpy as np
@@ -158,7 +159,7 @@ class Virtual:
         # suppressed (not removed) and is revealed again the moment the takeover
         # is cleared. Driven externally (e.g. the DMX input integration).
         self._wash_active: bool = False
-        self._wash_rgb: Optional[np.ndarray] = None  # float array, 3, 0-255
+        self._wash_rgb: np.ndarray | None = None  # float array, 3, 0-255
         self._wash_dimmer: float = 1.0
 
         self._debug_flush_total = 0.0
@@ -870,7 +871,7 @@ class Virtual:
             if isinstance(self._active_effect, GradientEffect):
                 self._active_effect.clear_gradient_override()
 
-    def set_dmx_wash(self, rgb, dimmer: float = 1.0):
+    def set_dmx_wash(self, rgb: Sequence[float], dimmer: float = 1.0) -> None:
         """Take the virtual over as a solid DMX wash fixture.
 
         While active, the render thread replaces the assembled frame with a
@@ -890,7 +891,7 @@ class Virtual:
             self._wash_dimmer = dimmer
             self._wash_active = True
 
-    def clear_dmx_wash(self):
+    def clear_dmx_wash(self) -> None:
         """Release the DMX wash takeover; the running effect is visible again."""
         with self.lock:
             self._wash_active = False

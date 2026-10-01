@@ -311,7 +311,7 @@ class IntegrationEntry(LedFxModel):
     id: str
     type: str
     active: bool = False
-    # qlc/mqtt/mqtt_hass keep a list here; other integrations a dict.
+    # qlc/mqtt/mqtt_hass/dmx_input keep a list here; other integrations a dict.
     data: list[object] | dict[str, object] = {}
     config: dict[str, object] = {}
 

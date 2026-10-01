@@ -3,6 +3,8 @@
 import struct
 from unittest.mock import MagicMock
 
+import pytest
+
 from ledfx.integrations.dmx_input import DMXInput, _channel, parse_artdmx
 
 
@@ -18,7 +20,7 @@ def _build_artdmx(universe: int, dmx: bytes, sequence: int = 1) -> bytes:
     return header + dmx
 
 
-def test_parse_valid_artdmx():
+def test_parse_valid_artdmx() -> None:
     dmx = bytes([0, 200, 50] + [0] * 9)
     pkt = _build_artdmx(7, dmx)
     result = parse_artdmx(pkt)
@@ -28,48 +30,54 @@ def test_parse_valid_artdmx():
     assert data == dmx
 
 
-def test_parse_respects_length_field():
+def test_parse_respects_length_field() -> None:
     dmx = bytes([10, 20, 30, 40])
     pkt = _build_artdmx(0, dmx)
-    universe, data = parse_artdmx(pkt)
+    result = parse_artdmx(pkt)
+    assert result is not None
+    _, data = result
     assert len(data) == 4
     assert data == dmx
 
 
-def test_parse_rejects_non_artnet():
+def test_parse_rejects_non_artnet() -> None:
     assert parse_artdmx(b"NOT-ARTNET-DATA-AT-ALL") is None
 
 
-def test_parse_rejects_wrong_opcode():
+def test_parse_rejects_wrong_opcode() -> None:
     pkt = bytearray(_build_artdmx(0, bytes([1, 2, 3])))
     pkt[8:10] = struct.pack("<H", 0x2000)  # ArtPoll, not ArtDMX
     assert parse_artdmx(bytes(pkt)) is None
 
 
-def test_parse_rejects_short_packet():
+def test_parse_rejects_short_packet() -> None:
     assert parse_artdmx(b"Art-Net\x00\x00\x50") is None
 
 
-def test_parse_high_universe():
+def test_parse_high_universe() -> None:
     pkt = _build_artdmx(300, bytes([1, 2, 3]))
-    universe, _ = parse_artdmx(pkt)
+    result = parse_artdmx(pkt)
+    assert result is not None
+    universe, _ = result
     assert universe == 300
 
 
-def test_channel_is_one_based():
+def test_channel_is_one_based() -> None:
     dmx = bytes([11, 22, 33])
     assert _channel(dmx, 1) == 11
     assert _channel(dmx, 2) == 22
     assert _channel(dmx, 3) == 33
 
 
-def test_channel_out_of_range_returns_zero():
+def test_channel_out_of_range_returns_zero() -> None:
     dmx = bytes([5, 6])
     assert _channel(dmx, 99) == 0
     assert _channel(dmx, 0) == 0
 
 
-def _make_dmx_input(monkeypatch, virtual, stale_timeout=2.0):
+def _make_dmx_input(
+    monkeypatch: pytest.MonkeyPatch, virtual: MagicMock, stale_timeout: float = 2.0
+) -> DMXInput:
     """Build a DMXInput with a fake ledfx/virtual, bypassing all networking.
 
     Driving `_on_dmx` / `_process` directly (instead of real UDP sockets)
@@ -88,7 +96,7 @@ def _make_dmx_input(monkeypatch, virtual, stale_timeout=2.0):
         "stale_timeout": stale_timeout,
         "hold_last_look": False,
     }
-    integration = DMXInput(ledfx, config, False, [])
+    integration = DMXInput(ledfx, DMXInput.Config(**config), False, [])
     mapping = {
         "name": "fixture-under-test",
         "type": "fixture",
@@ -100,7 +108,7 @@ def _make_dmx_input(monkeypatch, virtual, stale_timeout=2.0):
     return integration
 
 
-def test_fixture_wash_has_no_threshold_gate(monkeypatch):
+def test_fixture_wash_has_no_threshold_gate(monkeypatch: pytest.MonkeyPatch) -> None:
     """Wash engages unconditionally once data arrives, tracks live dimmer/RGB
     with no on/off threshold, and dimmer=0 renders black instead of
     reverting to the underlying effect (regression test for the flash bug
@@ -141,7 +149,9 @@ def test_fixture_wash_has_no_threshold_gate(monkeypatch):
     virtual.clear_dmx_wash.assert_not_called()
 
 
-def test_fixture_wash_releases_only_on_stale_stream(monkeypatch):
+def test_fixture_wash_releases_only_on_stale_stream(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """The wash is only released when the DMX stream actually goes stale
     (no packets for stale_timeout seconds), never due to a low/zero dimmer
     value."""
@@ -169,7 +179,9 @@ def test_fixture_wash_releases_only_on_stale_stream(monkeypatch):
     virtual.clear_dmx_wash.assert_called_once()
 
 
-def test_mapping_type_changed_in_place_does_not_crash(monkeypatch):
+def test_mapping_type_changed_in_place_does_not_crash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Regression test: editing a mapping's ``type`` in place (same list
     index) at runtime — e.g. via the mapping editor UI, without restarting
     the backend — must not leave stale per-index runtime state that crashes
@@ -232,7 +244,9 @@ def test_mapping_type_changed_in_place_does_not_crash(monkeypatch):
     virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
 
 
-def test_mapping_type_changed_fixture_to_color_releases_wash(monkeypatch):
+def test_mapping_type_changed_fixture_to_color_releases_wash(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Regression test for the "frozen frame" bug: switching a mapping from
     "fixture" (wash) to "color" (live RGB) in place at runtime, while DMX is
     live, must release the old wash takeover — not just start applying the
@@ -288,8 +302,8 @@ def test_mapping_type_changed_fixture_to_color_releases_wash(monkeypatch):
 
 
 def test_fixture_wash_default_strobe_probability_renders_every_pulse(
-    monkeypatch,
-):
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Default ``strobe_probability`` (1.0, or unset) must render every
     single strobe pulse exactly like today — no regression for anyone who
     never touches the new setting."""
@@ -302,9 +316,7 @@ def test_fixture_wash_default_strobe_probability_renders_every_pulse(
     )
     # Force every Bernoulli trial to "fail" if it were ever drawn — proves
     # the strobe_probability==1.0 fast-path skips rolling entirely.
-    monkeypatch.setattr(
-        "ledfx.integrations.dmx_input.random.random", lambda: 0.999
-    )
+    monkeypatch.setattr("ledfx.integrations.dmx_input.random.random", lambda: 0.999)
 
     integration._on_dmx(0, bytes([0, 0, 0, 0]))
     integration._process()  # primes
@@ -322,8 +334,8 @@ def test_fixture_wash_default_strobe_probability_renders_every_pulse(
 
 
 def test_fixture_wash_strobe_probability_suppresses_failed_pulses(
-    monkeypatch,
-):
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """With strobe_probability < 1.0, a pulse whose single Bernoulli trial
     "fails" must render fully black (dimmer forced to 0) for that pulse's
     entire duration, while a pulse that "succeeds" renders normally — and
@@ -373,7 +385,9 @@ def test_fixture_wash_strobe_probability_suppresses_failed_pulses(
     virtual.set_dmx_wash.assert_called_with((255, 0, 0), 1.0)
 
 
-def test_mapping_type_cache_field_round_trips_untouched(monkeypatch):
+def test_mapping_type_cache_field_round_trips_untouched(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """An arbitrary ``_type_field_cache`` key (used by the frontend mapping
     editor to remember each type's last-entered field values across type
     switches, per-mapping) must survive add_mapping/get_mappings untouched,

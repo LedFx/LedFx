@@ -1,10 +1,11 @@
+import copy
 import logging
 from json import JSONDecodeError
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.integrations.dmx_input import DMXInput, DMXMapping
 from ledfx.venues import VenueManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,33 +21,32 @@ class DMXInputEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/integrations/dmx_input/{integration_id}"
 
-    def _get_integration(self, integration_id):
+    def _get_integration(self, integration_id: str) -> DMXInput | None:
         integration = self._ledfx.integrations.get(integration_id)
         if (integration is None) or (integration.type != "dmx_input"):
             return None
         return integration
 
-    def _persist(self, integration):
-        for _integration in self._ledfx.config["integrations"]:
-            if _integration["id"] == integration.id:
-                _integration["data"] = integration.data
+    def _persist(self, integration: DMXInput) -> None:
+        for entry in self._ledfx.config.integrations:
+            if entry.id == integration.id:
+                entry.data = copy.deepcopy(integration.data)
                 break
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+        self._ledfx.config_store.request_save()
 
-    async def get(self, integration_id) -> web.Response:
+    async def get(self, integration_id: str) -> web.Response:
         integration = self._get_integration(integration_id)
         if integration is None:
             return await self.invalid_request(
                 f"Integration {integration_id} was not found or is not type dmx_input"
             )
 
-        venues = {}
         if not hasattr(self._ledfx, "venues"):
             self._ledfx.venues = VenueManager(self._ledfx)
-        venues = self._ledfx.venues.list_venues()
+        venues = {
+            vid: venue.model_dump()
+            for vid, venue in self._ledfx.venues.list_venues().items()
+        }
 
         virtuals = {v.id: v.name for v in self._ledfx.virtuals.values()}
 
@@ -58,7 +58,7 @@ class DMXInputEndpoint(RestEndpoint):
         }
         return await self.bare_request_success(response)
 
-    async def post(self, integration_id, request: web.Request) -> web.Response:
+    async def post(self, integration_id: str, request: web.Request) -> web.Response:
         integration = self._get_integration(integration_id)
         if integration is None:
             return await self.invalid_request(
@@ -70,7 +70,8 @@ class DMXInputEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        mapping = data.get("mapping")
+        # Mappings are stored as sent (the editor keeps its own extra keys).
+        mapping: DMXMapping | None = data.get("mapping")
         if mapping is None or not isinstance(mapping, dict):
             return await self.invalid_request(
                 'Required attribute "mapping" (object) was not provided'
@@ -86,19 +87,13 @@ class DMXInputEndpoint(RestEndpoint):
             except (TypeError, ValueError):
                 return await self.invalid_request('"index" must be an integer')
             if index < 0 or index >= len(mappings):
-                return await self.invalid_request(
-                    f"Mapping index {index} out of range"
-                )
+                return await self.invalid_request(f"Mapping index {index} out of range")
             mappings[index] = mapping
 
         self._persist(integration)
-        return await self.request_success(
-            type="success", message="DMX mapping saved"
-        )
+        return await self.request_success(type="success", message="DMX mapping saved")
 
-    async def delete(
-        self, integration_id, request: web.Request
-    ) -> web.Response:
+    async def delete(self, integration_id: str, request: web.Request) -> web.Response:
         integration = self._get_integration(integration_id)
         if integration is None:
             return await self.invalid_request(
@@ -120,12 +115,8 @@ class DMXInputEndpoint(RestEndpoint):
         except (TypeError, ValueError):
             return await self.invalid_request('"index" must be an integer')
         if index < 0 or index >= len(integration.get_mappings()):
-            return await self.invalid_request(
-                f"Mapping index {index} out of range"
-            )
+            return await self.invalid_request(f"Mapping index {index} out of range")
 
         integration.delete_mapping(index)
         self._persist(integration)
-        return await self.request_success(
-            type="success", message="DMX mapping deleted"
-        )
+        return await self.request_success(type="success", message="DMX mapping deleted")
