@@ -40,7 +40,6 @@ from typing_extensions import override
 from ledfx.configuration.fields import X_REQUIRED, CoercedFloat, CoercedInt
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.integrations import Integration
-from ledfx.venues import VenueManager
 
 if TYPE_CHECKING:
     from ledfx.core import LedFxCore
@@ -574,7 +573,7 @@ class DMXInput(Integration):
         if venue_id is None or pad_index is None:
             return
 
-        mgr = self._venues()
+        mgr = self._ledfx.venues
         if state["triggered"]:
             if value <= off_t:
                 state["triggered"] = False
@@ -709,11 +708,6 @@ class DMXInput(Integration):
     # Helpers
     # ------------------------------------------------------------------
 
-    def _venues(self) -> VenueManager:
-        if not hasattr(self._ledfx, "venues"):
-            self._ledfx.venues = VenueManager(self._ledfx)
-        return self._ledfx.venues
-
     def _targets(self, mapping: DMXMapping) -> Iterator["Virtual"]:
         """Yield target virtuals for a color/fixture mapping.
 
@@ -728,7 +722,7 @@ class DMXInput(Integration):
             return
         venue_id = mapping.get("venue_id")
         if venue_id:
-            cfg = self._venues().get(venue_id)
+            cfg = self._ledfx.venues.get(venue_id)
             if not cfg:
                 return
             for v_id in cfg.virtual_ids:
@@ -758,7 +752,7 @@ class DMXInput(Integration):
             venue_id = mapping.get("venue_id")
             if venue_id and self._venue_override_owner.get(venue_id) == idx:
                 try:
-                    self._venues().clear_override(venue_id)
+                    self._ledfx.venues.clear_override(venue_id)
                 except Exception:  # noqa: BLE001, S110 - best-effort release
                     pass
                 self._venue_override_owner.pop(venue_id, None)
@@ -787,7 +781,7 @@ class DMXInput(Integration):
         """Release every override / takeover this integration owns."""
         for venue_id in list(self._venue_override_owner.keys()):
             try:
-                self._venues().clear_override(venue_id)
+                self._ledfx.venues.clear_override(venue_id)
             except Exception:  # noqa: BLE001, S110 - best-effort release
                 pass
         self._venue_override_owner.clear()

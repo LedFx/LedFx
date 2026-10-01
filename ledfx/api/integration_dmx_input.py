@@ -6,7 +6,6 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.integrations.dmx_input import DMXInput, DMXMapping
-from ledfx.venues import VenueManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,8 +40,6 @@ class DMXInputEndpoint(RestEndpoint):
                 f"Integration {integration_id} was not found or is not type dmx_input"
             )
 
-        if not hasattr(self._ledfx, "venues"):
-            self._ledfx.venues = VenueManager(self._ledfx)
         venues = {
             vid: venue.model_dump()
             for vid, venue in self._ledfx.venues.list_venues().items()

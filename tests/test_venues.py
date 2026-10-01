@@ -270,6 +270,7 @@ def test_solid_override_matches_the_grouped_frame_size() -> None:
     virtual.lock = threading.Lock()
     virtual._active_effect = MagicMock(is_active=True, pixels=None)
     virtual._paused = False
+    virtual._wash_active = False
     virtual.fallback_fire = False
     virtual._last_render_error = 0.0
     virtual._fire_update_event = MagicMock()
