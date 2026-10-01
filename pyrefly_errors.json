@@ -14435,13 +14435,6 @@
       "severity": "error"
     },
     {
-      "column": 19,
-      "path": "ledfx/mdns_manager.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `async_close`",
-      "severity": "error"
-    },
-    {
       "column": 36,
       "path": "ledfx/nowplaying/album_art/musicbrainz.py",
       "name": "implicit-any-type-argument",

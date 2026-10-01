@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from zeroconf import ServiceStateChange, Zeroconf
@@ -33,6 +34,7 @@ class ZeroConfRunner:
     def __init__(self, ledfx):
         self.aiobrowser = None
         self.aiozc = None
+        self._closing: set[asyncio.Task[None]] = set()
         self._ledfx = ledfx
 
         def on_shutdown(e):
@@ -135,6 +137,7 @@ class ZeroConfRunner:
         """
         Asynchronous function for discovering WLED devices.
         """
+        previous = self.aiobrowser, self.aiozc
         self.aiozc = AsyncZeroconf()
         services = ["_wled._tcp.local."]
         _LOGGER.info("Browsing for WLED devices...")
@@ -143,14 +146,31 @@ class ZeroConfRunner:
             services,
             handlers=[self.on_service_state_change],
         )
+        # Close the previous scan's instance, or its sockets and thread leak.
+        # It is swapped out before the await so overlapping scans can't leak
+        # one, and the close is its own task so cancelling this scan can't
+        # cut it short.
+        task = asyncio.ensure_future(self._close(*previous))
+        self._closing.add(task)
+        task.add_done_callback(self._closing.discard)
+        await asyncio.shield(task)
 
     async def async_close(self) -> None:
         """
         Asynchronous function for closing zeroconf listener.
         """
-        # If aiobrowser exists, then aiozc must also exist.
-        if self.aiobrowser:
-            _LOGGER.info("Closing zeroconf listener.")
-            await self.aiobrowser.async_cancel()
-            await self.aiozc.async_close()
-            _LOGGER.info("Zeroconf closed.")
+        await self._close(self.aiobrowser, self.aiozc)
+        if self._closing:
+            await asyncio.gather(*self._closing, return_exceptions=True)
+
+    @staticmethod
+    async def _close(
+        aiobrowser: AsyncServiceBrowser | None, aiozc: AsyncZeroconf | None
+    ) -> None:
+        if aiobrowser and aiozc:
+            _LOGGER.debug("Closing zeroconf listener.")
+            try:
+                await aiobrowser.async_cancel()
+            finally:
+                await aiozc.async_close()
+            _LOGGER.debug("Zeroconf closed.")
