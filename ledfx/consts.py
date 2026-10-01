@@ -14,6 +14,9 @@ DEV = 0
 CONFIGURATION_VERSION = (
     f"{CONFIG_MAJOR_VERSION}.{CONFIG_MINOR_VERSION}.{CONFIG_MICRO_VERSION}"
 )
+# Written to every config.json forever: pre-overhaul LedFx builds re-run their
+# destructive migrate_config() on files that lack it (see ConfigStore).
+LEGACY_CONFIGURATION_VERSION = "2.3.6"
 LEDFX_ASSETS_PATH = ledfx_assets.where()
 
 if __name__ == "__main__":

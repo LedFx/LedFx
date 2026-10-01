@@ -2073,27 +2073,6 @@
       "severity": "error"
     },
     {
-      "column": 37,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/config.py",
       "name": "implicit-any-parameter",
@@ -2122,20 +2101,6 @@
       "severity": "error"
     },
     {
-      "column": 45,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`sanitise_effect_config` is missing an annotation for parameter `old_config`",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`invert_equalizer2d_flip_vertical` is missing an annotation for parameter `effect_config`",
-      "severity": "error"
-    },
-    {
       "column": 25,
       "path": "ledfx/config.py",
       "name": "implicit-any-type-argument",
@@ -2144,20 +2109,6 @@
     },
     {
       "column": 25,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/config.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
       "path": "ledfx/config.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",

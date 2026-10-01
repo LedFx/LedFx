@@ -1,0 +1,13 @@
+{
+    "configuration_version": "0.10.7",
+    "devices": [
+        {"id": "wled-kitchen", "type": "wled", "config": {"name": "Kitchen", "pixel_count": 60, "ip_address": "10.0.0.9"}}
+    ],
+    "scenes": {
+        "evening": {"name": "Evening", "devices": {
+            "wled-kitchen": {"type": "singleColor", "config": {"color": "#ff0000"}},
+            "missing-device": {"type": "singleColor", "config": {"color": "#00ff00"}}
+        }}
+    },
+    "user_presets": {}
+}

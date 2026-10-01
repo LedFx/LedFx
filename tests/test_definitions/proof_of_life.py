@@ -6,7 +6,13 @@ proof_of_life_tests = {
         method="GET",
         api_endpoint="/api/info",
         expected_return_code=200,
-        expected_response_keys=["url", "name", "version", "developer_mode"],
+        expected_response_keys=[
+            "url",
+            "name",
+            "version",
+            "developer_mode",
+            "config_error",
+        ],
     ),
     "get_audio_devices": APITestCase(
         execution_order=2,

@@ -1,0 +1,90 @@
+{
+    "audio": {
+        "audio_device": 2,
+        "min_volume": 0.2
+    },
+    "devices": [
+        {
+            "config": {
+                "ip_address": "10.0.0.5",
+                "name": "Strip",
+                "pixel_count": 30
+            },
+            "id": "strip",
+            "type": "e131"
+        },
+        {
+            "config": {
+                "ip_address": "10.0.0.6",
+                "name": "Art",
+                "pixel_count": 10,
+                "pixels_per_device": 2,
+                "rgb_order": "RGB",
+                "white_mode": "Brighter"
+            },
+            "id": "art",
+            "type": "artnet"
+        }
+    ],
+    "host": "0.0.0.0",
+    "port": 8888,
+    "scenes": {
+        "party": {
+            "name": "Party",
+            "virtuals": {
+                "ghost": {},
+                "strip": {
+                    "config": {
+                        "flip": true
+                    },
+                    "type": "rainbow"
+                }
+            }
+        }
+    },
+    "user_presets": {
+        "rainbow": {
+            "calm": {
+                "config": {
+                    "brightness": 0.3,
+                    "diag": false
+                },
+                "name": "Calm"
+            }
+        }
+    },
+    "virtuals": [
+        {
+            "auto_generated": false,
+            "config": {
+                "name": "Strip"
+            },
+            "effect": {
+                "config": {
+                    "background_color": "#000000",
+                    "brightness": 0.5,
+                    "diag": true
+                },
+                "type": "rainbow"
+            },
+            "id": "strip",
+            "is_device": "strip",
+            "segments": [
+                [
+                    "strip",
+                    0,
+                    29,
+                    false
+                ]
+            ]
+        },
+        {
+            "auto_generated": false,
+            "config": {
+                "name": "Ghost"
+            },
+            "id": "ghost",
+            "segments": []
+        }
+    ]
+}

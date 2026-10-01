@@ -19,7 +19,8 @@ from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.config import ConfigEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
 from ledfx.api.websocket import WebsocketConnection, websocket_handlers
-from ledfx.config import load_logger, migrate_config
+from ledfx.config import load_logger
+from ledfx.configuration.migrations.legacy import legacy_to_v1
 from ledfx.devices import Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
 from ledfx.utils import WLED, get_local_ip
@@ -115,19 +116,19 @@ def test_randomize_int_respects_exclusive_bounds() -> None:
 
 def test_migration_discards_effect_without_type_and_keeps_virtual() -> None:
     load_logger()
-    original = {
+    original: dict[str, object] = {
         "virtuals": [{"id": "broken", "effect": {"config": dict[str, object]()}}]
     }
-    with patch("ledfx.effects.Effects") as effects:
-        effects.return_value.classes.return_value = dict[str, object]()
-        result = migrate_config(original)
+    result = legacy_to_v1(original)
     assert result["virtuals"] == [{"id": "broken", "auto_generated": False}]
-    assert "effect" in original["virtuals"][0]
+    assert original["virtuals"] == [
+        {"id": "broken", "effect": {"config": {}}}
+    ]  # the input is not mutated
 
 
 def test_scene_migration_handles_empty_and_mixed_legacy_scenes() -> None:
     load_logger()
-    original = {
+    original: dict[str, object] = {
         "virtuals": [{"id": "v1"}],
         "scenes": {
             "empty": {"name": "Empty"},
@@ -135,12 +136,12 @@ def test_scene_migration_handles_empty_and_mixed_legacy_scenes() -> None:
             "current": {"name": "Current", "virtuals": {"v1": dict[str, object]()}},
         },
     }
-    with patch("ledfx.effects.Effects") as effects:
-        effects.return_value.classes.return_value = dict[str, object]()
-        result = migrate_config(original)
-    assert result["scenes"]["empty"] == {"name": "Empty", "virtuals": {}}
-    assert result["scenes"]["old"]["virtuals"] == {"v1": {}}
-    assert result["scenes"]["current"]["virtuals"] == {"v1": {}}
+    result = legacy_to_v1(original)
+    scenes = result["scenes"]
+    assert isinstance(scenes, dict)
+    assert scenes["empty"] == {"name": "Empty", "virtuals": {}}
+    assert scenes["old"]["virtuals"] == {"v1": {}}
+    assert scenes["current"]["virtuals"] == {"v1": {}}
 
 
 def test_ip_detection_survives_socket_creation_failure() -> None:
