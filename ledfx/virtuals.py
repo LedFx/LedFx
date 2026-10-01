@@ -842,6 +842,11 @@ class Virtual:
                     # 0 = previous effect and 1 = next effect
                     weight = self.transition_frame_counter / self.transition_frame_total
 
+                # the effective pixel count can change without _reactivate_effect,
+                # so rebuild the masks when they no longer fit the frame
+                if self.transitions.pixel_count != len(frame):
+                    self.transitions = Transitions(len(frame))
+
                 # we will pre validate the transition, which will generate a sentry report if it fails and return False
                 if self.transitions.pre_validate(frame, transition_frame):
                     # only call the transition effect if it will not crash

@@ -6,6 +6,8 @@ import numpy as np
 
 from ledfx.devices import Device
 from ledfx.devices.e131 import E131Device
+from ledfx.transitions import Transitions
+from ledfx.virtuals import Virtual
 
 
 def _e131(pixel_count: int) -> E131Device:
@@ -48,3 +50,23 @@ def test_pixel_count_change_resizes_device_buffer() -> None:
     assert device._pixels.shape == (4, 3)
     device._segments = [["v", 0, 3]]
     device.clear_virtual_segments("v")
+
+
+def test_transition_follows_effective_pixel_count() -> None:
+    # LEDFX-V2-REL-4SD: the dissolve mask kept the old length after the
+    # effective pixel count changed, so every transition frame raised.
+    virtual = object.__new__(Virtual)
+    virtual._ledfx = MagicMock()
+    virtual._ledfx.config.global_brightness = 1
+    virtual._config = {"center_offset": 0, "max_brightness": 1}
+    virtual._active_effect = MagicMock()
+    virtual._active_effect.get_pixels.return_value = np.zeros((1, 3))
+    virtual._transition_effect = MagicMock(is_active=True)
+    virtual._transition_effect.get_pixels.return_value = np.zeros((1, 3))
+    virtual.transitions = Transitions(2)
+    virtual.frame_transitions = virtual.transitions["Dissolve"]
+    virtual.transition_frame_counter = 0
+    virtual.transition_frame_total = 10
+
+    virtual.assemble_frame()
+    assert virtual.transitions.pixel_count == 1
