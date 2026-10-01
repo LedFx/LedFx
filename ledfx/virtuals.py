@@ -1371,7 +1371,9 @@ class Virtual:
         self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
 
         if reactivate_effect:
-            self._reactivate_effect()
+            # The render thread clears a finished transition under this lock.
+            with self.lock:
+                self._reactivate_effect()
 
     @cached_property
     def effective_pixel_count(self):

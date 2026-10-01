@@ -1,7 +1,9 @@
 """Regressions for clearing a virtual's effect slots (LEDFX-V2-REL-1NZ, 3QJ)."""
 
-from unittest.mock import MagicMock
+import threading
+from unittest.mock import MagicMock, patch
 
+from ledfx.configuration.models import VirtualConfig, validate_dict
 from ledfx.utils import RegistryLoader
 from ledfx.virtuals import Virtual
 
@@ -56,3 +58,21 @@ def test_clear_effect_destroys_registered_effect() -> None:
     virtual.clear_transition_effect()
 
     assert registered == {}
+
+
+def test_config_change_restarts_effect_under_lock() -> None:
+    # The render thread clears a finished transition under the lock; an
+    # unlocked restart could clear and destroy the same effect concurrently.
+    virtual = _virtual({})
+    virtual.lock = threading.Lock()
+    virtual._config = validate_dict(VirtualConfig, {"name": "v"})
+    virtual._active_effect = MagicMock()
+    virtual.complex_segments = False
+    held: list[bool] = []
+
+    def reactivate(self: Virtual) -> None:
+        held.append(self.lock.locked())
+
+    with patch.object(Virtual, "_reactivate_effect", reactivate):
+        virtual.config = {"grouping": 2}
+    assert held == [True]
