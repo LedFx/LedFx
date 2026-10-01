@@ -120,13 +120,6 @@
       "severity": "error"
     },
     {
-      "column": 19,
-      "path": "ledfx/api/__init__.py",
-      "name": "missing-attribute",
-      "concise_description": "No attribute `HttpBadRequest` in module `aiohttp.web`",
-      "severity": "error"
-    },
-    {
       "column": 15,
       "path": "ledfx/api/__init__.py",
       "name": "implicit-any-parameter",
@@ -229,27 +222,6 @@
       "path": "ledfx/api/__init__.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `handler`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/api/assets.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `MultipartReader` has no attribute `name`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/api/assets.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `MultipartReader` has no attribute `read`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/assets.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `MultipartReader` has no attribute `read`",
       "severity": "error"
     },
     {
@@ -383,13 +355,6 @@
       "path": "ledfx/api/config.py",
       "name": "bad-argument-count",
       "concise_description": "Expected 1 more positional argument",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/config.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `ConfigEndpoint` has no attribute `generic_error`",
       "severity": "error"
     },
     {
@@ -1177,48 +1142,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`coerce_type` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`lower` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`upper` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`lower` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`upper` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`val` may be uninitialized",
-      "severity": "error"
-    },
-    {
       "column": 26,
       "path": "ledfx/api/virtual_effects.py",
       "name": "implicit-any-parameter",
@@ -1230,48 +1153,6 @@
       "path": "ledfx/api/virtual_effects.py",
       "name": "implicit-any-parameter",
       "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`coerce_type` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`lower` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`upper` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`lower` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 53,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`upper` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 49,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "unbound-name",
-      "concise_description": "`val` may be uninitialized",
       "severity": "error"
     },
     {
@@ -1580,13 +1461,6 @@
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
       "concise_description": "`shutdown_handler` is missing an annotation for parameter `e`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/api/websocket.py",
-      "name": "unbound-name",
-      "concise_description": "`message` is uninitialized",
       "severity": "error"
     },
     {
@@ -2381,27 +2255,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/config.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/config.py",
-      "name": "unbound-name",
-      "concise_description": "`new_effect_config` may be uninitialized",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/config.py",
-      "name": "unbound-name",
-      "concise_description": "`new_effect_id` may be uninitialized",
-      "severity": "error"
-    },
-    {
       "column": 13,
       "path": "ledfx/config.py",
       "name": "unknown-name",
@@ -2413,13 +2266,6 @@
       "path": "ledfx/config.py",
       "name": "unknown-name",
       "concise_description": "Could not find name `_LOGGER`",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/config.py",
-      "name": "unbound-name",
-      "concise_description": "`scenes_mode` may be uninitialized",
       "severity": "error"
     },
     {
@@ -3183,13 +3029,6 @@
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`add_new_device` is missing an annotation for parameter `device_config`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unbound-name",
-      "concise_description": "`resolved_dest` may be uninitialized",
       "severity": "error"
     },
     {
@@ -18117,13 +17956,6 @@
       "severity": "error"
     },
     {
-      "column": 17,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `QLCWebsocketClient` has no attribute `callback`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/integrations/spotify.py",
       "name": "implicit-any-parameter",
@@ -20319,13 +20151,6 @@
       "path": "ledfx/utils.py",
       "name": "implicit-any-parameter",
       "concise_description": "`async_fire_and_forget` is missing an annotation for parameter `exc_handler`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/utils.py",
-      "name": "unbound-name",
-      "concise_description": "`sock` may be uninitialized",
       "severity": "error"
     },
     {

@@ -183,7 +183,7 @@ class ConfigEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
         except Exception as e:  # noqa: BLE001
-            return await self.generic_error(str(e))
+            return await self.internal_error(str(e))
 
         try:
             self.update_config(config)

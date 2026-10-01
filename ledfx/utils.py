@@ -195,19 +195,15 @@ def get_local_ip():
         string: Either the first non-loopback ip address or hostname, or localhost
     """
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        # Use Google Public DNS server to determine own IP
-        sock.connect(("8.8.8.8", 80))
-
-        return sock.getsockname()[0]
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            # No packets are sent; connect selects the outbound interface.
+            sock.connect(("8.8.8.8", 80))
+            return sock.getsockname()[0]
     except OSError:
         try:
             return socket.gethostbyname(socket.gethostname())
         except socket.gaierror:
             return "127.0.0.1"
-    finally:
-        sock.close()
 
 
 def check_if_ip_is_broadcast(thisip):

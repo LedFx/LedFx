@@ -361,8 +361,8 @@ class WebsocketConnection:
             shutdown_handler, Event.LEDFX_SHUTDOWN
         )
 
+        message: dict[str, object] | None = None
         try:
-            message = None
             ws_msg = await socket.receive()
             while ws_msg.type in (WSMsgType.TEXT, WSMsgType.BINARY):
                 if ws_msg.type == WSMsgType.BINARY:
@@ -370,8 +370,16 @@ class WebsocketConnection:
                     ws_msg = await socket.receive()
                     continue
 
-                message = ws_msg.json()
-                message = BASE_MESSAGE_SCHEMA(message)
+                # A parse/validation failure must not reuse the preceding ID
+                # or try to read dictionary keys from scalar/array JSON.
+                message = None
+                raw_message = ws_msg.json()
+                if isinstance(raw_message, dict):
+                    message = raw_message
+                validated_message = BASE_MESSAGE_SCHEMA(raw_message)
+                if not isinstance(validated_message, dict):
+                    raise vol.Invalid("Expected a JSON object")
+                message = validated_message
 
                 if message["type"] in websocket_handlers:
                     # Phase 1: Support async handlers
