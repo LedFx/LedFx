@@ -100,3 +100,22 @@ def test_e131_ip_address_change_rebuilds_the_sender() -> None:
     # Activation resolves the new address, then builds the new sender.
     assert device._destination is None
     assert resolve_then_activate.call_count == 2  # first activate, then this one
+
+
+def test_e131_layout_ending_on_a_universe_boundary_sends_every_channel() -> None:
+    # 170 pixels from channel offset 1 end on index 510: the first channel of
+    # the second 510-channel universe.
+    device = _e131(170)
+    device.update_config({"channel_offset": 1})
+    universes: dict[int, MagicMock] = {}
+
+    def universe(u: int) -> MagicMock:
+        return universes.setdefault(u, MagicMock(dmx_data=(0,) * 512))
+
+    with patch("ledfx.devices.e131.sacn.sACNsender") as sender:
+        sender.return_value.__getitem__.side_effect = universe
+        device.activate()
+        device.flush(np.full((170, 3), 255))
+
+    assert getattr(device.config, "universe_end") == 2  # noqa: B009
+    assert universes[2].dmx_data[0] == 255

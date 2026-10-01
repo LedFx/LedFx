@@ -66,10 +66,10 @@ class E131Device(NetworkedDevice):
         # the old channel_count-only branch could never run.
         channel_count = self.config.pixel_count * 3
 
+        # channel_offset is 0-based, so span is the index of the last channel
+        # and span // universe_size is the universe it lands in.
         span = self.config.channel_offset + channel_count - 1
-        universe_end = self.config.universe + int(span / self.config.universe_size)
-        if span % self.config.universe_size == 0:
-            universe_end -= 1
+        universe_end = self.config.universe + span // self.config.universe_size
         self._set_config_values(
             channel_count=channel_count,
             universe_end=universe_end,
