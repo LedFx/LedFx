@@ -13819,13 +13819,6 @@
       "severity": "error"
     },
     {
-      "column": 42,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`publish_single_color_updated` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
       "column": 34,
       "path": "ledfx/integrations/mqtt_hass.py",
       "name": "implicit-any-parameter",

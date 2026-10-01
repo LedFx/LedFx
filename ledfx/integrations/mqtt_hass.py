@@ -13,7 +13,7 @@ from ledfx.configuration.models import EffectEntry, VirtualConfig
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
-from ledfx.events import Event
+from ledfx.events import EffectSetEvent, Event
 from ledfx.integrations import Integration
 from ledfx.presets import ledfx_presets
 
@@ -118,6 +118,25 @@ class MQTT_HASS(Integration):
             event.audio_input_device_name,
         )
 
+    def publish_single_color(self, client: mqtt.Client, event: EffectSetEvent) -> None:
+        # Listeners run later on the loop, so the virtual may have moved on to
+        # another effect: use the event's effect, and skip it if it is gone.
+        effect = self._ledfx.effects.get(event.effect_id)
+        color = getattr(getattr(effect, "config", None), "color", None)
+        if color is None:
+            return
+        rgb = parse_color(color)
+        client.publish(
+            f"{self.config.topic}/light/{event.virtual_id}/state",
+            json.dumps(
+                {
+                    "state": "on",
+                    "color": [rgb.red, rgb.green, rgb.blue],
+                    "effect": color,
+                }
+            ),
+        )
+
     def on_connect(self, client, userdata, flags, rc):
         """paho network thread: hand the connect event to the event loop."""
         self._call_on_loop(self._handle_connect, client, rc)
@@ -154,21 +173,6 @@ class MQTT_HASS(Integration):
                 paused_state,
             )
 
-        def publish_single_color_updated(event):
-            virtual = self._ledfx.virtuals.get(event.virtual_id)
-            effect = virtual.active_effect
-            color = parse_color(getattr(effect.config, "color", None))
-            client.publish(
-                f"{self.config.topic}/light/{event.virtual_id}/state",
-                json.dumps(
-                    {
-                        "state": "on",
-                        "color": [color.red, color.green, color.blue],
-                        "effect": getattr(effect.config, "color", None),
-                    }
-                ),
-            )
-
         def publish_paused_state(event):
             virtual = self._ledfx.virtuals.get(event.virtual_id)
             paused_state = "OFF"
@@ -188,7 +192,7 @@ class MQTT_HASS(Integration):
 
         self._listeners.append(
             self._ledfx.events.add_listener(
-                publish_single_color_updated,
+                lambda event: self.publish_single_color(client, event),
                 Event.EFFECT_SET,
                 event_filter={"effect_name": "Single Color"},
             )
