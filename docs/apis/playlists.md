@@ -101,7 +101,7 @@ A **Playlist** is an ordered collection of **scene references** (by `scene_id`) 
 - Responses are snackbar-friendly and follow LedFx standard format:
   - Success: `{"status":"success", ...}` or with snackbar: `{"status":"success", "payload":{"type":"success", "reason":"message"}}`
   - Error: `{"status":"failed", "payload":{"type":"error", "reason":"message"}}`
-- Status codes: `200 OK` for all responses (to ensure snackbar functionality works).
+- Status codes: `200 OK` for success and for other failures (to ensure snackbar functionality works). Pydantic validation failures on POST and PUT are `400 Bad Request` with an `errors` array (see below).
 
 ---
 
@@ -130,7 +130,7 @@ Creates a new playlist or replaces an existing one with the same `id`.
 
 ### Validation Rules
 - `name`: required
-- `items`: non-empty array, each with `scene_id` present.
+- `items`: array (may be empty); each item must have a `scene_id`.
 - `duration_ms` and `default_duration_ms`: integers - **500** ms recommended minimum.
 
 ### Responses
@@ -145,14 +145,24 @@ Creates a new playlist or replaces an existing one with the same `id`.
 }
 ```
 
-**200 OK (Error)**
+**400 Bad Request (validation error)**
+
+`errors` has one entry per invalid value, with pydantic's `type`, `loc`, `msg` and the rejected `input`. For example, a missing `scene_id` on the first item:
 ```json
 {
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "Validation failed: items must be non-empty; item[2].scene_id is required"
-  }
+    "reason": "1 invalid value(s)"
+  },
+  "errors": [
+    {
+      "type": "missing",
+      "loc": ["items", 0, "scene_id"],
+      "msg": "Field required",
+      "input": {"duration_ms": 5000}
+    }
+  ]
 }
 ```
 

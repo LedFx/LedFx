@@ -354,46 +354,48 @@ Full update (all sections):
 }
 ```
 
-**Validation Error (invalid variant):**
+**Validation Error (HTTP 400):**
+
+A pydantic validation failure is answered with HTTP 400. `errors` has one entry per
+invalid value, each with pydantic's `type`, `loc`, `msg` and the rejected `input`. A section that is not an
+object (for example `"gradient": "x"`) is also such an error, with `loc` `["gradient"]`.
 ```json
 {
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "value is not allowed for dictionary value @ data['gradient']['variant']"
+    "reason": "1 invalid value(s)"
+  },
+  "errors": [
+    {
+      "type": "less_than_equal",
+      "loc": ["track_text", "duration"],
+      "msg": "Input should be less than or equal to 60",
+      "input": 90
+    }
+  ]
+}
+```
+
+**Invalid JSON (HTTP 400):**
+```json
+{
+  "status": "failed",
+  "reason": "JSON decoding failed",
+  "payload": {
+    "type": "error",
+    "reason": "Request body is not valid JSON"
   }
 }
 ```
 
-**Validation Error (duration out of range):**
+**Non-object body (HTTP 200):**
 ```json
 {
   "status": "failed",
   "payload": {
     "type": "error",
-    "reason": "value must be at most 60 for dictionary value @ data['track_text']['duration']"
-  }
-}
-```
-
-**Invalid JSON:**
-```json
-{
-  "status": "failed",
-  "payload": {
-    "type": "error",
-    "reason": "JSON Decode Error"
-  }
-}
-```
-
-**Non-object body:**
-```json
-{
-  "status": "failed",
-  "payload": {
-    "type": "error",
-    "reason": "Request body must be a JSON object."
+    "reason": "Request body must be a JSON object"
   }
 }
 ```

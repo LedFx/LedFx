@@ -19,6 +19,7 @@ Returns basic information about the LedFx instance as JSON, including a `feature
   "github_sha": "unknown",
   "is_release": "false",
   "developer_mode": false,
+  "config_error": null,
   "features": {
     "sendspin": true
   }
@@ -102,11 +103,16 @@ Set full LedFx config. You must provide a full, valid config. LedFx will
 restart to apply the config. To simply update a part of the config, use
 PUT
 
+LedFx first copies the current config to `config_backup_IMPORT_<timestamp>.json`
+in the config directory. A config from a newer LedFx is refused with
+`"This config is from a newer version of LedFx; update LedFx to import it."`
+
 **DELETE**
 
 Resets LedFx\'s config to default values and restarts.
 
-*Warning* This will irreversibly delete all your devices, settings, etc.
+*Warning* This deletes all your devices, settings, etc. The previous config is
+first copied to `config_backup_DELETE_<timestamp>.json` in the config directory.
 
 ## /api/log
 
@@ -116,6 +122,26 @@ LedFx Logging
 
 Opens a websocket connection through which realtime LedFx logging info
 will be sent.
+
+## /api/power
+
+**POST**
+
+Shuts down or restarts LedFx.
+
+``` json
+{
+    "action": "restart",
+    "timeout": 5
+}
+```
+
+-   `action`: `shutdown` (default) or `restart`.
+-   `timeout`: whole seconds to wait before stopping, 0 (default) to 3600.
+
+The reply (`{"status": "success"}`) is sent at once and the stop runs after
+`timeout` seconds. It cannot be cancelled. Any other `action` or `timeout`
+fails (HTTP 200, `status: failed`) and nothing is scheduled.
 
 ## /api/audio/devices
 
@@ -168,15 +194,18 @@ Returns an error if an invalid device index is provided:
 ``` json
 {
   "status": "failed",
-  "reason": "Invalid device index [99]"
+  "payload": {
+    "type": "error",
+    "reason": "Invalid device index [99]"
+  }
 }
 ```
 
-## /api/schema/
+## /api/schema
 
 LedFx Schema Api
 
-**GET /api/schema/**
+**GET /api/schema**
 
 Get JSON schemas specifically defining the kind of data LedFx\'s API
 expects. A GET with no request body will return all of LedFx\'s schemas
@@ -206,17 +235,8 @@ example: Get LedFx devices and effects schema
 ["devices", "effects"]
 ```
 
-## /api/schema/\<schema_type\>
-
-Query a specific LedFx schema with the matching *schema_type* as JSON
-
-**GET /api/schema/\<schema_type\>**
-
-Returns the LedFx schema with the matching *schema_type* as JSON
-
--   *devices*: Returns all the devices registered with LedFx
--   *effects*: Returns all the valid schemas for an LedFx effect
--   *integrations*: Returns all the integrations registered with LedFx
+There is no `/api/schema/<schema_type>` route: select schemas with the
+request body above, or use /api/schemas/\<kind\>.
 
 Effect schema entries include `uses_melbank_range`, a boolean capability flag
 for frontends. When `true`, the effect consumes melbank data through the
@@ -282,6 +302,9 @@ playlists, integrations, …) have their own endpoints. Effects keep `permitted_
 
 Returns one kind from /api/schemas, for example *effects* or *core*, as
 `{kind: entry}`, where entry is that kind's value in /api/schemas.
+
+An unknown kind fails with
+`{"status": "failed", "payload": {"type": "error", "reason": "Unknown schema kind: <kind>"}}`.
 
 ## /api/devices
 
@@ -350,6 +373,52 @@ if no device is found will return an error
 {
     "status": "error",
     "error": "Failed to find launchpad"
+}
+```
+
+## /api/find_lifx
+
+**GET**
+
+Discovers LIFX devices on the local network. Query parameters, all optional:
+
+-   `method`: `udp` (default), `mdns` or `both`. `both` runs the two scans
+    at the same time and merges the results (mDNS devices first).
+-   `discovery_timeout`: seconds to listen for replies, above 0 and at most
+    300 (default: the `lifx_discovery_timeout` setting).
+-   `broadcast_address`: IPv4 broadcast address for UDP discovery (default:
+    the `lifx_broadcast_address` setting).
+-   `add`: `true` adds each discovered device that is not already
+    configured.
+
+The request takes at most `discovery_timeout` plus 5 seconds; a scan still
+running then is stopped and its devices are left out.
+
+``` json
+{
+    "method": "both",
+    "devices": [
+        {
+            "device_type": "lifx",
+            "category": "matrix",
+            "lifx_type": "CeilingLight",
+            "label": "Living Room",
+            "serial": "d073d5xxxxxx",
+            "ip": "192.168.1.100",
+            "added": false,
+            "discovery_method": "mdns"
+        }
+    ]
+}
+```
+
+**POST**
+
+Detects the LIFX device at `ip_address` and returns the same device fields.
+
+``` json
+{
+    "ip_address": "192.168.1.100"
 }
 ```
 
@@ -454,7 +523,7 @@ return an error message
 }
 ```
 
-## /api/get_image and /api/get_gif_frames
+## /api/get_gif_frames
 
 See the [Images and Cache APIs](cache.md) documentation for complete details on image retrieval endpoints, security features, and cache management.
 
@@ -465,27 +534,6 @@ Query and manage all effects
 **GET**
 
 Returns all the effects currently created in LedFx as JSON
-
-**POST (upcoming)**
-
-Create a new Effect based on the provided JSON configuration
-
-## /api/effects/\<effect_id\>
-
-Query and manage a specific effect with the matching *effect_id* as JSON
-
-**GET**
-
-Returns information about the effect
-
-**PUT (upcoming)**
-
-Modifies the configuration of the effect and returns the new
-configuration as JSON
-
-**DELETE (upcoming)**
-
-Deletes the effect with the matching *effect_id*.
 
 ## /api/colors
 
@@ -528,6 +576,13 @@ Creates or updates user-defined colors or gradients
 }
 ```
 
+Built-in colors and gradients cannot be overwritten. Every entry is checked
+before anything is saved; if one is refused, nothing is saved and the reply
+names it (HTTP 200, `status: failed`):
+
+-   `"Cannot overwrite built-in color: red"` (or `gradient`)
+-   `"my_thing is not a valid color or gradient"`
+
 **DELETE**
 
 Deletes user-defined colors or gradients (legacy endpoint, requires JSON body)
@@ -535,6 +590,10 @@ Deletes user-defined colors or gradients (legacy endpoint, requires JSON body)
 ``` json
 ["my_red_color", "my_gradient"]
 ```
+
+If any name is a built-in (`"Cannot delete built-in color or gradient:
+red"`) or does not exist (`"Color or gradient ghost not found"`), the reply
+fails with that reason and nothing is deleted.
 
 ## /api/colors/\<color_id\>
 
@@ -544,7 +603,8 @@ Delete a specific color or gradient by ID
 
 Deletes a user-defined color or gradient with the matching *color_id*
 
-Returns success if the color/gradient was deleted, or an error if not found
+Returns success if the color/gradient was deleted, or an error if it is not
+found or is a built-in (built-ins cannot be deleted)
 
 ## /api/virtuals
 
@@ -786,9 +846,19 @@ Clear effect of a virtual
 
 Extensible support for general tools towards ALL virtuals in one call
 
+**GET**
+
+Lists the available tools
+
 **POST**
 
-Supports addition of oneshots to all virtuals.
+Supports addition of oneshots to all virtuals. POST runs only the
+`oneshot` tool. Failures are `{"status": "failed", "payload": {"type": "error", "reason": ...}}`
+with these reasons:
+
+- no `tool` in the body: `Required attribute "tool" was not provided`
+- unknown tool: `Tool <tool> is not in ['force_color', 'calibration', 'highlight', 'oneshot', 'copy']`
+- any other tool: `POST only runs the oneshot tool; use PUT for <tool>`
 
 ### oneshot
 
@@ -802,7 +872,13 @@ Repeated oneshot to a virtual will add an extra oneshot if the previous ones hav
 - ramp: The time in ms over which to ramp the color from zero to full weight over the active  effect
 - hold: The time in ms to hold the color to full weight over the active effect
 - fade: The time in ms to fade the color from full weight to zero over the active effect
-- brightness: The brightness of the oneshot at the beginning. Defaults to 1.0 which is maximum brightness
+- brightness: The brightness of the oneshot at the beginning. Defaults to 1.0 which is maximum brightness; values outside 0-1 are clamped
+
+ramp, hold and fade must be finite numbers >= 0 (default 0), brightness a
+finite number,
+and color a valid LedFx color. Anything else is answered with HTTP 400 and
+the standard validation error body (`status: failed`, plus an `errors`
+list naming each bad field).
 
 
 ``` json
@@ -881,9 +957,16 @@ returns
 
 Extensible support for general tools towards a specified virtual
 
+**GET**
+
+Lists the available tools
+
 **POST**
 
-Supports addition of oneshots to all virtuals.
+Supports addition of a oneshot to the virtual. POST runs only the
+`oneshot` tool; any other tool fails with
+`"POST only runs the oneshot tool; use PUT for <tool>"`. The oneshot
+fields are validated as for /api/virtuals_tools.
 
 ### oneshot
 
@@ -924,7 +1007,7 @@ The virtual must be active or an error will be returned
 ``` json
 {
     "status": "failed",
-    "reason": "virtual falcon1 is not active"
+    "payload": {"type": "error", "reason": "oneshot failed"}
 }
 ```
 
@@ -1068,7 +1151,10 @@ The virtual must be active or an error will be returned
 ``` json
 {
     "status": "failed",
-    "reason": "oneshot was not found"
+    "payload": {
+        "type": "error",
+        "reason": "oneshot was not found"
+    }
 }
 ```
 
@@ -1135,7 +1221,10 @@ Request body:
 }
 ```
 
-Note: Only `user_presets` can be deleted. Built-in `ledfx_presets` are read-only.
+Note: Only `user_presets` can be renamed or deleted. Built-in
+`ledfx_presets` are read-only: a PUT or DELETE with
+`"category": "ledfx_presets"` fails (HTTP 200, `status: failed`) with
+`"Built-in LedFx presets are read-only"`.
 
 ## /api/effects/\<effect_id\>/presets/\<preset_id\>
 
@@ -1209,7 +1298,9 @@ example:
 
 **POST**
 
-Create a new integration, or update an existing one
+Create a new integration, or update an existing one (send its `id`). An
+update restarts the integration with the new config; one that was active
+is reconnected and stays active, one that was off stays off.
 
 ``` json
 {
@@ -1336,27 +1427,34 @@ Get all the song triggers
 
 **PUT**
 
-Update a song trigger \[TODO\]
+Move an existing song trigger to another scene. Takes the same body as
+POST; the trigger is the one for that `song_id` and `song_position`, and it
+is reassigned to `scene_id` (with `song_name` updated). Fails with
+`"Trigger <song_id>-<song_position> does not exist"`, `"Scene <id> does
+not exist"`, or the missing-attributes reason, and changes nothing.
 
 **POST**
 
-Create a new song trigger
+Create a new song trigger. A song position triggers one scene: if another
+scene already has a trigger for that `song_id` and `song_position`, POST
+fails with `"Trigger <id> already belongs to scene <scene>; use PUT to move
+it"` and changes nothing.
 
 ``` json
 {
   "scene_id": "my_scene",
   "song_id": "347956287364597",
   "song_name": "Really Cool Song",
-  "song_position": "43764",
+  "song_position": 43764
 }
 ```
 
 **DELETE**
 
-Delete a song trigger
+Delete a song trigger. The trigger id is `<song_id>-<song_position>`.
 
 ``` json
 {
-  "trigger_id": "Really Cool Song - 43764",
+  "trigger_id": "347956287364597-43764"
 }
 ```

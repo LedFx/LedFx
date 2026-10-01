@@ -17,6 +17,7 @@ When launching LedFx from the command line, or by editing properties of a deskto
 - `--ci-smoke-test`: Launch LedFx and then exit after 5 seconds to sanity check the install.
 - `--clear-config`: Launch LedFx, backup the config, clear the config, and continue with a clean startup.
 - `--clear-effects`: Launch LedFx, load the config, clear all active effects on all virtuals. Effect configurations are persisted, just turned off.
+- `--dump-schemas PATH`: Write every config JSON Schema (as served by /api/schemas) to PATH and exit.
 - `--pause-all`: Start LedFx with all virtuals paused. This is a global pause and can be toggled via the UI, or via a rest PUT to /api/virtuals
 
 
