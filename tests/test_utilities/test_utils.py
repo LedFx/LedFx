@@ -3,7 +3,7 @@ import shutil
 import sys
 import time
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -34,9 +34,9 @@ class APITestCase:
     method: Literal["GET", "POST", "PUT", "DELETE"]
     api_endpoint: str
     expected_return_code: int
-    payload_to_send: dict[str, Any] = None
+    payload_to_send: dict[str, object] | None = None
     expected_response_keys: list[str] = None
-    expected_response_values: list[dict[str, Any]] = None
+    expected_response_values: list[dict[str, object]] | None = None
     sleep_after_test: float = 0
 
 

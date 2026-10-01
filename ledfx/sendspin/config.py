@@ -2,8 +2,13 @@
 
 import logging
 import urllib.parse
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Protocol
 
 import voluptuous as vol
+
+if TYPE_CHECKING:
+    from ledfx.effects.audio import AudioAnalysisSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -21,6 +26,16 @@ MANUFACTURER = "LedFx Developers"
 # enough headroom for network jitter while keeping latency reasonable.
 BUFFER_CAPACITY = 384000
 
+
+class _LedFx(Protocol):
+    """Core state needed by Sendspin's always-on startup helper."""
+
+    @property
+    def config(self) -> Mapping[str, object]: ...
+
+    audio: "AudioAnalysisSource | None"
+
+
 # Sendspin configuration schema
 SENDSPIN_CONFIG_SCHEMA = vol.Schema(
     {
@@ -30,7 +45,7 @@ SENDSPIN_CONFIG_SCHEMA = vol.Schema(
 )
 
 
-def validate_sendspin_server_url(url) -> tuple[bool, str]:
+def validate_sendspin_server_url(url: object) -> tuple[bool, str]:
     """Validate a Sendspin server WebSocket URL.
 
     Checks:
@@ -51,6 +66,8 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
 
     try:
         parsed = urllib.parse.urlparse(url)
+        hostname = parsed.hostname
+        port = parsed.port
     except Exception:  # noqa: BLE001
         return False, "server_url could not be parsed"
 
@@ -60,14 +77,13 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
             f"server_url scheme '{parsed.scheme}' is not allowed; must be ws or wss",
         )
 
-    hostname = parsed.hostname
     if not hostname:
         return False, "server_url must contain a non-empty hostname"
 
-    if parsed.port is not None and not (0 <= parsed.port <= 65535):
+    if port is not None and not (0 <= port <= 65535):
         return (
             False,
-            f"server_url port {parsed.port} is out of range (0-65535)",
+            f"server_url port {port} is out of range (0-65535)",
         )
 
     path = parsed.path
@@ -79,7 +95,11 @@ def validate_sendspin_server_url(url) -> tuple[bool, str]:
     return True, ""
 
 
-def is_always_on(device_idx, query_devices, query_hostapis):
+def is_always_on(
+    device_idx: object,
+    query_devices: Callable[[], Sequence[Mapping[str, object]]],
+    query_hostapis: Callable[[], Sequence[Mapping[str, object]]],
+) -> bool:
     """Check if the audio device at device_idx is a Sendspin device.
 
     Args:
@@ -97,7 +117,10 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         hostapis = query_hostapis()
         if device_idx >= len(devices):
             return False
-        hostapi_name = hostapis[devices[device_idx]["hostapi"]]["name"]
+        hostapi_index = devices[device_idx].get("hostapi")
+        if not isinstance(hostapi_index, int) or not 0 <= hostapi_index < len(hostapis):
+            return False
+        hostapi_name = hostapis[hostapi_index].get("name")
         return hostapi_name == "SENDSPIN"
     except Exception as exc:  # noqa: BLE001
         _LOGGER.debug(
@@ -108,7 +131,7 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         return False
 
 
-def eager_start(ledfx):
+def eager_start(ledfx: _LedFx) -> None:
     """Eagerly start the audio subsystem if sendspin_always_on is enabled
     and the configured audio device is a Sendspin source.
 
@@ -119,9 +142,13 @@ def eager_start(ledfx):
     if not ledfx.config.get("sendspin_always_on", True):
         return
 
-    audio_config = ledfx.config.get("audio", {})
+    audio_config_value = ledfx.config.get("audio", {})
+    audio_config: Mapping[str, object] = {}
+    if isinstance(audio_config_value, Mapping):
+        audio_config = audio_config_value
     device_idx = audio_config.get("audio_device")
-    device_name = audio_config.get("audio_device_name", "")
+    device_name_value = audio_config.get("audio_device_name", "")
+    device_name = device_name_value if isinstance(device_name_value, str) else ""
 
     _LOGGER.debug(
         "eager_start: audio_device=%s audio_device_name=%r sendspin_always_on=%s",
@@ -158,7 +185,7 @@ def eager_start(ledfx):
         device_name,
     )
 
-    existing_audio = getattr(ledfx, "audio", None)
+    existing_audio = ledfx.audio
     if existing_audio is not None:
         # Runtime path: apply current config and allow audio.py to activate
         # immediately when always-on + Sendspin conditions are met.
