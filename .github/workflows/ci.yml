@@ -23,9 +23,10 @@ env:
   DOCKERHUB_IMAGE: ledfxorg/ledfx
 
 jobs:
-  # Docs/frontend-only PRs skip the builds here rather than with paths-ignore:
-  # a workflow skipped by paths-ignore never reports, so the required
-  # "CI passed" check would wait forever. Skipped jobs count as passed.
+  # Decides which jobs a PR needs, here rather than with paths-ignore: a
+  # workflow skipped by paths-ignore never reports, so the required "CI passed"
+  # check would wait forever. Skipped jobs count as passed. Pushes (main,
+  # tags) and manual runs always run everything.
   plan:
     name: Plan
     runs-on: ubuntu-latest
@@ -34,7 +35,11 @@ jobs:
       contents: read
       pull-requests: read  # reads PR metadata (changed paths) to decide which jobs run
     outputs:
-      code: ${{ steps.plan.outputs.code }}
+      code: ${{ steps.plan.outputs.code }} # lint
+      tests: ${{ steps.plan.outputs.tests }} # Linux tests
+      platform: ${{ steps.plan.outputs.platform }} # Windows tests, macOS smoke
+      build: ${{ steps.plan.outputs.build }} # package, frozen builds, Docker
+      pythons: ${{ steps.plan.outputs.pythons }} # Linux test matrix
       version: ${{ steps.plan.outputs.version }}
       release: ${{ steps.plan.outputs.release }}
     steps:
@@ -47,6 +52,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
           REPO: ${{ github.repository }}
           REF: ${{ github.ref }}
           EVENT: ${{ github.event_name }}
@@ -69,7 +77,8 @@ jobs:
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
-          code=true
+          code=true tests=true platform=true build=true
+          pythons='["3.11", "3.12", "3.13", "3.14"]'
           if [ -n "$PR" ]; then
             # previous_filename: moving code out of ledfx/ into docs/ is still a code change
             files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
@@ -77,8 +86,42 @@ jobs:
             # docs/**/*.py is type-checked by the Pyrefly lint hook, so it counts as code.
             grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" \
               || grep -qE '^docs/.*\.py$' <<< "$files" || code=false
+            # A change to this workflow runs all of it.
+            if ! grep -qx '.github/workflows/ci.yml' <<< "$files"; then
+              # Repo metadata (other workflows, bot and editor config, top-level
+              # prose) is checked by lint (actionlint, zizmor); nothing to test.
+              meta='^(frontend/|docs/|ledfx_frontend/|\.github/|\.vscode/|renovate\.json$|release-please-config\.json$|\.release-please-manifest\.json$|\.readthedocs\.yml$|\.gitignore$|\.git-blame-ignore-revs$|[^/]+\.(md|rst|txt)$)'
+              grep -qvE "$meta" <<< "$files" || tests=false
+              # Tests alone can't break a build.
+              grep -qvE "$meta|^tests/" <<< "$files" || build=false
+              # Mid-stack (another open PR here builds on this branch): lint
+              # and Linux tests on the oldest and newest Python. The top of a
+              # stack (based on another PR's branch, nothing on top) runs
+              # everything: its files are one layer, its tree is the stack's.
+              # A plain assignment, so a failed query fails this step (bash -e)
+              # and with it CI passed, rather than reading as "stacked on".
+              above=0
+              if [ "$HEAD_REPO" = "$REPO" ]; then
+                above=$(gh api -X GET "repos/$REPO/pulls" -f state=open -f base="$HEAD_REF" --jq length)
+              fi
+              if [ "$above" != 0 ]; then
+                platform=false build=false
+                pythons='["3.11", "3.14"]'
+              elif [ "$BASE_REF" != main ]; then
+                code=true tests=true platform=true build=true
+              fi
+            fi
           fi
-          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" = true ] || tests=false
+          [ "$tests" = true ] || platform=false
+          [ "$code" = true ] || build=false
+          {
+            echo "code=$code"
+            echo "tests=$tests"
+            echo "platform=$platform"
+            echo "build=$build"
+            echo "pythons=$pythons"
+          } >> "$GITHUB_OUTPUT"
 
   # Fast lint gate before any build/test spend. Runs the same prek hook set
   # contributors see locally (`uv run prek run --all-files`), so CI cannot
@@ -110,13 +153,13 @@ jobs:
   test-linux:
     name: Test (Ubuntu, py${{ matrix.python }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13", "3.14"]
+        python: ${{ fromJSON(needs.plan.outputs.pythons) }}
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
@@ -147,7 +190,7 @@ jobs:
   test-windows:
     name: Test (Windows, py${{ matrix.python }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.platform == 'true'
     runs-on: windows-2022 # pinned until we understand why windows-2025 has audio device issues
     timeout-minutes: 20
     strategy:
@@ -191,7 +234,7 @@ jobs:
   test-macos:
     name: Smoke test (macOS arm64, py${{ matrix.python }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.platform == 'true'
     runs-on: macos-latest
     timeout-minutes: 20
     strategy:
@@ -226,7 +269,7 @@ jobs:
   frozen-windows:
     name: Frozen build (Windows)
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
     env:
@@ -273,7 +316,7 @@ jobs:
   frozen-macos:
     name: Frozen build (macOS ${{ matrix.suffix }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     strategy:
@@ -364,7 +407,7 @@ jobs:
   package:
     name: Build Python package
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -417,10 +460,10 @@ jobs:
   docker:
     name: Docker (${{ matrix.arch }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
-    # NOTE: deliberately no environment here. This job runs on every PR;
+    # NOTE: deliberately no environment here. This job runs on PRs;
     # an environment with protection rules (production has required
     # reviewers + a branch policy) would block or reject PR builds. The
     # Docker Hub login step is gated on PUBLISH, so fork PRs never touch

@@ -56,6 +56,19 @@ repos:
           - --min-severity
           - high
           - .github/workflows/
+  # Workflow syntax, expressions, job graph and inline shell. A PR that only
+  # changes workflows (other than ci.yml) runs lint alone, so this is its check.
+  # actionlint and shellcheck run from the locked dev group (uv.lock, bumped by
+  # Renovate), like ruff, so there is one pin each and shellcheck is on PATH
+  # locally as on the CI runner.
+  - repo: local
+    hooks:
+      - id: actionlint
+        name: actionlint
+        entry: uv run --frozen --only-group dev actionlint
+        language: system
+        files: ^\.github/workflows/
+        require_serial: true
   # Type-coverage ratchet: pyrefly_errors.json holds the baseline; new errors
   # fail CI (--error-stale-baseline). Routine pay-down: fix errors, then prune
   # the baseline with `uv run --isolated --locked --python 3.12 --group dev python
