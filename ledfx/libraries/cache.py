@@ -64,7 +64,7 @@ class ImageCache:
         self.metadata_file = os.path.join(self.cache_dir, "metadata.json")
         self.max_size_bytes = max_size_mb * 1024 * 1024
         self.max_items = max_items
-        # ponytail: one lock for the whole cache; per-key locks if it contends.
+        # ponytail: one lock for all metadata; per-key locks if it contends.
         self._lock = threading.RLock()
         self.metadata = self._load_metadata()
 
@@ -139,7 +139,6 @@ class ImageCache:
         _LOGGER.debug("Cache miss for %s", url)
         return None
 
-    @_locked
     def put(
         self,
         url: str,
@@ -190,12 +189,6 @@ class ImageCache:
         # Update metadata
         now = datetime.now(UTC).isoformat()
 
-        # Remove old entry size if updating
-        if cache_key in self.metadata["cache_entries"]:
-            old_size = self.metadata["cache_entries"][cache_key]["file_size"]
-            self.metadata["total_size"] -= old_size
-            self.metadata["total_count"] -= 1
-
         # Extract image metadata (dimensions, frame count, animation status)
         width, height, img_format, n_frames, is_animated = get_image_metadata(
             cache_path
@@ -235,12 +228,21 @@ class ImageCache:
             "gradients": gradient_data,
         }
 
-        self.metadata["cache_entries"][cache_key] = entry
-        self.metadata["total_size"] += len(data)
-        self.metadata["total_count"] += 1
+        # Only the shared metadata is locked: the event loop calls get()
+        # directly, so it must never wait on the image work above.
+        with self._lock:
+            # Remove old entry size if updating
+            if cache_key in self.metadata["cache_entries"]:
+                old_size = self.metadata["cache_entries"][cache_key]["file_size"]
+                self.metadata["total_size"] -= old_size
+                self.metadata["total_count"] -= 1
 
-        self._save_metadata()
-        self._enforce_limits()
+            self.metadata["cache_entries"][cache_key] = entry
+            self.metadata["total_size"] += len(data)
+            self.metadata["total_count"] += 1
+
+            self._save_metadata()
+            self._enforce_limits()
 
         _LOGGER.info("Cached image from %s (%s bytes)", url, len(data))
 
