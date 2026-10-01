@@ -2738,20 +2738,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/devices/adalight.py",
-      "name": "bad-override",
-      "concise_description": "Class member `AdalightDevice.CONFIG_SCHEMA` overrides parent class `SerialDevice` in an inconsistent manner",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/adalight.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `AdalightDevice.CONFIG_SCHEMA` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/devices/adalight.py",
       "name": "implicit-any-parameter",

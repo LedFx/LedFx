@@ -6,6 +6,7 @@ and layer 13 deletes both.
 """
 
 import inspect
+import warnings
 from collections.abc import Iterable
 from typing import (
     Annotated,
@@ -39,6 +40,18 @@ from ledfx.configuration.fields import (
     coerce,
 )
 from ledfx.configuration.models import LedFxModel, omits_default
+
+
+class ConfigShimWarning(DeprecationWarning):
+    """Dict-style access to a plugin config. Layer 13 deletes the shim."""
+
+
+def _shim_used(method: str) -> None:
+    warnings.warn(
+        f"dict-style plugin config access ({method}); read attributes instead",
+        ConfigShimWarning,
+        stacklevel=3,  # the caller of the shim method
+    )
 
 
 class PluginConfig(LedFxModel):
@@ -88,17 +101,21 @@ class PluginConfig(LedFxModel):
     # Returns Any on purpose: untyped plugin code reads self._config["k"] until
     # layers 10-12 rewrite it to typed attributes; `object` would add errors there.
     def __getitem__(self, key: str) -> Any:  # pyrefly: ignore[explicit-any]
+        _shim_used("__getitem__")
         if not self._present(key):
             raise KeyError(key)
         return self._value(key)
 
     def get(self, key: str, default: object = None) -> Any:  # pyrefly: ignore[explicit-any]
+        _shim_used("get")
         return self._value(key) if self._present(key) else default
 
     def __contains__(self, key: object) -> bool:
+        _shim_used("__contains__")
         return isinstance(key, str) and self._present(key)
 
     def keys(self) -> list[str]:
+        _shim_used("keys")
         return list(self.as_dict())
 
 

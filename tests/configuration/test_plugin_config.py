@@ -144,3 +144,11 @@ def test_list_item_constraints_precede_coercion() -> None:
     assert model.model_validate({"xs": ["3", 4.7]})["xs"] == [3, 4]
     with pytest.raises(ValidationError):
         model.model_validate({"xs": [10]})
+
+
+def test_shim_access_warns() -> None:
+    from ledfx.configuration.plugin import ConfigShimWarning
+
+    cfg = vol_to_model("Demo", SCHEMA).model_validate({"name": "x"})
+    with pytest.warns(ConfigShimWarning):
+        assert cfg["name"] == "x"

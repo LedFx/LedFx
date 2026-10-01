@@ -1,8 +1,9 @@
 import logging
-from typing import ClassVar
+from typing import ClassVar, Literal
 
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device
@@ -22,30 +23,23 @@ class WLEDDevice(NetworkedDevice):
     # The settings setup_subdevice copies into the sender.
     OUTPUT_KEYS = ("sync_mode", "name", "ip_address", "pixel_count", "refresh_rate")
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "sync_mode",
-                description="Streaming protocol to WLED device. Recommended: DDP for 0.13 or later. Use UDP for older versions.",
-                default="DDP",
-            ): vol.In(["DDP", "UDP", "E131"]),
-            vol.Optional(
-                "timeout",
-                description="Time between LedFx effect off and WLED effect activate",
-                default=1,
-            ): vol.All(int, vol.Range(0, 255)),
-            vol.Optional(
-                "create_segments",
-                description="Import WLED segments into LedFx",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "icon_name",
-                description="Icon for the device*",
-                default="wled",
-            ): str,
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        sync_mode: Literal["DDP", "UDP", "E131"] = Field(
+            "DDP",
+            description="Streaming protocol to WLED device. Recommended: DDP for 0.13 or later. Use UDP for older versions.",
+        )
+        timeout: int = Field(
+            1,
+            description="Time between LedFx effect off and WLED effect activate",
+            ge=0,
+            le=255,
+        )
+        create_segments: bool = Field(
+            False, description="Import WLED segments into LedFx"
+        )
+        icon_name: str = Field("wled", description="Icon for the device*")
+
+    config = TypedConfig(Config)
 
     SYNC_MODES: ClassVar[dict[str, type[NetworkedDevice]]] = {
         "UDP": UDPRealtimeDevice,
@@ -59,7 +53,7 @@ class WLEDDevice(NetworkedDevice):
 
         # moved DEVICE_CONFIGS class var to device_configs instance var as it is manipulated in seperate instances
         # see https://github.com/LedFx/LedFx/pull/237
-        self.device_configs = {
+        self.device_configs: dict[str, dict[str, object]] = {
             "UDP": {
                 "name": None,
                 "ip_address": None,
@@ -97,12 +91,12 @@ class WLEDDevice(NetworkedDevice):
         if self.subdevice is not None:
             self.subdevice.deactivate()
 
-        device = self.SYNC_MODES[self._config["sync_mode"]]
-        config = self.device_configs[self._config["sync_mode"]]
-        config["name"] = self._config["name"]
-        config["ip_address"] = self._config["ip_address"]
-        config["pixel_count"] = self._config["pixel_count"]
-        config["refresh_rate"] = self._config["refresh_rate"]
+        device = self.SYNC_MODES[self.config.sync_mode]
+        config = self.device_configs[self.config.sync_mode]
+        config["name"] = self.config.name
+        config["ip_address"] = self.config.ip_address
+        config["pixel_count"] = getattr(self.config, "pixel_count")  # noqa: B009 - stored extra, not a declared field
+        config["refresh_rate"] = self.config.refresh_rate
 
         # Subdevices are built directly, not through RegistryLoader.create.
         self.subdevice = device(
@@ -135,7 +129,7 @@ class WLEDDevice(NetworkedDevice):
 
     async def add_postamble(self):
         _LOGGER.debug("Doing post creation things for WLED...")
-        if self.config["create_segments"] or self._ledfx.config.create_segments:
+        if self.config.create_segments or self._ledfx.config.create_segments:
             segments = await self.wled.get_segments()
             isMatrix = segments[0].get("stopY", 0) > 0
             if len(segments) > 1 or isMatrix:
@@ -174,7 +168,7 @@ class WLEDDevice(NetworkedDevice):
             _LOGGER.info("WLED Build Supports Sync Setting API: %s", wled_build)
             await self.wled.get_sync_settings()
         # self.wled.enable_realtime_gamma()
-        # self.wled.set_inactivity_timeout(self._config["timeout"])
+        # self.wled.set_inactivity_timeout(self.config.timeout)
         # self.wled.first_universe()
         # self.wled.first_dmx_address()
         # self.wled.multirgb_dmx_mode()

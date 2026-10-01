@@ -1,7 +1,10 @@
 import logging
+from typing import Annotated, Literal
 
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import Device
 from ledfx.devices.utils.rgbw_conversion import (
     RGB_MAPPING,
@@ -34,30 +37,28 @@ class DeviceWrapper(Device):
 class RPI_WS281X(DeviceWrapper):
     """RPi WS281X/SK6812 device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Required(
-                "gpio_pin",
-                description="Raspberry Pi GPIO pin your LEDs are connected to",
-                default=10,
-            ): vol.In([10, 12, 13, 18, 21]),
-            vol.Optional(
-                "color_order",
-                description="RGB data order mode, supported for physical hardware that just doesn't play by the rules",
-                default="RGB",
-            ): vol.All(str, vol.In(RGB_MAPPING)),
-            vol.Optional(
-                "white_mode",
-                description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
-                default="None",
-            ): vol.All(str, vol.In(WHITE_FUNCS_MAPPING.keys())),
-        }
-    )
+    class Config(DeviceWrapper.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        gpio_pin: Literal[10, 12, 13, 18, 21] = Field(
+            10,
+            description="Raspberry Pi GPIO pin your LEDs are connected to",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        color_order: Annotated[str, OneOf(RGB_MAPPING)] = Field(
+            "RGB",
+            description="RGB data order mode, supported for physical hardware that just doesn't play by the rules",
+        )
+        white_mode: Annotated[str, OneOf(WHITE_FUNCS_MAPPING.keys())] = Field(
+            "None",
+            description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -77,8 +78,8 @@ class RPI_WS281X(DeviceWrapper):
     def config_updated(self, config):
         if not self._output_changed():
             return
-        self.color_order = config.get("color_order")
-        self.white_mode = config.get("white_mode") or "None"
+        self.color_order = self.config.color_order
+        self.white_mode = self.config.white_mode or "None"
         self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.deactivate()
         self.activate()
@@ -92,7 +93,7 @@ class RPI_WS281X(DeviceWrapper):
 
         # following configuration is based on the example from the rpi-ws281x library
         # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/50cc48bbb5d6ab2d205e58606892514a29571f5e/examples/strandtest.py#L20
-        self.LED_CHANNEL = 1 if self.config["gpio_pin"] == 13 else 0
+        self.LED_CHANNEL = 1 if self.config.gpio_pin == 13 else 0
 
         if self.white_mode == "None":  # RGB strip
             strip_type = WS2811_STRIP_RGB
@@ -101,7 +102,7 @@ class RPI_WS281X(DeviceWrapper):
 
         self.strip = PixelStrip(
             self.pixel_count,
-            self.config["gpio_pin"],
+            self.config.gpio_pin,
             self.LED_FREQ_HZ,
             self.LED_DMA,
             self.LED_INVERT,

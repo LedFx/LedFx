@@ -4,7 +4,6 @@ import socket
 import time
 
 import requests
-import voluptuous as vol
 
 # Try to import the optional package
 try:
@@ -14,6 +13,10 @@ try:
 except ImportError:
     MBEDTLS_AVAILABLE = False
 
+from pydantic import Field
+
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -24,19 +27,18 @@ class HueDevice(NetworkedDevice):
     Philips Hue device support (Entertainment Mode UDP streaming)
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the Hue bridge",
-            ): str,
-            vol.Required(
-                "group_name",
-                description="Entertainment zone group name",
-            ): str,
-            vol.Optional("udp_port", description="port", default=2100): int,
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        ip_address: str = Field(
+            description="Hostname or IP address of the Hue bridge",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        group_name: str = Field(
+            description="Entertainment zone group name",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        udp_port: int = Field(2100, description="port")
+
+    config = TypedConfig(Config)
 
     status: dict[int, tuple[int, int, int]]
     _sock: socket.socket | None = None
@@ -49,13 +51,13 @@ class HueDevice(NetworkedDevice):
                 "You need to install the python-mbedtls package for Hue to work."
             )
 
-        if "hue_application_id" in self._config:
+        if hasattr(self.config, "hue_application_id"):
             # since this is present the init gets called because the device is already known
             self._dtls_client_context = tls.ClientContext(
                 tls.DTLSConfiguration(
                     pre_shared_key=(
-                        self._config["hue_application_id"],
-                        bytes.fromhex(self._config["clientkey"]),
+                        getattr(self.config, "hue_application_id"),  # noqa: B009 - stored extra, not a declared field
+                        bytes.fromhex(getattr(self.config, "clientkey")),  # noqa: B009 - stored extra, not a declared field
                     ),
                     ciphers=["TLS-PSK-WITH-AES-128-GCM-SHA256"],
                     validate_certificates=False,
@@ -74,12 +76,12 @@ class HueDevice(NetworkedDevice):
         self.status = {}
 
     def _hue_register(self):
-        if (self._config.get("username") is None) and (
-            self._config.get("clientkey") is None
+        if (getattr(self.config, "username", None) is None) and (
+            getattr(self.config, "clientkey", None) is None
         ):
             # We need to register this device as application at the Hue Bridge.
             request_data = {
-                "devicetype": f"LedFx#{self._config['group_name']}",
+                "devicetype": f"LedFx#{self.config.group_name}",
                 "generateclientkey": True,
             }
             response, _ = self._hue_request("POST", "api", request_data)
@@ -99,7 +101,8 @@ class HueDevice(NetworkedDevice):
                 )
         else:
             # We need to check if the credentials are still valid for this device.
-            response, _ = self._hue_request("GET", f"api/{self._config['username']}")
+            username = getattr(self.config, "username")  # noqa: B009 - stored extra, not a declared field
+            response, _ = self._hue_request("GET", f"api/{username}")
             if "error" in response[0]:
                 # Credentials are no longer valid - need Bridge Link Button to be pressed and LedFx to be restarted.
                 # We delete the invalid credentials here - after a restart a fresh registration will be tried.
@@ -116,9 +119,9 @@ class HueDevice(NetworkedDevice):
             )
 
     def _hue_request(self, method, api_endpoint, data=None, ssl=False):
-        url = f"{'https' if ssl else 'http'}://{self._config['ip_address']}/{api_endpoint}"
+        url = f"{'https' if ssl else 'http'}://{self.config.ip_address}/{api_endpoint}"
 
-        headers = {"hue-application-key": self._config.get("username")}
+        headers = {"hue-application-key": getattr(self.config, "username", None)}
 
         # SSL is somehow necessary for some Hue requests but we need to skip the verification since there are no valid certs
         response = getattr(requests, method.lower())(
@@ -174,7 +177,7 @@ class HueDevice(NetworkedDevice):
         request_data = {"action": "start"}
         self._hue_request(
             "PUT",
-            f"/clip/v2/resource/entertainment_configuration/{self._config['entertainment_id']}",
+            f"/clip/v2/resource/entertainment_configuration/{getattr(self.config, 'entertainment_id')}",  # noqa: B009 - stored extra, not a declared field
             request_data,
             ssl=True,
         )
@@ -182,10 +185,8 @@ class HueDevice(NetworkedDevice):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.settimeout(5)
         sock.setblocking(False)
-        self._sock = self._dtls_client_context.wrap_socket(
-            sock, self._config["ip_address"]
-        )
-        self._sock.connect((self._config["ip_address"], self._config["udp_port"]))
+        self._sock = self._dtls_client_context.wrap_socket(sock, self.config.ip_address)
+        self._sock.connect((self.config.ip_address, self.config.udp_port))
 
         # Since UDP packets can get lost - we need to try handshaking a couple of times
         handshake_success = False
@@ -216,7 +217,7 @@ class HueDevice(NetworkedDevice):
         request_data = {"action": "stop"}
         response, _ = self._hue_request(  # noqa: RUF059
             "PUT",
-            f"/clip/v2/resource/entertainment_configuration/{self._config['entertainment_id']}",
+            f"/clip/v2/resource/entertainment_configuration/{getattr(self.config, 'entertainment_id')}",  # noqa: B009 - stored extra, not a declared field
             request_data,
             ssl=True,
         )
@@ -235,7 +236,7 @@ class HueDevice(NetworkedDevice):
         send_data.append(0)  # Reserved
         send_data.append(0)  # Color Mode (0=RGB, 1=XY)
         send_data.append(0)  # Reserved
-        send_data.extend(self._config["entertainment_id"].encode("utf-8"))
+        send_data.extend(getattr(self.config, "entertainment_id").encode("utf-8"))  # noqa: B009 - stored extra, not a declared field
         for i in range(len(pixels)):
             send_data.append(i)  # channel ID
             send_data.append(pixels[i][0])  # Red
@@ -254,17 +255,17 @@ class HueDevice(NetworkedDevice):
         await super().async_initialize()
 
         # see "self.__init__" why we do this.
-        if "hue_application_id" in self._config:
+        if hasattr(self.config, "hue_application_id"):
             self._hue_register()
             self._check_hue_bridge()
-            hue_application_id = self._config["hue_application_id"]
+            hue_application_id = getattr(self.config, "hue_application_id")  # noqa: B009 - stored extra, not a declared field
         else:
             hue_application_id = self._get_application_id()
             self._dtls_client_context = tls.ClientContext(
                 tls.DTLSConfiguration(
                     pre_shared_key=(
                         hue_application_id,
-                        bytes.fromhex(self._config["clientkey"]),
+                        bytes.fromhex(getattr(self.config, "clientkey")),  # noqa: B009 - stored extra, not a declared field
                     ),
                     ciphers=["TLS-PSK-WITH-AES-128-GCM-SHA256"],
                 )
@@ -275,7 +276,7 @@ class HueDevice(NetworkedDevice):
             id
             for id in entertainment_groups
             if entertainment_groups[id].get("name", "").lower()
-            == self._config.get("group_name", "").lower()
+            == self.config.group_name.lower()
         )
         entertainment_group = entertainment_groups[entertainment_id]
         group_id = re.findall(r"\d+", entertainment_group["id_v1"])[0]

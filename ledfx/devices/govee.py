@@ -5,10 +5,11 @@ import socket
 import time
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED, Fps
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
-from ledfx.devices.__init__ import fps_validator
 from ledfx.devices.utils.socket_singleton import SocketSingleton
 from ledfx.utils import AVAILABLE_FPS
 
@@ -24,37 +25,34 @@ class Govee(NetworkedDevice):
     Support for Govee devices with local API control
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "ip_address",
-                description="Hostname or IP address of the device",
-            ): str,
-            vol.Required(
-                "pixel_count",
-                description="Number of segments (seen in app)",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Optional(
-                "refresh_rate",
-                description="Target rate that pixels are sent to the device",
-                default=next(
-                    (f for f in AVAILABLE_FPS if f >= 30),
-                    list(AVAILABLE_FPS)[-1],
-                ),
-            ): fps_validator,
-            vol.Optional(
-                "ignore_status",
-                description="Bypass check for device status check response on port 4003",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "stretch_to_fit",
-                description="Some archane setting to make the pixel pattern stretch to fit the device",
-                default=False,
-            ): bool,
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        ip_address: str = Field(
+            description="Hostname or IP address of the device",
+            json_schema_extra={X_REQUIRED: True},
+        )
+        pixel_count: int = Field(
+            1,
+            description="Number of segments (seen in app)",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        refresh_rate: Fps = Field(
+            next(
+                (f for f in AVAILABLE_FPS if f >= 30),
+                list(AVAILABLE_FPS)[-1],
+            ),
+            description="Target rate that pixels are sent to the device",
+        )
+        ignore_status: bool = Field(
+            False,
+            description="Bypass check for device status check response on port 4003",
+        )
+        stretch_to_fit: bool = Field(
+            False,
+            description="Some archane setting to make the pixel pattern stretch to fit the device",
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -85,7 +83,7 @@ class Govee(NetworkedDevice):
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
         try:
-            self.udp_server.sendto(data, (self._config["ip_address"], port))
+            self.udp_server.sendto(data, (self.config.ip_address, port))
         except Exception as e:  # noqa: BLE001
             # we don't need this noise in sentry, and don't flood a standard log
             _LOGGER.info("govee:send_udp:Error sending UDP message %s", e)
@@ -131,7 +129,7 @@ class Govee(NetworkedDevice):
         _LOGGER.info("Govee %s Activating UDP stream mode...", self.name)
 
         try:
-            if self._config["ignore_status"]:
+            if self.config.ignore_status:
                 self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             else:
                 self.udp_server = SocketSingleton(recv_port=self.recv_port)
@@ -143,7 +141,7 @@ class Govee(NetworkedDevice):
             self.set_offline()
             return
 
-        if not self._config["ignore_status"]:
+        if not self.config.ignore_status:
             # enquiry to status is current used only to check if the device is responding adn set offline if not
             # the response information is of little use
             # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
@@ -156,7 +154,7 @@ class Govee(NetworkedDevice):
         else:
             _LOGGER.info("Ignoring Govee status check for %s", self.name)
 
-        if self._config["stretch_to_fit"]:
+        if self.config.stretch_to_fit:
             self.pre_active[4] = 0x01
         else:
             self.pre_active[4] = 0x00
@@ -186,7 +184,7 @@ class Govee(NetworkedDevice):
         try:
             # Receive Response from the device
             response, addr = self.udp_server.recvfrom(1024)
-            if self._config["ip_address"] == addr[0]:
+            if self.config.ip_address == addr[0]:
                 return f"{response.decode('utf-8')}", True
             else:
                 return (
@@ -201,9 +199,9 @@ class Govee(NetworkedDevice):
         await super().async_initialize()
 
         config = {
-            "name": self.config["name"],
-            "pixel_count": self.config["pixel_count"],
-            "refresh_rate": self.config["refresh_rate"],
+            "name": self.config.name,
+            "pixel_count": self.config.pixel_count,
+            "refresh_rate": self.config.refresh_rate,
         }
 
         self.update_config(config)

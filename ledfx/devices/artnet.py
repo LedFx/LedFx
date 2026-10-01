@@ -1,10 +1,13 @@
 import logging
 import math
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 from stupidArtnet import StupidArtnet
 
+from ledfx.configuration.fields import X_REQUIRED, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.utils.rgbw_conversion import (
     RGB_MAPPING,
@@ -19,61 +22,45 @@ _LOGGER = logging.getLogger(__name__)
 class ArtNetDevice(NetworkedDevice):
     """Art-Net device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "pixel_count",
-                description="Number of individual pixels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Optional(
-                "universe",
-                description="DMX universe for the device",
-                default=0,
-            ): vol.All(int, vol.Range(min=0)),
-            vol.Optional(
-                "packet_size",
-                description="Size of each DMX universe",
-                default=510,
-            ): vol.All(int, vol.Range(min=1, max=512)),
-            vol.Optional(
-                "pre_amble",
-                description="Channel bytes to insert before the RGB data",
-                default="",
-            ): str,
-            vol.Optional(
-                "post_amble",
-                description="Channel bytes to insert after the RGB data",
-                default="",
-            ): str,
-            vol.Optional(
-                "pixels_per_device",
-                description="Number of pixels to consume per device. Pre and post ambles are repeated per device. By default (0) all pixels will be used by one instance",
-                default=0,
-            ): vol.All(int, vol.Range(min=0)),
-            vol.Optional(
-                "dmx_start_address",
-                description="The start address within the universe",
-                default=1,
-            ): vol.All(int, vol.Range(min=1, max=512)),
-            vol.Optional(
-                "even_packet_size",
-                description="Whether to use even packet size",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "rgb_order",
-                description="RGB data order mode, supported for physical hardware that just doesn't play by the rules",
-                default="RGB",
-            ): vol.All(str, vol.In(RGB_MAPPING)),
-            vol.Optional(
-                "white_mode",
-                description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
-                default="None",
-            ): vol.All(str, vol.In(WHITE_FUNCS_MAPPING.keys())),
-            vol.Optional("port", description="port", default=6454): int,
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        pixel_count: int = Field(
+            1,
+            description="Number of individual pixels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+        universe: int = Field(0, description="DMX universe for the device", ge=0)
+        packet_size: int = Field(
+            510, description="Size of each DMX universe", ge=1, le=512
+        )
+        pre_amble: str = Field(
+            "", description="Channel bytes to insert before the RGB data"
+        )
+        post_amble: str = Field(
+            "", description="Channel bytes to insert after the RGB data"
+        )
+        pixels_per_device: int = Field(
+            0,
+            description="Number of pixels to consume per device. Pre and post ambles are repeated per device. By default (0) all pixels will be used by one instance",
+            ge=0,
+        )
+        dmx_start_address: int = Field(
+            1, description="The start address within the universe", ge=1, le=512
+        )
+        even_packet_size: bool = Field(
+            True, description="Whether to use even packet size"
+        )
+        rgb_order: Annotated[str, OneOf(RGB_MAPPING)] = Field(
+            "RGB",
+            description="RGB data order mode, supported for physical hardware that just doesn't play by the rules",
+        )
+        white_mode: Annotated[str, OneOf(WHITE_FUNCS_MAPPING.keys())] = Field(
+            "None",
+            description="White channel handling mode, if RGB leave as None. Commonly written as RGBW or RGBA",
+        )
+        port: int = Field(6454, description="port")
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -120,25 +107,25 @@ class ArtNetDevice(NetworkedDevice):
         self.dmx_start_address = config.get("dmx_start_address", 1) - 1
         self.rgb_mode = config.get("rgb_order")
         self.white_mode = config.get("white_mode")
-        self.packet_size = self._config["packet_size"]
+        self.packet_size = self.config.packet_size
 
     def activate(self):
         if self._artnet:
             _LOGGER.warning(
                 "Art-Net sender already started for device %s",
-                self.config["name"],
+                self.config.name,
             )
 
         # check if provided address is a broadcast address
-        broadcast = check_if_ip_is_broadcast(self._config["ip_address"])
+        broadcast = check_if_ip_is_broadcast(self.config.ip_address)
         self._artnet = StupidArtnet(
-            target_ip=self._config["ip_address"],
-            universe=self._config["universe"],
+            target_ip=self.config.ip_address,
+            universe=self.config.universe,
             packet_size=self.packet_size,
-            fps=self._config["refresh_rate"],
-            even_packet_size=self._config["even_packet_size"],
+            fps=self.config.refresh_rate,
+            even_packet_size=self.config.even_packet_size,
             broadcast=broadcast,
-            port=self._config["port"],
+            port=self.config.port,
         )
         # Don't use start for stupidArtnet - we handle fps locally, and it spawns hundreds of threads
 
@@ -229,10 +216,10 @@ class ArtNetDevice(NetworkedDevice):
                         packet[: min(self.packet_size, self.channel_count - start)] = (
                             devices_data[start:end]
                         )
-                        self._artnet.set_universe(i + self._config["universe"])
+                        self._artnet.set_universe(i + self.config.universe)
                         self._artnet.set(packet)
                         self._artnet.show()
             finally:
                 self.lock.release()
         else:
-            _LOGGER.error("Panic could not get lock %s", self.config["name"])
+            _LOGGER.error("Panic could not get lock %s", self.config.name)

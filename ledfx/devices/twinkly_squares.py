@@ -2,9 +2,11 @@ import io
 import logging
 
 import numpy as np
-import voluptuous as vol
 import xled
+from pydantic import Field
 
+from ledfx.configuration.fields import X_REQUIRED
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,24 +15,24 @@ _LOGGER = logging.getLogger(__name__)
 class TwinklySquaresDevice(NetworkedDevice):
     """Twinkly Squares device support"""
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Required(
-                "panel_count",
-                description="Number of 8x8 Twinkly Squares panels",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        panel_count: int = Field(
+            1,
+            description="Number of 8x8 Twinkly Squares panels",
+            ge=1,
+            json_schema_extra={X_REQUIRED: True},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "TwinklySquares"
         self.ctrl = None
-        self._set_config_values(pixel_count=64 * self._config["panel_count"])
+        self._set_config_values(pixel_count=64 * self.config.panel_count)
 
     def config_updated(self, config):
-        self._set_config_values(pixel_count=64 * self._config["panel_count"])
+        self._set_config_values(pixel_count=64 * self.config.panel_count)
         return super().config_updated(config)
 
     def flush(self, data):
@@ -41,7 +43,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         self.ctrl.set_rt_frame_socket(io.BytesIO(frame), version=3)
 
     def activate(self):
-        self.ctrl = xled.HighControlInterface(self._config["ip_address"])
+        self.ctrl = xled.HighControlInterface(self.config.ip_address)
         try:
             self.ctrl.turn_on()
             self.ctrl.set_brightness(100)
@@ -85,7 +87,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         config_changed = False
 
         # Update pixel count if different
-        if self._config["pixel_count"] != self.leds:
+        if getattr(self.config, "pixel_count") != self.leds:  # noqa: B009 - stored extra, not a declared field
             self._set_config_values(pixel_count=self.leds)
             config_changed = True
 

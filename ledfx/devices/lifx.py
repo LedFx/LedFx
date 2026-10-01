@@ -1,7 +1,6 @@
 import logging
 
 import numpy as np
-import voluptuous as vol
 from lifx import (
     HSBK,
     Animator,
@@ -16,8 +15,11 @@ from lifx import (
 )
 from lifx.exceptions import LifxTimeoutError
 from lifx.protocol import packets
+from pydantic import Field
 
-from ledfx.devices import NetworkedDevice, fps_validator
+from ledfx.configuration.fields import Fps
+from ledfx.configuration.plugin import TypedConfig
+from ledfx.devices import NetworkedDevice
 from ledfx.utils import AVAILABLE_FPS, async_fire_and_forget
 
 _LOGGER = logging.getLogger(__name__)
@@ -100,23 +102,19 @@ class LifxDevice(NetworkedDevice):
     and configures itself appropriately. Users only need to provide an IP.
     """
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "pixel_count",
-                description="Number of pixels (auto-detected on connect)",
-                default=1,
-            ): vol.All(int, vol.Range(min=1)),
-            vol.Optional(
-                "refresh_rate",
-                description="Target rate that pixels are sent to the device",
-                default=next(
-                    (f for f in AVAILABLE_FPS if f >= 30),
-                    list(AVAILABLE_FPS)[-1],
-                ),
-            ): fps_validator,
-        }
-    )
+    class Config(NetworkedDevice.Config):
+        pixel_count: int = Field(
+            1, description="Number of pixels (auto-detected on connect)", ge=1
+        )
+        refresh_rate: Fps = Field(
+            next(
+                (f for f in AVAILABLE_FPS if f >= 30),
+                list(AVAILABLE_FPS)[-1],
+            ),
+            description="Target rate that pixels are sent to the device",
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -151,13 +149,13 @@ class LifxDevice(NetworkedDevice):
     async def _detect_device_type(self):
         """Detect LIFX device type and update config accordingly."""
         try:
-            ip = self._config["ip_address"]
+            ip = self.config.ip_address
             device = await find_by_ip(ip=ip)
 
             if device is None:
                 _LOGGER.warning(
                     "LIFX %s: No device found at %s during detection",
-                    self._config["name"],
+                    self.config.name,
                     ip,
                 )
                 return
@@ -174,7 +172,7 @@ class LifxDevice(NetworkedDevice):
 
                 _LOGGER.info(
                     "LIFX %s: Detected %s (%s) serial=%s",
-                    self._config["name"],
+                    self.config.name,
                     lifx_class,
                     self._lifx_type,
                     device.serial,
@@ -197,7 +195,7 @@ class LifxDevice(NetworkedDevice):
                         )
                         _LOGGER.info(
                             "LIFX %s: Matrix %dx%d (%d pixels)",
-                            self._config["name"],
+                            self.config.name,
                             self._matrix_width,
                             self._matrix_height,
                             self._total_pixels,
@@ -205,7 +203,7 @@ class LifxDevice(NetworkedDevice):
                     else:
                         _LOGGER.warning(
                             "LIFX %s: Matrix device returned no tiles",
-                            self._config["name"],
+                            self.config.name,
                         )
 
                 elif isinstance(device, MultiZoneLight):
@@ -224,7 +222,7 @@ class LifxDevice(NetworkedDevice):
 
                     _LOGGER.info(
                         "LIFX %s: Strip with %d zones (extended=%s)",
-                        self._config["name"],
+                        self.config.name,
                         self._zone_count,
                         self._has_extended,
                     )
@@ -233,10 +231,10 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type = "light"
                     self._device_type = "LIFX Light"
                     self._set_config_values(pixel_count=1)
-                    _LOGGER.info("LIFX %s: Single bulb", self._config["name"])
+                    _LOGGER.info("LIFX %s: Single bulb", self.config.name)
 
         except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX %s: Detection failed: %s", self._config["name"], e)
+            _LOGGER.warning("LIFX %s: Detection failed: %s", self.config.name, e)
 
     @property
     def pixel_count(self):
@@ -244,7 +242,7 @@ class LifxDevice(NetworkedDevice):
             return self._total_pixels
         elif self._lifx_type == "strip":
             return self._zone_count
-        return self._config.get("pixel_count", 1)
+        return self.config.pixel_count
 
     @property
     def is_matrix(self):
@@ -320,11 +318,12 @@ class LifxDevice(NetworkedDevice):
     async def _create_animator(self):
         """Create Animator for high-performance frame delivery."""
         try:
-            ip = self._config["ip_address"]
-            serial = self._config.get("serial")
+            ip = self.config.ip_address
+            serial = getattr(self.config, "serial", None)
 
             if self._lifx_type == "matrix":
-                lifx_class = self._config.get("lifx_class")
+                # "" is no key, like a missing lifx_class: both give MatrixLight.
+                lifx_class = getattr(self.config, "lifx_class", "")
                 device_cls = LIFX_CLASS_MAP.get(lifx_class, MatrixLight)
 
                 if serial:
@@ -389,19 +388,19 @@ class LifxDevice(NetworkedDevice):
     async def _async_connect(self):
         """Connect to device using saved serial/type for speed."""
         try:
-            ip = self._config["ip_address"]
-            serial = self._config.get("serial")
-            lifx_type = self._config.get("lifx_type")
+            ip = self.config.ip_address
+            serial = getattr(self.config, "serial", None)
+            lifx_type = getattr(self.config, "lifx_type", None)
 
             # Use saved info for direct instantiation (faster)
-            lifx_class = self._config.get("lifx_class")
+            lifx_class = getattr(self.config, "lifx_class", None)
             if serial and lifx_type and lifx_class:
                 device_cls = LIFX_CLASS_MAP.get(lifx_class, Light)
                 self._device = device_cls(serial=serial, ip=ip)
                 self._lifx_type = lifx_type
                 _LOGGER.info(
                     "LIFX %s: Direct connect as %s (%s)",
-                    self._config["name"],
+                    self.config.name,
                     lifx_class,
                     lifx_type,
                 )
@@ -411,7 +410,7 @@ class LifxDevice(NetworkedDevice):
                 if self._device is None:
                     _LOGGER.warning(
                         "LIFX %s: No device found at %s",
-                        self._config["name"],
+                        self.config.name,
                         ip,
                     )
                     self._connected = False
@@ -421,7 +420,7 @@ class LifxDevice(NetworkedDevice):
                 self._lifx_type = LIFX_TYPE_MAP.get(lifx_class, "light")
                 _LOGGER.info(
                     "LIFX %s: Discovery connect as %s (%s)",
-                    self._config["name"],
+                    self.config.name,
                     lifx_class,
                     self._lifx_type,
                 )
@@ -449,7 +448,7 @@ class LifxDevice(NetworkedDevice):
         except (LifxError, OSError) as e:
             _LOGGER.warning(
                 "LIFX %s: Connection failed: %s",
-                self._config["name"],
+                self.config.name,
                 e,
             )
             self._connected = False
@@ -460,7 +459,7 @@ class LifxDevice(NetworkedDevice):
         self._device_type = "LIFX Light"
         _LOGGER.info(
             "LIFX %s: Configured as single bulb",
-            self._config["name"],
+            self.config.name,
         )
 
     async def _setup_strip(self):
@@ -483,7 +482,7 @@ class LifxDevice(NetworkedDevice):
 
         _LOGGER.info(
             "LIFX %s: Configured as strip with %d zones (extended=%s)",
-            self._config["name"],
+            self.config.name,
             self._zone_count,
             self._has_extended,
         )
@@ -495,11 +494,11 @@ class LifxDevice(NetworkedDevice):
 
             # Use saved config if available (from async_initialize)
             if self._tiles and self._perm is not None:
-                self._matrix_width = self._config.get("matrix_width", 0)
-                self._matrix_height = self._config.get("matrix_height", 0)
+                self._matrix_width = getattr(self.config, "matrix_width", 0)
+                self._matrix_height = getattr(self.config, "matrix_height", 0)
                 _LOGGER.info(
                     "LIFX %s: Using saved matrix config %dx%d (%d pixels)",
-                    self._config["name"],
+                    self.config.name,
                     self._matrix_width,
                     self._matrix_height,
                     self._total_pixels,
@@ -519,7 +518,7 @@ class LifxDevice(NetworkedDevice):
                 )
                 _LOGGER.info(
                     "LIFX %s: Matrix %dx%d (%d pixels) [%s]",
-                    self._config["name"],
+                    self.config.name,
                     self._matrix_width,
                     self._matrix_height,
                     self._total_pixels,
@@ -528,7 +527,7 @@ class LifxDevice(NetworkedDevice):
             else:
                 _LOGGER.warning(
                     "LIFX %s: Matrix device returned no tiles",
-                    self._config["name"],
+                    self.config.name,
                 )
 
     def _update_virtual_rows(self):
@@ -573,7 +572,7 @@ class LifxDevice(NetworkedDevice):
         _LOGGER.debug(
             "LIFX %s: Activating with config refresh_rate=%s, max_refresh_rate=%s",
             self.name,
-            self._config.get("refresh_rate"),
+            self.config.refresh_rate,
             self.max_refresh_rate,
         )
 
@@ -644,7 +643,7 @@ class LifxDevice(NetworkedDevice):
                 )
                 await self._device.connection.send_packet(packet)
         except (LifxError, OSError) as e:
-            _LOGGER.warning("LIFX %s: Light flush error: %s", self._config["name"], e)
+            _LOGGER.warning("LIFX %s: Light flush error: %s", self.config.name, e)
 
     def flush(self, data):
         if self._animator:
