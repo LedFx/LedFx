@@ -887,3 +887,23 @@ class TestSegmentUpdateRollback:
         assert virtual.segments == old
         assert dev_a.is_active() and dev_a._segments == [("v-1", 0, 49)]
         assert not dev_b.is_active() and dev_b._segments == []
+
+    def test_rollback_keeps_the_original_error_when_the_effect_fails_again(
+        self,
+    ) -> None:
+        dev_a = _DummyDevice("dev-a", pixel_count=100)
+        dev_b = _DummyDevice("dev-b", pixel_count=100)
+        ledfx = _make_ledfx(devices=[dev_a, dev_b])
+        old = [["dev-a", 0, 49, False]]
+        virtual = _make_virtual(ledfx, "v-1", "V1", old)
+        virtual._active = True
+        virtual.activate_segments(old)
+        effect = MagicMock()
+        effect.activate.side_effect = [ValueError("too many pixels"), OSError("x")]
+        virtual._active_effect = effect
+
+        with pytest.raises(ValueError, match="too many pixels"):
+            virtual.update_segments([["dev-b", 0, 99, False]])
+
+        assert virtual.segments == old
+        assert not dev_b.is_active() and dev_b._segments == []

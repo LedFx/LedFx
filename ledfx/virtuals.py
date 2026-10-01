@@ -302,7 +302,15 @@ class Virtual:
                         self._segments = old_segments
                         self.invalidate_cached_props()
                         self._compile_device_remap()
-                        self._reactivate_effect()
+                        try:
+                            self._reactivate_effect()
+                        except Exception:
+                            # Same effect, same fault: report the original.
+                            _LOGGER.exception(
+                                "Virtual %s: effect did not restart after the "
+                                "segment rollback",
+                                self.id,
+                            )
                         # Turn off devices only the new segments activated.
                         self._ledfx.virtuals.check_and_deactivate_devices()
                         raise
