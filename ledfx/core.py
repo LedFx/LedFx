@@ -213,13 +213,11 @@ class LedFxCore:
 
     def reconcile_snapcast_always_on_runtime(self, trigger: str):
         """Reconcile runtime Snapcast always-on behavior from current config."""
-        if self.config.get("snapcast_always_on", True):
+        if self.config.snapcast_always_on:
             try:
                 snapcast_eager_start(self)
-            except Exception as exc:
-                _LOGGER.warning(
-                    "snapcast reconcile (%s) failed: %s", trigger, exc
-                )
+            except Exception as exc:  # noqa: BLE001
+                _LOGGER.warning("snapcast reconcile (%s) failed: %s", trigger, exc)
             return
 
         if hasattr(self, "audio") and self.audio is not None:
@@ -305,19 +303,18 @@ class LedFxCore:
         """Load Snapcast server configurations from config into the audio system."""
         previous_valid = AudioInputSource.valid_device_indexes()
 
-        snapcast_config = self.config.get("snapcast_servers", {})
+        snapcast_config = self.config.snapcast_servers
         SNAPCAST_SERVERS.clear()
-        SNAPCAST_SERVERS.update(snapcast_config)
+        for name, config in snapcast_config.items():
+            SNAPCAST_SERVERS[name] = config.model_dump()
         if snapcast_config:
             _LOGGER.info("Loaded %d Snapcast server(s)", len(snapcast_config))
 
         try:
             if AudioInputSource.valid_device_indexes() != previous_valid:
                 self.events.fire_event(AudioDeviceListChangedEvent())
-        except Exception as exc:
-            _LOGGER.debug(
-                "_load_snapcast_servers: could not query devices: %s", exc
-            )
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.debug("_load_snapcast_servers: could not query devices: %s", exc)
 
         self.reconcile_snapcast_always_on_runtime("snapcast_servers_loaded")
 

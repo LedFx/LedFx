@@ -4,9 +4,10 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.config import save_config
+from ledfx.configuration.models import SnapcastServerConfig
 from ledfx.snapcast.config import build_server_config
 from ledfx.utils import generate_id
 
@@ -20,7 +21,7 @@ class SnapcastServersEndpoint(RestEndpoint):
 
     async def get(self, request: web.Request) -> web.Response:
         """Return all configured Snapcast servers."""
-        servers = self._ledfx.config.get("snapcast_servers", {})
+        servers = self._ledfx.config.snapcast_servers
         return await self.bare_request_success({"servers": servers})
 
     async def post(self, request: web.Request) -> web.Response:
@@ -30,10 +31,8 @@ class SnapcastServersEndpoint(RestEndpoint):
         except JSONDecodeError:
             return await self.json_decode_error()
 
-        if "id" not in data:
-            return await self.invalid_request(
-                "Required key not provided: 'id'"
-            )
+        if not isinstance(data.get("id"), str):
+            return await self.invalid_request("Required key not provided: 'id'")
 
         entry, reason = build_server_config(data)
         if entry is None:
@@ -41,14 +40,17 @@ class SnapcastServersEndpoint(RestEndpoint):
             return await self.invalid_request(reason)
 
         server_id = generate_id(data["id"])
-        servers = self._ledfx.config.setdefault("snapcast_servers", {})
+        servers = self._ledfx.config.snapcast_servers
         if server_id in servers:
             return await self.invalid_request(
                 f"Server '{server_id}' already exists. Use PUT to update."
             )
 
-        servers[server_id] = entry
-        save_config(self._ledfx.config, self._ledfx.config_dir)
+        try:
+            servers[server_id] = SnapcastServerConfig.model_validate(entry)
+        except ValidationError as err:
+            return await self.validation_error(err)
+        self._ledfx.config_store.request_save()
         self._ledfx._load_snapcast_servers()
 
         return await self.request_success(

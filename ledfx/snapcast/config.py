@@ -1,6 +1,12 @@
 """Snapcast configuration schema and constants."""
 
 import logging
+from collections.abc import Callable, Mapping, Sequence
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from ledfx.configuration.models import LedFxConfig
+    from ledfx.effects.audio import AudioAnalysisSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -12,7 +18,7 @@ DEVICE_PREFIX = "SNAPCAST:"
 HOSTAPI_NAME = "SNAPCAST"
 
 
-def validate_snapcast_host(host) -> tuple[bool, str]:
+def validate_snapcast_host(host: object) -> tuple[bool, str]:
     """Validate a snapserver hostname or IP address.
 
     Returns:
@@ -30,7 +36,7 @@ def validate_snapcast_host(host) -> tuple[bool, str]:
     return True, ""
 
 
-def validate_snapcast_port(port) -> tuple[bool, str]:
+def validate_snapcast_port(port: object) -> tuple[bool, str]:
     if isinstance(port, bool) or not isinstance(port, int):
         return False, "port must be an integer"
     if not 1 <= port <= 65535:
@@ -38,7 +44,11 @@ def validate_snapcast_port(port) -> tuple[bool, str]:
     return True, ""
 
 
-def is_always_on(device_idx, query_devices, query_hostapis):
+def is_always_on(
+    device_idx: object,
+    query_devices: Callable[[], Sequence[Mapping[str, object]]],
+    query_hostapis: Callable[[], Sequence[Mapping[str, object]]],
+) -> bool:
     """Check if the audio device at device_idx is a Snapcast device."""
     if not isinstance(device_idx, int) or device_idx < 0:
         return False
@@ -47,9 +57,11 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         hostapis = query_hostapis()
         if device_idx >= len(devices):
             return False
-        hostapi_name = hostapis[devices[device_idx]["hostapi"]]["name"]
-        return hostapi_name == HOSTAPI_NAME
-    except Exception as exc:
+        hostapi_index = devices[device_idx].get("hostapi")
+        if not isinstance(hostapi_index, int) or not 0 <= hostapi_index < len(hostapis):
+            return False
+        return hostapis[hostapi_index].get("name") == HOSTAPI_NAME
+    except Exception as exc:  # noqa: BLE001
         _LOGGER.debug(
             "is_always_on: exception checking device %s: %s",
             device_idx,
@@ -58,7 +70,16 @@ def is_always_on(device_idx, query_devices, query_hostapis):
         return False
 
 
-def eager_start(ledfx):
+class _LedFx(Protocol):
+    """Core state needed by Snapcast's always-on startup helper."""
+
+    @property
+    def config(self) -> "LedFxConfig": ...
+
+    audio: "AudioAnalysisSource | None"
+
+
+def eager_start(ledfx: _LedFx) -> None:
     """Start the audio subsystem immediately when snapcast_always_on is
     enabled and the configured audio device is a Snapcast source.
 
@@ -66,12 +87,13 @@ def eager_start(ledfx):
     remains visible in the server's client list even when no audio-reactive
     effect is running.
     """
-    if not ledfx.config.get("snapcast_always_on", True):
+    config = ledfx.config
+    if not config.snapcast_always_on:
         return
 
-    audio_config = ledfx.config.get("audio", {})
-    device_idx = audio_config.get("audio_device")
-    device_name = audio_config.get("audio_device_name", "")
+    audio_config = config.audio.model_dump()
+    device_idx = config.audio.audio_device
+    device_name = config.audio.audio_device_name
 
     # Lazy import to break circular dependency:
     # audio.py → snapcast/config.py → audio.py
@@ -107,7 +129,7 @@ def eager_start(ledfx):
         device_name,
     )
 
-    existing_audio = getattr(ledfx, "audio", None)
+    existing_audio = ledfx.audio
     if existing_audio is not None:
         existing_audio.update_config(audio_config)
         return
@@ -115,7 +137,9 @@ def eager_start(ledfx):
     ledfx.audio = AudioAnalysisSource(ledfx, audio_config)
 
 
-def build_server_config(data: dict, existing: dict | None = None):
+def build_server_config(
+    data: Mapping[str, object], existing: Mapping[str, object] | None = None
+) -> tuple[dict[str, object] | None, str]:
     """Validate API input and merge it into a server config entry.
 
     Args:
@@ -126,7 +150,7 @@ def build_server_config(data: dict, existing: dict | None = None):
     Returns:
         (entry, "") on success, or (None, reason) if the input is invalid.
     """
-    entry = dict(existing) if existing else {}
+    entry: dict[str, object] = dict(existing) if existing else {}
     if existing is None:
         if "host" not in data:
             return None, "Required key not provided: 'host'"

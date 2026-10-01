@@ -872,7 +872,7 @@ class AudioInputSource:
                 AudioInputSource._stream = SnapcastAudioStream(
                     device["snapcast_config"],
                     self._audio_sample_callback,
-                    instance_id=self._ledfx.config.get("instance_id", ""),
+                    instance_id=self._ledfx.config.instance_id,
                     ledfx=self._ledfx,
                     name=device["name"],
                 )
@@ -1002,21 +1002,22 @@ class AudioInputSource:
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
         return (
-            self._should_keep_sendspin_active()
-            or self._should_keep_snapcast_active()
+            self._should_keep_sendspin_active() or self._should_keep_snapcast_active()
         )
 
     def _should_keep_snapcast_active(self):
-        if not self._ledfx.config.get("snapcast_always_on", True):
+        if not self._ledfx.config.snapcast_always_on:
             return False
-        config = getattr(self, "_config", {})
-        network_source = network_audio_source(config.get("audio_device_name"))
+        configured_name = (
+            self._config.audio_device_name if hasattr(self, "_config") else ""
+        )
+        network_source = network_audio_source(configured_name)
         if network_source and network_source[0] == "Snapcast":
             # Only while the selected server is still configured; otherwise
             # activating would fall back to a local device.
             return network_source[1] in SNAPCAST_SERVERS
         return is_snapcast_always_on(
-            config.get("audio_device"),
+            self._config.audio_device if hasattr(self, "_config") else None,
             self.query_devices,
             self.query_hostapis,
         )
@@ -1067,9 +1068,7 @@ class AudioInputSource:
             self._timer.cancel()
         self._timer = None
         if self._should_always_keep_active():
-            _LOGGER.debug(
-                "Network audio always-on active, skipping deactivate"
-            )
+            _LOGGER.debug("Network audio always-on active, skipping deactivate")
             return
         if (
             len(self._callbacks) <= self._subscriber_threshold

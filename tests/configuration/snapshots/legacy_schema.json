@@ -9734,6 +9734,16 @@
      "title": "Now Playing",
      "default": {}
     },
+    "snapcast_servers": {
+     "type": "dict",
+     "title": "Snapcast Servers",
+     "default": {}
+    },
+    "snapcast_always_on": {
+     "type": "boolean",
+     "title": "Snapcast Always On",
+     "default": true
+    },
     "allowed_origins": {
      "type": "list",
      "validators": [
@@ -9785,7 +9795,8 @@
     "sendspin_always_on",
     "allowed_origins",
     "allowed_hosts",
-    "allow_null_origin"
+    "allow_null_origin",
+    "snapcast_always_on"
    ]
   }
  },

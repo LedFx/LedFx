@@ -1,6 +1,7 @@
 """Unit tests for Snapcast server management API endpoints and device listing."""
 
 import json
+from collections.abc import AsyncIterator
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -11,26 +12,37 @@ from aiohttp.test_utils import TestClient, TestServer
 from ledfx.api.audio_devices import AudioDevicesEndpoint
 from ledfx.api.snapcast_server import SnapcastServerEndpoint
 from ledfx.api.snapcast_servers import SnapcastServersEndpoint
+from ledfx.configuration.models import LedFxConfig
 from ledfx.effects.audio import (
     SNAPCAST_SERVERS,
     AudioInputSource,
     network_audio_source,
 )
 from ledfx.snapcast.config import eager_start as snapcast_eager_start
+from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
 class MockLedFx:
-    def __init__(self, servers=None):
-        self.config = {"snapcast_servers": servers or {}}
-        self.config_dir = "/tmp/test_snapcast"
+    def __init__(self, servers: dict[str, dict[str, object]] | None = None) -> None:
+        fake = fake_ledfx({"snapcast_servers": servers or {}})
+        self.config = fake.config
+        self.config_store = fake.config_store
+        self.audio: MagicMock | None = None
         self._load_snapcast_servers = MagicMock()
 
+
+def servers_of(ledfx: MockLedFx) -> dict[str, dict[str, object]]:
+    return {k: v.model_dump() for k, v in ledfx.config.snapcast_servers.items()}
+
+
+Client = TestClient[web.Request, web.Application]
+Api = tuple[Client, MockLedFx, MagicMock, MagicMock]
 
 LIVING_ROOM = {"host": "192.168.1.20", "port": 1704, "client_name": "LedFx"}
 
 
 @pytest.fixture
-async def api():
+async def api() -> AsyncIterator[Api]:
     """Serve both endpoints against a MockLedFx with one server configured."""
     mock_ledfx = MockLedFx({"living-room": dict(LIVING_ROOM)})
     app = web.Application()
@@ -46,15 +58,12 @@ async def api():
     )
     client = TestClient(TestServer(app))
     await client.start_server()
-    with (
-        patch("ledfx.api.snapcast_servers.save_config") as save_new,
-        patch("ledfx.api.snapcast_server.save_config") as save_existing,
-    ):
-        yield client, mock_ledfx, save_new, save_existing
+    save = mock_ledfx.config_store.request_save
+    yield client, mock_ledfx, save, save
     await client.close()
 
 
-async def send(client, method, path, payload):
+async def send(client: Client, method: str, path: str, payload: dict[str, object]):
     resp = await getattr(client, method)(
         path,
         data=json.dumps(payload),
@@ -65,13 +74,13 @@ async def send(client, method, path, payload):
 
 
 class TestListAndAdd:
-    async def test_get(self, api):
+    async def test_get(self, api: Api) -> None:
         client, *_ = api
         resp = await client.get("/api/snapcast/servers")
         data = await resp.json()
         assert data == {"servers": {"living-room": LIVING_ROOM}}
 
-    async def test_add_with_defaults(self, api):
+    async def test_add_with_defaults(self, api: Api) -> None:
         client, ledfx, save, _ = api
         data = await send(
             client,
@@ -80,7 +89,7 @@ class TestListAndAdd:
             {"id": "Kitchen", "host": " snapserver.local "},
         )
         assert data["status"] == "success"
-        assert ledfx.config["snapcast_servers"]["kitchen"] == {
+        assert servers_of(ledfx)["kitchen"] == {
             "host": "snapserver.local",
             "port": 1704,
             "client_name": "LedFx",
@@ -88,7 +97,7 @@ class TestListAndAdd:
         save.assert_called_once()
         ledfx._load_snapcast_servers.assert_called_once()
 
-    async def test_add_with_all_fields(self, api):
+    async def test_add_with_all_fields(self, api: Api) -> None:
         client, ledfx, *_ = api
         await send(
             client,
@@ -101,7 +110,7 @@ class TestListAndAdd:
                 "client_name": "Garage LEDs",
             },
         )
-        assert ledfx.config["snapcast_servers"]["garage"] == {
+        assert servers_of(ledfx)["garage"] == {
             "host": "10.0.0.5",
             "port": 1705,
             "client_name": "Garage LEDs",
@@ -123,12 +132,14 @@ class TestListAndAdd:
             ({"id": "x", "host": "h", "client_name": " "}, "client_name"),
         ],
     )
-    async def test_add_rejects_invalid(self, api, payload, reason):
+    async def test_add_rejects_invalid(
+        self, api: Api, payload: dict[str, object], reason: str
+    ) -> None:
         client, ledfx, save, _ = api
         data = await send(client, "post", "/api/snapcast/servers", payload)
         assert data["status"] == "failed"
         assert reason in data["payload"]["reason"]
-        assert list(ledfx.config["snapcast_servers"]) == ["living-room"]
+        assert list(servers_of(ledfx)) == ["living-room"]
         save.assert_not_called()
 
     @pytest.mark.parametrize(
@@ -138,15 +149,15 @@ class TestListAndAdd:
         # (which contain "%") are all legitimate.
         ["CON", "PRN", "NUL", "127.0.0.1", "fe80::1%eth0"],
     )
-    async def test_add_accepts_unusual_valid_hosts(self, api, host):
+    async def test_add_accepts_unusual_valid_hosts(self, api: Api, host: str) -> None:
         client, ledfx, *_ = api
         data = await send(
             client, "post", "/api/snapcast/servers", {"id": "x", "host": host}
         )
         assert data["status"] == "success"
-        assert ledfx.config["snapcast_servers"]["x"]["host"] == host
+        assert servers_of(ledfx)["x"]["host"] == host
 
-    async def test_add_duplicate(self, api):
+    async def test_add_duplicate(self, api: Api) -> None:
         client, *_ = api
         data = await send(
             client,
@@ -157,7 +168,7 @@ class TestListAndAdd:
         assert data["status"] == "failed"
         assert "already exists" in data["payload"]["reason"]
 
-    async def test_add_invalid_json(self, api):
+    async def test_add_invalid_json(self, api: Api) -> None:
         client, *_ = api
         resp = await client.post("/api/snapcast/servers", data="{nope")
         data = await resp.json()
@@ -165,7 +176,7 @@ class TestListAndAdd:
 
 
 class TestUpdateAndDelete:
-    async def test_update(self, api):
+    async def test_update(self, api: Api) -> None:
         client, ledfx, _, save = api
         with patch("ledfx.api.snapcast_server._sync_active_stream") as sync:
             data = await send(
@@ -175,14 +186,14 @@ class TestUpdateAndDelete:
                 {"port": 1800},
             )
         assert data["status"] == "success"
-        assert ledfx.config["snapcast_servers"]["living-room"] == {
+        assert servers_of(ledfx)["living-room"] == {
             **LIVING_ROOM,
             "port": 1800,
         }
         save.assert_called_once()
         sync.assert_called_once_with(ledfx, "living-room", restart=True)
 
-    async def test_update_without_change_keeps_stream(self, api):
+    async def test_update_without_change_keeps_stream(self, api: Api) -> None:
         client, *_ = api
         with patch("ledfx.api.snapcast_server._sync_active_stream") as sync:
             await send(
@@ -193,7 +204,7 @@ class TestUpdateAndDelete:
             )
         sync.assert_not_called()
 
-    async def test_update_rejects_invalid(self, api):
+    async def test_update_rejects_invalid(self, api: Api) -> None:
         client, ledfx, _, save = api
         data = await send(
             client,
@@ -202,28 +213,26 @@ class TestUpdateAndDelete:
             {"host": "a b"},
         )
         assert data["status"] == "failed"
-        assert ledfx.config["snapcast_servers"]["living-room"] == LIVING_ROOM
+        assert servers_of(ledfx)["living-room"] == LIVING_ROOM
         save.assert_not_called()
 
-    async def test_update_unknown(self, api):
+    async def test_update_unknown(self, api: Api) -> None:
         client, *_ = api
-        data = await send(
-            client, "put", "/api/snapcast/servers/nope", {"port": 1}
-        )
+        data = await send(client, "put", "/api/snapcast/servers/nope", {"port": 1})
         assert data["status"] == "failed"
         assert "not found" in data["payload"]["reason"]
 
-    async def test_delete(self, api):
+    async def test_delete(self, api: Api) -> None:
         client, ledfx, _, save = api
         with patch("ledfx.api.snapcast_server._sync_active_stream") as sync:
             resp = await client.delete("/api/snapcast/servers/living-room")
         data = await resp.json()
         assert data["status"] == "success"
-        assert ledfx.config["snapcast_servers"] == {}
+        assert servers_of(ledfx) == {}
         save.assert_called_once()
         sync.assert_called_once_with(ledfx, "living-room", restart=False)
 
-    async def test_delete_unknown(self, api):
+    async def test_delete_unknown(self, api: Api) -> None:
         client, *_ = api
         resp = await client.delete("/api/snapcast/servers/nope")
         data = await resp.json()
@@ -243,9 +252,7 @@ class TestDeviceListing:
     def test_configured_server_is_an_input_device(self):
         devices = AudioInputSource.input_devices()
         matches = [
-            idx
-            for idx, name in devices.items()
-            if name == "SNAPCAST: living-room"
+            idx for idx, name in devices.items() if name == "SNAPCAST: living-room"
         ]
         assert len(matches) == 1
         device = AudioInputSource.query_devices()[matches[0]]
@@ -260,7 +267,9 @@ class TestDeviceListing:
             (None, None),
         ],
     )
-    def test_network_audio_source(self, name, expected):
+    def test_network_audio_source(
+        self, name: str | None, expected: tuple[str, str] | None
+    ) -> None:
         assert network_audio_source(name) == expected
 
 
@@ -270,7 +279,7 @@ class TestSelectDevice:
         no effect is using audio yet (ledfx.audio is None)."""
         ledfx = MagicMock()
         ledfx.audio = None
-        ledfx.config = {"audio": {}}
+        ledfx.config = fake_ledfx().config
         app = web.Application()
         app.router.add_route(
             "*", "/api/audio/devices", AudioDevicesEndpoint(ledfx).handler
@@ -279,7 +288,6 @@ class TestSelectDevice:
         await client.start_server()
         try:
             with (
-                patch("ledfx.api.audio_devices.save_config"),
                 patch.object(
                     AudioInputSource, "valid_device_indexes", return_value=(3,)
                 ),
@@ -296,9 +304,7 @@ class TestSelectDevice:
             await client.close()
 
         assert data["status"] == "success"
-        assert ledfx.config["audio"]["audio_device_name"] == (
-            "SNAPCAST: living-room"
-        )
+        assert ledfx.config.audio.audio_device_name == ("SNAPCAST: living-room")
         ledfx.reconcile_snapcast_always_on_runtime.assert_called_once()
         ledfx.reconcile_sendspin_always_on_runtime.assert_called_once()
 
@@ -318,15 +324,17 @@ class TestAlwaysOnWithRemovedServer:
         SNAPCAST_SERVERS.update(saved)
 
     @staticmethod
-    def ledfx_with(device_name):
+    def ledfx_with(device_name: str) -> SimpleNamespace:
         return SimpleNamespace(
-            config={
-                "snapcast_always_on": True,
-                "audio": {
-                    "audio_device": 19,
-                    "audio_device_name": device_name,
-                },
-            },
+            config=LedFxConfig.model_validate(
+                {
+                    "snapcast_always_on": True,
+                    "audio": {
+                        "audio_device": 19,
+                        "audio_device_name": device_name,
+                    },
+                }
+            ),
             audio=MagicMock(),
         )
 
@@ -344,8 +352,12 @@ class TestAlwaysOnWithRemovedServer:
         "device_name, keep_active",
         [("SNAPCAST: living-room", True), ("SNAPCAST: deleted", False)],
     )
-    def test_keep_active_only_while_configured(self, device_name, keep_active):
+    def test_keep_active_only_while_configured(
+        self, device_name: str, keep_active: bool
+    ) -> None:
         source = AudioInputSource.__new__(AudioInputSource)
-        source._ledfx = SimpleNamespace(config={})
-        source._config = {"audio_device": 19, "audio_device_name": device_name}
+        source._ledfx = SimpleNamespace(config=LedFxConfig())
+        source._config = LedFxConfig.model_validate(
+            {"audio": {"audio_device": 19, "audio_device_name": device_name}}
+        ).audio
         assert source._should_keep_snapcast_active() is keep_active

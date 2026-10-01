@@ -13,7 +13,7 @@ def _blob(data: bytes) -> bytes:
     return struct.pack("<I", len(data)) + data
 
 
-def _wav_header(sample_rate=48000, bits=16, channels=2) -> bytes:
+def _wav_header(sample_rate: int = 48000, bits: int = 16, channels: int = 2) -> bytes:
     block_align = channels * bits // 8
     fmt = struct.pack(
         "<HHIIHH",
@@ -36,7 +36,7 @@ def _wav_header(sample_rate=48000, bits=16, channels=2) -> bytes:
     )
 
 
-def _flac_header(sample_rate=44100, bits=24, channels=2) -> bytes:
+def _flac_header(sample_rate: int = 44100, bits: int = 24, channels: int = 2) -> bytes:
     packed = (
         (sample_rate << 44)
         | ((channels - 1) << 41)
@@ -54,7 +54,7 @@ def _flac_header(sample_rate=44100, bits=24, channels=2) -> bytes:
 
 class TestTimeValues:
     @pytest.mark.parametrize("seconds", [0.0, 1.5, 11973.086150, 2.9999999])
-    def test_round_trip(self, seconds):
+    def test_round_trip(self, seconds: float) -> None:
         sec, usec = protocol.to_tv(seconds)
         assert 0 <= usec < 1_000_000
         assert protocol.from_tv(sec, usec) == pytest.approx(seconds, abs=1e-6)
@@ -97,9 +97,9 @@ class TestHeader:
         assert header.size == 8
         # and encoding produces the same bytes (received is receiver-filled)
         assert (
-            protocol.encode_message(
-                MessageType.TIME, b"", msg_id=3, sent=11973.086229
-            )[:14]
+            protocol.encode_message(MessageType.TIME, b"", msg_id=3, sent=11973.086229)[
+                :14
+            ]
             == raw[:14]
         )
 
@@ -152,7 +152,7 @@ class TestPayloads:
     @pytest.mark.parametrize(
         "payload", [b"\x05\x00", _blob(b"not json"), _blob(b"[1, 2]")]
     )
-    def test_bad_json(self, payload):
+    def test_bad_json(self, payload: bytes) -> None:
         with pytest.raises(ProtocolError):
             protocol.decode_json(payload)
 

@@ -73,7 +73,7 @@ class PcmFormat:
 def to_tv(seconds: float) -> tuple[int, int]:
     """Split a time in seconds into the (sec, usec) pair used on the wire."""
     sec = int(seconds // 1)
-    usec = int(round((seconds - sec) * 1_000_000))
+    usec = round((seconds - sec) * 1_000_000)
     if usec >= 1_000_000:
         sec += 1
         usec -= 1_000_000
@@ -108,9 +108,7 @@ def encode_message(
 
 def decode_header(data: bytes) -> Header:
     if len(data) != HEADER_SIZE:
-        raise ProtocolError(
-            f"header must be {HEADER_SIZE} bytes, got {len(data)}"
-        )
+        raise ProtocolError(f"header must be {HEADER_SIZE} bytes, got {len(data)}")
     msg_type, msg_id, refers_to, ss, su, rs, ru, size = HEADER.unpack(data)
     if size > MAX_PAYLOAD_SIZE:
         raise ProtocolError(f"payload size {size} exceeds limit")
@@ -136,12 +134,12 @@ def _read_blob(payload: bytes, offset: int) -> tuple[bytes, int]:
     return payload[start:end], end
 
 
-def encode_json(data: dict) -> bytes:
+def encode_json(data: dict[str, object]) -> bytes:
     raw = json.dumps(data, separators=(",", ":")).encode("utf-8")
     return _U32.pack(len(raw)) + raw
 
 
-def decode_json(payload: bytes) -> dict:
+def decode_json(payload: bytes) -> dict[str, object]:
     raw, _ = _read_blob(payload, 0)
     try:
         value = json.loads(raw.decode("utf-8"))

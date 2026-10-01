@@ -8,6 +8,6 @@ Supported stream codecs are flac (snapserver's default, requires pyFLAC) and
 pcm.  Implemented in pure Python, so it is always available.
 """
 
-from ledfx.snapcast.stream import SnapcastAudioStream  # noqa: F401
+from ledfx.snapcast.stream import SnapcastAudioStream
 
 __all__ = ["SnapcastAudioStream"]

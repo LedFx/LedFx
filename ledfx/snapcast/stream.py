@@ -13,12 +13,14 @@ import platform
 import socket
 import statistics
 import threading
-from typing import Callable
+from collections.abc import Callable
+from typing import Protocol, TypedDict
 
 import numpy as np
+from numpy.typing import NDArray
 
 from ledfx.consts import PROJECT_VERSION
-from ledfx.events import AudioSourceErrorEvent
+from ledfx.events import AudioSourceErrorEvent, Events
 from ledfx.snapcast import protocol
 from ledfx.snapcast.config import DEFAULT_CLIENT_NAME, DEFAULT_PORT
 from ledfx.snapcast.protocol import MessageType
@@ -33,6 +35,38 @@ _LOGGER = logging.getLogger(__name__)
 # Audio is delivered to LedFx in blocks of sample_rate / 60 samples so the
 # FFT / beat detection runs at ~60 Hz, the same as a local input device.
 _BLOCKS_PER_SECOND = 60
+
+AudioCallback = Callable[[NDArray[np.float32], int, object | None, object | None], None]
+
+
+def _json_int(value: object) -> int:
+    """int() of a JSON value; TypeError for null, arrays and objects."""
+    if not isinstance(value, int | float | str):
+        raise TypeError(f"expected a number, got {type(value).__name__}")
+    return int(value)
+
+
+class SnapcastServerDict(TypedDict, total=False):
+    """A dumped SnapcastServerConfig."""
+
+    host: str
+    port: int
+    client_name: str
+
+
+class _LedFx(Protocol):
+    """LedFx state used to report errors to the frontend."""
+
+    @property
+    def events(self) -> Events: ...
+
+
+class _FlacDecoder(Protocol):
+    """Operations used from pyflac's decoder, which has no typed API."""
+
+    def process(self, data: bytes) -> None: ...
+
+    def finish(self) -> None: ...
 
 
 class SnapcastAudioStream:
@@ -73,12 +107,12 @@ class SnapcastAudioStream:
 
     def __init__(
         self,
-        config: dict,
-        callback: Callable,
+        config: SnapcastServerDict,
+        callback: AudioCallback,
         instance_id: str = "",
-        ledfx=None,
+        ledfx: _LedFx | None = None,
         name: str = "",
-    ):
+    ) -> None:
         self.config = config
         self._device_name = f"SNAPCAST: {name}" if name else "SNAPCAST"
         self.callback = callback
@@ -88,7 +122,7 @@ class SnapcastAudioStream:
         self._active = False
         self._thread: threading.Thread | None = None
         self._loop: asyncio.AbstractEventLoop | None = None
-        self._main_task: asyncio.Task | None = None
+        self._main_task: asyncio.Task[None] | None = None
         self._writer: asyncio.StreamWriter | None = None
         self._msg_id = 0
 
@@ -98,7 +132,9 @@ class SnapcastAudioStream:
         self._muted = False
 
         # Clock sync: server clock minus local clock, in seconds
-        self._offsets = collections.deque(maxlen=self.TIME_SYNC_SAMPLES)
+        self._offsets: collections.deque[float] = collections.deque(
+            maxlen=self.TIME_SYNC_SAMPLES
+        )
         self._offset: float | None = None
 
         # Stream format (from CodecHeader)
@@ -110,14 +146,16 @@ class SnapcastAudioStream:
         # FLAC decoding runs on pyflac's own thread, so decoded blocks are
         # timestamped by counting samples from an anchor chunk rather than
         # by matching them to the chunk they came from.
-        self._flac_decoder = None
+        self._flac_decoder: _FlacDecoder | None = None
         self._flac_anchor_ts = 0.0
         self._flac_samples = 0
 
         # Decoded audio waiting to be released: (local play time, samples)
-        self._pending = collections.deque()
+        self._pending: collections.deque[tuple[float, NDArray[np.float32]]] = (
+            collections.deque()
+        )
         self._pending_lock = threading.Lock()
-        self._leftover = np.array([], dtype=np.float32)
+        self._leftover: NDArray[np.float32] = np.array([], dtype=np.float32)
         self._leftover_ts = 0.0
 
         _LOGGER.info(
@@ -181,8 +219,8 @@ class SnapcastAudioStream:
             self._loop.run_until_complete(self._main_task)
         except asyncio.CancelledError:
             pass
-        except Exception as exc:
-            _LOGGER.error("Snapcast client error: %s", exc, exc_info=True)
+        except Exception:
+            _LOGGER.exception("Snapcast client error")
         finally:
             self._main_task = None
             self._loop.close()
@@ -197,7 +235,7 @@ class SnapcastAudioStream:
                 backoff = 1.0
             except asyncio.CancelledError:
                 raise
-            except (OSError, asyncio.TimeoutError) as exc:
+            except (TimeoutError, OSError) as exc:
                 _LOGGER.warning(
                     "Snapcast connection to %s:%s lost, retrying in %.0fs: %s",
                     host,
@@ -207,31 +245,28 @@ class SnapcastAudioStream:
                 )
             except protocol.ProtocolError as exc:
                 _LOGGER.warning(
-                    "Snapcast protocol error from %s:%s, reconnecting in "
-                    "%.0fs: %s",
+                    "Snapcast protocol error from %s:%s, reconnecting in %.0fs: %s",
                     host,
                     port,
                     backoff,
                     exc,
                 )
-            except Exception as exc:
+            except Exception:
                 # Never let an unexpected error end the client thread: the
                 # audio source would stay "active" but silent for good.
-                _LOGGER.error(
+                _LOGGER.exception(
                     "Unexpected Snapcast client error with %s:%s, "
-                    "reconnecting in %.0fs: %s",
+                    "reconnecting in %.0fs",
                     host,
                     port,
                     backoff,
-                    exc,
-                    exc_info=True,
                 )
             if not self._active:
                 break
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, self.MAX_BACKOFF)
 
-    async def _connect_and_receive(self, host, port):
+    async def _connect_and_receive(self, host: str | None, port: int) -> None:
         _LOGGER.info(
             "Connecting to snapserver %s:%s as '%s' (client id %s)",
             host,
@@ -250,9 +285,7 @@ class SnapcastAudioStream:
                 MessageType.HELLO,
                 protocol.encode_hello(
                     client_id=self._client_id,
-                    host_name=self.config.get(
-                        "client_name", DEFAULT_CLIENT_NAME
-                    ),
+                    host_name=self.config.get("client_name", DEFAULT_CLIENT_NAME),
                     version=PROJECT_VERSION,
                     os_name=platform.system(),
                     arch=platform.machine(),
@@ -268,15 +301,13 @@ class SnapcastAudioStream:
                     self.READ_TIMEOUT,
                 )
                 header = protocol.decode_header(raw)
-                header.received = self._loop.time()
+                header.received = asyncio.get_running_loop().time()
                 payload = await asyncio.wait_for(
                     reader.readexactly(header.size), self.READ_TIMEOUT
                 )
                 self._handle_message(header, payload)
         except asyncio.IncompleteReadError as exc:
-            raise ConnectionResetError(
-                "snapserver closed the connection"
-            ) from exc
+            raise ConnectionResetError("snapserver closed the connection") from exc
         finally:
             for task in tasks:
                 task.cancel()
@@ -285,11 +316,11 @@ class SnapcastAudioStream:
             writer.close()
             try:
                 await writer.wait_closed()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
             self._finish_flac_decoder()
 
-    def _send(self, msg_type, payload, refers_to=0):
+    def _send(self, msg_type: int, payload: bytes, refers_to: int = 0) -> None:
         if self._writer is None:
             return
         self._msg_id = (self._msg_id + 1) & 0xFFFF
@@ -299,7 +330,7 @@ class SnapcastAudioStream:
                 payload,
                 msg_id=self._msg_id,
                 refers_to=refers_to,
-                sent=self._loop.time(),
+                sent=asyncio.get_running_loop().time(),
             )
         )
 
@@ -328,7 +359,7 @@ class SnapcastAudioStream:
     # Message handling
     # ------------------------------------------------------------------
 
-    def _handle_message(self, header, payload):
+    def _handle_message(self, header: protocol.Header, payload: bytes) -> None:
         if header.type == MessageType.WIRE_CHUNK:
             self._on_wire_chunk(*protocol.decode_wire_chunk(payload))
         elif header.type == MessageType.TIME:
@@ -340,7 +371,7 @@ class SnapcastAudioStream:
         else:
             _LOGGER.debug("Ignoring snapcast message type %s", header.type)
 
-    def _on_time(self, header, latency):
+    def _on_time(self, header: protocol.Header, latency: float) -> None:
         # latency = server receive - client send (c2s transit + offset)
         # s2c     = client receive - server send (s2c transit - offset)
         # With symmetric transit, (c2s - s2c) / 2 is the clock offset.
@@ -348,14 +379,12 @@ class SnapcastAudioStream:
         self._offsets.append((latency - s2c) / 2)
         self._offset = statistics.median(self._offsets)
 
-    def _on_server_settings(self, settings):
+    def _on_server_settings(self, settings: dict[str, object]) -> None:
         try:
-            buffer_ms = int(settings.get("bufferMs", self._buffer_ms))
-            latency_ms = int(settings.get("latency", self._latency_ms))
+            buffer_ms = _json_int(settings.get("bufferMs", self._buffer_ms))
+            latency_ms = _json_int(settings.get("latency", self._latency_ms))
         except (TypeError, ValueError) as exc:
-            raise protocol.ProtocolError(
-                f"invalid server settings: {exc}"
-            ) from exc
+            raise protocol.ProtocolError(f"invalid server settings: {exc}") from exc
         self._buffer_ms = buffer_ms
         self._latency_ms = latency_ms
         muted = bool(settings.get("muted", False))
@@ -369,7 +398,7 @@ class SnapcastAudioStream:
             self._muted,
         )
 
-    def _on_codec_header(self, codec, header):
+    def _on_codec_header(self, codec: str, header: bytes) -> None:
         self._finish_flac_decoder()
         self._clear_pending()
         self._codec = codec
@@ -411,7 +440,7 @@ class SnapcastAudioStream:
             self._format.channels,
         )
 
-    def _on_wire_chunk(self, timestamp, data):
+    def _on_wire_chunk(self, timestamp: float, data: bytes) -> None:
         if self._format is None or self._muted:
             return
 
@@ -432,16 +461,18 @@ class SnapcastAudioStream:
         if discontinuity:
             self._finish_flac_decoder()
             self._clear_pending()
-        if self._flac_decoder is None:
-            self._init_flac_decoder(timestamp)
-        self._flac_decoder.process(data)
+        decoder = self._flac_decoder
+        if decoder is None:
+            decoder = self._init_flac_decoder(timestamp)
+        decoder.process(data)
 
     # ------------------------------------------------------------------
     # Decoding
     # ------------------------------------------------------------------
 
-    def _decode_pcm(self, data):
+    def _decode_pcm(self, data: bytes) -> NDArray[np.float32]:
         fmt = self._format
+        assert fmt is not None  # _on_wire_chunk only decodes with a format
         # Drop any trailing partial frame rather than failing the whole chunk
         frame_bytes = max(1, fmt.bit_depth // 8) * max(1, fmt.channels)
         data = data[: len(data) - len(data) % frame_bytes]
@@ -457,26 +488,28 @@ class SnapcastAudioStream:
         elif fmt.bit_depth == 32:
             audio = np.frombuffer(data, dtype="<i4").astype(np.float32)
         else:
-            raise protocol.ProtocolError(
-                f"unsupported pcm bit depth {fmt.bit_depth}"
-            )
+            raise protocol.ProtocolError(f"unsupported pcm bit depth {fmt.bit_depth}")
         audio /= float(1 << (fmt.bit_depth - 1))
         return self._to_mono(audio, fmt.channels)
 
     @staticmethod
-    def _to_mono(audio, channels):
+    def _to_mono(audio: NDArray[np.float32], channels: int) -> NDArray[np.float32]:
         if channels > 1:
             usable = len(audio) - len(audio) % channels
             audio = audio[:usable].reshape(-1, channels).mean(axis=1)
         return audio.astype(np.float32, copy=False)
 
-    def _init_flac_decoder(self, anchor_ts):
+    def _init_flac_decoder(self, anchor_ts: float) -> _FlacDecoder:
+        # _on_codec_header sets no format without pyflac, so no chunk gets here
+        assert pyflac is not None
         self._flac_anchor_ts = anchor_ts
         self._flac_samples = 0
-        self._flac_decoder = pyflac.StreamDecoder(
+        decoder: _FlacDecoder = pyflac.StreamDecoder(
             write_callback=self._flac_write_callback
         )
-        self._flac_decoder.process(self._codec_header)
+        self._flac_decoder = decoder
+        decoder.process(self._codec_header)
+        return decoder
 
     def _finish_flac_decoder(self):
         decoder, self._flac_decoder = self._flac_decoder, None
@@ -484,22 +517,29 @@ class SnapcastAudioStream:
             return
         try:
             decoder.finish()
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.debug("FLAC decoder finish failed: %s", exc)
 
     def _flac_write_callback(
-        self, audio, sample_rate, num_channels, num_samples
-    ):
+        self,
+        audio: NDArray[np.int32],
+        sample_rate: int,
+        num_channels: int,
+        num_samples: int,
+    ) -> None:
         """Called by pyflac on its decoder thread for each decoded frame."""
+        fmt = self._format
+        if fmt is None:
+            return
         try:
             timestamp = self._flac_anchor_ts + self._flac_samples / sample_rate
             self._flac_samples += num_samples
-            scale = float(1 << (self._format.bit_depth - 1))
+            scale = float(1 << (fmt.bit_depth - 1))
             mono = self._to_mono(
                 audio.reshape(-1).astype(np.float32) / scale, num_channels
             )
             self._schedule(mono, timestamp)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             _LOGGER.error("Error in snapcast FLAC callback: %s", exc)
 
     # ------------------------------------------------------------------
@@ -513,7 +553,7 @@ class SnapcastAudioStream:
     def _play_delay(self):
         return (self._buffer_ms - self._latency_ms) / 1000
 
-    def _schedule(self, samples, server_ts):
+    def _schedule(self, samples: NDArray[np.float32], server_ts: float) -> None:
         """Split decoded mono audio into LedFx-sized blocks and queue each
         one for release at its local play time."""
         offset = self._offset
@@ -541,10 +581,11 @@ class SnapcastAudioStream:
     async def _playback_scheduler(self):
         """Release queued audio to LedFx at its play time, and feed silence
         when nothing is playing."""
-        last_release = self._loop.time()
+        loop = asyncio.get_running_loop()
+        last_release = loop.time()
         silence_next = 0.0
         while True:
-            now = self._loop.time()
+            now = loop.time()
             due = None
             with self._pending_lock:
                 while self._pending and self._pending[0][0] <= now:
@@ -566,9 +607,7 @@ class SnapcastAudioStream:
                 if now - silence_next > self.MAX_LATE:
                     silence_next = now
                 while silence_next <= now:
-                    self._deliver(
-                        np.zeros(self._block_size(), dtype=np.float32)
-                    )
+                    self._deliver(np.zeros(self._block_size(), dtype=np.float32))
                     silence_next += 1 / _BLOCKS_PER_SECOND
 
             wait = 0.005
@@ -576,15 +615,13 @@ class SnapcastAudioStream:
                 wait = min(wait, max(0.0, next_time - now))
             await asyncio.sleep(wait)
 
-    def _deliver(self, samples):
+    def _deliver(self, samples: NDArray[np.float32]) -> None:
         try:
             self.callback(samples, len(samples), None, None)
-        except Exception as exc:
-            _LOGGER.error(
-                "Error in LedFx audio callback: %s", exc, exc_info=True
-            )
+        except Exception:
+            _LOGGER.exception("Error in LedFx audio callback")
 
-    def _report_error(self, error_type, message):
+    def _report_error(self, error_type: str, message: str) -> None:
         _LOGGER.warning("Snapcast: %s", message)
         if self._ledfx is not None:
             self._ledfx.events.fire_event(

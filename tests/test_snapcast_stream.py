@@ -17,7 +17,7 @@ import pytest
 
 from ledfx.snapcast import protocol
 from ledfx.snapcast.protocol import MessageType
-from ledfx.snapcast.stream import SnapcastAudioStream
+from ledfx.snapcast.stream import SnapcastAudioStream, _LedFx
 
 try:
     import pyflac
@@ -39,14 +39,14 @@ def _blob(data: bytes) -> bytes:
     return struct.pack("<I", len(data)) + data
 
 
-def tone(seconds=TONE_SECONDS, amplitude=0.5):
+def tone(seconds: float = TONE_SECONDS, amplitude: float = 0.5) -> np.ndarray:
     """Stereo int16 440 Hz tone, shape (samples, 2)."""
     t = np.arange(int(seconds * RATE)) / RATE
     mono = (amplitude * np.sin(2 * np.pi * 440 * t) * 32767).astype(np.int16)
     return np.stack([mono, mono], axis=1)
 
 
-def wav_header(channels=2, bits=16):
+def wav_header(channels: int = 2, bits: int = 16) -> bytes:
     align = channels * bits // 8
     fmt = struct.pack("<HHIIHH", 1, channels, RATE, RATE * align, align, bits)
     return (
@@ -61,29 +61,29 @@ def wav_header(channels=2, bits=16):
     )
 
 
-def pcm_stream(samples):
+def pcm_stream(samples: np.ndarray) -> list[tuple[float, bytes]]:
     """Split interleaved int16 audio into (duration, bytes) wire chunks."""
     per_chunk = int(CHUNK_SECONDS * RATE)
     return [
         (len(block) / RATE, block.tobytes())
         for block in (
-            samples[i : i + per_chunk]
-            for i in range(0, len(samples), per_chunk)
+            samples[i : i + per_chunk] for i in range(0, len(samples), per_chunk)
         )
     ]
 
 
-def flac_stream(samples):
+def flac_stream(samples: np.ndarray) -> tuple[bytes, list[tuple[float, bytes]]]:
     """Encode audio with pyflac; return (codec header, wire chunks)."""
     header = bytearray()
-    chunks = []
+    chunks: list[tuple[float, bytes]] = []
 
-    def on_write(data, num_bytes, num_samples, frame):
+    def on_write(data: bytes, num_bytes: int, num_samples: int, frame: int) -> None:
         if num_samples == 0:
             header.extend(data)
         else:
             chunks.append((num_samples / RATE, bytes(data)))
 
+    assert pyflac is not None
     encoder = pyflac.StreamEncoder(
         sample_rate=RATE, write_callback=on_write, blocksize=960
     )
@@ -98,23 +98,23 @@ class FakeSnapserver:
 
     def __init__(
         self,
-        codec,
-        codec_header,
-        chunks,
-        muted=False,
-        drop_connection=False,
-        settings=None,
-    ):
+        codec: str,
+        codec_header: bytes,
+        chunks: list[tuple[float, bytes]],
+        muted: bool = False,
+        drop_connection: bool = False,
+        settings: dict[str, object] | None = None,
+    ) -> None:
         self.codec = codec
         self.codec_header = codec_header
         self.chunks = chunks
         self.muted = muted
         self.drop_connection = drop_connection
         self.settings = settings
-        self.hellos = []
-        self.first_chunk_local_time = None
+        self.hellos: list[dict[str, object]] = []
+        self.first_chunk_local_time: float | None = None
         self._ready = threading.Event()
-        self._handlers = set()
+        self._handlers: set[asyncio.Task[object]] = set()
 
     def __enter__(self):
         self._loop = asyncio.new_event_loop()
@@ -123,7 +123,7 @@ class FakeSnapserver:
         assert self._ready.wait(5)
         return self
 
-    def __exit__(self, *exc):
+    def __exit__(self, *exc: object) -> None:
         self._loop.call_soon_threadsafe(self._stopping.set)
         self._thread.join(5)
 
@@ -144,22 +144,32 @@ class FakeSnapserver:
         await asyncio.gather(*self._handlers, return_exceptions=True)
         await server.wait_closed()
 
-    def _send(self, writer, msg_type, payload, refers_to=0):
+    def _send(
+        self,
+        writer: asyncio.StreamWriter,
+        msg_type: int,
+        payload: bytes,
+        refers_to: int = 0,
+    ) -> None:
         writer.write(
             protocol.encode_message(
                 msg_type, payload, refers_to=refers_to, sent=server_now()
             )
         )
 
-    async def _read(self, reader):
-        header = protocol.decode_header(
-            await reader.readexactly(protocol.HEADER_SIZE)
-        )
+    async def _read(
+        self, reader: asyncio.StreamReader
+    ) -> tuple[protocol.Header, bytes]:
+        header = protocol.decode_header(await reader.readexactly(protocol.HEADER_SIZE))
         header.received = server_now()
         return header, await reader.readexactly(header.size)
 
-    async def _handle(self, reader, writer):
-        self._handlers.add(asyncio.current_task())
+    async def _handle(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
+        task = asyncio.current_task()
+        assert task is not None
+        self._handlers.add(task)
         try:
             await self._converse(reader, writer)
         except (asyncio.IncompleteReadError, ConnectionError):
@@ -171,7 +181,9 @@ class FakeSnapserver:
             except (ConnectionError, asyncio.CancelledError):
                 pass
 
-    async def _converse(self, reader, writer):
+    async def _converse(
+        self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter
+    ) -> None:
         header, payload = await self._read(reader)
         assert header.type == MessageType.HELLO
         self.hellos.append(protocol.decode_json(payload))
@@ -183,9 +195,7 @@ class FakeSnapserver:
             "latency": 0,
             "muted": self.muted,
         }
-        self._send(
-            writer, MessageType.SERVER_SETTINGS, protocol.encode_json(settings)
-        )
+        self._send(writer, MessageType.SERVER_SETTINGS, protocol.encode_json(settings))
         self._send(
             writer,
             MessageType.CODEC_HEADER,
@@ -206,7 +216,7 @@ class FakeSnapserver:
         finally:
             streaming.cancel()
 
-    async def _stream_chunks(self, writer):
+    async def _stream_chunks(self, writer: asyncio.StreamWriter) -> None:
         # Give the client's time sync burst a moment, like a real server
         # whose stream is already running when the client joins.
         await asyncio.sleep(0.2)
@@ -222,16 +232,20 @@ class FakeSnapserver:
             )
             ts += duration
             elapsed += duration
-            await asyncio.sleep(
-                max(0, start_local + elapsed - time.monotonic())
-            )
+            await asyncio.sleep(max(0, start_local + elapsed - time.monotonic()))
 
 
 class Recorder:
-    def __init__(self):
-        self.calls = []
+    def __init__(self) -> None:
+        self.calls: list[tuple[float, int, float]] = []
 
-    def __call__(self, data, frame_count, time_info, status):
+    def __call__(
+        self,
+        data: np.ndarray,
+        frame_count: int,
+        time_info: object | None,
+        status: object | None,
+    ) -> None:
         assert frame_count == len(data)
         self.calls.append(
             (time.monotonic(), len(data), float(np.sqrt(np.mean(data**2))))
@@ -241,7 +255,9 @@ class Recorder:
         return [c for c in self.calls if c[2] > 0.3]
 
 
-def run_stream(server, seconds, ledfx=None):
+def run_stream(
+    server: FakeSnapserver, seconds: float, ledfx: _LedFx | None = None
+) -> tuple[SnapcastAudioStream, Recorder]:
     recorder = Recorder()
     stream = SnapcastAudioStream(
         {"host": "127.0.0.1", "port": server.port, "client_name": "Test LEDs"},
@@ -258,7 +274,9 @@ def run_stream(server, seconds, ledfx=None):
     return stream, recorder
 
 
-def assert_tone_in_sync(server, stream, recorder):
+def assert_tone_in_sync(
+    server: FakeSnapserver, stream: SnapcastAudioStream, recorder: Recorder
+) -> None:
     assert stream._offset == pytest.approx(SERVER_CLOCK_OFFSET, abs=0.005)
     loud = recorder.loud()
     # 0.4 s of tone at 60 blocks/s, allowing for block boundaries
@@ -266,6 +284,7 @@ def assert_tone_in_sync(server, stream, recorder):
     assert {c[1] for c in loud} == {RATE // 60}
     # Released when the snapserver schedules it to play: bufferMs after it
     # was timestamped
+    assert server.first_chunk_local_time is not None
     expected = server.first_chunk_local_time + BUFFER_MS / 1000
     assert loud[0][0] == pytest.approx(expected, abs=0.05)
     assert loud[-1][0] == pytest.approx(expected + TONE_SECONDS, abs=0.06)
@@ -311,39 +330,41 @@ class TestSnapcastStream:
         real_sleep = asyncio.sleep
         tick = 0.0156
 
-        async def coarse_sleep(delay, *args, **kwargs):
+        async def coarse_sleep(delay: float) -> None:
             ticks = max(1, -(-delay // tick)) if delay > 0 else 0
-            await real_sleep(ticks * tick, *args, **kwargs)
+            await real_sleep(ticks * tick)
 
         stream_asyncio = SimpleNamespace(
             **{n: getattr(asyncio, n) for n in dir(asyncio) if n[0] != "_"}
         )
         stream_asyncio.sleep = coarse_sleep
         chunks = pcm_stream(tone())
-        with FakeSnapserver("pcm", wav_header(), chunks, muted=True) as server:
-            with patch("ledfx.snapcast.stream.asyncio", stream_asyncio):
-                _, recorder = run_stream(server, 1.2)
+        with (
+            FakeSnapserver("pcm", wav_header(), chunks, muted=True) as server,
+            patch("ledfx.snapcast.stream.asyncio", stream_asyncio),
+        ):
+            _, recorder = run_stream(server, 1.2)
         silent = [c for c in recorder.calls if c[2] == 0]
         span = silent[-1][0] - silent[0][0]
         assert len(silent) / span == pytest.approx(60, abs=6)
 
     def test_reconnects_after_malformed_settings(self):
-        bad_settings = {"bufferMs": "not a number", "latency": 0}
-        with FakeSnapserver(
-            "pcm", wav_header(), [], settings=bad_settings
-        ) as server:
+        bad_settings: dict[str, object] = {"bufferMs": "not a number", "latency": 0}
+        with FakeSnapserver("pcm", wav_header(), [], settings=bad_settings) as server:
             run_stream(server, 1.5)
         assert len(server.hellos) >= 2
 
     def test_recovers_from_unexpected_error(self):
         """An unexpected exception must not end the client thread."""
-        with FakeSnapserver("pcm", wav_header(), []) as server:
-            with patch.object(
+        with (
+            FakeSnapserver("pcm", wav_header(), []) as server,
+            patch.object(
                 SnapcastAudioStream,
                 "_on_codec_header",
                 side_effect=RuntimeError("boom"),
-            ):
-                run_stream(server, 1.5)
+            ),
+        ):
+            run_stream(server, 1.5)
         assert len(server.hellos) >= 2
 
     def test_partial_frame_is_dropped(self):
@@ -363,21 +384,18 @@ class TestSnapcastStream:
         assert "opus" in event.message
 
     def test_reconnects_after_disconnect(self):
-        with FakeSnapserver(
-            "pcm", wav_header(), [], drop_connection=True
-        ) as server:
+        with FakeSnapserver("pcm", wav_header(), [], drop_connection=True) as server:
             run_stream(server, 1.5)
         assert len(server.hellos) >= 2
 
     def test_close_without_server(self):
-        stream = SnapcastAudioStream(
-            {"host": "127.0.0.1", "port": 1}, lambda *a: None
-        )
+        stream = SnapcastAudioStream({"host": "127.0.0.1", "port": 1}, lambda *a: None)
         stream.start()
         time.sleep(0.2)
         started = time.monotonic()
         stream.close()
         assert time.monotonic() - started < 1
+        assert stream._thread is not None
         assert not stream._thread.is_alive()
 
 
@@ -431,10 +449,10 @@ class TestTiming:
         stream._on_wire_chunk(20.0, block)  # stream jumped 10 s
         assert [t for t, _ in stream._pending] == pytest.approx([21.0])
 
-    @pytest.mark.parametrize(
-        "settings", [{"bufferMs": "abc"}, {"latency": None}]
-    )
-    def test_invalid_settings_are_a_protocol_error(self, settings):
+    @pytest.mark.parametrize("settings", [{"bufferMs": "abc"}, {"latency": None}])
+    def test_invalid_settings_are_a_protocol_error(
+        self, settings: dict[str, object]
+    ) -> None:
         stream = self.make_stream()
         with pytest.raises(protocol.ProtocolError):
             stream._on_server_settings(settings)
