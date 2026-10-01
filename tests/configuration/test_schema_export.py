@@ -315,7 +315,12 @@ INSTANCE_ID_FIELDS = {
     ("core", "$defs", "VirtualEntry", "properties", "is_device", "anyOf", 0): "devices",
     **{
         ("core", "$defs", model, "properties", "virtual_ids", "items"): "virtuals"
-        for model in ("NowPlayingGradient", "NowPlayingTrackText", "NowPlayingAlbumArt")
+        for model in (
+            "NowPlayingGradient",
+            "NowPlayingTrackText",
+            "NowPlayingAlbumArt",
+            "Venue",
+        )
     },
     ("effects", "radial", "properties", "source_virtual"): "virtuals",
     **{
@@ -466,6 +471,7 @@ NOT_READ_ONLY = {
         "wled_preferences",
         "sendspin_servers",
         "now_playing",
+        "venues",
         "image_cache",
     )
 }

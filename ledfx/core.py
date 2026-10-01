@@ -59,6 +59,7 @@ from ledfx.utils import (
     resize_pixels,
     shape_to_fit_len,
 )
+from ledfx.venues import VenueManager
 from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,6 +99,7 @@ class LedFxCore:
             backup_config_file(config_dir, "DELETE", move=True)
 
         self.config_store = ConfigStore.load(config_dir)
+        self.venues = VenueManager(self)
         if not self.config.instance_id:
             self.config.instance_id = str(uuid.uuid4())
         self.hosts = get_sorted_physical_ips()

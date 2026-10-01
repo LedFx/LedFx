@@ -9734,6 +9734,11 @@
      "title": "Now Playing",
      "default": {}
     },
+    "venues": {
+     "type": "dict",
+     "title": "Venues",
+     "default": {}
+    },
     "allowed_origins": {
      "type": "list",
      "validators": [
