@@ -766,15 +766,7 @@ class Virtual:
         if self._color_override is None or not n:
             return None, None
 
-        try:
-            parsed = parse_gradient(self._color_override)
-        except ValueError:
-            _LOGGER.warning(
-                "Virtual %s: invalid color override '%s', using white",
-                self.id,
-                self._color_override,
-            )
-            parsed = RGB(255, 255, 255)
+        parsed = parse_gradient(self._valid_color_override())
 
         if isinstance(parsed, RGB):
             spatial = np.tile([parsed.red, parsed.green, parsed.blue], (n, 1)).astype(
@@ -804,6 +796,20 @@ class Virtual:
 
         return spatial, lut
 
+    def _valid_color_override(self) -> str:
+        """The override, or white if it does not parse (same for every effect)."""
+        override = self._color_override or ""
+        try:
+            parse_gradient(override)
+        except ValueError:
+            _LOGGER.warning(
+                "Virtual %s: invalid color override '%s', using white",
+                self.id,
+                override,
+            )
+            return "#ffffff"
+        return override
+
     def _apply_color_override_to_effect(self):
         """Internal: route override to the effect or to post-processing.
 
@@ -818,7 +824,7 @@ class Virtual:
         if isinstance(self._active_effect, GradientEffect):
             # The effect handles colour natively — inject the override gradient
             # so animations (roll, modulation, etc.) continue unaffected.
-            self._active_effect.set_gradient_override(self._color_override)
+            self._active_effect.set_gradient_override(self._valid_color_override())
             # No post-processing needed
             self._color_override_frame = None
             self._color_override_lut = None

@@ -300,3 +300,16 @@ def test_solid_override_matches_the_grouped_frame_size() -> None:
             virtual._reactivate_effect()
         assert virtual._color_override_frame is not None
         assert virtual._color_override_frame.shape == (5, 3)
+
+
+def test_invalid_override_falls_back_to_white_for_gradient_effects() -> None:
+    # GradientEffect takes the override natively; a bad pad string must still
+    # become white, as it does for every other effect.
+    from ledfx.effects.gradient import GradientEffect
+
+    virtual = object.__new__(Virtual)
+    virtual._color_override = "not-a-colour"
+    virtual._active_effect = MagicMock(spec=GradientEffect)
+    with patch.object(Virtual, "id", "v"):
+        virtual._apply_color_override_to_effect()
+    virtual._active_effect.set_gradient_override.assert_called_once_with("#ffffff")
