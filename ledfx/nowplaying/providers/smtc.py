@@ -49,6 +49,9 @@ class SMTCNowPlayingProvider:
         self._session_tokens = []
         self._init_task = None
         self._reselect_task = None
+        self._artwork_task: asyncio.Task[None] | None = None
+        self._timing_task: asyncio.Task[None] | None = None
+        self._timing_pending = False
         self._last_title = None
         self._last_artist = None
         self._last_album = None
@@ -85,6 +88,11 @@ class SMTCNowPlayingProvider:
         if self._reselect_task is not None:
             self._reselect_task.cancel()
             self._reselect_task = None
+        for task in (self._artwork_task, self._timing_task):
+            if task is not None:
+                task.cancel()
+        self._artwork_task = None
+        self._timing_task = None
         if self._init_task is not None:
             self._init_task.cancel()
             self._init_task = None
@@ -299,7 +307,24 @@ class SMTCNowPlayingProvider:
     def _schedule_timing_push(self):
         if self._loop is None:
             return
-        asyncio.run_coroutine_threadsafe(self._push_timing(), self._loop)
+        self._loop.call_soon_threadsafe(self._request_timing_push)
+
+    def _request_timing_push(self):
+        # Coalesce. Timeline events fire as position advances, and every read
+        # takes a worker thread that a stalled WinRT call never hands back, so
+        # keep one read in flight and remember that another event came in. The
+        # trailing read means the last event (often a pause) is never lost.
+        # Runs on the loop, so the flag needs no lock.
+        if self._timing_task is not None and not self._timing_task.done():
+            self._timing_pending = True
+            return
+        self._timing_task = asyncio.ensure_future(self._drain_timing_pushes())
+
+    async def _drain_timing_pushes(self):
+        self._timing_pending = True
+        while self._timing_pending:
+            self._timing_pending = False
+            await self._push_timing()
 
     def _on_media_properties_changed(self, session, args):
         """Fires when track title/artist/album changes."""
@@ -396,6 +421,7 @@ class SMTCNowPlayingProvider:
         # awaiting it here previously took the whole track push down with it.
         # has_own_artwork=True suppresses the MusicBrainz lookup: SMTC players
         # carry real cover art, and a wrong guess is worse than a late image.
+        # _push_artwork asks for the lookup if the player turns out to have none.
         now_playing.set_metadata(
             SOURCE_ID,
             TrackMetadata(
@@ -411,16 +437,23 @@ class SMTCNowPlayingProvider:
         )
         _LOGGER.debug("SMTC: metadata pushed for %s", title)
 
-        # Fire-and-forget: artwork arrives when it arrives.
-        asyncio.ensure_future(self._push_artwork(props))
+        # Artwork arrives when it arrives. Keep the task so stop() can cancel
+        # it, and drop the previous track's read so its art cannot land late
+        # on this one.
+        if self._artwork_task is not None:
+            self._artwork_task.cancel()
+        self._artwork_task = asyncio.ensure_future(self._push_artwork(props))
 
     async def _push_artwork(self, props):
         """Read and publish embedded artwork without blocking the track push."""
         art_bytes, art_content_type = await self._read_thumbnail(props)
-        if not art_bytes:
-            return
         now_playing = getattr(self._ledfx, "now_playing", None)
         if now_playing is None:
+            return
+        if not art_bytes:
+            # has_own_artwork=True held the album-art lookup back for this
+            # track; the player had nothing to give after all, so run it now.
+            now_playing.request_album_art_lookup(SOURCE_ID)
             return
         now_playing.set_artwork_bytes(SOURCE_ID, art_bytes, art_content_type)
         _LOGGER.debug("SMTC: embedded artwork applied (%d bytes)", len(art_bytes))

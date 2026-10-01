@@ -268,6 +268,17 @@ class NowPlayingService:
         predicted = self._emitted_position + (time.time() - self._emitted_timestamp)
         return abs(metadata.position - predicted) > _POSITION_DRIFT_PLAYING
 
+    def request_album_art_lookup(self, source_id: str) -> None:
+        """Run the album-art lookup for the current track after all.
+
+        For a provider that passed ``has_own_artwork=True`` and then could not
+        deliver the artwork.
+        """
+        metadata = self._state.metadata
+        if source_id != self._state.active_source_id or metadata is None:
+            return
+        self._art_resolver.on_track_changed(metadata)
+
     def set_artwork_url(
         self,
         source_id: str,
@@ -527,7 +538,7 @@ class NowPlayingService:
             try:
                 os.remove(os.path.join(art_dir, name))
             except OSError as exc:
-                _LOGGER.warning("Could not remove cached artwork %s: %s", name, exc)
+                _LOGGER.error("Could not remove cached artwork %s: %s", name, exc)
 
     def get_current(self) -> NowPlayingState:
         """Return the current Now Playing state.
@@ -926,8 +937,10 @@ class NowPlayingService:
 
         # Only anchor a timestamp when there is actually timing to anchor -
         # the frontend keys its interpolation off position + timestamp, and a
-        # timestamp without a position anchors nothing.
-        timestamp = time.time() if metadata.position is not None else None
+        # timestamp without a position anchors nothing. Anchor it to when the
+        # position was sampled, not to now: artwork re-emits this seconds later,
+        # and pairing the old position with a fresh time rewinds the client.
+        timestamp = metadata.updated_at if metadata.position is not None else None
 
         # Remember what clients were told, so _timing_diverged can judge
         # whether their extrapolation from it has gone stale.

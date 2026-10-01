@@ -1477,3 +1477,20 @@ class TestAlbumArtDurationSchema:
             NowPlayingConfig.model_validate(
                 {"album_art": {"duration": 61}}
             ).model_dump()
+
+
+class TestSongDetectedTimestamp:
+    def test_timestamp_anchored_to_sample(self, service, ledfx):
+        """A late re-emit (artwork) keeps the time the position was read."""
+        service.set_metadata(
+            "smtc", TrackMetadata(source_id="smtc", title="T", position=10.0)
+        )
+        service._state.metadata.updated_at = 1000.0
+        ledfx.events.fired.clear()
+
+        service._emit_song_detected()
+
+        (event,) = ledfx.events.fired
+        assert event.position == 10.0
+        assert event.timestamp == 1000.0
+        assert service._emitted_timestamp == 1000.0

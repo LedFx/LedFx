@@ -1,5 +1,6 @@
 """Unit tests for the SMTC (Windows System Media Transport Controls) Now Playing provider."""
 
+import asyncio
 import sys
 from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -413,3 +414,87 @@ class TestStateMethods:
         """clear() does not raise if now_playing is absent."""
         del provider._ledfx.now_playing
         provider.clear()  # should not raise
+
+
+# ------------------------------------------------------------------
+# Background artwork and timing tasks
+# ------------------------------------------------------------------
+
+
+class TestBackgroundTasks:
+    async def test_missing_embedded_art_falls_back_to_lookup(
+        self, provider: SMTCNowPlayingProvider, ledfx: _DummyLedFx
+    ):
+        """has_own_artwork=True must not leave a track with no art at all."""
+        provider._session = _FakeSession(props=_FakeProps(title="T", artist="A"))
+        provider._read_thumbnail = AsyncMock(return_value=(None, None))
+        lookup = MagicMock()
+        ledfx.now_playing._art_resolver.on_track_changed = lookup
+
+        await provider._fetch_and_push_metadata()
+        lookup.assert_not_called()  # held back while the embedded read runs
+        task = provider._artwork_task
+        assert task is not None
+        await task
+
+        lookup.assert_called_once()
+        assert lookup.call_args.args[0].title == "T"
+
+    async def test_embedded_art_skips_lookup(
+        self, provider: SMTCNowPlayingProvider, ledfx: _DummyLedFx
+    ):
+        provider._session = _FakeSession(props=_FakeProps(title="T", artist="A"))
+        provider._read_thumbnail = AsyncMock(return_value=(b"img", "image/png"))
+        ledfx.now_playing.set_artwork_bytes = MagicMock()
+        lookup = MagicMock()
+        ledfx.now_playing._art_resolver.on_track_changed = lookup
+
+        await provider._fetch_and_push_metadata()
+        task = provider._artwork_task
+        assert task is not None
+        await task
+
+        lookup.assert_not_called()
+        ledfx.now_playing.set_artwork_bytes.assert_called_once()
+
+    async def test_stop_cancels_artwork_task(self, provider: SMTCNowPlayingProvider):
+        provider._session = _FakeSession(props=_FakeProps(title="T"))
+        provider._read_thumbnail = AsyncMock(side_effect=asyncio.Event().wait)
+
+        await provider._fetch_and_push_metadata()
+        task = provider._artwork_task
+        assert task is not None and not task.done()
+
+        provider.stop()
+        await asyncio.sleep(0)
+        assert task.cancelled()
+        assert provider._artwork_task is None
+
+    async def test_timing_pushes_coalesce(self, provider: SMTCNowPlayingProvider):
+        """A burst of timeline events runs one read plus one trailing read."""
+        provider._loop = asyncio.get_running_loop()
+        release = asyncio.Event()
+        calls = 0
+
+        async def push():
+            nonlocal calls
+            calls += 1
+            await release.wait()
+
+        provider._push_timing = push
+        provider._schedule_timing_push()
+        for _ in range(3):
+            await asyncio.sleep(0)
+        assert calls == 1  # first read in flight
+
+        for _ in range(5):
+            provider._schedule_timing_push()
+        for _ in range(3):
+            await asyncio.sleep(0)
+        assert calls == 1  # the burst queued behind it, no new reads
+
+        release.set()
+        task = provider._timing_task
+        assert task is not None
+        await task
+        assert calls == 2
