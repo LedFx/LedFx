@@ -92,6 +92,7 @@ class ConfigStore:
         self.quarantined = 0  # records written; load() saves the repaired data
         self.quarantine_failed = False  # a dropped value has no record on disk
         self._blocked_logged = False
+        self._save_failure_logged = False
         self._write_lock = threading.Lock()
         self._lock = asyncio.Lock()  # mutate()/replace(); binds a loop on first wait
         self._seq = 0
@@ -257,6 +258,7 @@ class ConfigStore:
             # Persist the rename itself; a failure here doesn't undo the write.
             fsync_directory(self.config_dir)
             self._written_seq = seq
+            self._save_failure_logged = False
 
     def save_now(self) -> bool:
         """Write synchronously. Returns False if blocked by safe mode or on error."""
@@ -266,7 +268,7 @@ class ConfigStore:
         try:
             self._write(*self._next_text())
         except (OSError, TypeError, ValueError) as err:
-            _LOGGER.error("Failed to save config.json: %s", err)
+            self._log_save_failure(err)
             return False
         return True
 
@@ -300,15 +302,21 @@ class ConfigStore:
         try:
             seq, text = self._next_text()  # serialise on the loop: data is consistent
         except (TypeError, ValueError) as err:
-            _LOGGER.error("Failed to save config.json: %s", err)
+            self._log_save_failure(err)
             return
         future = self._loop.run_in_executor(None, self._write, seq, text)
         future.add_done_callback(self._log_write_failure)
 
-    @staticmethod
-    def _log_write_failure(future: "asyncio.Future[None]") -> None:
+    def _log_write_failure(self, future: "asyncio.Future[None]") -> None:
         if not future.cancelled() and future.exception() is not None:
-            _LOGGER.error("Failed to save config.json: %s", future.exception())
+            self._log_save_failure(future.exception())
+
+    def _log_save_failure(self, err: BaseException | None) -> None:
+        # A read-only config dir fails every save; log it once at error, then
+        # at debug until a save succeeds.
+        level = logging.DEBUG if self._save_failure_logged else logging.ERROR
+        self._save_failure_logged = True
+        _LOGGER.log(level, "Failed to save config.json: %s", err)
 
     async def flush(self) -> bool:
         """Write any pending change now and wait for it. False if blocked or failed."""
@@ -320,7 +328,7 @@ class ConfigStore:
             seq, text = self._next_text()
             await loop.run_in_executor(None, self._write, seq, text)
         except (OSError, TypeError, ValueError) as err:
-            _LOGGER.error("Failed to save config.json: %s", err)
+            self._log_save_failure(err)
             return False
         return True
 

@@ -1,5 +1,7 @@
 import json
+import logging
 import os
+import tempfile
 from pathlib import Path
 
 import pytest
@@ -398,3 +400,30 @@ def test_non_trigger_scene_list_is_quarantined_not_moved(tmp_path: Path) -> None
     assert [(r["path"], r["value"]) for r in map(json.loads, records)] == [
         ("scenes.s1.x", [1])
     ]
+
+
+def test_repeated_save_failures_log_one_error_until_a_save_succeeds(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    store = ConfigStore.load(str(tmp_path))
+    caplog.set_level(logging.DEBUG, logger="ledfx.configuration.store")
+    real_mkstemp = tempfile.mkstemp
+
+    def read_only_dir(**kwargs: str) -> tuple[int, str]:
+        raise PermissionError("read-only config dir")
+
+    def levels() -> list[int]:
+        return [r.levelno for r in caplog.records if "Failed to save" in r.getMessage()]
+
+    monkeypatch.setattr(tempfile, "mkstemp", read_only_dir)
+    for _ in range(3):
+        assert store.save_now() is False
+    assert levels() == [logging.ERROR, logging.DEBUG, logging.DEBUG]
+
+    monkeypatch.setattr(tempfile, "mkstemp", real_mkstemp)
+    assert store.save_now() is True
+    monkeypatch.setattr(tempfile, "mkstemp", read_only_dir)
+    assert store.save_now() is False
+    assert levels()[-1] == logging.ERROR
