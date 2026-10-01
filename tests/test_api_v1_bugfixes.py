@@ -268,6 +268,7 @@ async def test_tools_post_refuses_tools_it_does_not_run(
         ("fade", "inf"),
         ("hold", "nan"),
         ("color", "notacolor"),
+        ("color", "#1000000"),
     ],
 )
 async def test_tools_oneshot_rejects_bad_values(
@@ -290,11 +291,15 @@ async def test_tools_oneshot_still_clamps_brightness(one_virtual: bool) -> None:
 
 
 @pytest.mark.parametrize("one_virtual", [True, False])
+@pytest.mark.parametrize(
+    ("color", "reason"),
+    [("notacolor", "Invalid color: notacolor"), ("#1000000", "Invalid color: 1000000")],
+)
 async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
-    one_virtual: bool,
+    one_virtual: bool, color: str, reason: str
 ) -> None:
     ledfx, virtual = _tool_virtual()
-    body = {"tool": "force_color", "color": "notacolor"}
+    body = {"tool": "force_color", "color": color}
     if one_virtual:
         status, reply = await _call(
             VirtualsToolsEndpoint(ledfx), "PUT", body, virtual_id="v1"
@@ -303,7 +308,7 @@ async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
         virtual.is_device = virtual.id = "v1"
         status, reply = await _call(VirtualToolsEndpoint(ledfx), "PUT", body)
     assert status == 200
-    assert _reason(reply) == "Invalid color: notacolor"
+    assert _reason(reply) == reason
     virtual.force_frame.assert_not_called()
 
 
