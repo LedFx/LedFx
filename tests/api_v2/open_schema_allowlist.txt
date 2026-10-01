@@ -1,0 +1,3 @@
+# Schemas the spec lint (test_spec_lint.py) lets stay open, empty or unbounded.
+# One per line: <JSON pointer into the built spec><TAB><why this is safe>.
+# Every entry is a hole in the contract: keep the list short.
