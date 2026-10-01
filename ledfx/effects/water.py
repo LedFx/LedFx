@@ -1,8 +1,10 @@
 import queue
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import smooth
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
@@ -25,40 +27,25 @@ class Water(AudioReactiveEffect, HSVEffect):
     CATEGORY = "Atmospheric"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=1, max=3)),
-            vol.Optional(
-                "vertical_shift",
-                description="Vertical Shift",
-                default=0.12,
-            ): vol.All(vol.Coerce(float), vol.Range(min=-0.2, max=1)),
-            vol.Optional(
-                "bass_size",
-                description="Size of bass ripples",
-                default=8,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=15)),
-            vol.Optional(
-                "mids_size",
-                description="Size of mids ripples",
-                default=6,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=15)),
-            vol.Optional(
-                "high_size",
-                description="Size of high ripples",
-                default=3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=15)),
-            vol.Optional(
-                "viscosity",
-                description="Viscosity of ripples",
-                default=6,
-            ): vol.All(vol.Coerce(float), vol.Range(min=2, max=12)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(1, description="Effect Speed modifier", ge=1, le=3)
+        vertical_shift: CoercedFloat = Field(
+            0.12, description="Vertical Shift", ge=-0.2, le=1
+        )
+        bass_size: CoercedFloat = Field(
+            8, description="Size of bass ripples", ge=0, le=15
+        )
+        mids_size: CoercedFloat = Field(
+            6, description="Size of mids ripples", ge=0, le=15
+        )
+        high_size: CoercedFloat = Field(
+            3, description="Size of high ripples", ge=0, le=15
+        )
+        viscosity: CoercedFloat = Field(
+            6, description="Viscosity of ripples", ge=2, le=12
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -81,13 +68,13 @@ class Water(AudioReactiveEffect, HSVEffect):
             (0.875, -1.5),
         ]
         # Pre-compute config-dependent values
-        self._damp_factor = 2 ** self._config["viscosity"]
-        self._speed_int = int(self._config["speed"])
+        self._damp_factor = 2**self.config.viscosity
+        self._speed_int = int(self.config.speed)
 
     def config_updated(self, config):
         """Cache computed config values to avoid repeated calculations"""
-        self._damp_factor = 2 ** config["viscosity"]
-        self._speed_int = int(config["speed"])
+        self._damp_factor = 2**self.config.viscosity
+        self._speed_int = int(self.config.speed)
 
     def deactivate(self):
         empty_queue(self.drops_queue)
@@ -105,20 +92,20 @@ class Water(AudioReactiveEffect, HSVEffect):
         np.clip(intensities, 0, 1, out=intensities)
 
         # Bass emitters stay at start, end, and middle.
-        self.drops_queue.put((1, intensities[0] * self._config["bass_size"]))
+        self.drops_queue.put((1, intensities[0] * self.config.bass_size))
         self.drops_queue.put(
-            (self.pixel_count // 2, intensities[0] * self._config["bass_size"])
+            (self.pixel_count // 2, intensities[0] * self.config.bass_size)
         )
         self.drops_queue.put(
-            (self.pixel_count - 2, intensities[0] * self._config["bass_size"])
+            (self.pixel_count - 2, intensities[0] * self.config.bass_size)
         )
 
         # Emit drops and move the emitter
         for i in range(len(self._mids_emitters)):
             mid_pos, mid_speed = self._mids_emitters[i]
             pos = 1 + int(mid_pos * (self.pixel_count - 2))
-            self.drops_queue.put((pos, intensities[1] * self._config["mids_size"]))
-            mid_pos += 0.0002 * mid_speed * self._config["speed"]
+            self.drops_queue.put((pos, intensities[1] * self.config.mids_size))
+            mid_pos += 0.0002 * mid_speed * self.config.speed
             if mid_pos < 0.0:
                 mid_pos += 1.0
             elif mid_pos > 1.0:
@@ -128,8 +115,8 @@ class Water(AudioReactiveEffect, HSVEffect):
         for i in range(len(self._high_emitters)):
             high_pos, high_speed = self._high_emitters[i]
             pos = 1 + int(high_pos * (self.pixel_count - 2))
-            self.drops_queue.put((pos, intensities[2] * self._config["high_size"]))
-            high_pos += 0.0002 * high_speed * self._config["speed"]
+            self.drops_queue.put((pos, intensities[2] * self.config.high_size))
+            high_pos += 0.0002 * high_speed * self.config.speed
             if high_pos < 0.0:
                 high_pos += 1.0
             elif high_pos > 1.0:
@@ -150,7 +137,7 @@ class Water(AudioReactiveEffect, HSVEffect):
 
         # Render - cache the current buffer reference
         current_buf = self._buffer[self._cur_buffer]
-        shift_v = self._config["vertical_shift"]
+        shift_v = self.config.vertical_shift
 
         # Hues are a triangle of the raw values which makes for some nice effects.
         self.hsv_array[:, 0] = triangle(current_buf)

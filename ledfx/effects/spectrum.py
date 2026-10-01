@@ -1,8 +1,10 @@
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 
 
@@ -11,15 +13,15 @@ class SpectrumAudioEffect(AudioReactiveEffect):
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "rgb_mix",
-                description="How the melbank filters are applied to the RGB values",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=5)),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        rgb_mix: CoercedInt = Field(
+            0,
+            description="How the melbank filters are applied to the RGB values",
+            ge=0,
+            le=5,
+        )
+
+    config = TypedConfig(Config)
 
     rgb_mixes: ClassVar[list[list[int]]] = [
         [0, 1, 2],
@@ -38,12 +40,12 @@ class SpectrumAudioEffect(AudioReactiveEffect):
         # prevent crashes from segment edit / led count changes
         if self._b_filter is not None:
             self._b_filter.value = None
-        self.rgb_mix = self.rgb_mixes[self._config["rgb_mix"]]
+        self.rgb_mix = self.rgb_mixes[self.config.rgb_mix]
 
     def config_updated(self, config):
         # Create all the filters used for the effect
         self._b_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.5)
-        self.rgb_mix = self.rgb_mixes[self._config["rgb_mix"]]
+        self.rgb_mix = self.rgb_mixes[self.config.rgb_mix]
 
     def audio_data_updated(self, data):
         # Grab the filtered and interpolated melbank data

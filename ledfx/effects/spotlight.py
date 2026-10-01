@@ -5,11 +5,17 @@ import timeit
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
+
+SPOTLIGHT_MAX_ACTIVE_SPOTS = 28
+SPOTLIGHT_CENTER_COLOR = "#FFFFFF"
+SPOTLIGHT_EDGE_COLOR = "#4AA3FF"
 
 
 class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
@@ -29,7 +35,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
 
     INTERNAL_MIN_TIME_BETWEEN_SPOTS = 0.02
     INTERNAL_MIN_ACTIVE_SPOTS = 3
-    INTERNAL_MAX_ACTIVE_SPOTS = 28
+    INTERNAL_MAX_ACTIVE_SPOTS = SPOTLIGHT_MAX_ACTIVE_SPOTS
     INTERNAL_BASE_SPAWN_RATE = 2.5
     INTERNAL_ACTIVITY_SPAWN_RATE = 14.0
     INTERNAL_PEAK_SPAWN_BOOST = 1.8
@@ -37,56 +43,56 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
     INTERNAL_TRANSIENT_SENSITIVITY = 1.2
     INTERNAL_EDGE_SOFTNESS = 1.5
     INTERNAL_FADE_CURVE = 1.4
-    INTERNAL_CENTER_COLOR = "#FFFFFF"
-    INTERNAL_EDGE_COLOR = "#4AA3FF"
+    INTERNAL_CENTER_COLOR = SPOTLIGHT_CENTER_COLOR
+    INTERNAL_EDGE_COLOR = SPOTLIGHT_EDGE_COLOR
     INTERNAL_LOWS_WEIGHT = 0.5
     INTERNAL_MIDS_WEIGHT = 0.3
     INTERNAL_HIGHS_WEIGHT = 0.2
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "spot_width",
-                description="Spotlight width relative to strip length (%)",
-                default=8.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=100.0)),
-            vol.Optional(
-                "fade_time",
-                description="How long a spotlight fades out in seconds",
-                default=0.8,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.05, max=8.0)),
-            vol.Optional(
-                "max_active_spots",
-                description="Maximum simultaneous fading spotlights",
-                default=INTERNAL_MAX_ACTIVE_SPOTS,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=128)),
-            vol.Optional(
-                "use_gradient",
-                description="Use LedFx gradient instead of fixed spotlight colors",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "gradient_speed",
-                description="How fast the gradient color advances (cycles per second)",
-                default=0.12,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3.0)),
-            vol.Optional(
-                "spot_color_span",
-                description="Color spread from center to edge when using gradient",
-                default=0.08,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "center_color",
-                description="Color at spotlight center when gradient is disabled",
-                default=INTERNAL_CENTER_COLOR,
-            ): validate_color,
-            vol.Optional(
-                "edge_color",
-                description="Color at spotlight edge when gradient is disabled",
-                default=INTERNAL_EDGE_COLOR,
-            ): validate_color,
-        }
-    )
+    class Config(GradientEffect.Config):
+        spot_width: CoercedFloat = Field(
+            8.0,
+            description="Spotlight width relative to strip length (%)",
+            ge=0.5,
+            le=100.0,
+        )
+        fade_time: CoercedFloat = Field(
+            0.8,
+            description="How long a spotlight fades out in seconds",
+            ge=0.05,
+            le=8.0,
+        )
+        max_active_spots: CoercedInt = Field(
+            SPOTLIGHT_MAX_ACTIVE_SPOTS,
+            description="Maximum simultaneous fading spotlights",
+            ge=1,
+            le=128,
+        )
+        use_gradient: bool = Field(
+            True, description="Use LedFx gradient instead of fixed spotlight colors"
+        )
+        gradient_speed: CoercedFloat = Field(
+            0.12,
+            description="How fast the gradient color advances (cycles per second)",
+            ge=0.0,
+            le=3.0,
+        )
+        spot_color_span: CoercedFloat = Field(
+            0.08,
+            description="Color spread from center to edge when using gradient",
+            ge=0.0,
+            le=1.0,
+        )
+        center_color: Color = Field(
+            SPOTLIGHT_CENTER_COLOR,
+            description="Color at spotlight center when gradient is disabled",
+        )
+        edge_color: Color = Field(
+            SPOTLIGHT_EDGE_COLOR,
+            description="Color at spotlight edge when gradient is disabled",
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         """Initialize runtime state once the strip pixel count is known."""
@@ -104,26 +110,24 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
         """Cache validated config values and rebuild spot templates when needed."""
         old_template_signature = getattr(self, "_template_signature", None)
 
-        self.spot_width = self._config["spot_width"]
+        self.spot_width = self.config.spot_width
         self.edge_softness = self.INTERNAL_EDGE_SOFTNESS
-        self.fade_time = self._config["fade_time"]
+        self.fade_time = self.config.fade_time
         self.fade_curve = self.INTERNAL_FADE_CURVE
         self.min_time_between_spots = self.INTERNAL_MIN_TIME_BETWEEN_SPOTS
         self.min_active_spots = self.INTERNAL_MIN_ACTIVE_SPOTS
-        self.max_active_spots = self._config["max_active_spots"]
+        self.max_active_spots = self.config.max_active_spots
         self.min_active_spots = min(self.min_active_spots, self.max_active_spots)
         self.base_spawn_rate = self.INTERNAL_BASE_SPAWN_RATE
         self.activity_spawn_rate = self.INTERNAL_ACTIVITY_SPAWN_RATE
         self.peak_spawn_boost = self.INTERNAL_PEAK_SPAWN_BOOST
         self.max_spawns_per_update = self.INTERNAL_MAX_SPAWNS_PER_UPDATE
         self.transient_sensitivity = self.INTERNAL_TRANSIENT_SENSITIVITY
-        self.use_gradient = self._config["use_gradient"]
-        self.gradient_speed = self._config["gradient_speed"]
-        self.spot_color_span = self._config["spot_color_span"]
-        self.center_color = np.array(
-            parse_color(self._config["center_color"]), dtype=float
-        )
-        self.edge_color = np.array(parse_color(self._config["edge_color"]), dtype=float)
+        self.use_gradient = self.config.use_gradient
+        self.gradient_speed = self.config.gradient_speed
+        self.spot_color_span = self.config.spot_color_span
+        self.center_color = np.array(parse_color(self.config.center_color), dtype=float)
+        self.edge_color = np.array(parse_color(self.config.edge_color), dtype=float)
 
         self._template_signature = self._get_template_signature()
 
@@ -146,7 +150,7 @@ class SpotlightAudioEffect(AudioReactiveEffect, GradientEffect):
             self.spot_color_span,
             self.edge_softness,
             self.spot_width,
-            self._config.get("gradient"),
+            self.config.gradient,
             tuple(self.center_color.tolist()),
             tuple(self.edge_color.tolist()),
         )

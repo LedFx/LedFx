@@ -1,59 +1,61 @@
-from typing import ClassVar
+from typing import Annotated, ClassVar, Literal
 
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
+STROBE_MAPPINGS: dict[str, int] = {
+    "1/1 (.,. )": 1,
+    "1/2 (.-. )": 2,
+    "1/4 (.o. )": 4,
+    "1/8 (◉◡◉ )": 8,
+    "1/16 (◉﹏◉ )": 16,
+    "1/32 (⊙▃⊙ )": 32,
+}
+
 
 class Strobe(AudioReactiveEffect, GradientEffect):
-    MAPPINGS: ClassVar[dict[str, int]] = {
-        "1/1 (.,. )": 1,
-        "1/2 (.-. )": 2,
-        "1/4 (.o. )": 4,
-        "1/8 (◉◡◉ )": 8,
-        "1/16 (◉﹏◉ )": 16,
-        "1/32 (⊙▃⊙ )": 32,
-    }
+    MAPPINGS: ClassVar[dict[str, int]] = STROBE_MAPPINGS
 
     NAME = "BPM Strobe"
     CATEGORY = "BPM"
     HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "strobe_frequency",
-                description="How many strobes per beat",
-                default=list(MAPPINGS.keys())[1],
-            ): vol.In(list(MAPPINGS.keys())),
-            vol.Optional(
-                "strobe_decay",
-                description="How rapidly a single strobe hit fades. Higher -> faster fade",
-                default=1.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=1, max=10)),
-            vol.Optional(
-                "beat_decay",
-                description="How much the strobes fade across the beat. Higher -> less bright strobes towards end of beat",
-                default=2,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=10)),
-            vol.Optional(
-                "strobe_pattern",
-                description="When to fire (*) or skip (.) the strobe (Note that beat 1 is arbitrary)",
-                default="****",
-            ): vol.In(["****", "*.*.", ".*.*", "*...", "...*"]),
-        }
-    )
+    class Config(GradientEffect.Config):
+        strobe_frequency: Annotated[str, OneOf(list(STROBE_MAPPINGS.keys()))] = Field(
+            list(STROBE_MAPPINGS.keys())[1], description="How many strobes per beat"
+        )
+        strobe_decay: CoercedFloat = Field(
+            1.5,
+            description="How rapidly a single strobe hit fades. Higher -> faster fade",
+            ge=1,
+            le=10,
+        )
+        beat_decay: CoercedFloat = Field(
+            2,
+            description="How much the strobes fade across the beat. Higher -> less bright strobes towards end of beat",
+            ge=0,
+            le=10,
+        )
+        strobe_pattern: Literal["****", "*.*.", ".*.*", "*...", "...*"] = Field(
+            "****",
+            description="When to fire (*) or skip (.) the strobe (Note that beat 1 is arbitrary)",
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.color = self.get_gradient_color(0)
         self.strobe_brightness = 0
 
     def config_updated(self, config):
-        self.freq = self.MAPPINGS[self._config["strobe_frequency"]]
-        self.strobe_decay = self._config["strobe_decay"]
-        self.beat_decay = self._config["beat_decay"]
-        self.strobe_pattern = self._config["strobe_pattern"]
+        self.freq = self.MAPPINGS[self.config.strobe_frequency]
+        self.strobe_decay = self.config.strobe_decay
+        self.beat_decay = self.config.beat_decay
+        self.strobe_pattern = self.config.strobe_pattern
 
     def audio_data_updated(self, data):
         o = data.beat_oscillator()

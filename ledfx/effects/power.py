@@ -1,7 +1,9 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -11,35 +13,20 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "Classic"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=True,
-            ): bool,
-            vol.Optional(
-                "blur",
-                description="Amount to blur the effect",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "sparks_color",
-                description="Flash on percussive hits",
-                default="#ffffff",
-            ): validate_color,
-            vol.Optional(
-                "bass_decay_rate",
-                description="Bass decay rate. Higher -> decays faster.",
-                default=0.05,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-            vol.Optional(
-                "sparks_decay_rate",
-                description="Sparks decay rate. Higher -> decays faster.",
-                default=0.15,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0, max=1)),
-        }
-    )
+    class Config(GradientEffect.Config):
+        mirror: bool = Field(True, description="Mirror the effect")
+        blur: CoercedFloat = Field(
+            0.0, description="Amount to blur the effect", ge=0.0, le=10
+        )
+        sparks_color: Color = Field("#ffffff", description="Flash on percussive hits")
+        bass_decay_rate: CoercedFloat = Field(
+            0.05, description="Bass decay rate. Higher -> decays faster.", ge=0, le=1
+        )
+        sparks_decay_rate: CoercedFloat = Field(
+            0.15, description="Sparks decay rate. Higher -> decays faster.", ge=0, le=1
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.sparks_overlay = np.zeros((pixel_count, 3))
@@ -50,9 +37,9 @@ class PowerAudioEffect(AudioReactiveEffect, GradientEffect):
     def config_updated(self, config):
         # Create the filters used for the effect
         self._bass_filter = self.create_filter(alpha_decay=0.1, alpha_rise=0.8)
-        self.sparks_color = parse_color(self._config["sparks_color"])
-        self.sparks_decay_rate = 1 - self._config["sparks_decay_rate"]
-        self.bass_decay_rate = 1 - self._config["bass_decay_rate"]
+        self.sparks_color = parse_color(self.config.sparks_color)
+        self.sparks_decay_rate = 1 - self.config.sparks_decay_rate
+        self.bass_decay_rate = 1 - self.config.bass_decay_rate
 
     def audio_data_updated(self, data):
         # Fade existing sparks a little

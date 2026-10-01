@@ -1,6 +1,8 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -9,20 +11,15 @@ class Marching(AudioReactiveEffect, HSVEffect):
     NAME = "Marching"
     CATEGORY = "Atmospheric"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.2,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(
+            0.1, description="Effect Speed modifier", ge=0.00001, le=1.0
+        )
+        reactivity: CoercedFloat = Field(
+            0.2, description="Audio Reactive modifier", ge=0.00001, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def config_updated(self, config):
         self._lows_power = 0
@@ -34,10 +31,10 @@ class Marching(AudioReactiveEffect, HSVEffect):
     def render_hsv(self):
         # "Global expression"
 
-        t1 = self.time(self._config["speed"] * 20)
-        t2 = self.time(self._config["speed"])
-        # t1 += self._config["reactivity"] * self._lows_power
-        t2 += self._config["reactivity"] * self._lows_power * 20
+        t1 = self.time(self.config.speed * 20)
+        t2 = self.time(self.config.speed)
+        # t1 += self.config.reactivity * self._lows_power
+        t2 += self.config.reactivity * self._lows_power * 20
 
         # Vectorised pixel expression
         self.w2 = np.linspace(0, 1, self.pixel_count)
