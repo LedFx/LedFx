@@ -66,3 +66,22 @@ async def test_client_connect_retries_after_a_handshake_error() -> None:
 
     assert client.websocket is websocket
     assert session_cls.return_value.ws_connect.await_count == 2
+
+
+async def test_unresolvable_host_warns_and_leaves_the_integration_disconnected(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    integration = make_qlc()
+    integration._status = Status.CONNECTING
+    failure = ValueError("Failed to resolve destination not-a-host")
+
+    with patch(
+        "ledfx.integrations.qlc.resolve_destination", AsyncMock(side_effect=failure)
+    ):
+        await integration.connect()
+
+    assert integration.status == Status.DISCONNECTED
+    assert integration._client is None
+    assert [
+        r.levelname for r in caplog.records if r.name == "ledfx.integrations.qlc"
+    ] == ["WARNING"]

@@ -236,11 +236,18 @@ class QLC(Integration):
             await self._client.send(f"{int(widget_id)}|{value}")
 
     async def connect(self):
-        resolved_ip = await resolve_destination(
-            self._ledfx.loop,
-            self._ledfx.thread_executor,
-            self.config.ip_address,
-        )
+        try:
+            resolved_ip = await resolve_destination(
+                self._ledfx.loop,
+                self._ledfx.thread_executor,
+                self.config.ip_address,
+            )
+        except ValueError as e:
+            # A host that does not resolve is a config error: report it and
+            # stop, rather than staying on "connecting".
+            _LOGGER.warning("QLC+ %s: %s", self.name, e)
+            await super().disconnect()
+            return
         domain = f"{resolved_ip}:{self.config.port}"
         url = f"http://{domain}/qlcplusWS"
         if self._client is None:
