@@ -328,6 +328,10 @@ def test_an_extension_whose_component_clashes_is_skipped(
 
 SNIPPETS = {
     "toy": "from tests.api_v2.test_openapi import SPEC as spec",
+    "standalone": (
+        "from ledfx.api.v2.core.registry import build_standalone_spec\n"
+        "spec = build_standalone_spec()"
+    ),
 }
 
 
