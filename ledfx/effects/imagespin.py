@@ -1,10 +1,12 @@
 import logging
 import os
-from typing import ClassVar
+from typing import Annotated, ClassVar
 
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.twod import Twod
@@ -20,53 +22,37 @@ class Imagespin(Twod):
     HIDDEN_KEYS: ClassVar[list[str]] = ["speed", "mirror", "flip", "blur", "album_art"]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["pattern", "bilinear"]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "pattern",
-                description="use a test pattern",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the beat detection",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "multiplier",
-                description="Applied to the audio input to amplify effect",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "min_size",
-                description="The minimum size multiplier for the image",
-                default=0.3,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "bilinear",
-                description="default NEAREST, use BILINEAR for smoother scaling, expensive on runtime takes a few ms",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "spin",
-                description="spin image according to filter impulse",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "clip",
-                description="When spinning the image, force fit to frame, or allow clipping",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "image_source", description="Load image from", default=""
-            ): str,
-            vol.Optional(
-                "album_art",
-                description="Configuration for Album art display",
-                default=False,
-            ): bool,
-        }
-    )
+    class Config(Twod.Config):
+        pattern: bool = Field(False, description="use a test pattern")
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the beat detection"
+        )
+        multiplier: CoercedFloat = Field(
+            0.5,
+            description="Applied to the audio input to amplify effect",
+            ge=0.0,
+            le=1.0,
+        )
+        min_size: CoercedFloat = Field(
+            0.3, description="The minimum size multiplier for the image", ge=0.0, le=1.0
+        )
+        bilinear: bool = Field(
+            False,
+            description="default NEAREST, use BILINEAR for smoother scaling, expensive on runtime takes a few ms",
+        )
+        spin: bool = Field(False, description="spin image according to filter impulse")
+        clip: bool = Field(
+            False,
+            description="When spinning the image, force fit to frame, or allow clipping",
+        )
+        image_source: str = Field("", description="Load image from")
+        album_art: bool = Field(
+            False, description="Configuration for Album art display"
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -75,26 +61,30 @@ class Imagespin(Twod):
     def config_updated(self, config):
         super().config_updated(config)
 
-        self.clip = self._config["clip"]
-        self.min_size = self._config["min_size"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.do_spin = self._config["spin"]
-        self.resize = Image.BILINEAR if self._config["bilinear"] else Image.NEAREST
-        self.album_art = self.config["album_art"]
+        self.clip = self.config.clip
+        self.min_size = self.config.min_size
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.do_spin = self.config.spin
+        self.resize = (
+            Image.Resampling.BILINEAR
+            if self.config.bilinear
+            else Image.Resampling.NEAREST
+        )
+        self.album_art = self.config.album_art
         self.init = True
 
     def audio_data_updated(self, data):
         # Get filtered bar power
-        self.bar = getattr(data, self.power_func)() * self._config["multiplier"] * 2
+        self.bar = getattr(data, self.power_func)() * self.config.multiplier * 2
 
     def do_once(self):
         super().do_once()
-        if self._config["pattern"]:
+        if self.config.pattern:
             url_path = (
                 f"{os.path.join(LEDFX_ASSETS_PATH, 'test_images', 'TVTestPattern.png')}"
             )
         else:
-            url_path = self._config["image_source"]
+            url_path = self.config.image_source
 
         if url_path != "":
             self.bass_image = open_gif(url_path, config_dir=self._ledfx.config_dir)

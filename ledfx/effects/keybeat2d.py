@@ -1,9 +1,11 @@
 import logging
 import os
 
-import voluptuous as vol
 from PIL import ImageEnhance, ImageSequence
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.consts import LEDFX_ASSETS_PATH
 from ledfx.effects.gifbase import GifBase
 from ledfx.effects.twod import Twod
@@ -34,85 +36,53 @@ class Keybeat2d(Twod, GifBase):
         "image_brightness",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "stretch_horizontal",
-                description="Percentage of original to matrix width",
-                default=100,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
-            vol.Optional(
-                "stretch_vertical",
-                description="Percentage of original to matrix height",
-                default=100,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=200)),
-            vol.Optional(
-                "center_horizontal",
-                description="Center offset in horizontal direction percent of matrix width",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
-            vol.Optional(
-                "center_vertical",
-                description="Center offset in vertical direction percent of matrix height",
-                default=0,
-            ): vol.All(vol.Coerce(int), vol.Range(min=-95, max=95)),
-            vol.Optional(
-                "image_location",
-                description="Load gif from url or path",
-                default="",
-            ): str,
-            vol.Optional(
-                "beat_frames",
-                description="Frame index to interpolate beats between",
-                default="",
-            ): str,
-            vol.Optional(
-                "skip_frames",
-                description="Frames to remove from gif animation",
-                default="",
-            ): str,
-            vol.Optional(
-                "deep_diag",
-                description="Diagnostic overlayed on matrix",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "fake_beat",
-                description="Trigger test code with 0.05 beat per frame",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "keep_aspect_ratio",
-                description="Preserve aspect ratio if force fit",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "force_fit",
-                description="Force fit to matrix",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "ping_pong_skip",
-                description="When ping pong, skip the first beat key frame on both ends, use when key beat frames are very close to start and ends only",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "ping_pong",
-                description="Play gif forward and reverse, not just loop",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "half_beat",
-                description="half the beat input impulse, slow things down",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "image_brightness",
-                description="Image brightness",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=3.0)),
-        }
-    )
+    class Config(Twod.Config, GifBase.Config):
+        stretch_horizontal: CoercedInt = Field(
+            100, description="Percentage of original to matrix width", ge=1, le=200
+        )
+        stretch_vertical: CoercedInt = Field(
+            100, description="Percentage of original to matrix height", ge=1, le=200
+        )
+        center_horizontal: CoercedInt = Field(
+            0,
+            description="Center offset in horizontal direction percent of matrix width",
+            ge=-95,
+            le=95,
+        )
+        center_vertical: CoercedInt = Field(
+            0,
+            description="Center offset in vertical direction percent of matrix height",
+            ge=-95,
+            le=95,
+        )
+        image_location: str = Field("", description="Load gif from url or path")
+        beat_frames: str = Field(
+            "", description="Frame index to interpolate beats between"
+        )
+        skip_frames: str = Field("", description="Frames to remove from gif animation")
+        deep_diag: bool = Field(False, description="Diagnostic overlayed on matrix")
+        fake_beat: bool = Field(
+            False, description="Trigger test code with 0.05 beat per frame"
+        )
+        keep_aspect_ratio: bool = Field(
+            False, description="Preserve aspect ratio if force fit"
+        )
+        force_fit: bool = Field(False, description="Force fit to matrix")
+        ping_pong_skip: bool = Field(
+            False,
+            description="When ping pong, skip the first beat key frame on both ends, use when key beat frames are very close to start and ends only",
+        )
+        ping_pong: bool = Field(
+            False, description="Play gif forward and reverse, not just loop"
+        )
+        half_beat: bool = Field(
+            False, description="half the beat input impulse, slow things down"
+        )
+        image_brightness: CoercedFloat = Field(
+            1.0, description="Image brightness", ge=0.1, le=3.0
+        )
+
+    config = TypedConfig(Config)
 
     last_gif = None
 
@@ -153,20 +123,20 @@ class Keybeat2d(Twod, GifBase):
 
     def config_updated(self, config):
         super().config_updated(config)
-        self.stretch_h = self._config["stretch_horizontal"] / 100.0
-        self.stretch_v = self._config["stretch_vertical"] / 100.0
-        self.center_h = self._config["center_horizontal"] / 100.0
-        self.center_v = self._config["center_vertical"] / 100.0
+        self.stretch_h = self.config.stretch_horizontal / 100.0
+        self.stretch_v = self.config.stretch_vertical / 100.0
+        self.center_h = self.config.center_horizontal / 100.0
+        self.center_v = self.config.center_vertical / 100.0
 
-        self.image_location = self._config["image_location"]
+        self.image_location = self.config.image_location
 
-        self.ping_pong = self._config["ping_pong"]
-        self.ping_pong_skip = self._config["ping_pong_skip"]
-        self.force_fit = self._config["force_fit"]
-        self.force_aspect = self._config["keep_aspect_ratio"]
-        self.fake_beat = self._config["fake_beat"]
-        self.deep_diag = self._config["deep_diag"]
-        self.half_beat = self._config["half_beat"]
+        self.ping_pong = self.config.ping_pong
+        self.ping_pong_skip = self.config.ping_pong_skip
+        self.force_fit = self.config.force_fit
+        self.force_aspect = self.config.keep_aspect_ratio
+        self.fake_beat = self.config.fake_beat
+        self.deep_diag = self.config.deep_diag
+        self.half_beat = self.config.half_beat
 
         # Explicitly close PIL Images before clearing lists to release C-level memory
         if hasattr(self, "frames") and self.frames:
@@ -215,11 +185,11 @@ class Keybeat2d(Twod, GifBase):
 
         self.framecount = len(self.orig_frames)
         self.beat_frames = clip_at_limit(
-            sorted(extract_positive_integers(self._config["beat_frames"])),
+            sorted(extract_positive_integers(self.config.beat_frames)),
             len(self.orig_frames),
         )
         self.skip_frames = clip_at_limit(
-            sorted(extract_positive_integers(self._config["skip_frames"])),
+            sorted(extract_positive_integers(self.config.skip_frames)),
             len(self.orig_frames),
         )
 
@@ -256,7 +226,7 @@ class Keybeat2d(Twod, GifBase):
         # Apply brightness enhancement - this creates NEW PIL Image objects
         # The enhance() method returns a new image, leaving originals untouched
         self.post_frames = [
-            ImageEnhance.Brightness(frame).enhance(self._config["image_brightness"])
+            ImageEnhance.Brightness(frame).enhance(self.config.image_brightness)
             for frame in self.post_frames
         ]
 

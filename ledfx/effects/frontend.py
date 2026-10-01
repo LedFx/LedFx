@@ -2,9 +2,9 @@ import logging
 import time
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
 
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.twod import Twod
 from ledfx.events import Event
 
@@ -27,7 +27,10 @@ class FrontendEffect(Twod):
         "background_mode",
     ]
 
-    CONFIG_SCHEMA = vol.Schema({})
+    class Config(Twod.Config):
+        pass
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)

@@ -3,12 +3,15 @@ import math
 import random
 from collections import deque
 from enum import Enum
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 from ledfx.effects.utils.overlay import Overlay
@@ -52,85 +55,49 @@ class Texter2d(Twod, GradientEffect):
     HIDDEN_KEYS = Twod.HIDDEN_KEYS + []
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + ["resize_method", "deep_diag"]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "alpha",
-                description="apply alpha effect to text",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "option_1",
-                description="Text effect specific option switch",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "option_2",
-                description="Text effect specific option switch",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "value_option_1",
-                description="general value slider for text effects",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "font",
-                description="Font to render text with",
-                default="Press Start 2P",
-            ): vol.In(list(FONT_MAPPINGS.keys())),
-            vol.Optional(
-                "text",
-                description="Your text to display",
-                default="Your text here",
-            ): str,
-            vol.Optional(
-                "height_percent",
-                description="Font size as a percentage of the display height, fonts are unpredictable!",
-                default=100,
-            ): vol.All(vol.Coerce(int), vol.Range(min=10, max=150)),
-            vol.Optional(
-                "text_color",
-                description="Color of text",
-                default="#FFFFFF",
-            ): validate_color,
-            vol.Optional(
-                "resize_method",
-                description="What aliasing strategy to use when manipulating text elements",
-                default=ResizeMethods.BILINEAR.value,
-            ): vol.In([resize_method.value for resize_method in ResizeMethods]),
-            vol.Optional(
-                "text_effect",
-                description="Text effect to apply to configuration",
-                default="Side Scroll",
-            ): vol.In(list(TEXT_EFFECT_MAPPING.keys())),
-            vol.Optional(
-                "deep_diag",
-                description="Diagnostic overlayed on matrix",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "use_gradient",
-                description="Use gradient for word colors",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "impulse_decay",
-                description="Decay filter applied to the impulse for development",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "multiplier",
-                description="multiplier of audio effect injection",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional(
-                "speed_option_1",
-                description="general speed slider for text effects",
-                default=1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=3)),
-        },
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        alpha: bool = Field(False, description="apply alpha effect to text")
+        option_1: bool = Field(False, description="Text effect specific option switch")
+        option_2: bool = Field(False, description="Text effect specific option switch")
+        value_option_1: CoercedFloat = Field(
+            0.5, description="general value slider for text effects", ge=0.0, le=1.0
+        )
+        font: Annotated[str, OneOf(list(FONT_MAPPINGS.keys()))] = Field(
+            "Press Start 2P", description="Font to render text with"
+        )
+        text: str = Field("Your text here", description="Your text to display")
+        height_percent: CoercedInt = Field(
+            100,
+            description="Font size as a percentage of the display height, fonts are unpredictable!",
+            ge=10,
+            le=150,
+        )
+        text_color: Color = Field("#FFFFFF", description="Color of text")
+        resize_method: Annotated[
+            str, OneOf([resize_method.value for resize_method in ResizeMethods])
+        ] = Field(
+            ResizeMethods.BILINEAR.value,
+            description="What aliasing strategy to use when manipulating text elements",
+        )
+        text_effect: Annotated[str, OneOf(list(TEXT_EFFECT_MAPPING.keys()))] = Field(
+            "Side Scroll", description="Text effect to apply to configuration"
+        )
+        deep_diag: bool = Field(False, description="Diagnostic overlayed on matrix")
+        use_gradient: bool = Field(False, description="Use gradient for word colors")
+        impulse_decay: CoercedFloat = Field(
+            0.1,
+            description="Decay filter applied to the impulse for development",
+            ge=0.01,
+            le=0.3,
+        )
+        multiplier: CoercedFloat = Field(
+            1, description="multiplier of audio effect injection", ge=0.0, le=10
+        )
+        speed_option_1: CoercedFloat = Field(
+            1, description="general speed slider for text effects", ge=0.0, le=3
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
@@ -139,29 +106,29 @@ class Texter2d(Twod, GradientEffect):
     def config_updated(self, config):
         super().config_updated(config)
         # copy over your configs here into variables
-        self.alpha = self._config["alpha"]
-        self.option_1 = self._config["option_1"]
-        self.option_2 = self._config["option_2"]
-        self.speed_option_1 = self._config["speed_option_1"]
-        self.value_option_1 = self._config["value_option_1"]
-        self.deep_diag = self._config["deep_diag"]
-        self.use_gradient = self._config["use_gradient"]
+        self.alpha = self.config.alpha
+        self.option_1 = self.config.option_1
+        self.option_2 = self.config.option_2
+        self.speed_option_1 = self.config.speed_option_1
+        self.value_option_1 = self.config.value_option_1
+        self.deep_diag = self.config.deep_diag
+        self.use_gradient = self.config.use_gradient
         # putting text_color into a list so that it can be treated the same as a gradient list
-        self.text_color = [parse_color(self._config["text_color"])]
-        self.resize_method = RESIZE_METHOD_MAPPING[self._config["resize_method"]]
-        self.multiplier = self._config["multiplier"]
-        self.text_effect_funcs = TEXT_EFFECT_MAPPING[self._config["text_effect"]]
+        self.text_color = [parse_color(self.config.text_color)]
+        self.resize_method = RESIZE_METHOD_MAPPING[self.config.resize_method]
+        self.multiplier = self.config.multiplier
+        self.text_effect_funcs = TEXT_EFFECT_MAPPING[self.config.text_effect]
 
         self.lows_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
 
         self.mids_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
 
         self.high_impulse_filter = self.create_filter(
-            alpha_decay=self._config["impulse_decay"], alpha_rise=0.99
+            alpha_decay=self.config.impulse_decay, alpha_rise=0.99
         )
 
         self.lows_impulse = 0
@@ -176,9 +143,9 @@ class Texter2d(Twod, GradientEffect):
         # self.r_width and self.r_height should be used for the (r)ender space
         # as the self.matrix will not exist yet
         self.sentence = Sentence(
-            self.config["text"],
-            self.config["font"],
-            round(self.r_height * self.config["height_percent"] / 100),
+            self.config.text,
+            self.config.font,
+            round(self.r_height * self.config.height_percent / 100),
             (self.r_width, self.r_height),
         )
         if self.deep_diag:
@@ -364,7 +331,7 @@ class Texter2d(Twod, GradientEffect):
     # value option 1, will be used to set the number of seconds a words stays in focus until we have a mechanic for that
 
     def spokes_init(self):
-        self.spoke_spin = 0
+        self.spoke_spin: float = 0
         self.spokes = np.linspace(0, 2 * math.pi, self.sentence.wordcount + 1)[:-1]
 
         for idx, word in enumerate(self.sentence.wordblocks):

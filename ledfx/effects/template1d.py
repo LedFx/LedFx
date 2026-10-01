@@ -2,9 +2,11 @@ import logging
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, CoercedInt, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects import Effect
 from ledfx.effects.audio import AudioReactiveEffect
 
@@ -43,35 +45,24 @@ class Template1d(AudioReactiveEffect):
     # Try to make any setting and effect behavior independent of FPS or pixel count
     # Measure time passed per frame from the self.now and self.passed vars
     # THOU SHALT use snake case for field names
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "float_range",
-                description="A value picked from a float range",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
-            vol.Optional(
-                "color_beat",
-                description="A color picker element to render the beat",
-                default="#FF0000",
-            ): validate_color,
-            vol.Optional(
-                "color_bar",
-                description="A color picker element to render the bar",
-                default="#0000FF",
-            ): validate_color,
-            vol.Optional(
-                "int_value",
-                description="A value picked from an int range",
-                default=1,
-            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=10)),
-            vol.Optional(
-                "string_value",
-                description="A string input box",
-                default="Hey look, I'm a string!",
-            ): str,
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        float_range: CoercedFloat = Field(
+            0.1, description="A value picked from a float range", ge=0.01, le=1.0
+        )
+        color_beat: Color = Field(
+            "#FF0000", description="A color picker element to render the beat"
+        )
+        color_bar: Color = Field(
+            "#0000FF", description="A color picker element to render the bar"
+        )
+        int_value: CoercedInt = Field(
+            1, description="A value picked from an int range", ge=0, le=10
+        )
+        string_value: str = Field(
+            "Hey look, I'm a string!", description="A string input box"
+        )
+
+    config = TypedConfig(Config)
 
     # things you want to do on activation, when pixel count is known
     def on_activate(self, pixel_count):
@@ -82,11 +73,11 @@ class Template1d(AudioReactiveEffect):
     def config_updated(self, config):
         # it's healthy to get config values out of the dictionary and into variables
         # do any other heavy lifting here that you want done once if the config changes
-        self.float_range = self._config["float_range"]
-        self.color_beat = parse_color(self._config["color_beat"])
-        self.color_bar = parse_color(self._config["color_bar"])
-        self.int_value = self._config["int_value"]
-        self.string_value = self._config["string_value"]
+        self.float_range = self.config.float_range
+        self.color_beat = parse_color(self.config.color_beat)
+        self.color_bar = parse_color(self.config.color_bar)
+        self.int_value = self.config.int_value
+        self.string_value = self.config.string_value
         # make sure you initialise anything that might be used in render and otherwise set in audio_data_updated
         self.bar = 0
         self.beat = 0

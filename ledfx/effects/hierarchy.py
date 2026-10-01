@@ -3,9 +3,11 @@ import timeit
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
-from ledfx.color import parse_color, validate_color
+from ledfx.color import parse_color
+from ledfx.configuration.fields import CoercedFloat, Color
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.utils import aggressive_top_end_bias
 
@@ -23,45 +25,36 @@ class Hierarchy(AudioReactiveEffect):
         "flip",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "color_lows",
-                description="Color of low, bassy sounds",
-                default="#FF0000",
-            ): validate_color,
-            vol.Optional(
-                "color_mids",
-                description="Color of midrange sounds",
-                default="#00FF00",
-            ): validate_color,
-            vol.Optional(
-                "color_high",
-                description="Color of high sounds",
-                default="#0000FF",
-            ): validate_color,
-            vol.Optional(
-                "brightness_boost",
-                description="Boost the brightness of the effect on a parabolic curve",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "threshold_lows",
-                description="If Lows are below this value, Mids are used.",
-                default=0.05,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "threshold_mids",
-                description="If Mids are below this value, Highs are used",
-                default=0.05,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "switch_time",
-                description="Time Lows/Mids have to be below threshold before switch",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        }
-    )
+    class Config(AudioReactiveEffect.Config):
+        color_lows: Color = Field("#FF0000", description="Color of low, bassy sounds")
+        color_mids: Color = Field("#00FF00", description="Color of midrange sounds")
+        color_high: Color = Field("#0000FF", description="Color of high sounds")
+        brightness_boost: CoercedFloat = Field(
+            0.0,
+            description="Boost the brightness of the effect on a parabolic curve",
+            ge=0.0,
+            le=1.0,
+        )
+        threshold_lows: CoercedFloat = Field(
+            0.05,
+            description="If Lows are below this value, Mids are used.",
+            ge=0.0,
+            le=1.0,
+        )
+        threshold_mids: CoercedFloat = Field(
+            0.05,
+            description="If Mids are below this value, Highs are used",
+            ge=0.0,
+            le=1.0,
+        )
+        switch_time: CoercedFloat = Field(
+            0.1,
+            description="Time Lows/Mids have to be below threshold before switch",
+            ge=0.0,
+            le=1.0,
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.filtered_power = 0
@@ -70,13 +63,13 @@ class Hierarchy(AudioReactiveEffect):
         self.color = np.array(parse_color("#000000"))
 
     def config_updated(self, config):
-        self.switch_time = self._config["switch_time"]
-        self.switch_threshold_lows = self._config["threshold_lows"]
-        self.switch_threshold_mids = self._config["threshold_mids"]
-        self.brightness_boost = self._config["brightness_boost"]
-        self.color_low = np.array(parse_color(self._config["color_lows"]))
-        self.color_mids = np.array(parse_color(self._config["color_mids"]))
-        self.color_high = np.array(parse_color(self._config["color_high"]))
+        self.switch_time = self.config.switch_time
+        self.switch_threshold_lows = self.config.threshold_lows
+        self.switch_threshold_mids = self.config.threshold_mids
+        self.brightness_boost = self.config.brightness_boost
+        self.color_low = np.array(parse_color(self.config.color_lows))
+        self.color_mids = np.array(parse_color(self.config.color_mids))
+        self.color_high = np.array(parse_color(self.config.color_high))
 
     def audio_data_updated(self, data):
         # as this is in the audio_data_updated() not safe to use self.now

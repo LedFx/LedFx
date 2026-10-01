@@ -1,9 +1,12 @@
 import logging
+from typing import Annotated
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, OneOf
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
@@ -22,51 +25,46 @@ class Plasma2d(Twod, GradientEffect):
     ]
     ADVANCED_KEYS = Twod.ADVANCED_KEYS + []
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "frequency_range",
-                description="Frequency range for the beat detection",
-                default="Lows (beat+bass)",
-            ): vol.In(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys())),
-            vol.Optional(
-                "density_vertical",
-                description="Lets pretend its vertical density",
-                default=0.1,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "twist",
-                description="Like a slice of lemon",
-                default=0.07,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=0.3)),
-            vol.Optional(
-                "radius",
-                description="If you squint its the distance from the center",
-                default=0.2,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
-            vol.Optional(
-                "density",
-                description="kinda how small the plasma is, but who realy knows",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.001, max=2.0)),
-            vol.Optional(
-                "lower",
-                description="lower band of density",
-                default=0.01,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.01, max=1.0)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        frequency_range: Annotated[
+            str, OneOf(list(AudioReactiveEffect.POWER_FUNCS_MAPPING.keys()))
+        ] = Field(
+            "Lows (beat+bass)", description="Frequency range for the beat detection"
+        )
+        density_vertical: CoercedFloat = Field(
+            0.1, description="Lets pretend its vertical density", ge=0.01, le=0.3
+        )
+        twist: CoercedFloat = Field(
+            0.07, description="Like a slice of lemon", ge=0.01, le=0.3
+        )
+        radius: CoercedFloat = Field(
+            0.2,
+            description="If you squint its the distance from the center",
+            ge=0.01,
+            le=1.0,
+        )
+        density: CoercedFloat = Field(
+            0.5,
+            description="kinda how small the plasma is, but who realy knows",
+            ge=0.001,
+            le=2.0,
+        )
+        lower: CoercedFloat = Field(
+            0.01, description="lower band of density", ge=0.01, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
 
     def config_updated(self, config):
-        self.density = self._config["density"]
-        self.lower = self._config["lower"]
-        self.power_func = self.POWER_FUNCS_MAPPING[self._config["frequency_range"]]
-        self.density_vertical = self._config["density_vertical"]
-        self.twist = self._config["twist"]
-        self.radius = self._config["radius"]
+        self.density = self.config.density
+        self.lower = self.config.lower
+        self.power_func = self.POWER_FUNCS_MAPPING[self.config.frequency_range]
+        self.density_vertical = self.config.density_vertical
+        self.twist = self.config.twist
+        self.radius = self.config.radius
         super().config_updated(config)
 
     def do_once(self):

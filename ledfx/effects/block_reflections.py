@@ -1,6 +1,8 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -9,20 +11,15 @@ class BlockReflections(AudioReactiveEffect, HSVEffect):
     NAME = "Block Reflections"
     CATEGORY = "Atmospheric"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(
+            0.5, description="Effect Speed modifier", ge=0.00001, le=1.0
+        )
+        reactivity: CoercedFloat = Field(
+            0.5, description="Audio Reactive modifier", ge=0.00001, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def config_updated(self, config):
         self._lows_power = 0
@@ -32,14 +29,14 @@ class BlockReflections(AudioReactiveEffect, HSVEffect):
         self._lows_power = self._lows_filter.update(data.lows_power(filtered=False))
 
     def render_hsv(self):
-        t2 = self.time(1 * self._config["speed"]) * (np.pi**2) + (
-            0.8 * self._config["reactivity"] * self._lows_power
+        t2 = self.time(1 * self.config.speed) * (np.pi**2) + (
+            0.8 * self.config.reactivity * self._lows_power
         )
-        t1 = self.time(1 * self._config["speed"])
-        t3 = self.time(5 * self._config["speed"]) + (
-            self._config["reactivity"] * self._lows_power
+        t1 = self.time(1 * self.config.speed)
+        t3 = self.time(5 * self.config.speed) + (
+            self.config.reactivity * self._lows_power
         )
-        t4 = self.time(2 * self._config["speed"]) * (np.pi**2)
+        t4 = self.time(2 * self.config.speed) * (np.pi**2)
 
         m = 0.3 + self.triangle(t1) * 0.2
         c = self.triangle(t3) * 10 + 4 * self.sin(t4)

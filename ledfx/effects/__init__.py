@@ -9,8 +9,10 @@ from typing import ClassVar
 import numpy as np
 import voluptuous as vol
 from numpy.typing import NDArray
+from pydantic import Field
 
-from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color, validate_color
+from ledfx.color import LEDFX_COLORS, hsv_to_rgb, parse_color
+from ledfx.configuration.fields import X_LEGACY, X_OMIT_DEFAULT, CoercedFloat, Color
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.effects.utils.logsec_helper import LogSecHelper
 from ledfx.events import EffectUpdatedEvent
@@ -280,49 +282,33 @@ class Effect(BaseRegistry):
     # over ride in effect children to allow edit and show others
     PERMITTED_KEYS = None
     USES_MELBANK_RANGE = False
-    config = TypedConfig(PluginConfig)
     _config = None
     _active = False
     _virtual = None
 
     # Basic effect properties that can be applied to all effects
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "blur",
-                description="Amount to blur the effect",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=10)),
-            vol.Optional("flip", description="Flip the effect", default=False): bool,
-            vol.Optional(
-                "mirror",
-                description="Mirror the effect",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "brightness",
-                description="Brightness of strip",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "background_color",
-                description="Apply a background color",
-                default="#000000",
-            ): validate_color,
-            vol.Optional(
-                "background_brightness",
-                description="Brightness of the background color",
-                default=1.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-            vol.Optional(
-                "diag", description="Enable diagnostic logging", default=False
-            ): bool,
-            vol.Optional(
-                "advanced",
-                description=False,
-            ): bool,
-        }
-    )
+    class Config(PluginConfig):
+        blur: CoercedFloat = Field(
+            0.0, description="Amount to blur the effect", ge=0.0, le=10
+        )
+        flip: bool = Field(False, description="Flip the effect")
+        mirror: bool = Field(False, description="Mirror the effect")
+        brightness: CoercedFloat = Field(
+            1.0, description="Brightness of strip", ge=0.0, le=1.0
+        )
+        background_color: Color = Field(
+            "#000000", description="Apply a background color"
+        )
+        background_brightness: CoercedFloat = Field(
+            1.0, description="Brightness of the background color", ge=0.0, le=1.0
+        )
+        diag: bool = Field(False, description="Enable diagnostic logging")
+        advanced: bool | None = Field(
+            None,
+            json_schema_extra={X_OMIT_DEFAULT: True, X_LEGACY: {"description": False}},
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
@@ -387,20 +373,20 @@ class Effect(BaseRegistry):
             old_state, old_diag = dict(vars(self)), self.logsec.diag
             self._config = validated_config
 
-            bg_color = parse_color(self._config["background_color"])
+            bg_color = parse_color(self.config.background_color)
             # if bg color is black then flag we don't need to run at render time
             self.bg_color_use = bg_color != parse_color(LEDFX_COLORS["black"])
 
             # calculate colors always as they are used sometimes anyway
-            self._bg_color = np.array(bg_color) * self._config["background_brightness"]
+            self._bg_color = np.array(bg_color) * self.config.background_brightness
             self._bg_color_pil = tuple(
-                int(c * self._config["background_brightness"]) for c in bg_color
+                int(c * self.config.background_brightness) for c in bg_color
             )
 
-            self.flip = self._config["flip"]
-            self.mirror = self._config["mirror"]
-            self.brightness = self._config["brightness"]
-            self.logsec.diag = self._config.get("diag", False)
+            self.flip = self.config.flip
+            self.mirror = self.config.mirror
+            self.brightness = self.config.brightness
+            self.logsec.diag = self.config.diag
 
             def inherited(cls, method):
                 if hasattr(cls, method) and hasattr(super(cls, cls), method):
@@ -466,7 +452,7 @@ class Effect(BaseRegistry):
                 if self.pixels is not None:
                     pixels = np.copy(self.pixels)
                     # Grab the config and store it here for use in the function - we use it a lot
-                    config = self._config
+                    config = self.config
 
                     # Apply some of the base output filters if necessary
                     if self.flip:
@@ -494,8 +480,8 @@ class Effect(BaseRegistry):
                     # The matrix math requires > 3 pixels to work properly
                     # And blurring with a less than 3 pixels seems... redundant
                     # TODO: Handle RGBW properly
-                    if config["blur"] != 0.0 and self.pixel_count > 3:
-                        kernel = _gaussian_kernel1d(config["blur"], 0, len(pixels))
+                    if config.blur != 0.0 and self.pixel_count > 3:
+                        kernel = _gaussian_kernel1d(config.blur, 0, len(pixels))
 
                         # Blur the R,G,B portions of the pixel array
                         # Lots of attempts at vectorisation/performance improvements here

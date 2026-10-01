@@ -1,6 +1,8 @@
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.gradient import GradientEffect
 
@@ -10,15 +12,12 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
     CATEGORY = "2D"
     USES_MELBANK_RANGE = True
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "block_count",
-                description="Number of color blocks",
-                default=4,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=10))
-        }
-    )
+    class Config(GradientEffect.Config):
+        block_count: CoercedInt = Field(
+            4, description="Number of color blocks", ge=1, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.r = np.zeros(pixel_count)
@@ -28,7 +27,7 @@ class BlocksAudioEffect(AudioReactiveEffect, GradientEffect):
         self.r = self.melbank(filtered=True, size=self.pixel_count)
 
     def render(self):
-        blocks_active = min(self._config["block_count"], self.pixel_count)
+        blocks_active = min(self.config.block_count, self.pixel_count)
 
         out = np.tile(self.r, (3, 1))
         out_split = np.array_split(out, blocks_active, axis=1)

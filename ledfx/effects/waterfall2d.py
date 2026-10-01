@@ -1,9 +1,11 @@
 import logging
 
 import numpy as np
-import voluptuous as vol
 from PIL import Image, ImageDraw
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat, CoercedInt
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.twod import Twod
 
@@ -29,35 +31,25 @@ class Waterfall(Twod, GradientEffect):
         "background_brightness",
     ]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "center",
-                description="Center the waterfall",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "max_vs_mean",
-                description="Use max or mean value for bar size",
-                default=False,
-            ): bool,
-            vol.Optional(
-                "bands",
-                description="Number of frequency bands",
-                default=16,
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=64)),
-            vol.Optional(
-                "drop_secs",
-                description="Seconds for the waterfall to drop from the top to bottom of the matrix",
-                default=3.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10.0)),
-            vol.Optional(
-                "fade_out",
-                description="Fade out the waterfall effect",
-                default=0.0,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.0, max=1.0)),
-        }
-    )
+    class Config(Twod.Config, GradientEffect.Config):
+        center: bool = Field(False, description="Center the waterfall")
+        max_vs_mean: bool = Field(
+            False, description="Use max or mean value for bar size"
+        )
+        bands: CoercedInt = Field(
+            16, description="Number of frequency bands", ge=1, le=64
+        )
+        drop_secs: CoercedFloat = Field(
+            3.0,
+            description="Seconds for the waterfall to drop from the top to bottom of the matrix",
+            ge=0.1,
+            le=10.0,
+        )
+        fade_out: CoercedFloat = Field(
+            0.0, description="Fade out the waterfall effect", ge=0.0, le=1.0
+        )
+
+    config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
         """
@@ -89,12 +81,12 @@ class Waterfall(Twod, GradientEffect):
             config: The updated configuration dictionary.
         """
         super().config_updated(config)
-        self.bands = self._config["bands"]
-        self.center = self._config["center"]
-        self.grad_roll = self._config["gradient_roll"]
-        self.max = self._config["max_vs_mean"]
-        self.drop_secs = self._config["drop_secs"]
-        self.fade_out = self._config["fade_out"]
+        self.bands = self.config.bands
+        self.center = self.config.center
+        self.grad_roll = self.config.gradient_roll
+        self.max = self.config.max_vs_mean
+        self.drop_secs = self.config.drop_secs
+        self.fade_out = self.config.fade_out
         # we are going to do our own special thing with background color so disable default behavior
         self.bg_color_use = False
 

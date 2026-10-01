@@ -1,8 +1,10 @@
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.gradient import GradientEffect
 from ledfx.effects.temporal import TemporalEffect
 
@@ -16,15 +18,12 @@ class FadeEffect(TemporalEffect, GradientEffect):
     CATEGORY = "Non-Reactive"
     HIDDEN_KEYS: ClassVar[list[str]] = ["gradient_roll"]
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                default=0.5,
-                description="Rate of change of color",
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=10)),
-        }
-    )
+    class Config(TemporalEffect.Config, GradientEffect.Config):
+        speed: CoercedFloat = Field(
+            0.5, description="Rate of change of color", ge=0.1, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def config_updated(self, config):
         self.idx = 0

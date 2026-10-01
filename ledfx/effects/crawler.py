@@ -1,8 +1,10 @@
 import time
 
 import numpy as np
-import voluptuous as vol
+from pydantic import Field
 
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 from ledfx.effects.hsv_effect import HSVEffect
 
@@ -11,42 +13,27 @@ class Crawler(AudioReactiveEffect, HSVEffect):
     NAME = "Crawler"
     CATEGORY = "Atmospheric"
 
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional(
-                "speed",
-                description="Effect Speed modifier",
-                default=0.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-            vol.Optional(
-                "reactivity",
-                description="Audio Reactive modifier",
-                default=0.25,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=1.0)),
-            vol.Optional(
-                "sway",
-                description="Sway modifier",
-                default=20,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=50)),
-            vol.Optional(
-                "chop",
-                description="Chop modifier",
-                default=30,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=100)),
-            vol.Optional(
-                "stretch",
-                description="Stretch modifier",
-                default=2.5,
-            ): vol.All(vol.Coerce(float), vol.Range(min=0.00001, max=10)),
-        }
-    )
+    class Config(HSVEffect.Config):
+        speed: CoercedFloat = Field(
+            0.5, description="Effect Speed modifier", ge=0.00001, le=1.0
+        )
+        reactivity: CoercedFloat = Field(
+            0.25, description="Audio Reactive modifier", ge=0.00001, le=1.0
+        )
+        sway: CoercedFloat = Field(20, description="Sway modifier", ge=0.00001, le=50)
+        chop: CoercedFloat = Field(30, description="Chop modifier", ge=0.00001, le=100)
+        stretch: CoercedFloat = Field(
+            2.5, description="Stretch modifier", ge=0.00001, le=10
+        )
+
+    config = TypedConfig(Config)
 
     def on_activate(self, pixel_count):
         self.pc = pixel_count
         self.i = np.arange(pixel_count, dtype=np.float64)
         self.i1 = np.linspace(0, 1, pixel_count)
 
-        self.timestep = 0
+        self.timestep: float = 0
         self.last_time = time.time_ns()
         self.dt = 0
 
@@ -61,31 +48,28 @@ class Crawler(AudioReactiveEffect, HSVEffect):
         self.dt = time.time_ns() - self.last_time
         self.timestep += self.dt
         self.timestep += (
-            self._lows_power
-            * self._config["reactivity"]
-            * self._config["speed"]
-            * 1000000000.0
+            self._lows_power * self.config.reactivity * self.config.speed * 1000000000.0
         )
         self.last_time = time.time_ns()
 
         t1 = self.time(
-            self._config["speed"] * self._config["sway"],
+            self.config.speed * self.config.sway,
             timestep=self.timestep,
         )
         t2 = self.time(
-            self._config["speed"] * self._config["chop"],
+            self.config.speed * self.config.chop,
             timestep=self.timestep,
         )
         t3 = self.time(
-            self._config["speed"] * self._config["chop"]
-            + self._lows_power * self._config["reactivity"]
+            self.config.speed * self.config.chop
+            + self._lows_power * self.config.reactivity
         )
 
         h = np.copy(self.i)
         np.add(h, t3 * self.pc, h)
         np.divide(h, self.pc, h)
-        np.multiply(h, self._config["stretch"], h)
-        np.mod(h, self._config["stretch"] / 10, h)
+        np.multiply(h, self.config.stretch, h)
+        np.mod(h, self.config.stretch / 10, h)
         np.add(h, self.i1, h)
         np.add(h, self.sin(t1), h)
         v = np.copy(h)

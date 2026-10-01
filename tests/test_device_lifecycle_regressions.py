@@ -271,7 +271,3 @@ def test_govee_second_deactivate_does_not_release_socket_again() -> None:
         device.deactivate()
         device.deactivate()
     server.close.assert_called_once()
-
-
-def test_unextended_schema_returns_own_schema() -> None:
-    assert Fire.schema(extended=False) is Fire.CONFIG_SCHEMA
