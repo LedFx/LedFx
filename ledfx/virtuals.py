@@ -13,7 +13,7 @@ from ledfx.configuration.models import (
     validate_dict,
 )
 from ledfx.configuration.presets import preset_config
-from ledfx.effects import DummyEffect
+from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
     MAX_FREQ,
@@ -636,26 +636,25 @@ class Virtual:
             self.clear_handle = None
 
     def clear_transition_effect(self):
-        if self._transition_effect is not None:
-            # Save effect_id before deactivating (in case deactivate clears it)
-            effect_id = getattr(self._transition_effect, "id", None)
-            self._transition_effect._deactivate()
-            # CRITICAL: Remove effect from registry to allow garbage collection
-            # Only destroy if it has an ID (DummyEffect doesn't have one)
-            if effect_id is not None:
-                self._ledfx.effects.destroy(effect_id)
-        self._transition_effect = None
+        effect, self._transition_effect = self._transition_effect, None
+        self._discard_effect(effect)
 
     def clear_active_effect(self):
-        if self._active_effect is not None:
-            # Save effect_id before deactivating (in case deactivate clears it)
-            effect_id = getattr(self._active_effect, "id", None)
-            self._active_effect._deactivate()
-            # CRITICAL: Remove effect from registry to allow garbage collection
-            # Only destroy if it has an ID (DummyEffect doesn't have one)
-            if effect_id is not None:
-                self._ledfx.effects.destroy(effect_id)
-        self._active_effect = None
+        effect, self._active_effect = self._active_effect, None
+        self._discard_effect(effect)
+
+    def _discard_effect(self, effect: Effect | DummyEffect | None) -> None:
+        # The slot is already empty, so a failure here cannot wedge the virtual.
+        if effect is None:
+            return
+        # Save effect_id before deactivating (in case deactivate clears it)
+        effect_id = getattr(effect, "id", None)
+        effect._deactivate()
+        # CRITICAL: Remove effect from registry to allow garbage collection
+        # Only destroy if it has an ID (DummyEffect doesn't have one), and only
+        # this effect's entry: ids are reused once destroyed.
+        if effect_id is not None and self._ledfx.effects.get(effect_id) is effect:
+            self._ledfx.effects.destroy(effect_id)
 
     def clear_frame(self):
         """
