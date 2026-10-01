@@ -1282,7 +1282,7 @@ requires-dist = [
     { name = "rpi-ws281x", marker = "sys_platform == 'linux'", specifier = ">=4.3.0" },
     { name = "sacn", specifier = ">=1.9.0" },
     { name = "samplerate-ledfx", specifier = ">=0.2.3" },
-    { name = "sentry-sdk", specifier = ">=1.40.4" },
+    { name = "sentry-sdk", specifier = ">=2.0.0" },
     { name = "sounddevice", specifier = ">=0.4.6" },
     { name = "stupidartnet", specifier = ">=1.6.0,<2.0.0" },
     { name = "typing-extensions", specifier = ">=4.4" },
