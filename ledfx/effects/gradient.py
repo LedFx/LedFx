@@ -35,7 +35,7 @@ class GradientEffect(Effect):
 
     _gradient_curve = None
     _gradient_roll_counter: float = 0
-    _gradient_override: "Optional[str]" = None  # venue colour override
+    _gradient_override: str | None = None  # venue colour override
 
     def _comb(self, N, k):
         N = int(N)
@@ -123,7 +123,7 @@ class GradientEffect(Effect):
         gradient_src = (
             self._gradient_override
             if self._gradient_override is not None
-            else self._config["gradient"]
+            else self.config.gradient
         )
         if (
             self._gradient_curve is None  # Uninitialized gradient
@@ -145,9 +145,7 @@ class GradientEffect(Effect):
         """Restore the original gradient from config."""
         with self.lock:
             self._gradient_override = None
-            self._gradient_curve = (
-                None  # force rebuild from config on next frame
-            )
+            self._gradient_curve = None  # force rebuild from config on next frame
 
     def roll_gradient(self):
         if self.config.gradient_roll == 0:

@@ -146,10 +146,10 @@ class Virtual:
 
         # Color override: when set, overpaints assembled_frame before flush.
         # Effects keep running in the background; override is instant on/off.
-        self._color_override: Optional[str] = None
-        self._color_override_frame: Optional[np.ndarray] = None
+        self._color_override: str | None = None
+        self._color_override_frame: np.ndarray | None = None
         # For gradient overrides: 1024-entry LUT sampled by per-pixel hue.
-        self._color_override_lut: Optional[np.ndarray] = None
+        self._color_override_lut: np.ndarray | None = None
 
         self._debug_flush_total = 0.0
         self._debug_last_report = time.perf_counter()
@@ -757,14 +757,15 @@ class Virtual:
             - gradient_lut: 1024×3 float array sampled uniformly 0→1, or None for
               solid colors. Used at render time: per-pixel hue → LUT index → color.
         """
-        if self._color_override is None or self.pixel_count == 0:
+        n = self.pixel_count
+        if self._color_override is None or not n:
             return None, None
 
         from ledfx.color import RGB, Gradient, parse_gradient
 
         try:
             parsed = parse_gradient(self._color_override)
-        except Exception:
+        except ValueError:
             _LOGGER.warning(
                 "Virtual %s: invalid color override '%s', using white",
                 self.id,
@@ -772,16 +773,14 @@ class Virtual:
             )
             parsed = RGB(255, 255, 255)
 
-        n = self.pixel_count
-
         if isinstance(parsed, RGB):
-            spatial = np.tile(
-                [parsed.red, parsed.green, parsed.blue], (n, 1)
-            ).astype(float)
+            spatial = np.tile([parsed.red, parsed.green, parsed.blue], (n, 1)).astype(
+                float
+            )
             return spatial, None  # solid colour: no LUT needed
 
         # Gradient: build spatial frame (for static pad preview) + LUT
-        def _sample_hex(gradient, pos):
+        def _sample_hex(gradient: Gradient, pos: float) -> tuple[int, int, int]:
             hex_c = gradient.sample(pos)
             return (
                 int(hex_c[1:3], 16),
@@ -931,9 +930,7 @@ class Virtual:
                                 # Solid colour override: tint by per-pixel luminance so the
                                 # effect's brightness pattern (beats, pulses) is preserved.
                                 luminance = (
-                                    np.max(
-                                        self.assembled_frame, axis=1, keepdims=True
-                                    )
+                                    np.max(self.assembled_frame, axis=1, keepdims=True)
                                     / 255.0
                                 )
                                 self.assembled_frame = (

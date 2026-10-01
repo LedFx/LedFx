@@ -59,6 +59,7 @@ from ledfx.utils import (
     resize_pixels,
     shape_to_fit_len,
 )
+from ledfx.venues import VenueManager
 from ledfx.virtuals import Virtuals
 
 _LOGGER = logging.getLogger(__name__)
@@ -75,6 +76,8 @@ class LedFxCore:
         4: "Restart request via API - Restarting.",
         5: "Shutdown request via CI testing flag - Shutting down.",
     }
+    # Set on first use by the venue API endpoints (ledfx/api/venue*.py).
+    venues: VenueManager
 
     def __init__(
         self,

@@ -1,15 +1,19 @@
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager
+from ledfx.venues import VenueManager, venue_payload
+
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _ensure_manager(ledfx) -> VenueManager:
+def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
     if not hasattr(ledfx, "venues"):
         ledfx.venues = VenueManager(ledfx)
     return ledfx.venues
@@ -24,7 +28,7 @@ class VenuesEndpoint(RestEndpoint):
         """List all venues."""
         mgr = _ensure_manager(self._ledfx)
         venues = mgr.list_venues()
-        result = [{"id": vid, **cfg} for vid, cfg in venues.items()]
+        result = [venue_payload(vid, cfg) for vid, cfg in venues.items()]
         return await self.bare_request_success({"venues": result})
 
     async def post(self, request: web.Request) -> web.Response:
@@ -52,13 +56,13 @@ class VenuesEndpoint(RestEndpoint):
 
         try:
             mgr = _ensure_manager(self._ledfx)
-            venue = mgr.create(name=name, rows=rows, cols=cols)
-        except Exception as e:
+            venue_id, venue = mgr.create(name=name, rows=rows, cols=cols)
+        except Exception as e:  # noqa: BLE001 - reported to the client, as before
             _LOGGER.warning("Failed to create venue: %s", e)
             return await self.invalid_request(str(e))
 
         return await self.request_success(
             type="success",
             message=f"Created venue '{name}'",
-            data={"venue": venue},
+            data={"venue": venue_payload(venue_id, venue)},
         )

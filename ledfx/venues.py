@@ -29,36 +29,42 @@ from __future__ import annotations
 
 import colorsys
 import logging
-from typing import Optional
+from typing import TYPE_CHECKING
 
-from ledfx.config import save_config
+from ledfx.configuration.models import Venue, VenueColorPads, VenuePad
 from ledfx.utils import generate_id
+
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _hsl_auto_palette(n: int) -> list[dict]:
-    """Return *n* evenly-spaced hue colors as pad dicts."""
+def _hsl_auto_palette(n: int) -> list[VenuePad]:
+    """Return *n* evenly-spaced hue colors as pads."""
     pads = []
     for i in range(n):
         hue = i / n
         r, g, b = colorsys.hls_to_rgb(hue, 0.5, 1.0)
-        hex_color = "#{:02x}{:02x}{:02x}".format(
-            int(r * 255), int(g * 255), int(b * 255)
-        )
-        pads.append({"color": hex_color})
+        hex_color = f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
+        pads.append(VenuePad(color=hex_color))
     return pads
+
+
+def venue_payload(venue_id: str, venue: Venue) -> dict[str, object]:
+    """A venue as the API shows it: its config plus its ID."""
+    return {"id": venue_id, **venue.model_dump()}
 
 
 class VenueManager:
     """Manages venues in LedFx config."""
 
-    def __init__(self, ledfx):
+    def __init__(self, ledfx: LedFxCore) -> None:
         self._ledfx = ledfx
 
     @property
-    def _venues(self) -> dict:
-        return self._ledfx.config.setdefault("venues", {})
+    def _venues(self) -> dict[str, Venue]:
+        return self._ledfx.config.venues
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -67,27 +73,24 @@ class VenueManager:
     def _find_venue_for_virtual(self, virtual_id: str) -> str | None:
         """Return the venue ID that owns *virtual_id*, or None."""
         for vid, cfg in self._venues.items():
-            if virtual_id in cfg.get("virtual_ids", []):
+            if virtual_id in cfg.virtual_ids:
                 return vid
         return None
 
-    def _save(self):
-        save_config(
-            config=self._ledfx.config,
-            config_dir=self._ledfx.config_dir,
-        )
+    def _save(self) -> None:
+        self._ledfx.config_store.request_save()
 
     # ------------------------------------------------------------------
     # CRUD
     # ------------------------------------------------------------------
 
-    def list_venues(self) -> dict:
+    def list_venues(self) -> dict[str, Venue]:
         return dict(self._venues)
 
-    def get(self, venue_id: str) -> dict | None:
+    def get(self, venue_id: str) -> Venue | None:
         return self._venues.get(venue_id)
 
-    def create(self, name: str, rows: int = 4, cols: int = 4) -> dict:
+    def create(self, name: str, rows: int = 4, cols: int = 4) -> tuple[str, Venue]:
         """Create a new venue with an auto-filled color pad grid."""
         venue_id = generate_id(name)
         # Deduplicate ID
@@ -98,21 +101,18 @@ class VenueManager:
             idx += 1
 
         n_pads = rows * cols
-        venue_cfg = {
-            "name": name,
-            "virtual_ids": [],
-            "color_pads": {
-                "rows": rows,
-                "cols": cols,
-                "pads": _hsl_auto_palette(n_pads),
-            },
-        }
+        venue_cfg = Venue(
+            name=name,
+            color_pads=VenueColorPads(
+                rows=rows, cols=cols, pads=_hsl_auto_palette(n_pads)
+            ),
+        )
         self._venues[venue_id] = venue_cfg
         self._save()
         _LOGGER.info("Created venue '%s' (%s)", name, venue_id)
-        return {"id": venue_id, **venue_cfg}
+        return venue_id, venue_cfg
 
-    def update(self, venue_id: str, data: dict) -> dict:
+    def update(self, venue_id: str, data: dict[str, object]) -> Venue:
         """Update name and/or color_pads config for a venue.
 
         Supported keys in *data*: ``name``, ``color_pads``.
@@ -124,22 +124,30 @@ class VenueManager:
         if cfg is None:
             raise KeyError(f"Venue '{venue_id}' not found")
 
+        changes: dict[str, object] = {}
+
         if "name" in data:
-            cfg["name"] = str(data["name"])
+            changes["name"] = str(data["name"])
 
         if "color_pads" in data:
             cp = data["color_pads"]
-            rows = int(cp.get("rows", cfg["color_pads"]["rows"]))
-            cols = int(cp.get("cols", cfg["color_pads"]["cols"]))
+            if not isinstance(cp, dict):
+                raise ValueError('"color_pads" must be an object')
+            rows = int(cp.get("rows", cfg.color_pads.rows))
+            cols = int(cp.get("cols", cfg.color_pads.cols))
             n_pads = rows * cols
             if "pads" in cp and len(cp["pads"]) == n_pads:
                 pads = list(cp["pads"])
             else:
                 pads = _hsl_auto_palette(n_pads)
-            cfg["color_pads"] = {"rows": rows, "cols": cols, "pads": pads}
+            changes["color_pads"] = {"rows": rows, "cols": cols, "pads": pads}
 
+        # Validate the whole venue before swapping it in, so a bad PUT
+        # (pydantic.ValidationError) leaves the stored venue untouched.
+        cfg = Venue.model_validate({**cfg.model_dump(), **changes})
+        self._venues[venue_id] = cfg
         self._save()
-        return {"id": venue_id, **cfg}
+        return cfg
 
     def delete(self, venue_id: str) -> bool:
         """Delete a venue and clear any active overrides on its virtuals."""
@@ -147,7 +155,7 @@ class VenueManager:
         if cfg is None:
             return False
         # Clear any active color overrides
-        for vid in cfg.get("virtual_ids", []):
+        for vid in cfg.virtual_ids:
             v = self._ledfx.virtuals.get(vid)
             if v is not None:
                 v.clear_color_override()
@@ -159,7 +167,7 @@ class VenueManager:
     # Virtual membership
     # ------------------------------------------------------------------
 
-    def add_virtual(self, venue_id: str, virtual_id: str) -> dict:
+    def add_virtual(self, venue_id: str, virtual_id: str) -> Venue:
         """Add *virtual_id* to *venue_id* (exclusive membership enforced)."""
         cfg = self._venues.get(venue_id)
         if cfg is None:
@@ -174,28 +182,28 @@ class VenueManager:
                 f"Virtual '{virtual_id}' already belongs to venue '{existing}'"
             )
 
-        if virtual_id not in cfg["virtual_ids"]:
-            cfg["virtual_ids"].append(virtual_id)
+        if virtual_id not in cfg.virtual_ids:
+            cfg.virtual_ids.append(virtual_id)
             self._save()
 
-        return {"id": venue_id, **cfg}
+        return cfg
 
-    def remove_virtual(self, venue_id: str, virtual_id: str) -> dict:
+    def remove_virtual(self, venue_id: str, virtual_id: str) -> Venue:
         """Remove *virtual_id* from *venue_id* and clear its override."""
         cfg = self._venues.get(venue_id)
         if cfg is None:
             raise KeyError(f"Venue '{venue_id}' not found")
 
-        if virtual_id in cfg["virtual_ids"]:
-            cfg["virtual_ids"].remove(virtual_id)
+        if virtual_id in cfg.virtual_ids:
+            cfg.virtual_ids.remove(virtual_id)
             v = self._ledfx.virtuals.get(virtual_id)
             if v is not None:
                 v.clear_color_override()
             self._save()
 
-        return {"id": venue_id, **cfg}
+        return cfg
 
-    def cleanup_virtual(self, virtual_id: str):
+    def cleanup_virtual(self, virtual_id: str) -> None:
         """Remove *virtual_id* from whichever venue owns it (called on virtual delete)."""
         owner = self._find_venue_for_virtual(virtual_id)
         if owner:
@@ -205,33 +213,31 @@ class VenueManager:
     # Override helpers
     # ------------------------------------------------------------------
 
-    def activate_override(self, venue_id: str, pad_index: int):
+    def activate_override(self, venue_id: str, pad_index: int) -> None:
         """Apply the color/gradient from pad *pad_index* to all venue virtuals."""
         cfg = self._venues.get(venue_id)
         if cfg is None:
             raise KeyError(f"Venue '{venue_id}' not found")
 
-        pads = cfg["color_pads"]["pads"]
+        pads = cfg.color_pads.pads
         if pad_index < 0 or pad_index >= len(pads):
-            raise IndexError(
-                f"Pad index {pad_index} out of range (0-{len(pads) - 1})"
-            )
+            raise IndexError(f"Pad index {pad_index} out of range (0-{len(pads) - 1})")
 
         pad = pads[pad_index]
-        color_or_gradient = pad.get("gradient") or pad.get("color", "#ffffff")
+        color_or_gradient = pad.gradient or pad.color or "#ffffff"
 
-        for vid in cfg["virtual_ids"]:
+        for vid in cfg.virtual_ids:
             v = self._ledfx.virtuals.get(vid)
             if v is not None:
                 v.set_color_override(color_or_gradient)
 
-    def clear_override(self, venue_id: str):
+    def clear_override(self, venue_id: str) -> None:
         """Clear the color override from all virtuals in *venue_id*."""
         cfg = self._venues.get(venue_id)
         if cfg is None:
             raise KeyError(f"Venue '{venue_id}' not found")
 
-        for vid in cfg["virtual_ids"]:
+        for vid in cfg.virtual_ids:
             v = self._ledfx.virtuals.get(vid)
             if v is not None:
                 v.clear_color_override()

@@ -1,15 +1,20 @@
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.venues import VenueManager
+from ledfx.venues import VenueManager, venue_payload
+
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def _ensure_manager(ledfx) -> VenueManager:
+def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
     if not hasattr(ledfx, "venues"):
         ledfx.venues = VenueManager(ledfx)
     return ledfx.venues
@@ -20,17 +25,15 @@ class VenueEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/venues/{venue_id}"
 
-    async def get(self, venue_id) -> web.Response:
+    async def get(self, venue_id: str) -> web.Response:
         """Get a venue by ID."""
         mgr = _ensure_manager(self._ledfx)
         cfg = mgr.get(venue_id)
         if cfg is None:
             return await self.invalid_request(f"Venue '{venue_id}' not found")
-        return await self.bare_request_success(
-            {"venue": {"id": venue_id, **cfg}}
-        )
+        return await self.bare_request_success({"venue": venue_payload(venue_id, cfg)})
 
-    async def put(self, venue_id, request: web.Request) -> web.Response:
+    async def put(self, venue_id: str, request: web.Request) -> web.Response:
         """Update venue name, grid dimensions, or manage virtual membership.
 
         Supported body variants:
@@ -67,7 +70,7 @@ class VenueEndpoint(RestEndpoint):
                 return await self.request_success(
                     type="success",
                     message=f"Added virtual '{virtual_id}' to venue '{venue_id}'",
-                    data={"venue": venue},
+                    data={"venue": venue_payload(venue_id, venue)},
                 )
 
             elif action == "remove_virtual":
@@ -80,7 +83,7 @@ class VenueEndpoint(RestEndpoint):
                 return await self.request_success(
                     type="success",
                     message=f"Removed virtual '{virtual_id}' from venue '{venue_id}'",
-                    data={"venue": venue},
+                    data={"venue": venue_payload(venue_id, venue)},
                 )
 
             else:
@@ -89,18 +92,20 @@ class VenueEndpoint(RestEndpoint):
                 return await self.request_success(
                     type="success",
                     message=f"Updated venue '{venue_id}'",
-                    data={"venue": venue},
+                    data={"venue": venue_payload(venue_id, venue)},
                 )
 
         except KeyError as e:
             return await self.invalid_request(str(e))
+        except ValidationError as err:
+            return await self.validation_error(err)
         except ValueError as e:
             return await self.invalid_request(str(e))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - reported to the client, as before
             _LOGGER.warning("Venue update error: %s", e)
             return await self.invalid_request(str(e))
 
-    async def delete(self, venue_id) -> web.Response:
+    async def delete(self, venue_id: str) -> web.Response:
         """Delete a venue."""
         mgr = _ensure_manager(self._ledfx)
         ok = mgr.delete(venue_id)

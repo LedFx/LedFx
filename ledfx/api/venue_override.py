@@ -1,15 +1,19 @@
 import logging
 from json import JSONDecodeError
+from typing import TYPE_CHECKING
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.venues import VenueManager
 
+if TYPE_CHECKING:
+    from ledfx.core import LedFxCore
+
 _LOGGER = logging.getLogger(__name__)
 
 
-def _ensure_manager(ledfx) -> VenueManager:
+def _ensure_manager(ledfx: "LedFxCore") -> VenueManager:
     if not hasattr(ledfx, "venues"):
         ledfx.venues = VenueManager(ledfx)
     return ledfx.venues
@@ -24,7 +28,7 @@ class VenueOverrideEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/venues/{venue_id}/override"
 
-    async def post(self, venue_id, request: web.Request) -> web.Response:
+    async def post(self, venue_id: str, request: web.Request) -> web.Response:
         """Activate a color pad override on all virtuals in the venue.
 
         Body::
@@ -54,7 +58,7 @@ class VenueOverrideEndpoint(RestEndpoint):
             return await self.invalid_request(str(e))
         except IndexError as e:
             return await self.invalid_request(str(e))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001 - reported to the client, as before
             _LOGGER.warning("Override activation error: %s", e)
             return await self.invalid_request(str(e))
 
@@ -63,7 +67,7 @@ class VenueOverrideEndpoint(RestEndpoint):
             message=f"Color override activated (pad {pad_index}) on venue '{venue_id}'",
         )
 
-    async def delete(self, venue_id) -> web.Response:
+    async def delete(self, venue_id: str) -> web.Response:
         """Clear the color override — running effects immediately resume."""
         mgr = _ensure_manager(self._ledfx)
         try:
