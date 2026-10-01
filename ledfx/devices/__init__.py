@@ -127,6 +127,11 @@ class Device(BaseRegistry):
                 self._config = old_config
                 raise
 
+            # The pixel buffer is sized on activate; resize a live one here so
+            # segment writes and clears match the new pixel count.
+            if self._pixels is not None and len(self._pixels) != self.pixel_count:
+                self._pixels = np.zeros((self.pixel_count, 3))
+
             _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
             for virtual_id in self._ledfx.virtuals:

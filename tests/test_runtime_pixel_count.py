@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
+from ledfx.devices import Device
 from ledfx.devices.e131 import E131Device
 
 
@@ -34,3 +35,16 @@ def test_e131_pixel_count_change_resizes_channels() -> None:
         assert sender.call_count == 2
         sender.return_value.activate_output.assert_called_with(2)
         device.flush(np.zeros((200, 3)))
+
+
+def test_pixel_count_change_resizes_device_buffer() -> None:
+    # LEDFX-V2-REL-1WD: _pixels kept its old length, so clearing a segment
+    # sized for the new count raised a broadcast error.
+    device = _e131(1)
+    Device.activate(device)  # the buffer only; no sACN sender
+    device.update_config({"pixel_count": 4})
+
+    assert device._pixels is not None
+    assert device._pixels.shape == (4, 3)
+    device._segments = [["v", 0, 3]]
+    device.clear_virtual_segments("v")
