@@ -227,6 +227,10 @@ class ConfigEndpoint(RestEndpoint):
                     )
             if melbanks and getattr(self._ledfx, "audio", None) is not None:
                 self._ledfx.audio.melbanks.update_config(cfg.melbanks.model_dump())
+            if "now_playing_enabled" in patch and hasattr(
+                self._ledfx, "reconcile_now_playing_runtime"
+            ):
+                self._ledfx.reconcile_now_playing_runtime("config_updated")
             self._ledfx.events.fire_event(
                 BaseConfigUpdateEvent({**patch, **({"audio": audio} if audio else {})})
             )

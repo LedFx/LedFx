@@ -193,7 +193,7 @@ class LedFxCore:
         Same shape as the sendspin reconcile: callers only signal *when* to
         re-check, never *what* to do.
         """
-        enabled = self.config.get("now_playing_enabled", False)
+        enabled = self.config.now_playing_enabled
         providers = (self._smtc_now_playing, self._mpris_now_playing)
 
         for provider in providers:
@@ -204,7 +204,7 @@ class LedFxCore:
                     provider.start()
                 else:
                     provider.stop()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "now_playing reconcile (%s) failed for %s: %s",
                     trigger,
@@ -215,7 +215,7 @@ class LedFxCore:
         if not enabled and getattr(self, "now_playing", None) is not None:
             try:
                 self.now_playing.purge()
-            except Exception as exc:
+            except Exception as exc:  # noqa: BLE001
                 _LOGGER.warning(
                     "now_playing reconcile (%s): purge failed: %s",
                     trigger,

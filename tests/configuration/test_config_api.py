@@ -94,6 +94,14 @@ async def test_put_restarts_only_when_a_restart_field_changed() -> None:
     ledfx.loop.call_soon_threadsafe.assert_called_once()
 
 
+async def test_put_now_playing_enabled_reconciles_without_restart() -> None:
+    endpoint, ledfx = _endpoint()
+    await endpoint.put(_request("PUT", {"now_playing_enabled": True}))
+    assert ledfx.config.now_playing_enabled is True
+    ledfx.reconcile_now_playing_runtime.assert_called_once_with("config_updated")
+    ledfx.loop.call_soon_threadsafe.assert_not_called()
+
+
 async def test_get_includes_runtime_keys() -> None:
     endpoint, _ = _endpoint()
     request = make_mocked_request("GET", "/api/config")

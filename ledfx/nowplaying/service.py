@@ -232,10 +232,7 @@ class NowPlayingService:
             )
             self._apply_track_text_to_virtuals()
             self._emit_song_detected()
-            if (
-                not has_own_artwork
-                and source_id not in _SOURCES_WITH_OWN_ARTWORK
-            ):
+            if not has_own_artwork and source_id not in _SOURCES_WITH_OWN_ARTWORK:
                 self._art_resolver.on_track_changed(metadata)
         elif self._timing_diverged(metadata):
             # Same track, but a client extrapolating from the last anchor would
@@ -265,13 +262,10 @@ class NowPlayingService:
             # Paused: the client's position is frozen, so any real movement
             # is a seek.
             return (
-                abs(metadata.position - self._emitted_position)
-                > _POSITION_DRIFT_PAUSED
+                abs(metadata.position - self._emitted_position) > _POSITION_DRIFT_PAUSED
             )
 
-        predicted = self._emitted_position + (
-            time.time() - self._emitted_timestamp
-        )
+        predicted = self._emitted_position + (time.time() - self._emitted_timestamp)
         return abs(metadata.position - predicted) > _POSITION_DRIFT_PLAYING
 
     def set_artwork_url(
@@ -533,9 +527,7 @@ class NowPlayingService:
             try:
                 os.remove(os.path.join(art_dir, name))
             except OSError as exc:
-                _LOGGER.warning(
-                    "Could not remove cached artwork %s: %s", name, exc
-                )
+                _LOGGER.warning("Could not remove cached artwork %s: %s", name, exc)
 
     def get_current(self) -> NowPlayingState:
         """Return the current Now Playing state.

@@ -8,8 +8,15 @@ Artwork is NOT fetched here; that is handled by the album-art resolver.
 import asyncio
 import logging
 import sys
+from typing import TYPE_CHECKING
 
 from ledfx.nowplaying.models import TrackMetadata
+
+if TYPE_CHECKING:
+    # Windows-only projection; unresolvable elsewhere, which Pyrefly tolerates.
+    from winrt.windows.media.control import (
+        GlobalSystemMediaTransportControlsSession as Session,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,7 +74,7 @@ class SMTCNowPlayingProvider:
         self._init_task.add_done_callback(self._log_init_result)
 
     @staticmethod
-    def _log_init_result(task):
+    def _log_init_result(task: asyncio.Future[None]) -> None:
         if task.cancelled():
             return
         exc = task.exception()
@@ -146,10 +153,13 @@ class SMTCNowPlayingProvider:
         # now-playing while the music keeps playing, so keep the existing
         # session as long as it still qualifies. If it has gone away - the app
         # closed - it fails the same test and we fall through and clear.
-        if session is None and self._session is not None:
-            if await self._looks_like_music(self._session, "<attached>"):
-                _LOGGER.debug("SMTC: current session is not music, staying attached")
-                return
+        if (
+            session is None
+            and self._session is not None
+            and await self._looks_like_music(self._session, "<attached>")
+        ):
+            _LOGGER.debug("SMTC: current session is not music, staying attached")
+            return
 
         await self._attach_to_session(session)
         if session is None:
@@ -214,7 +224,7 @@ class SMTCNowPlayingProvider:
 
         try:
             app_id = current.source_app_user_model_id or "<unknown>"
-        except Exception:
+        except Exception:  # noqa: BLE001
             app_id = "<unknown>"
 
         if not await self._looks_like_music(current, app_id):
@@ -223,7 +233,7 @@ class SMTCNowPlayingProvider:
         _LOGGER.info("SMTC: using media session %s", app_id)
         return current
 
-    async def _looks_like_music(self, session, app_id):
+    async def _looks_like_music(self, session: "Session", app_id: str) -> bool:
         """Whether a session carries enough to be a track worth reporting.
 
         Deliberately generous: a session qualifies on an artist *or* a real
@@ -238,7 +248,7 @@ class SMTCNowPlayingProvider:
                 session.try_get_media_properties_async(),
                 timeout=_PROPS_READ_TIMEOUT,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             _LOGGER.warning("SMTC: timed out reading properties of %s", app_id)
             return False
         except Exception:
@@ -278,11 +288,11 @@ class SMTCNowPlayingProvider:
         # whatever just grabbed the controls is not necessarily the music.
         asyncio.run_coroutine_threadsafe(self._select_and_attach(), self._loop)
 
-    def _on_timeline_changed(self, session, args):
+    def _on_timeline_changed(self, session: object, args: object) -> None:
         """Fires as position advances and on seek."""
         self._schedule_timing_push()
 
-    def _on_playback_info_changed(self, session, args):
+    def _on_playback_info_changed(self, session: object, args: object) -> None:
         """Fires on play / pause / stop."""
         self._schedule_timing_push()
 
@@ -415,7 +425,7 @@ class SMTCNowPlayingProvider:
         now_playing.set_artwork_bytes(SOURCE_ID, art_bytes, art_content_type)
         _LOGGER.debug("SMTC: embedded artwork applied (%d bytes)", len(art_bytes))
 
-    async def _read_thumbnail(self, props):
+    async def _read_thumbnail(self, props: object):
         """Read embedded album art, bounded so it can never strand metadata.
 
         The WinRT stream calls are awaited on LedFx's loop from a WinRT
@@ -432,7 +442,7 @@ class SMTCNowPlayingProvider:
                 asyncio.to_thread(self._read_thumbnail_blocking, props),
                 timeout=_ARTWORK_READ_TIMEOUT,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             _LOGGER.warning(
                 "SMTC: timed out reading embedded artwork; "
                 "falling back to album-art lookup"
@@ -449,7 +459,7 @@ class SMTCNowPlayingProvider:
         """Bridge into a private event loop on a worker thread."""
         return asyncio.run(self._read_thumbnail_inner(props))
 
-    async def _read_thumbnail_inner(self, props):
+    async def _read_thumbnail_inner(self, props: object):
         """Actual embedded-artwork read. See :meth:`_read_thumbnail`."""
         stream = None
         reader = None
@@ -481,7 +491,7 @@ class SMTCNowPlayingProvider:
                 try:
                     if closeable is not None:
                         closeable.close()
-                except Exception:
+                except Exception:  # noqa: BLE001, S110
                     pass
 
     async def _push_timing(self):
@@ -517,7 +527,7 @@ class SMTCNowPlayingProvider:
             has_own_artwork=True,
         )
 
-    async def _read_timing(self, session=None):
+    async def _read_timing(self, session: "Session | None" = None):
         """Playback timing, read off the loop.
 
         The WinRT calls are synchronous; running them on LedFx's event loop
@@ -532,14 +542,14 @@ class SMTCNowPlayingProvider:
                 asyncio.to_thread(self._read_timing_blocking, session),
                 timeout=_TIMING_READ_TIMEOUT,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             _LOGGER.warning("SMTC: timed out reading playback timing")
             return None, None, None
         except Exception:
             _LOGGER.debug("SMTC: timing unavailable", exc_info=True)
             return None, None, None
 
-    def _read_timing_blocking(self, session=None):
+    def _read_timing_blocking(self, session: "Session | None" = None):
         """Best-effort playback timing from the session we already hold.
 
         Deliberately opportunistic: read once, here, off the session object this

@@ -39,9 +39,7 @@ class InfoEndpoint(RestEndpoint):
                 # only worth showing on a platform that has a provider, and
                 # clients must not assume the feature is running.
                 "now_playing": sys.platform in _NOW_PLAYING_PLATFORMS,
-                "now_playing_enabled": bool(
-                    self._ledfx.config.get("now_playing_enabled", False)
-                ),
+                "now_playing_enabled": self._ledfx.config.now_playing_enabled,
             },
         }
         return await self.bare_request_success(response)
