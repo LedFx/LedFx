@@ -4,6 +4,7 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.virtuals_tools import OneshotRequest, refuse_post_tool
 from ledfx.color import parse_color, validate_color
 from ledfx.effects.oneshots.oneshot import Flash
 
@@ -36,30 +37,14 @@ class VirtualToolsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         tool = data.get("tool")
+        if refused := await refuse_post_tool(self, tool, TOOLS):
+            return refused
 
-        if tool is None:
-            return await self.invalid_request(
-                'Required attribute "tool" was not provided'
-            )
-
-        if tool not in TOOLS:
-            return await self.invalid_request(f"Tool {tool} is not in {TOOLS}")
-
-        if tool == "oneshot":
-            color = parse_color(validate_color(data.get("color", "white")))
-            ramp = data.get("ramp", 0)
-            hold = data.get("hold", 0)
-            fade = data.get("fade", 0)
-            brightness = min(1, max(0, data.get("brightness", 1)))
-
-            # iterate through all virtuals and apply oneshot
-            for virtual_id in self._ledfx.virtuals:
-                virtual = self._ledfx.virtuals.get(virtual_id)
-                if virtual is not None:
-                    virtual.add_oneshot(Flash(color, ramp, hold, fade, brightness))
-
-        effect_response = {}
-        effect_response["tool"] = tool
+        oneshot = OneshotRequest.model_validate(data)
+        for virtual_id in self._ledfx.virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if virtual is not None:
+                virtual.add_oneshot(oneshot.flash())
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)
@@ -88,10 +73,14 @@ class VirtualToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Required attribute for force_color, color was not provided"
                 )
+            try:
+                rgb = parse_color(validate_color(color))
+            except ValueError as e:
+                return await self.invalid_request(str(e))
             for virtual_id in self._ledfx.virtuals:
                 virtual = self._ledfx.virtuals.get(virtual_id)
                 if virtual.is_device == virtual.id:
-                    virtual.force_frame(parse_color(validate_color(color)))
+                    virtual.force_frame(rgb)
 
         if tool == "oneshot":
             # Disable all oneshot Flash if put request is sent.
