@@ -2,8 +2,10 @@
 
 import asyncio
 import logging
+from typing import NotRequired, TypedDict
 
 from aiohttp import web
+from zeroconf import ServiceStateChange, Zeroconf
 from zeroconf.asyncio import (
     AsyncServiceBrowser,
     AsyncServiceInfo,
@@ -21,6 +23,16 @@ _SENDSPIN_SERVICE_TYPE = "_sendspin-server._tcp.local."
 _DEFAULT_TIMEOUT = 3.0
 _MAX_TIMEOUT = 30.0
 _MIN_TIMEOUT = 0.1
+
+
+class DiscoveredServer(TypedDict):
+    """Sendspin server information returned by mDNS discovery."""
+
+    name: str
+    server_url: str
+    host: str
+    port: int
+    already_configured: NotRequired[bool]
 
 
 def _sendspin_available():
@@ -80,31 +92,35 @@ class SendspinDiscoverEndpoint(RestEndpoint):
             data={"servers": discovered},
         )
 
-    async def _discover(self, timeout: float) -> list:
+    async def _discover(self, timeout: float) -> list[DiscoveredServer]:
         """Browse mDNS for Sendspin servers and return a list of found entries."""
         import ipaddress
 
-        from zeroconf import ServiceStateChange
-
-        found: list[dict] = []
+        found: list[DiscoveredServer] = []
         found_names: set[str] = set()
         lock = asyncio.Lock()
-        pending_tasks: list[asyncio.Task] = []
+        pending_tasks: list[asyncio.Task[None]] = []
 
         aiozc = AsyncZeroconf()
         try:
 
-            async def _handle_service(zeroconf, service_type, name, state_change):
+            async def _handle_service(
+                zeroconf: Zeroconf,
+                service_type: str,
+                name: str,
+                state_change: ServiceStateChange,
+            ) -> None:
                 if state_change is not ServiceStateChange.Added:
                     return
                 info = AsyncServiceInfo(service_type, name)
-                result = await info.async_request(zeroconf, 3000)
-                if not result:
+                # False on timeout; an SRV record alone (hostname + port) is
+                # still usable through the hostname fallback below.
+                if not await info.async_request(zeroconf, 3000) and not info.server:
                     _LOGGER.debug("mDNS info request timed out for %s", name)
                     return
 
                 addresses = info.parsed_addresses()
-                host = None
+                host: str | None = None
                 for addr in addresses:
                     try:
                         ip = ipaddress.ip_address(addr)
@@ -127,7 +143,7 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                 port = info.port or 8927
                 # Read WebSocket path from TXT record (spec recommends /sendspin)
                 properties = info.decoded_properties or {}
-                path = properties.get("path", "/sendspin")
+                path = properties.get("path") or "/sendspin"
                 if not path.startswith("/"):
                     path = "/" + path
                 # Bracket IPv6 literals so the URL is valid (e.g. ws://[::1]:8927/…)
@@ -153,7 +169,12 @@ class SendspinDiscoverEndpoint(RestEndpoint):
                             }
                         )
 
-            def on_service_state_change(zeroconf, service_type, name, state_change):
+            def on_service_state_change(
+                zeroconf: Zeroconf,
+                service_type: str,
+                name: str,
+                state_change: ServiceStateChange,
+            ) -> None:
                 task = asyncio.ensure_future(
                     _handle_service(zeroconf, service_type, name, state_change)
                 )
