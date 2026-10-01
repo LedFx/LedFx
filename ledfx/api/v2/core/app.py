@@ -30,7 +30,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 
 V2_PREFIX = "/api/v2"
+# The contract version (info.version in the spec), not the LedFx release: bump it
+# by hand when the contract changes (minor for additions, major for breaks).
+API_VERSION = "2.0.0"
 BOUND_ROUTES_KEY: web.AppKey[list[BoundRoute]] = web.AppKey("v2_bound_routes")
+OPENAPI_KEY: web.AppKey[dict[str, object]] = web.AppKey("v2_openapi")
 
 Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
 
@@ -38,13 +42,21 @@ Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
 def mount_v2(app: web.Application, ledfx: "LedFxCore") -> None:
     """Bind every router and add its routes under /api/v2. Call before the
     app is frozen (HttpServer.start), after the plugin registries load."""
+    # Imported here: openapi.py imports V2_PREFIX from this module.
+    from ledfx.api.v2.core.openapi import build_openapi
+
     builtins, extensions = discover_routers()
     routes = [bind(spec) for router in builtins for spec in router.routes]
     check_unique(routes)  # a broken built-in router stops LedFx starting
+    # Built-ins first: their clash is a startup error, not an extension's fault.
+    build_openapi(routes, version=API_VERSION)
     for router in extensions:
         try:
             extra = [bind(spec) for spec in router.routes]
             check_unique([*routes, *extra])
+            # A component-name clash is an app-build failure too:
+            # a trial build finds it, so the extension is skipped, not fatal.
+            build_openapi([*routes, *extra], version=API_VERSION)
         except Exception:  # LedFx starts without the extension
             _LOGGER.exception("Skipping v2 extension router %r", router.tag)
             continue
@@ -63,6 +75,7 @@ def mount_v2(app: web.Application, ledfx: "LedFxCore") -> None:
 
     app[LEDFX_KEY] = ledfx
     app[BOUND_ROUTES_KEY] = routes
+    app[OPENAPI_KEY] = build_openapi(app[BOUND_ROUTES_KEY], version=API_VERSION)
     app.middlewares.append(error_middleware)
     origin_policy.ORIGIN_REFUSAL = _origin_refusal
 
