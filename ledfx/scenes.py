@@ -1,7 +1,7 @@
 import logging
 
-from ledfx.config import configs_match
 from ledfx.configuration.models import Scene, SceneVirtual
+from ledfx.configuration.presets import configs_match, filter_config_for_comparison
 from ledfx.events import SceneActivatedEvent, SceneDeletedEvent
 from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_default_config, generate_id
@@ -250,8 +250,11 @@ class Scenes:
                     return False
                 if getattr(current_effect, "type", None) != "singleColor":
                     return False
-                current_config = getattr(current_effect, "config", None) or {}
-                if current_config.get("color") != "#000000":
+                current_config = getattr(current_effect, "config", None)
+                if (
+                    filter_config_for_comparison(current_config).get("color")
+                    != "#000000"
+                ):
                     return False
 
             elif action == "activate":

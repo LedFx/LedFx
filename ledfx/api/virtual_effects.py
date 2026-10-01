@@ -100,8 +100,8 @@ def randomize_effect_config(
 ) -> dict[str, object]:
     """Randomize supported settings without guessing values for unknown fields.
 
-    Like the voluptuous version: booleans and choices always; numbers only for
-    coerced fields with both bounds (vol.All(vol.Coerce(...), vol.Range(...))).
+    Booleans and choices always; numbers only for coerced fields with both
+    bounds (CoercedInt/CoercedFloat with ge/le or gt/lt).
     Every value is checked against the field, so exclusive bounds and extra
     validators are respected.
     """
@@ -236,7 +236,7 @@ class EffectsEndpoint(RestEndpoint):
                 # a transition by creating a new effect.
                 # add color_blend and set to False in your effect to prevent effect recreation on color change
                 # leave as a switch or add to HIDDEN_KEYS
-                if virtual.active_effect.config.get("color_blend", True) and next(
+                if getattr(virtual.active_effect.config, "color_blend", True) and next(
                     (key for key in effect_config if "color" in key),
                     None,
                 ):
@@ -244,7 +244,7 @@ class EffectsEndpoint(RestEndpoint):
                         ledfx=self._ledfx,
                         type=effect_type,
                         config={
-                            **virtual.active_effect.config,
+                            **virtual.active_effect.config.as_dict(),
                             **effect_config,
                         },
                     )

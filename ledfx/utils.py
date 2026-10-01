@@ -3,7 +3,6 @@ import concurrent.futures
 import csv
 import datetime
 import importlib
-import inspect
 import io
 import ipaddress
 import logging
@@ -40,7 +39,6 @@ from typing import TYPE_CHECKING, ClassVar
 import netifaces
 import numpy as np
 import requests
-import voluptuous as vol
 from dotenv import load_dotenv
 from PIL import Image, ImageFont
 
@@ -704,53 +702,6 @@ def is_gap_device(device) -> bool:
     return device.id.startswith("gap-") and device.type == "dummy"
 
 
-def hasattr_explicit(cls, attr):
-    """
-    Returns True if the given object has explicitly declared an attribute,
-    False otherwise.
-
-    Args:
-            cls: The class or object to check for the attribute.
-            attr: The name of the attribute to check.
-
-    Returns:
-            bool: True if the attribute is explicitly declared, False otherwise.
-    """
-    try:
-        return getattr(cls, attr) != getattr(super(cls, cls), attr, None)
-    except AttributeError:
-        return False
-
-
-def getattr_explicit(cls, attr, *default):
-    """
-    Gets an explicit attribute from an object.
-
-    Args:
-            cls: The class or object to retrieve the attribute from.
-            attr: The name of the attribute to retrieve.
-            *default: Optional default value(s) to return if the attribute is not found.
-
-    Returns:
-            The value of the attribute if found, or the default value(s) if provided.
-
-    Raises:
-            AttributeError: If the attribute is not found and no default value is provided.
-            TypeError: If more than 3 arguments are provided as default values.
-    """
-    if len(default) > 1:
-        raise TypeError(
-            f"getattr_explicit expected at most 3 arguments, got {len(default) + 2}"
-        )
-
-    if hasattr_explicit(cls, attr):
-        return getattr(cls, attr, default)
-    if default:
-        return default[0]
-
-    raise AttributeError(f"type object '{cls.__name__}' has no attribute '{attr}'.")
-
-
 class UserDefaultCollection(MutableMapping):
     """
     A collection of default values and user defined values.
@@ -850,8 +801,6 @@ class BaseRegistry(ABC):
         @Effect.no_registration
     """
 
-    _schema_attr = "CONFIG_SCHEMA"
-    _auto_config_model: ClassVar["type[PluginConfig] | None"] = None
     # Keys whose valid choices come from this machine (serial ports). At startup a
     # stored value that is not available here skips the plugin, as before, instead
     # of being reset to the default and later persisted.
@@ -859,43 +808,10 @@ class BaseRegistry(ABC):
 
     @classmethod
     def config_model(cls) -> "type[PluginConfig]":
-        """The pydantic model for this class's config.
-
-        Uses the class's own ``Config`` when declared (layers 10-12); otherwise
-        auto-converts the voluptuous CONFIG_SCHEMA of the classes in the MRO that
-        have no declared Config, on top of the nearest declared ancestors.
-        """
-        # Local import: ledfx.configuration imports ledfx.utils (generate_title).
-        from ledfx.configuration.plugin import PluginConfig, vol_to_model
-
-        declared = cls.__dict__.get("Config")
-        if declared is not None:
-            return declared
-        cached = cls.__dict__.get("_auto_config_model")
-        if cached is not None:
-            return cached
-        mro = inspect.getmro(cls)
-        ancestors = [c.__dict__["Config"] for c in mro[1:] if "Config" in c.__dict__]
-        bases = tuple(
-            b
-            for b in ancestors
-            if not any(o is not b and issubclass(o, b) for o in ancestors)
-        ) or (PluginConfig,)
-        schema = vol.Schema({}, extra=vol.ALLOW_EXTRA)
-        for c in mro[::-1]:
-            if "Config" in c.__dict__:
-                continue
-            if cls._schema_attr not in c.__dict__:
-                continue
-            own = getattr(c, cls._schema_attr)
-            if type(own) is property:
-                # Device/launchpad/openrgb/adalight: the property only reads
-                # import-time values (AVAILABLE_FPS), so caching stays correct.
-                own = own.fget()
-            schema = schema.extend(own.schema)
-        cls.validate_schema_keys(schema)
-        model = vol_to_model(f"{cls.__name__}Config", schema, bases)
-        cls._auto_config_model = model  # on this exact class, never inherited
+        """The pydantic model for this class's config (its declared ``Config``)."""
+        model = getattr(cls, "Config", None)
+        if model is None:
+            raise TypeError(f"{cls.__name__} declares no Config model")
         return model
 
     def _set_config_values(self, **changes: object) -> None:
@@ -929,66 +845,6 @@ class BaseRegistry(ABC):
         name = cls.__module__.split(".")[-1]
         del cls._registry[name]
         return cls
-
-    # currently this permanently overwrites Device.CONFIG_SCHEMA instead of just for a wrapper device
-    # @classmethod
-    # def designate_wrapper_device(self, cls):
-    #     """Designate Wrapper device to ignore pixel_count in schema"""
-    #     # replace base Device classes schema with Wrapper devices schema
-    #     setattr(inspect.getmro(cls)[2], self._schema_attr, getattr_explicit(inspect.getmro(cls)[0], self._schema_attr, None))
-    #     return cls
-
-    @classmethod
-    def schema(self, extended=True, extra=vol.ALLOW_EXTRA):
-        """Returns the extended schema of the class"""
-
-        if extended is False:
-            return getattr_explicit(self, self._schema_attr, vol.Schema({}))
-
-        schema = vol.Schema({}, extra=extra)
-        classes = inspect.getmro(self)[::-1]
-        for c in classes:
-            c_schema = getattr_explicit(c, self._schema_attr, None)
-            if c_schema is not None:
-                if type(c_schema) is property:
-                    schema = schema.extend(c_schema.fget().schema)
-                else:
-                    schema = schema.extend(c_schema.schema)
-        self.validate_schema_keys(schema)
-
-        return schema
-
-    @classmethod
-    def validate_schema_keys(self, schema):
-        """
-        Validates the keys in the given schema.
-
-        Args:
-            schema (vol.Schema): The schema to validate.
-
-        Raises:
-            ValueError: If any key in the schema do not match our naming conventions.
-        """
-        # Check if all keys in the schema use snake_case
-        for key in schema.schema:
-            # If key is a vol.Required or vol.Optional, get the schema from the key
-            # Otherwise, the key is the actual key
-            # This is to handle nested schemas
-            actual_key = (
-                key.schema if isinstance(key, (vol.Required, vol.Optional)) else key
-            )
-            if isinstance(actual_key, str):  # Check if actual_key is a string
-                if not is_snake_case(actual_key):
-                    # Raise an error if the key is not snake_case - this is to prevent
-                    # development of new effects/devices that have keys that are not snake_case
-                    error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use snake_case."
-                    _LOGGER.critical(error_msg)
-                    raise ValueError(error_msg)
-                # We search if the key contains the word "colour" and raise an error if it does, since we want to standardize on color
-                if "colour" in actual_key:
-                    error_msg = f"Invalid key '{actual_key}' in {self.__name__}. Keys must use 'color' instead of 'colour'."
-                    _LOGGER.critical(error_msg)
-                    raise ValueError(error_msg)
 
     @classmethod
     def registry(self):
@@ -1091,11 +947,19 @@ class RegistryLoader:
         lenient_path = kwargs.pop("lenient_path", None)
         lenient_entry = kwargs.pop("lenient_entry", None)
         if _config is not None:
+            # Local import: ledfx.configuration imports ledfx.utils.
+            from ledfx.configuration.plugin import PluginConfig
+
+            raw = (
+                _config.as_dict()
+                if isinstance(_config, PluginConfig)
+                else dict(_config)
+            )
             if lenient is None:
-                _config = _cls.config_model().model_validate(dict(_config))
+                _config = _cls.config_model().model_validate(raw)
             else:
                 _config = self.validate_leniently(
-                    _cls, type, id, dict(_config), lenient, lenient_path, lenient_entry
+                    _cls, type, id, raw, lenient, lenient_path, lenient_entry
                 )
                 if _config is None:
                     return None
@@ -1294,7 +1158,7 @@ class Graph:
             from bokeh.palettes import Category10
             from bokeh.plotting import figure
 
-            from ledfx.config import get_default_config_directory
+            from ledfx.configuration.paths import get_default_config_directory
         except ImportError:
             _LOGGER.info("Bokeh is not available, dump is disabled")
             return
@@ -2256,20 +2120,6 @@ class PerformanceAnalysis:
                 writer = csv.writer(file)
                 writer.writerows(PerformanceAnalysis._write_buffer)
                 PerformanceAnalysis._write_buffer.clear()
-
-
-@lru_cache(maxsize=128)
-def is_snake_case(string) -> bool:
-    """
-    Check if a string is in snake_case format.
-
-    Args:
-        string (str): The string to be checked.
-
-    Returns:
-        bool: True if the string is in snake_case format, False otherwise.
-    """
-    return re.match("^[a-z][a-z0-9_]*[a-z0-9]$", string) is not None
 
 
 class UpdateChecker:

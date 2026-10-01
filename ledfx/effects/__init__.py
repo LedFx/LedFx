@@ -7,7 +7,6 @@ from functools import lru_cache
 from typing import ClassVar
 
 import numpy as np
-import voluptuous as vol
 from numpy.typing import NDArray
 from pydantic import Field
 
@@ -22,7 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class DummyEffect:
-    config = vol.Schema({})
+    config = PluginConfig()
     _active = True
     is_active = _active
     NAME = name = ""
@@ -312,7 +311,7 @@ class Effect(BaseRegistry):
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
-        self._config = {}
+        self._config = None
         self.lock = threading.Lock()
         self.logsec = LogSecHelper(self)
         self.passed = 0.0
@@ -362,12 +361,12 @@ class Effect(BaseRegistry):
         return cls.config_model().model_validate({}).as_dict()
 
     def update_config(self, config):
+        if isinstance(config, PluginConfig):
+            config = config.as_dict()  # effects are created from a validated model
         with self.lock:
-            validated_config = (
-                type(self)
-                .config_model()
-                .model_validate({**(self._config or {}), **config})
-            )
+            if self._config is not None:
+                config = self._config.as_dict() | config
+            validated_config = type(self).config_model().model_validate(config)
 
             # A failing config_updated hook restores this, derived state included.
             old_state, old_diag = dict(vars(self)), self.logsec.diag
@@ -406,9 +405,7 @@ class Effect(BaseRegistry):
                 self.logsec.diag = old_diag
                 raise
 
-            _LOGGER.debug(
-                "Effect %s config updated to %s.", self.NAME, validated_config
-            )
+            _LOGGER.debug("Effect %s config updated to %s.", self.NAME, self._config)
 
             if self._virtual:
                 self._ledfx.events.fire_event(

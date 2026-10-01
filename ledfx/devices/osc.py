@@ -54,7 +54,7 @@ class OSCServerDevice(NetworkedDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "OSC"
-        self.last_frame = np.full((config["pixel_count"], 3), -1)
+        self.last_frame = np.full((self.config.pixel_count, 3), -1)
 
     OUTPUT_KEYS = (
         "ip_address",

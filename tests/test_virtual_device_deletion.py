@@ -5,7 +5,7 @@ Root cause: when a device is deleted, non-auto-generated virtuals that
 lose all segments survived in config.  On restart,
 Virtuals.create_from_config() tried to restore their effect via
 set_effect(), which raised ValueError.  The except clauses only caught
-RuntimeError and vol.MultipleInvalid.
+RuntimeError and the schema library's MultipleInvalid.
 
 These tests verify:
 1. Device deletion destroys user-created virtuals left with zero segments
@@ -21,7 +21,7 @@ import logging
 import threading
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
@@ -808,3 +808,35 @@ class TestRestoreRepairsEffectHistory:
             for effect in list(ledfx.effects.values()):
                 if effect._active:
                     effect._deactivate()  # stops the temporal effect's thread
+
+
+class TestVirtualsPostValidation:
+    """POST /api/virtuals answers an invalid config with the structured 400."""
+
+    @staticmethod
+    async def _post(ledfx: MagicMock, body: dict[str, object]):
+        from ledfx.api.virtuals import VirtualsEndpoint
+
+        request = MagicMock()
+        request.json = AsyncMock(return_value=body)
+        return await VirtualsEndpoint(ledfx).post(request)
+
+    async def test_create_with_invalid_config_is_rejected(self) -> None:
+        ledfx = _make_ledfx()
+        response = await self._post(
+            ledfx, {"config": {"name": "V", "max_brightness": 5}}
+        )
+        body = json.loads(response.text or "")
+        assert response.status == 400
+        assert body["errors"][0]["loc"] == ["max_brightness"]
+        assert not list(ledfx.virtuals) and not ledfx.config.virtuals
+
+    async def test_update_with_invalid_config_is_rejected(self) -> None:
+        ledfx = _make_ledfx()
+        virtual = _make_virtual(ledfx, "v-1", "V1", [])
+        response = await self._post(
+            ledfx, {"id": "v-1", "config": {"max_brightness": 5}}
+        )
+        assert response.status == 400
+        assert virtual.config["max_brightness"] == 1.0
+        ledfx.config_store.request_save.assert_not_called()

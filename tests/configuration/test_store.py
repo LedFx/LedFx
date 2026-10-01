@@ -113,7 +113,7 @@ def test_invalid_top_level_key_is_quarantined_and_defaulted(tmp_path: Path) -> N
 def test_quarantined_key_is_saved_as_default_so_it_is_not_quarantined_again(
     tmp_path: Path,
 ) -> None:
-    # spec §7: the bad value falls back to its default *on disk* too; the
+    # The bad value falls back to its default *on disk* too; the
     # original lives only in the quarantine file.
     _write(tmp_path, {"schema_version": CURRENT_SCHEMA_VERSION, "port": "nope"})
     ConfigStore.load(str(tmp_path))
@@ -318,7 +318,7 @@ def test_entry_lookups(tmp_path: Path) -> None:
 
 
 def test_quarantined_core_value_is_saved_as_its_default(tmp_path: Path) -> None:
-    # spec §7: the field falls back to its default on disk too, so the next boot
+    # The field falls back to its default on disk too, so the next boot
     # finds nothing to quarantine and the append-only jsonl does not grow.
     (tmp_path / "config.json").write_text(
         json.dumps({"schema_version": 2, "visualisation_fps": 999, "port": 9})

@@ -8,6 +8,7 @@ from packaging.version import parse as parse_version
 
 from ledfx.configuration.jsonshape import as_dict as _obj
 from ledfx.configuration.jsonshape import as_list as _items
+from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -195,9 +196,6 @@ def legacy_to_v1(raw: dict[str, object]) -> dict[str, object]:
                     }
             virtual["auto_generated"] = virtual.get("auto_generated", False)
     else:
-        # Local import: ledfx.utils imports ledfx.config, which imports this module.
-        from ledfx.utils import generate_id
-
         for device in devices:
             if not isinstance(device, dict):
                 continue

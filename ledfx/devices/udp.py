@@ -60,7 +60,7 @@ class UDPRealtimeDevice(UDPDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "UDP Realtime"
-        self.last_frame = np.full((config["pixel_count"], 3), -1)
+        self.last_frame = np.full((self.config.pixel_count, 3), -1)
         self.last_frame_sent_time = 0
 
     def flush(self, data):

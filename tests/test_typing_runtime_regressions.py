@@ -10,7 +10,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
-import voluptuous as vol
 from aiohttp import MultipartWriter, WSMessage, WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer, make_mocked_request
 from pydantic import BaseModel, Field
@@ -20,10 +19,10 @@ from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.config import ConfigEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
 from ledfx.api.websocket import WebsocketConnection, websocket_handlers
-from ledfx.config import load_logger
-from ledfx.configuration.fields import CoercedFloat, CoercedInt
+from ledfx.configuration.fields import X_OMIT_DEFAULT, CoercedFloat, CoercedInt
 from ledfx.configuration.migrations.legacy import legacy_to_v1
-from ledfx.configuration.plugin import vol_to_model
+from ledfx.configuration.paths import load_logger
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
 from ledfx.utils import WLED, get_local_ip
@@ -65,15 +64,17 @@ async def test_nested_multipart_upload_is_rejected_cleanly() -> None:
 async def test_randomize_skips_unsupported_schema_without_reusing_values(
     method: str,
 ) -> None:
-    schema = vol.Schema(
-        {
-            vol.Optional("text"): str,
-            vol.Optional("flag"): bool,
-            vol.Optional("other_text"): str,
-            vol.Optional("unbounded"): vol.All(vol.Coerce(float)),
-            vol.Optional("count"): vol.All(vol.Coerce(int), vol.Range(min=2, max=5)),
-        }
-    )
+    class DemoEffectConfig(PluginConfig):
+        text: str | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
+        flag: bool | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
+        other_text: str | None = Field(None, json_schema_extra={X_OMIT_DEFAULT: True})
+        unbounded: CoercedFloat | None = Field(
+            None, json_schema_extra={X_OMIT_DEFAULT: True}
+        )
+        count: CoercedInt | None = Field(
+            None, ge=2, le=5, json_schema_extra={X_OMIT_DEFAULT: True}
+        )
+
     ledfx = MagicMock()
     virtual = ledfx.virtuals.get.return_value
     effect = MagicMock()
@@ -82,9 +83,7 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     effect.config = dict[str, object]()
     virtual.active_effect = effect
     ledfx.effects.create.return_value = effect
-    ledfx.effects.get_class.return_value.config_model.return_value = vol_to_model(
-        "TestEffect", schema
-    )
+    ledfx.effects.get_class.return_value.config_model.return_value = DemoEffectConfig
     request = MagicMock()
     request.json = AsyncMock(
         return_value={"config": "RANDOMIZE", "type": "test-effect"}
@@ -232,7 +231,7 @@ def test_config_directory_failure_logs_before_logger_setup(tmp_path: Path) -> No
         [
             sys.executable,
             "-c",
-            "import ledfx.config as c; c.ensure_config_directory(__import__('sys').argv[1])",
+            "import ledfx.configuration.paths as c; c.ensure_config_directory(__import__('sys').argv[1])",
             str(blocker / "config"),
         ],
         capture_output=True,
@@ -257,9 +256,8 @@ def test_effect_update_config_stores_coerced_values() -> None:
 
     effect = Fire(MagicMock(), {})
     effect.update_config({"intensity": 12.7, "color_shift": "0.5"})
-    config = effect._config or {}
-    assert config["intensity"] == 12
-    assert config["color_shift"] == 0.5
+    assert effect.config.intensity == 12
+    assert effect.config.color_shift == 0.5
 
 
 def test_number_switching_from_time_to_bpm_formats_a_number() -> None:
@@ -411,3 +409,10 @@ def test_e131_waits_for_destination_before_starting_sender() -> None:
         device.activate()
     sender.assert_not_called()
     base_activate.assert_called_once()
+
+
+def test_update_checker_is_a_class() -> None:
+    # A decorator orphaned by a deleted function once wrapped it in lru_cache.
+    from ledfx.utils import UpdateChecker
+
+    assert isinstance(UpdateChecker, type)

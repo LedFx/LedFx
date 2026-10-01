@@ -1140,30 +1140,6 @@ class AudioInputSource:
 
 
 class AudioAnalysisSource(AudioInputSource):
-    # https://aubio.org/doc/latest/pitch_8h.html
-    PITCH_METHODS: ClassVar[list[str]] = [
-        "yinfft",
-        "yin",
-        "yinfast",
-        # mcomb and fcomb appears to just explode something deeep in the aubio code, no logs, no errors, it just dies.
-        # "mcomb",
-        # "fcomb",
-        "schmitt",
-        "specacf",
-    ]
-    # https://aubio.org/doc/latest/specdesc_8h.html
-    ONSET_METHODS: ClassVar[list[str]] = [
-        "energy",
-        "hfc",
-        "complex",
-        "phase",
-        "wphase",
-        "specdiff",
-        "kl",
-        "mkl",
-        "specflux",
-    ]
-
     # some frequency constants
     # beat, bass, mids, high
     freq_max_mels: ClassVar[list[int]] = [

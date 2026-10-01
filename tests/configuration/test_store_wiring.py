@@ -1,42 +1,15 @@
-import asyncio
-import json
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from ledfx.config import create_backup, save_config
-from ledfx.configuration.migrations import CURRENT_SCHEMA_VERSION
 from ledfx.configuration.models import LedFxConfig
-from ledfx.configuration.store import ConfigStore
-
-
-def test_save_config_shim_without_store_writes_atomically(tmp_path: Path) -> None:
-    save_config(LedFxConfig(port=1), str(tmp_path))
-    data = json.loads((tmp_path / "config.json").read_text())
-    assert data["port"] == 1 and data["configuration_version"] == "2.3.6"
-    # New behaviour: the store's envelope, and no temp file left behind.
-    assert data["schema_version"] == CURRENT_SCHEMA_VERSION
-    assert not [p for p in tmp_path.iterdir() if p.name.endswith(".tmp")]
-
-
-async def test_save_config_shim_routes_to_registered_store(tmp_path: Path) -> None:
-    store = ConfigStore.load(str(tmp_path))
-    store.attach_loop(asyncio.get_running_loop())
-    store.register()
-    try:
-        store.data.port = 1111
-        save_config(store.data, str(tmp_path))
-        assert store._save_handle is not None  # debounced, not written yet
-        store.flush_sync()
-        assert json.loads((tmp_path / "config.json").read_text())["port"] == 1111
-    finally:
-        store.unregister()
+from ledfx.configuration.store import ConfigStore, backup_config_file
 
 
 def test_create_backup_keeps_move_semantics_for_clear_config(tmp_path: Path) -> None:
-    save_config(LedFxConfig(port=1), str(tmp_path))
-    create_backup(str(tmp_path), "DELETE")
+    ConfigStore(str(tmp_path), LedFxConfig(port=1)).save_now()
+    backup_config_file(str(tmp_path), "DELETE", move=True)
     assert not (tmp_path / "config.json").exists()
     # New behaviour: the collision-proof name, not the old fixed one.
     backups = [
@@ -98,7 +71,7 @@ def test_mqtt_callback_after_loop_closed_is_dropped(
 
 async def test_shutdown_flush_survives_stop_failure() -> None:
     # Review Focus 4: a failure earlier in async_stop must not lose the
-    # debounced save; the store stays registered for late save_config() calls.
+    # debounced save.
     from ledfx.core import LedFxCore
 
     core = object.__new__(LedFxCore)
@@ -115,7 +88,6 @@ async def test_shutdown_flush_survives_stop_failure() -> None:
     await core.async_stop(4)
 
     core.config_store.flush_sync.assert_called_once_with()
-    core.config_store.unregister.assert_not_called()
     assert core.exit_code == 1
 
 

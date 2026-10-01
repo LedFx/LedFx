@@ -6,8 +6,8 @@ from aiohttp import web
 from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.config import find_matching_preset
 from ledfx.configuration.models import Scene
+from ledfx.configuration.presets import find_matching_preset
 from ledfx.effects import DummyEffect
 from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_id

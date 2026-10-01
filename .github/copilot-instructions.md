@@ -29,19 +29,25 @@ ledfx/
 
 All effects inherit from `Effect` (extends `BaseRegistry`). Modify `self.pixels` in `render()`.
 
+Config is a nested pydantic model that extends the parent's `Config`, bound with `TypedConfig`; read values as `self.config.<field>`.
+
 ```python
+from pydantic import Field
+
+from ledfx.configuration.fields import CoercedFloat
+from ledfx.configuration.plugin import TypedConfig
+
+
 class MyEffect(Effect):
     NAME = "My Effect"
-    CONFIG_SCHEMA = vol.Schema(
-        {
-            vol.Optional("speed", default=1.0): vol.All(
-                vol.Coerce(float), vol.Range(min=0.1, max=10.0)
-            ),
-        }
-    )
+
+    class Config(Effect.Config):
+        speed: CoercedFloat = Field(1.0, description="Speed", ge=0.1, le=10.0)
+
+    config = TypedConfig(Config)
 
     def render(self):
-        pass  # modify self.pixels
+        speed = self.config.speed  # modify self.pixels
 ```
 
 ## Device Pattern

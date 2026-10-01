@@ -6,7 +6,8 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.playlists import PlaylistManager, TimingSchema
+from ledfx.configuration.models import PlaylistTiming, validate_dict
+from ledfx.playlists import PlaylistManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class PlaylistsEndpoint(RestEndpoint):
                     return await self.invalid_request(
                         "mode must be 'sequence' or 'shuffle' if provided"
                     )
-                # optional runtime override for timing: validate shape via TimingSchema
+                # optional runtime override for timing: validate shape via PlaylistTiming
                 timing = data.get("timing")
                 if timing is not None:
                     if not isinstance(timing, dict):
@@ -73,9 +74,8 @@ class PlaylistsEndpoint(RestEndpoint):
                         )
                     try:
                         # validate (coerce types and enforce bounds)
-                        timing = TimingSchema(timing)
-                    except Exception as e:  # noqa: BLE001
-                        # voluptuous.Invalid / MultipleInvalid may be raised
+                        timing = validate_dict(PlaylistTiming, timing)
+                    except ValueError as e:  # pydantic's ValidationError
                         return await self.invalid_request(
                             f"timing validation failed: {e}"
                         )

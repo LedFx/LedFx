@@ -7,15 +7,16 @@ import struct
 import time
 import uuid
 from concurrent import futures
-from typing import ClassVar
+from typing import Annotated, ClassVar, Literal, get_args
 
 import numpy as np
 import pybase64
-import voluptuous as vol
 from aiohttp import WSMsgType, web
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.jsonutil import default, dumps
+from ledfx.configuration.fields import coerce
 from ledfx.events import (
     ClientBroadcastEvent,
     ClientConnectedEvent,
@@ -41,45 +42,41 @@ VALID_CLIENT_TYPES = [
     "unknown",
 ]
 
-# Phase 3: Broadcasting constants
-BROADCAST_TYPES = [
-    "visualiser_control",
-    "scene_sync",
-    "color_palette",
-    "custom",
-]
-TARGET_MODES = ["all", "type", "names", "uuids"]
+# Phase 3: Broadcasting constants and message models
+BroadcastType = Literal["visualiser_control", "scene_sync", "color_palette", "custom"]
+TargetMode = Literal["all", "type", "names", "uuids"]
+BROADCAST_TYPES: list[str] = list(get_args(BroadcastType))
+TARGET_MODES: list[str] = list(get_args(TargetMode))
 MAX_PAYLOAD_SIZE = 2048
+NonEmptyStr = Annotated[str, Field(min_length=1)]
 
-BASE_MESSAGE_SCHEMA = vol.Schema(
-    {
-        vol.Required("id"): vol.Coerce(int),
-        vol.Required("type"): str,
-    },
-    extra=vol.ALLOW_EXTRA,
-)
 
-# Phase 3: Broadcast message schema
-BROADCAST_SCHEMA = vol.Schema(
-    {
-        vol.Required("broadcast_type"): vol.In(BROADCAST_TYPES),
-        vol.Required("target"): vol.Schema(
-            {
-                vol.Required("mode"): vol.In(TARGET_MODES),
-                vol.Optional("value"): str,  # For mode="type"
-                vol.Optional("names"): [
-                    vol.All(str, vol.Length(min=1))
-                ],  # For mode="names"
-                vol.Optional("uuids"): [
-                    vol.All(str, vol.Length(min=1))
-                ],  # For mode="uuids"
-            },
-            extra=vol.PREVENT_EXTRA,
-        ),
-        vol.Required("payload"): dict,
-    },
-    extra=vol.PREVENT_EXTRA,
-)
+class BaseMessage(BaseModel):
+    """Every websocket message: an int id (coerced, as before) and a type."""
+
+    model_config = ConfigDict(extra="allow")
+
+    id: Annotated[int, coerce(int)]
+    type: str
+
+
+class BroadcastTarget(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    mode: TargetMode
+    value: str | None = None  # For mode="type"
+    names: list[NonEmptyStr] | None = None  # For mode="names"
+    uuids: list[NonEmptyStr] | None = None  # For mode="uuids"
+
+
+class BroadcastData(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    broadcast_type: BroadcastType
+    target: BroadcastTarget
+    payload: dict[str, object]
+
+
 # Not all events are able to be subscribed to by the websocket
 # This dict show the events that are not subscribable and what event should be used instead
 NON_SUBSCRIBABLE_EVENTS = {
@@ -377,10 +374,7 @@ class WebsocketConnection:
                 raw_message = ws_msg.json()
                 if isinstance(raw_message, dict):
                     message = raw_message
-                validated_message = BASE_MESSAGE_SCHEMA(raw_message)
-                if not isinstance(validated_message, dict):
-                    raise vol.Invalid("Expected a JSON object")
-                message = validated_message
+                message = BaseMessage.model_validate(raw_message).model_dump()
 
                 if message["type"] in websocket_handlers:
                     # Phase 1: Support async handlers
@@ -395,7 +389,7 @@ class WebsocketConnection:
 
                 ws_msg = await socket.receive()
 
-        except (vol.Invalid, ValueError):
+        except ValueError:  # includes pydantic's ValidationError
             _LOGGER.info("Invalid message format.")
             if message is not None:
                 msg_id = message.get("id")
@@ -711,9 +705,10 @@ class WebsocketConnection:
         """Handle client-to-client broadcast messages (WebSocket-only)"""
         try:
             data = message.get("data", {})
-            # Validate against schema
-            validated_data = BROADCAST_SCHEMA(data)
-        except vol.Invalid as e:
+            validated_data = BroadcastData.model_validate(data).model_dump(
+                exclude_unset=True
+            )
+        except ValidationError as e:
             self.send_error(message["id"], f"Invalid broadcast data: {e}")
             return
 

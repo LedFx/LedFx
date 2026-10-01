@@ -129,7 +129,7 @@ class LifxDevice(NetworkedDevice):
 
         # Matrix-specific
         self._tiles = []
-        self._total_pixels = config.get("pixel_count", 1)
+        self._total_pixels = self.config.pixel_count
         self._matrix_width = 0
         self._matrix_height = 0
         self._perm = None

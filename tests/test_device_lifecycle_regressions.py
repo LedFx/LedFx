@@ -1,13 +1,13 @@
 """Regressions for device lifecycle and render-loop fixes."""
 
+import json
 import threading
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import voluptuous as vol
 
 from ledfx.api.device import DeviceEndpoint
-from ledfx.configuration.plugin import ConfigShimWarning, PluginConfig
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Device
 from ledfx.devices.artnet import ArtNetDevice
 from ledfx.devices.ddp import DDPDevice
@@ -61,6 +61,24 @@ async def test_device_put_persists_merged_config() -> None:
     ledfx.config_store.request_save.assert_called_once()
 
 
+async def test_device_put_invalid_config_returns_structured_400() -> None:
+    ledfx = fake_ledfx()
+    device = object.__new__(WLEDDevice)
+    device._ledfx = ledfx
+    device.lock = threading.Lock()
+    device._config = WLEDDevice.config_model().model_validate(
+        {"name": "wled", "ip_address": "10.0.0.2", "sync_mode": "DDP"}
+    )
+    ledfx.devices.get.return_value = device
+    request = MagicMock()
+    request.json = AsyncMock(return_value={"config": {"sync_mode": "bogus"}})
+    response = await DeviceEndpoint(ledfx).put("d", request)
+    body = json.loads(response.text or "")
+    assert response.status == 400 and body["errors"][0]["loc"] == ["sync_mode"]
+    assert device.config.sync_mode == "DDP"
+    ledfx.config_store.request_save.assert_not_called()
+
+
 def test_ip_change_forces_address_re_resolution() -> None:
     device = object.__new__(DDPDevice)
     device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
@@ -81,11 +99,7 @@ def test_update_config_merges_into_model_and_keeps_stored_extras() -> None:
     device._config = WLEDDevice.config_model().model_validate(
         {"name": "wled", "ip_address": "10.0.0.2", "pixel_count": 20}
     )
-    # {**self._config, ...} goes through the mapping shim; layer 13 must convert it.
-    with (
-        patch.object(WLEDDevice, "setup_subdevice"),
-        pytest.warns(ConfigShimWarning),
-    ):
+    with patch.object(WLEDDevice, "setup_subdevice"):
         device.update_config({"sync_mode": "UDP"})
     assert device.config.sync_mode == "UDP"
     assert device.config.name == "wled"
@@ -207,8 +221,8 @@ def test_rejected_update_keeps_the_resolved_address() -> None:
     device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
     device._destination = "10.0.0.1"
     with (
-        patch.object(Device, "update_config", side_effect=vol.Invalid("bad ip")),
-        pytest.raises(vol.Invalid),
+        patch.object(Device, "update_config", side_effect=ValueError("bad ip")),
+        pytest.raises(ValueError),
     ):
         device.update_config({"ip_address": "not an address"})
     assert device._destination == "10.0.0.1"

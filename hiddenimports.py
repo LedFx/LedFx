@@ -14,7 +14,6 @@ hiddenimports = [
     "serial.tools.list_ports",
     "icmplib",
     "flux_led",
-    "voluptuous",
     "mbedtls",
     "mbedtls.mpi",
     "mbedtls._platform",

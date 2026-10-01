@@ -2,6 +2,7 @@ import logging
 from json import JSONDecodeError
 
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.jsonutil import dumps
@@ -66,7 +67,6 @@ class VirtualsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 'Required attribute "config" was not provided'
             )
-        # TODO: Validate the config schema against the virtuals config schema.
         virtual_id = data.get("id")
 
         # Update virtual config if id exists
@@ -77,7 +77,10 @@ class VirtualsEndpoint(RestEndpoint):
                     f"Virtual with ID {virtual_id} not found"
                 )
             # Update the virtual's configuration
-            virtual.config = virtual_config
+            try:
+                virtual.config = virtual_config
+            except ValidationError as err:
+                return await self.validation_error(err)
             _LOGGER.info("Updated virtual %s config to %s", virtual.id, virtual_config)
 
             entry = virtual.entry
@@ -104,12 +107,15 @@ class VirtualsEndpoint(RestEndpoint):
             # Create the virtual
             _LOGGER.info("Creating virtual with config %s", virtual_config)
 
-            virtual = self._ledfx.virtuals.create(
-                id=virtual_id,
-                is_device=False,
-                config=virtual_config,
-                ledfx=self._ledfx,
-            )
+            try:
+                virtual = self._ledfx.virtuals.create(
+                    id=virtual_id,
+                    is_device=False,
+                    config=virtual_config,
+                    ledfx=self._ledfx,
+                )
+            except ValidationError as err:
+                return await self.validation_error(err)
 
             # Update the configuration
             self._ledfx.config.virtuals.append(

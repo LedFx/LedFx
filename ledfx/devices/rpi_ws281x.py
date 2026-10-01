@@ -68,8 +68,8 @@ class RPI_WS281X(DeviceWrapper):
         self.LED_INVERT = False
         self.LED_CHANNEL = 0
         self._device_type = "RPi_WS281X"
-        self.color_order = config.get("color_order")
-        self.white_mode = config.get("white_mode") or "None"
+        self.color_order = self.config.color_order
+        self.white_mode = self.config.white_mode or "None"
         self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.activate()
 

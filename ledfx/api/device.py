@@ -1,8 +1,8 @@
 import logging
 from json import JSONDecodeError
 
-import voluptuous
 from aiohttp import web
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual import make_virtual_response
@@ -60,7 +60,9 @@ class DeviceEndpoint(RestEndpoint):
 
         try:
             device.update_config(device_config)
-        except (voluptuous.Error, ValueError) as msg:
+        except ValidationError as err:
+            return await self.validation_error(err)
+        except ValueError as msg:
             error_message = f"Error updating device {device_id}: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")
@@ -100,7 +102,7 @@ class DeviceEndpoint(RestEndpoint):
             for virtual in self._ledfx.virtuals.values():
                 response["virtuals"][virtual.id] = make_virtual_response(virtual)
 
-        except (voluptuous.Error, ValueError) as msg:
+        except ValueError as msg:  # includes pydantic's ValidationError
             error_message = f"Error creating device {device_id}: {msg}"
             _LOGGER.warning(error_message)
             return await self.internal_error(error_message, "error")

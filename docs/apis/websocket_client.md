@@ -204,7 +204,7 @@ Enable clients to broadcast messages to other connected clients through the serv
 #### Request Validation
 
 - **Payload Size Limit**: 2 KB maximum (configurable via constant)
-- **Schema Validation**: Voluptuous schema enforcement
+- **Schema Validation**: pydantic model validation (`BroadcastData` in `ledfx/api/websocket.py`)
 - **Target Validation**:
   - **Lenient Filtering**: For `mode="names"` and `mode="uuids"`, non-existent identifiers are silently filtered (broadcasts to whoever exists from the list)
   - **Fail-Closed Security**: If NO targets remain after filtering, request fails with error (prevents accidental broadcasts to zero recipients)

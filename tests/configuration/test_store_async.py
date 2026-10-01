@@ -168,16 +168,6 @@ async def test_serialise_failure_is_logged_not_raised(
     assert not any("Exception in callback" in m for m in messages)
 
 
-async def test_registry_round_trip(tmp_path: Path) -> None:
-    store = ConfigStore.load(str(tmp_path))
-    store.register()
-    try:
-        assert ConfigStore.registered(str(tmp_path)) is store
-    finally:
-        store.unregister()
-    assert ConfigStore.registered(str(tmp_path)) is None
-
-
 async def test_mutate_requests_a_save(tmp_path: Path) -> None:
     store = ConfigStore.load(str(tmp_path))
     store.attach_loop(asyncio.get_running_loop())
