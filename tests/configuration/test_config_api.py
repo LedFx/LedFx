@@ -203,6 +203,7 @@ async def test_integration_update_keeps_stored_data() -> None:
     )
     ledfx.integrations.get_class.return_value = Spotify
     ledfx.integrations.get.return_value.type = "spotify"
+    ledfx.integrations.get.return_value.active = False
     body = {"id": "sp", "type": "spotify", "config": {"name": "Renamed"}}
     await IntegrationsEndpoint(ledfx).post(_request("POST", body))
     assert ledfx.integrations.create.call_args.kwargs["data"] == {"s1": {}}

@@ -20,6 +20,9 @@ from ledfx.api.device import DeviceEndpoint
 from ledfx.api.find_lifx import FindLifxEndpoint
 from ledfx.api.find_openrgb import FindOpenRGBDevicesEndpoint
 from ledfx.api.get_gif_frames import GetGifFramesEndpoint
+from ledfx.api.integration_qlc import QLCEndpoint
+from ledfx.api.integration_spotify import QLCEndpoint as SpotifyEndpoint
+from ledfx.api.integrations import IntegrationsEndpoint
 from ledfx.api.power import MAX_POWER_TIMEOUT
 from ledfx.api.power import InfoEndpoint as PowerEndpoint
 from ledfx.api.preset_delete import PresetDeleteEndpoint
@@ -36,6 +39,7 @@ from ledfx.color import (
     validate_color,
     validate_gradient,
 )
+from ledfx.integrations.spotify import Spotify
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import UserDefaultCollection
@@ -584,3 +588,120 @@ async def test_openrgb_disconnects_after_listing() -> None:
     with patch("ledfx.api.find_openrgb.OpenRGBClient", return_value=client):
         await _call(FindOpenRGBDevicesEndpoint(fake_ledfx()), "GET")
     client.disconnect.assert_called_once_with()
+
+
+def _spotify() -> tuple[MagicMock, Spotify]:
+    ledfx = fake_ledfx(
+        {
+            "scenes": {"s1": {"name": "S1"}, "s2": {"name": "S2"}},
+            "integrations": [{"id": "sp", "type": "spotify", "data": {}}],
+        }
+    )
+    spotify = Spotify(ledfx, {"name": "Spotify"}, False, {})
+    vars(spotify).update(_id="sp", _type="spotify")  # set by the registry
+    ledfx.integrations.get.return_value = spotify
+    spotify.add_trigger("s1", "abc", "Song", 1000)
+    return ledfx, spotify
+
+
+async def test_spotify_put_moves_a_trigger_to_another_scene() -> None:
+    ledfx, spotify = _spotify()
+    # What the frontend's edit-trigger sends (storeIntegrationsSpotify.tsx).
+    body = {
+        "scene_id": "s2",
+        "song_id": "abc",
+        "song_name": "Song",
+        "song_position": 1000,
+    }
+    status, reply = await _call(
+        SpotifyEndpoint(ledfx), "PUT", body, integration_id="sp"
+    )
+    assert (status, reply) == (200, {"status": "success"})
+    assert spotify.triggers == {"s1": {}, "s2": {"abc-1000": ["abc", "Song", 1000]}}
+    assert ledfx.config.integrations[0].data == spotify.triggers
+    ledfx.config_store.request_save.assert_called_once_with()
+
+
+@pytest.mark.parametrize(
+    ("body", "reason"),
+    [
+        (
+            {"scene_id": "s2", "song_id": "abc", "song_name": "S", "song_position": 5},
+            "Trigger abc-5 does not exist",
+        ),
+        (
+            {
+                "scene_id": "nope",
+                "song_id": "abc",
+                "song_name": "S",
+                "song_position": 1000,
+            },
+            "Scene nope does not exist",
+        ),
+        (
+            {"enabled": False},
+            "Required attributes scene_id, song_id, song_name, song_position were not provided",
+        ),
+    ],
+)
+async def test_spotify_put_refuses_what_it_cannot_do(
+    body: dict[str, object], reason: str
+) -> None:
+    ledfx, spotify = _spotify()
+    status, reply = await _call(
+        SpotifyEndpoint(ledfx), "PUT", body, integration_id="sp"
+    )
+    assert (status, _reason(reply)) == (200, reason)
+    assert spotify.triggers == {"s1": {"abc-1000": ["abc", "Song", 1000]}}
+    ledfx.config_store.request_save.assert_not_called()
+
+
+async def test_spotify_post_refuses_a_trigger_another_scene_owns() -> None:
+    ledfx, spotify = _spotify()
+    body = {"scene_id": "s2", "song_id": "abc", "song_name": "S", "song_position": 1000}
+    status, reply = await _call(
+        SpotifyEndpoint(ledfx), "POST", body, integration_id="sp"
+    )
+    assert (status, _reason(reply)) == (
+        200,
+        "Trigger abc-1000 already belongs to scene s1; use PUT to move it",
+    )
+    assert spotify.triggers == {"s1": {"abc-1000": ["abc", "Song", 1000]}}
+    ledfx.config_store.request_save.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    ("endpoint", "kind"), [(SpotifyEndpoint, "spotify"), (QLCEndpoint, "qlc")]
+)
+@pytest.mark.parametrize("method", ["GET", "PUT", "POST", "DELETE"])
+async def test_unknown_integration_is_named_in_the_reason(
+    endpoint: type[RestEndpoint], kind: str, method: str
+) -> None:
+    ledfx = fake_ledfx()
+    ledfx.integrations.get.return_value = None
+    status, reply = await _call(endpoint(ledfx), method, {}, integration_id="nope")
+    assert (status, _reason(reply)) == (
+        200,
+        f"nope was not found or was not type {kind}",
+    )
+
+
+@pytest.mark.parametrize("was_active", [True, False])
+async def test_integration_update_keeps_it_as_active_as_it_was(
+    was_active: bool,
+) -> None:
+    ledfx = fake_ledfx(
+        {"integrations": [{"id": "sp", "type": "spotify", "active": was_active}]}
+    )
+    ledfx.integrations.get_class.return_value = Spotify
+    old = MagicMock(type="spotify", active=was_active, deactivate=AsyncMock())
+    ledfx.integrations.get.return_value = old
+    new = ledfx.integrations.create.return_value
+    new.activate = AsyncMock()
+    body = {"id": "sp", "type": "spotify", "config": {"name": "Renamed"}}
+
+    _, reply = await _call(IntegrationsEndpoint(ledfx), "POST", body)
+
+    assert reply == {"status": "success"}
+    assert old.deactivate.await_count == new.activate.await_count == int(was_active)
+    assert ledfx.config.integrations[0].active is was_active
