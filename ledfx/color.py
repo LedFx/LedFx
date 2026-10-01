@@ -292,7 +292,7 @@ def parse_gradient(gradient: str):
 
     The gradient can be either a color or a full gradient. The function tries to parse
     the gradient using the `Gradient.from_string` and `parse_color` functions. If
-    successful, it returns the parsed gradient object. If parsing fails, an error message
+    successful, it returns the parsed gradient object. If parsing fails, a warning
     is logged and a `ValueError` is raised.
 
     Args:
@@ -310,7 +310,7 @@ def parse_gradient(gradient: str):
         except Exception:  # noqa: BLE001, S112
             continue
     msg = f"Invalid gradient: {gradient}"
-    _LOGGER.error(msg)
+    _LOGGER.warning(msg)
     raise ValueError(msg)
 
 

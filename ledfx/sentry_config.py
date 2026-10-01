@@ -61,4 +61,8 @@ def setup_sentry():
         traces_sample_rate=sample_rate,
         integrations=[AioHttpIntegration()],
         release=release,
+        # A peer dropping its socket (a browser tab reloading, a script
+        # exiting mid-request) is expected; Windows reports it as these.
+        # Applies to captured exceptions and to error logs with exc_info.
+        ignore_errors=[ConnectionResetError, ConnectionAbortedError],
     )
