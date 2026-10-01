@@ -129,6 +129,38 @@ To run these local and / or develop more tests
     $ uv run pytest -vv
     ```
 
+### The v2 OpenAPI spec
+
+`openapi/ledfx-v2.json` is the committed contract of `/api/v2`, built from the
+route table. Regenerate it whenever you change a v2 route or model, on Linux
+with Python 3.12 and every extra installed. That is the environment the CI
+`openapi` job checks it in (WSL works):
+
+``` console
+$ uv sync --all-extras --dev
+$ uv run ledfx --dump-openapi openapi/ledfx-v2.json
+```
+
+Anywhere else, optional plugins may be missing and the file would lose their
+schemas. To run the drift check locally:
+
+``` console
+$ LEDFX_CANONICAL_SPEC=1 uv run pytest tests/api_v2/test_committed_spec.py
+```
+
+Changes within v2 must be additive: new routes, new optional request fields,
+new response fields. CI runs `oasdiff breaking` against the base branch's copy,
+and only a PR labelled `api-break` skips that check.
+
+Request schemas are closed (unknown fields are a 422). Response schemas are
+open, and the spec says so: clients must ignore unknown response fields, which
+is what makes a new response field additive.
+
+`info.version` is the contract version, `API_VERSION` in
+`ledfx/api/v2/core/app.py`, not the LedFx release. Bump it by hand when the
+contract changes (minor for additions, major for a break), then regenerate the
+spec. It does not change on a release.
+
 ## Frontend Development
 
 The LedFx frontend is now maintained in a separate repository: [LedFx-Frontend-v2](https://github.com/YeonV/LedFx-Frontend-v2).
