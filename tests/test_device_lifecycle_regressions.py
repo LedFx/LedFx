@@ -305,3 +305,37 @@ async def test_mdns_close_still_closes_zeroconf_if_cancel_fails() -> None:
     with pytest.raises(RuntimeError):
         await ZeroConfRunner._close(browser, zc)
     zc.async_close.assert_awaited_once()
+
+
+def test_e131_sender_does_not_need_the_sacn_port() -> None:
+    import socket
+
+    import sacn
+    from sacn.sending.sender_socket_base import DEFAULT_PORT
+
+    from ledfx.devices import NetworkedDevice
+    from ledfx.devices.e131 import E131Device
+
+    device = object.__new__(E131Device)
+    device._ledfx = MagicMock()
+    device.device_lock = threading.Lock()
+    device._destination = "127.0.0.1"
+    device._sacn = None
+    device._config = E131Device.config_model().model_construct(
+        name="e131",
+        ip_address="127.0.0.1",
+        universe=1,
+        universe_end=1,
+        packet_priority=100,
+    )
+    # Another sACN app (or another sender on macOS) holds the sACN port
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as holder:
+        holder.bind(("0.0.0.0", DEFAULT_PORT))
+        # The socket binds in the constructor; skip the send thread
+        with (
+            patch.object(NetworkedDevice, "activate"),
+            patch.object(sacn.sACNsender, "start"),
+        ):
+            device.activate()
+        assert device._sacn is not None
+        device._sacn._sender_handler.socket._socket.close()

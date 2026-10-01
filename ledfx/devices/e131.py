@@ -87,7 +87,8 @@ class E131Device(NetworkedDevice):
 
             # Configure sACN and start the dedicated thread to flush the buffer
             # Some variables are immutable and must be called here
-            self._sacn = sacn.sACNsender(source_name=self.name)
+            # Ephemeral source port: a fixed 5568 collides with other senders
+            self._sacn = sacn.sACNsender(source_name=self.name, bind_port=0)
 
             for universe in range(
                 self._config["universe"], self._config["universe_end"] + 1
