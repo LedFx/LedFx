@@ -862,10 +862,13 @@ class WebsocketConnection:
         data = message.get("data")
         # The frontend sends a list; older ones sent a {"0": ...} dict
         if isinstance(data, dict):
-            data = data.values()
+            data = list(data.values())
         try:
+            # Check the type: np.fromiter would turn a string into samples.
+            if not isinstance(data, list):
+                raise TypeError(type(data).__name__)
             samples = np.fromiter(data, dtype=np.float32)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             _LOGGER.warning("Malformed audio_stream_data from client %s", client)
             return
         ACTIVE_AUDIO_STREAM.data = samples
