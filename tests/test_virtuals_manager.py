@@ -196,19 +196,20 @@ def _store_unchecked(virtual: Virtual, **changes: object) -> None:
 
 
 @pytest.mark.parametrize(
-    "changes",
+    ("changes", "field"),
     [
-        {"frequency_min": 900, "frequency_max": 100},
-        {"frequency_min": 500, "frequency_max": 500},
+        ({"frequency_min": 900, "frequency_max": 100}, "frequency_min"),
+        ({"frequency_min": 500, "frequency_max": 500}, "frequency_min"),
+        ({"rows": 1, "rotate": 2}, "rotate"),
     ],
 )
-def test_add_refuses_a_frequency_range_it_would_repair(
-    ledfx: MagicMock, changes: dict[str, int]
+def test_add_refuses_what_it_would_repair(
+    ledfx: MagicMock, changes: dict[str, int], field: str
 ) -> None:
     before = _entry_ids(ledfx)
     with pytest.raises(Invalid) as caught:
         ledfx.virtuals.add(replace_model(VirtualConfig(name="Bad"), **changes))
-    assert caught.value.loc == ("body", "config", "frequency_min")
+    assert caught.value.loc == ("body", "config", field)
     assert _entry_ids(ledfx) == before
     assert ledfx.virtuals.get(VirtualIdStr("bad")) is None
     ledfx.config_store.request_save.assert_not_called()

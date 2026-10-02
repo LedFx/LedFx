@@ -1720,14 +1720,12 @@ class Virtuals:
     def add(self, config: VirtualConfig) -> Virtual:
         """Create a virtual (id from its name, made unique) and store it.
 
-        Raises Invalid (loc body.config.frequency_min) for a frequency range
-        with min >= max, and Invalid (loc body.config.name) when the name gives
-        a reserved id (RESERVED_IDS); nothing is created then."""
+        Raises Invalid (loc body.config.<field>) for a frequency range with
+        min >= max or a rotate with one row, and Invalid (loc body.config.name)
+        when the name gives a reserved id (RESERVED_IDS); nothing is created
+        then."""
         ensure_writable(self._ledfx)
-        self._check_frequency(config, None)
-        # v1-compat: not _check_rotate. v1 create stores a rotate on one row as
-        # sent (the r3 create golden pins it), so add accepts it; check it here
-        # too when v1 is retired.
+        self._check_config(config, None)
         virtual_id = generate_id(config.name)[:MAX_ID_LENGTH]
         if virtual_id in RESERVED_IDS:
             raise Invalid(
@@ -1862,19 +1860,26 @@ class Virtuals:
         config.virtuals = [v for v in config.virtuals if v.id != virtual_id]
         self._ledfx.config_store.request_save()
 
-    def _check_config(self, config: VirtualConfig, current: VirtualConfig) -> None:
+    def _check_config(
+        self, config: VirtualConfig, current: VirtualConfig | None
+    ) -> None:
         """Invalid for a frequency range or a rotate that config sets wrongly.
 
         Only what differs from current is checked: v1 can store a rotate on
-        one row, and changing something else must not be refused for it."""
+        one row, and changing something else must not be refused for it. With
+        no current config (a new virtual) everything is checked."""
         self._check_frequency(config, current)
         if (
-            (config.rotate, config.rows) != (current.rotate, current.rows)
+            (
+                current is None
+                or (config.rotate, config.rows) != (current.rotate, current.rows)
+            )
             and config.rotate != 0
             and config.rows <= 1
         ):
             # Blame rows when only rows changed (the rotate was stored).
-            field = "rows" if config.rotate == current.rotate else "rotate"
+            stored = current is not None and config.rotate == current.rotate
+            field = "rows" if stored else "rotate"
             raise Invalid(
                 "rotate needs more than one row", loc=("body", "config", field)
             )

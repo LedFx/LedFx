@@ -102,10 +102,13 @@ class VirtualsEndpoint(RestEndpoint):
             except ValidationError as err:
                 return await self.validation_error(err)
             _LOGGER.info("Creating virtual with config %s", virtual_config)
-            # v1-compat: add refuses a frequency range with min >= max; v1
-            # create swapped or widened it. (A rotate on one row is still
-            # stored as sent: see Virtuals.add.)
-            virtual = virtuals.add(repaired_frequency(config))
+            # v1-compat: add refuses a frequency range with min >= max and a
+            # rotate on one row; v1 swaps or widens the range and zeroes the
+            # rotate, as its update does.
+            config = repaired_frequency(config)
+            if config.rows <= 1 and config.rotate != 0:
+                config = replace_model(config, rotate=0)
+            virtual = virtuals.add(config)
             reason = f"Created Virtual {virtual.id}"
 
         response = {

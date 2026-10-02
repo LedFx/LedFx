@@ -251,3 +251,21 @@ async def test_v1_copy_skips_unknown_targets_and_lumps_refusals(
         assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is None
         assert await copy("ghost", "mirror") == "success"
     assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is not None
+
+
+async def test_v1_create_repairs_what_add_refuses(ledfx: MagicMock) -> None:
+    """v1 create zeroes a rotate on one row and fixes a reversed frequency
+    range, as its update does; add itself refuses both."""
+    config = {
+        "name": "R",
+        "rows": 1,
+        "rotate": 2,
+        "frequency_min": 900,
+        "frequency_max": 100,
+    }
+    async with TestClient(TestServer(build_app(ledfx, (VirtualsEndpoint,)))) as c:
+        response = await c.post("/api/virtuals", json={"config": config})
+        assert response.status == 200, await response.text()
+    stored = ledfx.virtuals.get_or_raise(VirtualIdStr("r")).config
+    assert stored.rotate == 0
+    assert (stored.frequency_min, stored.frequency_max) == (100, 900)
