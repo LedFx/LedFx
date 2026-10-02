@@ -265,6 +265,26 @@ async def test_randomize_and_reset(v2_client: Client) -> None:
     assert (await resp.json())["config"]["brightness"] == 1.0
 
 
+@pytest.mark.parametrize(
+    ("method", "path", "body"),
+    [
+        ("PATCH", EFFECT, {"config": {"color": "#00ff00"}}),
+        ("POST", f"{EFFECT}/randomize", None),
+        ("POST", f"{EFFECT}/reset", None),
+    ],
+)
+async def test_a_restart_keeps_a_paused_virtual_paused(
+    v2_client: Client, method: str, path: str, body: dict[str, object] | None
+) -> None:
+    await _put(v2_client, {"type": "singleColor"})
+    assert (await v2_client.patch(BIRD, json={"active": False})).status == 200
+    resp = await v2_client.request(method, path, json=body)
+    assert resp.status == 200, await resp.text()
+    assert (await (await v2_client.get(BIRD)).json())["active"] is False
+    entry = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
+    assert entry is not None and entry.active is False
+
+
 async def test_clear_keeps_the_history(v2_client: Client) -> None:
     await _put(v2_client, {"type": "rainbow"})
     assert (await v2_client.delete(EFFECT)).status == 204

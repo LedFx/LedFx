@@ -35,6 +35,7 @@ from tests.test_utilities.virtuals_core import (
     enter_safe_mode,
     entry_ids,
     flashes,
+    reload_virtual,
     running_core,
 )
 
@@ -332,6 +333,65 @@ def test_set_effect_runs_stores_and_saves(ledfx: MagicMock) -> None:
     assert entry.effect is not None and entry.effect.type == "rainbow"
     assert entry.last_effect == "rainbow"
     ledfx.config_store.request_save.assert_called()
+
+
+def test_an_effect_started_on_a_paused_virtual_is_stored_active(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_active(BIRD, False)
+    virtual = ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    assert virtual.active is True
+    entry = virtual.entry
+    assert entry is not None and entry.active is True
+
+    # a restart from the stored config leaves it active and running
+    restored = reload_virtual(ledfx, BIRD)
+    assert restored is not virtual
+    assert restored.active is True
+    assert restored.active_effect is not None
+    assert restored.active_effect.type == "rainbow"
+
+
+def _paused_with(ledfx: MagicMock, type_id: str) -> Virtual:
+    ledfx.virtuals.set_effect(BIRD, type_id, cfg({}))
+    ledfx.virtuals.set_active(BIRD, False)
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    assert virtual.active is False and virtual.entry is not None
+    assert virtual.entry.active is False
+    return virtual
+
+
+def test_a_colour_patch_keeps_a_paused_virtual_paused(ledfx: MagicMock) -> None:
+    virtual = _paused_with(ledfx, "singleColor")
+    ledfx.virtuals.patch_effect(BIRD, cfg({"color": "#00ff00"}))
+    assert virtual.active is False
+    assert virtual.entry is not None and virtual.entry.active is False
+    assert virtual.active_effect is not None
+    assert virtual.active_effect.config.color == "#00ff00"
+
+
+def test_a_speed_patch_keeps_a_paused_virtual_paused(ledfx: MagicMock) -> None:
+    virtual = _paused_with(ledfx, "rainbow")
+    ledfx.virtuals.patch_effect(BIRD, cfg({"speed": 3.0}))
+    assert virtual.active is False
+    assert virtual.entry is not None and virtual.entry.active is False
+
+
+def test_a_colour_patch_keeps_an_active_virtual_active(ledfx: MagicMock) -> None:
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
+    ledfx.virtuals.patch_effect(BIRD, cfg({"color": "#00ff00"}))
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    assert virtual.active is True
+    assert virtual.entry is not None and virtual.entry.active is True
+
+
+def test_a_fallback_effect_leaves_the_stored_active_flag(ledfx: MagicMock) -> None:
+    ledfx.virtuals.set_active(BIRD, False)
+    virtual = ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}), fallback=5.0)
+    assert virtual.entry is not None and virtual.entry.active is False
+    # the same effect without a fallback is stored active
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    assert virtual.entry.active is True
 
 
 def test_set_effect_without_config_restores_the_stored_one(ledfx: MagicMock) -> None:

@@ -33450,7 +33450,7 @@
         ]
       },
       "patch": {
-        "description": "The settings are checked against the running effect's type. A setting\nthe change leaves alone is kept even if it lies outside the bounds v2\naccepts in a request. A colour\nchange on an effect that blends colours restarts it, so it fades in.\nRestarting the effect makes the virtual active.",
+        "description": "The settings are checked against the running effect's type. A setting\nthe change leaves alone is kept even if it lies outside the bounds v2\naccepts in a request. A colour\nchange on an effect that blends colours restarts it, so it fades in.\nA restart keeps the virtual's pause state.",
         "operationId": "update_effect",
         "parameters": [
           {
@@ -34587,6 +34587,7 @@
     },
     "/api/v2/virtuals/{virtual_id}/effect/reset": {
       "post": {
+        "description": "keeps its pause state.",
         "operationId": "reset_effect",
         "parameters": [
           {
@@ -34938,7 +34939,7 @@
             "description": "Internal Server Error"
           }
         },
-        "summary": "Restart the running effect with its default settings.",
+        "summary": "Restart the running effect with its default settings. The virtual",
         "tags": [
           "virtuals"
         ]

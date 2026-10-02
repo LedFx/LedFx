@@ -77,7 +77,7 @@ async def update_effect(
     the change leaves alone is kept even if it lies outside the bounds v2
     accepts in a request. A colour
     change on an effect that blends colours restarts it, so it fades in.
-    Restarting the effect makes the virtual active.
+    A restart keeps the virtual's pause state.
     """
     ensure_writable(ledfx)  # safe mode answers before a 404, a 409 or a 422
     type_id, config = ledfx.virtuals.running_effect(virtual_id)
@@ -113,7 +113,8 @@ async def randomize_effect(
 async def reset_effect(
     virtual_id: VirtualIdParam, ledfx: LedFxDep
 ) -> EffectHistoryItem:
-    """Restart the running effect with its default settings."""
+    """Restart the running effect with its default settings. The virtual
+    keeps its pause state."""
     return _shown(ledfx.virtuals.reset_effect(virtual_id))
 
 

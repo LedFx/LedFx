@@ -15,7 +15,11 @@ from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Preset
 from ledfx.integrations.mqtt_hass import MQTT_HASS
 from ledfx.virtuals import Virtual
-from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
+from tests.test_utilities.virtuals_core import (
+    enter_safe_mode,
+    reload_virtual,
+    running_core,
+)
 
 BIRD = VirtualIdStr("dj bird")
 
@@ -253,6 +257,20 @@ def test_source_has_no_direct_virtual_changes() -> None:
     assert "virtual.active =" not in source
     assert "global_transitions" not in source
     assert source.count(".set_effect(") == source.count("virtuals.set_effect(")
+
+
+def test_an_effect_on_a_paused_virtual_stays_active_after_a_restart(
+    ledfx: MagicMock, integration: MQTT_HASS
+) -> None:
+    ledfx.virtuals.set_active(BIRD, False)
+
+    send(integration, "dj bird", {"state": "on", "effect": "rainbow"})
+
+    entry = ledfx.virtuals.get_or_raise(BIRD).entry
+    assert entry is not None and entry.active is True
+    restored = reload_virtual(ledfx, BIRD)
+    assert restored.active is True
+    assert running(ledfx, "dj bird") == "rainbow"
 
 
 def test_a_bad_effect_config_is_one_warning_and_changes_nothing(
