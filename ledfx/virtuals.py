@@ -71,13 +71,13 @@ class EffectRejected(Conflict):
 
 
 def _flash(params: OneshotParams) -> Flash:
-    """The Flash oneshot for params (brightness clamped to 0..1)."""
+    """The Flash oneshot for params."""
     return Flash(
         parse_color(params.color),
         params.ramp_ms,
         params.hold_ms,
         params.fade_ms,
-        min(1.0, max(0.0, params.brightness)),
+        params.brightness,
     )
 
 
@@ -2113,21 +2113,28 @@ class Virtuals:
         ]
 
     def delete_effect_history(self, virtual_id: VirtualIdStr, type_id: str) -> None:
-        """Forget an effect type's stored config, stopping it if it runs."""
+        """Forget an effect type's stored config, stopping it if it runs.
+
+        NotFound for a type the virtual has neither stored nor running. A
+        failure to stop the effect propagates and nothing is forgotten."""
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
+        entry = virtual.entry
+        effect = virtual.active_effect
+        running = (
+            effect is not None
+            and not isinstance(effect, DummyEffect)
+            and effect.type == type_id
+        )
+        if not running and (entry is None or type_id not in entry.effects):
+            raise NotFound("Effect", type_id)
         _LOGGER.info(
             "Deleting effect %s for virtual %s from effects", type_id, virtual_id
         )
-        try:
-            if virtual.active_effect and virtual.active_effect.type == type_id:
-                virtual.clear_effect()
-                entry = virtual.entry
-                if entry is not None:
-                    entry.effect = None
-        except Exception:
-            _LOGGER.exception("Error clearing active effect in effects delete")
-        entry = virtual.entry
+        if running:
+            virtual.clear_effect()
+            if entry is not None:
+                entry.effect = None
         if entry is not None:
             entry.effects.pop(type_id, None)
         self._ledfx.config_store.request_save()

@@ -16,7 +16,7 @@ from ledfx.api.v2.models.virtuals import (
     effect_variant,
 )
 from ledfx.configuration.plugin import PluginConfig
-from ledfx.errors import Conflict, NotFound
+from ledfx.errors import Conflict
 from ledfx.virtuals import Virtual
 
 router = Router(tag="virtuals")
@@ -128,10 +128,9 @@ async def list_effect_history(
 async def delete_effect_history(
     virtual_id: VirtualIdParam, effect_type: TypeId, ledfx: LedFxDep
 ) -> None:
-    """Forget an effect type's settings, stopping it if it is running."""
-    history = ledfx.virtuals.effect_history(virtual_id)
-    if effect_type not in [type_id for type_id, _ in history]:
-        raise NotFound("Effect", effect_type)
+    """Forget an effect type's settings, stopping it if it is running.
+
+    404 for a type the virtual has neither stored nor running."""
     ledfx.virtuals.delete_effect_history(virtual_id, effect_type)
 
 

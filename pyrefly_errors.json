@@ -1464,13 +1464,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/color.py",
-      "name": "invalid-annotation",
-      "concise_description": "Tuple literal cannot be used in annotations",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/color.py",
       "name": "implicit-any-parameter",

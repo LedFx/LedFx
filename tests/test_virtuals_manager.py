@@ -9,8 +9,10 @@ import pytest
 from aiohttp.test_utils import TestClient, TestServer
 
 from ledfx.api.effects import EffectsEndpoint
+from ledfx.api.v1_compat import v1_color
 from ledfx.api.virtual import VirtualEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
+from ledfx.api.virtual_effects_delete import EffectsEndpoint as EffectDeleteEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
@@ -461,6 +463,33 @@ def test_delete_effect_history_stops_a_running_type(ledfx: MagicMock) -> None:
     assert [t for t, _ in ledfx.virtuals.effect_history(BIRD)] == ["singleColor"]
 
 
+def test_delete_effect_history_of_an_unknown_type_is_not_found(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    ledfx.config_store.request_save.reset_mock()
+    with pytest.raises(NotFound) as info:
+        ledfx.virtuals.delete_effect_history(BIRD, "never-set")
+    assert info.value.ids == ("never-set",)
+    assert _running(ledfx) == "rainbow"
+    ledfx.config_store.request_save.assert_not_called()
+
+
+def test_delete_effect_history_lets_a_failed_clear_propagate(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+
+    def broken() -> None:
+        raise RuntimeError("device went away")
+
+    monkeypatch.setattr(virtual, "clear_effect", broken)
+    with pytest.raises(RuntimeError, match="went away"):
+        ledfx.virtuals.delete_effect_history(BIRD, "rainbow")
+    assert [t for t, _ in ledfx.virtuals.effect_history(BIRD)] == ["rainbow"]
+
+
 def test_effect_history_keeps_unregistered_types(ledfx: MagicMock) -> None:
     add_virtual(
         ledfx,
@@ -659,7 +688,7 @@ def test_set_effect_all_blocks_streamed_virtuals_with_a_fallback(
 
 
 def test_oneshot_one_and_all(ledfx: MagicMock) -> None:
-    params = OneshotParams(color="#0000ff", hold_ms=500, brightness=3)
+    params = OneshotParams(color="#0000ff", hold_ms=500, brightness=0.5)
     with pytest.raises(Conflict, match="Virtual dj bird is not active"):
         ledfx.virtuals.oneshot(BIRD, params)
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
@@ -669,6 +698,51 @@ def test_oneshot_one_and_all(ledfx: MagicMock) -> None:
     assert ledfx.virtuals.clear_oneshots(BIRD) is True
     assert _flashes(ledfx, "dj bird") == []
     assert ledfx.virtuals.clear_oneshots(MIRROR) is False
+
+
+@pytest.mark.parametrize("brightness", [-0.1, 3, float("nan")])
+def test_oneshot_brightness_is_a_fraction(brightness: float) -> None:
+    with pytest.raises(Invalid) as info:
+        OneshotParams(brightness=brightness)
+    assert info.value.loc == ("body", "brightness")
+
+
+@pytest.mark.parametrize(("sent", "peak"), [(5, 255), (-3, 0), (0.5, 127.5)])
+async def test_v1_oneshot_clamps_brightness(
+    ledfx: MagicMock, sent: float, peak: float
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    async with TestClient(TestServer(build_app(ledfx, (VirtualsToolsEndpoint,)))) as c:
+        response = await c.post(
+            "/api/virtuals_tools/dj%20bird",
+            json={"tool": "oneshot", "color": "white", "brightness": sent},
+        )
+        assert response.status == 200, await response.text()
+    [flash] = _flashes(ledfx, "dj bird")
+    assert max(flash._color) == peak
+
+
+async def test_v1_delete_swallows_only_an_unknown_effect(ledfx: MagicMock) -> None:
+    """The virtual vanishing after the handler's check is not a success."""
+
+    def gone(virtual_id: object, type_id: str) -> None:
+        raise NotFound("Virtual", "dj bird")
+
+    ledfx.virtuals.delete_effect_history = gone
+    async with TestClient(TestServer(build_app(ledfx, (EffectDeleteEndpoint,)))) as c:
+        response = await c.post(
+            "/api/virtuals/dj%20bird/effects/delete", json={"type": "rainbow"}
+        )
+        assert '"status": "success"' not in await response.text()
+
+
+def test_v1_color_turns_lists_into_hex() -> None:
+    assert v1_color([255, 0, 16]) == "#ff0010"
+    assert v1_color((1, 2, 3)) == "#010203"
+    assert v1_color("red") == "#ff0000"
+    for bad in ([1, 2], 7, None, dict[str, object]()):
+        with pytest.raises(ValueError, match="Invalid color"):
+            v1_color(bad)
 
 
 def test_force_color(ledfx: MagicMock) -> None:

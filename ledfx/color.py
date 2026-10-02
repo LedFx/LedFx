@@ -245,7 +245,7 @@ def rgb_to_hsv_vect(rgb, out=None):
     return out[0] if scalar else out
 
 
-def parse_color(color: (str, list, tuple)) -> RGB:
+def parse_color(color: str | list[int] | tuple[int, ...]) -> RGB:
     """
     Parses a color value and returns an RGB object.
 
@@ -314,12 +314,12 @@ def parse_gradient(gradient: str):
     raise ValueError(msg)
 
 
-def validate_color(color: str | list[int] | tuple[int, ...]) -> str:
+def validate_color(color: str) -> str:
     """
     Validates and formats a color.
 
     Args:
-        color: A color name or hex string, or an [r, g, b] list or tuple.
+        color: A color name or hex string.
 
     Returns:
         str: The validated and formatted color string.

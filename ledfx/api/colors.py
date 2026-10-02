@@ -5,7 +5,8 @@ from typing import TYPE_CHECKING
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-from ledfx.color import validate_color, validate_gradient
+from ledfx.api.v1_compat import v1_color
+from ledfx.color import validate_gradient
 
 if TYPE_CHECKING:
     from ledfx.core import LedFxCore
@@ -117,7 +118,8 @@ class ColorEndpoint(RestEndpoint):
         staged = []
         for key, val in data.items():
             try:
-                validate_color(val)
+                # v1-compat: a colour may be an [r, g, b] list.
+                v1_color(val)
                 collection, noun = self._ledfx.colors, "color"
             except ValueError:
                 try:

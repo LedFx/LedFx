@@ -35288,6 +35288,7 @@
     },
     "/api/v2/virtuals/{virtual_id}/effects/{effect_type}": {
       "delete": {
+        "description": "404 for a type the virtual has neither stored nor running.",
         "operationId": "delete_effect_history",
         "parameters": [
           {

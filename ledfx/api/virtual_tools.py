@@ -4,8 +4,8 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.v1_compat import v1_color
 from ledfx.api.virtuals_tools import OneshotRequest, refuse_post_tool
-from ledfx.color import validate_color
 
 _LOGGER = logging.getLogger(__name__)
 TOOLS = ["force_color", "oneshot"]
@@ -71,7 +71,8 @@ class VirtualToolsEndpoint(RestEndpoint):
                 )
             try:
                 # Every device's own virtual
-                self._ledfx.virtuals.force_color(None, validate_color(color))
+                # v1-compat: a colour may be an [r, g, b] list.
+                self._ledfx.virtuals.force_color(None, v1_color(color))
             except ValueError as e:
                 return await self.invalid_request(str(e))
 

@@ -8,8 +8,9 @@ from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.v1_compat import effect_config as validated_effect_config
+from ledfx.api.v1_compat import v1_color
 from ledfx.api.virtual_effects import process_fallback
-from ledfx.color import resolve_gradient, validate_color
+from ledfx.color import resolve_gradient
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import ApplyConfigResult, GlobalEffectUpdate
 from ledfx.errors import Invalid, ensure_writable
@@ -141,10 +142,8 @@ class EffectsEndpoint(RestEndpoint):
                             f'Invalid value for "{key}": must be true, false, or "toggle"'
                         )
                 elif key == "background_color":
-                    if not isinstance(value, (str, list, tuple)):
-                        # parse_color's own message for a non-color type
-                        raise ValueError(f"Invalid color: {value}")
-                    update = replace(update, background_color=validate_color(value))
+                    # v1-compat: a colour may be an [r, g, b] list.
+                    update = replace(update, background_color=v1_color(value))
                 elif key == "background_brightness":
                     update = replace(update, background_brightness=_fraction(value))
                 else:

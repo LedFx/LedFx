@@ -6,7 +6,7 @@ from aiohttp import web
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ledfx.api import RestEndpoint
-from ledfx.color import validate_color
+from ledfx.api.v1_compat import v1_color
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Highlight, OneshotParams
 from ledfx.effects import DummyEffect
@@ -23,12 +23,11 @@ class OneshotRequest(BaseModel):
     # An infinite fade never expires and turns the pixels to NaN.
     model_config = ConfigDict(allow_inf_nan=False)
 
-    # validate_color turns a [r, g, b] list into "#rrggbb" too.
-    color: Annotated[str | list[int], AfterValidator(validate_color)] = "white"
+    # v1-compat: a colour may be an [r, g, b] list.
+    color: Annotated[str | list[int], AfterValidator(v1_color)] = "white"
     ramp: float = Field(0, ge=0)
     hold: float = Field(0, ge=0)
     fade: float = Field(0, ge=0)
-    # Values outside 0-1 are clamped, as they always were.
     brightness: float = 1
 
     def params(self) -> OneshotParams:
@@ -37,7 +36,9 @@ class OneshotRequest(BaseModel):
             ramp_ms=self.ramp,
             hold_ms=self.hold,
             fade_ms=self.fade,
-            brightness=self.brightness,
+            # v1-compat: values outside 0-1 are clamped, as they always were;
+            # the manager refuses them.
+            brightness=min(1.0, max(0.0, self.brightness)),
         )
 
 
@@ -146,7 +147,8 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
             try:
-                virtuals.force_color(vid, validate_color(color))
+                # v1-compat: a colour may be an [r, g, b] list.
+                virtuals.force_color(vid, v1_color(color))
             except (ValueError, Invalid) as e:
                 return await self.invalid_request(str(e))
 

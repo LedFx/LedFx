@@ -35,6 +35,7 @@ from ledfx.configuration.fields import (
     VirtualId,
     coerce,
 )
+from ledfx.errors import Invalid
 from ledfx.utils import generate_title
 
 # JSON Schema readOnly: the UI shows the value but must not edit it. What the API
@@ -374,13 +375,19 @@ class GlobalEffectUpdate:
 @dataclass(frozen=True)
 class OneshotParams:
     """A flash: a colour, an envelope in milliseconds and a brightness
-    (Virtuals.oneshot clamps it to 0..1)."""
+    (0..1; Invalid otherwise)."""
 
     color: str = "white"
     ramp_ms: float = 0
     hold_ms: float = 0
     fade_ms: float = 0
     brightness: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.brightness <= 1.0:
+            raise Invalid(
+                "brightness must be between 0 and 1", loc=("body", "brightness")
+            )
 
 
 @dataclass(frozen=True)
