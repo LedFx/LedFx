@@ -766,12 +766,18 @@ def test_highlight_needs_calibration(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_highlight(BIRD, highlight)
     virtual = ledfx.virtuals.get_or_raise(BIRD)
     assert (virtual._hl_device, virtual._hl_start, virtual._hl_end) == ("strip", 0, 9)
-    with pytest.raises(Invalid, match="Device ghost not found") as unknown:
+    with pytest.raises(Invalid, match="Unknown device: ghost") as unknown:
         ledfx.virtuals.set_highlight(BIRD, Highlight("ghost", 0, 1))
     assert unknown.value.loc == ("body", "device_id")
-    with pytest.raises(Invalid, match="start and end must be less than 50") as past:
+    # The same wording and loc segment_problem gives a segment.
+    with pytest.raises(
+        Invalid, match="end must be within the device's pixels 0..49"
+    ) as past:
         ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 99))
     assert past.value.loc == ("body", "end")
+    with pytest.raises(Invalid, match="start must be within") as start_past:
+        ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 60, 70))
+    assert start_past.value.loc == ("body", "start")
     assert virtual.calibrating
     ledfx.virtuals.set_calibration(BIRD, False)
     assert not virtual.calibrating
@@ -783,6 +789,18 @@ def test_highlight_needs_calibration(ledfx: MagicMock) -> None:
     assert (virtual._hl_start, virtual._hl_end) == (0, 9)  # nothing changed
     ledfx.virtuals.set_highlight(BIRD, None)
     assert virtual._hl_state is False
+
+
+def test_a_highlight_checks_its_input_before_the_state(ledfx: MagicMock) -> None:
+    """Existence and input come before the calibration conflict."""
+    with pytest.raises(Invalid) as unknown:
+        ledfx.virtuals.set_highlight(BIRD, Highlight("ghost", 0, 1))
+    assert unknown.value.loc == ("body", "device_id")
+    with pytest.raises(Invalid) as past:
+        ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 99))
+    assert past.value.loc == ("body", "end")
+    with pytest.raises(Conflict, match="not in calibration mode"):
+        ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 9))
 
 
 def test_a_highlight_is_switched_on_after_its_range_is_set(

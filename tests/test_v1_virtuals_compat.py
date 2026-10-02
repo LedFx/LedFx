@@ -218,6 +218,22 @@ async def test_v1_highlight_with_a_bad_range_lights_nothing(
             ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 9))
 
 
+async def test_v1_highlight_without_a_string_device_is_refused(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_calibration(BIRD, True)
+    app = build_app(ledfx, (VirtualsToolsEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+        bodies: list[dict[str, int]] = [{}, {"device": 7}]
+        for body in bodies:
+            response = await client.put(
+                "/api/virtuals_tools/dj%20bird",
+                json={"tool": "highlight", "start": 0, "stop": 1, **body},
+            )
+            assert "Device" in await response.text()
+            assert "not found" in await response.text()
+
+
 async def test_v1_copy_skips_unknown_targets_and_lumps_refusals(
     ledfx: MagicMock,
 ) -> None:

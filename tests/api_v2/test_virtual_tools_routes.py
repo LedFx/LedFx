@@ -11,6 +11,7 @@ from ledfx.effects import DummyEffect
 from ledfx.effects.oneshots.oneshot import Flash
 from tests.api_v2.virtuals_client import BIRD, Client, V, core_of, expect_problem
 from tests.test_utilities.virtuals_core import (
+    FakeDevice,
     add_virtual,
     enter_safe_mode,
     running_core,
@@ -249,12 +250,15 @@ async def test_calibration_and_highlight(v2_client: Client) -> None:
         f"{BIRD}/highlight", json={**highlight, "device_id": "ghost"}
     )
     body = await expect_problem(resp, 422, "validation")
-    assert body["detail"] == "Device ghost not found"
+    assert body["detail"] == "Unknown device: ghost"
     assert body["errors"][0]["loc"] == ["body", "device_id"]
     resp = await v2_client.put(f"{BIRD}/highlight", json={**highlight, "end": 99})
     body = await expect_problem(resp, 422, "validation")
-    assert body["detail"] == "start and end must be less than 50"
+    assert body["detail"] == "end must be within the device's pixels 0..49"
     assert body["errors"][0]["loc"] == ["body", "end"]
+    resp = await v2_client.put(f"{BIRD}/highlight", json={**highlight, "start": 60})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "start"]
     resp = await v2_client.put(
         f"{BIRD}/highlight", json={**highlight, "start": 5, "end": 2}
     )
@@ -290,6 +294,24 @@ async def test_set_effect_answers_an_unknown_id_before_an_unknown_type(
     )
     body = await expect_problem(resp, 404, "not-found")
     assert "'ghost'" in body["detail"]
+
+
+async def test_a_highlight_on_a_gap_device_is_range_checked(
+    v2_client: Client,
+) -> None:
+    """Gap devices are exempt for segments, not for lit pixels."""
+    core = core_of(v2_client)
+    gap = FakeDevice(core, "gap-1", 10)
+    gap.type = "dummy"
+    core.devices._objects["gap-1"] = gap
+    assert (
+        await v2_client.put(f"{BIRD}/calibration", json={"enabled": True})
+    ).status == 204
+    resp = await v2_client.put(
+        f"{BIRD}/highlight", json={"device_id": "gap-1", "start": 0, "end": 99}
+    )
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "end"]
 
 
 async def test_copy_effect(v2_client: Client) -> None:

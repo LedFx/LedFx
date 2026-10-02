@@ -174,24 +174,37 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
             highlight = Highlight(device, start, end, flip) if state else None
             virtual = virtuals.get_or_raise(vid)
-            if not state and not virtual.calibrating:
-                # v1-compat: v1 refuses highlight off outside calibration;
-                # the manager (and v2) treat it as idempotent.
+            if not virtual.calibrating:
+                # v1-compat: v1 names calibration before a bad device or range
+                # (the manager checks its input first), and refuses highlight
+                # off outside calibration (the manager treats it as idempotent).
                 return await self.invalid_request(
                     f"highlight error: Cannot set highlight when {virtual.name} is not in calibration mode"
+                )
+            # v1-compat: v1 answered 500 for a missing or non-string device.
+            if state and not isinstance(device, str):
+                return await self.invalid_request(
+                    f"highlight error: Device {device} not found"
                 )
             unlit = state and (start < 0 or start > end)
             if unlit:
                 # v1-compat: v1 answered success for an omitted (-1), negative
                 # or reversed range and lit nothing; the manager refuses them.
-                # Run its calibration, device and past-the-end checks on the
-                # nearest valid range, then clear what that lit.
+                # Run its device and past-the-end checks on the nearest valid
+                # range, then clear what that lit.
                 nearest = max(start, end, 0)
                 highlight = Highlight(device, nearest, nearest, flip)
             try:
                 virtuals.set_highlight(vid, highlight)
-            except (Conflict, Invalid) as err:
-                return await self.invalid_request(f"highlight error: {err.detail}")
+            except Invalid as err:
+                # v1-compat: v1's own wording for what the manager reports by
+                # field (body.device_id, or body.start / body.end).
+                if err.loc[-1] == "device_id":
+                    reason = f"Device {device.lower()} not found"
+                else:
+                    pixels = self._ledfx.devices.get(device.lower()).pixel_count
+                    reason = f"start and end must be less than {pixels}"
+                return await self.invalid_request(f"highlight error: {reason}")
             if unlit:
                 virtuals.set_highlight(vid, None)
 

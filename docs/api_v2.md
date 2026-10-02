@@ -57,9 +57,10 @@ Behaviour worth knowing:
 - `PATCH` is all-or-nothing: if any part is refused, nothing changes. Arrays in
   a `PATCH` replace the stored array wholesale, so send every item complete.
 - v2 never adjusts a value it was sent. A segment must name a known device and
-  pixels inside it (start not after end; gap devices are exempt), `frequency_min`
-  must be below `frequency_max`, and `rotate` needs more than one row. Anything
-  else is a 422 at the offending field and nothing changes.
+  pixels inside it (start not after end; gap devices are exempt from the device
+  and pixel checks), `frequency_min` must be below `frequency_max`, and
+  `rotate` needs more than one row. Anything else is a 422 at the offending
+  field and nothing changes.
 - Responses show stored values even when they lie outside the bounds v2 accepts
   in a request. A `PATCH` holds only the settings it sends to those bounds: a
   stored value beyond them (v1 and old files can store one) is kept and does not
@@ -76,13 +77,14 @@ Behaviour worth knowing:
 - A virtual's id is made from its name and is at most 128 characters: a longer
   name is cut, and a numeric suffix for a repeat still fits. An older, longer
   id cannot be addressed in v2.
-- `DELETE …/highlight` is idempotent. `PUT …/highlight` on a virtual that is not
-  calibrating is a 409; an unknown device or a range past its end is a 422 at
-  `body.device_id` or `body.end`, and a negative or reversed range is a 422 at
-  `body.start`.
-- `copy-effect` with an unknown target is a 404 and nothing is copied. A target
-  that refuses the effect is passed over; if none takes it, or the source runs
-  nothing, that is a 409.
+- `DELETE …/highlight` is idempotent. `PUT …/highlight` checks the device and
+  the range first: an unknown device is a 422 at `body.device_id`, a range past
+  the device's end is a 422 at `body.start` or `body.end` (whichever is past),
+  and a negative or reversed range is a 422 at `body.start`. Only then, on a
+  virtual that is not calibrating, is it a 409.
+- `copy-effect` with an unknown target is a 404 and nothing is copied, even if
+  the source runs nothing. A target that refuses the effect is passed over; if
+  none takes it, or the source runs nothing, that is a 409.
 - Activating a virtual that cannot run (no segments, no effect to restore, a
   stored setting that no longer passes) is a 409, on `PATCH` and on starting an
   effect alike. Starting an effect makes the virtual active.

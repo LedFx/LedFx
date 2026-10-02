@@ -354,6 +354,12 @@ SCENARIOS: dict[str, list[Step]] = {
             f"{V}_tools/dj%20bird",
             {"tool": "highlight", "device": "ghost", "start": 0, "stop": 1},
         ),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "start": 0, "stop": 1}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": 7, "start": 0, "stop": 1},
+        ),
         (
             "PUT",
             f"{V}_tools/dj%20bird",

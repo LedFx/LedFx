@@ -114,19 +114,24 @@ class VirtualChanges:
     active: bool | None = None
 
 
-def segment_problem(devices, segment: Sequence[object]) -> tuple[str, str] | None:
-    """The first thing wrong with a well-formed segment [device_id, start, end,
-    invert]: (field, reason), or None. Gap devices (placeholders) are exempt.
-    The one rule behind both the strict request check and v1's repair."""
-    device_id, start, end = segment[0], segment[1], segment[2]
-    assert isinstance(device_id, str) and isinstance(start, int)
-    assert isinstance(end, int)
-    if device_id.startswith("gap-"):
+def unknown_device(device_id: str) -> str:
+    """The reason for a device id that names no device."""
+    return f"Unknown device: {device_id}"
+
+
+def segment_problem(
+    devices, device_id: str, start: int, end: int, *, exempt_gaps: bool = True
+) -> tuple[str, str] | None:
+    """The first thing wrong with a run of a device's pixels: (field, reason),
+    or None. Gap devices (placeholders) are exempt from the checks unless
+    exempt_gaps is False (a highlight lights real pixels). The one rule behind
+    the strict request checks (segments, highlight) and the load path's repair."""
+    if exempt_gaps and device_id.startswith("gap-"):
         return None
     device = devices.get(device_id)
     if device is None:
-        return "device_id", f"Unknown device: {device_id}"
-    if is_gap_device(device):
+        return "device_id", unknown_device(device_id)
+    if exempt_gaps and is_gap_device(device):
         return None
     last = device.pixel_count - 1
     if start > end:
@@ -282,7 +287,9 @@ class Virtual:
 
         device_id, start_pixel, end_pixel, invert = segment
 
-        problem = segment_problem(self._ledfx.devices, segment)
+        problem = segment_problem(
+            self._ledfx.devices, device_id, start_pixel, end_pixel
+        )
         if problem is None:
             return segment
         if problem[0] == "device_id":
@@ -810,27 +817,20 @@ class Virtual:
         self._hl_state = False
 
     def set_highlight(self, h: Highlight) -> None:
-        """Light a device's pixel range. Raises Conflict when not calibrating,
-        Invalid (at body.device_id / body.end / body.start) for an unknown device,
-        a range past its end, or a negative or reversed range; a refused highlight changes nothing."""
+        """Light a device's pixel range. Raises Invalid (at body.device_id,
+        body.start or body.end, see segment_problem) for an unknown device or
+        a range the device lacks, then Conflict when not calibrating; a
+        refused highlight changes nothing."""
+        device_id = h.device_id.lower()
+        problem = segment_problem(
+            self._ledfx.devices, device_id, h.start, h.end, exempt_gaps=False
+        )
+        if problem is not None:
+            field, reason = problem
+            raise Invalid(reason, loc=("body", field))
         if not self.calibrating:
             raise Conflict(
                 f"Cannot set highlight when {self.name} is not in calibration mode"
-            )
-
-        device_id = h.device_id.lower()
-        device = self._ledfx.devices.get(device_id)
-        if device is None:
-            raise Invalid(f"Device {device_id} not found", loc=("body", "device_id"))
-
-        if h.start > device.pixel_count - 1 or h.end > device.pixel_count - 1:
-            raise Invalid(
-                f"start and end must be less than {device.pixel_count}",
-                loc=("body", "end"),
-            )
-        if h.start < 0 or h.start > h.end:
-            raise Invalid(
-                "start must be 0 or more and not after end", loc=("body", "start")
             )
 
         # The render thread reads the range once _hl_state is on: set it last.
@@ -1937,7 +1937,9 @@ class Virtuals:
         """Invalid for a segment on an unknown device or outside its pixels
         (see segment_problem)."""
         for index, segment in enumerate(segments):
-            problem = segment_problem(self._ledfx.devices, segment)
+            problem = segment_problem(
+                self._ledfx.devices, segment.device_id, segment.start, segment.end
+            )
             if problem is not None:
                 field, reason = problem
                 raise Invalid(reason, loc=("body", "segments", index, field))
