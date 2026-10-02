@@ -87,7 +87,9 @@ Behaviour worth knowing:
   none takes it, or the source runs nothing, that is a 409.
 - Activating a virtual that cannot run (no segments, no effect to restore, a
   stored setting that no longer passes) is a 409, on `PATCH` and on starting an
-  effect alike. Starting an effect makes the virtual active.
+  effect alike. Starting an effect makes the virtual active. A restart of the
+  running effect (a colour change, randomize, reset) keeps the virtual's pause
+  state.
 - `set-effect` without a `config` starts the effect type's defaults. In
   `set-effect`, `clear-effects` and `apply-config`, an unknown id in
   `virtual_ids` is a 404 naming each unknown id once, and nothing changes.

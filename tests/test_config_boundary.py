@@ -44,6 +44,7 @@ import ast
 import functools
 import json
 from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -172,19 +173,23 @@ def _write_targets(node: ast.AST) -> list[ast.expr]:
     return [leaf for t in targets for leaf in _flatten(t)]
 
 
-def _aliases(scope: ast.AST) -> frozenset[str]:
-    """Names bound to the core's config (or below it) inside scope."""
+def _aliases(
+    scope: ast.AST,
+    through: Callable[[ast.expr, frozenset[str]], bool] = _through_core_config,
+) -> frozenset[str]:
+    """Names bound inside scope to a chain ``through`` accepts (by default the
+    core's config or below it; the effect ratchet passes its own chain test)."""
     found: set[str] = set()
     while True:
         before = len(found)
         names = frozenset(found)
         for n in ast.walk(scope):
-            if isinstance(n, ast.Assign) and _through_core_config(n.value, names):
+            if isinstance(n, ast.Assign) and through(n.value, names):
                 found.update(t.id for t in n.targets if isinstance(t, ast.Name))
             elif (
                 isinstance(n, (ast.For, ast.comprehension))
                 and isinstance(n.target, ast.Name)
-                and _through_core_config(n.iter, names)
+                and through(n.iter, names)
             ):
                 found.add(n.target.id)
         if len(found) == before:
@@ -262,9 +267,10 @@ def scan() -> dict[str, int]:
     return out
 
 
-def load_allowlist() -> dict[str, int]:
+def load_allowlist(path: Path = ALLOWLIST) -> dict[str, int]:
+    """``path:rule`` -> count from an allowlist file (both ratchets use this)."""
     out: dict[str, int] = {}
-    for line in ALLOWLIST.read_text("utf-8").splitlines():
+    for line in path.read_text("utf-8").splitlines():
         if line.strip():
             key, count = line.rsplit(":", 1)
             out[key] = int(count)

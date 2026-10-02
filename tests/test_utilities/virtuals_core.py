@@ -126,6 +126,18 @@ def add_virtual(
     return virtual
 
 
+def reload_virtual(ledfx: MagicMock, virtual_id: str) -> Virtual:
+    """Restart one virtual from its stored entry, as a restart of LedFx would."""
+    virtual = ledfx.virtuals.get_or_raise(VirtualIdStr(virtual_id))
+    stored = virtual.entry
+    assert stored is not None
+    stored = stored.model_copy(deep=True)
+    virtual.deactivate()
+    ledfx.virtuals.destroy(virtual_id)
+    ledfx.virtuals.create_from_config([stored])
+    return ledfx.virtuals.get_or_raise(VirtualIdStr(virtual_id))
+
+
 def seed_standard(ledfx: MagicMock) -> None:
     """The virtuals most tests share:
     - "dj bird": all of strip (an id with a space);

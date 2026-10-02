@@ -1,0 +1,123 @@
+[
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals/dj%20bird/presets",
+      {
+        "category": "ledfx_presets",
+        "effect_id": "singleColor",
+        "preset_id": "reset"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": true, \"streaming\": false, \"last_effect\": \"singleColor\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird/presets",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"virtual\": \"dj bird\", \"effect\": \"singleColor\", \"ledfx_presets\": {\"reset\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"reset\", \"active\": true}, \"black\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#000000\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Black\", \"active\": false}, \"blue\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#0000ff\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Blue\", \"active\": false}, \"cyan\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#00ffff\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Cyan\", \"active\": false}, \"green\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#00ff00\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Green\", \"active\": false}, \"magenta\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#ff00ff\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Magenta\", \"active\": false}, \"orange\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#ffc800\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Orange\", \"active\": false}, \"pink\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#ff00b2\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Pink\", \"active\": false}, \"red\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#ff0000\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Red\", \"active\": false}, \"red-waves\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 6.2, \"brightness\": 1, \"color\": \"#ff0000\", \"flip\": false, \"mirror\": true, \"modulate\": true, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.76, \"speed\": 0.62, \"diag\": false}, \"name\": \"Red Waves\", \"active\": false}, \"steel-pulse\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 6.2, \"brightness\": 1, \"color\": \"#4682b4\", \"flip\": false, \"mirror\": true, \"modulate\": true, \"modulation_effect\": \"breath\", \"modulation_speed\": 0.75, \"speed\": 0.62, \"diag\": false}, \"name\": \"Steel Pulse\", \"active\": false}, \"turquoise-roll\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 6.2, \"brightness\": 1, \"color\": \"#00c78c\", \"flip\": false, \"mirror\": false, \"modulate\": true, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.76, \"speed\": 0.62, \"diag\": false}, \"name\": \"Turquoise Roll\", \"active\": false}, \"yellow\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"color\": \"#ffc800\", \"decay\": 1, \"flip\": false, \"mirror\": true, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 5, \"threshold\": 0.7, \"diag\": false}, \"name\": \"Yellow\", \"active\": false}}, \"user_presets\": {}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals/dj%20bird/presets",
+      {
+        "category": "ledfx_presets",
+        "effect_id": "rainbow",
+        "preset_id": "reset"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": true, \"streaming\": false, \"last_effect\": \"rainbow\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/presets",
+      {
+        "name": "My Rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"preset\": {\"id\": \"my-rainbow\", \"name\": \"My Rainbow\", \"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals/dj%20bird/presets",
+      {
+        "category": "user_presets",
+        "effect_id": "rainbow",
+        "preset_id": "my-rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird/presets",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"virtual\": \"dj bird\", \"effect\": \"rainbow\", \"ledfx_presets\": {\"reset\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"reset\", \"active\": true}, \"cascade\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 7.7, \"brightness\": 1, \"flip\": false, \"frequency\": 0.32, \"mirror\": true, \"speed\": 0.3, \"diag\": false}, \"name\": \"Cascade\", \"active\": false}, \"crawl\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 2.3, \"brightness\": 1, \"flip\": true, \"frequency\": 3.6, \"mirror\": false, \"speed\": 3.5, \"diag\": false}, \"name\": \"Crawl\", \"active\": false}, \"faded\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 6.4, \"brightness\": 1, \"flip\": true, \"frequency\": 5.9, \"mirror\": false, \"speed\": 9.7, \"diag\": false}, \"name\": \"Faded\", \"active\": false}, \"gentle\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 7.7, \"brightness\": 1, \"flip\": true, \"frequency\": 1.9, \"mirror\": true, \"speed\": 3.3, \"diag\": false}, \"name\": \"Gentle\", \"active\": false}, \"slow-roll\": {\"config\": {\"background_brightness\": 1.0, \"background_color\": \"#000000\", \"blur\": 0, \"brightness\": 1, \"flip\": true, \"frequency\": 4.4, \"mirror\": true, \"speed\": 1.1, \"diag\": false}, \"name\": \"Slow Roll\", \"active\": false}}, \"user_presets\": {\"my-rainbow\": {\"name\": \"My Rainbow\", \"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"active\": true}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals/dj%20bird/presets",
+      {
+        "category": "ledfx_presets",
+        "effect_id": "singleColor",
+        "preset_id": "reset"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals/dj%20bird/presets",
+      {
+        "category": "user_presets",
+        "effect_id": "rainbow",
+        "preset_id": "my-rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": true, \"streaming\": false, \"last_effect\": \"rainbow\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}}"
+  }
+]

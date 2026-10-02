@@ -1359,7 +1359,7 @@ class Virtual:
 
     @property
     def config(self) -> VirtualConfig:
-        """The virtual's settings (frozen: change them with update_config)."""
+        """The virtual's settings (frozen: change them with Virtuals.set_config)."""
         return self._config
 
     def _sync_entry(self) -> None:
@@ -2034,7 +2034,8 @@ class Virtuals:
 
         patch holds only the settings to change, already validated. A colour
         change on an effect that blends colours restarts it, so the change
-        transitions (see restarts_effect). type_id is the type the caller
+        transitions (see restarts_effect and, for the pause state,
+        _start_effect). type_id is the type the caller
         checked the patch against. Raises Conflict when no effect runs or
         another type runs (a fallback can end in between), Invalid when the
         effect refuses a value, and EffectRejected when the virtual refuses
@@ -2050,7 +2051,9 @@ class Virtuals:
                 merged = effect.config.with_values(**patch.as_dict())
             except ValidationError as err:
                 raise _invalid_config(err) from err
-            self._start_effect(virtual, self._create_effect(effect.type, merged))
+            self._start_effect(
+                virtual, self._create_effect(effect.type, merged), keep_active=True
+            )
         else:
             try:
                 effect.update_config(patch.as_dict())
@@ -2073,10 +2076,17 @@ class Virtuals:
         )
 
     def reset_effect(self, virtual_id: VirtualIdStr) -> Virtual:
-        """Restart the running effect with its default settings."""
+        """Restart the running effect with its default settings (a restart:
+        see _start_effect)."""
         ensure_writable(self._ledfx)
-        effect = self._running_effect(self.get_or_raise(virtual_id))
-        return self.set_effect(virtual_id, effect.type, self._defaults(effect.type))
+        virtual = self.get_or_raise(virtual_id)
+        effect = self._running_effect(virtual)
+        defaults = self._defaults(effect.type)
+        self._start_effect(
+            virtual, self._create_effect(effect.type, defaults), keep_active=True
+        )
+        self._ledfx.config_store.request_save()
+        return virtual
 
     def _ensure_type(self, type_id: str) -> None:
         if type_id not in self._ledfx.effects.types():
@@ -2177,12 +2187,20 @@ class Virtuals:
         fallback: float | None = None,
         *,
         store: bool = True,
+        keep_active: bool = False,
     ) -> None:
         """Run a freshly created effect on a virtual and store its config
         (unless store is False).
 
+        Starting an effect makes the virtual active, and that is stored with
+        the config, except for a fallback (temporary) effect, which leaves the
+        stored flag alone. keep_active is for a restart of the running effect
+        (a colour patch, randomize, reset): the virtual keeps its pause state,
+        at runtime and stored.
+
         Raises EffectRejected (the effect unregistered) when the virtual
         refuses it."""
+        was_active = virtual.active
         try:
             virtual.set_effect(effect, fallback=fallback)
         except (ValueError, RuntimeError) as err:
@@ -2190,6 +2208,11 @@ class Virtuals:
             raise EffectRejected(effect, str(err)) from err
         if store:
             virtual.update_effect_config(effect)
+        if keep_active:
+            if virtual.active != was_active:
+                virtual.active = was_active
+        elif store and fallback is None and virtual.entry is not None:
+            virtual.entry.active = virtual.active
 
     def _discard_refused(self, virtual: Virtual, effect: Effect) -> None:
         """Unregister a refused effect, unless the virtual already holds it
@@ -2540,7 +2563,7 @@ def _apply_to_running_effects(
         if target_ids is not None and virtual.id not in target_ids:
             continue
 
-        eff = getattr(virtual, "active_effect", None)
+        eff = virtual.active_effect
         if eff is None or isinstance(eff, DummyEffect):
             continue
 
@@ -2567,7 +2590,7 @@ def _apply_to_running_effects(
         except (ValueError, RuntimeError) as exc:
             _LOGGER.warning(
                 "Effect on virtual %s refused the config: %s",
-                getattr(virtual, "id", "?"),
+                virtual.id,
                 exc,
             )
             failed += 1

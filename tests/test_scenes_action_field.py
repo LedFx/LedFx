@@ -1,10 +1,19 @@
-"""Tests for scene action field functionality."""
+"""Scene action dispatch (ignore, stop, forceblack, activate) against stand-ins.
+
+The core here is a stand-in: ``_DummyVirtuals`` takes every effect type, has no
+safe-mode check and no stored entries. It tests which action does what, not the
+Virtuals manager; the real manager's behaviour is covered in
+test_scenes_manager.py.
+"""
+
+from __future__ import annotations
 
 from unittest.mock import patch
 
 import pytest
 
 import ledfx.scenes as scenes_module
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.scenes import Scenes
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -36,9 +45,6 @@ class _DummyVirtual:
         self._set_effect_calls.append(effect)
         self.active_effect = effect
 
-    def update_effect_config(self, effect):
-        pass
-
 
 class _DummyEffect:
     def __init__(self, effect_type, config):
@@ -55,6 +61,15 @@ class _DummyEffects:
         self._created_effects.append(effect)
         return effect
 
+    def types(self):
+        """Every type is registered."""
+
+        class AnyType:
+            def __contains__(self, _):
+                return True
+
+        return AnyType()
+
     def get_class(self, effect_id):
         """Mock get_class for generate_default_config support."""
 
@@ -65,7 +80,38 @@ class _DummyEffects:
                 # Return a simple default config
                 return {"speed": 1.0, "brightness": 1.0, "color": "#ffffff"}
 
+            @staticmethod
+            def config_model():
+                return PluginConfig
+
         return MockEffectClass
+
+
+class _DummyVirtuals:
+    """The Virtuals manager's set_effect and clear_effect over dummy virtuals."""
+
+    def __init__(
+        self, virtuals: dict[str, _DummyVirtual], effects: _DummyEffects
+    ) -> None:
+        self._virtuals = virtuals
+        self._effects = effects
+
+    def get(self, virtual_id: str) -> _DummyVirtual | None:
+        return self._virtuals.get(virtual_id)
+
+    def set_effect(
+        self,
+        virtual_id: str,
+        type_id: str,
+        config: PluginConfig,
+        *,
+        fallback: float | None = None,
+    ) -> None:
+        effect = self._effects.create(None, type_id, config.as_dict())
+        self._virtuals[virtual_id].set_effect(effect)
+
+    def clear_effect(self, virtual_id: str) -> None:
+        self._virtuals[virtual_id].clear_effect()
 
 
 class _DummyLedFx:
@@ -75,9 +121,9 @@ class _DummyLedFx:
         self.config = fake.config
         self.config_store = fake.config_store
         scenes_module.ledfx_presets.update(presets or {})
-        self.virtuals = virtuals or {}
         self.events = _DummyEvents()
         self.effects = _DummyEffects()
+        self.virtuals = _DummyVirtuals(virtuals or {}, self.effects)
 
 
 def _build_scenes_manager(scene_config, virtuals, presets=None):

@@ -1,11 +1,13 @@
 """Tests for the MQTT Home Assistant integration."""
 
 import json
+import logging
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 import pytest
 
+from ledfx.errors import SafeMode
 from ledfx.events import EffectSetEvent
 from ledfx.integrations.mqtt_hass import MQTT_HASS
 
@@ -89,3 +91,20 @@ def test_the_pause_listener_ignores_a_virtual_deleted_since() -> None:
     listener(SimpleNamespace(virtual_id="gone"))
 
     client.publish.assert_not_called()
+
+
+def test_scene_select_in_safe_mode_is_logged_at_debug(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    integration = _integration({})
+    integration._client = MagicMock()
+    integration._ledfx.scenes.activate.side_effect = SafeMode("read-only")
+    msg = SimpleNamespace(topic="ha/select/ledfxsceneselect/set", payload=b"party")
+    integration._config = SimpleNamespace(topic="ha")
+
+    with caplog.at_level(logging.DEBUG):
+        integration._handle_message(msg)
+
+    integration._ledfx.scenes.activate.assert_called_once_with("party")
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("safe mode" in r.getMessage() for r in caplog.records)

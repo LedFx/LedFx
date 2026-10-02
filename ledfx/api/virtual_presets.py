@@ -4,9 +4,12 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.v1_compat import effect_config as validated_effect_config
+from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Preset
 from ledfx.configuration.presets import configs_match, preset_category, preset_config
 from ledfx.effects import DummyEffect
+from ledfx.errors import Conflict
 from ledfx.presets import ledfx_presets
 from ledfx.utils import (
     generate_default_config,
@@ -156,20 +159,22 @@ class VirtualPresetsEndpoint(RestEndpoint):
                     user_presets, category, effect_id, preset_id
                 )
 
-        effect = self._ledfx.effects.create(
-            ledfx=self._ledfx, type=effect_id, config=effect_config
-        )
+        vid = VirtualIdStr(virtual_id)
         try:
-            virtual.set_effect(effect)
-        except (ValueError, RuntimeError) as msg:
-            error_message = f"Unable to set effect on virtual {virtual.id}: {msg}"
+            # v1-compat: the settings are checked here for pydantic's error
+            # list (HTTP 400); the manager is handed typed values.
+            virtual = self._ledfx.virtuals.set_effect(
+                vid,
+                effect_id,
+                validated_effect_config(self._ledfx, effect_id, effect_config),
+            )
+        except Conflict as err:
+            # v1-compat: the refusal text v1 has always answered with.
+            error_message = f"Unable to set effect on virtual {vid}: {err.detail}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
 
-        virtual.update_effect_config(effect)
-
-        self._ledfx.config_store.request_save()
-
+        effect = virtual.active_effect
         effect_response = {}
         effect_response["config"] = effect.config
         effect_response["name"] = effect.name
@@ -231,7 +236,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         return await self.bare_request_success(response)
 
     async def delete(self, virtual_id) -> web.Response:
-        # TODO: This API is not currently used, and is not functional
+        # TODO: This API is not currently used
         # TODO: https://github.com/LedFx/LedFx/issues/1231
         """Delete a virtual preset.
 
@@ -245,15 +250,7 @@ class VirtualPresetsEndpoint(RestEndpoint):
         if virtual is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        # Clear the effect
-        virtual.clear_effect()
-
-        # TODO: Add a unit test for deleting a virtual preset effect, once fixed / removed
-        entry = virtual.entry
-        if entry is not None:
-            entry.effect = None
-
-        self._ledfx.config_store.request_save()
+        self._ledfx.virtuals.clear_effect(VirtualIdStr(virtual_id))
 
         response = {"status": "success", "effect": {}}
         return await self.bare_request_success(response)
