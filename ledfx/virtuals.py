@@ -1755,8 +1755,14 @@ class Virtuals:
     def add(self, config: VirtualConfig) -> Virtual:
         """Create a virtual (id from its name, made unique) and store it.
 
-        Raises Invalid when the name gives a reserved id (RESERVED_IDS)."""
+        Raises Invalid (loc body.config.frequency_min) for a frequency range
+        with min >= max, and Invalid (loc body.config.name) when the name gives
+        a reserved id (RESERVED_IDS); nothing is created then."""
         ensure_writable(self._ledfx)
+        self._check_frequency(config, None)
+        # v1-compat: not _check_rotate. v1 create stores a rotate on one row as
+        # sent (the r3 create golden pins it), so add accepts it; check it here
+        # too when v1 is retired.
         virtual_id = generate_id(config.name)[:MAX_ID_LENGTH]
         if virtual_id in RESERVED_IDS:
             raise Invalid(
@@ -1893,14 +1899,7 @@ class Virtuals:
 
         Only what differs from current is checked: v1 can store a rotate on
         one row, and changing something else must not be refused for it."""
-        if (config.frequency_min, config.frequency_max) != (
-            current.frequency_min,
-            current.frequency_max,
-        ) and config.frequency_min >= config.frequency_max:
-            raise Invalid(
-                "frequency_min must be below frequency_max",
-                loc=("body", "config", "frequency_min"),
-            )
+        self._check_frequency(config, current)
         if (
             (config.rotate, config.rows) != (current.rotate, current.rows)
             and config.rotate != 0
@@ -1910,6 +1909,21 @@ class Virtuals:
             field = "rows" if config.rotate == current.rotate else "rotate"
             raise Invalid(
                 "rotate needs more than one row", loc=("body", "config", field)
+            )
+
+    def _check_frequency(
+        self, config: VirtualConfig, current: VirtualConfig | None
+    ) -> None:
+        """Invalid for a frequency range that config sets to min >= max (a
+        new virtual, current None, is always checked)."""
+        if (
+            current is None
+            or (config.frequency_min, config.frequency_max)
+            != (current.frequency_min, current.frequency_max)
+        ) and config.frequency_min >= config.frequency_max:
+            raise Invalid(
+                "frequency_min must be below frequency_max",
+                loc=("body", "config", "frequency_min"),
             )
 
     def _apply_config(self, virtual: Virtual, config: VirtualConfig) -> None:

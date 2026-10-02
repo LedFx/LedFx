@@ -23,7 +23,13 @@ from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.errors import Conflict, Invalid, NotFound, SafeMode
 from ledfx.events import GlobalPauseEvent, VirtualConfigUpdateEvent
-from ledfx.virtuals import EffectRejected, VirtualChanges, Virtuals, restarts_effect
+from ledfx.virtuals import (
+    EffectRejected,
+    Virtual,
+    VirtualChanges,
+    Virtuals,
+    restarts_effect,
+)
 from tests.test_utilities.virtuals_core import (
     add_virtual,
     enter_safe_mode,
@@ -182,9 +188,36 @@ def test_set_config_refuses_what_it_would_repair(
     ledfx.config_store.request_save.assert_not_called()
 
 
+def _store_unchecked(virtual: Virtual, **changes: object) -> None:
+    """Put a config in the virtual and its entry as an old file or v1 left it."""
+    virtual._config = replace_model(virtual.config, **changes)
+    assert virtual.entry is not None
+    virtual.entry.config = virtual._config
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"frequency_min": 900, "frequency_max": 100},
+        {"frequency_min": 500, "frequency_max": 500},
+    ],
+)
+def test_add_refuses_a_frequency_range_it_would_repair(
+    ledfx: MagicMock, changes: dict[str, int]
+) -> None:
+    before = _entry_ids(ledfx)
+    with pytest.raises(Invalid) as caught:
+        ledfx.virtuals.add(replace_model(VirtualConfig(name="Bad"), **changes))
+    assert caught.value.loc == ("body", "config", "frequency_min")
+    assert _entry_ids(ledfx) == before
+    assert ledfx.virtuals.get(VirtualIdStr("bad")) is None
+    ledfx.config_store.request_save.assert_not_called()
+
+
 def test_a_config_check_looks_only_at_what_changes(ledfx: MagicMock) -> None:
     """v1 can store rows 1 with rotate 2; a change to something else keeps it."""
-    virtual = ledfx.virtuals.add(VirtualConfig(name="R", rows=1, rotate=2))
+    virtual = ledfx.virtuals.add(VirtualConfig(name="R"))
+    _store_unchecked(virtual, rows=1, rotate=2)
     stored = virtual.config
     changed = ledfx.virtuals.set_config(
         virtual.id, replace_model(stored, max_brightness=0.5)
@@ -889,7 +922,8 @@ def test_v2_highlight_off_is_idempotent(ledfx: MagicMock) -> None:
 
 def test_a_refused_patch_restores_a_config_v2_would_refuse(ledfx: MagicMock) -> None:
     """v1 can store rows 1 with rotate 2; the undo puts it back, unchecked."""
-    virtual = ledfx.virtuals.add(VirtualConfig(name="R", rows=1, rotate=2))
+    virtual = ledfx.virtuals.add(VirtualConfig(name="R"))
+    _store_unchecked(virtual, rows=1, rotate=2)
     before = virtual.config
     assert before.rotate == 2
     changes = VirtualChanges(config=replace_model(before, rotate=0), active=True)

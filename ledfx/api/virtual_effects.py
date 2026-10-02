@@ -119,6 +119,8 @@ class EffectsEndpoint(RestEndpoint):
         fallback = process_fallback(data.get("fallback", None))
 
         if fallback is not None and virtual.streaming:
+            # v1-compat: patch_effect has no streamed-to check (set_effect has
+            # one), and v1 answers it here, before it knows which one it calls.
             error_message = (
                 f"Unable to set effect: Virtual {virtual_id} being streamed to"
             )
