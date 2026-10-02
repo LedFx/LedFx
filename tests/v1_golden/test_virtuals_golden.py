@@ -26,7 +26,11 @@ from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import EffectEntry
 from ledfx.configuration.plugin import PluginConfig
-from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
+from tests.test_utilities.virtuals_core import (
+    FakeDevice,
+    enter_safe_mode,
+    running_core,
+)
 from tests.v1_golden.harness import (
     Raw,
     Step,
@@ -489,6 +493,15 @@ SCENARIOS: dict[str, list[Step]] = {
             {"action": "apply_global", "background_color": [-1, 0, 0]},
         ),
     ],
+    # Highlight on a registered gap device is range-checked like any device.
+    "highlight_gap": [
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "gap-1", "start": 0, "stop": 99},
+        ),
+    ],
     # Highlight ranges the manager no longer accepts, and unknown ids in bulk.
     "ranges": [
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
@@ -819,6 +832,10 @@ async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> N
         assert entry is not None
         entry.last_effect = "rainbow"
         entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
+    if name == "highlight_gap":
+        gap = FakeDevice(ledfx, "gap-1", 10)
+        gap.type = "dummy"
+        ledfx.devices._objects["gap-1"] = gap
     if name == "effect_typing":
         # A stored config that no longer validates.
         entry = ledfx.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
