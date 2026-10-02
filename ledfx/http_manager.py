@@ -9,6 +9,7 @@ from aiohttp import web
 import ledfx_frontend
 from ledfx.api import RestApi
 from ledfx.api.origin_policy import origin_middleware
+from ledfx.api.v2 import mount_v2
 
 try:
     base_path = sys._MEIPASS
@@ -93,6 +94,10 @@ class HttpServer:
         )
 
     async def start(self, ssl_certs=None):
+        # v2 binds its routes here, not in __init__: the plugin registries
+        # load after this server is built (core.py), and the app freezes in
+        # AppRunner.setup().
+        mount_v2(self.app, self._ledfx)
         self.runner = web.AppRunner(self.app)
         await self.runner.setup()
 
