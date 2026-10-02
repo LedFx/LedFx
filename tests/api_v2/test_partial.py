@@ -267,3 +267,37 @@ def test_deeply_nested_json_is_400_malformed() -> None:
     with pytest.raises(ProblemError) as info:
         Patch.parse(Outer, b"[" * 100_000 + b"]" * 100_000)
     assert (info.value.status, info.value.suffix) == (400, "malformed")
+
+
+class Item(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    a: int
+    b: int = 0
+
+
+class Holder(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    one: Item
+    many: list[Item] = []
+
+
+def test_partial_schema_keeps_required_for_array_items() -> None:
+    schema = partial_schema(Holder)
+    defs, props = schema["$defs"], schema["properties"]
+    assert isinstance(defs, dict) and isinstance(props, dict)
+    # Item merges as an object (stripped) and replaces as an array item (whole).
+    assert "required" not in defs["Item"]
+    assert props["many"]["items"] == {"$ref": "#/$defs/Item__item"}
+    assert defs["Item__item"]["required"] == ["a"]
+    assert "required" not in schema
+
+
+def test_partial_schema_item_only_def_keeps_its_name() -> None:
+    class OnlyMany(BaseModel):
+        many: list[Item] = []
+
+    schema = partial_schema(OnlyMany)
+    defs, props = schema["$defs"], schema["properties"]
+    assert isinstance(defs, dict) and isinstance(props, dict)
+    assert props["many"]["items"] == {"$ref": "#/$defs/Item"}
+    assert defs["Item"]["required"] == ["a"]

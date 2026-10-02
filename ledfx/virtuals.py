@@ -4,7 +4,7 @@ import time
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import fields
 from functools import cached_property
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 from pydantic import ValidationError
@@ -53,6 +53,10 @@ from ledfx.utils import (
     generate_id,
     is_gap_device,
 )
+
+if TYPE_CHECKING:
+    from ledfx.api.v2.core.partial import Patch
+    from ledfx.api.v2.models.virtuals import VirtualUpdate
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1731,6 +1735,59 @@ class Virtuals:
         self._ledfx.config_store.request_save()
         return virtual
 
+    def patch(self, virtual_id: VirtualIdStr, patch: "Patch[VirtualUpdate]") -> Virtual:
+        """Apply a v2 PATCH: the fields it names, checked strictly together
+        with the virtual's other settings, then applied as update() does.
+
+        All or nothing: if a step raises, the steps before it are undone and
+        nothing is saved.
+
+        Raises PatchValidationError (422; 409 when a stored value the PATCH
+        does not change is invalid), and Invalid like update().
+        """
+        ensure_writable(self._ledfx)
+        virtual = self.get_or_raise(virtual_id)
+        update = patch.apply(patch.model.of(virtual))
+        changed = {path[0] for path in patch.changed}
+        old_segments = list(virtual.segments)
+        old_config = virtual.config
+        attempted: list[str] = []
+        try:
+            if "segments" in changed:
+                attempted.append("segments")
+                self._apply_segments(
+                    virtual,
+                    [
+                        Segment(s.device_id, s.start, s.end, s.invert)
+                        for s in update.segments
+                    ],
+                )
+            if "config" in changed:
+                attempted.append("config")
+                self._apply_config(
+                    virtual,
+                    VirtualConfig.model_validate(update.config.model_dump()),
+                )
+            if "active" in changed:
+                # _apply_active undoes itself when it raises.
+                self._apply_active(virtual, update.active)
+        except Exception:
+            # A step may have changed state before it raised, so every step
+            # tried is restored; a restore that fails must not hide the error.
+            for step in reversed(attempted):
+                try:
+                    if step == "config":
+                        self._apply_config(virtual, old_config)
+                    elif list(virtual.segments) != old_segments:
+                        self._apply_segments(virtual, old_segments)
+                except Exception:
+                    _LOGGER.exception(
+                        "Could not undo %s of virtual %s", step, virtual.id
+                    )
+            raise
+        self._ledfx.config_store.request_save()
+        return virtual
+
     def remove(self, virtual_id: VirtualIdStr) -> None:
         """Delete a virtual, its device if it is one, and its scene entries."""
         ensure_writable(self._ledfx)
@@ -1773,6 +1830,28 @@ class Virtuals:
             entry.segments = virtual.segments
 
     def _apply_active(self, virtual: Virtual, active: bool) -> None:
+        old_active = virtual.active
+        old_effect = virtual._active_effect
+        entry = virtual.entry
+        old_entry = entry.model_copy(deep=True) if entry is not None else None
+        try:
+            self._set_active(virtual, active)
+        except Exception:
+            try:
+                if virtual._active_effect is not old_effect:
+                    virtual.clear_active_effect()
+                    virtual._active_effect = old_effect
+                virtual.active = old_active
+                if entry is not None and old_entry is not None:
+                    entry.effect = old_entry.effect
+                    entry.effects = old_entry.effects
+                    entry.last_effect = old_entry.last_effect
+                    entry.active = old_entry.active
+            except Exception:
+                _LOGGER.exception("Could not undo the activation of %s", virtual.id)
+            raise
+
+    def _set_active(self, virtual: Virtual, active: bool) -> None:
         effect = None
         try:
             if active and (

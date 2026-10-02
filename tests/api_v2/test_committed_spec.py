@@ -37,7 +37,9 @@ def test_committed_spec_is_current() -> None:
 
 # The spec-size budget: first set to twice the first measured size,
 # rounded up to the next 100 KB. Raise it deliberately, with the reason in the PR.
-SPEC_BUDGET_BYTES = 100_000
+# Raised to 800 KB with the virtuals routes (367 KB measured): every effect type
+# adds an EffectConfig_<type> and an EffectState_<type> component (63 each).
+SPEC_BUDGET_BYTES = 800_000
 
 
 def test_committed_spec_size_within_budget() -> None:

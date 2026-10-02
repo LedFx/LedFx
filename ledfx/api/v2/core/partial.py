@@ -145,27 +145,85 @@ def partial_model(annotation: object) -> type[BaseModel] | None:
     return None
 
 
+_REF = "#/$defs/"
+_SCHEMA_MAPS = ("properties", "patternProperties", "$defs")
+_SCHEMA_LISTS = ("anyOf", "oneOf", "allOf")
+_SCHEMAS = ("additionalProperties", "not", "if", "then", "else")
+
+
 def partial_schema(model: type[BaseModel]) -> dict[str, object]:
-    """M's validation schema with "required" removed from every object,
-    $defs included, so any subset of fields is a valid body."""
-    return {
-        key: _without_required(value)
-        for key, value in model.model_json_schema().items()
-        if key != "required"
+    """M's validation schema with "required" removed from every object that
+    merges, so any subset of fields is a valid body. Array items replace
+    wholesale (_merge), so each item keeps "required"; a $def used both ways
+    gets a second, complete copy named <name>__item."""
+    schema = model.model_json_schema()
+    defs = schema.pop("$defs", {})
+    needed: dict[tuple[str, bool], object] = {}
+    todo: list[tuple[str, bool]] = []
+
+    def walk(node: object, whole: bool) -> object:
+        if not isinstance(node, dict):
+            return node
+        out: dict[str, object] = {}
+        for key, value in node.items():
+            if key == "required" and isinstance(value, list):
+                if whole:
+                    out[key] = value
+            elif key == "$ref" and isinstance(value, str) and value.startswith(_REF):
+                name = value[len(_REF) :]
+                if (name, whole) not in needed:
+                    needed[(name, whole)] = None
+                    todo.append((name, whole))
+                out[key] = f"{_REF}{name}__item" if whole else value
+            elif key in _SCHEMA_MAPS and isinstance(value, dict):
+                out[key] = {k: walk(v, whole) for k, v in value.items()}
+            elif key in ("items", "prefixItems"):
+                out[key] = (
+                    [walk(v, True) for v in value]
+                    if isinstance(value, list)
+                    else walk(value, True)
+                )
+            elif key in _SCHEMA_LISTS and isinstance(value, list):
+                out[key] = [walk(v, whole) for v in value]
+            elif key in _SCHEMAS:
+                out[key] = walk(value, whole)
+            else:
+                out[key] = value
+        return out
+
+    result = walk(schema, False)
+    assert isinstance(result, dict)
+    while todo:
+        name, whole = todo.pop()
+        needed[(name, whole)] = walk(defs[name], whole)
+    # A $def used only inside items needs no suffix.
+    merged_names = {name for name, whole in needed if not whole}
+    renamed = {
+        f"{_REF}{name}__item": f"{_REF}{name}"
+        for name, whole in needed
+        if whole and name not in merged_names
     }
 
+    def rename(node: object) -> object:
+        if isinstance(node, dict):
+            return {
+                k: renamed.get(v, v)
+                if k == "$ref" and isinstance(v, str)
+                else rename(v)
+                for k, v in node.items()
+            }
+        if isinstance(node, list):
+            return [rename(v) for v in node]
+        return node
 
-def _without_required(node: object) -> object:
-    if isinstance(node, dict):
-        # A property may be called "required"; the keyword is always a list.
-        return {
-            k: _without_required(v)
-            for k, v in node.items()
-            if not (k == "required" and isinstance(v, list))
+    if needed:
+        result["$defs"] = {
+            (name if not whole or name not in merged_names else f"{name}__item"): node
+            for (name, whole), node in sorted(needed.items())
         }
-    if isinstance(node, list):
-        return [_without_required(v) for v in node]
-    return node
+    renamed_result = rename(result)
+    assert isinstance(renamed_result, dict)
+    return renamed_result
 
 
 def aliased_field(model: type[BaseModel]) -> str | None:

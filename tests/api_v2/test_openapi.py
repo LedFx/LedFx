@@ -439,10 +439,14 @@ def test_a_recursive_model_under_partial_builds() -> None:
     async def patch_node(node_id: str, body: Partial[Node]) -> Node:
         raise NotImplementedError
 
-    spec = _spec_for(rec)
-    schema = as_dict(_schemas(spec)["NodePartial"])
+    schemas = _schemas(_spec_for(rec))
+    schema = as_dict(schemas["NodePartial"])
     assert "required" not in schema
-    assert "#/components/schemas/NodePartial" in json.dumps(schema)
+    # Array items replace wholesale, so children are whole Nodes: a complete
+    # copy that recurses into itself.
+    item = "#/components/schemas/Node__itemPartial"
+    assert item in json.dumps(schema)
+    assert item in json.dumps(schemas["Node__itemPartial"])
 
 
 def test_a_clash_between_builtins_is_not_blamed_on_extensions(

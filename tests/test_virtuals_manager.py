@@ -41,6 +41,7 @@ BIRD = VirtualIdStr("dj bird")
 MUTATORS: tuple[str, ...] = (
     "add",
     "update",
+    "patch",
     "remove",
     "set_paused",
     "set_effect",

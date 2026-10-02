@@ -24,12 +24,15 @@ from ledfx.api.v2.core.app import BOUND_ROUTES_KEY, V2_PREFIX
 from ledfx.api.v2.core.binding import LEDFX_KEY
 from ledfx.api.v2.core.registry import load_plugin_registries
 from ledfx.api.v2.core.router import RouteSpec, discover_routers
+from ledfx.virtuals import Virtual, Virtuals
+from tests.test_utilities.virtuals_core import add_virtual, install_virtuals, no_render
 
 load_plugin_registries()
 
-# Path parameter name -> the id of a resource the test seeds. Empty: no
-# built-in GET route has a path parameter yet.
-PATH_PARAM_FIXTURES: dict[str, str] = {}
+# Path parameter name -> the id of a resource _seed() creates.
+PATH_PARAM_FIXTURES: dict[str, str] = {
+    "virtual_id": "dj bird",
+}
 
 # The only calls a GET may make on the fake core (the last name of each
 # recorded call). Anything else (save, fire_event, destroy, create, flush,
@@ -78,6 +81,28 @@ def _fill_path(path: str) -> str:
         r"\{([^}:]+)(?::[^}]*)?\}",
         lambda m: quote(PATH_PARAM_FIXTURES[m.group(1)], safe=""),
         path,
+    )
+
+
+def _seed(app: web.Application, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Create the resources PATH_PARAM_FIXTURES names."""
+    # A real Virtuals manager over the fake core. "dj bird" has an effect
+    # history and a stored effect whose plugin is gone, so nothing runs.
+    core = app[LEDFX_KEY]
+    assert isinstance(core, MagicMock)
+    monkeypatch.setattr(Virtual, "thread_function", no_render)
+    monkeypatch.setattr(Virtuals, "_instance", None)  # restored at teardown
+    install_virtuals(core)
+    add_virtual(
+        core,
+        "dj bird",
+        "dj bird",
+        [["strip", 0, 49, False]],
+        effect={"type": "gone", "config": {"x": 1}},
+        effects={
+            "rainbow": {"type": "rainbow", "config": {"speed": 2.0}},
+            "gone": {"type": "gone", "config": {"x": 1}},
+        },
     )
 
 
@@ -141,6 +166,8 @@ def test_layer_get_routes_are_discovered() -> None:
         "/openapi.json",
         "/docs",
         "/docs/scalar.standalone.js",
+        "/virtuals",
+        "/virtuals/{virtual_id}",
     } <= {spec.path for spec in GET_ROUTES}
 
 
@@ -164,6 +191,7 @@ async def test_get_is_safe(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     path = _fill_path(spec.path)
+    _seed(v2_client.app, monkeypatch)
     blocked = _block_outbound(monkeypatch, v2_client)
     core = v2_client.app[LEDFX_KEY]
     assert isinstance(core, MagicMock)  # tests/api_v2/conftest.py: fake_ledfx()
