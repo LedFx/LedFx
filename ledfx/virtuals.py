@@ -1359,7 +1359,7 @@ class Virtual:
 
     @property
     def config(self) -> VirtualConfig:
-        """The virtual's settings (frozen: change them with update_config)."""
+        """The virtual's settings (frozen: change them with Virtuals.set_config)."""
         return self._config
 
     def _sync_entry(self) -> None:
@@ -2563,7 +2563,7 @@ def _apply_to_running_effects(
         if target_ids is not None and virtual.id not in target_ids:
             continue
 
-        eff = getattr(virtual, "active_effect", None)
+        eff = virtual.active_effect
         if eff is None or isinstance(eff, DummyEffect):
             continue
 
@@ -2590,7 +2590,7 @@ def _apply_to_running_effects(
         except (ValueError, RuntimeError) as exc:
             _LOGGER.warning(
                 "Effect on virtual %s refused the config: %s",
-                getattr(virtual, "id", "?"),
+                virtual.id,
                 exc,
             )
             failed += 1
