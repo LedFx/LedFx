@@ -150,6 +150,73 @@ jobs:
       # context): fork PRs get a read-only token here and org secrets are not
       # injected into this workflow at all, so it stays credential-free.
 
+  # The committed /api/v2 contract. openapi/ledfx-v2.json is generated in one
+  # canonical environment (Linux, Python 3.12 from UV_PYTHON, every extra), so
+  # only this job runs the drift test. oasdiff then compares it with the base
+  # branch's copy; the api-break label skips that comparison.
+  openapi:
+    name: OpenAPI spec
+    needs: [plan, lint]
+    if: needs.plan.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read  # reads the PR's labels at run time (api-break)
+    env:
+      LEDFX_CANONICAL_SPEC: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libatlas3-base portaudio19-dev
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install LedFx
+        env:
+          CFLAGS: -Wno-incompatible-function-pointer-types
+        run: uv sync --all-extras --dev
+      # --noconftest: these tests need no running LedFx or LIFX emulator.
+      - name: Committed spec is current and passes the lint
+        run: |
+          set -o pipefail  # the default `bash -e` would take tee's status
+          uv run pytest -v -rs --noconftest --timeout=120 tests/api_v2/test_committed_spec.py tests/api_v2/test_spec_lint.py | tee pytest.log
+          # A skip means LEDFX_CANONICAL_SPEC drifted from the test: fail, don't go green.
+          if grep -Eq '[0-9]+ skipped' pytest.log; then echo "::error::spec tests were skipped"; exit 1; fi
+      - name: Fetch the base branch's spec
+        id: base
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # Read live, not from the event: re-running this job after adding
+          # the label then takes effect.
+          labels=$(gh api "repos/$REPO/pulls/$PR" --jq '.labels[].name')
+          if grep -qx api-break <<< "$labels"; then
+            echo "::notice::api-break label: skipping the breaking-change check"
+            exit 0
+          fi
+          git fetch --depth=1 origin "$BASE_REF"
+          if git show FETCH_HEAD:openapi/ledfx-v2.json > base-spec.json 2>/dev/null; then
+            echo "check=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$BASE_REF has no openapi/ledfx-v2.json yet: nothing to compare"
+          fi
+      - name: No breaking API changes
+        if: steps.base.outputs.check == 'true'
+        uses: oasdiff/oasdiff-action/breaking@5e81b5c380accc6b523f9d32a637ca630e33620b # v0.1.17
+        with:
+          base: base-spec.json
+          revision: openapi/ledfx-v2.json
+          fail-on: ERR
+          review: false # never upload the specs to oasdiff.com
+          github-token: "" # no PR comment
+
   test-linux:
     name: Test (Ubuntu, py${{ matrix.python }})
     needs: [plan, lint]
@@ -577,6 +644,7 @@ jobs:
     needs:
       - plan
       - lint
+      - openapi
       - test-linux
       - test-windows
       - test-macos

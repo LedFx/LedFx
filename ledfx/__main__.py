@@ -187,6 +187,14 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--dump-openapi",
+        dest="dump_openapi",
+        metavar="PATH",
+        help="Write the /api/v2 OpenAPI document (as served by /api/v2/openapi.json) to PATH and exit",
+        default=None,
+    )
+
+    parser.add_argument(
         "--clear-config",
         dest="clear_config",
         action="store_true",
@@ -223,6 +231,23 @@ def main():
 
         with open(args.dump_schemas, "w", encoding="utf-8") as file:
             json.dump(build_schemas(None), file, indent=2)
+        return 0
+    if args.dump_openapi:
+        import json
+        from pathlib import Path
+
+        from ledfx.api.v2.core.registry import build_standalone_spec
+
+        # Build first, then replace atomically: a failure never truncates the
+        # committed spec. newline="\n": byte-identical on every OS.
+        out = Path(args.dump_openapi)
+        tmp = out.with_name(out.name + ".tmp")
+        try:
+            text = json.dumps(build_standalone_spec(), indent=2, sort_keys=True)
+            tmp.write_text(text + "\n", encoding="utf-8", newline="\n")
+            tmp.replace(out)
+        finally:
+            tmp.unlink(missing_ok=True)
         return 0
     config_helpers.ensure_config_directory(args.config)
     setup_logging(args.loglevel, config_dir=args.config)
