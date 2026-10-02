@@ -387,7 +387,7 @@ jobs:
       - name: Install, then upgrade over a running LedFx
         run: |
           7z x "LedFx-$VERSION-win-x64-setup.zip"
-          dir="/c/Program Files/LedFX"
+          dir="/c/Program Files/LedFx"
           "./LedFx-$VERSION-setup.exe" //S
           "$dir/LedFx.exe" -vv --ci-smoke-test --offline
           "$dir/LedFx.exe" --offline > ledfx-running.log 2>&1 &
@@ -399,7 +399,7 @@ jobs:
       - name: Uninstall
         shell: pwsh
         run: |
-          $dir = "C:\Program Files\LedFX"
+          $dir = "C:\Program Files\LedFx"
           $p = Start-Process -Wait -PassThru "$dir\uninst.exe" -ArgumentList "/S _?=$dir"
           if ($p.ExitCode -ne 0 -or (Test-Path "$dir\_internal") -or (Test-Path "$dir\LedFx.exe")) { exit 1 }
 

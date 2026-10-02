@@ -5,12 +5,12 @@ Unicode true
 !include x64.nsh
 
 ; HM NIS Edit Wizard helper defines
-!define PRODUCT_NAME "LedFX"
+!define PRODUCT_NAME "LedFx"
 ; /DPRODUCT_VERSION=X.X.X parameter
 !ifndef PRODUCT_VERSION
 !define PRODUCT_VERSION "x.x.x"
 !endif
-!define PRODUCT_PUBLISHER "LedFX"
+!define PRODUCT_PUBLISHER "LedFx"
 !define PRODUCT_WEB_SITE "https://ledfx.app"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\LedFx.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
@@ -93,24 +93,24 @@ FunctionEnd
 !insertmacro CLOSE_LEDFX "un."
 
 !macro REMOVE_SHORTCUTS
-  Delete "$SMPROGRAMS\LedFX\Uninstall.lnk"
-  Delete "$SMPROGRAMS\LedFX\Website.lnk"
-  Delete "$SMPROGRAMS\LedFX\LedFX.lnk"
-  RMDir "$SMPROGRAMS\LedFX"
-  Delete "$DESKTOP\LedFX.lnk"
+  Delete "$SMPROGRAMS\LedFx\Uninstall.lnk"
+  Delete "$SMPROGRAMS\LedFx\Website.lnk"
+  Delete "$SMPROGRAMS\LedFx\LedFx.lnk"
+  RMDir "$SMPROGRAMS\LedFx"
+  Delete "$DESKTOP\LedFx.lnk"
 !macroend
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ledfx-setup-win-${PRODUCT_VERSION}.exe"
 RequestExecutionLevel admin
-InstallDir "$PROGRAMFILES64\LedFX"
+InstallDir "$PROGRAMFILES64\LedFx"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 ; A file that can't be written fails the install instead of being skipped.
 AllowSkipFiles off
 
-Section "LedFX" SEC01
+Section "LedFx" SEC01
   SectionIn RO
   SetOutPath "$INSTDIR"
   Call CloseLedFx
@@ -123,15 +123,15 @@ Section "LedFX" SEC01
     ${EndIf}
   ${EndIf}
   ; Re-added below if "Start on login" is still ticked.
-  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFX"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFx"
   File ".\..\dist\LedFx\LedFx.exe"
   ; A per-machine install gets all-users shortcuts. Older installers put
   ; them in the profile of whoever ran the setup, so remove those first.
   !insertmacro REMOVE_SHORTCUTS
   SetShellVarContext all
-  CreateDirectory "$SMPROGRAMS\LedFX"
-  CreateShortCut "$SMPROGRAMS\LedFX\LedFX.lnk" "$INSTDIR\LedFx.exe"
-  CreateShortCut "$DESKTOP\LedFX.lnk" "$INSTDIR\LedFx.exe"
+  CreateDirectory "$SMPROGRAMS\LedFx"
+  CreateShortCut "$SMPROGRAMS\LedFx\LedFx.lnk" "$INSTDIR\LedFx.exe"
+  CreateShortCut "$DESKTOP\LedFx.lnk" "$INSTDIR\LedFx.exe"
   CreateDirectory "$INSTDIR\_internal"
   SetOutPath "$INSTDIR\_internal"
   File /a /r ".\..\dist\LedFx\_internal\"
@@ -140,13 +140,13 @@ SectionEnd
 
 Section /o "Start on login" SEC02
   SetRegView 64
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFX" '"$InstDir\LedFx.exe"'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFx" '"$InstDir\LedFx.exe"'
 SectionEnd
 
 Section -AdditionalIcons
   WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-  CreateShortCut "$SMPROGRAMS\LedFX\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
-  CreateShortCut "$SMPROGRAMS\LedFX\Uninstall.lnk" "$INSTDIR\uninst.exe"
+  CreateShortCut "$SMPROGRAMS\LedFx\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url"
+  CreateShortCut "$SMPROGRAMS\LedFx\Uninstall.lnk" "$INSTDIR\uninst.exe"
 SectionEnd
 
 Section -Post
@@ -199,6 +199,6 @@ Section Uninstall
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
-  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFX"
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFx"
   SetAutoClose true
 SectionEnd
