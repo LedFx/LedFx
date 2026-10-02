@@ -1,18 +1,38 @@
 import logging
+from collections.abc import Callable
 from json import JSONDecodeError
+from typing import SupportsFloat, cast
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual_effects import process_fallback
-from ledfx.color import (
-    build_gradient_config,
-    validate_color,
-    validate_gradient,
-)
-from ledfx.virtuals import Virtuals, apply_config_to_active_effects
+from ledfx.color import resolve_gradient, validate_color
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import GlobalEffectUpdate
+from ledfx.errors import Invalid
 
 _LOGGER = logging.getLogger(__name__)
+
+# The settings apply_global writes, in the order v1 checks them.
+GLOBAL_KEYS = (
+    "gradient",
+    "background_color",
+    "background_brightness",
+    "brightness",
+    "flip",
+    "mirror",
+)
+
+
+def _fraction(value: object) -> float:
+    """v1's clamp into 0..1, for anything float() takes."""
+    if not isinstance(value, str | SupportsFloat):
+        raise TypeError(
+            "float() argument must be a string or a real number, "
+            f"not '{type(value).__name__}'"
+        )
+    return max(0.0, min(1.0, float(value)))
 
 
 class EffectsEndpoint(RestEndpoint):
@@ -75,80 +95,50 @@ class EffectsEndpoint(RestEndpoint):
                 "info", "Cleared all effects on all devices"
             )
 
-    async def _apply_global(self, data: dict) -> web.Response:
+    async def _apply_global(self, data: dict[str, object]) -> web.Response:
         """
         Apply a global configuration update across active effects.
 
         This was extracted from the PUT handler to keep that method tidy
         while preserving the original behavior.
         """
-        # Define supported configuration keys and their validation
-        SUPPORTED_KEYS = {
-            "gradient": {"validator": validate_gradient, "type": "string"},
-            "background_color": {
-                "validator": validate_color,
-                "type": "string",
-            },
-            "background_brightness": {
-                "validator": lambda x: max(0.0, min(1.0, float(x))),
-                "type": "number",
-            },
-            "brightness": {
-                "validator": lambda x: max(0.0, min(1.0, float(x))),
-                "type": "number",
-            },
-            "flip": {"validator": None, "type": "boolean"},
-            "mirror": {"validator": None, "type": "boolean"},
-        }
-
         # Check if at least one supported key is provided
-        provided_keys = [key for key in SUPPORTED_KEYS if key in data]
+        provided_keys = [key for key in GLOBAL_KEYS if key in data]
         if not provided_keys:
             return await self.invalid_request(
-                f"At least one of the following attributes must be provided: {', '.join(SUPPORTED_KEYS.keys())}"
+                f"At least one of the following attributes must be provided: {', '.join(GLOBAL_KEYS)}"
             )
 
-        # Validate and process each provided key
-        config_updates = {}
+        # Validate each provided key, in GLOBAL_KEYS order
+        values: dict[str, object] = {}
 
         for key in provided_keys:
             value = data[key]
-            key_info = SUPPORTED_KEYS[key]
-
             try:
                 if key == "gradient":
-                    try:
-                        gradient_config = build_gradient_config(
-                            value,
-                            self._ledfx.gradients,
-                            skip_keys=set(provided_keys),
-                        )
-                        config_updates.update(gradient_config)
-                    except Exception as e:  # noqa: BLE001
-                        return await self.invalid_request(
-                            f'Invalid value for "{key}": {e}'
-                        )
-
-                elif key_info["type"] == "boolean":
-                    # Special handling for boolean keys (True, False, "toggle")
+                    if not isinstance(value, str):
+                        raise TypeError("must be a string")
+                    # The manager resolves it again; this keeps v1's error
+                    # order and text.
+                    resolve_gradient(value, self._ledfx.gradients)
+                    values[key] = value
+                elif key in ("flip", "mirror"):
+                    # True, False, or "toggle" (resolved per effect)
                     if isinstance(value, bool):
-                        config_updates[key] = value
+                        values[key] = value
                     elif isinstance(value, str) and value.lower() == "toggle":
-                        # Mark for toggling - will be resolved per effect
-                        config_updates[key] = "toggle"
+                        values[key] = "toggle"
                     else:
                         return await self.invalid_request(
                             f'Invalid value for "{key}": must be true, false, or "toggle"'
                         )
-
+                elif key == "background_color":
+                    if not isinstance(value, (str, list, tuple)):
+                        # parse_color's own message for a non-color type
+                        raise ValueError(f"Invalid color: {value}")
+                    values[key] = validate_color(value)
                 else:
-                    # Standard validation
-                    if key_info["validator"]:
-                        validated_value = key_info["validator"](value)
-                        config_updates[key] = validated_value
-                    else:
-                        config_updates[key] = value
-
+                    values[key] = _fraction(value)
             except Exception as e:  # noqa: BLE001
                 return await self.invalid_request(f'Invalid value for "{key}": {e}')
 
@@ -160,24 +150,20 @@ class EffectsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     'Invalid value for "virtuals": must be a list of virtual ids'
                 )
-            virtuals_filter = {str(v) for v in vlist}
+            virtuals_filter = [VirtualIdStr(str(v)) for v in vlist]
 
-        updated, skipped = apply_config_to_active_effects(
-            self._ledfx.virtuals.values(),
-            config_updates,
-            target_ids=virtuals_filter,
+        updated, skipped = self._ledfx.virtuals.apply_global_config(
+            # values holds validated, per-key typed entries
+            cast("Callable[..., GlobalEffectUpdate]", GlobalEffectUpdate)(**values),
+            virtuals_filter,
         )
-
-        # Persist configuration changes
-        if updated > 0:
-            self._ledfx.config_store.request_save()
 
         return await self.request_success(
             "success",
             f"Applied global configuration to {updated} effects (skipped {skipped})",
         )
 
-    async def _apply_global_effect(self, data: dict) -> web.Response:
+    async def _apply_global_effect(self, data: dict[str, object]) -> web.Response:
         """
         Apply a specific effect (type + config) to a list of virtual ids.
 
@@ -190,9 +176,7 @@ class EffectsEndpoint(RestEndpoint):
         """
 
         vlist = data.get("virtuals", None)
-        if vlist is None:
-            vlist = Virtuals.get_virtual_ids()
-        elif not isinstance(vlist, list) or not vlist:
+        if vlist is not None and (not isinstance(vlist, list) or not vlist):
             return await self.invalid_request(
                 'Invalid value for "virtuals": must be a non-empty list of virtual ids'
             )
@@ -209,51 +193,21 @@ class EffectsEndpoint(RestEndpoint):
             return await self.invalid_request(
                 "RANDOMIZE is not supported for apply_global_effect"
             )
-        if effect_config is None:
-            # Reset behavior
-            effect_config = {}
+        if effect_config is not None and not isinstance(effect_config, dict):
+            return await self.invalid_request("'config' must be an object")
 
         # Fallback behaviour (same semantics as virtual endpoint)
         fallback = process_fallback(data.get("fallback", None))
 
-        applied = 0
-        skipped = 0
-        blocked = 0
-        failed = 0
-
-        for vid in vlist:
-            virtual = self._ledfx.virtuals.get(str(vid))
-            if virtual is None:
-                skipped += 1
-                continue
-
-            if fallback is not None and virtual.streaming:
-                # Don't interrupt the whole operation; record that this virtual is
-                # blocked due to an active stream and skip it.
-                blocked += 1
-                _LOGGER.debug(
-                    "Skipping virtual %s: streaming active and fallback provided",
-                    vid,
-                )
-                continue
-
-            # Create the effect and set it on the virtual. If config is empty, this
-            # effectively resets to defaults (effects.create will handle defaulting).
-            try:
-                effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx, type=effect_type, config=effect_config
-                )
-                # apply effect with provided fallback (may be None)
-                virtual.set_effect(effect, fallback=fallback)
-                virtual.update_effect_config(effect)
-                applied += 1
-            except (ValueError, RuntimeError) as msg:
-                _LOGGER.warning("Unable to set effect on virtual %s: %s", vid, msg)
-                failed += 1
-
-        # Persist configuration changes if anything applied
-        if applied > 0:
-            self._ledfx.config_store.request_save()
+        try:
+            applied, skipped, blocked, failed = self._ledfx.virtuals.set_effect_all(
+                str(effect_type),
+                effect_config,
+                None if vlist is None else [VirtualIdStr(str(v)) for v in vlist],
+                fallback=fallback,
+            )
+        except Invalid as err:
+            return await self.invalid_request(err.detail)
 
         return await self.request_success(
             "success",

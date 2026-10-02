@@ -155,7 +155,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"gradient\\\": 'int' object has no attribute 'strip'\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"gradient\\\": must be a string\"}}"
   },
   {
     "request": [
@@ -170,8 +170,8 @@
         ]
       }
     ],
-    "status": 202,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"cannot convert dictionary update sequence element #0 to a sequence\"}}"
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"'config' must be an object\"}}"
   },
   {
     "request": [
@@ -316,7 +316,7 @@
         ]
       }
     ],
-    "status": 202,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"'NoneType' object has no attribute 'config'\"}}"
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unknown effect type: nope\"}}"
   }
 ]

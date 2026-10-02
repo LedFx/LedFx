@@ -244,7 +244,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual oneshot\"}, \"virtual\": {\"config\": {\"name\": \"oneshot\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"oneshot\", \"is_device\": false, \"auto_generated\": false}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"The id 'oneshot' is reserved; give the virtual another name\"}}"
   },
   {
     "request": [
@@ -257,6 +257,6 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual force-color\"}, \"virtual\": {\"config\": {\"name\": \"Force Color\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"force-color\", \"is_device\": false, \"auto_generated\": false}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"The id 'force-color' is reserved; give the virtual another name\"}}"
   }
 ]

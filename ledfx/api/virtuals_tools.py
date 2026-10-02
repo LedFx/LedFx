@@ -6,8 +6,10 @@ from aiohttp import web
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ledfx.api import RestEndpoint
-from ledfx.color import parse_color, validate_color
-from ledfx.effects.oneshots.oneshot import Flash
+from ledfx.color import validate_color
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import Highlight, OneshotParams
+from ledfx.errors import Conflict, Invalid
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,6 +22,7 @@ class OneshotRequest(BaseModel):
     # An infinite fade never expires and turns the pixels to NaN.
     model_config = ConfigDict(allow_inf_nan=False)
 
+    # validate_color turns a [r, g, b] list into "#rrggbb" too.
     color: Annotated[str | list[int], AfterValidator(validate_color)] = "white"
     ramp: float = Field(0, ge=0)
     hold: float = Field(0, ge=0)
@@ -27,10 +30,13 @@ class OneshotRequest(BaseModel):
     # Values outside 0-1 are clamped, as they always were.
     brightness: float = 1
 
-    def flash(self) -> Flash:
-        brightness = min(1, max(0, self.brightness))
-        return Flash(
-            parse_color(self.color), self.ramp, self.hold, self.fade, brightness
+    def params(self) -> OneshotParams:
+        return OneshotParams(
+            color=str(self.color),  # a str once validated
+            ramp_ms=self.ramp,
+            hold_ms=self.hold,
+            fade_ms=self.fade,
+            brightness=self.brightness,
         )
 
 
@@ -56,7 +62,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
     ENDPOINT_PATH = "/api/virtuals_tools/{virtual_id}"
 
-    async def get(self, virtual_id) -> web.Response:
+    async def get(self, virtual_id: str) -> web.Response:
         """
         Get the tools specified for a virtual ID.
 
@@ -68,7 +74,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
         """
         return await self.request_success("info", f"Available tools: {TOOLS}")
 
-    async def post(self, virtual_id, request) -> web.Response:
+    async def post(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Uses the specified virtual tool on the virtual.
 
@@ -79,8 +85,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
         Returns:
             web.Response: The HTTP response object.
         """
-        virtual = self._ledfx.virtuals.get(virtual_id)
-        if virtual is None:
+        if self._ledfx.virtuals.get(virtual_id) is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
@@ -93,13 +98,15 @@ class VirtualsToolsEndpoint(RestEndpoint):
             return refused
 
         oneshot = OneshotRequest.model_validate(data)
-        if virtual.add_oneshot(oneshot.flash()) is False:
+        try:
+            self._ledfx.virtuals.oneshot(VirtualIdStr(virtual_id), oneshot.params())
+        except Conflict:
             return await self.invalid_request("oneshot failed")
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)
 
-    async def put(self, virtual_id, request) -> web.Response:
+    async def put(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Uses the specified virtual tool on the virtual.
 
@@ -110,8 +117,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
         Returns:
             web.Response: The HTTP response object.
         """
-        virtual = self._ledfx.virtuals.get(virtual_id)
-        if virtual is None:
+        if self._ledfx.virtuals.get(virtual_id) is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
@@ -120,6 +126,8 @@ class VirtualsToolsEndpoint(RestEndpoint):
             return await self.json_decode_error()
 
         tool = data.get("tool")
+        virtuals = self._ledfx.virtuals
+        vid = VirtualIdStr(virtual_id)
 
         if tool is None:
             return await self.invalid_request(
@@ -137,17 +145,14 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
             try:
-                rgb = parse_color(validate_color(color))
-            except ValueError as e:
+                virtuals.force_color(vid, validate_color(color))
+            except (ValueError, Invalid) as e:
                 return await self.invalid_request(str(e))
-            virtual.force_frame(rgb)
 
         if tool == "calibration":
             mode = data.get("mode")
-            if mode == "on":
-                virtual.set_calibration(True)
-            elif mode == "off":
-                virtual.set_calibration(False)
+            if mode in ("on", "off"):
+                virtuals.set_calibration(vid, mode == "on")
             else:
                 return await self.invalid_request(
                     "Required attribute for calibration, mode:on or mode:off expected"
@@ -164,19 +169,15 @@ class VirtualsToolsEndpoint(RestEndpoint):
             if type(start) is not int or type(end) is not int:
                 return await self.invalid_request("start and end must be integers")
 
-            hl_error = virtual.set_highlight(state, device, start, end, flip)
-            if hl_error is not None:
-                return await self.invalid_request(f"highlight error: {hl_error}")
+            highlight = Highlight(device, start, end, flip) if state else None
+            try:
+                virtuals.set_highlight(vid, highlight)
+            except (Conflict, Invalid) as err:
+                return await self.invalid_request(f"highlight error: {err.detail}")
 
-        if tool == "oneshot":
-            result = False
-            for oneshot in virtual.oneshots:
-                if isinstance(oneshot, Flash):
-                    oneshot.active = False
-                    result = True  # return True if there was at least one oneshot Flash to disable
-
-            if result is False:
-                return await self.invalid_request("oneshot was not found")
+        # Disable the virtual's oneshot Flashes
+        if tool == "oneshot" and not virtuals.clear_oneshots(vid):
+            return await self.invalid_request("oneshot was not found")
 
         if tool == "copy":
             # copy the config of the specified virtual instance to all virtuals listed in the target payload
@@ -191,40 +192,10 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Required attribute for copy, target must be a list"
                 )
-            updated = 0
-            if virtual.active_effect is None:
-                return await self.invalid_request(
-                    "Virtual copy failed, no active effect on source virtual"
-                )
-
-            for dest_virtual_id in target:
-                dest_virtual = self._ledfx.virtuals.get(dest_virtual_id)
-                if dest_virtual is None:
-                    continue
-
-                try:
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type=virtual.active_effect.type,
-                        config=virtual.active_effect.config,
-                    )
-
-                    dest_virtual.set_effect(effect)
-                except (ValueError, RuntimeError):
-                    continue
-
-                dest_virtual.update_effect_config(effect)
-                updated += 1
-
-            if updated > 0:
-                self._ledfx.config_store.request_save()
-            else:
-                return await self.invalid_request(
-                    "Virtual copy failed, no valid targets"
-                )
-
-        effect_response = {}
-        effect_response["tool"] = tool
+            try:
+                virtuals.copy_effect(vid, [VirtualIdStr(t) for t in target])
+            except (Conflict, Invalid) as err:
+                return await self.invalid_request(err.detail)
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)

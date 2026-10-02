@@ -288,62 +288,6 @@
       "severity": "error"
     },
     {
-      "column": 41,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 41,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-lambda",
-      "concise_description": "Type of lambda parameter `x` is unknown",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-lambda",
-      "concise_description": "Type of lambda parameter `x` is unknown",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "ledfx/api/effects.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `str`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
       "column": 22,
       "path": "ledfx/api/find_devices.py",
       "name": "implicit-any-parameter",
@@ -880,41 +824,6 @@
       "path": "ledfx/api/virtual_presets.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `request`",
       "severity": "error"
     },
     {
@@ -17722,13 +17631,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_T` for generic class `set[_T]`",
       "severity": "error"
     },
     {

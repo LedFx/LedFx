@@ -484,7 +484,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Cannot set highlight when dj bird is not in calibration mode\"}}"
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
   },
   {
     "request": [
@@ -506,7 +506,7 @@
         ]
       }
     ],
-    "status": 202,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"'DummyEffect' object has no attribute 'type'\"}}"
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no active effect on source virtual\"}}"
   }
 ]

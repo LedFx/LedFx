@@ -314,12 +314,12 @@ def parse_gradient(gradient: str):
     raise ValueError(msg)
 
 
-def validate_color(color: str) -> str:
+def validate_color(color: str | list[int] | tuple[int, ...]) -> str:
     """
-    Validates and formats a color string.
+    Validates and formats a color.
 
     Args:
-        color (str): The color string to validate.
+        color: A color name or hex string, or an [r, g, b] list or tuple.
 
     Returns:
         str: The validated and formatted color string.

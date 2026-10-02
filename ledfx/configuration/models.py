@@ -1,5 +1,6 @@
 """pydantic models for LedFx configuration."""
 
+from dataclasses import dataclass
 from typing import Annotated, Literal, NamedTuple, TypeVar
 
 from pydantic import (
@@ -338,6 +339,51 @@ class Segment(NamedTuple):
     start: int
     end: int
     invert: bool
+
+
+class SetEffectAllResult(NamedTuple):
+    """How Virtuals.set_effect_all went, per virtual."""
+
+    applied: int
+    skipped: int
+    blocked: int
+    failed: int
+
+
+@dataclass(frozen=True)
+class GlobalEffectUpdate:
+    """Settings Virtuals.apply_global_config writes into running effects
+    (None: leave as is). flip and mirror may be "toggle": each effect then
+    inverts its own value."""
+
+    gradient: str | None = None
+    background_color: str | None = None
+    background_brightness: float | None = None
+    brightness: float | None = None
+    flip: bool | Literal["toggle"] | None = None
+    mirror: bool | Literal["toggle"] | None = None
+
+
+@dataclass(frozen=True)
+class OneshotParams:
+    """A flash: a colour, an envelope in milliseconds and a brightness
+    (Virtuals.oneshot clamps it to 0..1)."""
+
+    color: str = "white"
+    ramp_ms: float = 0
+    hold_ms: float = 0
+    fade_ms: float = 0
+    brightness: float = 1.0
+
+
+@dataclass(frozen=True)
+class Highlight:
+    """A device's pixel range (inclusive) to light on a calibrating virtual."""
+
+    device_id: str
+    start: int
+    end: int
+    flip: bool = False
 
 
 class IntegrationEntry(LedFxModel):
