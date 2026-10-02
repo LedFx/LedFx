@@ -1,7 +1,8 @@
 # Run with prek: `uv run prek run --all-files`, or `uv run prek install` for a
 # git hook. `repo: builtin` hooks are prek-only (plain pre-commit can't run them).
-# ledfx_frontend/ is a built bundle: whitespace there can sit inside JS strings.
-exclude: ^ledfx_frontend/
+# ledfx_frontend/ and the vendored Scalar bundle are built files: whitespace
+# there can sit inside JS strings, and the Scalar bundle must match its sha256.
+exclude: ^(ledfx_frontend/|ledfx/api/v2/docs/scalar\.standalone\.js$)
 repos:
   - repo: builtin
     hooks:
