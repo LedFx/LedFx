@@ -1740,7 +1740,7 @@ class Virtuals:
         self._ledfx.events.fire_event(GlobalPauseEvent(paused))
         return paused
 
-    def _ensure_known(self, ids: Sequence[VirtualIdStr] | None) -> None:
+    def ensure_known(self, ids: Sequence[VirtualIdStr] | None) -> None:
         """Raise one NotFound naming every unknown id once, before any change."""
         missing = list(dict.fromkeys(v for v in ids or () if v not in self._virtuals))
         if missing:
@@ -2033,6 +2033,8 @@ class Virtuals:
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
         self._ensure_type(type_id)
+        if config is not None:
+            self._check_effect_config(type_id, config)
         if fallback is not None and virtual.streaming:
             raise Conflict(f"Virtual {virtual_id} is being streamed to")
         if config is None:
@@ -2113,6 +2115,16 @@ class Virtuals:
             return model.model_validate(virtual.get_effects_config(type_id))
         except ValidationError as err:
             raise _stale_stored(err) from err
+
+    def _check_effect_config(self, type_id: str, config: PluginConfig) -> None:
+        """Invalid when the type's model refuses config, before anything is
+        created (the model is the one _create_effect builds the effect with)."""
+        try:
+            self._ledfx.effects.get_class(type_id).config_model().model_validate(
+                config.as_dict()
+            )
+        except ValidationError as err:
+            raise _invalid_config(err) from err
 
     def _create_effect(self, type_id: str, config: PluginConfig) -> Effect:
         try:
@@ -2227,7 +2239,7 @@ class Virtuals:
         """Blank the output of every virtual, or of those listed (runtime only:
         the stored effects come back on restart). Raises NotFound for an
         unknown id, before anything is cleared."""
-        self._ensure_known(virtual_ids)
+        self.ensure_known(virtual_ids)
         for virtual in self.values():
             if virtual_ids is None or virtual.id in virtual_ids:
                 virtual.clear_frame()
@@ -2245,7 +2257,7 @@ class Virtuals:
         Raises NotFound for an unknown id.
         """
         ensure_writable(self._ledfx)
-        self._ensure_known(virtual_ids)
+        self.ensure_known(virtual_ids)
         given = {
             field.name: getattr(update, field.name)
             for field in fields(update)
@@ -2288,11 +2300,11 @@ class Virtuals:
         effect failed.
         """
         ensure_writable(self._ledfx)
-        self._ensure_type(type_id)
         ids = list(
             dict.fromkeys(self._virtuals if virtual_ids is None else virtual_ids)
         )
-        self._ensure_known(ids)
+        self.ensure_known(ids)
+        self._ensure_type(type_id)
         if config is None:
             config = self._defaults(type_id)
         applied = blocked = failed = 0
@@ -2344,12 +2356,13 @@ class Virtuals:
 
     def force_color(self, virtual_id: VirtualIdStr | None, color: str) -> None:
         """Fill one virtual, or every device's own virtual, with a colour."""
+        target = None if virtual_id is None else self.get_or_raise(virtual_id)
         try:
             rgb = parse_color(validate_color(color))
         except ValueError as err:
             raise Invalid(str(err), loc=("body", "color")) from err
-        if virtual_id is not None:
-            self.get_or_raise(virtual_id).force_frame(rgb)
+        if target is not None:
+            target.force_frame(rgb)
             return
         for virtual in self.values():
             if virtual.is_device == virtual.id:
@@ -2382,9 +2395,9 @@ class Virtuals:
         to once."""
         ensure_writable(self._ledfx)
         source = self.get_or_raise(virtual_id).active_effect
+        self.ensure_known(targets)
         if source is None or isinstance(source, DummyEffect):
             raise Conflict(f"Virtual {virtual_id} has no active effect")
-        self._ensure_known(targets)
         updated = 0
         for target_id in dict.fromkeys(targets):  # a repeated target once
             try:

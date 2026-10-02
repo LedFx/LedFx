@@ -821,6 +821,64 @@ def test_copy_effect(ledfx: MagicMock) -> None:
         ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("empty")])
 
 
+def test_copy_effect_reaches_each_target(ledfx: MagicMock) -> None:
+    """The result is a new effect object with the source's settings."""
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
+    ledfx.virtuals.set_effect(MIRROR, "singleColor", cfg({}))
+    stale = _effect(ledfx, "mirror")
+    ledfx.virtuals.copy_effect(BIRD, [MIRROR, VirtualIdStr("empty")])
+    copied = _effect(ledfx, "mirror")
+    assert copied is not stale
+    assert (copied.type, copied.config.as_dict()["speed"]) == ("rainbow", 3.0)
+    assert copied is not _effect(ledfx)
+
+
+def test_copy_effect_answers_an_unknown_target_before_an_idle_source(
+    ledfx: MagicMock,
+) -> None:
+    """Existence before state."""
+    with pytest.raises(NotFound) as caught:
+        ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("ghost")])
+    assert caught.value.ids == ("ghost",)
+    with pytest.raises(Conflict, match="no active effect"):
+        ledfx.virtuals.copy_effect(BIRD, [MIRROR])
+
+
+def test_set_effect_all_answers_an_unknown_id_before_an_unknown_type(
+    ledfx: MagicMock,
+) -> None:
+    """Existence before input."""
+    with pytest.raises(NotFound):
+        ledfx.virtuals.set_effect_all("nope", None, [VirtualIdStr("ghost")])
+    with pytest.raises(Invalid):
+        ledfx.virtuals.set_effect_all("nope", None, [BIRD])
+
+
+def test_force_color_answers_an_unknown_virtual_before_a_bad_colour(
+    ledfx: MagicMock,
+) -> None:
+    """Existence before input."""
+    with pytest.raises(NotFound):
+        ledfx.virtuals.force_color(VirtualIdStr("ghost"), "notacolor")
+
+
+def test_set_effect_checks_the_config_before_the_stream(ledfx: MagicMock) -> None:
+    """Input before state."""
+    ledfx.virtuals.set_segments(
+        BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
+    )
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    matrix = VirtualIdStr("matrix")
+    assert ledfx.virtuals.get_or_raise(matrix).streaming
+    before = set(ledfx.effects)
+    with pytest.raises(Invalid) as caught:
+        ledfx.virtuals.set_effect(
+            matrix, "rainbow", cfg({"speed": "fast"}), fallback=5.0
+        )
+    assert caught.value.loc == ("body", "config", "speed")
+    assert set(ledfx.effects) == before
+
+
 @pytest.mark.parametrize(
     ("update", "field"),
     [

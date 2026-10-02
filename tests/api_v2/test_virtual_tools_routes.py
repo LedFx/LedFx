@@ -282,7 +282,20 @@ async def test_calibration_and_highlight(v2_client: Client) -> None:
     assert not bird._hl_state
 
 
+async def test_set_effect_answers_an_unknown_id_before_an_unknown_type(
+    v2_client: Client,
+) -> None:
+    resp = await v2_client.post(
+        f"{V}/set-effect", json={"type": "nope", "virtual_ids": ["ghost"]}
+    )
+    body = await expect_problem(resp, 404, "not-found")
+    assert "'ghost'" in body["detail"]
+
+
 async def test_copy_effect(v2_client: Client) -> None:
+    # An unknown target is a 404 even when the source runs nothing.
+    resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["ghost"]})
+    await expect_problem(resp, 404, "not-found")
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["mirror"]})
     await expect_problem(resp, 409, "conflict")
     await _start(v2_client, "dj bird")
@@ -299,10 +312,15 @@ async def test_copy_effect(v2_client: Client) -> None:
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["empty"]})
     body = await expect_problem(resp, 409, "conflict")
     assert "errors" not in body
+    # mirror already runs the copy from before: stop it, so that only a new
+    # copy can bring the effect back.
+    assert (await v2_client.delete(f"{V}/mirror/effect")).status == 204
+    assert _running(v2_client, "mirror") == ""
     resp = await v2_client.post(
         f"{BIRD}/copy-effect", json={"targets": ["empty", "mirror"]}
     )
     assert resp.status == 204
+    assert _running(v2_client, "mirror") == "rainbow"
 
 
 async def test_safe_mode(v2_client: Client) -> None:

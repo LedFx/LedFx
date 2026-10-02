@@ -85,7 +85,8 @@ async def set_effect_on_virtuals(
     as failed; with fallback_s, one that is being streamed to counts as
     blocked.
     """
-    ensure_writable(ledfx)  # safe mode answers before a 422
+    ensure_writable(ledfx)  # safe mode answers before a 404 or a 422
+    ledfx.virtuals.ensure_known(body.virtual_ids)  # and the ids before the type
     variant = effect_variant(body.type)
     config = None
     if body.config is not None:
