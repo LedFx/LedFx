@@ -5,7 +5,7 @@ from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED, CoercedInt
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
-from ledfx.events import SceneActivatedEvent
+from ledfx.errors import SafeMode
 
 # from ledfx.events import Event
 from ledfx.integrations import Integration
@@ -103,33 +103,10 @@ class MQTT(Integration):
                 _LOGGER.warning("%s", response)
                 return
 
-            scene = self._ledfx.config.scenes[scene_id]
-
-            for virtual in self._ledfx.virtuals.values():
-                # Check virtual is in scene, make no changes if it isn't
-                if virtual.id not in scene.virtuals:
-                    _LOGGER.info(
-                        "virtual with id %s has no data in scene %s",
-                        virtual.id,
-                        scene_id,
-                    )
-                    continue
-
-                # Set effect of virtual to that saved in the scene,
-                # clear active effect of virtual if no effect in scene
-                scene_virtual = scene.virtuals[virtual.id]
-                if scene_virtual.type is not None:
-                    # Create the effect and add it to the virtual
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type=scene_virtual.type,
-                        config=scene_virtual.config or {},
-                    )
-                    virtual.set_effect(effect)
-                else:
-                    virtual.clear_effect()
-
-            self._ledfx.events.fire_event(SceneActivatedEvent(scene.name))
+            try:
+                self._ledfx.scenes.activate(scene_id)
+            except SafeMode as exc:
+                _LOGGER.debug("Scene %s not activated: %s", scene_id, exc)
             # SET SCENE END
 
     async def connect(self):
