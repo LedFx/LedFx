@@ -42,6 +42,17 @@ repos:
         types: [python]
         pass_filenames: false
         require_serial: true
+  # Renovate bumps ledfx/api/v2/docs/SCALAR_VERSION; this rebuilds the vendored
+  # bundle to match, and autofix commits the result to the PR. A no-op (and
+  # offline) when the bundle is already in step.
+  - repo: local
+    hooks:
+      - id: scalar-vendored
+        name: rebuild the vendored Scalar bundle when SCALAR_VERSION moves
+        language: python
+        entry: python tools/update_scalar.py --sync
+        pass_filenames: false
+        files: ^ledfx/api/v2/docs/(SCALAR_VERSION|docs\.html)$
   # GitHub Actions security audit. Config in .github/zizmor.yml; the gate
   # is --min-severity high (informational findings stay advisory).
   # prek provisions zizmor itself (language: python), so no system tooling.

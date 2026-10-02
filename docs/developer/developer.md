@@ -161,6 +161,17 @@ is what makes a new response field additive.
 contract changes (minor for additions, major for a break), then regenerate the
 spec. It does not change on a release.
 
+The API reference at `/api/v2/docs` serves a vendored Scalar bundle from
+`ledfx/api/v2/docs/`. Renovate bumps `SCALAR_VERSION`; the `scalar-vendored`
+hook rebuilds the bundle, its checksum, the licence and the `?v=` in
+`docs.html`, and autofix commits that to the Renovate PR. To update by hand,
+edit `SCALAR_VERSION` and run `uv run python tools/update_scalar.py --sync`,
+or pass a version: `uv run python tools/update_scalar.py 1.73.0`. The tool
+verifies the download against the npm registry's `dist.integrity`. Renovate
+does not automerge Scalar bumps, because the bundle runs on the LedFx origin,
+and each bump adds about 1.25 MB of compressed git history (the bundle is
+4.4 MB), so bump when you need something, not weekly.
+
 ## Frontend Development
 
 The LedFx frontend is now maintained in a separate repository: [LedFx-Frontend-v2](https://github.com/YeonV/LedFx-Frontend-v2).
