@@ -8,13 +8,6 @@
       "severity": "error"
     },
     {
-      "column": 11,
-      "path": "docs/conf.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`setup` is missing an annotation for parameter `app`",
-      "severity": "error"
-    },
-    {
       "column": 18,
       "path": "docs/conf.py",
       "name": "implicit-any-empty-container",

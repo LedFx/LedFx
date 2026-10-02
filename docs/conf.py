@@ -9,7 +9,10 @@
 
 import datetime
 import os
+import shutil
 import sys
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -18,6 +21,9 @@ import sys
 sys.path.insert(0, os.path.abspath(".."))
 
 from ledfx.consts import PROJECT_AUTHOR, PROJECT_NAME, PROJECT_VERSION
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
 
 # -- Project information -----------------------------------------------------
 
@@ -104,9 +110,29 @@ linkcheck_timeout = 2
 html_theme = "sphinx_rtd_theme"
 
 
-def setup(app):
+def _copy_api_v2(app: "Sphinx", exception: Exception | None) -> None:
+    """Stage the v2 API reference under _static/api-v2/ (api_v2.md iframes it).
+
+    The page LedFx serves at /api/v2/docs, next to the vendored Scalar bundle
+    and the committed spec, laid out so its relative URLs resolve unchanged.
+    """
+    if exception is not None or app.builder.format != "html":
+        return
+    root = Path(__file__).resolve().parent.parent
+    docs = root / "ledfx" / "api" / "v2" / "docs"
+    out = Path(app.outdir) / "_static" / "api-v2"
+    (out / "docs").mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(docs / "docs.html", out / "index.html")
+    shutil.copyfile(
+        docs / "scalar.standalone.js", out / "docs" / "scalar.standalone.js"
+    )
+    shutil.copyfile(root / "openapi" / "ledfx-v2.json", out / "openapi.json")
+
+
+def setup(app: "Sphinx") -> None:
     """Sphinx setup function."""
     app.add_css_file("css/custom.css")
+    app.connect("build-finished", _copy_api_v2)
 
 
 # Theme options are theme-specific and customize the look and feel of a theme

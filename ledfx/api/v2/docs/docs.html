@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LedFx API v2</title>
+  </head>
+  <body>
+    <!--
+      Scalar mounts next to #api-reference and reads data-configuration.
+      There is no inline script: the CSP allows scripts from 'self' only.
+      Nothing may leave the LedFx host: no default fonts, telemetry, proxy,
+      developer tools, AI agent or MCP. URLs are relative to /api/v2/docs.
+      Bump ?v= with SCALAR_VERSION: the bundle is cached as immutable.
+      The browser console shows one CSP violation for eval, from the bundle
+      probing for it; Scalar works without it. Do not add 'unsafe-eval'.
+    -->
+    <div id="api-reference" data-configuration='{"url":"./openapi.json","withDefaultFonts":false,"hideClientButton":true,"hideTestRequestButton":true,"telemetry":false,"showDeveloperTools":"never","agent":{"disabled":true},"mcp":{"disabled":true}}'></div>
+    <script src="./docs/scalar.standalone.js?v=1.72.2"></script>
+  </body>
+</html>

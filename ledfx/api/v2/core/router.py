@@ -29,6 +29,7 @@ class RouteSpec:
     status: int
     responses: Mapping[int, Binary]
     errors: tuple[type[LedFxError], ...]
+    in_schema: bool = True
 
 
 class Router:
@@ -43,6 +44,7 @@ class Router:
         status: int,
         responses: Mapping[int, Binary] | None,
         errors: Sequence[type[LedFxError]],
+        in_schema: bool = True,
     ) -> Callable[[F], F]:
         # Paths are relative to /api/v2; "/api..." means the prefix was repeated.
         if not path.startswith("/") or path == "/api" or path.startswith("/api/"):
@@ -58,6 +60,7 @@ class Router:
                     status=status,
                     responses=dict(responses or {}),
                     errors=tuple(errors),
+                    in_schema=in_schema,
                 )
             )
             return fn
@@ -71,8 +74,9 @@ class Router:
         status: int = 200,
         responses: Mapping[int, Binary] | None = None,
         errors: Sequence[type[LedFxError]] = (),
+        in_schema: bool = True,
     ) -> Callable[[F], F]:
-        return self._route("GET", path, status, responses, errors)
+        return self._route("GET", path, status, responses, errors, in_schema)
 
     def post(
         self,
