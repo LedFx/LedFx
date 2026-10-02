@@ -849,6 +849,32 @@ def test_a_global_update_accepts_what_it_is_given() -> None:
     )
 
 
+def test_a_refused_patch_config_fires_no_event_and_touches_no_segments(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Every input is checked before the first change."""
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    segments = list(virtual.segments)
+    running = virtual.active_effect
+    ledfx.events.fire_event.reset_mock()
+    ledfx.config_store.request_save.reset_mock()
+    update_segments = MagicMock(wraps=virtual.update_segments)
+    monkeypatch.setattr(virtual, "update_segments", update_segments)
+    changes = VirtualChanges(
+        segments=[Segment("strip", 0, 9, False)],
+        config=replace_model(virtual.config, frequency_min=500, frequency_max=100),
+    )
+    with pytest.raises(Invalid) as caught:
+        ledfx.virtuals.patch(BIRD, changes)
+    assert caught.value.loc == ("body", "config", "frequency_min")
+    update_segments.assert_not_called()
+    ledfx.events.fire_event.assert_not_called()
+    ledfx.config_store.request_save.assert_not_called()
+    assert virtual.segments == segments
+    assert virtual.active_effect is running
+
+
 BULK_CHANGES: dict[str, Callable[[Virtuals], object]] = {
     "apply-global": lambda v: v.apply_global_config(GlobalEffectUpdate(brightness=0.5)),
     "set-effect-all": lambda v: v.set_effect_all("rainbow", cfg({})),
@@ -963,18 +989,23 @@ def test_a_refused_patch_restores_a_config_v2_would_refuse(ledfx: MagicMock) -> 
 
 
 def test_a_refused_patch_restores_segments_that_no_longer_fit(
-    ledfx: MagicMock,
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """A device that shrank leaves stored segments v2 would refuse. The undo
     does not run the strict checks, so it restores (clamped, as a reload
     would) instead of failing and leaving the new segments in place."""
     virtual = ledfx.virtuals.get_or_raise(BIRD)
     ledfx.devices.get("strip").pixel_count = 30
+
+    def refuse(config: object) -> None:
+        raise Conflict("the config step refused")
+
+    monkeypatch.setattr(virtual, "replace_config", refuse)
     changes = VirtualChanges(
         segments=[Segment("strip", 0, 9, False)],
-        config=replace_model(virtual.config, frequency_min=900, frequency_max=100),
+        config=replace_model(virtual.config, max_brightness=0.5),
     )
-    with pytest.raises(Invalid):
+    with pytest.raises(Conflict, match="config step refused"):
         ledfx.virtuals.patch(BIRD, changes)
     assert virtual.segments == [["strip", 0, 29, False]]
     assert virtual.entry is not None

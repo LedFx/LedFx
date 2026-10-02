@@ -1840,15 +1840,18 @@ class Virtuals:
         virtual = self.get_or_raise(virtual_id)
         old_segments = list(virtual.segments)
         old_config = virtual.config
+        # Every request input is checked before the first change.
+        if changes.segments is not None:
+            self._check_segments(changes.segments)
+        if changes.config is not None:
+            self._check_config(changes.config, old_config)
         attempted: list[str] = []
         try:
             if changes.segments is not None:
                 attempted.append("segments")
-                self._check_segments(changes.segments)
                 self._apply_segments(virtual, changes.segments)
             if changes.config is not None:
                 attempted.append("config")
-                self._check_config(changes.config, old_config)
                 self._apply_config(virtual, changes.config)
             if changes.active is not None:
                 # _apply_active undoes itself when it raises.
