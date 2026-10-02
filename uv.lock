@@ -1340,7 +1340,7 @@ requires-dist = [
     { name = "dbus-fast", marker = "sys_platform == 'linux'", specifier = ">=5.0.22,<6.0.0" },
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
-    { name = "lifx-async", specifier = ">=6.5.1" },
+    { name = "lifx-async", specifier = ">=7.4.0" },
     { name = "mss", specifier = "~=10.2.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },
@@ -1412,11 +1412,11 @@ docs = [
 
 [[package]]
 name = "lifx-async"
-version = "7.3.0"
+version = "7.4.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a9/f9/d92b07d69acc161381868eb7194217177bad40a5e7f635ab800340fc457a/lifx_async-7.3.0.tar.gz", hash = "sha256:bef33113e7dc9bc9697ab47ede65d8154a4d44b647568beaa1ae28a4d7679173", size = 14261804, upload-time = "2026-09-09T11:09:10.437Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7a/13/71dbb2e0612d22369ede60ad0add4f71b040d6ef3e5e833ddd5bbb3f3c2d/lifx_async-7.4.0.tar.gz", hash = "sha256:a49bf6c2507e2d5b6a96a41a26316cccceb679eef3c759fcbd53fcea728ca6bc", size = 14305004, upload-time = "2026-09-19T03:14:13.76Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8c/f8/96415e707b56b05079db95034bce6a092146b996af768faca22486c71cbb/lifx_async-7.3.0-py3-none-any.whl", hash = "sha256:683cb70130359aed29a5c671154e7b5a8c14d65ae1eb40410e5d92c6a00b4198", size = 402792, upload-time = "2026-09-09T11:09:08.656Z" },
+    { url = "https://files.pythonhosted.org/packages/85/4f/d829e2ccd255fc15bd62843e8f9b3ee41ebce97a6beea018581a9c06434d/lifx_async-7.4.0-py3-none-any.whl", hash = "sha256:d362f23545832a9037fde81da781fa1e6b6074c04d703000808617b472799857", size = 420998, upload-time = "2026-09-19T03:14:11.445Z" },
 ]
 
 [[package]]
