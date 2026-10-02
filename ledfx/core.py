@@ -15,9 +15,9 @@ from audio_hotplug import create_monitor
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
+    coerce_color,
     parse_color,
     parse_gradient,
-    validate_color,
     validate_gradient,
 )
 from ledfx.configuration.models import LedFxConfig
@@ -514,7 +514,7 @@ class LedFxCore:
             "Colors",
             LEDFX_COLORS,
             self.config.user_colors,
-            validate_color,
+            coerce_color,
             parse_color,
         )
         self.gradients = UserDefaultCollection(

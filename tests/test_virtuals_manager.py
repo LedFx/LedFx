@@ -747,6 +747,12 @@ async def test_v1_oneshot_clamps_brightness(
     assert max(flash._color) == peak
 
 
+def test_the_colours_collection_still_stores_a_list(ledfx: MagicMock) -> None:
+    """The collection is a load/v1 path: it takes [r, g, b]."""
+    ledfx.colors["listed"] = [1, 2, 3]
+    assert ledfx.config.user_colors["listed"] == "#010203"
+
+
 async def test_v1_delete_swallows_only_an_unknown_effect(ledfx: MagicMock) -> None:
     """The virtual vanishing after the handler's check is not a success."""
 

@@ -119,6 +119,9 @@ class ColorEndpoint(RestEndpoint):
         for key, val in data.items():
             try:
                 # v1-compat: a colour may be an [r, g, b] list.
+                # The collection normalises it once; normalising here too
+                # would turn the 7-digit hex that [1, 2, 300] makes into
+                # a different colour (pinned).
                 v1_color(val)
                 collection, noun = self._ledfx.colors, "color"
             except ValueError:

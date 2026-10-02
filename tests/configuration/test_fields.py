@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, cast
 
 import pytest
 from pydantic import BaseModel, Field, ValidationError
@@ -152,3 +152,31 @@ def test_runtime_audio_hook_sees_the_coerced_int(
     # The rest is as before: load keeps the value, runtime falls back to default.
     results = [device(v, rt) for v in (None, 4, 99, True) for rt in (False, True)]
     assert results == [None, 1, 4, 4, 99, 1, 1, 1]
+
+
+def test_validate_color_takes_only_a_string() -> None:
+    from ledfx.color import coerce_color, validate_color
+
+    assert validate_color("red") == "#ff0000"
+    with pytest.raises(ValueError, match="Invalid color: "):
+        validate_color(cast("str", [1, 2, 3]))
+    assert coerce_color([1, 2, 3]) == "#010203"
+    assert coerce_color((1, 2, 3)) == "#010203"
+    assert coerce_color("red") == "#ff0000"
+    for bad in ([1, 2], 5, None, {"a": 1}):
+        with pytest.raises(ValueError, match="Invalid color: "):
+            coerce_color(bad)
+
+
+def test_the_color_field_still_loads_a_list() -> None:
+    """Old configs and v1 send [r, g, b]; the load path stays lenient."""
+    assert Sample.model_validate({"color": [1, 2, 3]}).color == "#010203"
+
+
+def test_the_v2_color_type_refuses_a_list() -> None:
+    from pydantic import TypeAdapter
+
+    from ledfx.api.v2.models.virtuals import ColorStr
+
+    with pytest.raises(ValidationError):
+        TypeAdapter(ColorStr).validate_python([1, 2, 3])

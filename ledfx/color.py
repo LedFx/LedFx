@@ -325,7 +325,23 @@ def validate_color(color: str) -> str:
         str: The validated and formatted color string.
 
     """
-    return "#{:02x}{:02x}{:02x}".format(*parse_color(color))
+    if isinstance(color, str):
+        return coerce_color(color)
+    raise ValueError(f"Invalid color: {color}")
+
+
+def coerce_color(value: object) -> str:
+    """
+    Formats a color given as a name, a hex string or an [r, g, b] list or
+    tuple. This is the lenient form for config loading and v1; requests
+    use validate_color, which takes only a string.
+
+    Raises:
+        ValueError: If value is not a color.
+    """
+    if isinstance(value, (str, list, tuple)):
+        return "#{:02x}{:02x}{:02x}".format(*parse_color(value))
+    raise ValueError(f"Invalid color: {value}")
 
 
 def get_color_at_position(gradient_like, position: float) -> str:
@@ -342,7 +358,7 @@ def get_color_at_position(gradient_like, position: float) -> str:
         parsed = parse_gradient(gradient_like)
     except Exception:  # noqa: BLE001
         # If parse fails, assume it's a color string and validate
-        return validate_color(gradient_like)
+        return coerce_color(gradient_like)
 
     if isinstance(parsed, RGB):
         return "#{:02x}{:02x}{:02x}".format(*parsed)

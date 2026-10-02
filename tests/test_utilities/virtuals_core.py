@@ -15,9 +15,9 @@ import pytest
 from ledfx.color import (
     LEDFX_COLORS,
     LEDFX_GRADIENTS,
+    coerce_color,
     parse_color,
     parse_gradient,
-    validate_color,
     validate_gradient,
 )
 from ledfx.configuration.models import VirtualEntry
@@ -99,7 +99,7 @@ def install_virtuals(ledfx: MagicMock) -> MagicMock:
         "Colors",
         LEDFX_COLORS,
         ledfx.config.user_colors,
-        validate_color,
+        coerce_color,
         parse_color,
     )
     ledfx.gradients = UserDefaultCollection(
