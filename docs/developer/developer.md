@@ -156,6 +156,11 @@ Request schemas are closed (unknown fields are a 422). Response schemas are
 open, and the spec says so: clients must ignore unknown response fields, which
 is what makes a new response field additive.
 
+New branches in a response union (for example a new effect or device type) are
+additive: `.oasdiff.yaml` and `openapi/oasdiff-levels.txt` lower those four
+oasdiff checks to INFO. Clients must handle plugin types they do not know; every
+response union has an `UnknownPlugin` branch for them.
+
 `info.version` is the contract version, `API_VERSION` in
 `ledfx/api/v2/core/app.py`, not the LedFx release. Bump it by hand when the
 contract changes (minor for additions, major for a break), then regenerate the
