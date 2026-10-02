@@ -2,11 +2,8 @@ import random
 
 import pytest
 
-from tests.test_utilities.test_utils import (
-    SERVER_PATH,
-    APITestCase,
-    HTTPSession,
-)
+from tests.test_utilities.consts import SERVER_PATH
+from tests.test_utilities.test_utils import APITestCase, HTTPSession
 
 CONFIG_KEYS_TO_TEST = [
     "audio",

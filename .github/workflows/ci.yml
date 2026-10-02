@@ -248,11 +248,13 @@ jobs:
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
+        env:
+          LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ledfx-log-linux-py${{ matrix.python }}
-          path: debug_config/ledfx.log
+          path: ${{ runner.temp }}/ledfx-test/*.log
 
   test-windows:
     name: Test (Windows, py${{ matrix.python }})
@@ -292,11 +294,13 @@ jobs:
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
+        env:
+          LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ledfx-log-windows-py${{ matrix.python }}
-          path: debug_config/ledfx.log
+          path: ${{ runner.temp }}/ledfx-test/*.log
 
   test-macos:
     name: Smoke test (macOS arm64, py${{ matrix.python }})
