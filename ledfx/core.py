@@ -30,7 +30,11 @@ from ledfx.configuration.store import ConfigStore, backup_config_file
 from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
-from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+from ledfx.effects.audio import (
+    SNAPCAST_SERVERS,
+    AudioAnalysisSource,
+    AudioInputSource,
+)
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -47,6 +51,7 @@ from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
+from ledfx.snapcast.config import eager_start as snapcast_eager_start
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
@@ -179,6 +184,8 @@ class LedFxCore:
 
         if "sendspin_always_on" in event.config:
             self.reconcile_sendspin_always_on_runtime("base_config_update")
+        if "snapcast_always_on" in event.config:
+            self.reconcile_snapcast_always_on_runtime("base_config_update")
 
     def reconcile_sendspin_always_on_runtime(self, trigger: str):
         """Reconcile runtime Sendspin always-on behavior from current config.
@@ -202,6 +209,18 @@ class LedFxCore:
                 "sendspin reconcile (%s): always-on disabled, checking deactivate.",
                 trigger,
             )
+            self.audio.check_and_deactivate()
+
+    def reconcile_snapcast_always_on_runtime(self, trigger: str):
+        """Reconcile runtime Snapcast always-on behavior from current config."""
+        if self.config.snapcast_always_on:
+            try:
+                snapcast_eager_start(self)
+            except Exception as exc:  # noqa: BLE001
+                _LOGGER.warning("snapcast reconcile (%s) failed: %s", trigger, exc)
+            return
+
+        if hasattr(self, "audio") and self.audio is not None:
             self.audio.check_and_deactivate()
 
     def dev_enabled(self):
@@ -279,6 +298,25 @@ class LedFxCore:
         # Runtime path: server changes can alter whether the configured
         # Sendspin source is currently available.
         self.reconcile_sendspin_always_on_runtime("sendspin_servers_loaded")
+
+    def _load_snapcast_servers(self):
+        """Load Snapcast server configurations from config into the audio system."""
+        previous_valid = AudioInputSource.valid_device_indexes()
+
+        snapcast_config = self.config.snapcast_servers
+        SNAPCAST_SERVERS.clear()
+        for name, config in snapcast_config.items():
+            SNAPCAST_SERVERS[name] = config.model_dump()
+        if snapcast_config:
+            _LOGGER.info("Loaded %d Snapcast server(s)", len(snapcast_config))
+
+        try:
+            if AudioInputSource.valid_device_indexes() != previous_valid:
+                self.events.fire_event(AudioDeviceListChangedEvent())
+        except Exception as exc:  # noqa: BLE001
+            _LOGGER.debug("_load_snapcast_servers: could not query devices: %s", exc)
+
+        self.reconcile_snapcast_always_on_runtime("snapcast_servers_loaded")
 
     def loop_exception_handler(self, loop, context):
         kwargs = {}
@@ -545,6 +583,7 @@ class LedFxCore:
         # virtuals, since virtuals with active effects trigger audio
         # initialization which validates the audio_device index.
         self._load_sendspin_servers()
+        self._load_snapcast_servers()
 
         self.zeroconf = ZeroConfRunner(ledfx=self)
         self.virtuals.create_from_config(self.config.virtuals, pause_all=pause_all)

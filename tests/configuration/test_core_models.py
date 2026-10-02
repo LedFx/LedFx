@@ -161,6 +161,14 @@ def test_sendspin_defaults_track_the_sendspin_module() -> None:
     )
 
 
+def test_snapcast_defaults_track_the_snapcast_module() -> None:
+    from ledfx.configuration.models import SnapcastServerConfig
+    from ledfx.snapcast.config import DEFAULT_CLIENT_NAME, DEFAULT_PORT
+
+    cfg = SnapcastServerConfig(host="h")
+    assert (cfg.port, cfg.client_name) == (DEFAULT_PORT, DEFAULT_CLIENT_NAME)
+
+
 def test_lenient_drops_only_a_non_dict_entry_of_a_model_list() -> None:
     # legacy_to_v1 passes junk entries through; the other devices must survive
     records, q = _collect()

@@ -30,6 +30,7 @@ class InfoEndpoint(RestEndpoint):
             "config_error": self._ledfx.config_store.error,
             "features": {
                 "sendspin": SENDSPIN_AVAILABLE,
+                "snapcast": True,
             },
         }
         return await self.bare_request_success(response)

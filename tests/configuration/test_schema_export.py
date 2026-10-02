@@ -465,6 +465,7 @@ NOT_READ_ONLY = {
         "user_gradients",
         "wled_preferences",
         "sendspin_servers",
+        "snapcast_servers",
         "now_playing",
         "image_cache",
     )

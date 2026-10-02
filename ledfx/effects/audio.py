@@ -26,14 +26,35 @@ from ledfx.effects.melbank import MIC_RATE, Melbanks
 from ledfx.events import AudioDeviceChangeEvent, AudioSourceErrorEvent, Event
 from ledfx.sendspin import SENDSPIN_AVAILABLE
 from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
+from ledfx.snapcast.config import HOSTAPI_NAME as SNAPCAST_HOSTAPI
+from ledfx.snapcast.config import is_always_on as is_snapcast_always_on
+from ledfx.snapcast.stream import SnapcastAudioStream
 
 # Sendspin server configurations discovered or configured
 SENDSPIN_SERVERS = {}
+# Snapcast server configurations
+SNAPCAST_SERVERS = {}
+
+# Network audio sources: device name prefix -> display name.  These are never
+# silently replaced by a local audio device when unavailable, since they may
+# only be temporarily unreachable.
+NETWORK_AUDIO_SOURCES = {"SENDSPIN:": "Sendspin", "SNAPCAST:": "Snapcast"}
 
 _LOGGER = logging.getLogger(__name__)
 
 MIN_MIDI = 21
 MAX_MIDI = 108
+
+
+def network_audio_source(device_name):
+    """Return (display name, server id) if device_name is a network audio
+    source such as "SENDSPIN: living-room", else None."""
+    if not isinstance(device_name, str):
+        return None
+    for prefix, kind in NETWORK_AUDIO_SOURCES.items():
+        if device_name.startswith(prefix):
+            return kind, device_name[len(prefix) :].strip()
+    return None
 
 
 class AudioInputSource:
@@ -218,23 +239,25 @@ class AudioInputSource:
         found_idx = self.get_device_index_by_name(last_device_name)
 
         if found_idx == -1:
-            # For Sendspin virtual devices, never silently switch to a real
+            # For network audio sources, never silently switch to a real
             # audio device — they may simply be temporarily unreachable rather
             # than permanently removed.  Notify the frontend instead.
-            if last_device_name and last_device_name.startswith("SENDSPIN:"):
+            network_source = network_audio_source(last_device_name)
+            if network_source:
+                kind, server_id = network_source
                 _LOGGER.warning(
-                    "Sendspin audio device '%s' not found after device list "
+                    "%s audio device '%s' not found after device list "
                     "change. Not falling back to default audio device.",
+                    kind,
                     last_device_name,
                 )
 
                 self._ledfx.events.fire_event(
                     AudioSourceErrorEvent(
-                        error_type="sendspin_device_not_found",
+                        error_type=f"{kind.lower()}_device_not_found",
                         message=(
-                            f"Sendspin audio source "
-                            f"'{last_device_name[len('SENDSPIN:') :].strip()}' "
-                            "is no longer available. Check your Sendspin server "
+                            f"{kind} audio source '{server_id}' "
+                            f"is no longer available. Check your {kind} server "
                             "or select a different audio source."
                         ),
                         device_name=last_device_name,
@@ -395,6 +418,7 @@ class AudioInputSource:
         apis = sd.query_hostapis() + ({"name": "WEB AUDIO"},)
         if SENDSPIN_AVAILABLE:
             apis = apis + ({"name": "SENDSPIN"},)
+        apis = apis + ({"name": SNAPCAST_HOSTAPI},)
         return apis
 
     @staticmethod
@@ -426,6 +450,18 @@ class AudioInputSource:
                 for name, config in SENDSPIN_SERVERS.items()
             )
             devices = devices + sendspin_devices
+        snapcast_idx = next(
+            i for i, h in enumerate(hostapis) if h["name"] == SNAPCAST_HOSTAPI
+        )
+        devices = devices + tuple(
+            {
+                "hostapi": snapcast_idx,
+                "name": name,
+                "max_input_channels": 1,
+                "snapcast_config": config,
+            }
+            for name, config in SNAPCAST_SERVERS.items()
+        )
         return devices
 
     @staticmethod
@@ -507,24 +543,27 @@ class AudioInputSource:
             return
 
         # Device not found by name at all.
-        # For Sendspin virtual devices: do NOT fall back to a real audio device.
+        # For network audio sources: do NOT fall back to a real audio device.
         # Silently switching to a microphone/loopback when the user intended
-        # Sendspin is confusing and hard to diagnose.  Report the error and
-        # leave the config unchanged so the user can fix it.
-        if saved_name.startswith("SENDSPIN:"):
+        # a network source is confusing and hard to diagnose.  Report the
+        # error and leave the config unchanged so the user can fix it.
+        network_source = network_audio_source(saved_name)
+        if network_source:
+            kind, server_id = network_source
             _LOGGER.warning(
-                "Sendspin audio device '%s' not found in current device list "
-                "(server may be removed or SENDSPIN_SERVERS not yet loaded). "
+                "%s audio device '%s' not found in current device list "
+                "(server may be removed or not yet loaded). "
                 "Not falling back to default audio device.",
+                kind,
                 saved_name,
             )
 
             self._ledfx.events.fire_event(
                 AudioSourceErrorEvent(
-                    error_type="sendspin_device_not_found",
+                    error_type=f"{kind.lower()}_device_not_found",
                     message=(
-                        f"Sendspin audio source '{saved_name[len('SENDSPIN:') :].strip()}' "
-                        "not found. Check your Sendspin server configuration or "
+                        f"{kind} audio source '{server_id}' "
+                        f"not found. Check your {kind} server configuration or "
                         "select a different audio source."
                     ),
                     device_name=saved_name,
@@ -672,22 +711,25 @@ class AudioInputSource:
 
         if device_idx not in valid_device_indexes:
             configured_name = self._config.audio_device_name
-            # For Sendspin virtual devices, never fall back to a real audio
+            # For network audio sources, never fall back to a real audio
             # device — notify the frontend so the user can take action.
-            if configured_name.startswith("SENDSPIN:"):
+            network_source = network_audio_source(configured_name)
+            if network_source:
+                kind, server_id = network_source
                 _LOGGER.warning(
-                    "Sendspin audio device '%s' (index %s) is not available. "
+                    "%s audio device '%s' (index %s) is not available. "
                     "Not falling back to default audio device.",
+                    kind,
                     configured_name,
                     device_idx,
                 )
 
                 self._ledfx.events.fire_event(
                     AudioSourceErrorEvent(
-                        error_type="sendspin_device_unavailable",
+                        error_type=f"{kind.lower()}_device_unavailable",
                         message=(
-                            f"Sendspin audio source '{configured_name[len('SENDSPIN:') :].strip()}' "
-                            "is not available. Check your Sendspin server configuration "
+                            f"{kind} audio source '{server_id}' "
+                            f"is not available. Check your {kind} server configuration "
                             "or select a different audio source."
                         ),
                         device_name=configured_name,
@@ -826,6 +868,14 @@ class AudioInputSource:
                     instance_id=self._ledfx.config.instance_id,
                     ledfx=self._ledfx,
                 )
+            elif hostapis[device["hostapi"]]["name"] == SNAPCAST_HOSTAPI:
+                AudioInputSource._stream = SnapcastAudioStream(
+                    device["snapcast_config"],
+                    self._audio_sample_callback,
+                    instance_id=self._ledfx.config.instance_id,
+                    ledfx=self._ledfx,
+                    name=device["name"],
+                )
             else:
                 AudioInputSource._stream = self._audio.InputStream(
                     samplerate=int(device["default_samplerate"]),
@@ -951,6 +1001,28 @@ class AudioInputSource:
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
+        return (
+            self._should_keep_sendspin_active() or self._should_keep_snapcast_active()
+        )
+
+    def _should_keep_snapcast_active(self):
+        if not self._ledfx.config.snapcast_always_on:
+            return False
+        configured_name = (
+            self._config.audio_device_name if hasattr(self, "_config") else ""
+        )
+        network_source = network_audio_source(configured_name)
+        if network_source and network_source[0] == "Snapcast":
+            # Only while the selected server is still configured; otherwise
+            # activating would fall back to a local device.
+            return network_source[1] in SNAPCAST_SERVERS
+        return is_snapcast_always_on(
+            self._config.audio_device if hasattr(self, "_config") else None,
+            self.query_devices,
+            self.query_hostapis,
+        )
+
+    def _should_keep_sendspin_active(self):
         sendspin_always_on = self._ledfx.config.sendspin_always_on
         if not sendspin_always_on:
             return False
@@ -996,7 +1068,7 @@ class AudioInputSource:
             self._timer.cancel()
         self._timer = None
         if self._should_always_keep_active():
-            _LOGGER.debug("Sendspin always-on active, skipping deactivate")
+            _LOGGER.debug("Network audio always-on active, skipping deactivate")
             return
         if (
             len(self._callbacks) <= self._subscriber_threshold

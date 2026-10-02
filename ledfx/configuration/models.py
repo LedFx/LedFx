@@ -389,6 +389,13 @@ class SendspinServerConfig(LedFxModel):
     client_name: str = "LedFx"
 
 
+class SnapcastServerConfig(LedFxModel):
+    # Literals (not imported), as for Sendspin. Pinned by a test.
+    host: str
+    port: int = Field(1704, ge=1, le=65535)
+    client_name: str = "LedFx"
+
+
 class NowPlayingGradient(LedFxModel):
     enabled: bool = False
     variant: Literal["led_safe", "led_punchy", "led_max"] = "led_punchy"
@@ -491,6 +498,11 @@ class LedFxConfig(LedFxModel):
         json_schema_extra=_legacy_type("dict", {}),
     )
     sendspin_always_on: bool = True
+    snapcast_servers: dict[str, SnapcastServerConfig] = Field(
+        dict[str, SnapcastServerConfig](),
+        json_schema_extra=_legacy_type("dict", {}),
+    )
+    snapcast_always_on: bool = True
     now_playing: NowPlayingConfig = Field(
         NowPlayingConfig(), json_schema_extra=_legacy_type("dict", {})
     )
