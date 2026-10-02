@@ -3,6 +3,7 @@ import json
 import logging
 import uuid
 from json import JSONDecodeError
+from typing import ClassVar
 
 from aiohttp import web
 from pydantic import ValidationError
@@ -20,6 +21,7 @@ SNACKBAR_OPTIONS = ["success", "info", "warning", "error"]
 class RestEndpoint(BaseRegistry):
     # Methods whose JSON body must be an object. GET bodies may name keys as
     # a string or list; an endpoint that takes another shape overrides this.
+    ENDPOINT_PATH: ClassVar[str]
     OBJECT_BODY_METHODS: tuple[str, ...] = ("PUT", "POST", "DELETE")
 
     def __init__(self, ledfx):

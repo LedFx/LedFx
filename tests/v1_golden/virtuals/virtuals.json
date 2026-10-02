@@ -1,0 +1,262 @@
+[
+  {
+    "request": [
+      "GET",
+      "/api/virtuals",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"virtuals\": {\"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"mirror\": {\"config\": {\"name\": \"Mirror\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"mirror\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 9, false]], \"pixel_count\": 10, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"empty\": {\"config\": {\"name\": \"Empty\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"empty\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"matrix\": {\"config\": {\"name\": \"matrix\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"matrix\", \"is_device\": \"matrix\", \"auto_generated\": false, \"segments\": [[\"matrix\", 0, 63, false]], \"pixel_count\": 64, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}, \"paused\": false}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "Küche"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual k-che\"}, \"virtual\": {\"config\": {\"name\": \"K\\u00fcche\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"k-che\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "Küche"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual k-che-1\"}, \"virtual\": {\"config\": {\"name\": \"K\\u00fcche\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"k-che-1\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "x",
+          "max_brightness": 5
+        }
+      }
+    ],
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"less_than_equal\", \"loc\": [\"max_brightness\"], \"msg\": \"Input should be less than or equal to 1\", \"input\": 5.0}]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {}
+      }
+    ],
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"missing\", \"loc\": [\"name\"], \"msg\": \"Field required\", \"input\": {}}]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {}
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute \\\"config\\\" was not provided\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"\\\"config\\\" must be an object\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": {},
+        "config": {}
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"\\\"id\\\" must be a string\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "max_brightness": 0.5
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 0.5, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "frequency_min": 900
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 0.5, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 900, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "frequency_max": 100
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 0.5, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 100, \"frequency_max\": 900, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "rows": 1,
+          "rotate": 2
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 0.5, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 100, \"frequency_max\": 900, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "mapping": "bogus"
+        }
+      }
+    ],
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"literal_error\", \"loc\": [\"mapping\"], \"msg\": \"Input should be 'span' or 'copy'\", \"input\": \"bogus\"}]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "nope",
+        "config": {}
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual with ID nope not found\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "raw": "not json"
+      }
+    ],
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"reason\": \"JSON decoding failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Request body is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      [
+        1,
+        2
+      ]
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Request body must be a JSON object\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"paused\": true}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"virtuals\": {\"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 0.5, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 100, \"frequency_max\": 900, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"mirror\": {\"config\": {\"name\": \"Mirror\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"mirror\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 9, false]], \"pixel_count\": 10, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"empty\": {\"config\": {\"name\": \"Empty\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"empty\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"matrix\": {\"config\": {\"name\": \"matrix\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"matrix\", \"is_device\": \"matrix\", \"auto_generated\": false, \"segments\": [[\"matrix\", 0, 63, false]], \"pixel_count\": 64, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"k-che\": {\"config\": {\"name\": \"K\\u00fcche\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"k-che\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"k-che-1\": {\"config\": {\"name\": \"K\\u00fcche\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"k-che-1\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}, \"paused\": true}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"paused\": false}"
+  },
+  {
+    "request": [
+      "PATCH",
+      "/api/virtuals",
+      null
+    ],
+    "status": 405,
+    "body": "405: Method Not Allowed"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "oneshot"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual oneshot\"}, \"virtual\": {\"config\": {\"name\": \"oneshot\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"oneshot\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "Force Color"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual force-color\"}, \"virtual\": {\"config\": {\"name\": \"Force Color\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"force-color\", \"is_device\": false, \"auto_generated\": false}}"
+  }
+]
