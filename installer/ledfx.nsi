@@ -72,8 +72,10 @@ Function ${un}CloseLedFx
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "LedFx is running. Click OK to close it and continue." /SD IDOK IDOK +2
   Abort
   ; 64-bit PowerShell: a 32-bit one can't read the path of a 64-bit process.
+  ; The path goes in through the environment, so no quoting can break it.
+  System::Call 'kernel32::SetEnvironmentVariable(t "LEDFX_EXE", t "$INSTDIR\LedFx.exe")'
   ${DisableX64FSRedirection}
-  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "Get-Process LedFx -ErrorAction SilentlyContinue | Where-Object Path -eq '$INSTDIR\LedFx.exe' | Stop-Process -Force"`
+  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "Get-Process LedFx -ErrorAction SilentlyContinue | Where-Object Path -eq $$env:LEDFX_EXE | Stop-Process -Force"`
   Pop $0
   ${EnableX64FSRedirection}
   Sleep 2000
