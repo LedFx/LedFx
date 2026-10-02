@@ -24,6 +24,7 @@ from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import EffectEntry
+from ledfx.configuration.plugin import PluginConfig
 from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
 from tests.v1_golden.harness import (
     Raw,
@@ -540,6 +541,14 @@ SCENARIOS: dict[str, list[Step]] = {
             {"action": "apply_global_effect", "type": "nope"},
         ),
     ],
+    # Safe mode entered while an effect runs: it answers before a bad config.
+    "safe_mode_running": [
+        ("PUT", f"{BIRD}/effects", {"config": {"speed": "x"}}),
+        ("PUT", f"{BIRD}/effects", {"config": {"color": "red"}, "fallback": 30}),
+        ("PUT", f"{BIRD}/effects", {"type": "rainbow", "config": {"speed": "x"}}),
+        ("POST", f"{BIRD}/effects", {"type": "rainbow", "config": {"speed": "x"}}),
+        ("GET", f"{BIRD}/effects", None),
+    ],
 }
 
 
@@ -550,6 +559,10 @@ def ledfx(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
 
 @pytest.mark.parametrize("name", sorted(SCENARIOS))
 async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> None:
+    if name == "safe_mode_running":
+        ledfx.virtuals.set_effect(
+            VirtualIdStr("dj bird"), "singleColor", PluginConfig.model_validate({})
+        )
     if name.startswith("safe_mode"):
         enter_safe_mode(ledfx)
     if name == "effect_typing":
