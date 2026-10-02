@@ -4,7 +4,7 @@ from pathlib import Path
 
 from aiohttp import hdrs, web
 
-from ledfx.api.v2.core.app import OPENAPI_DIGEST_KEY, OPENAPI_JSON_KEY, V2_PREFIX
+from ledfx.api.v2.core.app import OPENAPI_KEY, V2_PREFIX
 from ledfx.api.v2.core.problem import ProblemError
 from ledfx.api.v2.core.router import Binary, Router
 
@@ -40,8 +40,8 @@ async def get_openapi(request: web.Request) -> web.Response:
     The ETag is the sha256 of the body. Send it back in If-None-Match to get
     a 304 while the API is unchanged.
     """
-    body = request.app[OPENAPI_JSON_KEY]
-    digest = request.app[OPENAPI_DIGEST_KEY]
+    doc = request.app[OPENAPI_KEY]
+    body, digest = doc.body, doc.digest
     # RFC 9110 13.1.2: "*" matches any current representation.
     if any(tag.value in (digest, "*") for tag in request.if_none_match or ()):
         response = web.Response(status=304)

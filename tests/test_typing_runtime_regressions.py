@@ -17,12 +17,13 @@ from pydantic import BaseModel, Field
 from ledfx.api import RestEndpoint
 from ledfx.api.assets import AssetsEndpoint
 from ledfx.api.config import ConfigEndpoint
-from ledfx.api.virtual_effects import EffectsEndpoint, randomize_effect_config
+from ledfx.api.virtual_effects import EffectsEndpoint
 from ledfx.api.websocket import WebsocketConnection, websocket_handlers
 from ledfx.configuration.fields import X_OMIT_DEFAULT, CoercedFloat, CoercedInt
 from ledfx.configuration.migrations.legacy import legacy_to_v1
 from ledfx.configuration.paths import load_logger
 from ledfx.configuration.plugin import PluginConfig
+from ledfx.configuration.randomize import randomize_effect_config
 from ledfx.devices import Device, Devices
 from ledfx.integrations.qlc import QLCWebsocketClient
 from ledfx.utils import WLED, get_local_ip
@@ -82,7 +83,8 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     effect.name = "Test Effect"
     effect.config = dict[str, object]()
     virtual.active_effect = effect
-    ledfx.effects.create.return_value = effect
+    ledfx.virtuals.patch_effect.return_value = virtual
+    ledfx.virtuals.set_effect.return_value = virtual
     ledfx.effects.types.return_value = ["test-effect"]
     ledfx.effects.get_class.return_value.config_model.return_value = DemoEffectConfig
     request = MagicMock()
@@ -92,10 +94,10 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     endpoint = EffectsEndpoint(ledfx)
     if method == "put":
         response = await endpoint.put("virtual", request)
-        generated = effect.update_config.call_args.args[0]
+        generated = ledfx.virtuals.patch_effect.call_args.args[1]
     else:
         response = await endpoint.post("virtual", request)
-        generated = ledfx.effects.create.call_args.kwargs["config"]
+        generated = ledfx.virtuals.set_effect.call_args.args[2]
     assert response.status == 200
     assert set(generated) == {"flag", "count"}
     assert isinstance(generated["flag"], bool)
@@ -116,7 +118,7 @@ def test_randomize_honours_exclusive_bounds(
         return low if pick == "low" else high
 
     # uniform() may return either endpoint; an exclusive one must not be used.
-    monkeypatch.setattr("ledfx.api.virtual_effects.random.uniform", endpoint)
+    monkeypatch.setattr("ledfx.configuration.randomize.random.uniform", endpoint)
     for _ in range(20):
         result = randomize_effect_config(_Bounded, ())
         assert set(result) == {"one", "ratio"} and result["one"] == 1

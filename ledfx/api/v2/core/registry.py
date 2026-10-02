@@ -28,4 +28,4 @@ def build_standalone_spec() -> dict[str, object]:
     load_plugin_registries()
     app = web.Application()
     mount_v2(app, None)
-    return app[OPENAPI_KEY]
+    return app[OPENAPI_KEY].spec

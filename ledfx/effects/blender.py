@@ -21,7 +21,7 @@ class BlendVirtual:
         # Try protection against virtual not being found is left to the caller
 
         virtual = _virtuals.get(virtual_id)
-        self.rows = virtual.config["rows"]
+        self.rows = virtual.config.rows
         self.columns = int(virtual.pixel_count / self.rows)
         self.matching = (
             self.rows == fallback_shape[0] and self.columns == fallback_shape[1]
@@ -138,7 +138,7 @@ class Blender(AudioReactiveEffect):
 
     def on_activate(self, pixel_count):
         # TODO: refactor to shape tuples instead of rows and columns
-        self.rows = self._virtual.config["rows"]
+        self.rows = self._virtual.config.rows
         self.columns = int(self.pixel_count / self.rows)
         self.pixels_shape = np.shape(self.pixels)
 

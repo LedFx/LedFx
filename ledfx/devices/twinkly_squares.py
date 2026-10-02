@@ -94,17 +94,14 @@ class TwinklySquaresDevice(NetworkedDevice):
         # Update associated virtuals with the detected matrix height
         for virtual in self._ledfx.virtuals.values():
             if virtual.is_device == self.id:
-                if virtual.config.get("rows", 1) != self.matrix_height:
+                if virtual.config.rows != self.matrix_height:
                     _LOGGER.info(
                         "Updating virtual %s rows from %s to %s",
                         virtual.id,
-                        virtual.config.get("rows", 1),
+                        virtual.config.rows,
                         self.matrix_height,
                     )
-                    virtual.config = {"rows": self.matrix_height}
-                    entry = virtual.entry
-                    if entry is not None:
-                        entry.config.rows = self.matrix_height
+                    virtual.update_config({"rows": self.matrix_height})
                     config_changed = True
                 break  # Only one virtual can be is_device for this device
 

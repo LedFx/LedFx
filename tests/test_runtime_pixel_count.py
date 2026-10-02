@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 
+from ledfx.configuration.models import VirtualConfig
 from ledfx.devices import Device
 from ledfx.devices.e131 import E131Device
 from ledfx.transitions import Transitions
@@ -58,7 +59,7 @@ def test_transition_follows_effective_pixel_count() -> None:
     virtual = object.__new__(Virtual)
     virtual._ledfx = MagicMock()
     virtual._ledfx.config.global_brightness = 1
-    virtual._config = {"center_offset": 0, "max_brightness": 1}
+    virtual._config = VirtualConfig.model_validate({"name": "v"})
     virtual._active_effect = MagicMock()
     virtual._active_effect.get_pixels.return_value = np.zeros((1, 3))
     virtual._transition_effect = MagicMock(is_active=True)

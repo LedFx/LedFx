@@ -7,8 +7,8 @@ from pydantic import ValidationError
 from ledfx.api import RestEndpoint
 from ledfx.api.jsonutil import dumps
 from ledfx.api.virtual import make_virtual_response
-from ledfx.configuration.models import VirtualConfig, VirtualEntry
-from ledfx.utils import generate_id
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import VirtualConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,10 +25,11 @@ class VirtualsEndpoint(RestEndpoint):
         Returns:
             web.Response: The response containing the info of all virtuals
         """
-        response = {"status": "success", "virtuals": {}}
-        response["paused"] = self._ledfx.virtuals._paused
+        virtuals: dict[str, object] = {}
+        response: dict[str, object] = {"status": "success", "virtuals": virtuals}
+        response["paused"] = self._ledfx.virtuals.paused
         for virtual in self._ledfx.virtuals.values():
-            response["virtuals"][virtual.id] = make_virtual_response(virtual)
+            virtuals[virtual.id] = make_virtual_response(virtual)
 
         return web.json_response(data=response, status=200, dumps=dumps)
 
@@ -39,13 +40,9 @@ class VirtualsEndpoint(RestEndpoint):
         Returns:
             web.Response: The response containing the paused virtuals.
         """
-        self._ledfx.virtuals.pause_all()
-
-        response = {
-            "status": "success",
-            "paused": self._ledfx.virtuals._paused,
-        }
-        return await self.bare_request_success(response)
+        virtuals = self._ledfx.virtuals
+        paused = virtuals.set_paused(not virtuals.paused)
+        return await self.bare_request_success({"status": "success", "paused": paused})
 
     async def post(self, request: web.Request) -> web.Response:
         """
@@ -73,85 +70,43 @@ class VirtualsEndpoint(RestEndpoint):
         if virtual_id is not None and not isinstance(virtual_id, str):
             return await self.invalid_request('"id" must be a string')
 
+        virtuals = self._ledfx.virtuals
         # Update virtual config if id exists
         if virtual_id is not None:
-            virtual = self._ledfx.virtuals.get(virtual_id)
+            virtual = virtuals.get(virtual_id)
             if virtual is None:
                 return await self.invalid_request(
                     f"Virtual with ID {virtual_id} not found"
                 )
-            # Update the virtual's configuration
+            # The body holds only the keys to change.
             try:
-                virtual.config = virtual_config
+                config = VirtualConfig.model_validate(
+                    {**virtual.config.model_dump(), **virtual_config}
+                )
             except ValidationError as err:
                 return await self.validation_error(err)
+            virtual = virtuals.update(VirtualIdStr(virtual_id), config=config)
             _LOGGER.info("Updated virtual %s config to %s", virtual.id, virtual_config)
-
-            entry = virtual.entry
-            if entry is not None:
-                entry.config = VirtualConfig.model_validate(virtual.config)
-
-            response = {
-                "status": "success",
-                "payload": {
-                    "type": "success",
-                    "reason": f"Updated Virtual {virtual.name}",
-                },
-                "virtual": {
-                    "config": virtual.config,
-                    "id": virtual.id,
-                    "is_device": virtual.is_device,
-                    "auto_generated": virtual.auto_generated,
-                },
-            }
+            reason = f"Updated Virtual {virtual.name}"
         # Or, create new virtual if id does not exist
         else:
             # Validate first: the id is generated from the name.
             try:
-                VirtualConfig.model_validate(virtual_config)
+                config = VirtualConfig.model_validate(virtual_config)
             except ValidationError as err:
                 return await self.validation_error(err)
-            virtual_id = generate_id(virtual_config["name"])
-
-            # Create the virtual
             _LOGGER.info("Creating virtual with config %s", virtual_config)
+            virtual = virtuals.add(config)
+            reason = f"Created Virtual {virtual.id}"
 
-            try:
-                virtual = self._ledfx.virtuals.create(
-                    id=virtual_id,
-                    is_device=False,
-                    config=virtual_config,
-                    ledfx=self._ledfx,
-                )
-            except ValidationError as err:
-                return await self.validation_error(err)
-
-            # Update the configuration
-            self._ledfx.config.virtuals.append(
-                VirtualEntry.model_validate(
-                    {
-                        "id": virtual.id,
-                        "config": virtual.config,
-                        "is_device": virtual.is_device,
-                        "auto_generated": virtual.auto_generated,
-                    }
-                )
-            )
-
-            response = {
-                "status": "success",
-                "payload": {
-                    "type": "success",
-                    "reason": f"Created Virtual {virtual.id}",
-                },
-                "virtual": {
-                    "config": virtual.config,
-                    "id": virtual.id,
-                    "is_device": virtual.is_device,
-                    "auto_generated": virtual.auto_generated,
-                },
-            }
-
-        # Save config
-        self._ledfx.config_store.request_save()
+        response = {
+            "status": "success",
+            "payload": {"type": "success", "reason": reason},
+            "virtual": {
+                "config": virtual.config,
+                "id": virtual.id,
+                "is_device": virtual.is_device,
+                "auto_generated": virtual.auto_generated,
+            },
+        }
         return await self.bare_request_success(response)

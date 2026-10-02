@@ -1,6 +1,7 @@
 """pydantic models for LedFx configuration."""
 
-from typing import Annotated, Literal, TypeVar
+from dataclasses import dataclass
+from typing import Annotated, Literal, NamedTuple, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -87,8 +88,9 @@ class LedFxModel(BaseModel):
 
 
 # No return annotation on purpose: pydantic's model_dump() type is kept, so the
-# legacy dict site (virtuals) reads values as untyped, as it did voluptuous
-# output. Typing it needs that site to read typed models instead.
+# legacy dict sites (audio_devices.py, config.py, playlists.py) read values as
+# untyped, as they did voluptuous output. Typing it needs those sites to read
+# typed models instead.
 def validate_dict(model: type[BaseModel], data: object, *, runtime: bool = False):
     """Validate data (any mapping; anything else is a ValidationError) and
     return a plain dict shaped like voluptuous output."""
@@ -234,7 +236,11 @@ class WledPreferences(LedFxModel):
     inactivity_timeout: WledIntSetting = WledIntSetting(setting=1, user_enabled=False)
 
 
+# Frozen: Virtual.config and the virtual's config entry share one instance, so
+# a change replaces the model (Virtual.update_config), never writes into it.
 class VirtualConfig(LedFxModel):
+    model_config = ConfigDict(frozen=True)
+
     name: str = Field(description="Friendly name for the device")
     mapping: Literal["span", "copy"] = Field(
         "span",
@@ -321,6 +327,63 @@ class VirtualEntry(LedFxModel):
     )
     effects: dict[str, EffectEntry] = {}
     last_effect: str | None = Field(None, json_schema_extra=_UNSET)
+
+
+# ---- manager arguments (plain data; ledfx.virtuals.Virtuals takes them) ----
+
+
+class Segment(NamedTuple):
+    """One run of a device's pixels in a virtual (end inclusive)."""
+
+    device_id: str
+    start: int
+    end: int
+    invert: bool
+
+
+class SetEffectAllResult(NamedTuple):
+    """How Virtuals.set_effect_all went, per virtual."""
+
+    applied: int
+    skipped: int
+    blocked: int
+    failed: int
+
+
+@dataclass(frozen=True)
+class GlobalEffectUpdate:
+    """Settings Virtuals.apply_global_config writes into running effects
+    (None: leave as is). flip and mirror may be "toggle": each effect then
+    inverts its own value."""
+
+    gradient: str | None = None
+    background_color: str | None = None
+    background_brightness: float | None = None
+    brightness: float | None = None
+    flip: bool | Literal["toggle"] | None = None
+    mirror: bool | Literal["toggle"] | None = None
+
+
+@dataclass(frozen=True)
+class OneshotParams:
+    """A flash: a colour, an envelope in milliseconds and a brightness
+    (Virtuals.oneshot clamps it to 0..1)."""
+
+    color: str = "white"
+    ramp_ms: float = 0
+    hold_ms: float = 0
+    fade_ms: float = 0
+    brightness: float = 1.0
+
+
+@dataclass(frozen=True)
+class Highlight:
+    """A device's pixel range (inclusive) to light on a calibrating virtual."""
+
+    device_id: str
+    start: int
+    end: int
+    flip: bool = False
 
 
 class IntegrationEntry(LedFxModel):

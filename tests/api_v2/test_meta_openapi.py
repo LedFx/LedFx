@@ -25,7 +25,7 @@ async def test_openapi_json_serves_the_built_spec_with_an_etag(
     assert response.status == 200
     assert response.content_type == "application/json"
     canonical = json.dumps(
-        v2_client.app[OPENAPI_KEY], sort_keys=True, separators=(",", ":")
+        v2_client.app[OPENAPI_KEY].spec, sort_keys=True, separators=(",", ":")
     ).encode()
     assert await response.read() == canonical
     assert response.headers["ETag"] == f'"{hashlib.sha256(canonical).hexdigest()}"'
@@ -60,7 +60,7 @@ def test_mount_without_a_core_builds_the_spec() -> None:
     app = web.Application()
     mount_v2(app, None)
     assert LEDFX_KEY not in app
-    assert "/api/v2/openapi.json" in as_dict(app[OPENAPI_KEY]["paths"])
+    assert "/api/v2/openapi.json" in as_dict(app[OPENAPI_KEY].spec["paths"])
 
 
 @pytest.mark.timeout(120)

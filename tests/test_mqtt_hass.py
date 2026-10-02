@@ -56,3 +56,36 @@ def test_single_color_skips_effect_without_colour(effects: dict[str, object]) ->
     _integration(effects).publish_single_color(client, _event())
 
     client.publish.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "publish", ["publish_virtual_config", "publish_virtual_paused"]
+)
+def test_virtual_listeners_ignore_a_virtual_deleted_since(publish: str) -> None:
+    integration = _integration({})
+    integration._ledfx.virtuals.get.return_value = None
+    client = MagicMock()
+
+    getattr(integration, publish)("gone", client)
+
+    client.publish.assert_not_called()
+
+
+def test_the_pause_listener_ignores_a_virtual_deleted_since() -> None:
+    from ledfx.events import Event
+
+    integration = _integration({})
+    integration._ledfx.virtuals.get.return_value = None
+    integration._listeners = []
+    client = MagicMock()
+    integration._handle_connect(client, 0)
+    listener = next(
+        call.args[0]
+        for call in integration._ledfx.events.add_listener.call_args_list
+        if call.args[1] == Event.VIRTUAL_PAUSE
+    )
+    client.reset_mock()
+
+    listener(SimpleNamespace(virtual_id="gone"))
+
+    client.publish.assert_not_called()

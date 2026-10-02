@@ -1,0 +1,512 @@
+[
+  {
+    "request": [
+      "GET",
+      "/api/virtuals_tools",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"info\", \"reason\": \"Available tools: ['force_color', 'oneshot']\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals_tools/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"info\", \"reason\": \"Available tools: ['force_color', 'calibration', 'highlight', 'oneshot', 'copy']\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"oneshot failed\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "type": "singleColor"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "oneshot",
+        "color": "red",
+        "ramp": 10,
+        "hold": 20,
+        "fade": 30,
+        "brightness": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"oneshot\"}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "oneshot",
+        "hold": -1
+      }
+    ],
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"greater_than_equal\", \"loc\": [\"hold\"], \"msg\": \"Input should be greater than or equal to 0\", \"input\": -1}]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "force_color",
+        "color": "red"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"POST only runs the oneshot tool; use PUT for force_color\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools/dj%20bird",
+      {}
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute \\\"tool\\\" was not provided\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools/nope",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual with ID nope not found\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"oneshot\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"oneshot\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "force_color",
+        "color": "red"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"force_color\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "force_color"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute for force_color, color was not provided\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "force_color",
+        "color": "notacolor"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid color: notacolor\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 0,
+        "stop": 9
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Cannot set highlight when dj bird is not in calibration mode\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "on"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"calibration\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "maybe"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute for calibration, mode:on or mode:off expected\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 0,
+        "stop": 9
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": "a"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"start and end must be integers\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "ghost",
+        "start": 0,
+        "stop": 1
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Device ghost not found\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 0,
+        "stop": 99
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: start and end must be less than 50\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "state": false
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "off"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"calibration\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "mirror",
+          "ghost"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"copy\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute for copy, target was not provided\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": "mirror"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute for copy, target must be a list\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "ghost"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no valid targets\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/empty",
+      {
+        "tool": "copy",
+        "target": [
+          "mirror"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no active effect on source virtual\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "nope"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Tool nope is not in ['force_color', 'calibration', 'highlight', 'oneshot', 'copy']\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/nope",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual with ID nope not found\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/mirror",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"mirror\": {\"config\": {\"name\": \"Mirror\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"mirror\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 9, false]], \"pixel_count\": 10, \"active\": true, \"streaming\": false, \"last_effect\": \"singleColor\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools",
+      {
+        "tool": "oneshot",
+        "color": "blue"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"oneshot\"}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools",
+      {
+        "tool": "force_color",
+        "color": "red"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"POST only runs the oneshot tool; use PUT for force_color\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals_tools",
+      {
+        "tool": "oneshot",
+        "brightness": "x"
+      }
+    ],
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"float_parsing\", \"loc\": [\"brightness\"], \"msg\": \"Input should be a valid number, unable to parse string as a number\", \"input\": \"x\"}]}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"oneshot\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools",
+      {
+        "tool": "oneshot"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"oneshot\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools",
+      {
+        "tool": "force_color",
+        "color": "red"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"force_color\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools",
+      {
+        "tool": "force_color",
+        "color": "notacolor"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid color: notacolor\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools",
+      {
+        "tool": "force_color"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute for force_color, color was not provided\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools",
+      {
+        "tool": "nope"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Tool nope is not in ['force_color', 'oneshot']\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "state": false
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "DELETE",
+      "/api/virtuals/dj%20bird/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "mirror"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no active effect on source virtual\"}}"
+  }
+]

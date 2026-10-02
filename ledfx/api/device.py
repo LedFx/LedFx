@@ -133,7 +133,7 @@ class DeviceEndpoint(RestEndpoint):
         # TODO: this function does not exist, no one calls this API!
         # TODO: see https://github.com/LedFx/LedFx/issues/1226
         # device.clear_effect()
-        await device.remove_from_virtuals()
+        device.remove_from_virtuals()
         self._ledfx.devices.destroy(device_id)
 
         # Update and save the configuration

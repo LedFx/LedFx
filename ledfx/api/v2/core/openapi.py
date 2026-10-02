@@ -5,6 +5,7 @@ import json
 import re
 from collections.abc import Iterable, Sequence
 from http import HTTPStatus
+from typing import ClassVar
 
 from pydantic import BaseModel, TypeAdapter
 from pydantic.json_schema import (
@@ -61,6 +62,12 @@ class _OpenResponses(GenerateJsonSchema):
 def build_openapi(routes: Sequence[BoundRoute], *, version: str) -> dict[str, object]:
     """The OpenAPI document for routes, deterministic for a given route table.
     Routes declared with in_schema=False are served but left out."""
+    return _build(routes, version)[0]
+
+
+def _build(
+    routes: Sequence[BoundRoute], version: str
+) -> tuple[dict[str, object], list[_Input]]:
     routes = [r for r in routes if r.spec.in_schema]
     inputs: list[_Input] = [("problem", "serialization", TypeAdapter[object](Problem))]
     for route in routes:
@@ -103,7 +110,7 @@ def build_openapi(routes: Sequence[BoundRoute], *, version: str) -> dict[str, ob
         "paths": paths,
         "components": {"schemas": components},
     }
-    return as_dict(strip_backend_keys(spec))
+    return as_dict(strip_backend_keys(spec)), inputs
 
 
 def _operation(
@@ -244,9 +251,73 @@ def _is_array(schema: JsonSchemaValue) -> bool:
     return any(isinstance(b, dict) and b.get("type") == "array" for b in branches)
 
 
-def _check_component_names(adapters: Iterable[TypeAdapter[object]]) -> None:
-    """pydantic silently renames colliding components, so refuse them."""
-    seen: dict[str, type] = {}
+class _Builtins:
+    """The built-in routes' components and component-name table, built once
+    per route table (their RouteSpecs are module-level, so the key is stable)."""
+
+    _CACHE: ClassVar[dict[tuple[int, ...], "_Builtins"]] = {}
+
+    def __init__(self, routes: Sequence[BoundRoute], version: str) -> None:
+        self.specs = [r.spec for r in routes]  # keeps the ids in the key alive
+        spec, inputs = _build(routes, version)
+        self.components = _components(spec)
+        self.names: dict[str, type] = {}
+        _check_component_names((a for _, _, a in inputs), self.names)
+
+    @classmethod
+    def of(cls, routes: Sequence[BoundRoute], version: str) -> "_Builtins":
+        key = tuple(id(r.spec) for r in routes)
+        if key not in cls._CACHE:
+            cls._CACHE[key] = cls(routes, version)
+        return cls._CACHE[key]
+
+
+def _components(spec: dict[str, object]) -> dict[str, object]:
+    return as_dict(as_dict(spec["components"])["schemas"])
+
+
+_SPECS: dict[tuple[int, ...], tuple[list[object], dict[str, object]]] = {}
+
+
+def mounted_spec(routes: Sequence[BoundRoute], *, version: str) -> dict[str, object]:
+    """build_openapi for a mounted route table, built once per process: every
+    mount of the same RouteSpecs (a test suite mounts hundreds) shares it.
+    Callers must not mutate the result."""
+    key = tuple(id(r.spec) for r in routes)
+    if key not in _SPECS:  # the specs ride along so their ids stay unique
+        _SPECS[key] = ([r.spec for r in routes], build_openapi(routes, version=version))
+    return _SPECS[key][1]
+
+
+def check_builtins(routes: Sequence[BoundRoute], *, version: str) -> None:
+    """Build the built-ins' components (once per route table); raises on a clash."""
+    _Builtins.of(routes, version)
+
+
+def check_extension(
+    builtins: Sequence[BoundRoute], extra: Sequence[BoundRoute], *, version: str
+) -> None:
+    """Raise what build_openapi(builtins + extra) would raise, without
+    rebuilding the built-ins' schemas: extra alone is built, then its
+    component names are checked against the built-ins'."""
+    base = _Builtins.of(builtins, version)
+    spec, inputs = _build(extra, version)
+    _check_component_names((a for _, _, a in inputs), dict(base.names))
+    for name, value in _components(spec).items():
+        if base.components.get(name, value) != value:
+            # One model can differ only by schema mode (an open response in
+            # the built-ins, a closed request here); only a combined build
+            # names those apart, and it raises on a real clash.
+            build_openapi([*builtins, *extra], version=version)
+            return
+
+
+def _check_component_names(
+    adapters: Iterable[TypeAdapter[object]], seen: dict[str, type] | None = None
+) -> None:
+    """pydantic silently renames colliding components, so refuse them.
+    seen carries the names already taken (and receives the new ones)."""
+    seen = {} if seen is None else seen
 
     def walk(node: object) -> None:
         if isinstance(node, dict):
