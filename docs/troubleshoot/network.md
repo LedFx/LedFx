@@ -84,7 +84,7 @@ For extreme cases such as large pixel matrix, turn up the *pixels count* to step
 
 ### LedFx Effect and Device Performance Stats
 
-Basic performance statistics of the LedFX effects and in some cases such as WLED from the physical device itself can be monitored from within the LedFx effect configuration dialogs. Choose your desired device or virtual in LedFx and set the *Advanced* switch to on. You should now have an extra switch ( along with others ) for *Diag*, switch that to on as well.
+Basic performance statistics of the LedFx effects and in some cases such as WLED from the physical device itself can be monitored from within the LedFx effect configuration dialogs. Choose your desired device or virtual in LedFx and set the *Advanced* switch to on. You should now have an extra switch ( along with others ) for *Diag*, switch that to on as well.
 
 In the virtual configuration screen you will now get the following dialog appear ( subject to change as we improve the implementation )
 
