@@ -12,14 +12,6 @@ import numpy as np
 import pybase64
 from audio_hotplug import create_monitor
 
-from ledfx.color import (
-    LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    coerce_color,
-    parse_color,
-    parse_gradient,
-    validate_gradient,
-)
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.paths import (
     VISUALISATION_CONFIG_KEYS,
@@ -50,8 +42,8 @@ from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
-    UserDefaultCollection,
     async_fire_and_forget,
+    build_user_collections,
     currently_frozen,
     get_sorted_physical_ips,
     init_image_cache,
@@ -509,22 +501,7 @@ class LedFxCore:
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
         self.playlists = PlaylistManager(self)
-        self.colors = UserDefaultCollection(
-            self,
-            "Colors",
-            LEDFX_COLORS,
-            self.config.user_colors,
-            coerce_color,
-            parse_color,
-        )
-        self.gradients = UserDefaultCollection(
-            self,
-            "Gradients",
-            LEDFX_GRADIENTS,
-            self.config.user_gradients,
-            validate_gradient,
-            parse_gradient,
-        )
+        self.colors, self.gradients = build_user_collections(self)
 
         # Now Playing drives virtuals through the manager, so it starts once
         # virtuals, effects and gradients exist (Sendspin may push metadata

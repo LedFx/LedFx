@@ -12,18 +12,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ledfx.color import (
-    LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    coerce_color,
-    parse_color,
-    parse_gradient,
-    validate_gradient,
-)
 from ledfx.configuration.models import VirtualEntry
 from ledfx.devices import Device
 from ledfx.effects import Effects
-from ledfx.utils import UserDefaultCollection
+from ledfx.utils import build_user_collections
 from ledfx.virtuals import Virtual, Virtuals
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -94,22 +86,7 @@ def install_virtuals(ledfx: MagicMock) -> MagicMock:
         FakeDevice(ledfx, "strip", 50), FakeDevice(ledfx, "matrix", 64)
     )
     ledfx.effects = Effects(ledfx)
-    ledfx.colors = UserDefaultCollection(
-        ledfx,
-        "Colors",
-        LEDFX_COLORS,
-        ledfx.config.user_colors,
-        coerce_color,
-        parse_color,
-    )
-    ledfx.gradients = UserDefaultCollection(
-        ledfx,
-        "Gradients",
-        LEDFX_GRADIENTS,
-        ledfx.config.user_gradients,
-        validate_gradient,
-        parse_gradient,
-    )
+    ledfx.colors, ledfx.gradients = build_user_collections(ledfx)
     Virtuals._instance = None
     ledfx.virtuals = Virtuals(ledfx)
     return ledfx
