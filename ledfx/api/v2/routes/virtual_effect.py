@@ -72,7 +72,9 @@ async def update_effect(
 ) -> EffectHistoryItem:
     """Change some settings of the running effect.
 
-    The settings are checked against the running effect's type. A colour
+    The settings are checked against the running effect's type. A setting
+    the change leaves alone is kept even if it lies outside the bounds v2
+    accepts in a request. A colour
     change on an effect that blends colours restarts it, so it fades in.
     Restarting the effect makes the virtual active.
     """

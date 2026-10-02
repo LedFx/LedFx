@@ -205,6 +205,36 @@ async def test_patch_refuses_config_it_would_repair(
     core.config_store.request_save.assert_not_called()
 
 
+@pytest.mark.parametrize(
+    ("in_request", "against_stored"),
+    [
+        ({"frequency_min": 500, "frequency_max": 500}, {"frequency_max": 20}),
+        ({"rows": 1, "rotate": 2}, {"rotate": 2}),
+    ],
+    ids=["frequency", "rotate"],
+)
+async def test_a_rule_has_one_error_shape(
+    v2_client: Client, in_request: dict[str, int], against_stored: dict[str, int]
+) -> None:
+    """A rule broken within the request or against a stored value (dj bird
+    stores frequency_min 20 and one row) gives the same error."""
+    found = []
+    for config in (in_request, against_stored):
+        resp = await v2_client.patch(BIRD, json={"config": config})
+        found.append((await expect_problem(resp, 422, "validation"))["errors"][0])
+    assert found[0] == found[1]
+
+
+async def test_fewer_rows_under_a_stored_rotate_blames_rows(
+    v2_client: Client,
+) -> None:
+    virtual = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    virtual._config = replace_model(virtual.config, rows=2, rotate=2)
+    resp = await v2_client.patch(BIRD, json={"config": {"rows": 1}})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", "rows"]
+
+
 @pytest.mark.parametrize("field", ["pixel_count", "max_brightness"])
 async def test_null_for_a_setting_is_422_and_changes_nothing(
     v2_client: Client, field: str
@@ -220,14 +250,75 @@ async def test_null_for_a_setting_is_422_and_changes_nothing(
     core.config_store.request_save.assert_not_called()
 
 
-async def test_a_bad_stored_setting_is_a_409_until_fixed(v2_client: Client) -> None:
+async def test_a_stored_setting_beyond_the_bounds_does_not_block_a_patch(
+    v2_client: Client,
+) -> None:
     virtual = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("dj bird"))
     virtual._config = replace_model(virtual.config, grouping=5000)  # v2 max 4096
     resp = await v2_client.patch(BIRD, json={"config": {"name": "Bird"}})
+    assert resp.status == 200, await resp.text()
+    body = await resp.json()
+    assert (body["config"]["name"], body["config"]["grouping"]) == ("Bird", 5000)
+    assert virtual.config.grouping == 5000
+    assert (await (await v2_client.get(BIRD)).json())["config"]["grouping"] == 5000
+
+
+@pytest.mark.filterwarnings("ignore:Pydantic serializer warnings")
+async def test_a_stored_setting_of_the_wrong_type_is_still_a_409(
+    v2_client: Client,
+) -> None:
+    core = core_of(v2_client)
+    virtual = core.virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    stored = {**virtual.config.model_dump(), "grouping": "x"}
+    virtual._config = virtual.config.model_construct(**stored)
+    resp = await v2_client.patch(BIRD, json={"config": {"name": "Bird"}})
     body = await expect_problem(resp, 409, "conflict")
     assert "config.grouping" in body["detail"]
+    core.config_store.request_save.assert_not_called()
+
+
+async def test_a_patch_checks_the_bounds_of_the_fields_it_sets(
+    v2_client: Client,
+) -> None:
+    core = core_of(v2_client)
+    virtual = core.virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    virtual._config = replace_model(virtual.config, grouping=5000)
+    before = core.config.model_dump()
+    resp = await v2_client.patch(BIRD, json={"config": {"grouping": 6000}})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", "grouping"]
+    assert core.config.model_dump() == before
     resp = await v2_client.patch(BIRD, json={"config": {"grouping": 2}})
     assert resp.status == 200
+
+
+async def test_a_stored_rotate_on_one_row_does_not_block_a_patch(
+    v2_client: Client,
+) -> None:
+    """v1 create can store rows 1 with rotate 2; v2 only refuses a PATCH that
+    changes rotate or rows into that state."""
+    virtual = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("empty"))
+    virtual._config = replace_model(virtual.config, rows=1, rotate=2)
+    assert virtual.entry is not None
+    virtual.entry.config = virtual._config
+    resp = await v2_client.patch(f"{V}/empty", json={"config": {"name": "E"}})
+    assert resp.status == 200, await resp.text()
+    assert (virtual.config.rows, virtual.config.rotate) == (1, 2)
+    resp = await v2_client.patch(f"{V}/empty", json={"config": {"rotate": 3}})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", "rotate"]
+    resp = await v2_client.patch(f"{V}/empty", json={"config": {"rotate": 0}})
+    assert resp.status == 200
+
+
+async def test_a_patch_of_one_frequency_checks_it_against_the_stored_other(
+    v2_client: Client,
+) -> None:
+    resp = await v2_client.patch(BIRD, json={"config": {"frequency_min": 500}})
+    assert resp.status == 200
+    resp = await v2_client.patch(BIRD, json={"config": {"frequency_max": 400}})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", "frequency_min"]
 
 
 async def test_delete(v2_client: Client) -> None:

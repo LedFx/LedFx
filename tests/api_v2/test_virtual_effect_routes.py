@@ -7,9 +7,12 @@ from unittest.mock import MagicMock
 import pytest
 from pydantic import BaseModel
 
+from ledfx.api.v2.core.partial import PatchValidationError
+from ledfx.api.v2.models.virtuals import checked_config, effect_variant
 from ledfx.api.v2.routes import virtual_effect
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import EffectEntry, Segment
+from ledfx.configuration.plugin import PluginConfig
 from tests.api_v2.virtuals_client import (
     BIRD,
     Client,
@@ -167,21 +170,28 @@ async def test_patch_checks_against_the_running_type(
     core.config_store.request_save.assert_not_called()
 
 
-async def test_a_bad_stored_setting_is_a_409_until_fixed(v2_client: Client) -> None:
-    await _put(v2_client, {"type": "rainbow"})
+async def test_a_stored_setting_beyond_the_bounds_does_not_block_a_patch(
+    v2_client: Client,
+) -> None:
+    """v1 accepts text of any length; v2 caps what a request sends."""
     core = core_of(v2_client)
-    effect = core.virtuals.get_or_raise(VirtualIdStr("dj bird")).active_effect
-    assert effect is not None
-    effect._config = effect.config.model_copy(update={"speed": 1e9})
-    stored, saved = effect.config, core.config.model_dump()
-    core.config_store.request_save.reset_mock()
+    long_text = "x" * 9000
+    core.virtuals.set_effect(
+        VirtualIdStr("dj bird"),
+        "texter2d",
+        PluginConfig.model_validate({"text": long_text}),
+    )
     resp = await v2_client.patch(EFFECT, json={"config": {"brightness": 0.5}})
-    body = await expect_problem(resp, 409, "conflict")
-    assert "Stored field 'config.speed' is invalid" in str(body["detail"])
-    assert effect.config == stored
+    assert resp.status == 200, await resp.text()
+    body = await resp.json()
+    assert (body["config"]["brightness"], body["config"]["text"]) == (0.5, long_text)
+    # A setting the PATCH sets is held to the bounds.
+    saved = core.config.model_dump()
+    resp = await v2_client.patch(EFFECT, json={"config": {"text": "y" * 9000}})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", "text"]
     assert core.config.model_dump() == saved
-    core.config_store.request_save.assert_not_called()
-    resp = await v2_client.patch(EFFECT, json={"config": {"speed": 2.0}})
+    resp = await v2_client.patch(EFFECT, json={"config": {"text": "short"}})
     assert resp.status == 200
 
 
@@ -199,13 +209,20 @@ async def test_patch_on_an_effect_swapped_after_the_check_is_a_conflict(
         config: Mapping[str, object],
         sent: Mapping[str, object],
     ) -> dict[str, object]:
-        core.virtuals.set_effect(VirtualIdStr("dj bird"), "singleColor", {})
+        core.virtuals.set_effect(VirtualIdStr("dj bird"), "singleColor", None)
         return check(variant, config, sent)
 
     monkeypatch.setattr(virtual_effect, "checked_config", swap_then_check)
     resp = await v2_client.patch(EFFECT, json={"config": {"speed": 3.0}})
     body = await expect_problem(resp, 409, "conflict")
     assert body["detail"] == "Virtual dj bird runs singleColor, not rainbow"
+
+
+def test_a_stored_setting_of_the_wrong_type_is_a_409() -> None:
+    variant = effect_variant("rainbow")
+    with pytest.raises(PatchValidationError) as info:
+        checked_config(variant, {"speed": "x", "brightness": 0.5}, {"brightness": 0.5})
+    assert (info.value.status, info.value.stored_field) == (409, "config.speed")
 
 
 async def test_patch_without_an_effect_is_a_conflict(v2_client: Client) -> None:

@@ -1797,12 +1797,13 @@ class Virtuals:
     def set_config(self, virtual_id: VirtualIdStr, config: VirtualConfig) -> Virtual:
         """Replace the config.
 
-        Raises Invalid (loc body.config.<field>) for frequency_min >=
-        frequency_max, or for rotate with one row; nothing changes then.
+        Raises Invalid (loc body.config.<field>) when the change sets
+        frequency_min >= frequency_max, or a rotate with one row; nothing
+        changes then. A stored value the change leaves alone is not checked.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
-        self._check_config(config)
+        self._check_config(config, virtual.config)
         self._apply_config(virtual, config)
         self._ledfx.config_store.request_save()
         return virtual
@@ -1836,7 +1837,7 @@ class Virtuals:
                 self._apply_segments(virtual, changes.segments)
             if changes.config is not None:
                 attempted.append("config")
-                self._check_config(changes.config)
+                self._check_config(changes.config, old_config)
                 self._apply_config(virtual, changes.config)
             if changes.active is not None:
                 # _apply_active undoes itself when it raises.
@@ -1882,15 +1883,28 @@ class Virtuals:
         config.virtuals = [v for v in config.virtuals if v.id != virtual_id]
         self._ledfx.config_store.request_save()
 
-    def _check_config(self, config: VirtualConfig) -> None:
-        if config.frequency_min >= config.frequency_max:
+    def _check_config(self, config: VirtualConfig, current: VirtualConfig) -> None:
+        """Invalid for a frequency range or a rotate that config sets wrongly.
+
+        Only what differs from current is checked: v1 can store a rotate on
+        one row, and changing something else must not be refused for it."""
+        if (config.frequency_min, config.frequency_max) != (
+            current.frequency_min,
+            current.frequency_max,
+        ) and config.frequency_min >= config.frequency_max:
             raise Invalid(
                 "frequency_min must be below frequency_max",
                 loc=("body", "config", "frequency_min"),
             )
-        if config.rotate != 0 and config.rows <= 1:
+        if (
+            (config.rotate, config.rows) != (current.rotate, current.rows)
+            and config.rotate != 0
+            and config.rows <= 1
+        ):
+            # Blame rows when only rows changed (the rotate was stored).
+            field = "rows" if config.rotate == current.rotate else "rotate"
             raise Invalid(
-                "rotate needs more than one row", loc=("body", "config", "rotate")
+                "rotate needs more than one row", loc=("body", "config", field)
             )
 
     def _apply_config(self, virtual: Virtual, config: VirtualConfig) -> None:

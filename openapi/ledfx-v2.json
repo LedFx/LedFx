@@ -32664,7 +32664,7 @@
         ]
       },
       "patch": {
-        "description": "Only the fields sent change; a config object merges into the current one,\nand segments replace the list. All or nothing: a 4xx means nothing\nchanged. Values are never adjusted: a segment must name a known device\nand pixels inside it (start not after end), frequency_min must be below\nfrequency_max, and rotate needs more than one row; anything else is 422.\nA stored setting that the change leaves alone but that is no longer valid\ngives 409.",
+        "description": "Only the fields sent change; a config object merges into the current one,\nand segments replace the list. All or nothing: a 4xx means nothing\nchanged. Values are never adjusted: a segment must name a known device\nand pixels inside it (start not after end), frequency_min must be below\nfrequency_max, and rotate needs more than one row; anything else is 422.\nThose bounds apply to what the change sets: a stored setting it leaves\nalone is kept even if it lies outside them.",
         "operationId": "update_virtual",
         "parameters": [
           {
@@ -33450,7 +33450,7 @@
         ]
       },
       "patch": {
-        "description": "The settings are checked against the running effect's type. A colour\nchange on an effect that blends colours restarts it, so it fades in.\nRestarting the effect makes the virtual active.",
+        "description": "The settings are checked against the running effect's type. A setting\nthe change leaves alone is kept even if it lies outside the bounds v2\naccepts in a request. A colour\nchange on an effect that blends colours restarts it, so it fades in.\nRestarting the effect makes the virtual active.",
         "operationId": "update_effect",
         "parameters": [
           {

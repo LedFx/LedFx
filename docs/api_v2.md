@@ -61,7 +61,10 @@ Behaviour worth knowing:
   must be below `frequency_max`, and `rotate` needs more than one row. Anything
   else is a 422 at the offending field and nothing changes.
 - Responses show stored values even when they lie outside the bounds v2 accepts
-  in a request.
+  in a request. A `PATCH` holds only the settings it sends to those bounds: a
+  stored value beyond them (v1 and old files can store one) is kept and does not
+  block a change to anything else. A client that sends back a whole config it
+  read must drop such a value or fix it, or the `PATCH` is a 422.
 - New plugins add new branches to response unions. This is additive, so a
   client must treat an unknown `type` as `UnknownPlugin` and not fail.
 - The ids `oneshot` and `force-color` are reserved for the paths

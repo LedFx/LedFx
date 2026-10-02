@@ -183,6 +183,22 @@ def test_set_config_refuses_what_it_would_repair(
     ledfx.config_store.request_save.assert_not_called()
 
 
+def test_a_config_check_looks_only_at_what_changes(ledfx: MagicMock) -> None:
+    """v1 can store rows 1 with rotate 2; a change to something else keeps it."""
+    virtual = ledfx.virtuals.add(VirtualConfig(name="R", rows=1, rotate=2))
+    stored = virtual.config
+    changed = ledfx.virtuals.set_config(
+        virtual.id, replace_model(stored, max_brightness=0.5)
+    )
+    assert (changed.config.rows, changed.config.rotate) == (1, 2)
+    with pytest.raises(Invalid) as caught:
+        ledfx.virtuals.set_config(virtual.id, replace_model(changed.config, rotate=3))
+    assert caught.value.loc == ("body", "config", "rotate")
+    two_rows = ledfx.virtuals.add(VirtualConfig(name="S", rows=2, rotate=2))
+    with pytest.raises(Invalid):
+        ledfx.virtuals.set_config(two_rows.id, replace_model(two_rows.config, rows=1))
+
+
 def test_a_stored_config_is_still_repaired_on_load(ledfx: MagicMock) -> None:
     config = VirtualConfig(name="Old", frequency_min=900, frequency_max=100)
     virtual = ledfx.virtuals.create(
