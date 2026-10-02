@@ -49,12 +49,40 @@
 
 Function .onInit
   SetRegView 64
-  IfFileExists "$INSTDIR\uninst.exe" 0 done
-  MessageBox MB_ICONQUESTION|MB_YESNO "A previous version of LedFX is installed. Uninstall it now?" IDYES +2
-  Goto done
-  ExecWait '"$INSTDIR\uninst.exe" /S _?=$INSTDIR'
-  done:
 FunctionEnd
+
+; A running LedFx (tray included) locks its files, so close it first.
+; Windows won't open a running exe for writing, which is how we detect it.
+!macro CLOSE_LEDFX un
+Function ${un}CloseLedFx
+  ${IfNot} ${FileExists} "$INSTDIR\LedFx.exe"
+    Return
+  ${EndIf}
+  ClearErrors
+  FileOpen $0 "$INSTDIR\LedFx.exe" a
+  ${IfNot} ${Errors}
+    FileClose $0
+    Return
+  ${EndIf}
+  MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "LedFx is running. Click OK to close it and continue." /SD IDOK IDOK +2
+  Abort
+  ; 64-bit PowerShell: a 32-bit one can't read the path of a 64-bit process.
+  ${DisableX64FSRedirection}
+  nsExec::Exec `"$SYSDIR\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "Get-Process LedFx -ErrorAction SilentlyContinue | Where-Object Path -eq '$INSTDIR\LedFx.exe' | Stop-Process -Force"`
+  Pop $0
+  ${EnableX64FSRedirection}
+  Sleep 2000
+  ClearErrors
+  FileOpen $0 "$INSTDIR\LedFx.exe" a
+  ${If} ${Errors}
+    MessageBox MB_ICONSTOP "Couldn't close LedFx. Quit it from its tray icon, then try again." /SD IDOK
+    Abort
+  ${EndIf}
+  FileClose $0
+FunctionEnd
+!macroend
+!insertmacro CLOSE_LEDFX ""
+!insertmacro CLOSE_LEDFX "un."
 
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ledfx-setup-win-${PRODUCT_VERSION}.exe"
@@ -63,18 +91,30 @@ InstallDir "$PROGRAMFILES64\LedFX"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
+; A file that can't be written fails the install instead of being skipped.
+AllowSkipFiles off
 
 Section "LedFX" SEC01
   SectionIn RO
   SetOutPath "$INSTDIR"
-  SetOverwrite ifnewer
+  Call CloseLedFx
+  ; Replace the previous version's files outright: stale ones can break it.
+  ${If} ${FileExists} "$INSTDIR\_internal\*.*"
+    ClearErrors
+    RMDir /r "$INSTDIR\_internal"
+    ${If} ${Errors}
+      Abort "Couldn't remove the previous version from $INSTDIR\_internal. Close any program using it, then try again."
+    ${EndIf}
+  ${EndIf}
+  ; Re-added below if "Start on login" is still ticked.
+  DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFX"
   File ".\..\dist\LedFx\LedFx.exe"
   CreateDirectory "$SMPROGRAMS\LedFX"
   CreateShortCut "$SMPROGRAMS\LedFX\LedFX.lnk" "$INSTDIR\LedFx.exe"
   CreateShortCut "$DESKTOP\LedFX.lnk" "$INSTDIR\LedFx.exe"
   CreateDirectory "$INSTDIR\_internal"
   SetOutPath "$INSTDIR\_internal"
-  File /nonfatal /a /r ".\..\dist\LedFx\_internal\"
+  File /a /r ".\..\dist\LedFx\_internal\"
 SectionEnd
 
 
@@ -121,9 +161,10 @@ FunctionEnd
 
 Section Uninstall
   SetRegView 64
+  Call un.CloseLedFx
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
-  RMDir /r /REBOOTOK "$INSTDIR\_internal"
+  RMDir /r "$INSTDIR\_internal"
   Delete "$INSTDIR\LedFx.exe"
 
   Delete "$SMPROGRAMS\LedFX\Uninstall.lnk"
