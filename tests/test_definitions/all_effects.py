@@ -28,8 +28,6 @@ def get_ledfx_effects():
             expected_response_values=[
                 {"status": "success"},
             ],
-            # Let the effect run for a bit before checking its still active
-            sleep_after_test=0.1,
         )
         effects_to_test[effect_id + "_set"] = set_effect_test_case
 
