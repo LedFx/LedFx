@@ -1,19 +1,21 @@
 import json
 import logging
 import socket
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import ClassVar
 
 import paho.mqtt.client as mqtt
 from pydantic import Field
 
 from ledfx.api.jsonutil import dumps
-from ledfx.color import parse_color
-from ledfx.configuration.fields import X_REQUIRED, CoercedInt
-from ledfx.configuration.models import EffectEntry
+from ledfx.color import coerce_color, parse_color
+from ledfx.configuration.fields import X_REQUIRED, CoercedInt, VirtualIdStr
+from ledfx.configuration.models import replace_model
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
-from ledfx.errors import SafeMode
+from ledfx.errors import Conflict, Invalid, NotFound, SafeMode
 from ledfx.events import EffectSetEvent, Event
 from ledfx.integrations import Integration
 from ledfx.presets import ledfx_presets
@@ -404,6 +406,30 @@ class MQTT_HASS(Integration):
         """paho network thread: hand the message to the event loop."""
         self._call_on_loop(self._handle_message, msg)
 
+    @contextmanager
+    def _refusals(self, what: str) -> Iterator[None]:
+        """Log a refused change instead of raising: safe mode quietly, a typed
+        refusal as a warning. The rest of the with block is skipped. Parse an
+        HA payload before entering it: a ValueError here is a bug, not a refusal."""
+        try:
+            yield
+        except SafeMode:
+            _LOGGER.debug("Not changing the %s: safe mode", what)
+        except (Invalid, NotFound, Conflict) as err:
+            _LOGGER.warning("Could not change the %s: %s", what, err)
+        except Exception:
+            _LOGGER.exception("Failed to change the %s", what)
+
+    @staticmethod
+    def _settings(what: str, values: Callable[[], object]) -> PluginConfig | None:
+        """Parse the settings of an HA payload; a bad payload is one warning
+        (a colour list with a non-number raises TypeError)."""
+        try:
+            return PluginConfig.model_validate(values())
+        except (ValueError, TypeError) as err:
+            _LOGGER.warning("Could not change the %s: %s", what, err)
+            return None
+
     def _handle_message(self, msg):
         client = self._client
         if client is None:
@@ -435,15 +461,16 @@ class MQTT_HASS(Integration):
                 active_pixels += virtual.pixel_count
         if segs[0] == "ledfx":
             if payload == "HomeAssistant initialized":
-                virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
-                client.publish(
-                    f"{self.config.topic}/select/ledfxtransitiontype/state",
-                    virtual.config.transition_mode,
-                )
-                client.publish(
-                    f"{self.config.topic}/number/ledfxtransitiontime/state",
-                    virtual.config.transition_time,
-                )
+                virtual = next(iter(self._ledfx.virtuals.values()), None)
+                if virtual is not None:
+                    client.publish(
+                        f"{self.config.topic}/select/ledfxtransitiontype/state",
+                        virtual.config.transition_mode,
+                    )
+                    client.publish(
+                        f"{self.config.topic}/number/ledfxtransitiontime/state",
+                        virtual.config.transition_time,
+                    )
                 # PausedState
                 client.publish(
                     f"{self.config.topic}/switch/ledfxplay/state",
@@ -489,23 +516,30 @@ class MQTT_HASS(Integration):
 
         # React to Transition-Type
         if virtualid in self.TRANSITION_MAPPING:
-            # _LOGGER.info("Transitions: %s", payload)
-            prior_state = self._ledfx.config.global_transitions
-            self._ledfx.config.global_transitions = True
-            virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
             key = self.TRANSITION_MAPPING[virtualid]
             if key == "transition_time":
                 try:
                     val = float(payload)
-                except ValueError as e:
-                    _LOGGER.warning("%s", e)
-                    val = 0.5
+                except (TypeError, ValueError) as err:
+                    _LOGGER.warning("Could not change the transition: %s", err)
+                    return
             else:
                 val = payload
 
-            virtual.update_config({key: val})
-            self._ledfx.config.global_transitions = prior_state
-            self._ledfx.config_store.request_save()
+            # Every virtual takes the transition. Build every new config first,
+            # so a bad value is one warning and changes no virtual. Nothing runs
+            # after this branch, so it can return.
+            try:
+                changes = [
+                    (virtual.id, replace_model(virtual.config, **{key: val}))
+                    for virtual in self._ledfx.virtuals.values()
+                ]
+            except ValueError as err:
+                _LOGGER.warning("Could not change the transition: %s", err)
+                return
+            for virtual_id, config in changes:
+                with self._refusals(f"transition of virtual {virtual_id}"):
+                    self._ledfx.virtuals.set_config(virtual_id, config)
 
         # React to Scene-Selector
         elif virtualid == "ledfxsceneselect":
@@ -535,28 +569,24 @@ class MQTT_HASS(Integration):
             virtual = self._ledfx.virtuals.get(virtualid, None)
             if virtual:
                 # SET VIRTUAL COLOR AND ACTIVE
-                color = payload.get("effect", "orange")
                 color = payload.get("color", None)
 
                 if color is not None:
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type="singleColor",
-                        config={"color": color},
+                    what = f"colour of virtual {virtualid}"
+                    settings = self._settings(
+                        what, lambda: {"color": coerce_color(color)}
                     )
-                    try:
-                        virtual.set_effect(effect)
-                        virtual.active = payload.get("state", "off") == "on"
-
-                    except (ValueError, RuntimeError) as msg:  # noqa: PLR1704
-                        _LOGGER.warning(msg)
+                    if settings is not None:
+                        with self._refusals(what):
+                            self._ledfx.virtuals.set_effect(
+                                VirtualIdStr(virtualid), "singleColor", settings
+                            )
+                            self._ledfx.virtuals.set_active(
+                                VirtualIdStr(virtualid),
+                                payload.get("state", "off") == "on",
+                            )
                 else:
                     _LOGGER.debug("COLOR: %s", color)
-                    # effect = self._ledfx.effects.create(
-                    #     ledfx=self._ledfx,
-                    #     type="singleColor",
-                    #     config={"color": "orange"},
-                    # )
 
                 # Handle effect selection
                 selected_effect_or_preset = payload.get("effect")
@@ -576,12 +606,17 @@ class MQTT_HASS(Integration):
                             + list(system_presets.keys())
                             + list(user_presets.keys())
                         )
-                        effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx,
-                            type=selected_effect_or_preset,
-                            config=payload.get("effect_config", {}),
+                        what = f"effect of virtual {virtualid}"
+                        settings = self._settings(
+                            what, lambda: payload.get("effect_config", {})
                         )
-                        virtual.set_effect(effect)
+                        if settings is not None:
+                            with self._refusals(what):
+                                self._ledfx.virtuals.set_effect(
+                                    VirtualIdStr(virtualid),
+                                    selected_effect_or_preset,
+                                    settings,
+                                )
                     else:
                         # If a preset is selected, apply it
                         effect_type = getattr(virtual.active_effect, "type", "")
@@ -605,12 +640,13 @@ class MQTT_HASS(Integration):
                             + list(user_presets.keys())
                         )
                         if preset_config is not None:
-                            effect = self._ledfx.effects.create(
-                                ledfx=self._ledfx,
-                                type=virtual.active_effect.type,
-                                config=preset_config,
-                            )
-                            virtual.set_effect(effect)
+                            what = f"preset of virtual {virtualid}"
+                            settings = self._settings(what, lambda: preset_config)
+                            if settings is not None:
+                                with self._refusals(what):
+                                    self._ledfx.virtuals.set_effect(
+                                        VirtualIdStr(virtualid), effect_type, settings
+                                    )
                         return
                     name = virtual.config.name
                     if name.startswith("gap-") or name.endswith(
@@ -659,15 +695,6 @@ class MQTT_HASS(Integration):
                             }
                         ),
                     )
-
-                # TODO: Stare at this to convince self, not writing unit test for this
-                entry = virtual.entry
-                if entry is not None:
-                    entry.active = virtual.active
-                    entry.effect = EffectEntry(
-                        type="singleColor", config={"color": color}
-                    )
-                    self._ledfx.config_store.request_save()
 
         # client.publish(
         #     f"{self.config.topic}/light/{virtualid}/state",

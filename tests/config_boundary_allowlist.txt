@@ -46,8 +46,8 @@ ledfx/api/virtual_presets.py:config-write:1
 ledfx/api/virtual_presets.py:core-config:3
 ledfx/devices/twinkly_squares.py:config-store:1
 ledfx/errors.py:config-store:1
-ledfx/integrations/mqtt_hass.py:config-store:3
-ledfx/integrations/mqtt_hass.py:config-write:3
+ledfx/integrations/mqtt_hass.py:config-store:1
+ledfx/integrations/mqtt_hass.py:config-write:1
 ledfx/nowplaying/service.py:config-store:1
 ledfx/nowplaying/service.py:config-write:1
 ledfx/utils.py:config-store:5
