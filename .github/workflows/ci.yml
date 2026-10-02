@@ -391,7 +391,9 @@ jobs:
           "./LedFx-$VERSION-setup.exe" //S
           "$dir/LedFx.exe" -vv --ci-smoke-test --offline
           "$dir/LedFx.exe" --offline > ledfx-running.log 2>&1 &
+          pid=$!
           sleep 20
+          kill -0 "$pid" || { echo "::error::LedFx exited before the upgrade"; cat ledfx-running.log; exit 1; }
           "./LedFx-$VERSION-setup.exe" //S
           "$dir/LedFx.exe" -vv --ci-smoke-test --offline
       # _?= makes the uninstaller run in place, so -Wait waits for it. It must be
