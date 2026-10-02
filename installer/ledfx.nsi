@@ -84,6 +84,14 @@ FunctionEnd
 !insertmacro CLOSE_LEDFX ""
 !insertmacro CLOSE_LEDFX "un."
 
+!macro REMOVE_SHORTCUTS
+  Delete "$SMPROGRAMS\LedFX\Uninstall.lnk"
+  Delete "$SMPROGRAMS\LedFX\Website.lnk"
+  Delete "$SMPROGRAMS\LedFX\LedFX.lnk"
+  RMDir "$SMPROGRAMS\LedFX"
+  Delete "$DESKTOP\LedFX.lnk"
+!macroend
+
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "ledfx-setup-win-${PRODUCT_VERSION}.exe"
 RequestExecutionLevel admin
@@ -109,6 +117,10 @@ Section "LedFX" SEC01
   ; Re-added below if "Start on login" is still ticked.
   DeleteRegValue HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFX"
   File ".\..\dist\LedFx\LedFx.exe"
+  ; A per-machine install gets all-users shortcuts. Older installers put
+  ; them in the profile of whoever ran the setup, so remove those first.
+  !insertmacro REMOVE_SHORTCUTS
+  SetShellVarContext all
   CreateDirectory "$SMPROGRAMS\LedFX"
   CreateShortCut "$SMPROGRAMS\LedFX\LedFX.lnk" "$INSTDIR\LedFx.exe"
   CreateShortCut "$DESKTOP\LedFX.lnk" "$INSTDIR\LedFx.exe"
@@ -173,12 +185,8 @@ Section Uninstall
   RMDir /r "$INSTDIR\_internal"
   Delete "$INSTDIR\LedFx.exe"
 
-  Delete "$SMPROGRAMS\LedFX\Uninstall.lnk"
-  Delete "$SMPROGRAMS\LedFX\Website.lnk"
-  Delete "$DESKTOP\LedFX.lnk"
-  Delete "$SMPROGRAMS\LedFX\LedFX.lnk"
-
-  RMDir "$SMPROGRAMS\LedFX"
+  SetShellVarContext all
+  !insertmacro REMOVE_SHORTCUTS
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
