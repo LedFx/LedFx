@@ -104,6 +104,11 @@ class ConfigStore:
     def path(self) -> str:
         return os.path.join(self.config_dir, CONFIG_FILE_NAME)
 
+    @property
+    def read_only(self) -> bool:
+        """True in safe mode: changes are kept in memory but never saved."""
+        return self.error is not None
+
     # ---- loading -------------------------------------------------------
     @classmethod
     def load(cls, config_dir: str) -> "ConfigStore":

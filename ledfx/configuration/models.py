@@ -8,12 +8,11 @@ from pydantic import (
     ConfigDict,
     Field,
     JsonValue,
-    SerializerFunctionWrapHandler,
-    model_serializer,
     model_validator,
 )
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.json_schema import JsonDict, SkipJsonSchema
+from typing_extensions import override
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
@@ -29,7 +28,9 @@ from ledfx.configuration.fields import (
     IPv4,
     OneOf,
     PlaylistId,
+    PlaylistIdStr,
     SceneId,
+    SceneIdStr,
     VirtualId,
     coerce,
 )
@@ -42,6 +43,10 @@ _RO: JsonDict = {X_READONLY: True}
 
 def _field_title(name: str, _info: FieldInfo | ComputedFieldInfo) -> str:
     return generate_title(name)
+
+
+def _is_none(value: object) -> bool:
+    return value is None
 
 
 def omits_default(info: FieldInfo) -> bool:
@@ -60,14 +65,25 @@ class LedFxModel(BaseModel):
         field_title_generator=_field_title,
     )
 
-    @model_serializer(mode="wrap")
-    def _drop_unset_optionals(self, handler: SerializerFunctionWrapHandler) -> object:
-        data = handler(self)
-        if isinstance(data, dict):
-            for name, info in type(self).model_fields.items():
-                if omits_default(info) and data.get(name, 0) is None:
-                    del data[name]
-        return data
+    @classmethod
+    @override
+    def __pydantic_init_subclass__(cls, **kwargs: object) -> None:
+        # Fields marked X_OMIT_DEFAULT are left out of every dump while None,
+        # unless the field sets its own exclude_if.
+        # exclude_if, unlike a wrap model_serializer, keeps the
+        # serialization-mode JSON Schema real instead of {}.
+        super().__pydantic_init_subclass__(**kwargs)
+        marked = [
+            info
+            for info in cls.__pydantic_fields__.values()
+            if omits_default(info) and info.exclude_if is None
+        ]
+        for info in marked:
+            info.exclude_if = _is_none
+        # An incomplete class (deferred, or a forward reference still to
+        # resolve) picks the new exclude_if up on its first real build.
+        if marked and cls.__pydantic_complete__:
+            cls.model_rebuild(force=True)
 
 
 # No return annotation on purpose: pydantic's model_dump() type is kept, so the
@@ -481,8 +497,8 @@ class LedFxConfig(LedFxModel):
     )
     global_brightness: CoercedFloat = Field(1.0, ge=0, le=1.0)
     ui_brightness_boost: CoercedFloat = Field(0.0, ge=0, le=1.0)
-    startup_scene_id: SceneId = ""
-    startup_playlist_id: PlaylistId = ""
+    startup_scene_id: SceneId = SceneIdStr("")
+    startup_playlist_id: PlaylistId = PlaylistIdStr("")
     lifx_broadcast_address: IPv4 = "255.255.255.255"
     lifx_discovery_timeout: int = Field(30, ge=1, le=120)
     instance_id: str = Field("", json_schema_extra=_RO)

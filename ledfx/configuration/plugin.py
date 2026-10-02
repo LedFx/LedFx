@@ -32,8 +32,8 @@ class PluginConfig(LedFxModel):
             cls.model_rebuild(force=True)
 
     def as_dict(self, mode: Literal["python", "json"] = "python") -> dict[str, object]:
-        """Plain dict shaped like the old voluptuous output (LedFxModel's
-        serializer already drops unset optionals)."""
+        """Plain dict shaped like the old voluptuous output (fields
+        marked X_OMIT_DEFAULT are dropped while None)."""
         return self.model_dump(mode=mode)
 
     def with_values(self, **changes: object) -> Self:

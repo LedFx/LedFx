@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from pydantic import Field
 
-from ledfx.configuration.fields import CoercedFloat, OneOf, VirtualId
+from ledfx.configuration.fields import CoercedFloat, OneOf, VirtualId, VirtualIdStr
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 
@@ -115,13 +115,16 @@ class Blender(AudioReactiveEffect):
             description="How to stretch the foreground source pixles to the effect pixels",
         )
         mask: VirtualId = Field(
-            "", description="The virtual from which to source the mask"
+            VirtualIdStr(""),
+            description="The virtual from which to source the mask",
         )
         foreground: VirtualId = Field(
-            "", description="The virtual from which to source the foreground"
+            VirtualIdStr(""),
+            description="The virtual from which to source the foreground",
         )
         background: VirtualId = Field(
-            "", description="The virtual from which to source the background"
+            VirtualIdStr(""),
+            description="The virtual from which to source the background",
         )
         invert_mask: bool = Field(False, description="Switch Foreground and Background")
         mask_cutoff: CoercedFloat = Field(
