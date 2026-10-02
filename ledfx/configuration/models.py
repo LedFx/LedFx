@@ -1,6 +1,6 @@
 """pydantic models for LedFx configuration."""
 
-from typing import Annotated, Literal, TypeVar
+from typing import Annotated, Literal, NamedTuple, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -326,6 +326,18 @@ class VirtualEntry(LedFxModel):
     )
     effects: dict[str, EffectEntry] = {}
     last_effect: str | None = Field(None, json_schema_extra=_UNSET)
+
+
+# ---- manager arguments (plain data; ledfx.virtuals.Virtuals takes them) ----
+
+
+class Segment(NamedTuple):
+    """One run of a device's pixels in a virtual (end inclusive)."""
+
+    device_id: str
+    start: int
+    end: int
+    invert: bool
 
 
 class IntegrationEntry(LedFxModel):

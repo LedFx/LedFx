@@ -473,7 +473,7 @@ class Device(BaseRegistry):
         for scene in self._ledfx.config.scenes.values():
             scene.virtuals.pop(virtual_id, None)
 
-    async def remove_from_virtuals(self):
+    def remove_from_virtuals(self) -> None:
         """Remove segments referencing this device from all virtuals.
 
         Any virtual (auto-generated or user-created) that loses all of
@@ -530,7 +530,7 @@ class Device(BaseRegistry):
             # Skip destroying the device we are currently processing;
             # the caller is responsible for that.
             if device is not None and device_id != self.id:
-                await device.remove_from_virtuals()
+                device.remove_from_virtuals()
                 self._ledfx.devices.destroy(device_id)
 
                 # Update the configuration

@@ -44,7 +44,7 @@ from ledfx.integrations.spotify import Spotify
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.utils import BaseRegistry, UserDefaultCollection
-from ledfx.virtuals import Virtual
+from ledfx.virtuals import Virtual, Virtuals
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
@@ -123,10 +123,19 @@ def _entry() -> VirtualEntry:
     )
 
 
+@pytest.fixture(autouse=True)
+def _restore_virtuals_singleton(monkeypatch: pytest.MonkeyPatch) -> None:
+    # _with_virtual replaces the singleton; this restores it at teardown.
+    monkeypatch.setattr(Virtuals, "_instance", Virtuals._instance)
+
+
 def _with_virtual(virtual: _Virtual | None = None) -> tuple[MagicMock, _Virtual]:
+    """A fake core whose real Virtuals manager holds one fake virtual, "v1"."""
     ledfx = fake_ledfx()
     virtual = virtual or _Virtual()
-    ledfx.virtuals.get.return_value = virtual
+    Virtuals._instance = None
+    ledfx.virtuals = Virtuals(ledfx)
+    ledfx.virtuals._virtuals["v1"] = virtual
     ledfx.effects.types.return_value = ["singleColor"]
     return ledfx, virtual
 

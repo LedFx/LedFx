@@ -67,8 +67,8 @@ class FakeDevice:
     def _cleanup_virtual_from_scenes(self, virtual_id: str) -> None:
         Device._cleanup_virtual_from_scenes(cast("Device", self), virtual_id)
 
-    async def remove_from_virtuals(self) -> None:
-        await Device.remove_from_virtuals(cast("Device", self))
+    def remove_from_virtuals(self) -> None:
+        Device.remove_from_virtuals(cast("Device", self))
 
 
 class FakeDevices:

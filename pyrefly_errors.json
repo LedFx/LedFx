@@ -820,62 +820,6 @@
       "severity": "error"
     },
     {
-      "column": 27,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`make_virtual_response` is missing an annotation for parameter `virtual`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/api/virtual.py",
-      "name": "bad-assignment",
-      "concise_description": "`dict[str, dict[str, Unknown] | Unknown]` is not assignable to dict key with type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`delete` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
       "column": 22,
       "path": "ledfx/api/virtual_effects.py",
       "name": "implicit-any-parameter",
@@ -1025,13 +969,6 @@
     {
       "column": 52,
       "path": "ledfx/api/virtual_presets.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/api/virtuals.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
       "severity": "error"

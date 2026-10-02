@@ -3,12 +3,18 @@ import threading
 import time
 from collections.abc import Mapping
 from functools import cached_property
+from typing import Literal
 
 import numpy as np
 
-from ledfx.configuration.fields import EnumSource, register_enum_source
+from ledfx.configuration.fields import (
+    EnumSource,
+    VirtualIdStr,
+    register_enum_source,
+)
 from ledfx.configuration.models import (
     EffectEntry,
+    Segment,
     VirtualConfig,
     VirtualEntry,
     replace_model,
@@ -21,6 +27,7 @@ from ledfx.effects.melbank import (
     FrequencyRange,
 )
 from ledfx.effects.oneshots.oneshot import Oneshot
+from ledfx.errors import Invalid, NotFound, ensure_writable
 from ledfx.events import (
     EffectClearedEvent,
     EffectSetEvent,
@@ -31,12 +38,21 @@ from ledfx.events import (
     VirtualUpdateEvent,
 )
 from ledfx.transitions import Transitions
-from ledfx.utils import Teleplot, fps_to_sleep_interval, is_gap_device
+from ledfx.utils import (
+    Teleplot,
+    fps_to_sleep_interval,
+    generate_id,
+    is_gap_device,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Virtual:
+    # Set by Virtuals.create.
+    is_device: str | Literal[False] = False
+    auto_generated: bool = False
+
     _paused = False
     _active = False
     _output_thread = None
@@ -1597,14 +1613,153 @@ class Virtuals:
         for virtual in self.values():
             virtual.set_fallback()
 
-    def pause_all(self):
-        self._paused = not self._paused
-        for virtual in self.values():
-            virtual._paused = self._paused
-        self._ledfx.events.fire_event(GlobalPauseEvent(self._paused))
+    def pause_all(self) -> None:
+        """Toggle the global pause (the --pause-all flag and MQTT)."""
+        self.set_paused(not self._paused)
 
     def get(self, *args):
         return self._virtuals.get(*args)
+
+    # ---- manager API (v1 and v2 call these) -------------------------------
+    # Mutators check safe mode first and never await, so no other request can
+    # run between their change and its save.
+
+    @property
+    def paused(self) -> bool:
+        """The global pause (runtime only, never saved)."""
+        return self._paused
+
+    def set_paused(self, paused: bool) -> bool:
+        """Pause or resume every virtual. Runtime only, so allowed in safe mode."""
+        self._paused = paused
+        for virtual in self.values():
+            virtual._paused = paused
+        self._ledfx.events.fire_event(GlobalPauseEvent(paused))
+        return paused
+
+    def get_or_raise(self, virtual_id: VirtualIdStr) -> Virtual:
+        virtual = self._virtuals.get(virtual_id)
+        if virtual is None:
+            raise NotFound("Virtual", virtual_id)
+        return virtual
+
+    def add(self, config: VirtualConfig) -> Virtual:
+        """Create a virtual (id from its name, made unique) and store it."""
+        ensure_writable(self._ledfx)
+        virtual = self.create(
+            id=generate_id(config.name),
+            config=config,
+            is_device=False,
+            ledfx=self._ledfx,
+        )
+        self._ledfx.config.virtuals.append(
+            VirtualEntry(
+                id=virtual.id,
+                config=virtual.config,
+                is_device=virtual.is_device,
+                auto_generated=virtual.auto_generated,
+            )
+        )
+        self._ledfx.config_store.request_save()
+        self._ledfx.events.fire_event(
+            VirtualConfigUpdateEvent(virtual.id, virtual.config)
+        )
+        return virtual
+
+    def update(
+        self,
+        virtual_id: VirtualIdStr,
+        *,
+        config: VirtualConfig | None = None,
+        segments: list[Segment] | None = None,
+        active: bool | None = None,
+    ) -> Virtual:
+        """Replace the segments, the config or the active state, in that order.
+
+        Raises Invalid when the segments or the activation are refused. The
+        refused part is undone and no save is requested, but the parts applied
+        before it stay, in the virtual and its stored entry, so the next save
+        writes them.
+        """
+        ensure_writable(self._ledfx)
+        virtual = self.get_or_raise(virtual_id)
+        if segments is not None:
+            self._apply_segments(virtual, segments)
+        if config is not None:
+            self._apply_config(virtual, config)
+        if active is not None:
+            self._apply_active(virtual, active)
+        self._ledfx.config_store.request_save()
+        return virtual
+
+    def remove(self, virtual_id: VirtualIdStr) -> None:
+        """Delete a virtual, its device if it is one, and its scene entries."""
+        ensure_writable(self._ledfx)
+        virtual = self.get_or_raise(virtual_id)
+        virtual.clear_effect()
+        config = self._ledfx.config
+        device_id = virtual.is_device
+        device = self._ledfx.devices.get(device_id)
+        if device is not None:
+            device.remove_from_virtuals()
+            # remove_from_virtuals may have already destroyed this device
+            if self._ledfx.devices.get(device_id) is not None:
+                self._ledfx.devices.destroy(device_id)
+            config.devices = [d for d in config.devices if d.id != device_id]
+        for scene in config.scenes.values():
+            scene.virtuals.pop(virtual_id, None)
+        # remove_from_virtuals may have already destroyed this virtual
+        if virtual_id in self._virtuals:
+            self.destroy(virtual_id)
+        config.virtuals = [v for v in config.virtuals if v.id != virtual_id]
+        self._ledfx.config_store.request_save()
+
+    def _apply_config(self, virtual: Virtual, config: VirtualConfig) -> None:
+        current = virtual.config
+        changes = {
+            name: value
+            for name, value in config.model_dump().items()
+            if getattr(current, name) != value
+        }
+        virtual.update_config(changes)
+
+    def _apply_segments(self, virtual: Virtual, segments: list[Segment]) -> None:
+        try:
+            # update_segments validates first and restores on a failure.
+            virtual.update_segments(segments)
+        except ValueError as err:
+            raise Invalid(str(err), loc=("body", "segments")) from err
+        entry = virtual.entry
+        if entry is not None:
+            entry.segments = virtual.segments
+
+    def _apply_active(self, virtual: Virtual, active: bool) -> None:
+        effect = None
+        try:
+            if active and (
+                not virtual._active_effect
+                or isinstance(virtual.active_effect, DummyEffect)
+            ):
+                # Restore the last effect; a stale stored config fails here too.
+                entry = virtual.entry
+                last_effect = entry.last_effect if entry is not None else None
+                if last_effect:
+                    effect_config = virtual.get_effects_config(last_effect)
+                    if effect_config:
+                        effect = self._ledfx.effects.create(
+                            ledfx=self._ledfx,
+                            type=last_effect,
+                            config=effect_config,
+                        )
+                        virtual.set_effect(effect)
+            virtual.active = active
+        except (ValueError, RuntimeError) as err:  # includes ValidationError
+            raise Invalid(str(err), loc=("body", "active")) from err
+        if effect is not None:
+            virtual.update_effect_config(effect)
+        entry = virtual.entry
+        if entry is not None:
+            entry.active = virtual.active
 
     @classmethod
     def get_virtual_ids(cls):

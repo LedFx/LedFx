@@ -97,6 +97,9 @@ class MQTT_HASS(Integration):
 
     def publish_virtual_config(self, virtual_id, client):
         virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:  # deleted since the event was fired
+            _LOGGER.debug("Virtual %s is gone, not publishing its config", virtual_id)
+            return
         client.publish(
             f"{self.config.topic}/light/{virtual_id}/meta",
             dumps(virtual.config),
@@ -104,6 +107,9 @@ class MQTT_HASS(Integration):
 
     def publish_virtual_paused(self, virtual_id, client):
         virtual = self._ledfx.virtuals.get(virtual_id)
+        if virtual is None:  # deleted since the event was fired
+            _LOGGER.debug("Virtual %s is gone, not publishing its state", virtual_id)
+            return
         paused_state = "OFF"
         if virtual.active:
             paused_state = "ON"
@@ -174,14 +180,7 @@ class MQTT_HASS(Integration):
             )
 
         def publish_paused_state(event):
-            virtual = self._ledfx.virtuals.get(event.virtual_id)
-            paused_state = "OFF"
-            if virtual.active:
-                paused_state = "ON"
-            client.publish(
-                f"{self.config.topic}/light/{event.virtual_id}/state",
-                json.dumps({"state": paused_state}),
-            )
+            self.publish_virtual_paused(event.virtual_id, client)
 
         self._listeners.append(
             self._ledfx.events.add_listener(
