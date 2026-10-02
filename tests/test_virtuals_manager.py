@@ -639,3 +639,30 @@ async def test_v1_apply_global_accepts_a_colour_list(ledfx: MagicMock) -> None:
         assert "Applied global configuration to 1" in await response.text()
     effect = ledfx.virtuals.get_or_raise(BIRD).active_effect
     assert effect.config.background_color == "#ff0000"
+
+
+def test_refused_activations_leave_the_registry_alone(ledfx: MagicMock) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.clear_effect(BIRD)
+    ledfx.virtuals.update(BIRD, segments=[], active=False)
+    before = set(ledfx.effects)
+    for _ in range(5):
+        with pytest.raises(Invalid):  # no segments to run the restored effect on
+            ledfx.virtuals.update(BIRD, active=True)
+    assert set(ledfx.effects) == before
+
+
+async def test_v1_refused_activations_leave_the_registry_alone(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.clear_effect(BIRD)
+    ledfx.virtuals.update(BIRD, segments=[], active=False)
+    before = set(ledfx.effects)
+    app = build_app(ledfx, (VirtualEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+        for _ in range(5):
+            response = await client.put(f"/api/virtuals/{BIRD}", json={"active": True})
+            assert response.status == 200  # v1 reports failures in the body
+            assert (await response.json())["status"] == "failed"
+    assert set(ledfx.effects) == before

@@ -1872,6 +1872,8 @@ class Virtuals:
                         virtual.set_effect(effect)
             virtual.active = active
         except (ValueError, RuntimeError) as err:  # includes ValidationError
+            if effect is not None:
+                self._discard_refused(virtual, effect)
             raise Invalid(str(err), loc=("body", "active")) from err
         if effect is not None:
             virtual.update_effect_config(effect)
