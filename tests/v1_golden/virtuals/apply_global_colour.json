@@ -1,0 +1,29 @@
+[
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "type": "rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "background_color": [
+          -1,
+          0,
+          0
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": Invalid color: -10000\"}}"
+  }
+]

@@ -15,6 +15,7 @@ from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.json_schema import JsonDict, SkipJsonSchema
 from typing_extensions import override
 
+from ledfx.color import validate_color
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
     X_LEGACY,
@@ -362,7 +363,9 @@ class ApplyConfigResult(NamedTuple):
 @dataclass(frozen=True)
 class GlobalEffectUpdate:
     """Settings Virtuals.apply_global_config writes into running effects
-    (None: leave as is)."""
+    (None: leave as is). The fractions are 0..1 and background_color a colour
+    string (Invalid at body.<field> otherwise); a gradient is resolved when
+    it is applied."""
 
     gradient: str | None = None
     background_color: str | None = None
@@ -370,6 +373,17 @@ class GlobalEffectUpdate:
     brightness: float | None = None
     flip: bool | None = None
     mirror: bool | None = None
+
+    def __post_init__(self) -> None:
+        for field in ("background_brightness", "brightness"):
+            value = getattr(self, field)
+            if value is not None and not 0.0 <= value <= 1.0:
+                raise Invalid(f"{field} must be between 0 and 1", loc=("body", field))
+        if self.background_color is not None:
+            try:
+                validate_color(self.background_color)
+            except ValueError as err:
+                raise Invalid(str(err), loc=("body", "background_color")) from err
 
 
 @dataclass(frozen=True)

@@ -821,6 +821,34 @@ def test_copy_effect(ledfx: MagicMock) -> None:
         ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("empty")])
 
 
+@pytest.mark.parametrize(
+    ("update", "field"),
+    [
+        (lambda: GlobalEffectUpdate(brightness=5), "brightness"),
+        (lambda: GlobalEffectUpdate(brightness=-0.1), "brightness"),
+        (lambda: GlobalEffectUpdate(background_brightness=2), "background_brightness"),
+        (
+            lambda: GlobalEffectUpdate(background_brightness=float("nan")),
+            "background_brightness",
+        ),
+        (lambda: GlobalEffectUpdate(background_color="notacolor"), "background_color"),
+    ],
+    ids=["high", "negative", "background-high", "nan", "colour"],
+)
+def test_a_bad_global_value_is_invalid_not_a_failed_count(
+    update: Callable[[], GlobalEffectUpdate], field: str
+) -> None:
+    with pytest.raises(Invalid) as caught:
+        update()
+    assert caught.value.loc == ("body", field)
+
+
+def test_a_global_update_accepts_what_it_is_given() -> None:
+    GlobalEffectUpdate(
+        brightness=0, background_brightness=1, background_color="#00ff00", flip=True
+    )
+
+
 BULK_CHANGES: dict[str, Callable[[Virtuals], object]] = {
     "apply-global": lambda v: v.apply_global_config(GlobalEffectUpdate(brightness=0.5)),
     "set-effect-all": lambda v: v.set_effect_all("rainbow", cfg({})),

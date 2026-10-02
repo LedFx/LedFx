@@ -480,6 +480,15 @@ SCENARIOS: dict[str, list[Step]] = {
             },
         ),
     ],
+    # A colour with a negative channel is refused (v1 used to apply garbage).
+    "apply_global_colour": [
+        ("POST", f"{BIRD}/effects", {"type": "rainbow"}),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "background_color": [-1, 0, 0]},
+        ),
+    ],
     # Highlight ranges the manager no longer accepts, and unknown ids in bulk.
     "ranges": [
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
