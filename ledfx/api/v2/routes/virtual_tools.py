@@ -28,7 +28,7 @@ from ledfx.api.v2.models.virtuals import (
 from ledfx.configuration.models import GlobalEffectUpdate, OneshotParams
 from ledfx.configuration.models import Highlight as HighlightParams
 from ledfx.configuration.plugin import PluginConfig
-from ledfx.errors import NotFound
+from ledfx.errors import NotFound, ensure_writable
 
 router = Router(tag="virtuals")
 
@@ -85,6 +85,7 @@ async def set_effect_on_virtuals(
     as failed; with fallback_s, one that is being streamed to counts as
     blocked.
     """
+    ensure_writable(ledfx)  # safe mode answers before a 422
     variant = effect_variant(body.type)
     config = None
     if body.config is not None:

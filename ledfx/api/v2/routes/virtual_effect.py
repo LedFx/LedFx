@@ -16,7 +16,7 @@ from ledfx.api.v2.models.virtuals import (
     effect_variant,
 )
 from ledfx.configuration.plugin import PluginConfig
-from ledfx.errors import Conflict
+from ledfx.errors import Conflict, ensure_writable
 from ledfx.virtuals import Virtual
 
 router = Router(tag="virtuals")
@@ -53,6 +53,7 @@ async def set_effect(
     that many seconds (409 if the virtual is being streamed to). Starting an
     effect makes the virtual active.
     """
+    ensure_writable(ledfx)  # safe mode answers before a 404 or a 422
     ledfx.virtuals.get_or_raise(virtual_id)
     variant = effect_variant(body.type)
     config = None
@@ -78,6 +79,7 @@ async def update_effect(
     change on an effect that blends colours restarts it, so it fades in.
     Restarting the effect makes the virtual active.
     """
+    ensure_writable(ledfx)  # safe mode answers before a 404, a 409 or a 422
     type_id, config = ledfx.virtuals.running_effect(virtual_id)
     variant = effect_variant(type_id)
     stored = {

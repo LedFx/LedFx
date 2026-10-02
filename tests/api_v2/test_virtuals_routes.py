@@ -171,6 +171,42 @@ async def test_safe_mode_answers_before_a_404_or_a_422(v2_client: Client) -> Non
         await expect_problem(resp, 409, "safe-mode")
 
 
+@pytest.mark.parametrize(
+    ("method", "path", "body"),
+    [
+        ("PUT", f"{V}/ghost/effect", {"type": "rainbow"}),
+        ("PUT", f"{BIRD}/effect", {"type": "nope"}),
+        ("PUT", f"{BIRD}/effect", {"type": "rainbow", "config": {"speed": "fast"}}),
+        ("PATCH", f"{V}/ghost/effect", {"config": {"speed": 1}}),
+        ("PATCH", f"{BIRD}/effect", {"config": {"speed": 1}}),
+        ("PATCH", f"{BIRD}/effect", {"config": {"speed": "fast"}}),
+        ("POST", f"{V}/set-effect", {"type": "nope"}),
+        ("POST", f"{V}/set-effect", {"type": "rainbow", "virtual_ids": ["ghost"]}),
+        ("POST", f"{V}/set-effect", {"type": "rainbow", "config": {"speed": "fast"}}),
+    ],
+    ids=[
+        "put-unknown-virtual",
+        "put-unknown-type",
+        "put-bad-config",
+        "patch-unknown-virtual",
+        "patch-nothing-running",
+        "patch-bad-config",
+        "set-effect-unknown-type",
+        "set-effect-unknown-id",
+        "set-effect-bad-config",
+    ],
+)
+async def test_every_saving_route_answers_safe_mode_first(
+    v2_client: Client, method: str, path: str, body: dict[str, object]
+) -> None:
+    core = core_of(v2_client)
+    enter_safe_mode(core)
+    before = core.config.model_dump()
+    resp = await v2_client.request(method, path, json=body)
+    await expect_problem(resp, 409, "safe-mode")
+    assert core.config.model_dump() == before
+
+
 async def test_a_refused_patch_keeps_a_config_v1_stored(v2_client: Client) -> None:
     virtual = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("empty"))
     virtual._config = replace_model(virtual.config, rows=1, rotate=2)
