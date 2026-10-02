@@ -91,14 +91,15 @@ def validation_errors(
     ]
 
 
+MAX_PROBLEM_ERRORS = 100  # a big body must not make a bigger response
+
+
 def validation_problem(errors: list[ProblemDetailError]) -> ProblemError:
-    return ProblemError(
-        422,
-        "validation",
-        _TITLES["validation"],
-        f"{len(errors)} invalid value(s)",
-        errors,
-    )
+    detail = f"{len(errors)} invalid value(s)"
+    if len(errors) > MAX_PROBLEM_ERRORS:
+        detail += f" (first {MAX_PROBLEM_ERRORS} of {len(errors)} errors)"
+        errors = errors[:MAX_PROBLEM_ERRORS]
+    return ProblemError(422, "validation", _TITLES["validation"], detail, errors)
 
 
 def json_body(raw: bytes) -> object:

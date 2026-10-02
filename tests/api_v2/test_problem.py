@@ -178,3 +178,15 @@ def test_problem_response_is_problem_json_without_null_errors() -> None:
         "detail": "x",
         "instance": "req-1",
     }
+
+
+def test_a_problem_lists_at_most_100_errors() -> None:
+    class _Many(BaseModel):
+        items: list[int]
+
+    with pytest.raises(ValidationError) as info:
+        _Many.model_validate({"items": ["x"] * 250})
+    problem = validation_problem(validation_errors(info.value, ("body",)))
+    assert problem.errors is not None
+    assert len(problem.errors) == 100
+    assert problem.detail == "250 invalid value(s) (first 100 of 250 errors)"
