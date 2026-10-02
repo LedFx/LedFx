@@ -1,0 +1,357 @@
+[
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "strip",
+            30,
+            10,
+            false
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"segments\": [[\"strip\", 10, 10, false]]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "strip",
+            -5,
+            10,
+            true
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"segments\": [[\"strip\", 0, 10, true]]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "strip",
+            60,
+            70,
+            false
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"segments\": [[\"strip\", 49, 49, false]]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "gap-1",
+            0,
+            500,
+            false
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"segments\": [[\"gap-1\", 0, 500, false]]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": "strip"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual segments strip: Invalid segments: strip, should be a list of segments\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": {
+          "device": "strip"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual segments {'device': 'strip'}: Invalid segments: {'device': 'strip'}, should be a list of segments\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          5
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual segments [5]: Invalid segment format: 5, should be [device_id, start, end, invert]\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "strip",
+            0,
+            "a",
+            false
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual segments [['strip', 0, 'a', False]]: Invalid segment format: ['strip', 0, 'a', False], should be [device_id, start, end, invert]\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "strip",
+            0,
+            9,
+            false
+          ],
+          [
+            "ghost",
+            0,
+            1,
+            false
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual segments [['strip', 0, 9, False], ['ghost', 0, 1, False]]: Invalid device id: ghost\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"gap-1\", 0, 500, false]], \"pixel_count\": 501, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "frequency_min": 500
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 500, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "frequency_min": 500,
+          "frequency_max": 500
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 500, \"frequency_max\": 501, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "frequency_min": 900,
+          "frequency_max": 100
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 100, \"frequency_max\": 900, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "frequency_min": 15000,
+          "frequency_max": 15000
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "rows": 3,
+          "rotate": 2
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 3, \"rotate\": 2}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "rows": 1
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "rotate": 3
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "id": "dj bird",
+        "config": {
+          "rows": 1,
+          "rotate": 0
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Updated Virtual dj bird\"}, \"virtual\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"gap-1\", 0, 500, false]], \"pixel_count\": 501, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "r1",
+          "frequency_min": 900,
+          "frequency_max": 100
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual r1\"}, \"virtual\": {\"config\": {\"name\": \"r1\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 100, \"frequency_max\": 900, \"rows\": 1, \"rotate\": 0}, \"id\": \"r1\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "r2",
+          "frequency_min": 500,
+          "frequency_max": 500
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual r2\"}, \"virtual\": {\"config\": {\"name\": \"r2\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 500, \"frequency_max\": 501, \"rows\": 1, \"rotate\": 0}, \"id\": \"r2\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "r3",
+          "rows": 1,
+          "rotate": 2
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual r3\"}, \"virtual\": {\"config\": {\"name\": \"r3\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 2}, \"id\": \"r3\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals",
+      {
+        "config": {
+          "name": "r4",
+          "rows": 3,
+          "rotate": 2
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Created Virtual r4\"}, \"virtual\": {\"config\": {\"name\": \"r4\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 3, \"rotate\": 2}, \"id\": \"r4\", \"is_device\": false, \"auto_generated\": false}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"virtuals\": {\"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 14999, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"gap-1\", 0, 500, false]], \"pixel_count\": 501, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"mirror\": {\"config\": {\"name\": \"Mirror\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"mirror\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 9, false]], \"pixel_count\": 10, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"empty\": {\"config\": {\"name\": \"Empty\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"empty\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"matrix\": {\"config\": {\"name\": \"matrix\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"matrix\", \"is_device\": \"matrix\", \"auto_generated\": false, \"segments\": [[\"matrix\", 0, 63, false]], \"pixel_count\": 64, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"r1\": {\"config\": {\"name\": \"r1\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 100, \"frequency_max\": 900, \"rows\": 1, \"rotate\": 0}, \"id\": \"r1\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"r2\": {\"config\": {\"name\": \"r2\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 500, \"frequency_max\": 501, \"rows\": 1, \"rotate\": 0}, \"id\": \"r2\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"r3\": {\"config\": {\"name\": \"r3\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 2}, \"id\": \"r3\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}, \"r4\": {\"config\": {\"name\": \"r4\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 3, \"rotate\": 2}, \"id\": \"r4\", \"is_device\": false, \"auto_generated\": false, \"segments\": [], \"pixel_count\": 0, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}, \"paused\": false}"
+  }
+]
