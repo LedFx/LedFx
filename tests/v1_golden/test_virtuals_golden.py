@@ -14,6 +14,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ledfx.api import RestEndpoint
+from ledfx.api.colors import ColorEndpoint
 from ledfx.api.effects import EffectsEndpoint as GlobalEffectsEndpoint
 from ledfx.api.virtual import VirtualEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
@@ -37,6 +38,7 @@ from tests.v1_golden.harness import (
 )
 
 ENDPOINTS: tuple[type[RestEndpoint], ...] = (
+    ColorEndpoint,
     VirtualsEndpoint,
     VirtualEndpoint,
     VirtualEffectsEndpoint,
@@ -719,6 +721,19 @@ SCENARIOS: dict[str, list[Step]] = {
         ("POST", V, {"config": {"name": "b" * 128}}),
         ("POST", V, {"config": {"name": "b" * 128}}),
         ("GET", V, None),
+    ],
+    # v1 /api/colors: colours (and gradients) as strings and [r, g, b] lists.
+    "user_colors": [
+        ("POST", "/api/colors", {"hexed": "#102030"}),
+        ("POST", "/api/colors", {"named": "teal"}),
+        ("POST", "/api/colors", {"listed": [1, 2, 3]}),
+        ("POST", "/api/colors", {"short": [1, 2]}),
+        ("POST", "/api/colors", {"wide": [1, 2, 300]}),
+        ("POST", "/api/colors", {"num": 5}),
+        ("POST", "/api/colors", {"obj": {"a": 1}}),
+        ("POST", "/api/colors", {"red": [1, 2, 3]}),
+        ("POST", "/api/colors", {"ok": [9, 8, 7], "bad": [1]}),
+        ("GET", "/api/colors", None),
     ],
 }
 
