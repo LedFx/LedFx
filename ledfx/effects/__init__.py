@@ -4,7 +4,7 @@ import timeit
 
 # from ledfx.effects.audio import FREQUENCY_RANGES
 from functools import lru_cache
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 import numpy as np
 from numpy.typing import NDArray
@@ -16,6 +16,9 @@ from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.effects.utils.logsec_helper import LogSecHelper
 from ledfx.events import EffectUpdatedEvent
 from ledfx.utils import BaseRegistry, RegistryLoader
+
+if TYPE_CHECKING:
+    from ledfx.virtuals import Virtual
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -283,7 +286,7 @@ class Effect(BaseRegistry):
     USES_MELBANK_RANGE = False
     _config = None
     _active = False
-    _virtual = None
+    _virtual: "Virtual | None" = None
 
     # Basic effect properties that can be applied to all effects
     class Config(PluginConfig):

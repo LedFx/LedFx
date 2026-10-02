@@ -9,7 +9,7 @@ from pydantic import Field
 from ledfx.api.jsonutil import dumps
 from ledfx.color import parse_color
 from ledfx.configuration.fields import X_REQUIRED, CoercedInt
-from ledfx.configuration.models import EffectEntry, VirtualConfig
+from ledfx.configuration.models import EffectEntry
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
@@ -357,14 +357,14 @@ class MQTT_HASS(Integration):
 
         # Create Virtuals as Light in HomeAssistant
         for virtual in self._ledfx.virtuals.values():
-            name = virtual.config["name"]
+            name = virtual.config.name
             if name.startswith("gap-") or name.endswith(
                 ("-background", "-mask", "-foreground")
             ):
                 continue
 
-            if virtual.config["icon_name"].startswith("mdi:"):
-                icon = virtual.config["icon_name"]
+            if virtual.config.icon_name.startswith("mdi:"):
+                icon = virtual.config.icon_name
             else:
                 icon = "mdi:led-strip"
             client.publish(
@@ -438,11 +438,11 @@ class MQTT_HASS(Integration):
                 virtual = self._ledfx.virtuals.get(next(iter(self._ledfx.virtuals)))
                 client.publish(
                     f"{self.config.topic}/select/ledfxtransitiontype/state",
-                    virtual.config["transition_mode"],
+                    virtual.config.transition_mode,
                 )
                 client.publish(
                     f"{self.config.topic}/number/ledfxtransitiontime/state",
-                    virtual.config["transition_time"],
+                    virtual.config.transition_time,
                 )
                 # PausedState
                 client.publish(
@@ -505,9 +505,6 @@ class MQTT_HASS(Integration):
 
             virtual.update_config({key: val})
             self._ledfx.config.global_transitions = prior_state
-            entry = virtual.entry
-            if entry is not None:
-                entry.config = VirtualConfig.model_validate(virtual.config)
             self._ledfx.config_store.request_save()
 
         # React to Scene-Selector
@@ -612,14 +609,14 @@ class MQTT_HASS(Integration):
                             )
                             virtual.set_effect(effect)
                         return
-                    name = virtual.config["name"]
+                    name = virtual.config.name
                     if name.startswith("gap-") or name.endswith(
                         ("-background", "-mask", "-foreground")
                     ):
                         return
 
-                    if virtual.config["icon_name"].startswith("mdi:"):
-                        icon = virtual.config["icon_name"]
+                    if virtual.config.icon_name.startswith("mdi:"):
+                        icon = virtual.config.icon_name
                     else:
                         icon = "mdi:led-strip"
                     hass_device = {

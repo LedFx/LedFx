@@ -3,7 +3,7 @@
 import threading
 from unittest.mock import MagicMock, patch
 
-from ledfx.configuration.models import VirtualConfig, validate_dict
+from ledfx.configuration.models import VirtualConfig
 from ledfx.utils import RegistryLoader
 from ledfx.virtuals import Virtual
 
@@ -65,7 +65,7 @@ def test_config_change_restarts_effect_under_lock() -> None:
     # unlocked restart could clear and destroy the same effect concurrently.
     virtual = _virtual({})
     virtual.lock = threading.Lock()
-    virtual._config = validate_dict(VirtualConfig, {"name": "v"})
+    virtual._config = VirtualConfig.model_validate({"name": "v"})
     virtual._active_effect = MagicMock()
     virtual.complex_segments = False
     held: list[bool] = []
@@ -74,5 +74,5 @@ def test_config_change_restarts_effect_under_lock() -> None:
         held.append(self.lock.locked())
 
     with patch.object(Virtual, "_reactivate_effect", reactivate):
-        virtual.config = {"grouping": 2}
+        virtual.update_config({"grouping": 2})
     assert held == [True]

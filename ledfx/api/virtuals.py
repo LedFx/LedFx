@@ -82,14 +82,10 @@ class VirtualsEndpoint(RestEndpoint):
                 )
             # Update the virtual's configuration
             try:
-                virtual.config = virtual_config
+                virtual.update_config(virtual_config)
             except ValidationError as err:
                 return await self.validation_error(err)
             _LOGGER.info("Updated virtual %s config to %s", virtual.id, virtual_config)
-
-            entry = virtual.entry
-            if entry is not None:
-                entry.config = VirtualConfig.model_validate(virtual.config)
 
             response = {
                 "status": "success",

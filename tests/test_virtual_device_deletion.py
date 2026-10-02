@@ -838,7 +838,7 @@ class TestVirtualsPostValidation:
             ledfx, {"id": "v-1", "config": {"max_brightness": 5}}
         )
         assert response.status == 400
-        assert virtual.config["max_brightness"] == 1.0
+        assert virtual.config.max_brightness == 1.0
         ledfx.config_store.request_save.assert_not_called()
 
 

@@ -1,6 +1,7 @@
 import logging
 import threading
 import time
+from collections.abc import Mapping
 from functools import cached_property
 
 import numpy as np
@@ -10,7 +11,7 @@ from ledfx.configuration.models import (
     EffectEntry,
     VirtualConfig,
     VirtualEntry,
-    validate_dict,
+    replace_model,
 )
 from ledfx.configuration.presets import preset_config
 from ledfx.effects import DummyEffect, Effect
@@ -45,37 +46,31 @@ class Virtual:
     _min_time = time.get_clock_info("perf_counter").resolution
     _last_render_error = float("-inf")
 
-    def _validate_and_set_frequency_range(self, config):
-        """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""
-        # Handle equality first
-        if config["frequency_min"] == config["frequency_max"]:
-            if config["frequency_max"] < MAX_FREQ:
-                config["frequency_max"] += 1
+    def _checked_frequency_range(self, config: VirtualConfig) -> VirtualConfig:
+        """Set frequency_range from config, making frequency_min < frequency_max
+        first (the adjusted config is returned)."""
+        low, high = config.frequency_min, config.frequency_max
+        if low == high:
+            if high < MAX_FREQ:
+                high += 1
             else:
-                config["frequency_min"] -= 1
+                low -= 1
             _LOGGER.warning(
-                "Frequency range was zero-width. Adjusted to %s-%s Hz.",
-                config["frequency_min"],
-                config["frequency_max"],
+                "Frequency range was zero-width. Adjusted to %s-%s Hz.", low, high
             )
-        # Then handle inversion
-        elif config["frequency_min"] > config["frequency_max"]:
+        elif low > high:
             _LOGGER.warning(
                 "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                config["frequency_min"],
-                config["frequency_max"],
+                low,
+                high,
             )
-            config["frequency_min"], config["frequency_max"] = (
-                config["frequency_max"],
-                config["frequency_min"],
-            )
+            low, high = high, low
+        self.frequency_range = FrequencyRange(low, high)
+        if (low, high) == (config.frequency_min, config.frequency_max):
+            return config
+        return replace_model(config, frequency_min=low, frequency_max=high)
 
-        # Update frequency range object
-        self.frequency_range = FrequencyRange(
-            config["frequency_min"], config["frequency_max"]
-        )
-
-    def __init__(self, ledfx, config):
+    def __init__(self, ledfx, config: VirtualConfig):
         self._ledfx = ledfx
         self._config = config
         # the multiplier to fade in/out of an effect. -ve values mean fading
@@ -99,7 +94,7 @@ class Virtual:
         self.fallback_timer = None
         self.fallback_suppress_transition = False
         self._streaming = False
-        self.complex_segments = self._config.get("complex_segments", False)
+        self.complex_segments = config.complex_segments
 
         # Precompiled device remap structure for fast pixel mapping
         # Maps virtual indices to device indices per device
@@ -113,7 +108,7 @@ class Virtual:
         self._calibration_cache = CalibratorPatternCache()
 
         # Validate, adjust, and initialize frequency range
-        self._validate_and_set_frequency_range(self._config)
+        self._config = self._checked_frequency_range(config)
 
         # Initialize transitions - will be resized in _reactivate_effect() when effect activates
         self.transitions = Transitions(0)
@@ -315,7 +310,7 @@ class Virtual:
                         self._ledfx.virtuals.check_and_deactivate_devices()
                         raise
 
-                mode = self._config["transition_mode"]
+                mode = self._config.transition_mode
                 self.frame_transitions = self.transitions[mode]
             # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
             entry = self.entry
@@ -343,7 +338,7 @@ class Virtual:
             self._device_remap = {}
             return
 
-        if self._config["mapping"] != "span":
+        if self._config.mapping != "span":
             # Only compile for span mode - copy mode needs different handling
             self._device_remap = {}
             return
@@ -542,12 +537,12 @@ class Virtual:
                 self.fallback_start(fallback)
 
             if (
-                self._config["transition_mode"] != "None"
-                and self._config["transition_time"] > 0
+                self._config.transition_mode != "None"
+                and self._config.transition_time > 0
                 and not self.fallback_suppress_transition
             ):
                 self.transition_frame_total = (
-                    self.refresh_rate * self._config["transition_time"]
+                    self.refresh_rate * self._config.transition_time
                 )
                 self.transition_frame_counter = 0
                 self.clear_transition_effect()
@@ -606,15 +601,15 @@ class Virtual:
             self.clear_transition_effect()
 
             if (
-                self._config["transition_mode"] != "None"
-                and self._config["transition_time"] > 0
+                self._config.transition_mode != "None"
+                and self._config.transition_time > 0
                 and not self.fallback_suppress_transition
             ):
                 self._transition_effect = self._active_effect
                 self._active_effect = DummyEffect(self.effective_pixel_count)
 
                 self.transition_frame_total = (
-                    self.refresh_rate * self._config["transition_time"]
+                    self.refresh_rate * self._config.transition_time
                 )
                 self.transition_frame_counter = 0
             else:
@@ -624,9 +619,7 @@ class Virtual:
             self.flush_pending_clear_frame()
 
             delay = (
-                0
-                if self.fallback_suppress_transition
-                else self._config["transition_time"]
+                0 if self.fallback_suppress_transition else self._config.transition_time
             )
             self.clear_handle = self._ledfx.loop.call_later(delay, self.clear_frame)
 
@@ -766,7 +759,7 @@ class Virtual:
                         # )
                         self.assembled_frame = self.assemble_frame()
                         if self.assembled_frame is not None and not self._paused:
-                            if not self._config["preview_only"]:
+                            if not self._config.preview_only:
                                 # self._ledfx.thread_executor.submit(self.flush)
                                 # await self._ledfx.loop.run_in_executor(
                                 #     self._ledfx.thread_executor, self.flush
@@ -804,8 +797,8 @@ class Virtual:
             frame[frame < 0] = 0
             # np.clip(frame, 0, 255, frame)
 
-            if self._config["center_offset"]:
-                frame = np.roll(frame, self._config["center_offset"], axis=0)
+            if self._config.center_offset:
+                frame = np.roll(frame, self._config.center_offset, axis=0)
 
             # This part handles blending two effects together
             if (
@@ -819,10 +812,10 @@ class Virtual:
                 transition_frame[transition_frame > 255] = 255
                 transition_frame[transition_frame < 0] = 0
 
-                if self._config["center_offset"]:
+                if self._config.center_offset:
                     transition_frame = np.roll(
                         transition_frame,
-                        self._config["center_offset"],
+                        self._config.center_offset,
                         axis=0,
                     )
 
@@ -855,7 +848,7 @@ class Virtual:
                 if self.transition_frame_counter == self.transition_frame_total:
                     self.clear_transition_effect()
 
-            np.multiply(frame, self._config["max_brightness"], frame)
+            np.multiply(frame, self._config.max_brightness, frame)
             np.multiply(frame, self._ledfx.config.global_brightness, frame)
         return frame
 
@@ -938,7 +931,7 @@ class Virtual:
             else:
                 oneshot_index += 1
 
-        if self._config["mapping"] == "span":
+        if self._config.mapping == "span":
             # In span mode we can calculate the final pixels once for all segments
             pixels = self._effective_to_physical_pixels(pixels)
 
@@ -955,7 +948,7 @@ class Virtual:
 
         if (
             self.complex_segments
-            and self._config["mapping"] == "span"
+            and self._config.mapping == "span"
             and self._device_remap
             and not self._calibration
         ):
@@ -991,7 +984,7 @@ class Virtual:
                     # Reset color sequence for each device to maintain consistency
                     self._calibration_cache.reset_color_sequence()
                     self.render_calibration(data, device, segments, device_id)
-                elif self._config["mapping"] == "span":
+                elif self._config.mapping == "span":
                     for (
                         start,
                         stop,
@@ -1004,7 +997,7 @@ class Virtual:
                         for oneshot in self._oneshots:
                             oneshot.apply(seg, start, stop)
                         data.append((seg, device_start, device_end))
-                elif self._config["mapping"] == "copy":
+                elif self._config.mapping == "copy":
                     for (
                         start,
                         stop,
@@ -1125,11 +1118,11 @@ class Virtual:
 
     @property
     def name(self):
-        return self._config["name"]
+        return self._config.name
 
     @property
     def max_brightness(self):
-        return self._config["max_brightness"] * 256
+        return self._config.max_brightness * 256
 
     @property
     def active(self):
@@ -1220,14 +1213,14 @@ class Virtual:
 
     @cached_property
     def pixel_count(self):
-        if self._config["mapping"] == "span":
+        if self._config.mapping == "span":
             total = 0
             for device_id, start_pixel, end_pixel, invert in self._segments:
                 # Include ALL pixels, even gap devices
                 # Gap pixels are rendered but not displayed - they create empty space in the layout
                 total += end_pixel - start_pixel + 1
             return total
-        elif self._config["mapping"] == "copy":
+        elif self._config.mapping == "copy":
             if self._segments:
                 # For copy mode, use the maximum segment size (including gaps)
                 all_segments = [
@@ -1279,93 +1272,66 @@ class Virtual:
         return self._ledfx.config_store.virtual_entry(self.id)
 
     @property
-    def config(self) -> dict:
-        """Returns the config for the object"""
-        return getattr(self, "_config", None)
+    def config(self) -> VirtualConfig:
+        """The virtual's settings (frozen: change them with update_config)."""
+        return self._config
 
-    def update_config(self, config):
-        self.config = config
+    def _sync_entry(self) -> None:
+        """Keep the saved entry on the same config instance as the virtual."""
+        entry = self.entry
+        if entry is not None:
+            entry.config = self._config
 
-    @config.setter
-    def config(self, new_config):
-        """Updates the config for an object"""
-        if self._config is not None:
-            _config = {**self._config, **new_config}
-        else:
-            _config = new_config
+    def update_config(self, changes: Mapping[str, object]) -> None:
+        """Merge changes into the config, validate the result and apply it.
 
-        _config = validate_dict(VirtualConfig, _config)
+        Raises ValidationError, before changing anything, if the result is invalid.
+        """
+        old = self._config
+        new = replace_model(old, **changes)
         reactivate_effect = False
-        mapping_changed = False
+        mapping_changed = new.mapping != old.mapping
+        if mapping_changed:
+            self.invalidate_cached_props()
+            reactivate_effect = True
 
-        if hasattr(self, "_config"):
-            if _config["mapping"] != self._config["mapping"]:
-                self.invalidate_cached_props()
-                reactivate_effect = True
-                mapping_changed = True
+        if (
+            new.transition_mode != old.transition_mode
+            or new.transition_time != old.transition_time
+        ):
+            self.frame_transitions = self.transitions[new.transition_mode]
+            if self._ledfx.config.global_transitions:
+                self._share_transition(new)
 
-            if (
-                _config["transition_mode"] != self._config["transition_mode"]
-                or _config["transition_time"] != self._config["transition_time"]
+        if "frequency_min" in changes or "frequency_max" in changes:
+            new = self._checked_frequency_range(new)
+            # Clear cached effect properties so the changes take effect
+            if self._active_effect is not None and hasattr(
+                self._active_effect, "clear_melbank_freq_props"
             ):
-                self.frame_transitions = self.transitions[_config["transition_mode"]]
-                if self._ledfx.config.global_transitions:
-                    for virtual_id in self._ledfx.virtuals:
-                        if virtual_id == self.id:
-                            continue
-                        virtual = self._ledfx.virtuals.get(virtual_id)
-                        if hasattr(virtual, "frame_transitions"):
-                            virtual.frame_transitions = virtual.transitions[
-                                _config["transition_mode"]
-                            ]
-                            virtual._config["transition_time"] = _config[
-                                "transition_time"
-                            ]
-                            virtual._config["transition_mode"] = _config[
-                                "transition_mode"
-                            ]
-                            # Persist it too (the entry no longer shares _config).
-                            entry = virtual.entry
-                            if entry is not None:
-                                entry.config.transition_time = _config[
-                                    "transition_time"
-                                ]
-                                entry.config.transition_mode = _config[
-                                    "transition_mode"
-                                ]
-                        else:
-                            _LOGGER.info("virtual of %s has no transitions", virtual_id)
-            if "frequency_min" in new_config or "frequency_max" in new_config:
-                # Validate, adjust, and update frequency range
-                self._validate_and_set_frequency_range(_config)
+                self._active_effect.clear_melbank_freq_props()
 
-                # Clear cached effect properties so the changes take effect
-                if self._active_effect is not None and hasattr(
-                    self._active_effect, "clear_melbank_freq_props"
-                ):
-                    self._active_effect.clear_melbank_freq_props()
+        if self._active_effect is not None:
+            # if a virtual level config change impacts a 2d effect layout, then trigger an init
+            if (new.rows != old.rows or new.rotate != old.rotate) and hasattr(
+                self._active_effect, "set_init"
+            ):
+                self._active_effect.set_init()
 
-            if self._active_effect is not None:
-                # if a virtual level config change impacts a 2d effect layout, then trigger an init
-                if (
-                    _config["rows"] != self._config["rows"]
-                    or _config["rotate"] != self._config["rotate"]
-                ) and hasattr(self._active_effect, "set_init"):
-                    self._active_effect.set_init()
-
-                if _config["grouping"] != self._config["grouping"]:
-                    # The effect needs to be reactivated later after the config has been applied
-                    reactivate_effect = True
-                    self.invalidate_cached_props()
+            if new.grouping != old.grouping:
+                # The effect needs to be reactivated later after the config has been applied
+                reactivate_effect = True
+                self.invalidate_cached_props()
 
         # force rotate to 0 if this is a 1d virtual
-        if _config["rows"] <= 1:
-            _config["rotate"] = 0
+        if new.rows <= 1 and new.rotate != 0:
+            new = replace_model(new, rotate=0)
 
-        self._config = _config
+        self._config = new
+        self._sync_entry()
 
         old_complex_segments = self.complex_segments
-        self.complex_segments = _config.get("complex_segments", False)
+        self.complex_segments = new.complex_segments
 
         # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
         if old_complex_segments != self.complex_segments or (
@@ -1380,6 +1346,25 @@ class Virtual:
             with self.lock:
                 self._reactivate_effect()
 
+    def _share_transition(self, config: VirtualConfig) -> None:
+        """global_transitions: every other virtual takes this transition."""
+        for virtual in self._ledfx.virtuals.values():
+            if virtual is self:
+                continue
+            if not hasattr(virtual, "frame_transitions"):
+                _LOGGER.info("virtual of %s has no transitions", virtual.id)
+                continue
+            virtual.frame_transitions = virtual.transitions[config.transition_mode]
+            virtual._config = replace_model(
+                virtual._config,
+                transition_time=config.transition_time,
+                transition_mode=config.transition_mode,
+            )
+            # Persist it too.
+            entry = virtual.entry
+            if entry is not None:
+                entry.config = virtual._config
+
     @cached_property
     def effective_pixel_count(self):
         """The number of pixels to calculate by effects.
@@ -1392,7 +1377,7 @@ class Virtual:
     @cached_property
     def group_size(self):
         """The number of physical pixels to group into virtual effect pixels."""
-        grouping = self._config["grouping"]
+        grouping = self._config.grouping
 
         if grouping is None or grouping < 1:
             return 1
@@ -1424,7 +1409,7 @@ class Virtual:
         Returns:
             int: The number of rows specified in the configuration.
         """
-        return self._config["rows"]
+        return self._config.rows
 
     @rows.setter
     def rows(self, rows: int) -> None:
@@ -1436,7 +1421,8 @@ class Virtual:
         Args:
             rows (int): The number of rows to set in the configuration.
         """
-        self._config["rows"] = max(1, rows)
+        self._config = replace_model(self._config, rows=max(1, rows))
+        self._sync_entry()
 
 
 class Virtuals:
@@ -1480,7 +1466,7 @@ class Virtuals:
             _LOGGER.debug("Loading virtual from config: %s", entry)
             new_virtual = self._ledfx.virtuals.create(
                 id=entry.id,
-                config=entry.config.model_dump(),
+                config=entry.config,
                 is_device=entry.is_device,
                 auto_generated=entry.auto_generated,
                 ledfx=self._ledfx,
@@ -1488,7 +1474,7 @@ class Virtuals:
 
             # Update the entry with the validated config in case initialization
             # adjusted frequencies
-            entry.config = VirtualConfig.model_validate(new_virtual.config)
+            entry.config = new_virtual.config
             self._repair_effect_history(entry)
 
             if "segments" in entry.model_fields_set:
@@ -1578,7 +1564,7 @@ class Virtuals:
         _auto_generated = kwargs.pop("auto_generated", False)
 
         if _config is not None:
-            _config = validate_dict(VirtualConfig, _config)
+            _config = VirtualConfig.model_validate(_config)
             obj = Virtual(config=_config, *args, **kwargs)  # noqa: B026
         else:
             obj = Virtual(*args, **kwargs)

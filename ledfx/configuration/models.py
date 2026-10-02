@@ -87,8 +87,9 @@ class LedFxModel(BaseModel):
 
 
 # No return annotation on purpose: pydantic's model_dump() type is kept, so the
-# legacy dict site (virtuals) reads values as untyped, as it did voluptuous
-# output. Typing it needs that site to read typed models instead.
+# legacy dict sites (audio_devices.py, config.py, playlists.py) read values as
+# untyped, as they did voluptuous output. Typing it needs those sites to read
+# typed models instead.
 def validate_dict(model: type[BaseModel], data: object, *, runtime: bool = False):
     """Validate data (any mapping; anything else is a ValidationError) and
     return a plain dict shaped like voluptuous output."""
@@ -234,7 +235,11 @@ class WledPreferences(LedFxModel):
     inactivity_timeout: WledIntSetting = WledIntSetting(setting=1, user_enabled=False)
 
 
+# Frozen: Virtual.config and the virtual's config entry share one instance, so
+# a change replaces the model (Virtual.update_config), never writes into it.
 class VirtualConfig(LedFxModel):
+    model_config = ConfigDict(frozen=True)
+
     name: str = Field(description="Friendly name for the device")
     mapping: Literal["span", "copy"] = Field(
         "span",
