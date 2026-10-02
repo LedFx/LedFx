@@ -22,6 +22,8 @@ from ledfx.api.virtual_effects_fallback import EffectsEndpoint as FallbackEndpoi
 from ledfx.api.virtual_tools import VirtualToolsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import EffectEntry
 from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
 from tests.v1_golden.harness import (
     Raw,
@@ -398,6 +400,146 @@ SCENARIOS: dict[str, list[Step]] = {
         ("DELETE", BIRD, None),
         ("GET", V, None),
     ],
+    # Effect configs and the bulk effect: error order and the counts on the wire.
+    "effect_typing": [
+        (
+            "POST",
+            BIRD,
+            {"segments": [["strip", 0, 49, False], ["matrix", 0, 63, False]]},
+        ),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        # A bad config answers before the streamed-to refusal.
+        (
+            "POST",
+            f"{V}/matrix/effects",
+            {**SINGLE, "config": {"speed": "x"}, "fallback": True},
+        ),
+        ("POST", f"{V}/matrix/effects", {**SINGLE, "fallback": True}),
+        ("POST", f"{V}/matrix/effects", SINGLE),
+        # PUT: the streamed-to refusal answers before the config is looked at.
+        (
+            "PUT",
+            f"{V}/matrix/effects",
+            {"config": {"speed": "x"}, "fallback": True},
+        ),
+        ("PUT", f"{V}/matrix/effects", {"config": {"color": "red"}, "fallback": True}),
+        # A stale stored config on POST without config.
+        ("POST", f"{BIRD}/effects", {"type": "rainbow"}),
+        # A colour change with a fallback restarts the effect as a fallback.
+        ("POST", f"{BIRD}/effects", SINGLE),
+        ("PUT", f"{BIRD}/effects", {"config": {"color": "#00ff00"}, "fallback": 30}),
+        ("GET", f"{BIRD}/effects", None),
+        ("PUT", f"{BIRD}/effects", {"config": {"speed": 4}, "fallback": 30}),
+        (
+            "PUT",
+            f"{BIRD}/effects",
+            {"config": {"color": "#0000ff", "speed": "x"}, "fallback": 30},
+        ),
+        (
+            "PUT",
+            f"{BIRD}/effects",
+            {"type": "singleColor", "config": {"color": "red"}, "fallback": 30},
+        ),
+        ("PUT", f"{BIRD}/effects", {"config": {"color": "nocolour"}}),
+        ("GET", f"{BIRD}/effects", None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        # The bulk effect: counts for a bad config, unknown and refusing ids.
+        # (matrix is streamed to again once it holds no effect of its own.)
+        ("PUT", f"{V}/matrix", {"active": False}),
+        ("DELETE", f"{BIRD}/effects", None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+                "virtuals": ["dj bird", "ghost", "empty"],
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+                "virtuals": ["dj bird", "matrix"],
+                "fallback": True,
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "virtuals": ["ghost"],
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "virtuals": ["dj bird", "empty", "ghost", "matrix"],
+                "fallback": True,
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": 5,
+                "virtuals": ["dj bird"],
+            },
+        ),
+        ("GET", BIRD, None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+    ],
+    # The bulk effect with an id listed twice.
+    "repeated_ids": [
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "virtuals": ["dj bird", "dj bird", "mirror"],
+            },
+        ),
+    ],
+    # Safe mode answers before a bad config is looked at.
+    "safe_mode_effects": [
+        ("POST", f"{BIRD}/effects", {**SINGLE, "config": {"speed": "x"}}),
+        ("PUT", f"{BIRD}/effects", {"config": {"speed": "x"}}),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global_effect", "type": "nope"},
+        ),
+    ],
 }
 
 
@@ -408,8 +550,13 @@ def ledfx(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
 
 @pytest.mark.parametrize("name", sorted(SCENARIOS))
 async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> None:
-    if name == "safe_mode":
+    if name.startswith("safe_mode"):
         enter_safe_mode(ledfx)
+    if name == "effect_typing":
+        # A stored config that no longer validates.
+        entry = ledfx.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
+        assert entry is not None
+        entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
     random.seed(0)  # RANDOMIZE
     records = await replay(build_app(ledfx, ENDPOINTS), SCENARIOS[name])
     check("virtuals", name, records)
