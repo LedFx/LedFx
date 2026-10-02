@@ -933,11 +933,11 @@ class TestNowPlayingConfigSchema:
         assert result["gradient"]["enabled"] is False
         assert result["gradient"]["variant"] == "led_punchy"
         assert result["gradient"]["virtual_ids"] == []
-        assert result["track_text"]["enabled"] is True
+        assert result["track_text"]["enabled"] is False
         assert result["track_text"]["duration"] == 60
         assert result["track_text"]["virtual_ids"] == []
         assert result["track_text"]["preset"] == ""
-        assert result["album_art"]["enabled"] is True
+        assert result["album_art"]["enabled"] is False
         assert result["album_art"]["duration"] == 10
         assert result["album_art"]["virtual_ids"] == []
 
@@ -997,8 +997,8 @@ class TestServiceConfigFromInit:
         assert cfg["gradient"]["enabled"] is False
         assert cfg["gradient"]["variant"] == "led_punchy"
         assert cfg["gradient"]["virtual_ids"] == []
-        assert cfg["track_text"]["enabled"] is True
-        assert cfg["album_art"]["enabled"] is True
+        assert cfg["track_text"]["enabled"] is False
+        assert cfg["album_art"]["enabled"] is False
 
     def test_persisted_config_loaded(self, tmp_path):
         ldfx = _DummyLedFx(config_dir=str(tmp_path))
@@ -1028,7 +1028,7 @@ class TestServiceConfigFromInit:
         assert svc.config["track_text"]["duration"] == 5
         assert svc.config["track_text"]["virtual_ids"] == ["matrix1"]
         # album_art should be defaults since not specified
-        assert svc.config["album_art"]["enabled"] is True
+        assert svc.config["album_art"]["enabled"] is False
 
     def test_variant_applied_to_state(self, tmp_path):
         ldfx = _DummyLedFx(config_dir=str(tmp_path))
@@ -1477,3 +1477,20 @@ class TestAlbumArtDurationSchema:
             NowPlayingConfig.model_validate(
                 {"album_art": {"duration": 61}}
             ).model_dump()
+
+
+class TestSongDetectedTimestamp:
+    def test_timestamp_anchored_to_sample(self, service, ledfx):
+        """A late re-emit (artwork) keeps the time the position was read."""
+        service.set_metadata(
+            "smtc", TrackMetadata(source_id="smtc", title="T", position=10.0)
+        )
+        service._state.metadata.updated_at = 1000.0
+        ledfx.events.fired.clear()
+
+        service._emit_song_detected()
+
+        (event,) = ledfx.events.fired
+        assert event.position == 10.0
+        assert event.timestamp == 1000.0
+        assert service._emitted_timestamp == 1000.0

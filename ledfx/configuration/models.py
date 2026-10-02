@@ -396,14 +396,16 @@ class NowPlayingGradient(LedFxModel):
 
 
 class NowPlayingTrackText(LedFxModel):
-    enabled: bool = True
+    # Off by default, like every section: enabling Now Playing
+    # should not immediately start pushing to virtuals.
+    enabled: bool = False
     duration: CoercedInt = Field(60, ge=0, le=60)
     virtual_ids: list[VirtualId] = []
     preset: str = ""
 
 
 class NowPlayingAlbumArt(LedFxModel):
-    enabled: bool = True
+    enabled: bool = False
     duration: CoercedInt = Field(10, ge=0, le=60)
     virtual_ids: list[VirtualId] = []
 
@@ -491,6 +493,12 @@ class LedFxConfig(LedFxModel):
         json_schema_extra=_legacy_type("dict", {}),
     )
     sendspin_always_on: bool = True
+    # Opt-in, and deliberately default False. Enabling it lets LedFx read
+    # the OS media session: the track title can end up rendered on a
+    # matrix, the artist and title are sent to MusicBrainz to look up
+    # cover art, and that art is cached to disk. None of that should
+    # happen to somebody who never asked for it.
+    now_playing_enabled: bool = False
     now_playing: NowPlayingConfig = Field(
         NowPlayingConfig(), json_schema_extra=_legacy_type("dict", {})
     )

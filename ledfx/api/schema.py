@@ -31,7 +31,7 @@ LEGACY_CORE_ORDER = (
     "configuration_version", "global_brightness", "ui_brightness_boost",
     "startup_scene_id", "startup_playlist_id", "lifx_broadcast_address",
     "lifx_discovery_timeout", "instance_id", "sendspin_servers",
-    "sendspin_always_on", "now_playing",
+    "sendspin_always_on", "now_playing_enabled", "now_playing",
 )  # fmt: skip
 LEGACY_CORE_EXTRAS: dict[str, dict[str, object]] = {
     "hosts": {"type": "array", "title": "Hosts", "default": []},

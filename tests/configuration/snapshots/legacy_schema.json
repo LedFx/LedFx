@@ -9729,6 +9729,11 @@
      "title": "Sendspin Always On",
      "default": true
     },
+    "now_playing_enabled": {
+     "type": "boolean",
+     "title": "Now Playing Enabled",
+     "default": false
+    },
     "now_playing": {
      "type": "dict",
      "title": "Now Playing",
@@ -9785,7 +9790,8 @@
     "sendspin_always_on",
     "allowed_origins",
     "allowed_hosts",
-    "allow_null_origin"
+    "allow_null_origin",
+    "now_playing_enabled"
    ]
   }
  },
