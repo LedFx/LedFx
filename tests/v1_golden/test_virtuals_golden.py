@@ -681,6 +681,36 @@ SCENARIOS: dict[str, list[Step]] = {
         ("POST", f"{BIRD}/effects", {"type": "rainbow", "config": {"speed": "x"}}),
         ("GET", f"{BIRD}/effects", None),
     ],
+    # Colour lists and oneshot brightness, which the manager no longer repairs,
+    # and deleting a type the virtual never ran.
+    "colors_and_history": [
+        ("POST", f"{BIRD}/effects", SINGLE),
+        *[
+            ("POST", f"{V}_tools/dj%20bird", {"tool": "oneshot", **extra})
+            for extra in (
+                {"color": [255, 0, 0]},
+                {"color": [1, 2]},
+                {"color": [300, 0, 0]},
+                {"color": 5},
+                {"color": [255, 0, 0], "brightness": 0.25},
+                {"brightness": -3},
+                {"brightness": 5},
+            )
+        ],
+        *[
+            ("PUT", url, {"tool": "force_color", "color": color})
+            for url in (f"{V}_tools/dj%20bird", f"{V}_tools")
+            for color in ([0, 255, 0], [0, 255], [0, 999, 0], 7, "")
+        ],
+        *[
+            ("PUT", "/api/effects", {"action": "apply_global", "background_color": c})
+            for c in ([1, 2, 3], [1, 2], [1, 2, 300], 7, dict[str, object]())
+        ],
+        ("POST", f"{BIRD}/effects/delete", {"type": "never-set"}),
+        ("POST", f"{BIRD}/effects/delete", {"type": "singleColor"}),
+        ("POST", f"{BIRD}/effects/delete", {"type": "singleColor"}),
+        ("GET", f"{BIRD}/effects", None),
+    ],
 }
 
 
