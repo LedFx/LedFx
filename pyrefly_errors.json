@@ -17158,13 +17158,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_valid_id` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 33,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",

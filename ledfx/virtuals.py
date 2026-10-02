@@ -28,7 +28,6 @@ from ledfx.configuration.models import (
     replace_model,
 )
 from ledfx.configuration.plugin import PluginConfig
-from ledfx.configuration.presets import preset_config
 from ledfx.configuration.randomize import randomize_effect_config
 from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
@@ -236,15 +235,6 @@ class Virtual:
 
     def __del__(self):
         self.active = False
-
-    def _valid_id(self, id):
-        device = self._ledfx.devices.get(id)
-        if device is not None:
-            return id
-        else:
-            msg = f"Invalid device id: {id}"
-            _LOGGER.warning(msg)
-            raise ValueError(msg)
 
     def activate_segments(self, segments):
         # Always use optimized batch mode for segment activation
@@ -511,31 +501,6 @@ class Virtual:
         }
 
         self._device_remap = device_remap
-
-    def set_preset(self, preset_info):
-        """
-        Sets the preset for the virtual.
-
-        Args:
-            preset_info (tuple): A tuple containing the category, effect_id, and preset_id of the preset.
-
-        Returns:
-            None
-        """
-        category, effect_id, preset_id = preset_info
-
-        # Create the effect and add it to the virtual
-        try:
-            effect_config = preset_config(
-                self._ledfx.config.user_presets, category, effect_id, preset_id
-            )
-        except KeyError:
-            _LOGGER.error("Cannot find preset: %s", preset_info)
-            return
-        effect = self._ledfx.effects.create(
-            ledfx=self._ledfx, type=effect_id, config=effect_config
-        )
-        self.set_effect(effect)
 
     def set_fallback(self):
         """
