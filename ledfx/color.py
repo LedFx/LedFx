@@ -260,12 +260,14 @@ def parse_color(color: str | list[int] | tuple[int, ...]) -> RGB:
         ValueError: If the color value is invalid or cannot be parsed.
 
     """
+    # A list or tuple is [r, g, b] (alpha removed): refuse a channel that is
+    # not an int in 0..255 rather than format it into a malformed hex.
+    if isinstance(color, (list, tuple)):
+        if len(color) != 3 or not all(type(c) is int and 0 <= c <= 255 for c in color):
+            msg = f"colour channels must be integers from 0 to 255, got {list(color)}"
+            raise ValueError(msg)
+        return RGB(*color)
     try:
-        # If it's a list/tuple, interpret it as RGB(A removed)
-        if isinstance(color, (list, tuple)):
-            # assert 3 <= len(color) <= 4
-            assert len(color) == 3
-            return RGB(*color)
         # Otherwise, it needs to be a string to continue
         if not isinstance(color, str):
             raise ValueError  # noqa: TRY004

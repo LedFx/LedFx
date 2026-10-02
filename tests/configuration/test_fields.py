@@ -163,9 +163,20 @@ def test_validate_color_takes_only_a_string() -> None:
     assert coerce_color([1, 2, 3]) == "#010203"
     assert coerce_color((1, 2, 3)) == "#010203"
     assert coerce_color("red") == "#ff0000"
-    for bad in ([1, 2], 5, None, {"a": 1}):
+    for bad in (5, None, {"a": 1}):
         with pytest.raises(ValueError, match="Invalid color: "):
             coerce_color(bad)
+
+
+@pytest.mark.parametrize(
+    "bad", [[1, 2, 256], [-1, 0, 0], [True, 0, 0], [1.0, 2, 3], [1, 2], (1, 2, 300)]
+)
+def test_a_list_colour_needs_three_int_channels_in_range(bad: object) -> None:
+    from ledfx.color import coerce_color, parse_color
+
+    for fn in (parse_color, coerce_color):
+        with pytest.raises(ValueError, match="channels must be integers from 0 to 255"):
+            fn(cast("list[int]", bad))
 
 
 def test_the_color_field_still_loads_a_list() -> None:
@@ -180,3 +191,21 @@ def test_the_v2_color_type_refuses_a_list() -> None:
 
     with pytest.raises(ValidationError):
         TypeAdapter(ColorStr).validate_python([1, 2, 3])
+
+
+def test_a_stored_out_of_range_list_colour_is_dropped_with_a_record() -> None:
+    from ledfx.configuration.lenient import lenient_validate
+    from ledfx.configuration.models import LedFxConfig
+
+    dropped: list[str] = []
+    config = lenient_validate(
+        LedFxConfig,
+        {"user_colors": {"ok": "#010203", "wide": [1, 2, 300]}},
+        "",
+        lambda path, _value, _errors: dropped.append(path),
+    )
+    assert config is not None
+    assert config.user_colors == {"ok": "#010203"}
+    assert dropped == ["user_colors.wide"]
+    with pytest.raises(ValidationError, match="channels must be integers"):
+        Sample.model_validate({"color": [1, 2, 300]})

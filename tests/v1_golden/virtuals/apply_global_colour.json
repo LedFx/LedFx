@@ -24,6 +24,6 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": Invalid color: -10000\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": colour channels must be integers from 0 to 255, got [-1, 0, 0]\"}}"
   }
 ]

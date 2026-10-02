@@ -97,9 +97,11 @@ def test_v1_color_turns_lists_into_hex() -> None:
     assert v1_color([255, 0, 16]) == "#ff0010"
     assert v1_color((1, 2, 3)) == "#010203"
     assert v1_color("red") == "#ff0000"
-    for bad in ([1, 2], 7, None, dict[str, object]()):
+    for bad in (7, None, dict[str, object]()):
         with pytest.raises(ValueError, match="Invalid color"):
             v1_color(bad)
+    with pytest.raises(ValueError, match="channels must be integers from 0 to 255"):
+        v1_color([1, 2])
 
 
 async def test_v1_apply_global_accepts_a_colour_list(ledfx: MagicMock) -> None:

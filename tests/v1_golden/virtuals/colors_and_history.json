@@ -39,7 +39,7 @@
       }
     ],
     "status": 400,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"value_error\", \"loc\": [\"color\"], \"msg\": \"Value error, Invalid color: [1, 2]\", \"input\": [1, 2]}]}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"value_error\", \"loc\": [\"color\"], \"msg\": \"Value error, colour channels must be integers from 0 to 255, got [1, 2]\", \"input\": [1, 2]}]}"
   },
   {
     "request": [
@@ -54,8 +54,8 @@
         ]
       }
     ],
-    "status": 202,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid color: 12c0000\"}}"
+    "status": 400,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"1 invalid value(s)\"}, \"errors\": [{\"type\": \"value_error\", \"loc\": [\"color\"], \"msg\": \"Value error, colour channels must be integers from 0 to 255, got [300, 0, 0]\", \"input\": [300, 0, 0]}]}"
   },
   {
     "request": [
@@ -139,7 +139,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid color: [0, 255]\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"colour channels must be integers from 0 to 255, got [0, 255]\"}}"
   },
   {
     "request": [
@@ -155,7 +155,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"tool\": \"force_color\"}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"colour channels must be integers from 0 to 255, got [0, 999, 0]\"}}"
   },
   {
     "request": [
@@ -210,7 +210,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid color: [0, 255]\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"colour channels must be integers from 0 to 255, got [0, 255]\"}}"
   },
   {
     "request": [
@@ -226,7 +226,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"tool\": \"force_color\"}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"colour channels must be integers from 0 to 255, got [0, 999, 0]\"}}"
   },
   {
     "request": [
@@ -281,7 +281,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": Invalid color: [1, 2]\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": colour channels must be integers from 0 to 255, got [1, 2]\"}}"
   },
   {
     "request": [
@@ -297,7 +297,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 1 effects (skipped 0)\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": colour channels must be integers from 0 to 255, got [1, 2, 300]\"}}"
   },
   {
     "request": [
