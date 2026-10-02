@@ -666,11 +666,6 @@ class TestApplyGradientToVirtuals:
     def test_no_gradient_returns_zero(self, service_v):
         assert service_v.apply_gradient_to_virtuals() == 0
 
-    def test_no_virtuals_attribute_returns_zero(self, service):
-        """The core builds its virtuals after this service."""
-        service._state.current_gradient = GRADIENT
-        assert service.apply_gradient_to_virtuals() == 0
-
     def test_applies_gradient_to_single_effect(self, service_v, ledfx_with_virtuals):
         eff = _start(ledfx_with_virtuals, BIRD, "gradient")
         before = eff.config.as_dict()["gradient"]
@@ -1103,15 +1098,6 @@ class TestApplyAlbumArtToVirtuals:
         )
 
         assert service_v._apply_album_art_to_virtuals() == 0
-
-    def test_no_virtuals_attr_returns_zero(self, service, ledfx):
-        """The core builds its virtuals after this service."""
-        service._config["album_art"]["enabled"] = True
-        service._config["album_art"]["virtual_ids"] = ["v1"]
-        service.__dict__["_is_audio_active"] = lambda: True
-        _set_artwork_on_service(service)
-
-        assert service._apply_album_art_to_virtuals() == 0
 
     def test_temporary_mode_uses_fallback(self, service_v, set_effect_spy):
         _enable(service_v, "album_art", [BIRD], duration=8)

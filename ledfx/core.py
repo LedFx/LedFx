@@ -500,17 +500,6 @@ class LedFxCore:
             max_items=cache_config.max_items,
         )
 
-        # Initialize Now Playing Service
-        self.now_playing = NowPlayingService(self)
-
-        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
-        self._smtc_now_playing = SMTCNowPlayingProvider(self)
-        self._smtc_now_playing.start()
-
-        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
-        self._mpris_now_playing = MPRISNowPlayingProvider(self)
-        self._mpris_now_playing.start()
-
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
@@ -536,6 +525,19 @@ class LedFxCore:
             validate_gradient,
             parse_gradient,
         )
+
+        # Now Playing drives virtuals through the manager, so it starts once
+        # virtuals, effects and gradients exist (Sendspin may push metadata
+        # while virtuals load, below).
+        self.now_playing = NowPlayingService(self)
+
+        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
+        self._smtc_now_playing = SMTCNowPlayingProvider(self)
+        self._smtc_now_playing.start()
+
+        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
+        self._mpris_now_playing = MPRISNowPlayingProvider(self)
+        self._mpris_now_playing.start()
 
         # TODO: Deferr
         self.devices.create_from_config(self.config.devices)

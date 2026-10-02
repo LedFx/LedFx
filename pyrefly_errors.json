@@ -21519,13 +21519,6 @@
       "severity": "error"
     },
     {
-      "column": 50,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_skips_dummy_effect` is missing an annotation for parameter `ledfx_with_virtuals`",
-      "severity": "error"
-    },
-    {
       "column": 49,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21894,13 +21887,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_no_cache_key_returns_zero` is missing an annotation for parameter `ledfx_album_art`",
-      "severity": "error"
-    },
-    {
-      "column": 50,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_no_virtuals_attr_returns_zero` is missing an annotation for parameter `service`",
       "severity": "error"
     },
     {

@@ -530,9 +530,7 @@ class NowPlayingService:
         if not gradient_str:
             return 0
 
-        virtuals = getattr(self._ledfx, "virtuals", None)
-        if virtuals is None:  # the core builds virtuals after this service
-            return 0
+        virtuals = self._ledfx.virtuals
 
         ids = [
             VirtualIdStr(vid)
@@ -686,9 +684,7 @@ class NowPlayingService:
         it or saving the config. A virtual that is gone or refuses the effect
         is logged and skipped; so are all of them in safe mode. Returns how
         many took it."""
-        virtuals = getattr(self._ledfx, "virtuals", None)
-        if virtuals is None:  # the core builds virtuals after this service
-            return 0
+        virtuals = self._ledfx.virtuals
         try:
             config = (
                 self._ledfx.effects.get_class(type_id)
