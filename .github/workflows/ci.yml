@@ -449,6 +449,28 @@ jobs:
         run: |
           7z x "LedFx-$VERSION-win-x64.zip"
           "LedFx-$VERSION/LedFx.exe" -vv --ci-smoke-test --offline
+      # //S: Git Bash would rewrite /S as a path. The second install runs over
+      # a running LedFx, which the installer must close rather than half-replace.
+      - name: Install, then upgrade over a running LedFx
+        run: |
+          7z x "LedFx-$VERSION-win-x64-setup.zip"
+          dir="/c/Program Files/LedFx"
+          "./LedFx-$VERSION-setup.exe" //S
+          "$dir/LedFx.exe" -vv --ci-smoke-test --offline
+          "$dir/LedFx.exe" --offline > ledfx-running.log 2>&1 &
+          pid=$!
+          sleep 20
+          kill -0 "$pid" || { echo "::error::LedFx exited before the upgrade"; cat ledfx-running.log; exit 1; }
+          "./LedFx-$VERSION-setup.exe" //S
+          "$dir/LedFx.exe" -vv --ci-smoke-test --offline
+      # _?= makes the uninstaller run in place, so -Wait waits for it. It must be
+      # last and unquoted, which Git Bash can't pass.
+      - name: Uninstall
+        shell: pwsh
+        run: |
+          $dir = "C:\Program Files\LedFx"
+          $p = Start-Process -Wait -PassThru "$dir\uninst.exe" -ArgumentList "/S _?=$dir"
+          if ($p.ExitCode -ne 0 -or (Test-Path "$dir\_internal") -or (Test-Path "$dir\LedFx.exe")) { exit 1 }
 
   smoke-macos:
     name: Smoke test frozen build (macOS ${{ matrix.suffix }})

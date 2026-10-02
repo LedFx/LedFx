@@ -36,7 +36,7 @@ Each Twinkly Squares panel contains 64 individually addressable RGB LEDs arrange
 - IP address of the Twinkly Squares controller
 - Number of panels in your configuration
 
-The Twinkly Squares must be preconfigured via the Twinkly app to have generated the layout mappings. Ledfx will consume this mapping information, LedFX cannot generate this independantly.
+The Twinkly Squares must be preconfigured via the Twinkly app to have generated the layout mappings. LedFx will consume this mapping information, LedFx cannot generate this independantly.
 
 ## Setup
 
