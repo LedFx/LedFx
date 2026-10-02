@@ -322,8 +322,30 @@ def test_an_extension_whose_component_clashes_is_skipped(
     app = web.Application()
     mount_v2(app, fake_ledfx())
     assert "Skipping v2 extension router 'clash'" in caplog.text
-    assert "/api/v2/clash" not in as_dict(app[OPENAPI_KEY]["paths"])
-    assert "/api/v2/system" in as_dict(app[OPENAPI_KEY]["paths"])
+    assert "/api/v2/clash" not in as_dict(app[OPENAPI_KEY].spec["paths"])
+    assert "/api/v2/system" in as_dict(app[OPENAPI_KEY].spec["paths"])
+
+
+def test_an_extension_taking_a_builtin_response_model_as_a_body_is_mounted(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The built-ins answer with SystemInfo (an open response schema); an
+    extension taking it as a request body gets a closed one. A combined build
+    names them apart, so this is no clash and the extension is mounted."""
+    from ledfx.api.v2.models.system import SystemInfo
+
+    echo = Router(tag="echo")
+
+    @echo.post("/echo", status=204)
+    async def post_echo(body: SystemInfo) -> None:
+        raise NotImplementedError
+
+    builtins, _ = app_module.discover_routers()
+    monkeypatch.setattr(app_module, "discover_routers", lambda: (builtins, [echo]))
+    app = web.Application()
+    mount_v2(app, fake_ledfx())
+    assert "Skipping v2 extension router" not in caplog.text
+    assert "/api/v2/echo" in as_dict(app[OPENAPI_KEY].spec["paths"])
 
 
 SNIPPETS = {
@@ -358,7 +380,7 @@ def test_spec_is_stable_across_hash_seeds(snippet: str) -> None:
 async def test_mount_stores_the_spec(
     v2_client: TestClient[web.Request, web.Application],
 ) -> None:
-    spec = v2_client.app[OPENAPI_KEY]
+    spec = v2_client.app[OPENAPI_KEY].spec
     assert "/api/v2/system" in as_dict(spec["paths"])
     assert as_dict(spec["info"])["version"] == API_VERSION
 

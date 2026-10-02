@@ -5,6 +5,7 @@ import hashlib
 import json
 import logging
 from collections.abc import Awaitable, Callable
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 from aiohttp import web
@@ -36,13 +37,33 @@ V2_PREFIX = "/api/v2"
 # by hand when the contract changes (minor for additions, major for breaks).
 API_VERSION = "2.0.0"
 BOUND_ROUTES_KEY: web.AppKey[list[BoundRoute]] = web.AppKey("v2_bound_routes")
-OPENAPI_KEY: web.AppKey[dict[str, object]] = web.AppKey("v2_openapi")
-# The compact, key-sorted JSON of app[OPENAPI_KEY]: what GET /openapi.json serves.
-OPENAPI_JSON_KEY = web.AppKey("v2_openapi_json", bytes)
-# sha256 hex of app[OPENAPI_JSON_KEY]: the ETag, hashed once.
-OPENAPI_DIGEST_KEY = web.AppKey("v2_openapi_digest", str)
+OPENAPI_KEY: web.AppKey["OpenApiDoc"] = web.AppKey("v2_openapi")
 
 Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
+
+
+class OpenApiDoc:
+    """The spec, built on first read (a build costs ~0.5 s with every route):
+    the dict, its compact key-sorted JSON (what GET /openapi.json serves) and
+    the sha256 hex of that JSON (the ETag), each computed once."""
+
+    def __init__(self, routes: list[BoundRoute]) -> None:
+        self._routes = routes
+
+    @cached_property
+    def spec(self) -> dict[str, object]:
+        # Imported here: openapi.py imports V2_PREFIX from this module.
+        from ledfx.api.v2.core.openapi import mounted_spec
+
+        return mounted_spec(self._routes, version=API_VERSION)
+
+    @cached_property
+    def body(self) -> bytes:
+        return json.dumps(self.spec, sort_keys=True, separators=(",", ":")).encode()
+
+    @cached_property
+    def digest(self) -> str:
+        return hashlib.sha256(self.body).hexdigest()
 
 
 def mount_v2(app: web.Application, ledfx: "LedFxCore | None") -> None:
@@ -50,20 +71,29 @@ def mount_v2(app: web.Application, ledfx: "LedFxCore | None") -> None:
     app is frozen (HttpServer.start), after the plugin registries load.
     ledfx is None only for building the spec (--dump-openapi): no handler runs."""
     # Imported here: openapi.py imports V2_PREFIX from this module.
-    from ledfx.api.v2.core.openapi import build_openapi
+    from ledfx.api.v2.core.openapi import (
+        build_openapi,
+        check_builtins,
+        check_extension,
+    )
 
     builtins, extensions = discover_routers()
     routes = [bind(spec) for router in builtins for spec in router.routes]
     check_unique(routes)  # a broken built-in router stops LedFx starting
     # Built-ins first: their clash is a startup error, not an extension's fault.
-    build_openapi(routes, version=API_VERSION)
+    n_builtin = len(routes)
+    if extensions:
+        check_builtins(routes, version=API_VERSION)  # cached per process
     for router in extensions:
         try:
             extra = [bind(spec) for spec in router.routes]
             check_unique([*routes, *extra])
             # A component-name clash is an app-build failure too:
             # a trial build finds it, so the extension is skipped, not fatal.
-            build_openapi([*routes, *extra], version=API_VERSION)
+            if len(routes) == n_builtin:  # the cheap check against the built-ins
+                check_extension(routes, extra, version=API_VERSION)
+            else:  # a second extension also has to fit the first
+                build_openapi([*routes, *extra], version=API_VERSION)
         except Exception:  # LedFx starts without the extension
             _LOGGER.exception("Skipping v2 extension router %r", router.tag)
             continue
@@ -83,11 +113,7 @@ def mount_v2(app: web.Application, ledfx: "LedFxCore | None") -> None:
     if ledfx is not None:
         app[LEDFX_KEY] = ledfx
     app[BOUND_ROUTES_KEY] = routes
-    spec = build_openapi(app[BOUND_ROUTES_KEY], version=API_VERSION)
-    app[OPENAPI_KEY] = spec
-    body = json.dumps(spec, sort_keys=True, separators=(",", ":")).encode()
-    app[OPENAPI_JSON_KEY] = body
-    app[OPENAPI_DIGEST_KEY] = hashlib.sha256(body).hexdigest()
+    app[OPENAPI_KEY] = OpenApiDoc(routes)
     app.middlewares.append(error_middleware)
     origin_policy.ORIGIN_REFUSAL = _origin_refusal
 
