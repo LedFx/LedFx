@@ -426,6 +426,60 @@ SCENARIOS: dict[str, list[Step]] = {
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "off"}),
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
     ],
+    # Which refusal v1 names first when a request is wrong in more than one way.
+    "check_order": [
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "ghost", "start": 0, "stop": 1},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 0, "stop": 99},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 60, "stop": 70},
+        ),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 60, "stop": 70},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "ghost", "start": 60, "stop": 70},
+        ),
+        ("PUT", f"{V}_tools/nope", {"tool": "force_color", "color": "notacolor"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "copy", "target": ["ghost"]},
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "nope",
+                "virtuals": ["ghost"],
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "fast"},
+                "virtuals": ["ghost"],
+            },
+        ),
+    ],
     # Highlight ranges the manager no longer accepts, and unknown ids in bulk.
     "ranges": [
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
