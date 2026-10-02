@@ -7,10 +7,10 @@ An AST walk counts, per file:
 - private: a ``_private`` (not dunder) attribute of the core or of anything
   reached from it by attributes (``self._ledfx.virtuals._paused``).
 
-tests/api_boundary_allowlist.txt holds today's counts as ``path:rule:count``.
+tests/config_boundary_allowlist.txt holds today's counts as ``path:rule:count``.
 It may only shrink, and never names a file under ledfx/api/v2/. After moving
 logic into a manager, regenerate it:
-    uv run python -m tests.test_api_boundary > tests/api_boundary_allowlist.txt
+    uv run python -m tests.test_config_boundary > tests/config_boundary_allowlist.txt
 """
 
 import ast
@@ -22,7 +22,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 API_DIR = ROOT / "ledfx" / "api"
-ALLOWLIST = Path(__file__).with_name("api_boundary_allowlist.txt")
+ALLOWLIST = Path(__file__).with_name("config_boundary_allowlist.txt")
 PYREFLY_BASELINE = ROOT / "pyrefly_errors.json"
 V2_PREFIX = "ledfx/api/v2/"
 CORE_NAMES = frozenset({"ledfx", "_ledfx"})
@@ -122,7 +122,7 @@ def test_allowlist_is_not_stale() -> None:
     stale = {k: n for k, n in load_allowlist().items() if current.get(k, 0) < n}
     assert stale == {}, (
         "Violations were removed: shrink the allowlist with "
-        "`uv run python -m tests.test_api_boundary > tests/api_boundary_allowlist.txt`"
+        "`uv run python -m tests.test_config_boundary > tests/config_boundary_allowlist.txt`"
     )
 
 
