@@ -15,6 +15,7 @@ import pytest
 
 from ledfx.api import RestEndpoint
 from ledfx.api.colors import ColorEndpoint
+from ledfx.api.config import ConfigEndpoint
 from ledfx.api.effects import EffectsEndpoint as GlobalEffectsEndpoint
 from ledfx.api.virtual import VirtualEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
@@ -43,6 +44,7 @@ from tests.v1_golden.harness import (
 
 ENDPOINTS: tuple[type[RestEndpoint], ...] = (
     ColorEndpoint,
+    ConfigEndpoint,
     VirtualsEndpoint,
     VirtualEndpoint,
     VirtualEffectsEndpoint,
@@ -804,6 +806,24 @@ SCENARIOS: dict[str, list[Step]] = {
         ("POST", V, {"config": {"name": "b" * 128}}),
         ("GET", V, None),
     ],
+    # Starting an effect on a paused virtual: what /api/config stores as active.
+    # Then a colour change and RANDOMIZE on a paused virtual's running effect.
+    "start_effect_active": [
+        ("PUT", BIRD, {"active": False}),
+        ("GET", "/api/config", None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        ("GET", "/api/config", None),
+        ("PUT", BIRD, {"active": False}),
+        (
+            "PUT",
+            f"{BIRD}/effects",
+            {"type": "singleColor", "config": {"color": "#00ff00"}},
+        ),
+        ("GET", BIRD, None),
+        ("PUT", f"{BIRD}/effects", {"config": "RANDOMIZE"}),
+        ("GET", BIRD, None),
+        ("GET", "/api/config", None),
+    ],
     # v1 /api/colors: colours (and gradients) as strings and [r, g, b] lists.
     "user_colors": [
         ("POST", "/api/colors", {"hexed": "#102030"}),
@@ -826,7 +846,9 @@ def ledfx(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
 
 
 @pytest.mark.parametrize("name", sorted(SCENARIOS))
-async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> None:
+async def test_v1_virtuals_family_is_unchanged(
+    name: str, ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
     if name == "safe_mode_running":
         ledfx.virtuals.set_effect(
             VirtualIdStr("dj bird"), "singleColor", PluginConfig.model_validate({})
@@ -838,6 +860,9 @@ async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> N
         assert entry is not None
         entry.last_effect = "rainbow"
         entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
+    if name == "start_effect_active":
+        # GET /api/config dumps every key in set order: keep only the virtuals.
+        monkeypatch.setattr("ledfx.api.config.CONFIG_KEYS", frozenset({"virtuals"}))
     if name == "highlight_gap":
         gap = FakeDevice(ledfx, "gap-1", 10)
         gap.type = "dummy"
