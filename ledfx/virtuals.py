@@ -167,6 +167,16 @@ def repaired_frequency(config: VirtualConfig) -> VirtualConfig:
     return replace_model(config, frequency_min=low, frequency_max=high)
 
 
+def repaired_config(config: VirtualConfig) -> VirtualConfig:
+    """config as stored data is repaired: the frequency range made valid (see
+    repaired_frequency) and a rotate on one row zeroed. For the load path and
+    legacy callers; the manager's request methods refuse such a config."""
+    config = repaired_frequency(config)
+    if config.rows <= 1 and config.rotate != 0:
+        config = replace_model(config, rotate=0)
+    return config
+
+
 class Virtual:
     # Set by Virtuals.create.
     is_device: str | Literal[False] = False
@@ -1366,11 +1376,7 @@ class Virtual:
         zeroed on one row (the manager's request methods refuse both).
         """
         old = self._config
-        new = replace_model(old, **changes)
-        if "frequency_min" in changes or "frequency_max" in changes:
-            new = repaired_frequency(new)
-        if new.rows <= 1 and new.rotate != 0:
-            new = replace_model(new, rotate=0)
+        new = repaired_config(replace_model(old, **changes))
         self.replace_config(new)
 
     def replace_config(self, new: VirtualConfig) -> None:

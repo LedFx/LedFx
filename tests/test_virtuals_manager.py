@@ -28,6 +28,7 @@ from ledfx.virtuals import (
     Virtual,
     VirtualChanges,
     Virtuals,
+    repaired_config,
     restarts_effect,
 )
 from tests.test_utilities.virtuals_core import (
@@ -230,6 +231,19 @@ def test_a_config_check_looks_only_at_what_changes(ledfx: MagicMock) -> None:
     two_rows = ledfx.virtuals.add(VirtualConfig(name="S", rows=2, rotate=2))
     with pytest.raises(Invalid):
         ledfx.virtuals.set_config(two_rows.id, replace_model(two_rows.config, rows=1))
+
+
+def test_repaired_config_fixes_the_range_and_the_rotate() -> None:
+    config = replace_model(
+        VirtualConfig(name="Old"),
+        frequency_min=900,
+        frequency_max=100,
+        rows=1,
+        rotate=2,
+    )
+    fixed = repaired_config(config)
+    assert (fixed.frequency_min, fixed.frequency_max, fixed.rotate) == (100, 900, 0)
+    assert repaired_config(fixed) == fixed
 
 
 def test_a_stored_config_is_still_repaired_on_load(ledfx: MagicMock) -> None:

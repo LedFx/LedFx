@@ -5,7 +5,9 @@ typed managers. Everything here is deleted with v1 (find users with
 from typing import TYPE_CHECKING
 
 from ledfx.color import coerce_color
+from ledfx.configuration.models import VirtualConfig
 from ledfx.configuration.plugin import PluginConfig
+from ledfx.virtuals import repaired_config
 
 if TYPE_CHECKING:
     from ledfx.core import LedFxCore
@@ -24,3 +26,10 @@ def v1_color(value: object) -> str:
     list, and answers anything else with "Invalid color: ...". The managers
     and v2 take only the string form (validate_color). Raises ValueError."""
     return coerce_color(value)
+
+
+def repaired_virtual_config(config: VirtualConfig) -> VirtualConfig:
+    """v1-compat: v1 repairs a virtual's config instead of refusing it: a
+    reversed or zero-width frequency range is swapped or widened and a rotate
+    on one row is zeroed. The manager (and v2) refuse both with Invalid."""
+    return repaired_config(config)
