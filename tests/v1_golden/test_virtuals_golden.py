@@ -464,6 +464,50 @@ SCENARIOS: dict[str, list[Step]] = {
         ),
         ("PUT", "/api/effects", {"action": "clear_all_effects"}),
     ],
+    # "toggle" inverts each effect's own value; counts for skipped effects.
+    "apply_toggle": [
+        ("POST", BIRD, {"segments": [["strip", 0, 49, False]]}),
+        ("POST", f"{BIRD}/effects", {**SINGLE, "config": {"flip": False}}),
+        (
+            "POST",
+            f"{V}/matrix/effects",
+            {"type": "rainbow", "config": {"flip": True, "mirror": False}},
+        ),
+        ("PUT", "/api/effects", {"action": "apply_global", "flip": "toggle"}),
+        ("GET", "/api/effects", None),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global",
+                "flip": "TOGGLE",
+                "mirror": "toggle",
+                "virtuals": ["matrix"],
+            },
+        ),
+        ("GET", "/api/effects", None),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "mirror": "toggle", "virtuals": []},
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global",
+                "flip": "toggle",
+                "virtuals": ["ghost", "empty"],
+            },
+        ),
+        ("PUT", "/api/effects", {"action": "apply_global", "gradient": "Rainbow"}),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "flip": "toggle", "gradient": "Rainbow"},
+        ),
+        ("GET", "/api/effects", None),
+    ],
     # Activation refused for a stale stored config.
     "activation": [
         ("PUT", BIRD, {"active": True}),
@@ -481,6 +525,7 @@ SCENARIOS: dict[str, list[Step]] = {
         ("PUT", BIRD, {"active": False}),
         ("POST", f"{BIRD}/effects/delete", {"type": "rainbow"}),
         ("PUT", "/api/effects", {"action": "apply_global", "brightness": 0.5}),
+        ("PUT", "/api/effects", {"action": "apply_global", "flip": "toggle"}),
         ("PUT", "/api/effects", {"action": "apply_global_effect", "type": "rainbow"}),
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["mirror"]}),
         ("DELETE", f"{BIRD}/effects", None),

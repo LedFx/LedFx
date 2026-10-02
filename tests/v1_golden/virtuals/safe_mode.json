@@ -125,6 +125,18 @@
       "PUT",
       "/api/effects",
       {
+        "action": "apply_global",
+        "flip": "toggle"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
         "action": "apply_global_effect",
         "type": "rainbow"
       }
