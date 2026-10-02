@@ -3,7 +3,28 @@
   "extends": [
     "github>LedFx/renovate-config"
   ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Tracks the vendored Scalar bundle (ledfx/api/v2/docs). Renovate only bumps SCALAR_VERSION; the scalar-vendored prek hook, run by autofix, rebuilds the bundle, its sha256, the licence and the ?v= in docs.html.",
+      "managerFilePatterns": [
+        "/^ledfx/api/v2/docs/SCALAR_VERSION$/"
+      ],
+      "matchStrings": [
+        "^(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*$"
+      ],
+      "depNameTemplate": "@scalar/api-reference",
+      "datasourceTemplate": "npm"
+    }
+  ],
   "packageRules": [
+    {
+      "description": "The Scalar bundle runs on the LedFx origin: a person reviews each bump. Never automerge.",
+      "matchPackageNames": [
+        "@scalar/api-reference"
+      ],
+      "automerge": false
+    },
     {
       "description": "Windows CI is pinned to windows-2022 on purpose: windows-2025 has audio device issues (see ci.yml). Move it by hand once that is understood.",
       "matchManagers": [

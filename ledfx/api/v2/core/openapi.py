@@ -59,7 +59,9 @@ class _OpenResponses(GenerateJsonSchema):
 
 
 def build_openapi(routes: Sequence[BoundRoute], *, version: str) -> dict[str, object]:
-    """The OpenAPI document for routes, deterministic for a given route table."""
+    """The OpenAPI document for routes, deterministic for a given route table.
+    Routes declared with in_schema=False are served but left out."""
+    routes = [r for r in routes if r.spec.in_schema]
     inputs: list[_Input] = [("problem", "serialization", TypeAdapter[object](Problem))]
     for route in routes:
         op = route.operation_id
