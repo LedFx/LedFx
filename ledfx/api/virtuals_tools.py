@@ -171,7 +171,7 @@ class VirtualsToolsEndpoint(RestEndpoint):
 
             highlight = Highlight(device, start, end, flip) if state else None
             try:
-                virtuals.set_highlight(vid, highlight)
+                virtuals.set_highlight(vid, highlight, strict_off=True)
             except (Conflict, Invalid) as err:
                 return await self.invalid_request(f"highlight error: {err.detail}")
 

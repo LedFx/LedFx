@@ -323,7 +323,7 @@ SCENARIOS: dict[str, list[Step]] = {
         ("PUT", "/api/virtuals_tools", {"tool": "force_color", "color": "notacolor"}),
         ("PUT", "/api/virtuals_tools", {"tool": "force_color"}),
         ("PUT", "/api/virtuals_tools", {"tool": "nope"}),
-        # dj bird is no longer calibrating.
+        # dj bird is no longer calibrating: v1 refuses turning its highlight off.
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
         # A cleared effect leaves a placeholder (DummyEffect) while it fades out.
         ("DELETE", f"{BIRD}/effects", None),

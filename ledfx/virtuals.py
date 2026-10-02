@@ -2193,14 +2193,25 @@ class Virtuals:
         """Calibration mode, where highlights are allowed (runtime only)."""
         self.get_or_raise(virtual_id).set_calibration(enabled)
 
-    def set_highlight(self, virtual_id: VirtualIdStr, h: Highlight | None) -> None:
+    def set_highlight(
+        self,
+        virtual_id: VirtualIdStr,
+        h: Highlight | None,
+        *,
+        strict_off: bool = False,
+    ) -> None:
         """Light a device's pixel range on a calibrating virtual (None: off).
 
         Raises Conflict when the virtual is not calibrating, Invalid for an
         unknown device or a range past its end; a refused highlight changes
-        nothing. None always turns the highlight off."""
+        nothing. None turns the highlight off, calibrating or not; with strict_off
+        (v1) it is refused with Conflict when the virtual is not calibrating."""
         virtual = self.get_or_raise(virtual_id)
         if h is None:
+            if strict_off and not virtual._calibration:
+                raise Conflict(
+                    f"Cannot set highlight when {virtual.name} is not in calibration mode"
+                )
             virtual._hl_state = False  # off whether or not it is calibrating
             return
         error = virtual.set_highlight(True, h.device_id, h.start, h.end, h.flip)

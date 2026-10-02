@@ -1,9 +1,9 @@
 import logging
-from collections.abc import Callable
 from json import JSONDecodeError
-from typing import SupportsFloat, cast
+from typing import SupportsFloat
 
 from aiohttp import web
+from pydantic import TypeAdapter
 
 from ledfx.api import RestEndpoint
 from ledfx.api.virtual_effects import process_fallback
@@ -13,6 +13,7 @@ from ledfx.configuration.models import GlobalEffectUpdate
 from ledfx.errors import Invalid
 
 _LOGGER = logging.getLogger(__name__)
+_GLOBAL_UPDATE = TypeAdapter(GlobalEffectUpdate)
 
 # The settings apply_global writes, in the order v1 checks them.
 GLOBAL_KEYS = (
@@ -153,8 +154,7 @@ class EffectsEndpoint(RestEndpoint):
             virtuals_filter = [VirtualIdStr(str(v)) for v in vlist]
 
         updated, skipped = self._ledfx.virtuals.apply_global_config(
-            # values holds validated, per-key typed entries
-            cast("Callable[..., GlobalEffectUpdate]", GlobalEffectUpdate)(**values),
+            _GLOBAL_UPDATE.validate_python(values),
             virtuals_filter,
         )
 

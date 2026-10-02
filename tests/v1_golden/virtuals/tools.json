@@ -484,7 +484,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Cannot set highlight when dj bird is not in calibration mode\"}}"
   },
   {
     "request": [

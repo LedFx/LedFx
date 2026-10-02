@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from ledfx.api.effects import EffectsEndpoint
 from ledfx.api.virtual import VirtualEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
+from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import (
     GlobalEffectUpdate,
@@ -666,3 +667,19 @@ async def test_v1_refused_activations_leave_the_registry_alone(
             assert response.status == 200  # v1 reports failures in the body
             assert (await response.json())["status"] == "failed"
     assert set(ledfx.effects) == before
+
+
+async def test_v1_highlight_off_outside_calibration_is_refused(
+    ledfx: MagicMock,
+) -> None:
+    app = build_app(ledfx, (VirtualsToolsEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+        response = await client.put(
+            "/api/virtuals_tools/dj%20bird", json={"tool": "highlight", "state": False}
+        )
+        text = await response.text()
+    assert "Cannot set highlight when dj bird is not in calibration mode" in text
+
+
+def test_v2_highlight_off_is_idempotent(ledfx: MagicMock) -> None:
+    ledfx.virtuals.set_highlight(BIRD, None)  # not calibrating: still fine
