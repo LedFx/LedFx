@@ -188,10 +188,9 @@ def test_a_stored_config_is_still_repaired_on_load(ledfx: MagicMock) -> None:
     assert (virtual.config.frequency_min, virtual.config.frequency_max) == (100, 900)
 
 
-def test_set_active_without_segments_is_invalid(ledfx: MagicMock) -> None:
-    with pytest.raises(Invalid) as caught:
+def test_set_active_without_segments_is_a_conflict(ledfx: MagicMock) -> None:
+    with pytest.raises(Conflict, match="no configured device segments"):
         ledfx.virtuals.set_active(VirtualIdStr("empty"), True)
-    assert caught.value.loc == ("body", "active")
     ledfx.config_store.request_save.assert_not_called()
 
 
@@ -667,22 +666,49 @@ def test_highlight_needs_calibration(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_highlight(BIRD, highlight)
     virtual = ledfx.virtuals.get_or_raise(BIRD)
     assert (virtual._hl_device, virtual._hl_start, virtual._hl_end) == ("strip", 0, 9)
-    with pytest.raises(Invalid, match="Device ghost not found"):
+    with pytest.raises(Invalid, match="Device ghost not found") as unknown:
         ledfx.virtuals.set_highlight(BIRD, Highlight("ghost", 0, 1))
-    with pytest.raises(Invalid, match="start and end must be less than 50"):
+    assert unknown.value.loc == ("body", "device_id")
+    with pytest.raises(Invalid, match="start and end must be less than 50") as past:
         ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 99))
+    assert past.value.loc == ("body", "end")
+    assert virtual.calibrating
+    ledfx.virtuals.set_calibration(BIRD, False)
+    assert not virtual.calibrating
     ledfx.virtuals.set_highlight(BIRD, None)
     assert virtual._hl_state is False
+
+
+def test_a_highlight_is_switched_on_after_its_range_is_set(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The render thread reads the range once _hl_state is on, so it goes last."""
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    ledfx.virtuals.set_calibration(BIRD, True)
+    order: list[str] = []
+
+    def spy(self: object, name: str, value: object) -> None:
+        if name.startswith("_hl_"):
+            order.append(name)
+        object.__setattr__(self, name, value)
+
+    monkeypatch.setattr(type(virtual), "__setattr__", spy)
+    ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 9))
+    assert order[-1] == "_hl_state"
 
 
 def test_copy_effect(ledfx: MagicMock) -> None:
     with pytest.raises(Conflict, match="no active effect on source virtual"):
         ledfx.virtuals.copy_effect(BIRD, [MIRROR])
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
-    ledfx.virtuals.copy_effect(BIRD, [MIRROR, VirtualIdStr("ghost")])
+    with pytest.raises(NotFound) as unknown:  # checked before anything starts
+        ledfx.virtuals.copy_effect(BIRD, [MIRROR, VirtualIdStr("ghost")])
+    assert unknown.value.ids == ("ghost",)
+    assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is None
+    ledfx.virtuals.copy_effect(BIRD, [MIRROR])
     copied = ledfx.virtuals.get_or_raise(MIRROR).active_effect
     assert copied.type == "rainbow" and copied.config.speed == 3.0
-    with pytest.raises(Invalid, match="no valid targets"):
+    with pytest.raises(Conflict, match="No target could run the effect"):
         ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("empty")])
 
 
@@ -725,7 +751,7 @@ def test_bulk_refusals_leave_nothing_in_the_registry(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     before = set(ledfx.effects)
     ledfx.virtuals.set_effect_all("rainbow", cfg({}), ["empty"])  # no segments
-    with pytest.raises(Invalid):
+    with pytest.raises(Conflict):
         ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("empty")])
     assert set(ledfx.effects) == before
 
@@ -802,7 +828,7 @@ def test_refused_activations_leave_the_registry_alone(ledfx: MagicMock) -> None:
     ledfx.virtuals.patch(BIRD, VirtualChanges(segments=[], active=False))
     before = set(ledfx.effects)
     for _ in range(5):
-        with pytest.raises(Invalid):  # no segments to run the restored effect on
+        with pytest.raises(Conflict):  # no segments to run the restored effect on
             ledfx.virtuals.set_active(BIRD, True)
     assert set(ledfx.effects) == before
 
@@ -835,6 +861,25 @@ async def test_v1_highlight_off_outside_calibration_is_refused(
     assert "Cannot set highlight when dj bird is not in calibration mode" in text
 
 
+async def test_v1_copy_skips_unknown_targets_and_lumps_refusals(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    app = build_app(ledfx, (VirtualsToolsEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+
+        async def copy(*target: str) -> str:
+            response = await client.put(
+                "/api/virtuals_tools/dj%20bird", json={"tool": "copy", "target": target}
+            )
+            return (await response.json())["status"]
+
+        assert await copy("ghost", "empty") == "failed"
+        assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is None
+        assert await copy("ghost", "mirror") == "success"
+    assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is not None
+
+
 def test_v2_highlight_off_is_idempotent(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_highlight(BIRD, None)  # not calibrating: still fine
 
@@ -845,7 +890,7 @@ def test_a_refused_patch_restores_a_config_v2_would_refuse(ledfx: MagicMock) -> 
     before = virtual.config
     assert before.rotate == 2
     changes = VirtualChanges(config=replace_model(before, rotate=0), active=True)
-    with pytest.raises(Invalid):  # no segments to activate on
+    with pytest.raises(Conflict):  # no segments to activate on
         ledfx.virtuals.patch(virtual.id, changes)
     assert virtual.config == before
     assert virtual.entry is not None

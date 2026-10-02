@@ -9,7 +9,8 @@ from ledfx.api import RestEndpoint
 from ledfx.color import validate_color
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Highlight, OneshotParams
-from ledfx.errors import Conflict, Invalid
+from ledfx.effects import DummyEffect
+from ledfx.errors import Conflict, Invalid, ensure_writable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -170,8 +171,15 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request("start and end must be integers")
 
             highlight = Highlight(device, start, end, flip) if state else None
+            virtual = virtuals.get_or_raise(vid)
+            if not state and not virtual.calibrating:
+                # v1-compat: v1 refuses highlight off outside calibration;
+                # the manager (and v2) treat it as idempotent.
+                return await self.invalid_request(
+                    f"highlight error: Cannot set highlight when {virtual.name} is not in calibration mode"
+                )
             try:
-                virtuals.set_highlight(vid, highlight, strict_off=True)
+                virtuals.set_highlight(vid, highlight)
             except (Conflict, Invalid) as err:
                 return await self.invalid_request(f"highlight error: {err.detail}")
 
@@ -192,10 +200,21 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Required attribute for copy, target must be a list"
                 )
+            # v1-compat: v1 skips unknown targets and lumps "every target
+            # refused" with "none known"; the manager raises NotFound / Conflict.
+            ensure_writable(self._ledfx)
+            source = virtuals.get_or_raise(vid).active_effect
+            if source is None or isinstance(source, DummyEffect):
+                return await self.invalid_request(
+                    "Virtual copy failed, no active effect on source virtual"
+                )
+            known = [VirtualIdStr(t) for t in target if virtuals.get(t) is not None]
             try:
-                virtuals.copy_effect(vid, [VirtualIdStr(t) for t in target])
-            except (Conflict, Invalid) as err:
-                return await self.invalid_request(err.detail)
+                virtuals.copy_effect(vid, known)
+            except Conflict:
+                return await self.invalid_request(
+                    "Virtual copy failed, no valid targets"
+                )
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)

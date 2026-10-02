@@ -188,12 +188,14 @@ async def clear_highlight(virtual_id: VirtualIdParam, ledfx: LedFxDep) -> None:
     ledfx.virtuals.set_highlight(virtual_id, None)
 
 
-@router.post("/virtuals/{virtual_id}/copy-effect", status=204)
+@router.post("/virtuals/{virtual_id}/copy-effect", status=204, errors=[NotFound])
 async def copy_effect(
     virtual_id: VirtualIdParam, body: CopyEffect, ledfx: LedFxDep
 ) -> None:
     """Start this virtual's effect, with its settings, on the targets.
 
-    Targets that refuse it are passed over; 422 if none takes it.
+    404 if a target does not exist (nothing is copied). Targets that refuse
+    the effect are passed over; 409 if none takes it, or if this virtual runs
+    nothing.
     """
-    ledfx.virtuals.copy_effect(virtual_id, _known(ledfx, body.targets, "targets") or [])
+    ledfx.virtuals.copy_effect(virtual_id, body.targets)

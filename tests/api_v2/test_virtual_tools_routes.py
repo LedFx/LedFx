@@ -214,9 +214,11 @@ async def test_calibration_and_highlight(v2_client: Client) -> None:
     )
     body = await expect_problem(resp, 422, "validation")
     assert body["detail"] == "Device ghost not found"
+    assert body["errors"][0]["loc"] == ["body", "device_id"]
     resp = await v2_client.put(f"{BIRD}/highlight", json={**highlight, "end": 99})
     body = await expect_problem(resp, 422, "validation")
     assert body["detail"] == "start and end must be less than 50"
+    assert body["errors"][0]["loc"] == ["body", "end"]
     assert (await v2_client.delete(f"{BIRD}/highlight")).status == 204
     assert not bird._hl_state
     # A refused PUT changes nothing: the cleared highlight stays off.
@@ -246,12 +248,20 @@ async def test_copy_effect(v2_client: Client) -> None:
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["mirror"]})
     assert resp.status == 204
     assert _running(v2_client, "mirror") == "rainbow"
-    resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["ghost"]})
-    body = await expect_problem(resp, 422, "validation")
-    assert body["errors"][0]["loc"] == ["body", "targets", 0]
+    # An unknown target is a 404 and nothing is copied, even to the known ones.
+    resp = await v2_client.post(
+        f"{BIRD}/copy-effect", json={"targets": ["matrix", "ghost"]}
+    )
+    await expect_problem(resp, 404, "not-found")
+    assert _running(v2_client, "matrix") == ""
+    # A target that refuses is a state conflict; one that takes it is enough.
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["empty"]})
-    body = await expect_problem(resp, 422, "validation")
-    assert body["detail"] == "Virtual copy failed, no valid targets"
+    body = await expect_problem(resp, 409, "conflict")
+    assert "errors" not in body
+    resp = await v2_client.post(
+        f"{BIRD}/copy-effect", json={"targets": ["empty", "mirror"]}
+    )
+    assert resp.status == 204
 
 
 async def test_safe_mode(v2_client: Client) -> None:

@@ -50,7 +50,8 @@ async def set_effect(
     config is checked against the type's settings; without it the settings
     this virtual last used for the type apply (409 if they no longer pass
     the type's checks). With fallback_s the current effect comes back after
-    that many seconds (409 if the virtual is being streamed to).
+    that many seconds (409 if the virtual is being streamed to). Starting an
+    effect makes the virtual active.
     """
     ledfx.virtuals.get_or_raise(virtual_id)
     variant = effect_variant(body.type)
@@ -73,6 +74,7 @@ async def update_effect(
 
     The settings are checked against the running effect's type. A colour
     change on an effect that blends colours restarts it, so it fades in.
+    Restarting the effect makes the virtual active.
     """
     type_id, config = ledfx.virtuals.running_effect(virtual_id)
     variant = effect_variant(type_id)

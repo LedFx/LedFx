@@ -7,7 +7,7 @@ from ledfx.api import RestEndpoint
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Segment
 from ledfx.effects import DummyEffect
-from ledfx.errors import Invalid
+from ledfx.errors import Conflict, Invalid
 from ledfx.virtuals import Virtual
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class VirtualEndpoint(RestEndpoint):
 
         try:
             virtual = self._ledfx.virtuals.set_active(VirtualIdStr(virtual_id), active)
-        except Invalid as err:
+        except (Invalid, Conflict) as err:  # v1-compat: a refusal was once Invalid
             error_message = f"Unable to set virtual {virtual.id} status: {err.detail}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)

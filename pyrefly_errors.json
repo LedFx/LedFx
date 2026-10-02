@@ -17270,27 +17270,6 @@
       "severity": "error"
     },
     {
-      "column": 47,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `start`",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `end`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `flip`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/virtuals.py",
       "name": "missing-attribute",

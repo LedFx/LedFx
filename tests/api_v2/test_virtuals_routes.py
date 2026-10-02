@@ -179,7 +179,7 @@ async def test_a_refused_patch_keeps_a_config_v1_stored(v2_client: Client) -> No
     resp = await v2_client.patch(
         f"{V}/empty", json={"config": {"rotate": 0}, "active": True}
     )
-    await expect_problem(resp, 422, "validation")
+    await expect_problem(resp, 409, "conflict")
     assert virtual.config.rotate == 2
     assert virtual.entry.config.rotate == 2
 
@@ -279,8 +279,7 @@ async def test_a_refused_step_undoes_the_whole_patch(v2_client: Client) -> None:
     core = core_of(v2_client)
     before = _snapshot(core)
     resp = await v2_client.patch(MIRROR, json=MIRROR_PATCH)
-    body = await expect_problem(resp, 422, "validation")
-    assert body["errors"][0]["loc"] == ["body", "active"]
+    await expect_problem(resp, 409, "conflict")
     assert _snapshot(core) == before
     core.config_store.request_save.assert_not_called()
 

@@ -791,31 +791,39 @@ class Virtual:
         if not calibration:
             self._hl_state = False
 
-    def set_highlight(self, state, device_id, start, end, flip):
-        if self._calibration is False:
-            return f"Cannot set highlight when {self.name} is not in calibration mode"
+    @property
+    def calibrating(self) -> bool:
+        return self._calibration is not False
 
-        if not state:
-            self._hl_state = False
-            return None
+    def clear_highlight(self) -> None:
+        self._hl_state = False
 
-        device_id = device_id.lower()
+    def set_highlight(self, h: Highlight) -> None:
+        """Light a device's pixel range. Raises Conflict when not calibrating,
+        Invalid (at body.device_id / body.end) for an unknown device or a range
+        past its end; a refused highlight changes nothing."""
+        if not self.calibrating:
+            raise Conflict(
+                f"Cannot set highlight when {self.name} is not in calibration mode"
+            )
+
+        device_id = h.device_id.lower()
         device = self._ledfx.devices.get(device_id)
         if device is None:
-            return f"Device {device_id} not found"
+            raise Invalid(f"Device {device_id} not found", loc=("body", "device_id"))
 
-        if start > device.pixel_count - 1 or end > device.pixel_count - 1:
-            return f"start and end must be less than {device.pixel_count}"
+        if h.start > device.pixel_count - 1 or h.end > device.pixel_count - 1:
+            raise Invalid(
+                f"start and end must be less than {device.pixel_count}",
+                loc=("body", "end"),
+            )
 
-        self._hl_state = True
+        # The render thread reads the range once _hl_state is on: set it last.
         self._hl_device = device_id
-        self._hl_start = start
-        self._hl_end = end
-        if flip:
-            self._hl_step = -1
-        else:
-            self._hl_step = 1
-        return None
+        self._hl_start = h.start
+        self._hl_end = h.end
+        self._hl_step = -1 if h.flip else 1
+        self._hl_state = True
 
     @property
     def active_effect(self):
@@ -1782,8 +1790,9 @@ class Virtuals:
         return virtual
 
     def set_active(self, virtual_id: VirtualIdStr, active: bool) -> Virtual:
-        """Activate or deactivate. Raises Invalid when activating is refused;
-        the refused change is undone."""
+        """Activate or deactivate. Raises Conflict when activating is refused
+        (no segments, no effect to restore, a stale stored config); the refused
+        change is undone."""
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
         self._apply_active(virtual, active)
@@ -1794,8 +1803,8 @@ class Virtuals:
         """Apply the parts of changes that are set: segments, config, active.
 
         All or nothing: if a step raises, the steps before it are undone and
-        nothing is saved. Raises Invalid like set_segments, set_config and
-        set_active.
+        nothing is saved. Raises Invalid like set_segments and set_config, and
+        Conflict like set_active.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
@@ -1935,7 +1944,7 @@ class Virtuals:
         except (ValueError, RuntimeError) as err:  # includes ValidationError
             if effect is not None:
                 self._discard_refused(virtual, effect)
-            raise Invalid(str(err), loc=("body", "active")) from err
+            raise Conflict(str(err)) from err
         if effect is not None:
             virtual.update_effect_config(effect)
         entry = virtual.entry
@@ -2278,65 +2287,49 @@ class Virtuals:
         """Calibration mode, where highlights are allowed (runtime only)."""
         self.get_or_raise(virtual_id).set_calibration(enabled)
 
-    def set_highlight(
-        self,
-        virtual_id: VirtualIdStr,
-        h: Highlight | None,
-        *,
-        strict_off: bool = False,
-    ) -> None:
+    def set_highlight(self, virtual_id: VirtualIdStr, h: Highlight | None) -> None:
         """Light a device's pixel range on a calibrating virtual (None: off).
 
         Raises Conflict when the virtual is not calibrating, Invalid for an
         unknown device or a range past its end; a refused highlight changes
-        nothing. None turns the highlight off, calibrating or not; with strict_off
-        (v1) it is refused with Conflict when the virtual is not calibrating."""
+        nothing. None turns the highlight off, calibrating or not."""
         virtual = self.get_or_raise(virtual_id)
         if h is None:
-            if strict_off and not virtual._calibration:
-                raise Conflict(
-                    f"Cannot set highlight when {virtual.name} is not in calibration mode"
-                )
-            virtual._hl_state = False  # off whether or not it is calibrating
-            return
-        error = virtual.set_highlight(True, h.device_id, h.start, h.end, h.flip)
-        if error is None:
-            return
-        if not virtual._calibration:
-            raise Conflict(error)
-        raise Invalid(error)
+            virtual.clear_highlight()
+        else:
+            virtual.set_highlight(h)
 
     def copy_effect(
         self, virtual_id: VirtualIdStr, targets: Sequence[VirtualIdStr]
     ) -> None:
         """Start the source's effect, with its settings, on each target.
 
-        Unknown targets and targets that refuse it are passed over. Raises
-        Conflict if the source runs nothing, Invalid if no target took it."""
+        Raises NotFound for an unknown target before anything starts, Conflict
+        if the source runs nothing or no target took the effect. A target that
+        refuses is passed over when another takes it; a repeated one is copied
+        to once."""
         ensure_writable(self._ledfx)
         source = self.get_or_raise(virtual_id).active_effect
         if source is None or isinstance(source, DummyEffect):
             raise Conflict("Virtual copy failed, no active effect on source virtual")
+        missing = [t for t in targets if t not in self._virtuals]
+        if missing:
+            raise NotFound("Virtual", *missing)
         updated = 0
-        for target_id in targets:
-            target = self._virtuals.get(target_id)
-            if target is None:
-                continue
+        for target_id in dict.fromkeys(targets):  # a repeated target once
             try:
                 effect = self._ledfx.effects.create(
                     ledfx=self._ledfx, type=source.type, config=source.config
                 )
-                self._start_effect(target, effect)
-            except (ValueError, RuntimeError, EffectRejected) as err:
+                self._start_effect(self._virtuals[target_id], effect)
+            except EffectRejected as err:
                 _LOGGER.warning(
                     "Unable to copy effect to virtual %s: %s", target_id, err
                 )
                 continue
             updated += 1
         if updated == 0:
-            raise Invalid(
-                "Virtual copy failed, no valid targets", loc=("body", "targets")
-            )
+            raise Conflict("No target could run the effect")
         self._ledfx.config_store.request_save()
 
     @classmethod

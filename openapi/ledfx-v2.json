@@ -32881,7 +32881,7 @@
     },
     "/api/v2/virtuals/{virtual_id}/copy-effect": {
       "post": {
-        "description": "Targets that refuse it are passed over; 422 if none takes it.",
+        "description": "404 if a target does not exist (nothing is copied). Targets that refuse\nthe effect are passed over; 409 if none takes it, or if this virtual runs\nnothing.",
         "operationId": "copy_effect",
         "parameters": [
           {
@@ -33425,7 +33425,7 @@
         ]
       },
       "patch": {
-        "description": "The settings are checked against the running effect's type. A colour\nchange on an effect that blends colours restarts it, so it fades in.",
+        "description": "The settings are checked against the running effect's type. A colour\nchange on an effect that blends colours restarts it, so it fades in.\nRestarting the effect makes the virtual active.",
         "operationId": "update_effect",
         "parameters": [
           {
@@ -33813,7 +33813,7 @@
         ]
       },
       "put": {
-        "description": "config is checked against the type's settings; without it the settings\nthis virtual last used for the type apply (409 if they no longer pass\nthe type's checks). With fallback_s the current effect comes back after\nthat many seconds (409 if the virtual is being streamed to).",
+        "description": "config is checked against the type's settings; without it the settings\nthis virtual last used for the type apply (409 if they no longer pass\nthe type's checks). With fallback_s the current effect comes back after\nthat many seconds (409 if the virtual is being streamed to). Starting an\neffect makes the virtual active.",
         "operationId": "set_effect",
         "parameters": [
           {
