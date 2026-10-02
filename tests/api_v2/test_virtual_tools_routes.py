@@ -98,7 +98,24 @@ async def test_apply_config_counts_a_refusing_effect_as_failed(
 
     monkeypatch.setattr(effect, "update_config", refuse)
     resp = await v2_client.post(f"{V}/apply-config", json={"gradient": "Rainbow"})
+    assert resp.status == 200
     assert await resp.json() == {"updated": 0, "skipped": 1, "failed": 1}
+
+
+async def test_apply_config_answers_500_for_a_real_error(
+    v2_client: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await _start(v2_client, "dj bird")
+    effect = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    effect = effect.active_effect
+    assert effect is not None
+
+    def bug(config: object) -> None:
+        raise TypeError("bug")
+
+    monkeypatch.setattr(effect, "update_config", bug)
+    resp = await v2_client.post(f"{V}/apply-config", json={"brightness": 0.5})
+    assert resp.status == 500
 
 
 async def test_set_effect_on_virtuals(v2_client: Client) -> None:

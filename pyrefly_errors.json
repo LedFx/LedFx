@@ -21393,20 +21393,6 @@
       "severity": "error"
     },
     {
-      "column": 23,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_effect` is missing an annotation for parameter `schema_keys`",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_effect` is missing an annotation for parameter `hidden_keys`",
-      "severity": "error"
-    },
-    {
       "column": 54,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21425,27 +21411,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_make_mock_virtual` is missing an annotation for parameter `effect`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__getitem__` is missing an annotation for parameter `key`",
       "severity": "error"
     },
     {
@@ -21607,13 +21572,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_hidden_keys_skipped` is missing an annotation for parameter `service_v`",
       "severity": "error"
     },
     {
@@ -21848,20 +21806,6 @@
       "severity": "error"
     },
     {
-      "column": 40,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_virtual_with_set_effect` is missing an annotation for parameter `vid`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`create` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
       "column": 29,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21887,13 +21831,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`ledfx_album_art` is missing an annotation for parameter `tmp_path`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`service_aa` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {
@@ -21929,13 +21866,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_empty_virtual_ids_returns_zero` is missing an annotation for parameter `service_aa`",
-      "severity": "error"
-    },
-    {
-      "column": 63,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_empty_virtual_ids_returns_zero` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {
@@ -22097,13 +22027,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_set_effect_error_skips_virtual` is missing an annotation for parameter `service_aa`",
-      "severity": "error"
-    },
-    {
-      "column": 63,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_set_effect_error_skips_virtual` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {

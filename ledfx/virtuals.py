@@ -1980,6 +1980,7 @@ class Virtuals:
         config: PluginConfig | None,
         *,
         fallback: float | None = None,
+        store: bool = True,
     ) -> Virtual:
         """Start an effect; config None restores the type's stored config.
 
@@ -1989,7 +1990,9 @@ class Virtuals:
         unregistered type, Conflict for a fallback on a virtual that is
         streamed to or for a stored config that no longer validates, and
         EffectRejected when the virtual cannot run the effect. Every check
-        runs before an effect is created.
+        runs before an effect is created. With store False the effect only
+        runs: nothing is stored or saved, so a restart brings back the stored
+        effect.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
@@ -1999,8 +2002,9 @@ class Virtuals:
         if config is None:
             config = self._stored_config(virtual, type_id)
         effect = self._create_effect(type_id, config)
-        self._start_effect(virtual, effect, fallback)
-        self._ledfx.config_store.request_save()
+        self._start_effect(virtual, effect, fallback, store=store)
+        if store:
+            self._ledfx.config_store.request_save()
         return virtual
 
     def patch_effect(
@@ -2134,9 +2138,15 @@ class Virtuals:
         self.get_or_raise(virtual_id).fallback_fire_set_with_lock()
 
     def _start_effect(
-        self, virtual: Virtual, effect: Effect, fallback: float | None = None
+        self,
+        virtual: Virtual,
+        effect: Effect,
+        fallback: float | None = None,
+        *,
+        store: bool = True,
     ) -> None:
-        """Run a freshly created effect on a virtual and store its config.
+        """Run a freshly created effect on a virtual and store its config
+        (unless store is False).
 
         Raises EffectRejected (the effect unregistered) when the virtual
         refuses it."""
@@ -2145,7 +2155,8 @@ class Virtuals:
         except (ValueError, RuntimeError) as err:
             self._discard_refused(virtual, effect)
             raise EffectRejected(effect, str(err)) from err
-        virtual.update_effect_config(effect)
+        if store:
+            virtual.update_effect_config(effect)
 
     def _discard_refused(self, virtual: Virtual, effect: Effect) -> None:
         """Unregister a refused effect, unless the virtual already holds it
@@ -2210,7 +2221,7 @@ class Virtuals:
                 )
             except ValueError as err:
                 raise Invalid(str(err), loc=("body", "gradient")) from err
-        result = apply_config_to_active_effects(
+        result = _apply_to_running_effects(
             self.values(), changes, target_ids=virtual_ids
         )
         if result.updated > 0:
@@ -2459,7 +2470,7 @@ class Virtuals:
         _LOGGER.info("Active Devices: %s", active_devices)
 
 
-def apply_config_to_active_effects(
+def _apply_to_running_effects(
     virtuals,
     config_updates: dict,
     target_ids: Collection[str] | None = None,
@@ -2482,6 +2493,10 @@ def apply_config_to_active_effects(
     Returns:
         The ``ApplyConfigResult`` counts: skipped effects have none of the
         settings, failed ones refused them.
+
+    Only ``ValueError``/``RuntimeError`` from an effect count as a refusal;
+    anything else is a bug and propagates, leaving the effects already visited
+    updated in memory and not saved.
     """
     updated = 0
     skipped = 0
@@ -2520,11 +2535,6 @@ def apply_config_to_active_effects(
                 "Effect on virtual %s refused the config: %s",
                 getattr(virtual, "id", "?"),
                 exc,
-            )
-            failed += 1
-        except Exception:
-            _LOGGER.exception(
-                "Failed to update config on virtual %s", getattr(virtual, "id", "?")
             )
             failed += 1
 

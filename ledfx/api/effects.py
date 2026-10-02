@@ -121,8 +121,8 @@ class EffectsEndpoint(RestEndpoint):
                 if key == "gradient":
                     if not isinstance(value, str):
                         raise TypeError("must be a string")
-                    # The manager resolves it again; this keeps v1's error
-                    # order and text.
+                    # v1-compat: the manager resolves it again; this keeps v1's
+                    # error order and text.
                     resolve_gradient(value, self._ledfx.gradients)
                     update = replace(update, gradient=value)
                 elif key in ("flip", "mirror"):
@@ -170,6 +170,7 @@ class EffectsEndpoint(RestEndpoint):
         if toggles:
             # v1-compat: "toggle" inverts each effect's own value, so v1 makes
             # one explicit-bool call per virtual and sums the counts.
+            # ponytail: N resolves and N saves for a v1-only path; delete with v1.
             ensure_writable(self._ledfx)
             counts = ApplyConfigResult(0, 0, 0)
             for virtual in list(self._ledfx.virtuals.values()):

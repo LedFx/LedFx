@@ -581,6 +581,7 @@ def test_apply_global_config_gradient_and_filter(ledfx: MagicMock) -> None:
     with pytest.raises(Invalid) as caught:
         ledfx.virtuals.apply_global_config(GlobalEffectUpdate(gradient="nope("))
     assert caught.value.loc == ("body", "gradient")
+    assert not caught.value.detail.startswith('Invalid value for "gradient"')
 
 
 def test_apply_global_config_counts_refusals_apart_from_skips(
@@ -599,6 +600,21 @@ def test_apply_global_config_counts_refusals_apart_from_skips(
     assert ledfx.virtuals.apply_global_config(
         GlobalEffectUpdate(gradient="Dancefloor")
     ) == ApplyConfigResult(updated=0, skipped=1, failed=1)
+
+
+def test_apply_global_config_lets_a_real_error_through(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    effect = ledfx.virtuals.get_or_raise(BIRD).active_effect
+    assert effect is not None
+
+    def bug(config: object) -> None:
+        raise TypeError("bug")
+
+    monkeypatch.setattr(effect, "update_config", bug)
+    with pytest.raises(TypeError):
+        ledfx.virtuals.apply_global_config(GlobalEffectUpdate(brightness=0.5))
 
 
 def test_set_effect_all_counts_each_outcome(ledfx: MagicMock) -> None:

@@ -13,14 +13,14 @@ import urllib.parse
 import urllib.request
 
 from PIL import Image
+from pydantic import ValidationError
 
 from ledfx.assets import (
     save_asset,
 )
-from ledfx.color import (
-    build_gradient_config,
-)
-from ledfx.configuration.models import NowPlayingConfig
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import GlobalEffectUpdate, NowPlayingConfig
+from ledfx.errors import Conflict, Invalid, NotFound, SafeMode
 from ledfx.events import (
     NowPlayingArtworkChangedEvent,
     NowPlayingClearedEvent,
@@ -51,7 +51,6 @@ from ledfx.utilities.security_utils import (
     validate_pil_image,
     validate_url_safety,
 )
-from ledfx.virtuals import apply_config_to_active_effects
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -516,12 +515,13 @@ class NowPlayingService:
         self._ledfx.config_store.request_save()
 
     def apply_gradient_to_virtuals(self) -> int:
-        """Apply the current gradient + color group updates to target virtuals.
+        """Apply the current gradient to the target virtuals' running effects.
 
-        Uses :func:`~ledfx.color.build_gradient_config` for gradient
-        resolution / color-group sampling and
-        :func:`~ledfx.virtuals.apply_config_to_active_effects` for the
-        per-effect update loop.
+        Goes through :meth:`~ledfx.virtuals.Virtuals.apply_global_config`, which
+        resolves the gradient, samples its colours and saves. Configured ids
+        that no longer exist are dropped; an empty list means every virtual.
+        A refusal or failure is logged and answers 0: this runs from event
+        handlers, which must not raise.
 
         Returns:
             The number of effects successfully updated.
@@ -531,37 +531,31 @@ class NowPlayingService:
             return 0
 
         virtuals = getattr(self._ledfx, "virtuals", None)
-        if virtuals is None:
+        if virtuals is None:  # the core builds virtuals after this service
             return 0
 
-        gradients_collection = getattr(self._ledfx, "gradients", None)
-        if gradients_collection is None:
-            return 0
-
-        # Resolve the gradient and sample color groups
+        ids = [
+            VirtualIdStr(vid)
+            for vid in self._gradient_virtual_ids
+            if virtuals.get(vid) is not None
+        ]
         try:
-            config_updates = build_gradient_config(gradient_str, gradients_collection)
-        except Exception as exc:  # noqa: BLE001
-            _LOGGER.warning("Failed to resolve gradient: %s", exc)
+            result = virtuals.apply_global_config(
+                GlobalEffectUpdate(gradient=gradient_str),
+                ids if self._gradient_virtual_ids else None,
+            )
+        except SafeMode:
+            _LOGGER.debug("Now Playing gradient not applied: safe mode")
+            return 0
+        except (Invalid, NotFound, Conflict) as exc:
+            _LOGGER.warning("Failed to apply Now Playing gradient: %s", exc)
+            return 0
+        except Exception:
+            _LOGGER.exception("Failed to apply Now Playing gradient")
             return 0
 
-        # Determine target virtuals
-        target_ids = (
-            set(self._gradient_virtual_ids) if self._gradient_virtual_ids else None
-        )
-
-        updated = apply_config_to_active_effects(
-            virtuals.values(),
-            config_updates,
-            target_ids=target_ids,
-        ).updated
-
-        # Persist configuration changes
-        if updated > 0:
-            self._ledfx.config_store.request_save()
-
-        _LOGGER.info("Applied Now Playing gradient to %d effect(s)", updated)
-        return updated
+        _LOGGER.info("Applied Now Playing gradient to %d effect(s)", result.updated)
+        return result.updated
 
     def _is_audio_active(self) -> bool:
         """Return True if the audio stream is active, False otherwise."""
@@ -573,16 +567,16 @@ class NowPlayingService:
     def _apply_track_text_to_virtuals(self) -> int:
         """Apply current track info as a Texter effect on target virtuals.
 
-        Uses :meth:`~ledfx.virtuals.Virtual.set_effect` with the ``fallback``
+        Uses :meth:`~ledfx.virtuals.Virtuals.set_effect` with the ``fallback``
         parameter for temporary display.  When ``track_text.duration`` is 0,
-        the effect is applied permanently (no restore timer).
+        the effect stays until something replaces it (no restore timer). It
+        is never stored, so a restart brings back the virtual's own effect.
 
         Gate conditions (all must hold):
 
         * ``track_text.enabled`` is ``True``
         * ``track_text.virtual_ids`` is non-empty
         * ``self._state.metadata`` is set
-        * ``self._ledfx.virtuals`` and ``self._ledfx.effects`` are available
         * Audio stream is active
 
         Returns:
@@ -603,14 +597,6 @@ class NowPlayingService:
 
         metadata = self._state.metadata
         if not metadata:
-            return 0
-
-        virtuals = getattr(self._ledfx, "virtuals", None)
-        if virtuals is None:
-            return 0
-
-        effects_registry = getattr(self._ledfx, "effects", None)
-        if effects_registry is None:
             return 0
 
         # Build display string — normalise away YouTube/video noise first
@@ -637,51 +623,23 @@ class NowPlayingService:
                 effect_config = dict(user.config)
 
         effect_config["text"] = text
-        updated = 0
-
-        for virtual_id in virtual_ids:
-            virtual = virtuals.get(virtual_id)
-            if virtual is None:
-                _LOGGER.warning(
-                    "Now Playing track text: virtual %r not found, skipping",
-                    virtual_id,
-                )
-                continue
-
-            try:
-                effect = effects_registry.create(
-                    ledfx=self._ledfx,
-                    type="texter2d",
-                    config=effect_config,
-                )
-                if duration == 0:
-                    virtual.set_effect(effect)
-                else:
-                    virtual.set_effect(effect, fallback=float(duration))
-                updated += 1
-            except Exception as exc:  # noqa: BLE001
-                _LOGGER.warning(
-                    "Now Playing track text: failed to set effect on virtual %r: %s",
-                    virtual_id,
-                    exc,
-                )
-
-        _LOGGER.info("Applied Now Playing track text to %d virtual(s)", updated)
-        return updated
+        return self._set_effect_on_virtuals(
+            virtual_ids, "texter2d", effect_config, duration, "track text"
+        )
 
     def _apply_album_art_to_virtuals(self) -> int:
         """Apply current album artwork as an Image effect on target virtuals.
 
-        Uses :meth:`~ledfx.virtuals.Virtual.set_effect` with the ``fallback``
+        Uses :meth:`~ledfx.virtuals.Virtuals.set_effect` with the ``fallback``
         parameter for temporary display.  When ``album_art.duration`` is 0,
-        the effect is applied permanently (no restore timer).
+        the effect stays until something replaces it (no restore timer). It
+        is never stored, so a restart brings back the virtual's own effect.
 
         Gate conditions (all must hold):
 
         * ``album_art.enabled`` is ``True``
         * ``album_art.virtual_ids`` is non-empty
         * ``self._state.artwork.cache_key`` is set
-        * ``self._ledfx.virtuals`` and ``self._ledfx.effects`` are available
         * Audio stream is active
 
         Returns:
@@ -703,14 +661,6 @@ class NowPlayingService:
         if not artwork or not artwork.cache_key:
             return 0
 
-        virtuals = getattr(self._ledfx, "virtuals", None)
-        if virtuals is None:
-            return 0
-
-        effects_registry = getattr(self._ledfx, "effects", None)
-        if effects_registry is None:
-            return 0
-
         duration = album_art_cfg["duration"]
 
         # Start from the built-in "artwork" preset so settings like bilinear
@@ -719,36 +669,72 @@ class NowPlayingService:
         artwork_preset = ledfx_presets.get("imagespin", {}).get("artwork")
         preset_config = artwork_preset["config"] if artwork_preset else {}
         effect_config = {**preset_config, "image_source": artwork.cache_key}
-        updated = 0
+        return self._set_effect_on_virtuals(
+            virtual_ids, "imagespin", effect_config, duration, "album art"
+        )
 
+    def _set_effect_on_virtuals(
+        self,
+        virtual_ids: list[str],
+        type_id: str,
+        effect_config: dict[str, object],
+        duration: float,
+        label: str,
+    ) -> int:
+        """Start one effect on each listed virtual through the manager (for
+        *duration* seconds, or until replaced when it is 0), without storing
+        it or saving the config. A virtual that is gone or refuses the effect
+        is logged and skipped; so are all of them in safe mode. Returns how
+        many took it."""
+        virtuals = getattr(self._ledfx, "virtuals", None)
+        if virtuals is None:  # the core builds virtuals after this service
+            return 0
+        try:
+            config = (
+                self._ledfx.effects.get_class(type_id)
+                .config_model()
+                .model_validate(effect_config)
+            )
+        except ValidationError as exc:
+            _LOGGER.warning("Now Playing %s: invalid effect config: %s", label, exc)
+            return 0
+
+        updated = 0
         for virtual_id in virtual_ids:
-            virtual = virtuals.get(virtual_id)
-            if virtual is None:
+            if virtuals.get(virtual_id) is None:
                 _LOGGER.warning(
-                    "Now Playing album art: virtual %r not found, skipping",
+                    "Now Playing %s: virtual %r not found, skipping",
+                    label,
                     virtual_id,
                 )
                 continue
-
             try:
-                effect = effects_registry.create(
-                    ledfx=self._ledfx,
-                    type="imagespin",
-                    config=effect_config,
+                virtuals.set_effect(
+                    VirtualIdStr(virtual_id),
+                    type_id,
+                    config,
+                    fallback=None if duration == 0 else float(duration),
+                    store=False,
                 )
-                if duration == 0:
-                    virtual.set_effect(effect)
-                else:
-                    virtual.set_effect(effect, fallback=float(duration))
                 updated += 1
-            except Exception as exc:  # noqa: BLE001
+            except SafeMode:
+                _LOGGER.debug("Now Playing %s not applied: safe mode", label)
+                return updated
+            except (Invalid, NotFound, Conflict) as exc:
                 _LOGGER.warning(
-                    "Now Playing album art: failed to set effect on virtual %r: %s",
+                    "Now Playing %s: virtual %r refused the effect: %s",
+                    label,
                     virtual_id,
                     exc,
                 )
+            except Exception:
+                _LOGGER.exception(
+                    "Now Playing %s: failed to set effect on virtual %r",
+                    label,
+                    virtual_id,
+                )
 
-        _LOGGER.info("Applied Now Playing album art to %d virtual(s)", updated)
+        _LOGGER.info("Applied Now Playing %s to %d virtual(s)", label, updated)
         return updated
 
     # ------------------------------------------------------------------

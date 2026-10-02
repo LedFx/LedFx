@@ -7,10 +7,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL import Image
-from pydantic import ValidationError, create_model
+from pydantic import ValidationError
 
+from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.plugin import PluginConfig
-from ledfx.effects import DummyEffect
+from ledfx.effects import DummyEffect, Effect
 from ledfx.events import Event
 from ledfx.nowplaying.models import (
     ArtworkReference,
@@ -19,6 +20,7 @@ from ledfx.nowplaying.models import (
 )
 from ledfx.nowplaying.service import NowPlayingService
 from tests.test_utilities.fake_ledfx import fake_ledfx
+from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
 
 
 class _DummyEvents:
@@ -592,62 +594,46 @@ class TestNowPlayingServiceEvents:
 # ------------------------------------------------------------------
 
 
-def _make_mock_model(*keys: str) -> type[PluginConfig]:
-    """A plugin config model with the given optional string keys."""
-    fields: dict[str, tuple[type[str], str]] = {k: (str, "") for k in keys}
-    return create_model("MockEffect", __base__=PluginConfig, **fields)  # pyrefly: ignore[no-matching-overload]
-
-
-def _make_mock_effect(schema_keys, hidden_keys=None, config=None):
-    """Create a mock effect that mimics the Effect interface for apply_global."""
-    eff = MagicMock()
-    eff.HIDDEN_KEYS = hidden_keys or []
-    eff._config = config or {}
-
-    mock_model = _make_mock_model(*schema_keys)
-    type(eff).config_model = MagicMock(return_value=mock_model)
-    return eff
-
-
-def _make_mock_virtual(vid, effect=None):
-    """Create a mock virtual with an id and optional active_effect."""
-    virtual = MagicMock()
-    virtual.id = vid
-    virtual.active_effect = effect
-    return virtual
-
-
-class _MockGradients:
-    """Minimal gradients collection stub."""
-
-    def get_all(self):
-        return {}, {}
-
-    def __getitem__(self, key):
-        raise KeyError(key)
-
-
-class _DummyLedFxWithVirtuals(_DummyLedFx):
-    """Extended stub that provides virtuals and gradients for Phase 6 tests."""
-
-    def __init__(self, config_dir=None):
-        super().__init__(config_dir)
-        self._virtuals = {}
-        self.gradients = _MockGradients()
-
-    @property
-    def virtuals(self):
-        return self._virtuals
+GRADIENT = "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
+BIRD = VirtualIdStr("dj bird")
+MATRIX = VirtualIdStr("matrix")
+EMPTY = VirtualIdStr("empty")  # no segments: refuses every effect
 
 
 @pytest.fixture
-def ledfx_with_virtuals(tmp_path):
-    return _DummyLedFxWithVirtuals(config_dir=str(tmp_path))
+def ledfx_with_virtuals(tmp_path, monkeypatch):
+    """A core running the real Virtuals and Effects managers."""
+    for core in running_core(monkeypatch):
+        core.events.fired = list[object]()
+        core.events.fire_event.side_effect = core.events.fired.append
+        core.config_dir = str(tmp_path)
+        core.audio = MagicMock(_audio_stream_active=True)
+        yield core
 
 
 @pytest.fixture
 def service_v(ledfx_with_virtuals):
-    return NowPlayingService(ledfx_with_virtuals)
+    svc = NowPlayingService(ledfx_with_virtuals)
+    svc.set_metadata("sendspin", TrackMetadata(source_id="sendspin", title="T"))
+    return svc
+
+
+def _start(core: MagicMock, virtual_id: str, type_id: str) -> Effect:
+    core.virtuals.set_effect(virtual_id, type_id, PluginConfig.model_validate({}))
+    return core.virtuals.get_or_raise(virtual_id).active_effect
+
+
+def _running(core: MagicMock, virtual_id: str) -> str:
+    effect = core.virtuals.get_or_raise(virtual_id).active_effect
+    return "" if effect is None or isinstance(effect, DummyEffect) else effect.type
+
+
+def _png_with_gradient(service: NowPlayingService, data: bytes | None = None) -> None:
+    with patch(
+        "ledfx.nowplaying.service.extract_gradient_metadata",
+        return_value={"led_punchy": {"gradient": GRADIENT}},
+    ):
+        service.set_artwork_bytes("sendspin", data or _make_test_png(), "image/png")
 
 
 class TestGradientApplicationConfig:
@@ -675,240 +661,151 @@ class TestGradientApplicationConfig:
 
 
 class TestApplyGradientToVirtuals:
-    """Tests for apply_gradient_to_virtuals()."""
+    """Tests for apply_gradient_to_virtuals(), which goes through the manager."""
 
     def test_no_gradient_returns_zero(self, service_v):
-        # No artwork set, no current_gradient
         assert service_v.apply_gradient_to_virtuals() == 0
 
     def test_no_virtuals_attribute_returns_zero(self, service):
-        """Service without virtuals on ledfx returns 0."""
-        # _DummyLedFx has no virtuals attribute
-        service._state.current_gradient = "linear-gradient(90deg, #ff0000, #0000ff)"
+        """The core builds its virtuals after this service."""
+        service._state.current_gradient = GRADIENT
         assert service.apply_gradient_to_virtuals() == 0
 
     def test_applies_gradient_to_single_effect(self, service_v, ledfx_with_virtuals):
-        # Set up a virtual with an effect that accepts 'gradient'
-        eff = _make_mock_effect(["gradient", "color", "color_high"])
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
+        eff = _start(ledfx_with_virtuals, BIRD, "gradient")
+        before = eff.config.as_dict()["gradient"]
+        service_v._state.current_gradient = GRADIENT
 
-        # Set a valid gradient
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
-
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 1
-        eff.update_config.assert_called_once()
-
-        # Verify the config contains 'gradient' key
-        call_args = eff.update_config.call_args[0][0]
-        assert "gradient" in call_args
+        assert service_v.apply_gradient_to_virtuals() == 1
+        assert eff.config.as_dict()["gradient"] != before
 
     def test_applies_to_multiple_virtuals(self, service_v, ledfx_with_virtuals):
-        eff1 = _make_mock_effect(["gradient", "color"])
-        eff2 = _make_mock_effect(["gradient", "color_high"])
-        v1 = _make_mock_virtual("v1", eff1)
-        v2 = _make_mock_virtual("v2", eff2)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-        ledfx_with_virtuals._virtuals["v2"] = v2
+        _start(ledfx_with_virtuals, BIRD, "gradient")
+        _start(ledfx_with_virtuals, MATRIX, "gradient")
+        service_v._state.current_gradient = GRADIENT
 
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
-
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 2
-
-    def test_skips_dummy_effect(self, service_v, ledfx_with_virtuals):
-        eff = DummyEffect(10)
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
-
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 0
+        assert service_v.apply_gradient_to_virtuals() == 2
 
     def test_skips_virtual_without_effect(self, service_v, ledfx_with_virtuals):
-        v1 = _make_mock_virtual("v1", None)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
-
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 0
+        service_v._state.current_gradient = GRADIENT
+        assert service_v.apply_gradient_to_virtuals() == 0
 
     def test_filters_by_virtual_ids(self, service_v, ledfx_with_virtuals):
-        eff1 = _make_mock_effect(["gradient"])
-        eff2 = _make_mock_effect(["gradient"])
-        v1 = _make_mock_virtual("v1", eff1)
-        v2 = _make_mock_virtual("v2", eff2)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-        ledfx_with_virtuals._virtuals["v2"] = v2
+        bird = _start(ledfx_with_virtuals, BIRD, "gradient")
+        matrix = _start(ledfx_with_virtuals, MATRIX, "gradient")
+        before = matrix.config.as_dict()["gradient"]
+        service_v.gradient_virtual_ids = [BIRD]
+        service_v._state.current_gradient = GRADIENT
 
-        service_v.gradient_virtual_ids = ["v1"]
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
-
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 1
-        eff1.update_config.assert_called_once()
-        eff2.update_config.assert_not_called()
+        assert service_v.apply_gradient_to_virtuals() == 1
+        assert bird.config.as_dict()["gradient"] != before
+        assert matrix.config.as_dict()["gradient"] == before
 
     def test_empty_virtual_ids_means_all(self, service_v, ledfx_with_virtuals):
-        eff1 = _make_mock_effect(["gradient"])
-        eff2 = _make_mock_effect(["gradient"])
-        v1 = _make_mock_virtual("v1", eff1)
-        v2 = _make_mock_virtual("v2", eff2)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-        ledfx_with_virtuals._virtuals["v2"] = v2
-
+        _start(ledfx_with_virtuals, BIRD, "gradient")
+        _start(ledfx_with_virtuals, MATRIX, "gradient")
         service_v.gradient_virtual_ids = []
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
+        service_v._state.current_gradient = GRADIENT
 
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 2
+        assert service_v.apply_gradient_to_virtuals() == 2
 
-    def test_hidden_keys_skipped(self, service_v, ledfx_with_virtuals):
-        eff = _make_mock_effect(["gradient", "color"], hidden_keys=["gradient"])
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
+    def test_unknown_configured_ids_are_dropped(self, service_v, ledfx_with_virtuals):
+        matrix = _start(ledfx_with_virtuals, MATRIX, "gradient")
+        before = matrix.config.as_dict()["gradient"]
+        service_v.gradient_virtual_ids = ["ghost"]
+        service_v._state.current_gradient = GRADIENT
 
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
+        assert service_v.apply_gradient_to_virtuals() == 0
+        assert matrix.config.as_dict()["gradient"] == before
 
-        result = service_v.apply_gradient_to_virtuals()  # noqa: F841
-        # Effect should still update if color key is in schema
-        call_args = eff.update_config.call_args[0][0]
-        assert "gradient" not in call_args
-        assert "color" in call_args
-
-    def test_effect_without_gradient_in_schema_gets_colors_only(
+    def test_unknown_ids_do_not_stop_the_known_ones(
         self, service_v, ledfx_with_virtuals
     ):
-        # Effect only has color keys, no gradient key
-        eff = _make_mock_effect(["color", "color_high"])
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
+        _start(ledfx_with_virtuals, BIRD, "gradient")
+        service_v.gradient_virtual_ids = ["ghost", BIRD]
+        service_v._state.current_gradient = GRADIENT
 
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
-
-        result = service_v.apply_gradient_to_virtuals()
-        assert result == 1
-        call_args = eff.update_config.call_args[0][0]
-        assert "gradient" not in call_args
-        assert "color" in call_args
+        assert service_v.apply_gradient_to_virtuals() == 1
 
     def test_saves_config_after_updates(self, service_v, ledfx_with_virtuals):
-        eff = _make_mock_effect(["gradient"])
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
+        _start(ledfx_with_virtuals, BIRD, "gradient")
+        ledfx_with_virtuals.config_store.request_save.reset_mock()
+        service_v._state.current_gradient = GRADIENT
 
         service_v.apply_gradient_to_virtuals()
-        ledfx_with_virtuals.config_store.request_save.assert_called_once()
+        ledfx_with_virtuals.config_store.request_save.assert_called()
 
     def test_no_config_save_when_nothing_updated(self, service_v, ledfx_with_virtuals):
-        # No virtuals, no updates
-        service_v._state.current_gradient = (
-            "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-        )
+        ledfx_with_virtuals.config_store.request_save.reset_mock()
+        service_v._state.current_gradient = GRADIENT
 
         service_v.apply_gradient_to_virtuals()
         ledfx_with_virtuals.config_store.request_save.assert_not_called()
+
+    def test_safe_mode_changes_and_saves_nothing(self, service_v, ledfx_with_virtuals):
+        eff = _start(ledfx_with_virtuals, BIRD, "gradient")
+        before = eff.config.as_dict()["gradient"]
+        enter_safe_mode(ledfx_with_virtuals)
+        ledfx_with_virtuals.config_store.request_save.reset_mock()
+        service_v._state.current_gradient = GRADIENT
+
+        assert service_v.apply_gradient_to_virtuals() == 0
+        assert eff.config.as_dict()["gradient"] == before
+        ledfx_with_virtuals.config_store.request_save.assert_not_called()
+
+    def test_a_bad_gradient_is_logged_not_raised(
+        self, service_v, ledfx_with_virtuals, caplog
+    ):
+        _start(ledfx_with_virtuals, BIRD, "gradient")
+        service_v._state.current_gradient = "nope("
+
+        assert service_v.apply_gradient_to_virtuals() == 0
+        assert "Failed to apply Now Playing gradient" in caplog.text
+
+    def test_a_raising_effect_is_logged_not_raised(
+        self, service_v, ledfx_with_virtuals, monkeypatch, caplog
+    ):
+        eff = _start(ledfx_with_virtuals, BIRD, "gradient")
+
+        def bug(config: object) -> None:
+            raise TypeError("bug")
+
+        monkeypatch.setattr(eff, "update_config", bug)
+        service_v._state.current_gradient = GRADIENT
+
+        assert service_v.apply_gradient_to_virtuals() == 0
+        assert "Failed to apply Now Playing gradient" in caplog.text
 
 
 class TestGradientAutoApplication:
     """Tests verifying gradient is auto-applied when artwork changes."""
 
     def test_gradient_applied_on_artwork_bytes(self, service_v, ledfx_with_virtuals):
-        eff = _make_mock_effect(["gradient", "color"])
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-
+        eff = _start(ledfx_with_virtuals, BIRD, "gradient")
+        before = eff.config.as_dict()["gradient"]
         service_v.gradient_enabled = True
 
-        meta = TrackMetadata(source_id="sendspin", title="Song")
-        service_v.set_metadata("sendspin", meta)
+        _png_with_gradient(service_v)
 
-        data = _make_test_png()
-        # Mock gradient extraction to return a valid gradient
-        with (
-            patch(
-                "ledfx.nowplaying.service.extract_gradient_metadata",
-                return_value={
-                    "led_punchy": {
-                        "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-                    }
-                },
-            ),
-        ):
-            service_v.set_artwork_bytes("sendspin", data, "image/png")
-
-        # Effect should have been updated
-        eff.update_config.assert_called_once()
-        call_args = eff.update_config.call_args[0][0]
-        assert "gradient" in call_args
+        assert eff.config.as_dict()["gradient"] != before
 
     def test_gradient_not_applied_when_disabled(self, service_v, ledfx_with_virtuals):
-        eff = _make_mock_effect(["gradient", "color"])
-        v1 = _make_mock_virtual("v1", eff)
-        ledfx_with_virtuals._virtuals["v1"] = v1
-
+        eff = _start(ledfx_with_virtuals, BIRD, "gradient")
+        before = eff.config.as_dict()["gradient"]
         service_v.gradient_enabled = False
 
-        meta = TrackMetadata(source_id="sendspin", title="Song")
-        service_v.set_metadata("sendspin", meta)
+        _png_with_gradient(service_v)
 
-        data = _make_test_png()
-        with patch(
-            "ledfx.nowplaying.service.extract_gradient_metadata",
-            return_value={
-                "led_punchy": {
-                    "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-                }
-            },
-        ):
-            service_v.set_artwork_bytes("sendspin", data, "image/png")
-
-        # Effect should NOT have been updated
-        eff.update_config.assert_not_called()
+        assert eff.config.as_dict()["gradient"] == before
 
     def test_gradient_event_still_fires_when_disabled(
         self, service_v, ledfx_with_virtuals
     ):
         """Gradient changed event fires even when application is disabled."""
         service_v.gradient_enabled = False
-
-        meta = TrackMetadata(source_id="sendspin", title="Song")
-        service_v.set_metadata("sendspin", meta)
         ledfx_with_virtuals.events.fired.clear()
 
-        data = _make_test_png()
-        with patch(
-            "ledfx.nowplaying.service.extract_gradient_metadata",
-            return_value={
-                "led_punchy": {
-                    "gradient": "linear-gradient(90deg, rgb(255, 0, 0) 0%, rgb(0, 0, 255) 100%)"
-                }
-            },
-        ):
-            service_v.set_artwork_bytes("sendspin", data, "image/png")
+        _png_with_gradient(service_v)
 
         gradient_events = [
             e
@@ -1100,7 +997,7 @@ class TestUpdateConfig:
 
     def test_config_persisted_to_disk(self, service, ledfx):
         service.update_config({"gradient": {"enabled": False}})
-        ledfx.config_store.request_save.assert_called_once()
+        ledfx.config_store.request_save.assert_called()
 
         assert ledfx.config.now_playing.gradient.enabled is False
 
@@ -1150,50 +1047,12 @@ class TestUpdateConfig:
 # ------------------------------------------------------------------
 
 
-def _make_mock_virtual_with_set_effect(vid):
-    """Create a mock virtual with a trackable set_effect method."""
-    virtual = MagicMock()
-    virtual.id = vid
-    return virtual
-
-
-class _DummyEffectsRegistry:
-    """Minimal effects registry that returns a mock effect from create()."""
-
-    def __init__(self):
-        self.created = []
-
-    def create(self, ledfx, type, config):
-        effect = MagicMock()
-        effect.type = type
-        effect.config = config
-        self.created.append(effect)
-        return effect
-
-
-class _DummyLedFxWithAlbumArt(_DummyLedFxWithVirtuals):
-    """Stub with both virtuals and effects, for album art tests."""
-
-    def __init__(self, config_dir=None):
-        super().__init__(config_dir)
-        self.effects = _DummyEffectsRegistry()
-        self.audio = MagicMock()
-        self.audio._audio_stream_active = True
-
-
-@pytest.fixture
-def ledfx_album_art(tmp_path):
-    return _DummyLedFxWithAlbumArt(config_dir=str(tmp_path))
-
-
-@pytest.fixture
-def service_aa(ledfx_album_art):
-    svc = NowPlayingService(ledfx_album_art)
-    # activate source so set_artwork_* calls are accepted
-    from ledfx.nowplaying.models import TrackMetadata
-
-    svc.set_metadata("sendspin", TrackMetadata(source_id="sendspin", title="T"))
-    return svc
+def _enable(
+    svc: NowPlayingService, section: str, ids: list[str], duration: float = 0
+) -> None:
+    svc._config[section]["enabled"] = True
+    svc._config[section]["virtual_ids"] = list(ids)
+    svc._config[section]["duration"] = duration
 
 
 def _set_artwork_on_service(svc, cache_key="/tmp/now_playing.jpg"):
@@ -1205,250 +1064,256 @@ def _set_artwork_on_service(svc, cache_key="/tmp/now_playing.jpg"):
     )
 
 
+@pytest.fixture
+def set_effect_spy(ledfx_with_virtuals, monkeypatch):
+    """The manager's set_effect, recording its calls."""
+    spy = MagicMock(wraps=ledfx_with_virtuals.virtuals.set_effect)
+    monkeypatch.setattr(ledfx_with_virtuals.virtuals, "set_effect", spy)
+    return spy
+
+
 class TestApplyAlbumArtToVirtuals:
     """Tests for NowPlayingService._apply_album_art_to_virtuals()."""
 
-    def test_disabled_returns_zero(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = False
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        _set_artwork_on_service(service_aa)
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+    def test_disabled_returns_zero(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD])
+        service_v._config["album_art"]["enabled"] = False
+        _set_artwork_on_service(service_v)
 
-        assert service_aa._apply_album_art_to_virtuals() == 0
-        v1.set_effect.assert_not_called()
+        assert service_v._apply_album_art_to_virtuals() == 0
+        assert _running(ledfx_with_virtuals, BIRD) == ""
 
-    def test_empty_virtual_ids_returns_zero(self, service_aa, ledfx_album_art):
-        # album_art.virtual_ids defaults to []
-        _set_artwork_on_service(service_aa)
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+    def test_empty_virtual_ids_returns_zero(self, service_v, ledfx_with_virtuals):
+        _set_artwork_on_service(service_v)
+        service_v._config["album_art"]["enabled"] = True
 
-        assert service_aa._apply_album_art_to_virtuals() == 0
-        v1.set_effect.assert_not_called()
+        assert service_v._apply_album_art_to_virtuals() == 0
+        assert _running(ledfx_with_virtuals, BIRD) == ""
 
-    def test_no_artwork_returns_zero(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        # artwork is None
-        service_aa._state.artwork = None
+    def test_no_artwork_returns_zero(self, service_v):
+        _enable(service_v, "album_art", [BIRD])
+        service_v._state.artwork = None
 
-        assert service_aa._apply_album_art_to_virtuals() == 0
+        assert service_v._apply_album_art_to_virtuals() == 0
 
-    def test_no_cache_key_returns_zero(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        service_aa._state.artwork = ArtworkReference(
+    def test_no_cache_key_returns_zero(self, service_v):
+        _enable(service_v, "album_art", [BIRD])
+        service_v._state.artwork = ArtworkReference(
             source_id="sendspin", cache_key=None
         )
 
-        assert service_aa._apply_album_art_to_virtuals() == 0
+        assert service_v._apply_album_art_to_virtuals() == 0
 
     def test_no_virtuals_attr_returns_zero(self, service, ledfx):
-        """_DummyLedFx has no virtuals attribute — should return 0."""
+        """The core builds its virtuals after this service."""
         service._config["album_art"]["enabled"] = True
         service._config["album_art"]["virtual_ids"] = ["v1"]
+        service.__dict__["_is_audio_active"] = lambda: True
         _set_artwork_on_service(service)
 
         assert service._apply_album_art_to_virtuals() == 0
 
-    def test_no_effects_attr_returns_zero(self, service_v, ledfx_with_virtuals):
-        """ledfx with virtuals but no effects registry returns 0."""
-        service_v._config["album_art"]["enabled"] = True
-        service_v._config["album_art"]["virtual_ids"] = ["v1"]
+    def test_temporary_mode_uses_fallback(self, service_v, set_effect_spy):
+        _enable(service_v, "album_art", [BIRD], duration=8)
+        _set_artwork_on_service(service_v, "/tmp/art.jpg")
+
+        assert service_v._apply_album_art_to_virtuals() == 1
+        set_effect_spy.assert_called_once()
+        assert set_effect_spy.call_args.kwargs["fallback"] == 8.0
+
+    def test_permanent_mode_no_fallback(self, service_v, set_effect_spy):
+        _enable(service_v, "album_art", [BIRD], duration=0)
+        _set_artwork_on_service(service_v, "/tmp/art.jpg")
+
+        assert service_v._apply_album_art_to_virtuals() == 1
+        assert set_effect_spy.call_args.kwargs["fallback"] is None
+
+    def test_goes_through_the_manager(self, service_v, set_effect_spy):
+        """A service that starts effects on the Virtual directly (skipping the
+        manager's checks) never reaches the manager's set_effect."""
+        _enable(service_v, "album_art", [BIRD, MATRIX])
         _set_artwork_on_service(service_v)
-        ledfx_with_virtuals._virtuals["v1"] = _make_mock_virtual_with_set_effect("v1")
-        # _DummyLedFxWithVirtuals has no effects attribute
-        assert service_v._apply_album_art_to_virtuals() == 0
 
-    def test_temporary_mode_uses_fallback(self, service_aa, ledfx_album_art):
-        """duration > 0 → set_effect(effect, fallback=duration)."""
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        service_aa._config["album_art"]["duration"] = 8
-        _set_artwork_on_service(service_aa, "/tmp/art.jpg")
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+        service_v._apply_album_art_to_virtuals()
 
-        result = service_aa._apply_album_art_to_virtuals()
+        assert [c.args[0] for c in set_effect_spy.call_args_list] == [BIRD, MATRIX]
 
-        assert result == 1
-        v1.set_effect.assert_called_once()
-        call_args, call_kwargs = v1.set_effect.call_args
-        assert call_kwargs.get("fallback") == 8.0 or (
-            len(call_args) > 1 and call_args[1] == 8.0
-        )
-
-    def test_permanent_mode_no_fallback(self, service_aa, ledfx_album_art):
-        """duration == 0 → set_effect(effect) with no fallback argument."""
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        service_aa._config["album_art"]["duration"] = 0
-        _set_artwork_on_service(service_aa, "/tmp/art.jpg")
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
-
-        result = service_aa._apply_album_art_to_virtuals()
-
-        assert result == 1
-        v1.set_effect.assert_called_once()
-        call_args, call_kwargs = v1.set_effect.call_args
-        # No fallback keyword
-        assert "fallback" not in call_kwargs
-        # Only the effect positional arg
-        assert len(call_args) == 1
-
-    def test_image_source_config_uses_cache_key(self, service_aa, ledfx_album_art):
-        """Effect is created with image_source set to artwork.cache_key."""
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
+    def test_image_source_config_uses_cache_key(self, service_v, ledfx_with_virtuals):
         cache_key = "/config/assets/now_playing/now_playing.jpg"
-        _set_artwork_on_service(service_aa, cache_key)
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+        _enable(service_v, "album_art", [BIRD])
+        _set_artwork_on_service(service_v, cache_key)
 
-        service_aa._apply_album_art_to_virtuals()
+        service_v._apply_album_art_to_virtuals()
 
-        assert len(ledfx_album_art.effects.created) == 1
-        created = ledfx_album_art.effects.created[0]
-        assert created.config["image_source"] == cache_key
+        effect = ledfx_with_virtuals.virtuals.get_or_raise(BIRD).active_effect
+        assert effect.type == "imagespin"
+        assert effect.config.as_dict()["image_source"] == cache_key
 
-    def test_created_effect_type_is_image(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        _set_artwork_on_service(service_aa)
-        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect("v1")
+    def test_multiple_virtuals_updated(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD, MATRIX])
+        _set_artwork_on_service(service_v)
 
-        service_aa._apply_album_art_to_virtuals()
+        assert service_v._apply_album_art_to_virtuals() == 2
+        assert _running(ledfx_with_virtuals, MATRIX) == "imagespin"
 
-        assert ledfx_album_art.effects.created[0].type == "imagespin"
+    def test_missing_virtual_skipped(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD, "missing"])
+        _set_artwork_on_service(service_v)
 
-    def test_multiple_virtuals_updated(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1", "v2"]
-        _set_artwork_on_service(service_aa)
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        v2 = _make_mock_virtual_with_set_effect("v2")
-        ledfx_album_art._virtuals["v1"] = v1
-        ledfx_album_art._virtuals["v2"] = v2
+        assert service_v._apply_album_art_to_virtuals() == 1
 
-        result = service_aa._apply_album_art_to_virtuals()
+    def test_a_refusing_virtual_leaks_no_effect(self, service_v, ledfx_with_virtuals):
+        """EMPTY has no segments: the manager refuses before it creates."""
+        _enable(service_v, "album_art", [EMPTY, BIRD])
+        _set_artwork_on_service(service_v)
+        before = len(ledfx_with_virtuals.effects.values())
 
-        assert result == 2
-        v1.set_effect.assert_called_once()
-        v2.set_effect.assert_called_once()
+        assert service_v._apply_album_art_to_virtuals() == 1
+        assert len(ledfx_with_virtuals.effects.values()) == before + 1
 
-    def test_missing_virtual_skipped(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1", "missing"]
-        _set_artwork_on_service(service_aa)
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
-        # "missing" is not in virtuals dict
+    def test_safe_mode_changes_and_saves_nothing(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD])
+        _set_artwork_on_service(service_v)
+        enter_safe_mode(ledfx_with_virtuals)
+        ledfx_with_virtuals.config_store.request_save.reset_mock()
 
-        result = service_aa._apply_album_art_to_virtuals()
+        assert service_v._apply_album_art_to_virtuals() == 0
+        assert _running(ledfx_with_virtuals, BIRD) == ""
+        ledfx_with_virtuals.config_store.request_save.assert_not_called()
 
-        assert result == 1
-        v1.set_effect.assert_called_once()
+    def test_an_unexpected_error_skips_only_that_virtual(
+        self, service_v, ledfx_with_virtuals, monkeypatch, caplog
+    ):
+        _enable(service_v, "album_art", [BIRD, MATRIX])
+        _set_artwork_on_service(service_v)
+        real = ledfx_with_virtuals.virtuals.set_effect
 
-    def test_effect_creation_error_skips_virtual(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        _set_artwork_on_service(service_aa)
-        ledfx_album_art._virtuals["v1"] = _make_mock_virtual_with_set_effect("v1")
+        def flaky(virtual_id: str, *args: object, **kwargs: object) -> object:
+            if virtual_id == BIRD:
+                raise KeyError("bug")
+            return real(virtual_id, *args, **kwargs)
 
-        ledfx_album_art.effects.create = MagicMock(
-            side_effect=Exception("creation failure")
-        )
+        monkeypatch.setattr(ledfx_with_virtuals.virtuals, "set_effect", flaky)
 
-        result = service_aa._apply_album_art_to_virtuals()
+        assert service_v._apply_album_art_to_virtuals() == 1
+        assert "failed to set effect" in caplog.text
 
-        assert result == 0  # graceful skip
 
-    def test_set_effect_error_skips_virtual(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        _set_artwork_on_service(service_aa)
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        v1.set_effect.side_effect = Exception("set_effect failure")
-        ledfx_album_art._virtuals["v1"] = v1
+class TestApplyTrackTextToVirtuals:
+    """Tests for NowPlayingService._apply_track_text_to_virtuals()."""
 
-        result = service_aa._apply_album_art_to_virtuals()
+    def test_starts_texter_through_the_manager(
+        self, service_v, ledfx_with_virtuals, set_effect_spy
+    ):
+        _enable(service_v, "track_text", [BIRD], duration=5)
 
-        assert result == 0  # graceful skip
+        assert service_v._apply_track_text_to_virtuals() == 1
+        effect = ledfx_with_virtuals.virtuals.get_or_raise(BIRD).active_effect
+        assert effect.type == "texter2d"
+        assert "T" in effect.config.as_dict()["text"]
+        assert set_effect_spy.call_args.kwargs["fallback"] == 5.0
+
+    def test_permanent_mode_no_fallback(self, service_v, set_effect_spy):
+        _enable(service_v, "track_text", [BIRD], duration=0)
+
+        service_v._apply_track_text_to_virtuals()
+
+        assert set_effect_spy.call_args.kwargs["fallback"] is None
+
+    def test_a_refusing_virtual_leaks_no_effect(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "track_text", [EMPTY])
+        before = len(ledfx_with_virtuals.effects.values())
+
+        assert service_v._apply_track_text_to_virtuals() == 0
+        assert len(ledfx_with_virtuals.effects.values()) == before
+
+    def test_safe_mode_changes_and_saves_nothing(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "track_text", [BIRD])
+        enter_safe_mode(ledfx_with_virtuals)
+        ledfx_with_virtuals.config_store.request_save.reset_mock()
+
+        assert service_v._apply_track_text_to_virtuals() == 0
+        assert _running(ledfx_with_virtuals, BIRD) == ""
+        ledfx_with_virtuals.config_store.request_save.assert_not_called()
+
+
+@pytest.mark.parametrize("duration", [0, 5])
+@pytest.mark.parametrize("section", ["track_text", "album_art"])
+def test_a_track_effect_is_not_stored(
+    service_v: NowPlayingService,
+    ledfx_with_virtuals: MagicMock,
+    section: str,
+    duration: float,
+) -> None:
+    """Track effects are temporary: none is stored or saved, so a restart
+    brings back the virtual's own effect, not the last song's."""
+    _start(ledfx_with_virtuals, BIRD, "rainbow")
+    entry = ledfx_with_virtuals.virtuals.get_or_raise(BIRD).entry
+    assert entry is not None
+    before = entry.model_dump()
+    ledfx_with_virtuals.config_store.request_save.reset_mock()
+    _enable(service_v, section, [BIRD], duration)
+    _set_artwork_on_service(service_v)
+    apply = (
+        service_v._apply_track_text_to_virtuals
+        if section == "track_text"
+        else service_v._apply_album_art_to_virtuals
+    )
+
+    assert apply() == 1
+    assert _running(ledfx_with_virtuals, BIRD) in ("texter2d", "imagespin")
+    assert entry.model_dump() == before
+    ledfx_with_virtuals.config_store.request_save.assert_not_called()
 
 
 class TestAlbumArtAutoApplication:
     """Tests that _apply_album_art_to_virtuals is triggered by artwork changes."""
 
-    def test_called_on_set_artwork_bytes(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
-
-        data = _make_test_png()
-        with (
-            patch(
-                "ledfx.nowplaying.service.extract_gradient_metadata",
-                return_value={},
-            ),
+    def _set_bytes(self, svc):
+        with patch(
+            "ledfx.nowplaying.service.extract_gradient_metadata", return_value={}
         ):
-            service_aa.set_artwork_bytes("sendspin", data, "image/png")
+            svc.set_artwork_bytes("sendspin", _make_test_png(), "image/png")
 
-        v1.set_effect.assert_called_once()
+    def test_called_on_set_artwork_bytes(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD])
 
-    def test_called_on_set_artwork_url(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+        self._set_bytes(service_v)
 
-        png_data = _make_test_png()
+        assert _running(ledfx_with_virtuals, BIRD) == "imagespin"
+
+    def test_called_on_set_artwork_url(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD])
+
         with (
             patch.object(
-                service_aa, "_download_image", return_value=(png_data, "image/png")
+                service_v,
+                "_download_image",
+                return_value=(_make_test_png(), "image/png"),
             ),
             patch(
                 "ledfx.nowplaying.service.extract_gradient_metadata",
                 return_value={},
             ),
         ):
-            service_aa.set_artwork_url("sendspin", "https://example.com/art.png")
+            service_v.set_artwork_url("sendspin", "https://example.com/art.png")
 
-        v1.set_effect.assert_called_once()
+        assert _running(ledfx_with_virtuals, BIRD) == "imagespin"
 
-    def test_not_called_when_disabled(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = False
-        service_aa._config["album_art"]["virtual_ids"] = ["v1"]
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+    def test_not_called_when_disabled(self, service_v, ledfx_with_virtuals):
+        _enable(service_v, "album_art", [BIRD])
+        service_v._config["album_art"]["enabled"] = False
 
-        data = _make_test_png()
-        with (
-            patch(
-                "ledfx.nowplaying.service.extract_gradient_metadata",
-                return_value={},
-            ),
-        ):
-            service_aa.set_artwork_bytes("sendspin", data, "image/png")
+        self._set_bytes(service_v)
 
-        v1.set_effect.assert_not_called()
+        assert _running(ledfx_with_virtuals, BIRD) == ""
 
-    def test_not_called_when_virtual_ids_empty(self, service_aa, ledfx_album_art):
-        service_aa._config["album_art"]["enabled"] = True
-        # virtual_ids is [] by default
-        v1 = _make_mock_virtual_with_set_effect("v1")
-        ledfx_album_art._virtuals["v1"] = v1
+    def test_not_called_when_virtual_ids_empty(self, service_v, ledfx_with_virtuals):
+        service_v._config["album_art"]["enabled"] = True
 
-        data = _make_test_png()
-        with (
-            patch(
-                "ledfx.nowplaying.service.extract_gradient_metadata",
-                return_value={},
-            ),
-        ):
-            service_aa.set_artwork_bytes("sendspin", data, "image/png")
+        self._set_bytes(service_v)
 
-        v1.set_effect.assert_not_called()
+        assert _running(ledfx_with_virtuals, BIRD) == ""
 
 
 class TestAlbumArtDurationSchema:
