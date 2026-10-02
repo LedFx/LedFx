@@ -382,6 +382,53 @@ SCENARIOS: dict[str, list[Step]] = {
         ("DELETE", f"{BIRD}/effects", None),
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["mirror"]}),
     ],
+    # Copy and highlight refusals: what is a typo, what refused, and which
+    # message wins.
+    "conflicts": [
+        ("PUT", f"{V}_tools/empty", {"tool": "copy", "target": ["ghost"]}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["mirror"]}),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": []}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["empty"]}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "copy", "target": ["ghost", "empty"]},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "copy", "target": ["empty", "mirror"]},
+        ),
+        ("GET", f"{V}/mirror/effects", None),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "device": "strip"}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "device": "strip"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "STRIP", "start": 0, "stop": 5},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "GHOST", "start": 0, "stop": 5},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 99, "stop": 0},
+        ),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "off"}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
+    ],
+    # Activation refused for a stale stored config.
+    "activation": [
+        ("PUT", BIRD, {"active": True}),
+        ("GET", BIRD, None),
+    ],
     # Safe mode: config.json could not be loaded, so changes can't be saved.
     "safe_mode": [
         ("GET", V, None),
@@ -565,6 +612,11 @@ async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> N
         )
     if name.startswith("safe_mode"):
         enter_safe_mode(ledfx)
+    if name == "activation":
+        entry = ledfx.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
+        assert entry is not None
+        entry.last_effect = "rainbow"
+        entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
     if name == "effect_typing":
         # A stored config that no longer validates.
         entry = ledfx.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry

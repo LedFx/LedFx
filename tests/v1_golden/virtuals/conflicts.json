@@ -1,0 +1,232 @@
+[
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/empty",
+      {
+        "tool": "copy",
+        "target": [
+          "ghost"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no active effect on source virtual\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "mirror"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no active effect on source virtual\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "type": "singleColor"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": []
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no valid targets\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "empty"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no valid targets\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "ghost",
+          "empty"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual copy failed, no valid targets\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "copy",
+        "target": [
+          "empty",
+          "mirror"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"copy\"}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/mirror/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Cannot set highlight when dj bird is not in calibration mode\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "on"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"calibration\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "STRIP",
+        "start": 0,
+        "stop": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "GHOST",
+        "start": 0,
+        "stop": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Device ghost not found\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 99,
+        "stop": 0
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: start and end must be less than 50\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "state": false
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "state": false
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "off"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"calibration\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "state": false
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Cannot set highlight when dj bird is not in calibration mode\"}}"
+  }
+]
