@@ -1,6 +1,198 @@
 {
   "components": {
     "schemas": {
+      "ApplyConfig": {
+        "additionalProperties": false,
+        "description": "POST /virtuals/apply-config: write these settings into every running\neffect that has them (default: on all virtuals). flip and mirror are\nexplicit booleans: v2 has no \"toggle\".",
+        "properties": {
+          "background_brightness": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Background Brightness"
+          },
+          "background_color": {
+            "anyOf": [
+              {
+                "maxLength": 256,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Background Color"
+          },
+          "brightness": {
+            "anyOf": [
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Brightness"
+          },
+          "flip": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Flip"
+          },
+          "gradient": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Gradient"
+          },
+          "mirror": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Mirror"
+          },
+          "virtual_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string",
+                  "x-ledfx-enum-source": "virtuals"
+                },
+                "maxItems": 1024,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Virtual Ids"
+          }
+        },
+        "title": "ApplyConfig",
+        "type": "object"
+      },
+      "ApplyConfigCounts": {
+        "description": "Effects updated, and effects skipped (they have none of the settings).",
+        "properties": {
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          },
+          "updated": {
+            "title": "Updated",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "updated",
+          "skipped"
+        ],
+        "title": "ApplyConfigCounts",
+        "type": "object"
+      },
+      "Calibration": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "Calibration",
+        "type": "object"
+      },
+      "ClearEffects": {
+        "additionalProperties": false,
+        "description": "POST /virtuals/clear-effects: blank these virtuals (default: all).",
+        "properties": {
+          "virtual_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string",
+                  "x-ledfx-enum-source": "virtuals"
+                },
+                "maxItems": 1024,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Virtual Ids"
+          }
+        },
+        "title": "ClearEffects",
+        "type": "object"
+      },
+      "CopyEffect": {
+        "additionalProperties": false,
+        "description": "POST /virtuals/{virtual_id}/copy-effect: start this virtual's effect,\nwith its settings, on the targets.",
+        "properties": {
+          "targets": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            },
+            "maxItems": 1024,
+            "minItems": 1,
+            "title": "Targets",
+            "type": "array"
+          }
+        },
+        "required": [
+          "targets"
+        ],
+        "title": "CopyEffect",
+        "type": "object"
+      },
       "EffectConfig_bands-Input": {
         "additionalProperties": false,
         "properties": {
@@ -30102,6 +30294,102 @@
         "title": "EffectState_wavelength",
         "type": "object"
       },
+      "ForceColor": {
+        "additionalProperties": false,
+        "properties": {
+          "color": {
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Color",
+            "type": "string"
+          }
+        },
+        "required": [
+          "color"
+        ],
+        "title": "ForceColor",
+        "type": "object"
+      },
+      "Highlight": {
+        "additionalProperties": false,
+        "description": "Light a device's pixels start..end (inclusive) on a calibrating virtual.",
+        "properties": {
+          "device_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Device Id",
+            "type": "string",
+            "x-ledfx-enum-source": "devices"
+          },
+          "end": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "flip": {
+            "default": false,
+            "title": "Flip",
+            "type": "boolean"
+          },
+          "start": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "device_id",
+          "start",
+          "end"
+        ],
+        "title": "Highlight",
+        "type": "object"
+      },
+      "Oneshot": {
+        "additionalProperties": false,
+        "description": "A flash: ramp up, hold, fade out (milliseconds).",
+        "properties": {
+          "brightness": {
+            "default": 1.0,
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Brightness",
+            "type": "number"
+          },
+          "color": {
+            "default": "white",
+            "maxLength": 256,
+            "minLength": 1,
+            "title": "Color",
+            "type": "string"
+          },
+          "fade_ms": {
+            "default": 0,
+            "maximum": 60000,
+            "minimum": 0,
+            "title": "Fade Ms",
+            "type": "number"
+          },
+          "hold_ms": {
+            "default": 0,
+            "maximum": 60000,
+            "minimum": 0,
+            "title": "Hold Ms",
+            "type": "number"
+          },
+          "ramp_ms": {
+            "default": 0,
+            "maximum": 60000,
+            "minimum": 0,
+            "title": "Ramp Ms",
+            "type": "number"
+          }
+        },
+        "title": "Oneshot",
+        "type": "object"
+      },
       "Problem": {
         "properties": {
           "detail": {
@@ -30181,6 +30469,279 @@
           "type"
         ],
         "title": "ProblemDetailError",
+        "type": "object"
+      },
+      "SetEffectAll": {
+        "additionalProperties": false,
+        "description": "POST /virtuals/set-effect: start one effect on these virtuals\n(default: all). Without config, the type's defaults start.",
+        "properties": {
+          "config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EffectConfig_bands-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_bands_matrix-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_bar-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_blade_power_plus-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_bleep-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_blender-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_block_reflections-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_blocks-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_clone-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_concentric-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_crawler-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_digitalrain2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_energy-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_energy2-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_equalizer-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_equalizer2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_fade-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_filter-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_fire-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_flame2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_frontend-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_game_of_life-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_gifplayer-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_glitch-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_gradient-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_hierarchy-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_imagespin-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_keybeat2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_lava_lamp-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_magnitude-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_marching-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_melt-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_melt_and_sparkle-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_metro-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_multiBar-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_noise2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_number-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_pitchSpectrum-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_pixels-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_plasma2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_plasmawled-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_power-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_radial-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_rain-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_rainbow-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_random_flash-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_real_strobe-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_scan-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_scan_and_flare-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_scan_multi-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_scroll-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_scroll_plus-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_singleColor-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_smoke2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_soap2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_spectrum-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_spotlight-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_strobe-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_texter2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_vumeter-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_water-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_waterfall2d-Input"
+              },
+              {
+                "$ref": "#/components/schemas/EffectConfig_wavelength-Input"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Config"
+          },
+          "fallback_s": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "maximum": 86400,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Fallback S"
+          },
+          "type": {
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Type",
+            "type": "string"
+          },
+          "virtual_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "maxLength": 128,
+                  "minLength": 1,
+                  "type": "string",
+                  "x-ledfx-enum-source": "virtuals"
+                },
+                "maxItems": 1024,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Virtual Ids"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "SetEffectAll",
+        "type": "object"
+      },
+      "SetEffectAllCounts": {
+        "description": "Per virtual: applied; blocked (streamed to, with a fallback); failed\n(refused the effect, e.g. no segments).",
+        "properties": {
+          "applied": {
+            "title": "Applied",
+            "type": "integer"
+          },
+          "blocked": {
+            "title": "Blocked",
+            "type": "integer"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "applied",
+          "blocked",
+          "failed"
+        ],
+        "title": "SetEffectAllCounts",
         "type": "object"
       },
       "SystemInfo": {
@@ -31367,6 +31928,545 @@
         ]
       }
     },
+    "/api/v2/virtuals/apply-config": {
+      "post": {
+        "description": "A gradient also sets the colours sampled from it, except those given.",
+        "operationId": "apply_effect_config",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyConfigCounts"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Write settings into every running effect that has them.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/clear-effects": {
+      "post": {
+        "description": "Runtime only: their stored effects come back when LedFx restarts.",
+        "operationId": "clear_effects",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClearEffects"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Blank the output of these virtuals (default: all).",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/force-color": {
+      "post": {
+        "operationId": "force_color",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForceColor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Fill every device's own virtual with a colour.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/oneshot": {
+      "delete": {
+        "operationId": "clear_oneshots",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "End every virtual's flashes.",
+        "tags": [
+          "virtuals"
+        ]
+      },
+      "post": {
+        "operationId": "flash_virtuals",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Oneshot"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Flash every active virtual with a colour.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/set-effect": {
+      "post": {
+        "description": "Without config the type's defaults start. A virtual that refuses it (no\nsegments) counts as failed; with\nfallback_s, one that is being streamed to counts as blocked.",
+        "operationId": "set_effect_on_virtuals",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetEffectAll"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetEffectAllCounts"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Start one effect on these virtuals (default: all).",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
     "/api/v2/virtuals/{virtual_id}": {
       "delete": {
         "description": "A device's own virtual takes its device with it. Scenes forget it.",
@@ -31645,6 +32745,241 @@
           }
         },
         "summary": "Change a virtual's settings, segments or active state.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/{virtual_id}/calibration": {
+      "put": {
+        "operationId": "set_calibration",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Calibration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Turn calibration mode, where highlights show, on or off.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/{virtual_id}/copy-effect": {
+      "post": {
+        "description": "Targets that refuse it are passed over; 422 if none takes it.",
+        "operationId": "copy_effect",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyEffect"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Start this virtual's effect, with its settings, on the targets.",
         "tags": [
           "virtuals"
         ]
@@ -34093,6 +35428,527 @@
           }
         },
         "summary": "End a temporary (fallback_s) effect now: the previous one comes back.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/{virtual_id}/force-color": {
+      "post": {
+        "operationId": "force_virtual_color",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForceColor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Fill the virtual with a colour until its effect draws again.",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/{virtual_id}/highlight": {
+      "delete": {
+        "operationId": "clear_highlight",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Turn the highlight off (204 whether or not the virtual is calibrating).",
+        "tags": [
+          "virtuals"
+        ]
+      },
+      "put": {
+        "operationId": "set_highlight",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Highlight"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Light a device's pixels on a calibrating virtual (409 otherwise).",
+        "tags": [
+          "virtuals"
+        ]
+      }
+    },
+    "/api/v2/virtuals/{virtual_id}/oneshot": {
+      "delete": {
+        "operationId": "clear_virtual_oneshots",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "End the virtual's flashes.",
+        "tags": [
+          "virtuals"
+        ]
+      },
+      "post": {
+        "operationId": "flash_virtual",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "virtual_id",
+            "required": true,
+            "schema": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string",
+              "x-ledfx-enum-source": "virtuals"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Oneshot"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "403": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "415": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unsupported Media Type"
+          },
+          "422": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "500": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          }
+        },
+        "summary": "Flash the virtual with a colour (409 if it is not active).",
         "tags": [
           "virtuals"
         ]

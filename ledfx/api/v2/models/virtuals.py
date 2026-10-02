@@ -258,7 +258,7 @@ class ApplyConfigCounts(BaseModel):
 
 class SetEffectAll(BaseModel):
     """POST /virtuals/set-effect: start one effect on these virtuals
-    (default: all)."""
+    (default: all). Without config, the type's defaults start."""
 
     model_config = _LAZY
 
