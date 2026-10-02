@@ -424,6 +424,46 @@ SCENARIOS: dict[str, list[Step]] = {
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "off"}),
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
     ],
+    # Highlight ranges the manager no longer accepts, and unknown ids in bulk.
+    "ranges": [
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 10, "stop": 5},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": -5, "stop": -2},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 3, "stop": 3},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 2},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "stop": 2},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "ghost", "start": 10, "stop": 5},
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "mirror": True, "virtuals": ["ghost"]},
+        ),
+        ("PUT", "/api/effects", {"action": "clear_all_effects"}),
+    ],
     # Activation refused for a stale stored config.
     "activation": [
         ("PUT", BIRD, {"active": True}),
