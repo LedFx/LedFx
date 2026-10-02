@@ -1,7 +1,7 @@
 """The Virtuals manager: CRUD, safe mode and mutators that never await."""
 
 import inspect
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -18,9 +18,7 @@ from ledfx.configuration.models import (
     VirtualConfig,
     replace_model,
 )
-from ledfx.configuration.plugin import PluginConfig
 from ledfx.effects import DummyEffect, Effect
-from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.errors import Conflict, Invalid, NotFound, SafeMode
 from ledfx.events import GlobalPauseEvent, VirtualConfigUpdateEvent
 from ledfx.virtuals import (
@@ -33,16 +31,14 @@ from ledfx.virtuals import (
 )
 from tests.test_utilities.virtuals_core import (
     add_virtual,
+    cfg,
     enter_safe_mode,
+    entry_ids,
+    flashes,
     running_core,
 )
 
 BIRD = VirtualIdStr("dj bird")
-
-
-def cfg(values: Mapping[str, object]) -> PluginConfig:
-    """Effect settings as the manager takes them."""
-    return PluginConfig.model_validate(values)
 
 
 # Every manager method that changes state. None may be a coroutine: the
@@ -79,10 +75,6 @@ def ledfx(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
     yield from running_core(monkeypatch)
 
 
-def _entry_ids(ledfx: MagicMock) -> list[str]:
-    return [entry.id for entry in ledfx.config.virtuals]
-
-
 @pytest.mark.parametrize("name", MUTATORS)
 def test_mutators_are_plain_functions(name: str) -> None:
     assert not inspect.iscoroutinefunction(getattr(Virtuals, name))
@@ -98,7 +90,7 @@ def test_add_stores_saves_and_fires(ledfx: MagicMock) -> None:
     virtual = ledfx.virtuals.add(VirtualConfig(name="Küche"))
     assert virtual.id == "k-che"
     assert ledfx.virtuals.add(VirtualConfig(name="Küche")).id == "k-che-1"
-    assert _entry_ids(ledfx)[-2:] == ["k-che", "k-che-1"]
+    assert entry_ids(ledfx)[-2:] == ["k-che", "k-che-1"]
     assert ledfx.config.virtuals[-2].config is virtual.config
     ledfx.config_store.request_save.assert_called()
     event = ledfx.events.fire_event.call_args.args[0]
@@ -108,11 +100,11 @@ def test_add_stores_saves_and_fires(ledfx: MagicMock) -> None:
 
 @pytest.mark.parametrize("name", ["oneshot", "Force Color"])
 def test_add_refuses_a_reserved_id(ledfx: MagicMock, name: str) -> None:
-    before = _entry_ids(ledfx)
+    before = entry_ids(ledfx)
     with pytest.raises(Invalid, match="is reserved") as refused:
         ledfx.virtuals.add(VirtualConfig(name=name))
     assert refused.value.loc == ("body", "config", "name")
-    assert _entry_ids(ledfx) == before
+    assert entry_ids(ledfx) == before
     ledfx.config_store.request_save.assert_not_called()
 
 
@@ -207,11 +199,11 @@ def _store_unchecked(virtual: Virtual, **changes: object) -> None:
 def test_add_refuses_what_it_would_repair(
     ledfx: MagicMock, changes: dict[str, int], field: str
 ) -> None:
-    before = _entry_ids(ledfx)
+    before = entry_ids(ledfx)
     with pytest.raises(Invalid) as caught:
         ledfx.virtuals.add(replace_model(VirtualConfig(name="Bad"), **changes))
     assert caught.value.loc == ("body", "config", field)
-    assert _entry_ids(ledfx) == before
+    assert entry_ids(ledfx) == before
     assert ledfx.virtuals.get(VirtualIdStr("bad")) is None
     ledfx.config_store.request_save.assert_not_called()
 
@@ -266,7 +258,7 @@ def test_remove_drops_entry_and_scene_references(ledfx: MagicMock) -> None:
     )
     ledfx.virtuals.remove(BIRD)
     assert ledfx.virtuals.get(BIRD) is None
-    assert "dj bird" not in _entry_ids(ledfx)
+    assert "dj bird" not in entry_ids(ledfx)
     assert "dj bird" not in ledfx.config.scenes["s"].virtuals
     ledfx.config_store.request_save.assert_called_once()
 
@@ -274,7 +266,7 @@ def test_remove_drops_entry_and_scene_references(ledfx: MagicMock) -> None:
 def test_remove_device_virtual_removes_its_device(ledfx: MagicMock) -> None:
     ledfx.virtuals.remove(VirtualIdStr("matrix"))
     assert ledfx.devices.get("matrix") is None
-    assert "matrix" not in _entry_ids(ledfx)
+    assert "matrix" not in entry_ids(ledfx)
 
 
 def test_set_paused_is_runtime_only(ledfx: MagicMock) -> None:
@@ -611,11 +603,6 @@ def test_an_effect_that_fails_to_activate_stays_registered_iff_held(
 MIRROR = VirtualIdStr("mirror")
 
 
-def _flashes(ledfx: MagicMock, virtual_id: str) -> list[Flash]:
-    virtual = ledfx.virtuals.get_or_raise(VirtualIdStr(virtual_id))
-    return [o for o in virtual.oneshots if isinstance(o, Flash) and o.active]
-
-
 def test_clear_all_effects_can_be_limited(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "rainbow", cfg({}))
@@ -732,9 +719,9 @@ def test_oneshot_one_and_all(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.oneshot(BIRD, params)
     ledfx.virtuals.oneshot(None, params)  # inactive virtuals are passed over
-    assert len(_flashes(ledfx, "dj bird")) == 2
+    assert len(flashes(ledfx, "dj bird")) == 2
     assert ledfx.virtuals.clear_oneshots(BIRD) is True
-    assert _flashes(ledfx, "dj bird") == []
+    assert flashes(ledfx, "dj bird") == []
     assert ledfx.virtuals.clear_oneshots(MIRROR) is False
 
 
@@ -935,9 +922,15 @@ def test_a_bad_global_value_is_invalid_not_a_failed_count(
 
 
 def test_a_global_update_accepts_what_it_is_given() -> None:
-    GlobalEffectUpdate(
+    update = GlobalEffectUpdate(
         brightness=0, background_brightness=1, background_color="#00ff00", flip=True
     )
+    assert (
+        update.brightness,
+        update.background_brightness,
+        update.background_color,
+        update.flip,
+    ) == (0, 1, "#00ff00", True)
 
 
 def test_a_refused_patch_config_fires_no_event_and_touches_no_segments(

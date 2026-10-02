@@ -12,9 +12,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import VirtualEntry
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Device
 from ledfx.effects import Effects
+from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.utils import build_user_collections
 from ledfx.virtuals import Virtual, Virtuals
 from tests.test_utilities.fake_ledfx import fake_ledfx
@@ -167,3 +170,19 @@ def running_core(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
     seed_standard(ledfx)
     yield ledfx
     stop_virtuals(ledfx)
+
+
+def cfg(values: Mapping[str, object]) -> PluginConfig:
+    """Effect settings as the manager takes them."""
+    return PluginConfig.model_validate(values)
+
+
+def entry_ids(ledfx: MagicMock) -> list[str]:
+    """The ids of the stored virtual entries."""
+    return [entry.id for entry in ledfx.config.virtuals]
+
+
+def flashes(ledfx: MagicMock, virtual_id: str) -> list[Flash]:
+    """The flashes running on a virtual."""
+    virtual = ledfx.virtuals.get_or_raise(VirtualIdStr(virtual_id))
+    return [o for o in virtual.oneshots if isinstance(o, Flash) and o.active]

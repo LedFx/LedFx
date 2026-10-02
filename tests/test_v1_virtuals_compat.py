@@ -3,7 +3,7 @@ behaviour that rides on it. Deleted with v1; the manager's own tests live in
 test_virtuals_manager.py and import nothing from v1."""
 
 import asyncio
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator
 from unittest.mock import MagicMock
 
 import pytest
@@ -18,28 +18,19 @@ from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Highlight
-from ledfx.configuration.plugin import PluginConfig
-from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.errors import NotFound
 from ledfx.virtuals import VirtualChanges
-from tests.test_utilities.virtuals_core import add_virtual, running_core
+from tests.test_utilities.virtuals_core import (
+    add_virtual,
+    cfg,
+    entry_ids,
+    flashes,
+    running_core,
+)
 from tests.v1_golden.harness import build_app
 
 BIRD = VirtualIdStr("dj bird")
 MIRROR = VirtualIdStr("mirror")
-
-
-def cfg(values: Mapping[str, object]) -> PluginConfig:
-    return PluginConfig.model_validate(values)
-
-
-def _entry_ids(ledfx: MagicMock) -> list[str]:
-    return [entry.id for entry in ledfx.config.virtuals]
-
-
-def _flashes(ledfx: MagicMock, virtual_id: str) -> list[Flash]:
-    virtual = ledfx.virtuals.get_or_raise(VirtualIdStr(virtual_id))
-    return [o for o in virtual.oneshots if isinstance(o, Flash) and o.active]
 
 
 @pytest.fixture
@@ -67,7 +58,7 @@ async def test_concurrent_v1_update_and_delete_leave_no_orphan(
             assert update.status == 200
             assert delete.status == 200
             assert ledfx.virtuals.get(virtual_id) is None
-            assert virtual_id not in _entry_ids(ledfx)
+            assert virtual_id not in entry_ids(ledfx)
 
 
 # ---- the running effect ----------------------------------------------------
@@ -84,7 +75,7 @@ async def test_v1_oneshot_clamps_brightness(
             json={"tool": "oneshot", "color": "white", "brightness": sent},
         )
         assert response.status == 200, await response.text()
-    [flash] = _flashes(ledfx, "dj bird")
+    [flash] = flashes(ledfx, "dj bird")
     assert max(flash._color) == peak
 
 
