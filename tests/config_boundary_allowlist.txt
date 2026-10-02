@@ -41,7 +41,7 @@ ledfx/api/sendspin_servers.py:config-store:1
 ledfx/api/sendspin_servers.py:config-write:1
 ledfx/api/sendspin_servers.py:core-config:2
 ledfx/api/sendspin_servers.py:private:1
-ledfx/api/virtual_presets.py:config-store:3
+ledfx/api/virtual_presets.py:config-store:1
 ledfx/api/virtual_presets.py:config-write:1
 ledfx/api/virtual_presets.py:core-config:3
 ledfx/devices/twinkly_squares.py:config-store:1
