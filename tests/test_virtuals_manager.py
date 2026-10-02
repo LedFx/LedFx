@@ -855,6 +855,8 @@ def test_highlight_needs_calibration(ledfx: MagicMock) -> None:
 
 def test_a_highlight_checks_its_input_before_the_state(ledfx: MagicMock) -> None:
     """Existence and input come before the calibration conflict."""
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    before = (virtual._hl_state, virtual._hl_start, virtual._hl_end)
     with pytest.raises(Invalid) as unknown:
         ledfx.virtuals.set_highlight(BIRD, Highlight("ghost", 0, 1))
     assert unknown.value.loc == ("body", "device_id")
@@ -863,6 +865,7 @@ def test_a_highlight_checks_its_input_before_the_state(ledfx: MagicMock) -> None
     assert past.value.loc == ("body", "end")
     with pytest.raises(Conflict, match="not in calibration mode"):
         ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 9))
+    assert (virtual._hl_state, virtual._hl_start, virtual._hl_end) == before
 
 
 def test_a_highlight_is_switched_on_after_its_range_is_set(
@@ -917,29 +920,39 @@ def test_copy_effect_answers_an_unknown_target_before_an_idle_source(
     ledfx: MagicMock,
 ) -> None:
     """Existence before state."""
+    before = set(ledfx.effects)
     with pytest.raises(NotFound) as caught:
         ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("ghost")])
     assert caught.value.ids == ("ghost",)
     with pytest.raises(Conflict, match="no active effect"):
         ledfx.virtuals.copy_effect(BIRD, [MIRROR])
+    assert set(ledfx.effects) == before
+    assert ledfx.virtuals.get_or_raise(BIRD).active_effect is None
+    assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is None
 
 
 def test_set_effect_all_answers_an_unknown_id_before_an_unknown_type(
     ledfx: MagicMock,
 ) -> None:
     """Existence before input."""
+    before = set(ledfx.effects)
     with pytest.raises(NotFound):
         ledfx.virtuals.set_effect_all("nope", None, [VirtualIdStr("ghost")])
     with pytest.raises(Invalid):
         ledfx.virtuals.set_effect_all("nope", None, [BIRD])
+    assert set(ledfx.effects) == before
+    assert ledfx.virtuals.get_or_raise(BIRD).active_effect is None
 
 
 def test_force_color_answers_an_unknown_virtual_before_a_bad_colour(
     ledfx: MagicMock,
 ) -> None:
     """Existence before input."""
+    before = set(ledfx.effects)
     with pytest.raises(NotFound):
         ledfx.virtuals.force_color(VirtualIdStr("ghost"), "notacolor")
+    assert set(ledfx.effects) == before
+    assert ledfx.virtuals.get_or_raise(BIRD).active_effect is None
 
 
 def test_set_effect_checks_the_config_before_the_stream(ledfx: MagicMock) -> None:
