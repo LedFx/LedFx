@@ -194,9 +194,14 @@ FunctionEnd
 Section Uninstall
   SetRegView 64
   Call un.CloseLedFx
+  ; Stop before touching anything else, so the uninstall can be retried.
+  ClearErrors
+  RMDir /r "$INSTDIR\_internal"
+  ${If} ${Errors}
+    Abort "Couldn't remove $INSTDIR\_internal. Close any program using it, then try again."
+  ${EndIf}
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
-  RMDir /r "$INSTDIR\_internal"
   Delete "$INSTDIR\LedFx.exe"
 
   SetShellVarContext all
