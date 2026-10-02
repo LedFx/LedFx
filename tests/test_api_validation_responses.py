@@ -38,6 +38,7 @@ from ledfx.api.virtual_effects_delete import EffectsEndpoint as EffectsDeleteEnd
 from ledfx.api.virtual_presets import VirtualPresetsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.configuration.models import Preset, Segment, VirtualEntry
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Device, Devices, SerialDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
@@ -618,7 +619,8 @@ async def test_bad_effect_posts_are_named(body: object, reason: str) -> None:
 
 async def test_effect_put_without_type_updates_the_active_effect() -> None:
     ledfx, virtual = _with_virtual()
-    virtual.active_effect.config = dict[str, object]()
+    virtual.active_effect.config = PluginConfig.model_validate({})
+    ledfx.effects.get_class.return_value.config_model.return_value = PluginConfig
     virtual.active_effect.name = "Single Color"
     body = {"config": {"brightness": 0.5}}
     _, response = await _call(

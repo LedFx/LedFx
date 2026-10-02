@@ -1,0 +1,14 @@
+"""Helpers shared by v1 handlers that keep v1's behaviour on top of the strict,
+typed managers. Everything here is deleted with v1 (find users with
+``grep -rn "v1-compat"``)."""
+
+from ledfx.configuration.plugin import PluginConfig
+from ledfx.core import LedFxCore
+
+
+def effect_config(ledfx: LedFxCore, type_id: str, raw: object) -> PluginConfig:
+    """v1-compat: v1 sends raw JSON settings and answers a bad value with
+    pydantic's error list (HTTP 400), so it validates against the type's own
+    model before it calls the manager. Raises ValidationError; type_id must be
+    registered."""
+    return ledfx.effects.get_class(type_id).config_model().model_validate(raw)

@@ -24,13 +24,23 @@ class NotFound(LedFxError):
     problem: ClassVar[str] = "not-found"
     title: ClassVar[str] = "Not found"
 
-    def __init__(self, kind: str, id: str) -> None:
-        super().__init__(f"{kind} '{id}' not found")
+    named: ClassVar[int] = 10  # ids a plural detail names; the rest are counted
+
+    def __init__(self, kind: str, id: str, *more: str) -> None:
+        if more:
+            ids = (id, *more)
+            names = ", ".join(f"'{i}'" for i in ids[: self.named])
+            if len(ids) > self.named:
+                names += f" and {len(ids) - self.named} more"
+            super().__init__(f"{kind}s not found: {names}")
+        else:
+            super().__init__(f"{kind} '{id}' not found")
         self.kind = kind
         self.id = id
+        self.ids = (id, *more)
 
     def __reduce__(self):
-        return type(self), (self.kind, self.id)
+        return type(self), (self.kind, *self.ids)
 
 
 class Conflict(LedFxError):

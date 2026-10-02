@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from ledfx.api.v2.routes import virtual_effect
 from ledfx.configuration.fields import VirtualIdStr
-from ledfx.configuration.models import Segment
+from ledfx.configuration.models import EffectEntry, Segment
 from tests.api_v2.virtuals_client import (
     BIRD,
     Client,
@@ -98,6 +98,40 @@ async def test_put_refusals_are_conflicts(v2_client: Client) -> None:
     )
     body = await expect_problem(resp, 409, "conflict")
     assert body["detail"] == "Virtual matrix is being streamed to"
+
+
+async def test_put_with_a_stale_stored_config_is_a_409(v2_client: Client) -> None:
+    core = core_of(v2_client)
+    entry = core.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
+    assert entry is not None
+    entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
+    known = len(list(core.effects))
+    resp = await v2_client.put(EFFECT, json={"type": "rainbow"})
+    body = await expect_problem(resp, 409, "conflict")
+    assert body["detail"] == "Stored field 'config.speed' is invalid"
+    assert len(list(core.effects)) == known
+    # Sending the setting replaces the stale one.
+    await _put(v2_client, {"type": "rainbow", "config": {"speed": 2.0}})
+
+
+async def test_a_streamed_to_refusal_creates_no_effect(
+    v2_client: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    core = core_of(v2_client)
+    core.virtuals.set_segments(
+        VirtualIdStr("dj bird"),
+        [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)],
+    )
+    await _put(v2_client, {"type": "rainbow"})
+    known = len(list(core.effects))
+    create = MagicMock(wraps=core.effects.create)
+    monkeypatch.setattr(core.effects, "create", create)
+    resp = await v2_client.put(
+        f"{V}/matrix/effect", json={"type": "singleColor", "fallback_s": 5}
+    )
+    await expect_problem(resp, 409, "conflict")
+    create.assert_not_called()
+    assert len(list(core.effects)) == known
 
 
 async def test_patch_changes_the_running_effect(v2_client: Client) -> None:

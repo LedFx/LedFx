@@ -71,7 +71,11 @@ Behaviour worth knowing:
   can be read and changed, but `DELETE /virtuals/oneshot` ends every flash
   instead of deleting it.
 - `DELETE …/highlight` is idempotent.
-- `set-effect` without a `config` starts the effect type's defaults.
+- `set-effect` without a `config` starts the effect type's defaults. An unknown
+  id in `virtual_ids` is a 404 and nothing starts.
+- `PUT …/effect` without a `config` restores the settings the virtual last used
+  for the type; if one of them no longer passes the type's checks, that is a 409
+  naming the field, and nothing starts.
 
 <iframe src="_static/api-v2/index.html" title="LedFx API v2 reference"
         style="width: 100%; height: 80vh; border: 0;"></iframe>

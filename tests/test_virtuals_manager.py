@@ -2,15 +2,15 @@
 
 import asyncio
 import inspect
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from unittest.mock import MagicMock
 
 import pytest
 from aiohttp.test_utils import TestClient, TestServer
-from pydantic import ValidationError
 
 from ledfx.api.effects import EffectsEndpoint
 from ledfx.api.virtual import VirtualEndpoint
+from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
@@ -24,11 +24,12 @@ from ledfx.configuration.models import (
     VirtualConfig,
     replace_model,
 )
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.errors import Conflict, Invalid, NotFound, SafeMode
 from ledfx.events import GlobalPauseEvent, VirtualConfigUpdateEvent
-from ledfx.virtuals import EffectRejected, VirtualChanges, Virtuals
+from ledfx.virtuals import EffectRejected, VirtualChanges, Virtuals, restarts_effect
 from tests.test_utilities.virtuals_core import (
     add_virtual,
     enter_safe_mode,
@@ -37,6 +38,12 @@ from tests.test_utilities.virtuals_core import (
 from tests.v1_golden.harness import build_app
 
 BIRD = VirtualIdStr("dj bird")
+
+
+def cfg(values: Mapping[str, object]) -> PluginConfig:
+    """Effect settings as the manager takes them."""
+    return PluginConfig.model_validate(values)
+
 
 # Every manager method that changes state. None may be a coroutine: the
 # change and its save must happen with no await in between.
@@ -285,7 +292,7 @@ def _setting(ledfx: MagicMock, name: str) -> object:
 
 
 def test_set_effect_runs_stores_and_saves(ledfx: MagicMock) -> None:
-    virtual = ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": 2.0})
+    virtual = ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 2.0}))
     assert virtual.id == "dj bird"
     assert _running(ledfx) == "rainbow"
     assert _setting(ledfx, "speed") == 2.0
@@ -297,24 +304,27 @@ def test_set_effect_runs_stores_and_saves(ledfx: MagicMock) -> None:
 
 
 def test_set_effect_without_config_restores_the_stored_one(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": 2.0})
-    ledfx.virtuals.set_effect(BIRD, "singleColor", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 2.0}))
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
     ledfx.virtuals.set_effect(BIRD, "rainbow", None)
     assert _setting(ledfx, "speed") == 2.0
 
 
 def test_set_effect_refusals(ledfx: MagicMock) -> None:
+    before = set(ledfx.effects)
     with pytest.raises(Invalid, match="Unknown effect type: nope") as caught:
-        ledfx.virtuals.set_effect(BIRD, "nope", {})
+        ledfx.virtuals.set_effect(BIRD, "nope", cfg({}))
     assert caught.value.loc == ("body", "type")
-    with pytest.raises(ValidationError):
-        ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": "fast"})
+    with pytest.raises(Invalid) as bad:
+        ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": "fast"}))
+    assert bad.value.loc == ("body", "config", "speed")
     with pytest.raises(
         EffectRejected, match="no configured device segments"
     ) as rejected:
-        ledfx.virtuals.set_effect(VirtualIdStr("empty"), "rainbow", {})
+        ledfx.virtuals.set_effect(VirtualIdStr("empty"), "rainbow", cfg({}))
     assert rejected.value.effect.type == "rainbow"
     assert rejected.value.status == 409
+    assert set(ledfx.effects) == before
     ledfx.config_store.request_save.assert_not_called()
 
 
@@ -324,17 +334,58 @@ def test_set_effect_with_fallback_on_a_streamed_virtual_conflicts(
     ledfx.virtuals.set_segments(
         BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
     )
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     matrix = VirtualIdStr("matrix")
     assert ledfx.virtuals.get_or_raise(matrix).streaming
     with pytest.raises(Conflict, match="Virtual matrix is being streamed to"):
-        ledfx.virtuals.set_effect(matrix, "singleColor", {}, fallback=5.0)
+        ledfx.virtuals.set_effect(matrix, "singleColor", cfg({}), fallback=5.0)
+
+
+def test_set_effect_checks_the_stream_before_it_creates_anything(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledfx.virtuals.set_segments(
+        BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
+    )
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    create = MagicMock(wraps=ledfx.effects.create)
+    monkeypatch.setattr(ledfx.effects, "create", create)
+    with pytest.raises(Conflict, match="being streamed to"):
+        ledfx.virtuals.set_effect(
+            VirtualIdStr("matrix"), "singleColor", None, fallback=5.0
+        )
+    create.assert_not_called()
+
+
+def test_a_stale_stored_config_is_a_conflict_naming_the_field(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 2.0}))
+    entry = ledfx.virtuals.get_or_raise(BIRD).entry
+    assert entry is not None
+    entry.effects["rainbow"].config["speed"] = "x"
+    before = set(ledfx.effects)
+    with pytest.raises(Conflict, match="Stored field 'config.speed'") as caught:
+        ledfx.virtuals.set_effect(BIRD, "rainbow", None)
+    assert caught.value.loc == ("config", "speed")
+    assert set(ledfx.effects) == before
+
+
+def test_restarts_effect_is_a_colour_change_on_a_blending_effect(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
+    effect = _effect(ledfx)
+    assert restarts_effect(effect, cfg({"color": "#00ff00"}))
+    assert not restarts_effect(effect, cfg({"speed": 3.0}))
+    effect._config = effect.config.model_copy(update={"color_blend": False})
+    assert not restarts_effect(effect, cfg({"color": "#00ff00"}))
 
 
 def test_patch_effect_updates_the_running_effect(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     started = _effect(ledfx)
-    ledfx.virtuals.patch_effect(BIRD, {"speed": 3.0})
+    ledfx.virtuals.patch_effect(BIRD, cfg({"speed": 3.0}))
     assert _effect(ledfx) is started
     assert started.config.as_dict()["speed"] == 3.0
     entry = ledfx.virtuals.get_or_raise(BIRD).entry
@@ -342,25 +393,26 @@ def test_patch_effect_updates_the_running_effect(ledfx: MagicMock) -> None:
 
 
 def test_a_colour_change_restarts_the_effect(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "singleColor", {})
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
     started = _effect(ledfx)
-    ledfx.virtuals.patch_effect(BIRD, {"color": "#00ff00"})
+    ledfx.virtuals.patch_effect(BIRD, cfg({"color": "#00ff00"}))
     assert _effect(ledfx) is not started
     assert _setting(ledfx, "color") == "#00ff00"
 
 
 def test_patch_effect_refusals(ledfx: MagicMock) -> None:
     with pytest.raises(Conflict, match="Virtual dj bird has no active effect"):
-        ledfx.virtuals.patch_effect(BIRD, {"speed": 3.0})
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
-    with pytest.raises(ValidationError):
-        ledfx.virtuals.patch_effect(BIRD, {"speed": "fast"})
+        ledfx.virtuals.patch_effect(BIRD, cfg({"speed": 3.0}))
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    with pytest.raises(Invalid) as bad:
+        ledfx.virtuals.patch_effect(BIRD, cfg({"speed": "fast"}))
+    assert bad.value.loc == ("body", "config", "speed")
 
 
 def test_running_effect(ledfx: MagicMock) -> None:
     with pytest.raises(Conflict, match="Virtual dj bird has no active effect"):
         ledfx.virtuals.running_effect(BIRD)
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": 3.0})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
     type_id, config = ledfx.virtuals.running_effect(BIRD)
     assert (type_id, config.as_dict()["speed"]) == ("rainbow", 3.0)
 
@@ -370,22 +422,22 @@ def test_patch_effect_refuses_a_patch_checked_against_another_type(
 ) -> None:
     """A fallback can swap the effect between the caller's check and the
     patch; the patch must then not reach the new effect."""
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": 2.0})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 2.0}))
     with pytest.raises(Conflict, match="runs rainbow, not singleColor"):
-        ledfx.virtuals.patch_effect(BIRD, {"speed": 3.0}, type_id="singleColor")
+        ledfx.virtuals.patch_effect(BIRD, cfg({"speed": 3.0}), type_id="singleColor")
     assert _setting(ledfx, "speed") == 2.0
-    ledfx.virtuals.patch_effect(BIRD, {"speed": 3.0}, type_id="rainbow")
+    ledfx.virtuals.patch_effect(BIRD, cfg({"speed": 3.0}), type_id="rainbow")
     assert _setting(ledfx, "speed") == 3.0
 
 
 def test_randomize_keeps_brightness(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"brightness": 0.3})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"brightness": 0.3}))
     ledfx.virtuals.randomize_effect(BIRD)
     assert _setting(ledfx, "brightness") == 0.3
 
 
 def test_reset_restores_defaults(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": 3.0})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
     ledfx.virtuals.reset_effect(BIRD)
     assert _setting(ledfx, "speed") != 3.0
     with pytest.raises(Conflict, match="has no active effect"):
@@ -393,7 +445,7 @@ def test_reset_restores_defaults(ledfx: MagicMock) -> None:
 
 
 def test_clear_effect_keeps_history(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.clear_effect(BIRD)
     entry = ledfx.virtuals.get_or_raise(BIRD).entry
     assert entry is not None
@@ -402,8 +454,8 @@ def test_clear_effect_keeps_history(ledfx: MagicMock) -> None:
 
 
 def test_delete_effect_history_stops_a_running_type(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "singleColor", {})
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.delete_effect_history(BIRD, "rainbow")
     assert _running(ledfx) == ""
     assert [t for t, _ in ledfx.virtuals.effect_history(BIRD)] == ["singleColor"]
@@ -430,8 +482,8 @@ def test_fire_fallback_is_runtime_only(ledfx: MagicMock) -> None:
 
 
 EFFECT_CHANGES: dict[str, Callable[[Virtuals], object]] = {
-    "set": lambda v: v.set_effect(BIRD, "rainbow", {}),
-    "patch": lambda v: v.patch_effect(BIRD, {"speed": 3.0}),
+    "set": lambda v: v.set_effect(BIRD, "rainbow", cfg({})),
+    "patch": lambda v: v.patch_effect(BIRD, cfg({"speed": 3.0})),
     "randomize": lambda v: v.randomize_effect(BIRD),
     "reset": lambda v: v.reset_effect(BIRD),
     "clear": lambda v: v.clear_effect(BIRD),
@@ -445,7 +497,7 @@ EFFECT_CHANGES: dict[str, Callable[[Virtuals], object]] = {
 def test_effect_changes_are_refused_in_safe_mode(
     ledfx: MagicMock, call: Callable[[Virtuals], object]
 ) -> None:
-    ledfx.virtuals.set_effect(BIRD, "singleColor", {})
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
     ledfx.config_store.request_save.reset_mock()
     enter_safe_mode(ledfx)
     before = ledfx.config.model_dump()
@@ -460,12 +512,14 @@ def test_refused_effects_are_not_left_in_the_registry(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_segments(
         BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
     )
-    ledfx.virtuals.set_effect(BIRD, "singleColor", {})
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
     before = set(ledfx.effects)
     with pytest.raises(Conflict):  # streamed to
-        ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "rainbow", {}, fallback=5.0)
+        ledfx.virtuals.set_effect(
+            VirtualIdStr("matrix"), "rainbow", cfg({}), fallback=5.0
+        )
     with pytest.raises(EffectRejected):  # no segments
-        ledfx.virtuals.set_effect(VirtualIdStr("empty"), "rainbow", {})
+        ledfx.virtuals.set_effect(VirtualIdStr("empty"), "rainbow", cfg({}))
     assert set(ledfx.effects) == before
 
 
@@ -478,7 +532,7 @@ def test_an_effect_that_fails_to_activate_stays_registered_iff_held(
     monkeypatch.setattr(Effect, "activate", refuse)
     before = set(ledfx.effects)
     with pytest.raises(EffectRejected, match="boom") as rejected:
-        ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+        ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     effect = rejected.value.effect
     held = ledfx.virtuals.get_or_raise(BIRD).active_effect is effect
     assert (effect.id in set(ledfx.effects)) == held
@@ -496,15 +550,15 @@ def _flashes(ledfx: MagicMock, virtual_id: str) -> list[Flash]:
 
 
 def test_clear_all_effects_can_be_limited(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
-    ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "rainbow", cfg({}))
     ledfx.virtuals.clear_all_effects([VirtualIdStr("matrix")])
     assert _running(ledfx) == "rainbow"
     assert _running(ledfx, "matrix") == ""
 
 
 def test_apply_global_config_updates_running_effects(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"flip": False})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"flip": False}))
     updated, skipped = ledfx.virtuals.apply_global_config(
         GlobalEffectUpdate(brightness=0.5, flip="toggle")
     )
@@ -516,8 +570,8 @@ def test_apply_global_config_updates_running_effects(ledfx: MagicMock) -> None:
 
 
 def test_apply_global_config_gradient_and_filter(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "gradient", {})
-    ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "gradient", {})
+    ledfx.virtuals.set_effect(BIRD, "gradient", cfg({}))
+    ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "gradient", cfg({}))
     assert ledfx.virtuals.apply_global_config(
         GlobalEffectUpdate(gradient="Dancefloor"), [VirtualIdStr("matrix")]
     ) == (1, 0)
@@ -530,11 +584,31 @@ def test_apply_global_config_gradient_and_filter(ledfx: MagicMock) -> None:
 
 
 def test_set_effect_all_counts_each_outcome(ledfx: MagicMock) -> None:
-    result = ledfx.virtuals.set_effect_all("rainbow", {}, ["dj bird", "ghost", "empty"])
-    assert result == SetEffectAllResult(applied=1, skipped=1, blocked=0, failed=1)
+    result = ledfx.virtuals.set_effect_all("rainbow", cfg({}), ["dj bird", "empty"])
+    assert result == SetEffectAllResult(applied=1, blocked=0, failed=1)
     with pytest.raises(Invalid, match="Unknown effect type: nope"):
-        ledfx.virtuals.set_effect_all("nope", {})
+        ledfx.virtuals.set_effect_all("nope", cfg({}))
     assert _running(ledfx) == "rainbow"
+
+
+def test_set_effect_all_refuses_an_unknown_id_before_starting_anything(
+    ledfx: MagicMock,
+) -> None:
+    before = set(ledfx.effects)
+    with pytest.raises(NotFound, match="Virtual 'ghost' not found"):
+        ledfx.virtuals.set_effect_all("rainbow", None, [BIRD, VirtualIdStr("ghost")])
+    assert _running(ledfx) == ""
+    assert set(ledfx.effects) == before
+    ledfx.config_store.request_save.assert_not_called()
+
+
+def test_set_effect_all_without_a_config_starts_the_defaults(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
+    result = ledfx.virtuals.set_effect_all("rainbow", None, [BIRD])
+    assert result.applied == 1
+    assert _setting(ledfx, "speed") != 3.0
 
 
 def test_set_effect_all_blocks_streamed_virtuals_with_a_fallback(
@@ -543,8 +617,10 @@ def test_set_effect_all_blocks_streamed_virtuals_with_a_fallback(
     ledfx.virtuals.set_segments(
         BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
     )
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
-    result = ledfx.virtuals.set_effect_all("singleColor", {}, ["matrix"], fallback=5.0)
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    result = ledfx.virtuals.set_effect_all(
+        "singleColor", cfg({}), ["matrix"], fallback=5.0
+    )
     assert result.blocked == 1
 
 
@@ -552,7 +628,7 @@ def test_oneshot_one_and_all(ledfx: MagicMock) -> None:
     params = OneshotParams(color="#0000ff", hold_ms=500, brightness=3)
     with pytest.raises(Conflict, match="Virtual dj bird is not active"):
         ledfx.virtuals.oneshot(BIRD, params)
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.oneshot(BIRD, params)
     ledfx.virtuals.oneshot(None, params)  # inactive virtuals are passed over
     assert len(_flashes(ledfx, "dj bird")) == 2
@@ -562,7 +638,7 @@ def test_oneshot_one_and_all(ledfx: MagicMock) -> None:
 
 
 def test_force_color(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.force_color(BIRD, "red")
     assert ledfx.virtuals.get_or_raise(BIRD).assembled_frame[0].tolist() == [
         255.0,
@@ -602,7 +678,7 @@ def test_highlight_needs_calibration(ledfx: MagicMock) -> None:
 def test_copy_effect(ledfx: MagicMock) -> None:
     with pytest.raises(Conflict, match="no active effect on source virtual"):
         ledfx.virtuals.copy_effect(BIRD, [MIRROR])
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {"speed": 3.0})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
     ledfx.virtuals.copy_effect(BIRD, [MIRROR, VirtualIdStr("ghost")])
     copied = ledfx.virtuals.get_or_raise(MIRROR).active_effect
     assert copied.type == "rainbow" and copied.config.speed == 3.0
@@ -612,7 +688,7 @@ def test_copy_effect(ledfx: MagicMock) -> None:
 
 BULK_CHANGES: dict[str, Callable[[Virtuals], object]] = {
     "apply-global": lambda v: v.apply_global_config(GlobalEffectUpdate(brightness=0.5)),
-    "set-effect-all": lambda v: v.set_effect_all("rainbow", {}),
+    "set-effect-all": lambda v: v.set_effect_all("rainbow", cfg({})),
     "copy": lambda v: v.copy_effect(BIRD, [MIRROR]),
 }
 
@@ -621,7 +697,7 @@ BULK_CHANGES: dict[str, Callable[[Virtuals], object]] = {
 def test_bulk_changes_are_refused_in_safe_mode(
     ledfx: MagicMock, call: Callable[[Virtuals], object]
 ) -> None:
-    ledfx.virtuals.set_effect(BIRD, "singleColor", {})
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
     ledfx.config_store.request_save.reset_mock()
     enter_safe_mode(ledfx)
     before = ledfx.config.model_dump()
@@ -633,7 +709,7 @@ def test_bulk_changes_are_refused_in_safe_mode(
 
 
 def test_runtime_tools_work_in_safe_mode(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.config_store.request_save.reset_mock()
     enter_safe_mode(ledfx)
     ledfx.virtuals.clear_all_effects()
@@ -646,9 +722,9 @@ def test_runtime_tools_work_in_safe_mode(ledfx: MagicMock) -> None:
 
 
 def test_bulk_refusals_leave_nothing_in_the_registry(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     before = set(ledfx.effects)
-    ledfx.virtuals.set_effect_all("rainbow", {}, ["empty"])  # no segments
+    ledfx.virtuals.set_effect_all("rainbow", cfg({}), ["empty"])  # no segments
     with pytest.raises(Invalid):
         ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("empty")])
     assert set(ledfx.effects) == before
@@ -658,16 +734,16 @@ def test_set_effect_all_mixed_outcomes_leave_only_the_running_effects(
     ledfx: MagicMock,
 ) -> None:
     before = set(ledfx.effects)
-    ids = [BIRD, MIRROR, VirtualIdStr("empty"), VirtualIdStr("ghost")]
-    result = ledfx.virtuals.set_effect_all("rainbow", {}, ids)
-    assert result == SetEffectAllResult(applied=2, skipped=1, blocked=0, failed=1)
+    ids = [BIRD, MIRROR, VirtualIdStr("empty")]
+    result = ledfx.virtuals.set_effect_all("rainbow", cfg({}), ids)
+    assert result == SetEffectAllResult(applied=2, blocked=0, failed=1)
     assert len(set(ledfx.effects) - before) == 2
 
 
 def test_copy_effect_warns_per_refusing_target(
     ledfx: MagicMock, caplog: pytest.LogCaptureFixture
 ) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     with caplog.at_level("WARNING", logger="ledfx.virtuals"):
         ledfx.virtuals.copy_effect(BIRD, [MIRROR, VirtualIdStr("empty")])
     refusals = [r for r in caplog.records if "Unable to copy effect" in r.message]
@@ -675,7 +751,7 @@ def test_copy_effect_warns_per_refusing_target(
 
 
 async def test_v1_apply_global_accepts_a_colour_list(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     app = build_app(ledfx, (EffectsEndpoint,))
     async with TestClient(TestServer(app)) as client:
         response = await client.put(
@@ -687,8 +763,41 @@ async def test_v1_apply_global_accepts_a_colour_list(ledfx: MagicMock) -> None:
     assert effect.config.background_color == "#ff0000"
 
 
+async def test_v1_put_colour_with_a_fallback_arms_the_fallback(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "singleColor", cfg({}))
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    app = build_app(ledfx, (VirtualEffectsEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+        path = f"/api/virtuals/{BIRD}/effects"
+        # In place: nothing restarts, so the fallback is dropped.
+        response = await client.put(path, json={"config": {"speed": 4}, "fallback": 30})
+        assert (await response.json())["status"] == "success"
+        assert not virtual.fallback_active
+        # A colour change restarts the effect as a fallback.
+        response = await client.put(
+            path, json={"config": {"color": "#00ff00"}, "fallback": 30}
+        )
+        assert (await response.json())["status"] == "success"
+    try:
+        assert virtual.fallback_active
+        assert virtual.fallback_effect_type == "singleColor"
+    finally:
+        virtual.fallback_clear()
+
+
+def test_set_effect_all_names_every_unknown_id(ledfx: MagicMock) -> None:
+    ids = [BIRD, VirtualIdStr("ghost"), MIRROR, VirtualIdStr("spook")]
+    with pytest.raises(NotFound) as caught:
+        ledfx.virtuals.set_effect_all("rainbow", None, ids)
+    assert caught.value.detail == "Virtuals not found: 'ghost', 'spook'"
+    assert caught.value.ids == ("ghost", "spook")
+    assert _running(ledfx) == ""
+
+
 def test_refused_activations_leave_the_registry_alone(ledfx: MagicMock) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.clear_effect(BIRD)
     ledfx.virtuals.patch(BIRD, VirtualChanges(segments=[], active=False))
     before = set(ledfx.effects)
@@ -701,7 +810,7 @@ def test_refused_activations_leave_the_registry_alone(ledfx: MagicMock) -> None:
 async def test_v1_refused_activations_leave_the_registry_alone(
     ledfx: MagicMock,
 ) -> None:
-    ledfx.virtuals.set_effect(BIRD, "rainbow", {})
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.clear_effect(BIRD)
     ledfx.virtuals.patch(BIRD, VirtualChanges(segments=[], active=False))
     before = set(ledfx.effects)

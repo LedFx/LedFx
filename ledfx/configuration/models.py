@@ -345,7 +345,6 @@ class SetEffectAllResult(NamedTuple):
     """How Virtuals.set_effect_all went, per virtual."""
 
     applied: int
-    skipped: int
     blocked: int
     failed: int
 

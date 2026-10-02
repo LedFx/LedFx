@@ -3,14 +3,15 @@ from json import JSONDecodeError
 from typing import SupportsFloat
 
 from aiohttp import web
-from pydantic import TypeAdapter
+from pydantic import TypeAdapter, ValidationError
 
 from ledfx.api import RestEndpoint
+from ledfx.api.v1_compat import effect_config as validated_effect_config
 from ledfx.api.virtual_effects import process_fallback
 from ledfx.color import resolve_gradient, validate_color
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import GlobalEffectUpdate
-from ledfx.errors import Invalid
+from ledfx.errors import Invalid, ensure_writable
 
 _LOGGER = logging.getLogger(__name__)
 _GLOBAL_UPDATE = TypeAdapter(GlobalEffectUpdate)
@@ -199,16 +200,51 @@ class EffectsEndpoint(RestEndpoint):
         # Fallback behaviour (same semantics as virtual endpoint)
         fallback = process_fallback(data.get("fallback", None))
 
+        type_id = str(effect_type)
+        virtuals = self._ledfx.virtuals
         try:
-            applied, skipped, blocked, failed = self._ledfx.virtuals.set_effect_all(
-                str(effect_type),
-                effect_config,
-                None if vlist is None else [VirtualIdStr(str(v)) for v in vlist],
-                fallback=fallback,
+            # v1-compat: safe mode answers before a bad config does.
+            ensure_writable(self._ledfx)
+            # v1-compat: unknown ids are skipped and counted, not refused.
+            ids = (
+                list(virtuals)
+                if vlist is None
+                else [VirtualIdStr(str(v)) for v in vlist]
+            )
+            known = [v for v in ids if virtuals.get(v) is not None]
+            skipped = len(ids) - len(known)
+            config = None
+            # v1-compat: check the config up front; a bad one is counted, below.
+            if type_id in self._ledfx.effects.types() and effect_config is not None:
+                try:
+                    config = validated_effect_config(
+                        self._ledfx, type_id, effect_config
+                    )
+                except ValidationError:
+                    # v1-compat: a bad config is one failure per virtual that
+                    # would have run it, not an error.
+                    blocked = sum(
+                        1
+                        for v in known
+                        if fallback is not None and virtuals.get_or_raise(v).streaming
+                    )
+                    applied, failed = 0, len(known) - blocked
+                    return await self._applied_effect(
+                        effect_type, applied, skipped, blocked, failed
+                    )
+            applied, blocked, failed = virtuals.set_effect_all(
+                type_id, config, known, fallback=fallback
             )
         except Invalid as err:
             return await self.invalid_request(err.detail)
 
+        return await self._applied_effect(
+            effect_type, applied, skipped, blocked, failed
+        )
+
+    async def _applied_effect(
+        self, effect_type: object, applied: int, skipped: int, blocked: int, failed: int
+    ) -> web.Response:
         return await self.request_success(
             "success",
             f"Applied effect '{effect_type}' to {applied} virtuals (skipped {skipped}, blocked {blocked}, failed {failed})",

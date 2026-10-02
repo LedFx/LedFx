@@ -31,6 +31,8 @@ from ledfx.api.v2.models.virtuals import (
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import GlobalEffectUpdate, OneshotParams
 from ledfx.configuration.models import Highlight as HighlightParams
+from ledfx.configuration.plugin import PluginConfig
+from ledfx.errors import NotFound
 
 if TYPE_CHECKING:
     from ledfx.core import LedFxCore
@@ -97,25 +99,25 @@ async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfig
     return ApplyConfigCounts(updated=updated, skipped=skipped)
 
 
-@router.post("/virtuals/set-effect")
+@router.post("/virtuals/set-effect", errors=[NotFound])
 async def set_effect_on_virtuals(
     body: SetEffectAll, ledfx: LedFxDep
 ) -> SetEffectAllCounts:
     """Start one effect on these virtuals (default: all).
 
-    Without config the type's defaults start. A virtual that refuses it (no
-    segments) counts as failed; with
-    fallback_s, one that is being streamed to counts as blocked.
+    Without config the type's defaults start. An unknown virtual id is a 404
+    and nothing starts. A virtual that refuses the effect (no segments) counts
+    as failed; with fallback_s, one that is being streamed to counts as
+    blocked.
     """
     variant = effect_variant(body.type)
     config = None
     if body.config is not None:
-        config = checked_config(variant, body.config, body.config)
+        config = PluginConfig.model_validate(
+            checked_config(variant, body.config, body.config)
+        )
     result = ledfx.virtuals.set_effect_all(
-        body.type,
-        config,
-        _known(ledfx, body.virtual_ids, "virtual_ids"),
-        fallback=body.fallback_s,
+        body.type, config, body.virtual_ids, fallback=body.fallback_s
     )
     return SetEffectAllCounts(
         applied=result.applied, blocked=result.blocked, failed=result.failed

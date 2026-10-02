@@ -5,11 +5,13 @@ from aiohttp import web
 from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
+from ledfx.api.v1_compat import effect_config as validated_effect_config
 from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.configuration.randomize import randomize_effect_config
 from ledfx.effects import DummyEffect
-from ledfx.errors import Conflict, Invalid
-from ledfx.virtuals import EffectRejected
+from ledfx.errors import Conflict, Invalid, ensure_writable
+from ledfx.virtuals import EffectRejected, restarts_effect
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -125,16 +127,39 @@ class EffectsEndpoint(RestEndpoint):
 
         # The same type updates the running effect; another type replaces it.
         virtuals = self._ledfx.virtuals
+        vid = VirtualIdStr(virtual_id)
         try:
-            if virtual.active_effect.type == effect_type:
-                virtual = virtuals.patch_effect(
-                    VirtualIdStr(virtual_id), effect_config, fallback=fallback
+            # v1-compat: safe mode answers before a bad config does.
+            ensure_writable(self._ledfx)
+            running = virtual.active_effect
+            if running.type == effect_type:
+                # v1-compat: check the merged settings first, for pydantic's
+                # error list; the manager is handed typed values.
+                merged = validated_effect_config(
+                    self._ledfx,
+                    effect_type,
+                    {**running.config.as_dict(), **effect_config},
                 )
+                # v1-compat: the patch holds the checked values of the keys sent.
+                checked = merged.as_dict()
+                patch = PluginConfig.model_validate(
+                    {k: checked.get(k, v) for k, v in effect_config.items()}
+                )
+                if fallback is not None and restarts_effect(running, patch):
+                    # v1-compat: a colour change with a fallback restarts the
+                    # effect as a fallback; the manager's patch has no fallback.
+                    virtual = virtuals.set_effect(
+                        vid, effect_type, merged, fallback=fallback
+                    )
+                else:
+                    # v1-compat: any fallback is dropped when nothing restarts.
+                    virtual = virtuals.patch_effect(vid, patch)
             else:
                 virtual = virtuals.set_effect(
-                    VirtualIdStr(virtual_id),
+                    vid,
                     effect_type,
-                    effect_config,
+                    # v1-compat: check the raw settings for pydantic's error list.
+                    validated_effect_config(self._ledfx, effect_type, effect_config),
                     fallback=fallback,
                 )
         except ValidationError as err:
@@ -192,9 +217,22 @@ class EffectsEndpoint(RestEndpoint):
 
         fallback = process_fallback(data.get("fallback", None))
         try:
-            # config None: the manager restores the type's stored config.
+            # v1-compat: safe mode answers before a bad config does.
+            ensure_writable(self._ledfx)
+            # v1-compat: without a config the type's stored one applies; check
+            # it here (a stale one answers 400) and hand the manager typed values.
+            vid = VirtualIdStr(virtual_id)
             virtual = self._ledfx.virtuals.set_effect(
-                VirtualIdStr(virtual_id), effect_type, effect_config, fallback=fallback
+                vid,
+                effect_type,
+                validated_effect_config(
+                    self._ledfx,
+                    effect_type,
+                    virtual.get_effects_config(effect_type)
+                    if effect_config is None
+                    else effect_config,
+                ),
+                fallback=fallback,
             )
         except ValidationError as err:
             return await self.validation_error(err)

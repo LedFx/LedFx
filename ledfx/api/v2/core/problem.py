@@ -8,7 +8,7 @@ from aiohttp import web
 from pydantic import BaseModel, ConfigDict, ValidationError
 from pydantic_core import from_json
 
-from ledfx.errors import LedFxError
+from ledfx.errors import LedFxError, NotFound
 
 PROBLEM_PREFIX = "urn:ledfx:problem:"
 PROBLEM_MEDIA_TYPE = "application/problem+json"
@@ -145,6 +145,14 @@ def problem_for(exc: BaseException, instance: str) -> Problem:
         if exc.loc and exc.status == 422:
             errors = [
                 ProblemDetailError(loc=list(exc.loc), msg=exc.detail, type=exc.problem)
+            ]
+        elif isinstance(exc, NotFound) and len(exc.ids) > 1:
+            # The detail names only the first few; each id is listed here.
+            errors = [
+                ProblemDetailError(
+                    loc=[], msg=f"{exc.kind} '{i}' not found", type=exc.problem
+                )
+                for i in exc.ids[:MAX_PROBLEM_ERRORS]
             ]
         return _problem(
             exc.status, exc.problem, exc.title, exc.detail, instance, errors

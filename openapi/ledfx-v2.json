@@ -32369,7 +32369,7 @@
     },
     "/api/v2/virtuals/set-effect": {
       "post": {
-        "description": "Without config the type's defaults start. A virtual that refuses it (no\nsegments) counts as failed; with\nfallback_s, one that is being streamed to counts as blocked.",
+        "description": "Without config the type's defaults start. An unknown virtual id is a 404\nand nothing starts. A virtual that refuses the effect (no segments) counts\nas failed; with fallback_s, one that is being streamed to counts as\nblocked.",
         "operationId": "set_effect_on_virtuals",
         "requestBody": {
           "content": {
@@ -32411,6 +32411,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "409": {
             "content": {
@@ -33803,7 +33813,7 @@
         ]
       },
       "put": {
-        "description": "config is checked against the type's settings; without it the settings\nthis virtual last used for the type apply. With fallback_s the current\neffect comes back after that many seconds (409 if the virtual is being\nstreamed to).",
+        "description": "config is checked against the type's settings; without it the settings\nthis virtual last used for the type apply (409 if they no longer pass\nthe type's checks). With fallback_s the current effect comes back after\nthat many seconds (409 if the virtual is being streamed to).",
         "operationId": "set_effect",
         "parameters": [
           {

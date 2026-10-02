@@ -115,6 +115,15 @@ async def test_a_repeated_id_is_applied_once(v2_client: Client) -> None:
     assert await resp.json() == {"applied": 1, "blocked": 0, "failed": 0}
 
 
+async def test_set_effect_on_an_unknown_virtual_is_a_404(v2_client: Client) -> None:
+    resp = await v2_client.post(
+        f"{V}/set-effect", json={"type": "rainbow", "virtual_ids": ["dj bird", "ghost"]}
+    )
+    body = await expect_problem(resp, 404, "not-found")
+    assert body["detail"] == "Virtual 'ghost' not found"
+    assert _running(v2_client, "dj bird") == ""  # nothing ran before the refusal
+
+
 async def test_oneshot_on_one_virtual(v2_client: Client) -> None:
     resp = await v2_client.post(
         f"{BIRD}/oneshot", json={"color": "blue", "hold_ms": 500}

@@ -80,6 +80,20 @@ def _flash(params: OneshotParams) -> Flash:
     )
 
 
+def restarts_effect(effect: Effect, patch: PluginConfig) -> bool:
+    """Whether patch restarts the running effect: a colour change on an effect
+    that blends colours restarts it, so the change transitions."""
+    return bool(getattr(effect.config, "color_blend", True)) and any(
+        "color" in key for key in patch.as_dict()
+    )
+
+
+def _invalid_config(err: ValidationError) -> Invalid:
+    """The first problem of a config that failed its type's model, as Invalid."""
+    first = err.errors()[0]
+    return Invalid(first["msg"], loc=("body", "config", *first["loc"]))
+
+
 @dataclass(frozen=True)
 class VirtualChanges:
     """What Virtuals.patch changes: only the parts that are set."""
@@ -1934,28 +1948,28 @@ class Virtuals:
         self,
         virtual_id: VirtualIdStr,
         type_id: str,
-        config: Mapping[str, object] | None,
+        config: PluginConfig | None,
         *,
         fallback: float | None = None,
     ) -> Virtual:
         """Start an effect; config None restores the type's stored config.
 
-        With fallback (seconds) the current effect comes back afterwards.
-        Raises Invalid for an unregistered type, ValidationError for a bad
-        config, Conflict for a fallback on a virtual that is streamed to,
-        and EffectRejected when the virtual cannot run it.
+        config is already checked by the caller; a config the type's model
+        refuses is Invalid at body.config.<field>. With fallback (seconds) the
+        current effect comes back afterwards. Raises Invalid for an
+        unregistered type, Conflict for a fallback on a virtual that is
+        streamed to or for a stored config that no longer validates, and
+        EffectRejected when the virtual cannot run the effect. Every check
+        runs before an effect is created.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
-        effects = self._ledfx.effects
-        if type_id not in effects.types():
-            raise Invalid(f"Unknown effect type: {type_id}", loc=("body", "type"))
-        if config is None:
-            config = virtual.get_effects_config(type_id)
-        effect = effects.create(ledfx=self._ledfx, type=type_id, config=dict(config))
+        self._ensure_type(type_id)
         if fallback is not None and virtual.streaming:
-            effects.destroy(effect.id)
             raise Conflict(f"Virtual {virtual_id} is being streamed to")
+        if config is None:
+            config = self._stored_config(virtual, type_id)
+        effect = self._create_effect(type_id, config)
         self._start_effect(virtual, effect, fallback)
         self._ledfx.config_store.request_save()
         return virtual
@@ -1963,40 +1977,36 @@ class Virtuals:
     def patch_effect(
         self,
         virtual_id: VirtualIdStr,
-        patch: Mapping[str, object],
+        patch: PluginConfig,
         *,
-        fallback: float | None = None,
         type_id: str | None = None,
     ) -> Virtual:
         """Change some settings of the running effect.
 
-        A colour change on an effect that blends colours restarts it, so the
-        change transitions (with fallback, as in set_effect). type_id is the
-        type the caller checked the patch against. Raises Conflict when no
-        effect runs or another type runs (a fallback can end in between),
-        ValidationError for a bad value, Invalid when the effect refuses a
-        value, and EffectRejected when the virtual refuses the restarted
-        effect.
+        patch holds only the settings to change, already validated. A colour
+        change on an effect that blends colours restarts it, so the change
+        transitions (see restarts_effect). type_id is the type the caller
+        checked the patch against. Raises Conflict when no effect runs or
+        another type runs (a fallback can end in between), Invalid when the
+        effect refuses a value, and EffectRejected when the virtual refuses
+        the restarted effect.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
         effect = self._running_effect(virtual)
         if type_id is not None and effect.type != type_id:
             raise Conflict(f"Virtual {virtual_id} runs {effect.type}, not {type_id}")
-        if getattr(effect.config, "color_blend", True) and any(
-            "color" in key for key in patch
-        ):
-            effect = self._ledfx.effects.create(
-                ledfx=self._ledfx,
-                type=effect.type,
-                config={**effect.config.as_dict(), **patch},
-            )
-            self._start_effect(virtual, effect, fallback)
+        if restarts_effect(effect, patch):
+            try:
+                merged = effect.config.with_values(**patch.as_dict())
+            except ValidationError as err:
+                raise _invalid_config(err) from err
+            self._start_effect(virtual, self._create_effect(effect.type, merged))
         else:
             try:
-                effect.update_config(dict(patch))
-            except ValidationError:
-                raise
+                effect.update_config(patch.as_dict())
+            except ValidationError as err:
+                raise _invalid_config(err) from err
             except (ValueError, RuntimeError) as err:
                 raise Invalid(str(err), loc=("body", "config")) from err
             virtual.update_effect_config(effect)
@@ -2009,14 +2019,42 @@ class Virtuals:
         effect = self._running_effect(self.get_or_raise(virtual_id))
         model = self._ledfx.effects.get_class(effect.type).config_model()
         return self.patch_effect(
-            virtual_id, randomize_effect_config(model, ["brightness"])
+            virtual_id,
+            PluginConfig.model_validate(randomize_effect_config(model, ["brightness"])),
         )
 
     def reset_effect(self, virtual_id: VirtualIdStr) -> Virtual:
         """Restart the running effect with its default settings."""
         ensure_writable(self._ledfx)
         effect = self._running_effect(self.get_or_raise(virtual_id))
-        return self.set_effect(virtual_id, effect.type, {})
+        return self.set_effect(virtual_id, effect.type, self._defaults(effect.type))
+
+    def _ensure_type(self, type_id: str) -> None:
+        if type_id not in self._ledfx.effects.types():
+            raise Invalid(f"Unknown effect type: {type_id}", loc=("body", "type"))
+
+    def _defaults(self, type_id: str) -> PluginConfig:
+        return self._ledfx.effects.get_class(type_id).config_model().model_validate({})
+
+    def _stored_config(self, virtual: Virtual, type_id: str) -> PluginConfig:
+        """The config this virtual last used for the type; Conflict when it no
+        longer validates (the stored field is the problem, not the request)."""
+        model = self._ledfx.effects.get_class(type_id).config_model()
+        try:
+            return model.model_validate(virtual.get_effects_config(type_id))
+        except ValidationError as err:
+            loc = ("config", *err.errors()[0]["loc"])
+            raise Conflict(
+                f"Stored field '{'.'.join(map(str, loc))}' is invalid", loc=loc
+            ) from err
+
+    def _create_effect(self, type_id: str, config: PluginConfig) -> Effect:
+        try:
+            return self._ledfx.effects.create(
+                ledfx=self._ledfx, type=type_id, config=config
+            )
+        except ValidationError as err:
+            raise _invalid_config(err) from err
 
     def clear_effect(self, virtual_id: VirtualIdStr) -> Virtual:
         """Stop the running effect (it stays in the history)."""
@@ -2153,27 +2191,32 @@ class Virtuals:
     def set_effect_all(
         self,
         type_id: str,
-        config: Mapping[str, object] | None,
+        config: PluginConfig | None,
         virtual_ids: Sequence[VirtualIdStr] | None = None,
         *,
         fallback: float | None = None,
     ) -> SetEffectAllResult:
         """Start one effect on every virtual, or on those listed (config None:
-        the defaults).
+        the defaults; otherwise already validated by the type's model).
 
-        Unknown ids are skipped; with a fallback, streamed-to virtuals are
-        blocked; virtuals that refuse the effect (or its config) failed.
+        Raises Invalid for an unregistered type and NotFound for an unknown id,
+        both before any virtual changes. A repeated id is applied once. With a
+        fallback, streamed-to virtuals are blocked; virtuals that refuse the
+        effect failed.
         """
         ensure_writable(self._ledfx)
-        effects = self._ledfx.effects
-        if type_id not in effects.types():
-            raise Invalid(f"Unknown effect type: {type_id}", loc=("body", "type"))
-        applied = skipped = blocked = failed = 0
-        for virtual_id in list(self._virtuals) if virtual_ids is None else virtual_ids:
-            virtual = self._virtuals.get(virtual_id)
-            if virtual is None:
-                skipped += 1
-                continue
+        self._ensure_type(type_id)
+        ids = list(
+            dict.fromkeys(self._virtuals if virtual_ids is None else virtual_ids)
+        )
+        missing = [v for v in ids if v not in self._virtuals]
+        if missing:
+            raise NotFound("Virtual", *missing)
+        if config is None:
+            config = self._defaults(type_id)
+        applied = blocked = failed = 0
+        for virtual_id in ids:
+            virtual = self._virtuals[virtual_id]
             if fallback is not None and virtual.streaming:
                 _LOGGER.debug(
                     "Skipping virtual %s: streaming active and fallback provided",
@@ -2182,23 +2225,18 @@ class Virtuals:
                 blocked += 1
                 continue
             try:
-                effect = effects.create(
-                    ledfx=self._ledfx, type=type_id, config=dict(config or {})
+                self._start_effect(
+                    virtual, self._create_effect(type_id, config), fallback
                 )
-                self._start_effect(virtual, effect, fallback)
                 applied += 1
-            except (
-                ValueError,
-                RuntimeError,
-                EffectRejected,
-            ) as err:  # includes ValidationError
+            except EffectRejected as err:
                 _LOGGER.warning(
                     "Unable to set effect on virtual %s: %s", virtual_id, err
                 )
                 failed += 1
         if applied > 0:
             self._ledfx.config_store.request_save()
-        return SetEffectAllResult(applied, skipped, blocked, failed)
+        return SetEffectAllResult(applied, blocked, failed)
 
     def oneshot(self, virtual_id: VirtualIdStr | None, params: OneshotParams) -> None:
         """Flash one virtual (Conflict if it is not active), or every active one."""
@@ -2286,7 +2324,7 @@ class Virtuals:
                 continue
             try:
                 effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx, type=source.type, config=source.config.as_dict()
+                    ledfx=self._ledfx, type=source.type, config=source.config
                 )
                 self._start_effect(target, effect)
             except (ValueError, RuntimeError, EffectRejected) as err:
