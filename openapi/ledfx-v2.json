@@ -110,8 +110,12 @@
         "type": "object"
       },
       "ApplyConfigCounts": {
-        "description": "Effects updated, and effects skipped (they have none of the settings).",
+        "description": "Effects updated, skipped (they have none of the settings) and failed\n(they refused the settings).",
         "properties": {
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
           "skipped": {
             "title": "Skipped",
             "type": "integer"
@@ -123,7 +127,8 @@
         },
         "required": [
           "updated",
-          "skipped"
+          "skipped",
+          "failed"
         ],
         "title": "ApplyConfigCounts",
         "type": "object"
@@ -31932,7 +31937,7 @@
     },
     "/api/v2/virtuals/apply-config": {
       "post": {
-        "description": "A gradient also sets the colours sampled from it, except those given. 404\nif an id in virtual_ids does not exist (nothing is written).",
+        "description": "A gradient also sets the colours sampled from it, except those given. Each\nrunning effect is counted as updated, skipped (it has none of the settings)\nor failed (it refused them). 404 if an id in virtual_ids does not exist\n(nothing is written).",
         "operationId": "apply_effect_config",
         "requestBody": {
           "content": {

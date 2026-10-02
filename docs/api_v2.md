@@ -83,6 +83,9 @@ Behaviour worth knowing:
 - `set-effect` without a `config` starts the effect type's defaults. In
   `set-effect`, `clear-effects` and `apply-config`, an unknown id in
   `virtual_ids` is a 404 naming each unknown id once, and nothing changes.
+- `apply-config` counts each running effect once: `updated`, `skipped` (it has
+  none of the settings) or `failed` (it refused them). `flip` and `mirror` are
+  plain booleans.
 - `PUT …/effect` without a `config` restores the settings the virtual last used
   for the type; if one of them no longer passes the type's checks, that is a 409
   naming the field, and nothing starts.

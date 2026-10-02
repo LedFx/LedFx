@@ -75,12 +75,30 @@ async def test_apply_config(v2_client: Client) -> None:
     await _start(v2_client, "dj bird")
     resp = await v2_client.post(f"{V}/apply-config", json={"brightness": 0.5})
     assert resp.status == 200
-    assert await resp.json() == {"updated": 1, "skipped": 0}
+    assert await resp.json() == {"updated": 1, "skipped": 0, "failed": 0}
     effect = await (await v2_client.get(f"{BIRD}/effect")).json()
     assert effect["config"]["brightness"] == 0.5
     await expect_problem(
         await v2_client.post(f"{V}/apply-config", json={}), 422, "validation"
     )
+
+
+async def test_apply_config_counts_a_refusing_effect_as_failed(
+    v2_client: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await _start(v2_client, "dj bird")
+    await _start(v2_client, "matrix", "singleColor")
+    effect = (
+        core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("matrix")).active_effect
+    )
+    assert effect is not None
+
+    def refuse(config: object) -> None:
+        raise ValueError("refused")
+
+    monkeypatch.setattr(effect, "update_config", refuse)
+    resp = await v2_client.post(f"{V}/apply-config", json={"gradient": "Rainbow"})
+    assert await resp.json() == {"updated": 0, "skipped": 1, "failed": 1}
 
 
 async def test_set_effect_on_virtuals(v2_client: Client) -> None:

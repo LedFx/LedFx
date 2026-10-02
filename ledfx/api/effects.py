@@ -1,20 +1,20 @@
 import logging
+from dataclasses import replace
 from json import JSONDecodeError
 from typing import SupportsFloat
 
 from aiohttp import web
-from pydantic import TypeAdapter, ValidationError
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.v1_compat import effect_config as validated_effect_config
 from ledfx.api.virtual_effects import process_fallback
 from ledfx.color import resolve_gradient, validate_color
 from ledfx.configuration.fields import VirtualIdStr
-from ledfx.configuration.models import GlobalEffectUpdate
+from ledfx.configuration.models import ApplyConfigResult, GlobalEffectUpdate
 from ledfx.errors import Invalid, ensure_writable
 
 _LOGGER = logging.getLogger(__name__)
-_GLOBAL_UPDATE = TypeAdapter(GlobalEffectUpdate)
 
 # The settings apply_global writes, in the order v1 checks them.
 GLOBAL_KEYS = (
@@ -112,7 +112,8 @@ class EffectsEndpoint(RestEndpoint):
             )
 
         # Validate each provided key, in GLOBAL_KEYS order
-        values: dict[str, object] = {}
+        update = GlobalEffectUpdate()
+        toggles: set[str] = set()
 
         for key in provided_keys:
             value = data[key]
@@ -123,13 +124,18 @@ class EffectsEndpoint(RestEndpoint):
                     # The manager resolves it again; this keeps v1's error
                     # order and text.
                     resolve_gradient(value, self._ledfx.gradients)
-                    values[key] = value
+                    update = replace(update, gradient=value)
                 elif key in ("flip", "mirror"):
-                    # True, False, or "toggle" (resolved per effect)
+                    # v1-compat: "toggle" is not a manager value; it is resolved
+                    # per virtual below.
                     if isinstance(value, bool):
-                        values[key] = value
+                        update = (
+                            replace(update, flip=value)
+                            if key == "flip"
+                            else replace(update, mirror=value)
+                        )
                     elif isinstance(value, str) and value.lower() == "toggle":
-                        values[key] = "toggle"
+                        toggles.add(key)
                     else:
                         return await self.invalid_request(
                             f'Invalid value for "{key}": must be true, false, or "toggle"'
@@ -138,9 +144,11 @@ class EffectsEndpoint(RestEndpoint):
                     if not isinstance(value, (str, list, tuple)):
                         # parse_color's own message for a non-color type
                         raise ValueError(f"Invalid color: {value}")
-                    values[key] = validate_color(value)
+                    update = replace(update, background_color=validate_color(value))
+                elif key == "background_brightness":
+                    update = replace(update, background_brightness=_fraction(value))
                 else:
-                    values[key] = _fraction(value)
+                    update = replace(update, brightness=_fraction(value))
             except Exception as e:  # noqa: BLE001
                 return await self.invalid_request(f'Invalid value for "{key}": {e}')
 
@@ -159,14 +167,38 @@ class EffectsEndpoint(RestEndpoint):
                 if self._ledfx.virtuals.get(str(v)) is not None
             ]
 
-        updated, skipped = self._ledfx.virtuals.apply_global_config(
-            _GLOBAL_UPDATE.validate_python(values),
-            virtuals_filter,
-        )
+        if toggles:
+            # v1-compat: "toggle" inverts each effect's own value, so v1 makes
+            # one explicit-bool call per virtual and sums the counts.
+            ensure_writable(self._ledfx)
+            counts = ApplyConfigResult(0, 0, 0)
+            for virtual in list(self._ledfx.virtuals.values()):
+                effect = virtual.active_effect
+                if virtuals_filter is not None and virtual.id not in virtuals_filter:
+                    continue
+                if effect is None:
+                    continue
+                per_virtual = replace(
+                    update,
+                    flip=not getattr(effect.config, "flip", False)
+                    if "flip" in toggles
+                    else update.flip,
+                    mirror=not getattr(effect.config, "mirror", False)
+                    if "mirror" in toggles
+                    else update.mirror,
+                )
+                part = self._ledfx.virtuals.apply_global_config(
+                    per_virtual, [virtual.id]
+                )
+                counts = ApplyConfigResult(*(a + b for a, b in zip(counts, part)))
+        else:
+            counts = self._ledfx.virtuals.apply_global_config(update, virtuals_filter)
 
+        # v1-compat: v1 has one "skipped" count for skipped and refused effects.
         return await self.request_success(
             "success",
-            f"Applied global configuration to {updated} effects (skipped {skipped})",
+            f"Applied global configuration to {counts.updated} effects "
+            f"(skipped {counts.skipped + counts.failed})",
         )
 
     async def _apply_global_effect(self, data: dict[str, object]) -> web.Response:

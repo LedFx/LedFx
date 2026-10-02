@@ -349,18 +349,26 @@ class SetEffectAllResult(NamedTuple):
     failed: int
 
 
+class ApplyConfigResult(NamedTuple):
+    """How Virtuals.apply_global_config went, per running effect: updated,
+    skipped (it has none of the settings) or failed (it refused them)."""
+
+    updated: int
+    skipped: int
+    failed: int
+
+
 @dataclass(frozen=True)
 class GlobalEffectUpdate:
     """Settings Virtuals.apply_global_config writes into running effects
-    (None: leave as is). flip and mirror may be "toggle": each effect then
-    inverts its own value."""
+    (None: leave as is)."""
 
     gradient: str | None = None
     background_color: str | None = None
     background_brightness: float | None = None
     brightness: float | None = None
-    flip: bool | Literal["toggle"] | None = None
-    mirror: bool | Literal["toggle"] | None = None
+    flip: bool | None = None
+    mirror: bool | None = None
 
 
 @dataclass(frozen=True)

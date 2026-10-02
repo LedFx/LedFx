@@ -16,6 +16,7 @@ from ledfx.configuration.fields import (
     register_enum_source,
 )
 from ledfx.configuration.models import (
+    ApplyConfigResult,
     EffectEntry,
     GlobalEffectUpdate,
     Highlight,
@@ -2181,10 +2182,11 @@ class Virtuals:
         self,
         update: GlobalEffectUpdate,
         virtual_ids: Sequence[VirtualIdStr] | None = None,
-    ) -> tuple[int, int]:
+    ) -> ApplyConfigResult:
         """Write the given settings into every running effect that has them.
 
-        Returns (updated, skipped): skipped effects have none of the settings.
+        Returns the counts: skipped effects have none of the settings, failed
+        ones refused them.
         A gradient also sets the colours sampled from it, except those given.
         Raises NotFound for an unknown id.
         """
@@ -2207,15 +2209,13 @@ class Virtuals:
                     )
                 )
             except ValueError as err:
-                raise Invalid(
-                    f'Invalid value for "gradient": {err}', loc=("body", "gradient")
-                ) from err
-        updated, skipped = apply_config_to_active_effects(
+                raise Invalid(str(err), loc=("body", "gradient")) from err
+        result = apply_config_to_active_effects(
             self.values(), changes, target_ids=virtual_ids
         )
-        if updated > 0:
+        if result.updated > 0:
             self._ledfx.config_store.request_save()
-        return updated, skipped
+        return result
 
     def set_effect_all(
         self,
@@ -2463,14 +2463,14 @@ def apply_config_to_active_effects(
     virtuals,
     config_updates: dict,
     target_ids: Collection[str] | None = None,
-) -> tuple[int, int]:
+) -> ApplyConfigResult:
     """Apply *config_updates* to every active effect on the given virtuals.
 
     For each virtual the function:
     1. Skips virtuals not in *target_ids* (when provided).
     2. Skips virtuals without an active effect or with a ``DummyEffect``.
     3. Filters *config_updates* against the effect's schema and
-       ``HIDDEN_KEYS``, resolving ``"toggle"`` for boolean keys.
+       ``HIDDEN_KEYS``.
     4. Calls ``update_config`` / ``update_effect_config``.
 
     Args:
@@ -2480,10 +2480,12 @@ def apply_config_to_active_effects(
             is in this set.
 
     Returns:
-        ``(updated, skipped)`` counts.
+        The ``ApplyConfigResult`` counts: skipped effects have none of the
+        settings, failed ones refused them.
     """
     updated = 0
     skipped = 0
+    failed = 0
 
     for virtual in virtuals:
         if target_ids is not None and virtual.id not in target_ids:
@@ -2503,13 +2505,7 @@ def apply_config_to_active_effects(
                 continue
             if key in hidden_keys:
                 continue
-
-            # Handle toggle for boolean keys
-            if value == "toggle" and key in ("flip", "mirror"):
-                current_value = getattr(eff.config, key, False)
-                effect_config_update[key] = not current_value
-            else:
-                effect_config_update[key] = value
+            effect_config_update[key] = value
 
         if not effect_config_update:
             skipped += 1
@@ -2519,15 +2515,20 @@ def apply_config_to_active_effects(
             eff.update_config(effect_config_update)
             virtual.update_effect_config(eff)
             updated += 1
-        except Exception as exc:  # noqa: BLE001
+        except (ValueError, RuntimeError) as exc:
             _LOGGER.warning(
-                "Failed to update config on virtual %s: %s",
+                "Effect on virtual %s refused the config: %s",
                 getattr(virtual, "id", "?"),
                 exc,
             )
-            skipped += 1
+            failed += 1
+        except Exception:
+            _LOGGER.exception(
+                "Failed to update config on virtual %s", getattr(virtual, "id", "?")
+            )
+            failed += 1
 
-    return updated, skipped
+    return ApplyConfigResult(updated, skipped, failed)
 
 
 register_enum_source(

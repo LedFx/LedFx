@@ -338,7 +338,7 @@ async def test_setting_an_invalid_effect_config_is_a_400() -> None:
     assert "brightness" in json.dumps(json.loads(response.text or ""))
 
 
-def test_toggle_flips_flags_on_a_real_effect() -> None:
+def test_apply_config_sets_flags_on_a_real_effect() -> None:
     from ledfx.effects import Effects
     from ledfx.virtuals import apply_config_to_active_effects
 
@@ -347,6 +347,6 @@ def test_toggle_flips_flags_on_a_real_effect() -> None:
     effect = Effects(ledfx).create(ledfx=ledfx, type="rainbow", config={"flip": True})
     assert effect is not None
     virtual = MagicMock(id="v", active_effect=effect)
-    updates: dict[str, object] = {"flip": "toggle", "mirror": "toggle"}
-    assert apply_config_to_active_effects([virtual], updates) == (1, 0)
+    updates: dict[str, object] = {"flip": False, "mirror": True}
+    assert apply_config_to_active_effects([virtual], updates) == (1, 0, 0)
     assert effect.config.flip is False and effect.config.mirror is True

@@ -15,6 +15,7 @@ from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import (
+    ApplyConfigResult,
     GlobalEffectUpdate,
     Highlight,
     OneshotParams,
@@ -558,10 +559,10 @@ def test_clear_all_effects_can_be_limited(ledfx: MagicMock) -> None:
 
 def test_apply_global_config_updates_running_effects(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"flip": False}))
-    updated, skipped = ledfx.virtuals.apply_global_config(
-        GlobalEffectUpdate(brightness=0.5, flip="toggle")
+    result = ledfx.virtuals.apply_global_config(
+        GlobalEffectUpdate(brightness=0.5, flip=True)
     )
-    assert (updated, skipped) == (1, 0)
+    assert result == ApplyConfigResult(updated=1, skipped=0, failed=0)
     effect = ledfx.virtuals.get_or_raise(BIRD).active_effect
     assert effect.config.brightness == 0.5
     assert effect.config.flip is True
@@ -573,13 +574,31 @@ def test_apply_global_config_gradient_and_filter(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "gradient", cfg({}))
     assert ledfx.virtuals.apply_global_config(
         GlobalEffectUpdate(gradient="Dancefloor"), [VirtualIdStr("matrix")]
-    ) == (1, 0)
+    ) == ApplyConfigResult(updated=1, skipped=0, failed=0)
     bird = ledfx.virtuals.get_or_raise(BIRD).active_effect
     matrix = ledfx.virtuals.get_or_raise(VirtualIdStr("matrix")).active_effect
     assert matrix.config.gradient != bird.config.gradient
-    with pytest.raises(Invalid, match='Invalid value for "gradient"') as caught:
+    with pytest.raises(Invalid) as caught:
         ledfx.virtuals.apply_global_config(GlobalEffectUpdate(gradient="nope("))
     assert caught.value.loc == ("body", "gradient")
+
+
+def test_apply_global_config_counts_refusals_apart_from_skips(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "gradient", cfg({}))
+    ledfx.virtuals.set_effect(VirtualIdStr("matrix"), "rainbow", cfg({}))
+    bird = ledfx.virtuals.get_or_raise(BIRD).active_effect
+    assert bird is not None
+
+    def refuse(config: object) -> None:
+        raise ValueError("refused")
+
+    monkeypatch.setattr(bird, "update_config", refuse)
+    # matrix has no gradient setting: skipped; bird refuses: failed.
+    assert ledfx.virtuals.apply_global_config(
+        GlobalEffectUpdate(gradient="Dancefloor")
+    ) == ApplyConfigResult(updated=0, skipped=1, failed=1)
 
 
 def test_set_effect_all_counts_each_outcome(ledfx: MagicMock) -> None:
@@ -796,6 +815,25 @@ async def test_v1_apply_global_accepts_a_colour_list(ledfx: MagicMock) -> None:
         assert "Applied global configuration to 1" in await response.text()
     effect = ledfx.virtuals.get_or_raise(BIRD).active_effect
     assert effect.config.background_color == "#ff0000"
+
+
+async def test_v1_apply_global_reports_a_refusing_effect_as_skipped(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    effect = ledfx.virtuals.get_or_raise(BIRD).active_effect
+    assert effect is not None
+
+    def refuse(config: object) -> None:
+        raise ValueError("refused")
+
+    monkeypatch.setattr(effect, "update_config", refuse)
+    app = build_app(ledfx, (EffectsEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+        response = await client.put(
+            "/api/effects", json={"action": "apply_global", "brightness": 0.5}
+        )
+        assert "to 0 effects (skipped 1)" in await response.text()
 
 
 async def test_v1_put_colour_with_a_fallback_arms_the_fallback(

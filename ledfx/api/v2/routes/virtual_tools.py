@@ -57,8 +57,10 @@ async def clear_effects(body: ClearEffects, ledfx: LedFxDep) -> None:
 async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfigCounts:
     """Write settings into every running effect that has them.
 
-    A gradient also sets the colours sampled from it, except those given. 404
-    if an id in virtual_ids does not exist (nothing is written).
+    A gradient also sets the colours sampled from it, except those given. Each
+    running effect is counted as updated, skipped (it has none of the settings)
+    or failed (it refused them). 404 if an id in virtual_ids does not exist
+    (nothing is written).
     """
     update = GlobalEffectUpdate(
         gradient=body.gradient,
@@ -68,8 +70,8 @@ async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfig
         flip=body.flip,
         mirror=body.mirror,
     )
-    updated, skipped = ledfx.virtuals.apply_global_config(update, body.virtual_ids)
-    return ApplyConfigCounts(updated=updated, skipped=skipped)
+    result = ledfx.virtuals.apply_global_config(update, body.virtual_ids)
+    return ApplyConfigCounts(**result._asdict())
 
 
 @router.post("/virtuals/set-effect", errors=[NotFound])

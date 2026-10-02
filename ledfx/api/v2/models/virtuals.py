@@ -294,12 +294,14 @@ class ApplyConfig(BaseModel):
 
 
 class ApplyConfigCounts(BaseModel):
-    """Effects updated, and effects skipped (they have none of the settings)."""
+    """Effects updated, skipped (they have none of the settings) and failed
+    (they refused the settings)."""
 
     model_config = _CLOSED
 
     updated: int
     skipped: int
+    failed: int
 
 
 class SetEffectAll(BaseModel):

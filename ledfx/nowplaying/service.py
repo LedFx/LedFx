@@ -550,11 +550,11 @@ class NowPlayingService:
             set(self._gradient_virtual_ids) if self._gradient_virtual_ids else None
         )
 
-        updated, _skipped = apply_config_to_active_effects(
+        updated = apply_config_to_active_effects(
             virtuals.values(),
             config_updates,
             target_ids=target_ids,
-        )
+        ).updated
 
         # Persist configuration changes
         if updated > 0:
