@@ -330,3 +330,19 @@ def test_deactivate_warns_for_a_refusal_like_activate(
 
     assert [r.levelno for r in caplog.records] == [logging.WARNING]
     assert "busy" in caplog.text
+
+
+async def test_a_playlist_step_that_fails_is_logged_with_its_traceback(
+    ledfx: MagicMock,
+    scenes: Scenes,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    monkeypatch.setattr(scenes, "activate", MagicMock(side_effect=RuntimeError("boom")))
+    with caplog.at_level(logging.ERROR, logger="ledfx.playlists"):
+        advanced = await run_one_item(playlist_core(ledfx, scenes, tmp_path))
+
+    # The playlist keeps running.
+    assert len(advanced) == 1
+    assert [r.exc_info is not None for r in caplog.records] == [True]

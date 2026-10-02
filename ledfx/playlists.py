@@ -292,9 +292,9 @@ class PlaylistManager:
                             )
                     except SafeMode:
                         _LOGGER.debug("Playlist scene %s skipped: safe mode", scene_id)
-                    except Exception:  # noqa: BLE001, S110
-                        # Swallow scene activation errors to keep playlist running
-                        pass
+                    except Exception:
+                        # Log scene activation errors, but keep the playlist running
+                        _LOGGER.exception("Playlist scene %s failed", scene_id)
 
                     # Emit an event that we activated a scene / advanced
                     try:
