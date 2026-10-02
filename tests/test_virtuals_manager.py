@@ -119,6 +119,15 @@ def test_add_refuses_a_reserved_id(ledfx: MagicMock, name: str) -> None:
     ledfx.config_store.request_save.assert_not_called()
 
 
+def test_a_generated_id_is_at_most_128_characters(ledfx: MagicMock) -> None:
+    ids = [ledfx.virtuals.add(VirtualConfig(name="a" * 300)).id for _ in range(12)]
+    assert len(set(ids)) == 12
+    assert {len(i) for i in ids} == {128}
+    assert ids[0] == "a" * 128
+    assert ids[1] == "a" * 126 + "-1"
+    assert ids[10] == "a" * 125 + "-10"
+
+
 def test_patch_config_segments_and_active(ledfx: MagicMock) -> None:
     virtual = ledfx.virtuals.patch(
         BIRD,

@@ -73,6 +73,9 @@ Behaviour worth knowing:
   already has the id `oneshot` (from an older config, or a device's own virtual)
   can be read and changed, but `DELETE /virtuals/oneshot` ends every flash
   instead of deleting it.
+- A virtual's id is made from its name and is at most 128 characters: a longer
+  name is cut, and a numeric suffix for a repeat still fits. An older, longer
+  id cannot be addressed in v2.
 - `DELETE …/highlight` is idempotent. `PUT …/highlight` on a virtual that is not
   calibrating is a 409; an unknown device or a range past its end is a 422 at
   `body.device_id` or `body.end`, and a negative or reversed range is a 422 at

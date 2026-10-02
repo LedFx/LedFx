@@ -61,6 +61,9 @@ _LOGGER = logging.getLogger(__name__)
 # which win over /virtuals/{virtual_id}: add() refuses them.
 RESERVED_IDS = frozenset({"oneshot", "force-color"})
 
+# The longest id Virtuals.add makes (the v2 id parameters accept no more).
+MAX_ID_LENGTH = 128
+
 
 class EffectRejected(Conflict):
     """The virtual cannot run an effect (no segments, a device error)."""
@@ -1669,11 +1672,13 @@ class Virtuals:
     def create(self, id=None, *args, **kwargs):
         """Creates a virtual"""
 
-        # Find the first valid id based on what is already in the registry
-        dupe_id = id
+        # Find the first valid id based on what is already in the registry;
+        # a suffixed id stays within MAX_ID_LENGTH, so it can be addressed.
+        dupe_id = str(id)
         dupe_index = 1
         while id in self._virtuals:
-            id = f"{dupe_id}-{dupe_index}"
+            suffix = f"-{dupe_index}"
+            id = f"{dupe_id[: MAX_ID_LENGTH - len(suffix)]}{suffix}"
             dupe_index = dupe_index + 1
 
         # Create the new virtual and validate the schema.
@@ -1752,7 +1757,7 @@ class Virtuals:
 
         Raises Invalid when the name gives a reserved id (RESERVED_IDS)."""
         ensure_writable(self._ledfx)
-        virtual_id = generate_id(config.name)
+        virtual_id = generate_id(config.name)[:MAX_ID_LENGTH]
         if virtual_id in RESERVED_IDS:
             raise Invalid(
                 f"The id '{virtual_id}' is reserved; give the virtual another name",

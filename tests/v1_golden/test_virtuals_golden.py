@@ -711,6 +711,15 @@ SCENARIOS: dict[str, list[Step]] = {
         ("POST", f"{BIRD}/effects/delete", {"type": "singleColor"}),
         ("GET", f"{BIRD}/effects", None),
     ],
+    # A generated id is cut to 128 characters (a longer one cannot be addressed
+    # in v2).
+    "long_names": [
+        ("POST", V, {"config": {"name": "a" * 130}}),
+        ("POST", V, {"config": {"name": "a" * 130}}),
+        ("POST", V, {"config": {"name": "b" * 128}}),
+        ("POST", V, {"config": {"name": "b" * 128}}),
+        ("GET", V, None),
+    ],
 }
 
 

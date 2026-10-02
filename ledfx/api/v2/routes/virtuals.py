@@ -28,7 +28,8 @@ async def create_virtual(body: VirtualCreate, ledfx: LedFxDep) -> Virtual:
     """Create a virtual.
 
     Its id is made from the name (lowercase, other characters as "-") and
-    made unique with a numeric suffix. The new virtual has no segments.
+    made unique with a numeric suffix; it is at most 128 characters, so a long
+    name is cut. The new virtual has no segments.
     """
     config = VirtualConfig.model_validate(body.config.model_dump())
     return Virtual.of(ledfx.virtuals.add(config))

@@ -328,6 +328,18 @@ async def test_delete(v2_client: Client) -> None:
     assert "mirror" not in [e.id for e in core_of(v2_client).config.virtuals]
 
 
+async def test_two_long_names_give_two_addressable_ids(v2_client: Client) -> None:
+    ids = []
+    for _ in range(2):
+        resp = await v2_client.post(V, json={"config": {"name": "a" * 128}})
+        assert resp.status == 201, await resp.text()
+        ids.append((await resp.json())["id"])
+    assert len(set(ids)) == 2
+    for virtual_id in ids:
+        assert len(virtual_id) <= 128
+        assert (await v2_client.get(f"{V}/{virtual_id}")).status == 200
+
+
 async def test_safe_mode_refuses_changes_but_serves_reads(v2_client: Client) -> None:
     core = core_of(v2_client)
     enter_safe_mode(core)

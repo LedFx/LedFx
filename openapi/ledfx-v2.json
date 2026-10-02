@@ -31835,7 +31835,7 @@
         ]
       },
       "post": {
-        "description": "Its id is made from the name (lowercase, other characters as \"-\") and\nmade unique with a numeric suffix. The new virtual has no segments.",
+        "description": "Its id is made from the name (lowercase, other characters as \"-\") and\nmade unique with a numeric suffix; it is at most 128 characters, so a long\nname is cut. The new virtual has no segments.",
         "operationId": "create_virtual",
         "requestBody": {
           "content": {
