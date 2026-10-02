@@ -15,5 +15,59 @@ in the other pages of this section. v1 keeps working, and new work goes into v2.
 - Errors are RFC 9457 problems (`application/problem+json`) with a stable
   `type` such as `urn:ledfx:problem:not-found`.
 
+## Using v2
+
+Every v2 path starts with `/api/v2`. Ids go in the path percent-encoded: the
+virtual `dj bird` is `/api/v2/virtuals/dj%20bird`. Request bodies are JSON and
+are checked strictly: unknown keys, wrong types (`"0.5"` for a number) and
+out-of-range values are refused with a 422 problem whose `errors` name each
+field, for example `["body", "config", "max_brightness"]`.
+
+Virtuals:
+
+| Method and path | What it does |
+|---|---|
+| `GET /virtuals`, `GET /virtuals/{virtual_id}` | List virtuals, or read one: settings, segments, state and the running effect |
+| `POST /virtuals` | Create a virtual (`{"config": {"name": "Küche"}}`); the id comes from the name (`k-che`) and is in the `Location` header |
+| `PATCH /virtuals/{virtual_id}` | Change only what you send: `config` settings, `segments`, `active` |
+| `DELETE /virtuals/{virtual_id}` | Delete a virtual |
+| `GET`, `PUT`, `PATCH`, `DELETE /virtuals/{virtual_id}/effect` | Read, start (`{"type": "rainbow", "config": {…}}`), adjust (`{"config": {"speed": 2}}`) or clear the effect |
+| `POST /virtuals/{virtual_id}/effect/randomize`, `…/effect/reset` | Random or default settings for the running effect |
+| `GET /virtuals/{virtual_id}/effects`, `DELETE …/effects/{effect_type}` | The effect types this virtual remembers settings for |
+| `POST /virtuals/{virtual_id}/fallback` | Return now to the effect a timed effect replaced |
+| `POST /virtuals/clear-effects`, `/virtuals/apply-config`, `/virtuals/set-effect` | Act on many virtuals (default: all) |
+| `POST`/`DELETE /virtuals/oneshot`, `/virtuals/{virtual_id}/oneshot` | Flash all virtuals or one, or end the flashes |
+| `POST /virtuals/force-color`, `/virtuals/{virtual_id}/force-color` | Show one colour |
+| `PUT /virtuals/{virtual_id}/calibration`, `PUT`/`DELETE …/highlight`, `POST …/copy-effect` | Calibration tools, and copying an effect to other virtuals |
+
+A stored effect whose type is no longer installed shows as
+`{"type": "…", "config": {…}, "available": false}`; it cannot run until the
+type is installed again. In safe mode every change that would be saved answers
+409 (`urn:ledfx:problem:safe-mode`); reads keep working, and so do the runtime
+tools that save nothing: clear-effects, flashes, force-color, calibration,
+highlight and fallback (ending a temporary effect).
+
+Behaviour worth knowing:
+
+- v2 shares the server's app-wide origin middleware; there is no separate CORS
+  setup. Its 403 refusals on `/api/v2` are problems too
+  (`urn:ledfx:problem:forbidden`).
+- A request body over the size limit answers 413, and a mutating route that
+  gets a non-JSON body answers 415.
+- `PATCH` is all-or-nothing: if any part is refused, nothing changes. Arrays in
+  a `PATCH` replace the stored array wholesale, so send every item complete.
+- Responses show stored values even when they lie outside the bounds v2 accepts
+  in a request.
+- New plugins add new branches to response unions. This is additive, so a
+  client must treat an unknown `type` as `UnknownPlugin` and not fail.
+- The ids `oneshot` and `force-color` are reserved for the paths
+  `/virtuals/oneshot` and `/virtuals/force-color`, which act on every virtual:
+  a name that gives one of them is a 422 at `body.config.name`. A virtual that
+  already has the id `oneshot` (from an older config, or a device's own virtual)
+  can be read and changed, but `DELETE /virtuals/oneshot` ends every flash
+  instead of deleting it.
+- `DELETE …/highlight` is idempotent.
+- `set-effect` without a `config` starts the effect type's defaults.
+
 <iframe src="_static/api-v2/index.html" title="LedFx API v2 reference"
         style="width: 100%; height: 80vh; border: 0;"></iframe>
