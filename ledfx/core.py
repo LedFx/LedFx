@@ -23,6 +23,7 @@ from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+from ledfx.errors import SafeMode
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -552,23 +553,31 @@ class LedFxCore:
             # The check makes a blocking HTTP request.
             await asyncio.to_thread(self.check_and_notify_updates)
 
-        if self.config.startup_scene_id != "":
-            if self.scenes.activate(self.config.startup_scene_id):
-                _LOGGER.info(
-                    "startup_scene_id; %s activated.",
-                    self.config.startup_scene_id,
-                )
-            else:
-                _LOGGER.warning(
-                    "startup_scene_id: %s not found.",
-                    self.config.startup_scene_id,
-                )
+        self._activate_startup_scene()
 
         await self._handle_startup_playlist()
 
         if pause_all:
             # pause at the virtuals level
             self.virtuals.pause_all()
+
+    def _activate_startup_scene(self) -> None:
+        """Activate the configured startup scene, if any (skipped in safe mode)."""
+        if self.config.startup_scene_id == "":
+            return
+        try:
+            activated = self.scenes.activate(self.config.startup_scene_id)
+        except SafeMode:
+            _LOGGER.debug("startup_scene_id not activated: safe mode")
+            return
+        if activated:
+            _LOGGER.info(
+                "startup_scene_id; %s activated.", self.config.startup_scene_id
+            )
+        else:
+            _LOGGER.warning(
+                "startup_scene_id: %s not found.", self.config.startup_scene_id
+            )
 
     async def _handle_startup_playlist(self):
         """Activate the configured startup playlist, if any."""

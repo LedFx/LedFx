@@ -1,8 +1,13 @@
 import asyncio
 import logging
+from collections.abc import Mapping
 
+from pydantic import ValidationError
+
+from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Scene, SceneVirtual
 from ledfx.configuration.presets import configs_match, filter_config_for_comparison
+from ledfx.errors import Conflict, Invalid, NotFound, SafeMode, ensure_writable
 from ledfx.events import SceneActivatedEvent, SceneDeletedEvent
 from ledfx.presets import ledfx_presets
 from ledfx.utils import generate_default_config, generate_id
@@ -56,6 +61,7 @@ class Scenes:
 
     def create(self, scene_config, scene_id=None):
         """Creates a scene of current effects of specified virtuals if no ID given, else updates one with matching id"""
+        ensure_writable(self._ledfx)
         virtual_effects = {}
         for virtual_id in self.existing_virtual_ids(scene_config["virtuals"]):
             virtual = self._ledfx.virtuals.get(virtual_id)
@@ -73,6 +79,7 @@ class Scenes:
 
     def activate_in(self, scene_id: str, delay: float) -> None:
         """Activate a scene after delay seconds, replacing any pending one."""
+        ensure_writable(self._ledfx)
         self.cancel_pending(scene_id)
         self._pending[scene_id] = self._ledfx.loop.call_later(
             delay, self._activate_pending, scene_id
@@ -80,7 +87,11 @@ class Scenes:
 
     def _activate_pending(self, scene_id: str) -> None:
         del self._pending[scene_id]
-        self.activate(scene_id)
+        try:
+            self.activate(scene_id)
+        except SafeMode:
+            # Safe mode can begin after the activation was scheduled.
+            _LOGGER.debug("Scene %s not activated: safe mode", scene_id)
 
     def cancel_pending(self, scene_id: str) -> None:
         """Cancel a delayed activation of scene_id, if there is one."""
@@ -92,10 +103,12 @@ class Scenes:
 
         Args:
             scene_id: The ID of the scene to activate
-            save_config_after: If True, saves config to disk after activation.
-                              Set to False for playlist-driven activations to reduce disk I/O.
-                              Defaults to True for backward compatibility.
+            save_config_after: If True, the scene also requests a save after the
+                              last virtual. Only that final save is optional: the
+                              manager saves each effect change it makes either way.
+                              Playlists pass False to skip the extra request.
         """
+        ensure_writable(self._ledfx)
         self.cancel_pending(scene_id)
         scene = self.get(scene_id)
         if not scene:
@@ -103,66 +116,22 @@ class Scenes:
             return False
 
         for virtual_id, virtual_config in scene.virtuals.items():
-            virtual = self._ledfx.virtuals.get(virtual_id)
-            if not virtual:
+            if self._ledfx.virtuals.get(virtual_id) is None:
                 # virtual has been deleted since scene was created
                 continue
-
-            action = scene_action(virtual_config)
-
-            # Process action
-            if action == "ignore":
-                # Leave virtual unchanged
-                continue
-
-            elif action == "stop":
-                # Stop any playing effect
-                virtual.clear_effect()
-
-            elif action == "forceblack":
-                # Set to Single Color effect with black
-                effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx,
-                    type="singleColor",
-                    config={"color": "#000000"},
+            try:
+                self._apply(VirtualIdStr(virtual_id), virtual_config)
+            except (Invalid, NotFound, Conflict) as exc:
+                _LOGGER.warning(
+                    "Scene %s: virtual %r refused its entry: %s",
+                    scene_id,
+                    virtual_id,
+                    exc,
                 )
-                virtual.set_effect(effect)
-                virtual.update_effect_config(effect)
-
-            elif action == "activate":
-                # Get effect type (required for both preset and explicit config)
-                effect_type = virtual_config.type
-                if not effect_type:
-                    _LOGGER.warning(
-                        "Invalid activate config for virtual %s, missing required 'type' field",
-                        virtual_id,
-                    )
-                    continue
-
-                # Check if using preset
-                preset_name = virtual_config.preset
-                if preset_name:
-                    # Resolve preset from current library for this effect type
-                    # (will fall back to reset preset if not found)
-                    effect_config = self._resolve_preset(effect_type, preset_name)
-                else:
-                    # Use explicit config
-                    effect_config = virtual_config.config
-                    if effect_config is None:
-                        _LOGGER.warning(
-                            "Invalid activate config for virtual %s, missing 'config' field",
-                            virtual_id,
-                        )
-                        continue
-
-                # Create and apply the effect
-                effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx,
-                    type=effect_type,
-                    config=effect_config,
+            except Exception:
+                _LOGGER.exception(
+                    "Scene %s: failed to apply virtual %r", scene_id, virtual_id
                 )
-                virtual.set_effect(effect)
-                virtual.update_effect_config(effect)
 
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
 
@@ -170,6 +139,62 @@ class Scenes:
             self._ledfx.config_store.request_save()
 
         return True
+
+    def _apply(self, virtual_id: VirtualIdStr, virtual_config: SceneVirtual) -> None:
+        """Apply one scene entry to a virtual, through the manager."""
+        virtuals = self._ledfx.virtuals
+        action = scene_action(virtual_config)
+
+        if action == "stop":
+            virtuals.clear_effect(virtual_id)
+
+        elif action == "forceblack":
+            self._start(virtual_id, "singleColor", {"color": "#000000"})
+
+        elif action == "activate":
+            # The type is required for both preset and explicit config
+            effect_type = virtual_config.type
+            if not effect_type:
+                _LOGGER.warning(
+                    "Invalid activate config for virtual %s, missing required 'type' field",
+                    virtual_id,
+                )
+                return
+            if effect_type not in self._ledfx.effects.types():
+                raise Invalid(f"Unknown effect type: {effect_type}")
+
+            if virtual_config.preset:
+                # Resolve preset from current library for this effect type
+                # (will fall back to reset preset if not found)
+                effect_config = self._resolve_preset(effect_type, virtual_config.preset)
+            else:
+                effect_config = virtual_config.config
+                if effect_config is None:
+                    _LOGGER.warning(
+                        "Invalid activate config for virtual %s, missing 'config' field",
+                        virtual_id,
+                    )
+                    return
+            self._start(virtual_id, effect_type, effect_config)
+
+        # "ignore" and unknown actions leave the virtual unchanged
+
+    def _start(
+        self,
+        virtual_id: VirtualIdStr,
+        effect_type: str,
+        effect_config: Mapping[str, object],
+    ) -> None:
+        effects = self._ledfx.effects
+        try:
+            config = (
+                effects.get_class(effect_type)
+                .config_model()
+                .model_validate(effect_config)
+            )
+        except ValidationError as err:
+            raise Invalid(str(err)) from err
+        self._ledfx.virtuals.set_effect(virtual_id, effect_type, config, fallback=None)
 
     def _resolve_preset(self, effect_type, preset_name):
         """Resolve a preset name to effect config for a specific effect type.
@@ -206,6 +231,7 @@ class Scenes:
 
     def deactivate(self, scene_id):
         """Deactivate the effects defined in a scene by clearing those virtuals."""
+        ensure_writable(self._ledfx)
         self.cancel_pending(scene_id)
         scene = self.get(scene_id)
         if not scene:
@@ -213,14 +239,20 @@ class Scenes:
             return False
 
         for virtual_id, virtual_config in scene.virtuals.items():
-            virtual = self._ledfx.virtuals.get(virtual_id)
-            if not virtual:
+            if self._ledfx.virtuals.get(virtual_id) is None:
                 # virtual has been deleted since scene was created
                 continue
 
             # If the scene has an effect entry for this virtual, clear it
             if not is_empty(virtual_config):
-                virtual.clear_effect()
+                try:
+                    self._ledfx.virtuals.clear_effect(VirtualIdStr(virtual_id))
+                except (Invalid, NotFound, Conflict) as exc:
+                    _LOGGER.warning("Scene %s: %s", scene_id, exc)
+                except Exception:
+                    _LOGGER.exception(
+                        "Scene %s: failed to clear virtual %r", scene_id, virtual_id
+                    )
 
         # Persist the change so that clearing effects is saved
         self._ledfx.config_store.request_save()
@@ -229,7 +261,7 @@ class Scenes:
 
     def destroy(self, scene_id):
         """Deletes a scene"""
-
+        ensure_writable(self._ledfx)
         self.cancel_pending(scene_id)
         if not self._scenes.pop(scene_id, None):
             _LOGGER.warning("Cannot delete non-existent scene id: %s", scene_id)

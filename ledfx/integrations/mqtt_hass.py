@@ -13,6 +13,7 @@ from ledfx.configuration.models import EffectEntry
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
 from ledfx.consts import PROJECT_VERSION
 from ledfx.effects.audio import AudioInputSource
+from ledfx.errors import SafeMode
 from ledfx.events import EffectSetEvent, Event
 from ledfx.integrations import Integration
 from ledfx.presets import ledfx_presets
@@ -508,7 +509,10 @@ class MQTT_HASS(Integration):
 
         # React to Scene-Selector
         elif virtualid == "ledfxsceneselect":
-            self._ledfx.scenes.activate(str(payload))
+            try:
+                self._ledfx.scenes.activate(str(payload))
+            except SafeMode:
+                _LOGGER.debug("Scene %s not activated: safe mode", payload)
 
         # React to Audio-Selector
         elif virtualid == "ledfxaudio":

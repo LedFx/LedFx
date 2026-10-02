@@ -8,8 +8,8 @@
         "action": "activate"
       }
     ],
-    "status": 202,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual empty: Cannot activate, no configured device segments\"}}"
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"info\", \"reason\": \"Activated Refused\"}}"
   },
   {
     "request": [
@@ -18,7 +18,7 @@
       null
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": true, \"streaming\": false, \"last_effect\": \"singleColor\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}}"
   },
   {
     "request": [
@@ -27,7 +27,7 @@
       null
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"matrix\": {\"config\": {\"name\": \"matrix\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"matrix\", \"is_device\": \"matrix\", \"auto_generated\": false, \"segments\": [[\"matrix\", 0, 63, false]], \"pixel_count\": 64, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+    "body": "{\"status\": \"success\", \"matrix\": {\"config\": {\"name\": \"matrix\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"matrix\", \"is_device\": \"matrix\", \"auto_generated\": false, \"segments\": [[\"matrix\", 0, 63, false]], \"pixel_count\": 64, \"active\": true, \"streaming\": false, \"last_effect\": \"rainbow\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}}"
   },
   {
     "request": [
@@ -57,6 +57,6 @@
       null
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": true, \"streaming\": false, \"last_effect\": \"singleColor\", \"effect\": {}}}"
   }
 ]

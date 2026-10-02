@@ -9,10 +9,12 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import logging
 import random
 import time
 
 from ledfx.configuration.models import Playlist
+from ledfx.errors import SafeMode
 from ledfx.events import (
     PlaylistAdvancedEvent,
     PlaylistPausedEvent,
@@ -21,6 +23,8 @@ from ledfx.events import (
     PlaylistStoppedEvent,
 )
 from ledfx.utils import generate_id
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class PlaylistManager:
@@ -279,12 +283,15 @@ class PlaylistManager:
                 # Wrap activation, event emission, sleeping and advancements in a try/finally
                 try:
                     # Activate the scene (synchronous API)
-                    # Skip config save during playlist playback to reduce disk I/O
+                    # Skip the scene's own final save during playback (the manager
+                    # still saves each effect change)
                     try:
                         if hasattr(self._core, "scenes"):
                             self._core.scenes.activate(
                                 scene_id, save_config_after=False
                             )
+                    except SafeMode:
+                        _LOGGER.debug("Playlist scene %s skipped: safe mode", scene_id)
                     except Exception:  # noqa: BLE001, S110
                         # Swallow scene activation errors to keep playlist running
                         pass
