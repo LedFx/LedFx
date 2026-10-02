@@ -43,6 +43,7 @@ from ledfx.integrations.spotify import Spotify
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
 from ledfx.utils import UserDefaultCollection
+from ledfx.virtuals import Virtuals
 from tests.test_api_validation_responses import _call, _reason, _request
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -227,12 +228,20 @@ def test_user_default_collection_refuses_to_touch_built_ins() -> None:
         del colors["ghost"]
 
 
+@pytest.fixture(autouse=True)
+def _restore_virtuals_singleton(monkeypatch: pytest.MonkeyPatch) -> None:
+    # _tool_virtual replaces the singleton; this restores it at teardown.
+    monkeypatch.setattr(Virtuals, "_instance", Virtuals._instance)
+
+
 def _tool_virtual() -> tuple[MagicMock, MagicMock]:
+    """A fake core whose real Virtuals manager holds one MagicMock virtual, "v1"."""
     ledfx = fake_ledfx()
-    virtual = MagicMock()
+    virtual = MagicMock(id="v1")
     virtual.add_oneshot.return_value = True
-    ledfx.virtuals.get.return_value = virtual
-    ledfx.virtuals.__iter__.return_value = iter(["v1"])
+    Virtuals._instance = None
+    ledfx.virtuals = Virtuals(ledfx)
+    ledfx.virtuals._virtuals["v1"] = virtual
     return ledfx, virtual
 
 

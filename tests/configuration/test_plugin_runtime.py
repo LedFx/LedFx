@@ -318,15 +318,22 @@ async def test_setting_an_invalid_effect_config_is_a_400() -> None:
     from unittest.mock import AsyncMock, MagicMock
 
     from ledfx.api.virtual_effects import EffectsEndpoint
-    from ledfx.effects import Effects
+    from tests.test_utilities.virtuals_core import (
+        add_virtual,
+        install_virtuals,
+        stop_virtuals,
+    )
 
-    ledfx = fake_ledfx()
-    ledfx.effects = Effects(ledfx)
+    ledfx = install_virtuals(fake_ledfx())
+    add_virtual(ledfx, "virtual", "virtual", [])
     request = MagicMock()
     request.json = AsyncMock(
         return_value={"type": "rainbow", "config": {"brightness": 7}}
     )
-    response = await EffectsEndpoint(ledfx).post("virtual", request)
+    try:
+        response = await EffectsEndpoint(ledfx).post("virtual", request)
+    finally:
+        stop_virtuals(ledfx)
     assert response.status == 400
     assert "brightness" in json.dumps(json.loads(response.text or ""))
 

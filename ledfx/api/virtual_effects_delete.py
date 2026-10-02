@@ -1,17 +1,15 @@
-import logging
 from json import JSONDecodeError
 
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
-
-_LOGGER = logging.getLogger(__name__)
+from ledfx.configuration.fields import VirtualIdStr
 
 
 class EffectsEndpoint(RestEndpoint):
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}/effects/delete"
 
-    async def post(self, virtual_id, request) -> web.Response:
+    async def post(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Deletes an effect from a virtual from the active effect and the history
 
@@ -22,8 +20,7 @@ class EffectsEndpoint(RestEndpoint):
         Returns:
             web.Response: The response indicating the success or failure of the deletion.
         """
-        virtual = self._ledfx.virtuals.get(virtual_id)
-        if virtual is None:
+        if self._ledfx.virtuals.get(virtual_id) is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         try:
@@ -36,27 +33,8 @@ class EffectsEndpoint(RestEndpoint):
                 "Required attribute 'type' was not provided"
             )
 
-        _LOGGER.info(
-            "Deleting effect %s for virtual %s from effects",
-            effect_type,
-            virtual_id,
+        self._ledfx.virtuals.delete_effect_history(
+            VirtualIdStr(virtual_id), effect_type
         )
-
-        # clearing specific effect from history
-        try:
-            if virtual.active_effect and virtual.active_effect.type == effect_type:
-                virtual.clear_effect()
-                entry = virtual.entry
-                if entry is not None:
-                    entry.effect = None
-        except Exception as e:  # noqa: BLE001
-            _LOGGER.error("Error clearing active effect in effects delete: %s", e)
-
-        entry = virtual.entry
-        if entry is not None:
-            entry.effects.pop(effect_type, None)
-
-        self._ledfx.config_store.request_save()
-
         response = {"status": "success"}
         return await self.bare_request_success(response)

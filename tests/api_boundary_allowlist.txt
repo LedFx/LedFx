@@ -31,8 +31,6 @@ ledfx/api/sendspin_server.py:private:2
 ledfx/api/sendspin_servers.py:config-store:1
 ledfx/api/sendspin_servers.py:core-config:2
 ledfx/api/sendspin_servers.py:private:1
-ledfx/api/virtual_effects.py:config-store:3
-ledfx/api/virtual_effects_delete.py:config-store:1
 ledfx/api/virtual_presets.py:config-store:3
 ledfx/api/virtual_presets.py:core-config:3
 ledfx/api/virtuals_tools.py:config-store:1
