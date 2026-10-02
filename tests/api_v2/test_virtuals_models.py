@@ -111,7 +111,7 @@ def test_colors_are_checked_and_normalized() -> None:
 
 
 def test_highlight_range_is_ordered() -> None:
-    assert _rejects(Highlight, {**SEGMENT, "start": 9, "end": 0}) == [()]
+    assert _rejects(Highlight, {**SEGMENT, "start": 9, "end": 0}) == [("start",)]
 
 
 def test_virtual_config_is_the_strict_view() -> None:

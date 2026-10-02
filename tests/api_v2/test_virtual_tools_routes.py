@@ -255,6 +255,11 @@ async def test_calibration_and_highlight(v2_client: Client) -> None:
     body = await expect_problem(resp, 422, "validation")
     assert body["detail"] == "start and end must be less than 50"
     assert body["errors"][0]["loc"] == ["body", "end"]
+    resp = await v2_client.put(
+        f"{BIRD}/highlight", json={**highlight, "start": 5, "end": 2}
+    )
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "start"]
     assert (await v2_client.delete(f"{BIRD}/highlight")).status == 204
     assert not bird._hl_state
     # A refused PUT changes nothing: the cleared highlight stays off.

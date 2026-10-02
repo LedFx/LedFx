@@ -123,6 +123,20 @@ VirtualIds = Annotated[
 EffectHistoryItem = EffectState | UnknownPlugin
 
 
+def _start_after_end(model: str, start: int) -> ValidationError:
+    """The error both ranges report for a reversed range, at ("start",)."""
+    return ValidationError.from_exception_data(
+        model,
+        [
+            InitErrorDetails(
+                type=PydanticCustomError("inconsistent", "start must not be after end"),
+                loc=("start",),
+                input=start,
+            )
+        ],
+    )
+
+
 class VirtualSegment(BaseModel):
     """A run of one device's pixels, start and end inclusive."""
 
@@ -136,18 +150,7 @@ class VirtualSegment(BaseModel):
     @model_validator(mode="after")
     def _ordered(self) -> Self:
         if self.start > self.end:
-            raise ValidationError.from_exception_data(
-                "VirtualSegment",
-                [
-                    InitErrorDetails(
-                        type=PydanticCustomError(
-                            "inconsistent", "start must not be after end"
-                        ),
-                        loc=("start",),
-                        input=self.start,
-                    )
-                ],
-            )
+            raise _start_after_end("VirtualSegment", self.start)
         return self
 
 
@@ -379,7 +382,7 @@ class Highlight(BaseModel):
     @model_validator(mode="after")
     def _ordered(self) -> Self:
         if self.start > self.end:
-            raise ValueError("start must not be after end")
+            raise _start_after_end("Highlight", self.start)
         return self
 
 
