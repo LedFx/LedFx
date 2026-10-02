@@ -97,8 +97,12 @@ class VirtualEndpoint(RestEndpoint):
 
         try:
             virtual = self._ledfx.virtuals.set_active(VirtualIdStr(virtual_id), active)
-        except (Invalid, Conflict) as err:  # v1-compat: a refusal was once Invalid
-            error_message = f"Unable to set virtual {virtual.id} status: {err.detail}"
+        except Conflict as err:
+            # v1-compat: v1 words the refusal as a status failure and shows the
+            # underlying error's text (the stale-config case has a cleaner v2 detail).
+            error_message = (
+                f"Unable to set virtual {virtual.id} status: {err.__cause__ or err}"
+            )
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
 

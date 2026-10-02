@@ -8,7 +8,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual dj bird status: 1 validation error for Config\\nspeed\\n  Value error, could not convert string to float: 'x' [type=value_error, input_value='x', input_type=str]\\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error\"}}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unable to set virtual dj bird status: 1 validation error for Config\\nspeed\\n  Value error, could not convert string to float: 'x' [type=value_error, input_value='x', input_type=str]\\n    For further information visit https://errors.pydantic.dev/X/v/value_error\"}}"
   },
   {
     "request": [

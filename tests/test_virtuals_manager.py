@@ -675,6 +675,12 @@ def test_highlight_needs_calibration(ledfx: MagicMock) -> None:
     assert virtual.calibrating
     ledfx.virtuals.set_calibration(BIRD, False)
     assert not virtual.calibrating
+    ledfx.virtuals.set_calibration(BIRD, True)
+    for start, end in [(5, 2), (-5, -2), (-1, -1), (-1, 3)]:
+        with pytest.raises(Invalid) as bad:
+            ledfx.virtuals.set_highlight(BIRD, Highlight("strip", start, end))
+        assert bad.value.loc == ("body", "start")
+    assert (virtual._hl_start, virtual._hl_end) == (0, 9)  # nothing changed
     ledfx.virtuals.set_highlight(BIRD, None)
     assert virtual._hl_state is False
 
@@ -698,12 +704,15 @@ def test_a_highlight_is_switched_on_after_its_range_is_set(
 
 
 def test_copy_effect(ledfx: MagicMock) -> None:
-    with pytest.raises(Conflict, match="no active effect on source virtual"):
+    with pytest.raises(Conflict, match="Virtual dj bird has no active effect"):
         ledfx.virtuals.copy_effect(BIRD, [MIRROR])
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({"speed": 3.0}))
     with pytest.raises(NotFound) as unknown:  # checked before anything starts
         ledfx.virtuals.copy_effect(BIRD, [MIRROR, VirtualIdStr("ghost")])
     assert unknown.value.ids == ("ghost",)
+    with pytest.raises(NotFound) as twice:  # each unknown id is named once
+        ledfx.virtuals.copy_effect(BIRD, [VirtualIdStr("ghost")] * 2)
+    assert twice.value.ids == ("ghost",)
     assert ledfx.virtuals.get_or_raise(MIRROR).active_effect is None
     ledfx.virtuals.copy_effect(BIRD, [MIRROR])
     copied = ledfx.virtuals.get_or_raise(MIRROR).active_effect
@@ -822,6 +831,17 @@ def test_set_effect_all_names_every_unknown_id(ledfx: MagicMock) -> None:
     assert _running(ledfx) == ""
 
 
+def test_only_domain_refusals_of_an_activation_are_conflicts(
+    ledfx: MagicMock,
+) -> None:
+    ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
+    ledfx.virtuals.clear_effect(BIRD)
+    ledfx.virtuals.get_or_raise(BIRD).active = False
+    ledfx.effects.create = MagicMock(side_effect=ValueError("plugin bug"))
+    with pytest.raises(ValueError, match="plugin bug"):
+        ledfx.virtuals.set_active(BIRD, True)
+
+
 def test_refused_activations_leave_the_registry_alone(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", cfg({}))
     ledfx.virtuals.clear_effect(BIRD)
@@ -859,6 +879,29 @@ async def test_v1_highlight_off_outside_calibration_is_refused(
         )
         text = await response.text()
     assert "Cannot set highlight when dj bird is not in calibration mode" in text
+
+
+async def test_v1_highlight_with_a_bad_range_lights_nothing(
+    ledfx: MagicMock,
+) -> None:
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    ledfx.virtuals.set_calibration(BIRD, True)
+    ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 9))
+    app = build_app(ledfx, (VirtualsToolsEndpoint,))
+    async with TestClient(TestServer(app)) as client:
+        bodies: list[dict[str, int]] = [
+            {"start": 10, "stop": 5},
+            {"start": -5, "stop": -2},
+            {},
+        ]
+        for body in bodies:
+            response = await client.put(
+                "/api/virtuals_tools/dj%20bird",
+                json={"tool": "highlight", "device": "strip", **body},
+            )
+            assert (await response.json())["status"] == "success"
+            assert not virtual._hl_state  # the earlier highlight is cleared
+            ledfx.virtuals.set_highlight(BIRD, Highlight("strip", 0, 9))
 
 
 async def test_v1_copy_skips_unknown_targets_and_lumps_refusals(

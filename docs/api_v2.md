@@ -72,15 +72,17 @@ Behaviour worth knowing:
   instead of deleting it.
 - `DELETE …/highlight` is idempotent. `PUT …/highlight` on a virtual that is not
   calibrating is a 409; an unknown device or a range past its end is a 422 at
-  `body.device_id` or `body.end`.
+  `body.device_id` or `body.end`, and a negative or reversed range is a 422 at
+  `body.start`.
 - `copy-effect` with an unknown target is a 404 and nothing is copied. A target
   that refuses the effect is passed over; if none takes it, or the source runs
   nothing, that is a 409.
 - Activating a virtual that cannot run (no segments, no effect to restore, a
   stored setting that no longer passes) is a 409, on `PATCH` and on starting an
   effect alike. Starting an effect makes the virtual active.
-- `set-effect` without a `config` starts the effect type's defaults. An unknown
-  id in `virtual_ids` is a 404 and nothing starts.
+- `set-effect` without a `config` starts the effect type's defaults. In
+  `set-effect`, `clear-effects` and `apply-config`, an unknown id in
+  `virtual_ids` is a 404 naming each unknown id once, and nothing changes.
 - `PUT …/effect` without a `config` restores the settings the virtual last used
   for the type; if one of them no longer passes the type's checks, that is a 409
   naming the field, and nothing starts.

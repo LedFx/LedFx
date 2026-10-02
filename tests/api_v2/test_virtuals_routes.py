@@ -10,7 +10,7 @@ from aiohttp.test_utils import TestClient, TestServer
 
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.configuration.fields import VirtualIdStr
-from ledfx.configuration.models import Scene, replace_model
+from ledfx.configuration.models import EffectEntry, Scene, replace_model
 from ledfx.virtuals import Virtual
 from tests.api_v2.virtuals_client import BIRD, Client, V, core_of, expect_problem
 from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
@@ -280,6 +280,24 @@ async def test_a_refused_step_undoes_the_whole_patch(v2_client: Client) -> None:
     before = _snapshot(core)
     resp = await v2_client.patch(MIRROR, json=MIRROR_PATCH)
     await expect_problem(resp, 409, "conflict")
+    assert _snapshot(core) == before
+    core.config_store.request_save.assert_not_called()
+
+
+async def test_activating_over_a_stale_stored_config_is_a_clean_409(
+    v2_client: Client,
+) -> None:
+    core = core_of(v2_client)
+    virtual = core.virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    assert virtual.entry is not None
+    virtual.entry.last_effect = "rainbow"
+    virtual.entry.effects["rainbow"] = EffectEntry(
+        type="rainbow", config={"speed": "x"}
+    )
+    before = _snapshot(core)
+    resp = await v2_client.patch(BIRD, json={"active": True})
+    body = await expect_problem(resp, 409, "conflict")
+    assert body["detail"] == "Stored field 'config.speed' is invalid"
     assert _snapshot(core) == before
     core.config_store.request_save.assert_not_called()
 

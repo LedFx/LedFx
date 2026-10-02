@@ -178,10 +178,20 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     f"highlight error: Cannot set highlight when {virtual.name} is not in calibration mode"
                 )
+            unlit = state and (start < 0 or start > end)
+            if unlit:
+                # v1-compat: v1 answered success for an omitted (-1), negative
+                # or reversed range and lit nothing; the manager refuses them.
+                # Run its calibration, device and past-the-end checks on the
+                # nearest valid range, then clear what that lit.
+                nearest = max(start, end, 0)
+                highlight = Highlight(device, nearest, nearest, flip)
             try:
                 virtuals.set_highlight(vid, highlight)
             except (Conflict, Invalid) as err:
                 return await self.invalid_request(f"highlight error: {err.detail}")
+            if unlit:
+                virtuals.set_highlight(vid, None)
 
         # Disable the virtual's oneshot Flashes
         if tool == "oneshot" and not virtuals.clear_oneshots(vid):
@@ -202,6 +212,8 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
             # v1-compat: v1 skips unknown targets and lumps "every target
             # refused" with "none known"; the manager raises NotFound / Conflict.
+            # It also answers safe mode, then a source with no effect, before
+            # it looks at the targets, so those checks run first here.
             ensure_writable(self._ledfx)
             source = virtuals.get_or_raise(vid).active_effect
             if source is None or isinstance(source, DummyEffect):

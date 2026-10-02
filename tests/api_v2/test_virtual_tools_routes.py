@@ -58,16 +58,17 @@ async def test_clear_effects(v2_client: Client) -> None:
 
 async def test_unknown_ids_are_named(v2_client: Client) -> None:
     resp = await v2_client.post(
-        f"{V}/clear-effects", json={"virtual_ids": ["dj bird", "ghost"]}
+        f"{V}/clear-effects",
+        json={"virtual_ids": ["dj bird", "ghost", "spook", "ghost"]},
     )
-    body = await expect_problem(resp, 422, "validation")
-    assert body["errors"] == [
-        {
-            "loc": ["body", "virtual_ids", 1],
-            "msg": "Virtual 'ghost' not found",
-            "type": "not_found",
-        }
-    ]
+    body = await expect_problem(resp, 404, "not-found")
+    assert body["detail"] == "Virtuals not found: 'ghost', 'spook'"
+    resp = await v2_client.post(
+        f"{V}/apply-config",
+        json={"brightness": 0.5, "virtual_ids": ["ghost", "spook", "ghost"]},
+    )
+    body = await expect_problem(resp, 404, "not-found")
+    assert body["detail"] == "Virtuals not found: 'ghost', 'spook'"
 
 
 async def test_apply_config(v2_client: Client) -> None:

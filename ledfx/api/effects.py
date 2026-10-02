@@ -152,7 +152,12 @@ class EffectsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     'Invalid value for "virtuals": must be a list of virtual ids'
                 )
-            virtuals_filter = [VirtualIdStr(str(v)) for v in vlist]
+            # v1-compat: v1 ignores ids it does not know; the manager raises NotFound.
+            virtuals_filter = [
+                VirtualIdStr(str(v))
+                for v in vlist
+                if self._ledfx.virtuals.get(str(v)) is not None
+            ]
 
         updated, skipped = self._ledfx.virtuals.apply_global_config(
             _GLOBAL_UPDATE.validate_python(values),

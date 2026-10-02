@@ -22,6 +22,8 @@ from ledfx.api import RestEndpoint
 GOLDEN_ROOT = Path(__file__).parent
 # Object reprs in some v1 reasons carry a memory address.
 _ADDRESS = re.compile(r" at 0x[0-9a-fA-F]+")
+# pydantic error texts link to docs for the installed version.
+_PYDANTIC_DOCS = re.compile(r"https://errors\.pydantic\.dev/[0-9.]+/")
 
 
 @dataclass(frozen=True)
@@ -69,6 +71,7 @@ async def replay(app: web.Application, steps: Sequence[Step]) -> list[object]:
                 response = await client.request(method, path, json=body)
                 sent = body
             text = _ADDRESS.sub(" at 0x0", await response.text())
+            text = _PYDANTIC_DOCS.sub("https://errors.pydantic.dev/X/", text)
             records.append(
                 {
                     "request": [method, path, sent],

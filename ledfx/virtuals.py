@@ -88,6 +88,13 @@ def restarts_effect(effect: Effect, patch: PluginConfig) -> bool:
     )
 
 
+def _stale_stored(err: ValidationError) -> Conflict:
+    """A stored effect config that no longer validates: the stored field is the
+    problem, not the request."""
+    loc = ("config", *err.errors()[0]["loc"])
+    return Conflict(f"Stored field '{'.'.join(map(str, loc))}' is invalid", loc=loc)
+
+
 def _invalid_config(err: ValidationError) -> Invalid:
     """The first problem of a config that failed its type's model, as Invalid."""
     first = err.errors()[0]
@@ -800,8 +807,8 @@ class Virtual:
 
     def set_highlight(self, h: Highlight) -> None:
         """Light a device's pixel range. Raises Conflict when not calibrating,
-        Invalid (at body.device_id / body.end) for an unknown device or a range
-        past its end; a refused highlight changes nothing."""
+        Invalid (at body.device_id / body.end / body.start) for an unknown device,
+        a range past its end, or a negative or reversed range; a refused highlight changes nothing."""
         if not self.calibrating:
             raise Conflict(
                 f"Cannot set highlight when {self.name} is not in calibration mode"
@@ -816,6 +823,10 @@ class Virtual:
             raise Invalid(
                 f"start and end must be less than {device.pixel_count}",
                 loc=("body", "end"),
+            )
+        if h.start < 0 or h.start > h.end:
+            raise Invalid(
+                "start must be 0 or more and not after end", loc=("body", "start")
             )
 
         # The render thread reads the range once _hl_state is on: set it last.
@@ -1723,6 +1734,12 @@ class Virtuals:
         self._ledfx.events.fire_event(GlobalPauseEvent(paused))
         return paused
 
+    def _ensure_known(self, ids: Sequence[VirtualIdStr] | None) -> None:
+        """Raise one NotFound naming every unknown id once, before any change."""
+        missing = list(dict.fromkeys(v for v in ids or () if v not in self._virtuals))
+        if missing:
+            raise NotFound("Virtual", *missing)
+
     def get_or_raise(self, virtual_id: VirtualIdStr) -> Virtual:
         virtual = self._virtuals.get(virtual_id)
         if virtual is None:
@@ -1923,25 +1940,27 @@ class Virtuals:
 
     def _set_active(self, virtual: Virtual, active: bool) -> None:
         effect = None
+        if active and (
+            not virtual._active_effect or isinstance(virtual.active_effect, DummyEffect)
+        ):
+            # Restore the last effect; a stale stored config refuses here too.
+            entry = virtual.entry
+            last_effect = entry.last_effect if entry is not None else None
+            effect_config = (
+                virtual.get_effects_config(last_effect) if last_effect else None
+            )
+            if last_effect and effect_config:
+                try:
+                    effect = self._ledfx.effects.create(
+                        ledfx=self._ledfx, type=last_effect, config=effect_config
+                    )
+                except ValidationError as err:
+                    raise _stale_stored(err) from err
         try:
-            if active and (
-                not virtual._active_effect
-                or isinstance(virtual.active_effect, DummyEffect)
-            ):
-                # Restore the last effect; a stale stored config fails here too.
-                entry = virtual.entry
-                last_effect = entry.last_effect if entry is not None else None
-                if last_effect:
-                    effect_config = virtual.get_effects_config(last_effect)
-                    if effect_config:
-                        effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx,
-                            type=last_effect,
-                            config=effect_config,
-                        )
-                        virtual.set_effect(effect)
+            if effect is not None:
+                virtual.set_effect(effect)
             virtual.active = active
-        except (ValueError, RuntimeError) as err:  # includes ValidationError
+        except (ValueError, RuntimeError) as err:  # the virtual cannot run
             if effect is not None:
                 self._discard_refused(virtual, effect)
             raise Conflict(str(err)) from err
@@ -2052,10 +2071,7 @@ class Virtuals:
         try:
             return model.model_validate(virtual.get_effects_config(type_id))
         except ValidationError as err:
-            loc = ("config", *err.errors()[0]["loc"])
-            raise Conflict(
-                f"Stored field '{'.'.join(map(str, loc))}' is invalid", loc=loc
-            ) from err
+            raise _stale_stored(err) from err
 
     def _create_effect(self, type_id: str, config: PluginConfig) -> Effect:
         try:
@@ -2154,7 +2170,9 @@ class Virtuals:
         self, virtual_ids: Sequence[VirtualIdStr] | None = None
     ) -> None:
         """Blank the output of every virtual, or of those listed (runtime only:
-        the stored effects come back on restart)."""
+        the stored effects come back on restart). Raises NotFound for an
+        unknown id, before anything is cleared."""
+        self._ensure_known(virtual_ids)
         for virtual in self.values():
             if virtual_ids is None or virtual.id in virtual_ids:
                 virtual.clear_frame()
@@ -2168,8 +2186,10 @@ class Virtuals:
 
         Returns (updated, skipped): skipped effects have none of the settings.
         A gradient also sets the colours sampled from it, except those given.
+        Raises NotFound for an unknown id.
         """
         ensure_writable(self._ledfx)
+        self._ensure_known(virtual_ids)
         given = {
             field.name: getattr(update, field.name)
             for field in fields(update)
@@ -2218,9 +2238,7 @@ class Virtuals:
         ids = list(
             dict.fromkeys(self._virtuals if virtual_ids is None else virtual_ids)
         )
-        missing = [v for v in ids if v not in self._virtuals]
-        if missing:
-            raise NotFound("Virtual", *missing)
+        self._ensure_known(ids)
         if config is None:
             config = self._defaults(type_id)
         applied = blocked = failed = 0
@@ -2311,10 +2329,8 @@ class Virtuals:
         ensure_writable(self._ledfx)
         source = self.get_or_raise(virtual_id).active_effect
         if source is None or isinstance(source, DummyEffect):
-            raise Conflict("Virtual copy failed, no active effect on source virtual")
-        missing = [t for t in targets if t not in self._virtuals]
-        if missing:
-            raise NotFound("Virtual", *missing)
+            raise Conflict(f"Virtual {virtual_id} has no active effect")
+        self._ensure_known(targets)
         updated = 0
         for target_id in dict.fromkeys(targets):  # a repeated target once
             try:

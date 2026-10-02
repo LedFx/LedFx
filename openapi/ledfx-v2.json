@@ -31932,7 +31932,7 @@
     },
     "/api/v2/virtuals/apply-config": {
       "post": {
-        "description": "A gradient also sets the colours sampled from it, except those given.",
+        "description": "A gradient also sets the colours sampled from it, except those given. 404\nif an id in virtual_ids does not exist (nothing is written).",
         "operationId": "apply_effect_config",
         "requestBody": {
           "content": {
@@ -31974,6 +31974,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "409": {
             "content": {
@@ -32034,7 +32044,7 @@
     },
     "/api/v2/virtuals/clear-effects": {
       "post": {
-        "description": "Runtime only: their stored effects come back when LedFx restarts.",
+        "description": "Runtime only: their stored effects come back when LedFx restarts. 404 if an\nid does not exist (nothing is cleared).",
         "operationId": "clear_effects",
         "requestBody": {
           "content": {
@@ -32069,6 +32079,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "409": {
             "content": {

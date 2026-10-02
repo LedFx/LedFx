@@ -8,10 +8,7 @@ refuses both ids (RESERVED_IDS), but a virtual that already has the id
 through v2. Other methods on that id reach the virtual.
 """
 
-from typing import TYPE_CHECKING
-
 from ledfx.api.v2.core.binding import LedFxDep
-from ledfx.api.v2.core.problem import ProblemDetailError, validation_problem
 from ledfx.api.v2.core.router import Router
 from ledfx.api.v2.models.ids import VirtualIdParam
 from ledfx.api.v2.models.virtuals import (
@@ -28,37 +25,12 @@ from ledfx.api.v2.models.virtuals import (
     checked_config,
     effect_variant,
 )
-from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import GlobalEffectUpdate, OneshotParams
 from ledfx.configuration.models import Highlight as HighlightParams
 from ledfx.configuration.plugin import PluginConfig
 from ledfx.errors import NotFound
 
-if TYPE_CHECKING:
-    from ledfx.core import LedFxCore
-
 router = Router(tag="virtuals")
-
-
-def _known(
-    ledfx: "LedFxCore", ids: list[VirtualIdStr] | None, field: str
-) -> list[VirtualIdStr] | None:
-    """ids without repeats, if every one names a virtual; else 422 naming
-    each unknown one."""
-    if ids is None:
-        return None
-    unknown = [
-        ProblemDetailError(
-            loc=["body", field, index],
-            msg=f"Virtual '{virtual_id}' not found",
-            type="not_found",
-        )
-        for index, virtual_id in enumerate(ids)
-        if ledfx.virtuals.get(virtual_id) is None
-    ]
-    if unknown:
-        raise validation_problem(unknown)
-    return list(dict.fromkeys(ids))
 
 
 def _params(body: Oneshot) -> OneshotParams:
@@ -71,20 +43,22 @@ def _params(body: Oneshot) -> OneshotParams:
     )
 
 
-@router.post("/virtuals/clear-effects", status=204)
+@router.post("/virtuals/clear-effects", status=204, errors=[NotFound])
 async def clear_effects(body: ClearEffects, ledfx: LedFxDep) -> None:
     """Blank the output of these virtuals (default: all).
 
-    Runtime only: their stored effects come back when LedFx restarts.
+    Runtime only: their stored effects come back when LedFx restarts. 404 if an
+    id does not exist (nothing is cleared).
     """
-    ledfx.virtuals.clear_all_effects(_known(ledfx, body.virtual_ids, "virtual_ids"))
+    ledfx.virtuals.clear_all_effects(body.virtual_ids)
 
 
-@router.post("/virtuals/apply-config")
+@router.post("/virtuals/apply-config", errors=[NotFound])
 async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfigCounts:
     """Write settings into every running effect that has them.
 
-    A gradient also sets the colours sampled from it, except those given.
+    A gradient also sets the colours sampled from it, except those given. 404
+    if an id in virtual_ids does not exist (nothing is written).
     """
     update = GlobalEffectUpdate(
         gradient=body.gradient,
@@ -94,8 +68,7 @@ async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfig
         flip=body.flip,
         mirror=body.mirror,
     )
-    ids = _known(ledfx, body.virtual_ids, "virtual_ids")
-    updated, skipped = ledfx.virtuals.apply_global_config(update, ids)
+    updated, skipped = ledfx.virtuals.apply_global_config(update, body.virtual_ids)
     return ApplyConfigCounts(updated=updated, skipped=skipped)
 
 
