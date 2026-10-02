@@ -76,19 +76,26 @@ class OneOf:
         return handler(core_schema.literal_schema(self.values()))
 
 
+@dataclass(frozen=True)
+class Coercion:
+    """coerce()'s validator. A class, not a closure, so the v2 variants
+    (ledfx.api.v2.models.plugins) can tell a type coercion from a check."""
+
+    target: Callable[[object], object]
+
+    def __call__(self, value: object) -> object:
+        try:
+            return self.target(value)
+        except (TypeError, ValueError, OverflowError) as err:
+            raise ValueError(str(err)) from err
+
+
 def coerce(target: Callable[[object], object]) -> BeforeValidator:
     """vol.Coerce(target): call target; TypeError/ValueError become invalid.
 
     OverflowError too (int(inf), float(10**400)), so it is a validation error.
     """
-
-    def run(value: object) -> object:
-        try:
-            return target(value)
-        except (TypeError, ValueError, OverflowError) as err:
-            raise ValueError(str(err)) from err
-
-    return BeforeValidator(run)
+    return BeforeValidator(Coercion(target))
 
 
 @dataclass(frozen=True)
