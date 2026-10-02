@@ -2,9 +2,9 @@ import logging
 import threading
 import time
 from collections.abc import Collection, Mapping, Sequence
-from dataclasses import fields
+from dataclasses import dataclass, fields
 from functools import cached_property
-from typing import TYPE_CHECKING, Literal
+from typing import Literal
 
 import numpy as np
 from pydantic import ValidationError
@@ -54,10 +54,6 @@ from ledfx.utils import (
     is_gap_device,
 )
 
-if TYPE_CHECKING:
-    from ledfx.api.v2.core.partial import Patch
-    from ledfx.api.v2.models.virtuals import VirtualUpdate
-
 _LOGGER = logging.getLogger(__name__)
 
 # The ids of the v2 collection paths /virtuals/oneshot and /virtuals/force-color,
@@ -84,6 +80,64 @@ def _flash(params: OneshotParams) -> Flash:
     )
 
 
+@dataclass(frozen=True)
+class VirtualChanges:
+    """What Virtuals.patch changes: only the parts that are set."""
+
+    config: VirtualConfig | None = None
+    segments: list[Segment] | None = None
+    active: bool | None = None
+
+
+def segment_problem(devices, segment: Sequence[object]) -> tuple[str, str] | None:
+    """The first thing wrong with a well-formed segment [device_id, start, end,
+    invert]: (field, reason), or None. Gap devices (placeholders) are exempt.
+    The one rule behind both the strict request check and v1's repair."""
+    device_id, start, end = segment[0], segment[1], segment[2]
+    assert isinstance(device_id, str) and isinstance(start, int)
+    assert isinstance(end, int)
+    if device_id.startswith("gap-"):
+        return None
+    device = devices.get(device_id)
+    if device is None:
+        return "device_id", f"Unknown device: {device_id}"
+    if is_gap_device(device):
+        return None
+    last = device.pixel_count - 1
+    if start > end:
+        return "start", "start must not be after end"
+    if start < 0 or start > last:
+        return "start", f"start must be within the device's pixels 0..{last}"
+    if end > last:
+        return "end", f"end must be within the device's pixels 0..{last}"
+    return None
+
+
+def repaired_frequency(config: VirtualConfig) -> VirtualConfig:
+    """config with frequency_min < frequency_max: equal values are widened by
+    1 Hz, reversed ones swapped. For stored and legacy input; the manager's
+    request methods refuse such a range instead."""
+    low, high = config.frequency_min, config.frequency_max
+    if low == high:
+        if high < MAX_FREQ:
+            high += 1
+        else:
+            low -= 1
+        _LOGGER.warning(
+            "Frequency range was zero-width. Adjusted to %s-%s Hz.", low, high
+        )
+    elif low > high:
+        _LOGGER.warning(
+            "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
+            low,
+            high,
+        )
+        low, high = high, low
+    if (low, high) == (config.frequency_min, config.frequency_max):
+        return config
+    return replace_model(config, frequency_min=low, frequency_max=high)
+
+
 class Virtual:
     # Set by Virtuals.create.
     is_device: str | Literal[False] = False
@@ -99,28 +153,13 @@ class Virtual:
     _last_render_error = float("-inf")
 
     def _checked_frequency_range(self, config: VirtualConfig) -> VirtualConfig:
-        """Set frequency_range from config, making frequency_min < frequency_max
-        first (the adjusted config is returned)."""
-        low, high = config.frequency_min, config.frequency_max
-        if low == high:
-            if high < MAX_FREQ:
-                high += 1
-            else:
-                low -= 1
-            _LOGGER.warning(
-                "Frequency range was zero-width. Adjusted to %s-%s Hz.", low, high
-            )
-        elif low > high:
-            _LOGGER.warning(
-                "frequency_min (%s) must be less than frequency_max (%s). Swapping values.",
-                low,
-                high,
-            )
-            low, high = high, low
-        self.frequency_range = FrequencyRange(low, high)
-        if (low, high) == (config.frequency_min, config.frequency_max):
-            return config
-        return replace_model(config, frequency_min=low, frequency_max=high)
+        """Set frequency_range from config, repaired (see repaired_frequency);
+        the repaired config is returned."""
+        config = repaired_frequency(config)
+        self.frequency_range = FrequencyRange(
+            config.frequency_min, config.frequency_max
+        )
+        return config
 
     def __init__(self, ledfx, config: VirtualConfig):
         self._ledfx = ledfx
@@ -205,9 +244,6 @@ class Virtual:
             device.clear_virtual_segments(self.id)
 
     def validate_segment(self, segment):
-        valid = True
-        msg = None
-
         if not (
             isinstance(segment, (list, tuple))
             and len(segment) == 4
@@ -221,50 +257,33 @@ class Virtual:
 
         device_id, start_pixel, end_pixel, invert = segment
 
-        # Get device for validation
-        device = self._ledfx.devices.get(device_id)
-
-        # gap- IDs are configuration placeholders that are never registered
-        # as real devices, so skip validation entirely
-        if device_id.startswith("gap-"):
+        problem = segment_problem(self._ledfx.devices, segment)
+        if problem is None:
             return segment
-
-        if device is None:
+        if problem[0] == "device_id":
             msg = f"Invalid device id: {device_id}"
-            valid = False
-        # Skip validation for gap devices - they are dummy placeholders
-        elif is_gap_device(device):
-            return segment
-        elif (
-            start_pixel < 0
-            or end_pixel < 0
-            or start_pixel > end_pixel
-            or start_pixel >= device.pixel_count
-            or end_pixel >= device.pixel_count
-        ):
-            _LOGGER.warning(
-                "Invalid segment pixels in Virtual '%s': segment('%s' (%s, %s)) valid pixels between (0, %s)",
-                self.name,
-                device.name,
-                start_pixel,
-                end_pixel,
-                device.pixel_count - 1,
-            )
-            start_pixel = max(start_pixel, 0)
-            end_pixel = max(end_pixel, 0)
-            start_pixel = min(start_pixel, end_pixel)
-            if start_pixel >= device.pixel_count:
-                start_pixel = device.pixel_count - 1
-            if end_pixel >= device.pixel_count:
-                end_pixel = device.pixel_count - 1
-            segment = [device_id, start_pixel, end_pixel, invert]
-            _LOGGER.warning("Fixed to %s", segment)
-
-        if not valid:
             _LOGGER.warning(msg)
             raise ValueError(msg)
-        else:
-            return segment
+
+        device = self._ledfx.devices.get(device_id)
+        _LOGGER.warning(
+            "Invalid segment pixels in Virtual '%s': segment('%s' (%s, %s)) valid pixels between (0, %s)",
+            self.name,
+            device.name,
+            start_pixel,
+            end_pixel,
+            device.pixel_count - 1,
+        )
+        start_pixel = max(start_pixel, 0)
+        end_pixel = max(end_pixel, 0)
+        start_pixel = min(start_pixel, end_pixel)
+        if start_pixel >= device.pixel_count:
+            start_pixel = device.pixel_count - 1
+        if end_pixel >= device.pixel_count:
+            end_pixel = device.pixel_count - 1
+        segment = [device_id, start_pixel, end_pixel, invert]
+        _LOGGER.warning("Fixed to %s", segment)
+        return segment
 
     def invalidate_cached_props(self):
         # invalidate cached properties
@@ -1341,9 +1360,20 @@ class Virtual:
         """Merge changes into the config, validate the result and apply it.
 
         Raises ValidationError, before changing anything, if the result is invalid.
+        A reversed or zero-width frequency range is repaired and rotate is
+        zeroed on one row (the manager's request methods refuse both).
         """
         old = self._config
         new = replace_model(old, **changes)
+        if "frequency_min" in changes or "frequency_max" in changes:
+            new = repaired_frequency(new)
+        if new.rows <= 1 and new.rotate != 0:
+            new = replace_model(new, rotate=0)
+        self.replace_config(new)
+
+    def replace_config(self, new: VirtualConfig) -> None:
+        """Make new the config, as it is (no repair), and apply what changed."""
+        old = self._config
         reactivate_effect = False
         mapping_changed = new.mapping != old.mapping
         if mapping_changed:
@@ -1358,8 +1388,11 @@ class Virtual:
             if self._ledfx.config.global_transitions:
                 self._share_transition(new)
 
-        if "frequency_min" in changes or "frequency_max" in changes:
-            new = self._checked_frequency_range(new)
+        if (new.frequency_min, new.frequency_max) != (
+            old.frequency_min,
+            old.frequency_max,
+        ):
+            self.frequency_range = FrequencyRange(new.frequency_min, new.frequency_max)
             # Clear cached effect properties so the changes take effect
             if self._active_effect is not None and hasattr(
                 self._active_effect, "clear_melbank_freq_props"
@@ -1377,10 +1410,6 @@ class Virtual:
                 # The effect needs to be reactivated later after the config has been applied
                 reactivate_effect = True
                 self.invalidate_cached_props()
-
-        # force rotate to 0 if this is a 1d virtual
-        if new.rows <= 1 and new.rotate != 0:
-            new = replace_model(new, rotate=0)
 
         self._config = new
         self._sync_entry()
@@ -1709,71 +1738,73 @@ class Virtuals:
         )
         return virtual
 
-    def update(
-        self,
-        virtual_id: VirtualIdStr,
-        *,
-        config: VirtualConfig | None = None,
-        segments: list[Segment] | None = None,
-        active: bool | None = None,
+    def set_segments(
+        self, virtual_id: VirtualIdStr, segments: list[Segment]
     ) -> Virtual:
-        """Replace the segments, the config or the active state, in that order.
+        """Replace the segments.
 
-        Raises Invalid when the segments or the activation are refused. The
-        refused part is undone and no save is requested, but the parts applied
-        before it stay, in the virtual and its stored entry, so the next save
-        writes them.
+        Raises Invalid (loc body.segments.<i>.<field>) for a segment that
+        names an unknown device or pixels outside it (gap devices are exempt),
+        or when the new set cannot be activated; nothing changes then.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
-        if segments is not None:
-            self._apply_segments(virtual, segments)
-        if config is not None:
-            self._apply_config(virtual, config)
-        if active is not None:
-            self._apply_active(virtual, active)
+        self._check_segments(segments)
+        self._apply_segments(virtual, segments)
         self._ledfx.config_store.request_save()
         return virtual
 
-    def patch(self, virtual_id: VirtualIdStr, patch: "Patch[VirtualUpdate]") -> Virtual:
-        """Apply a v2 PATCH: the fields it names, checked strictly together
-        with the virtual's other settings, then applied as update() does.
+    def set_config(self, virtual_id: VirtualIdStr, config: VirtualConfig) -> Virtual:
+        """Replace the config.
 
-        All or nothing: if a step raises, the steps before it are undone and
-        nothing is saved.
-
-        Raises PatchValidationError (422; 409 when a stored value the PATCH
-        does not change is invalid), and Invalid like update().
+        Raises Invalid (loc body.config.<field>) for frequency_min >=
+        frequency_max, or for rotate with one row; nothing changes then.
         """
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
-        update = patch.apply(patch.model.of(virtual))
-        changed = {path[0] for path in patch.changed}
+        self._check_config(config)
+        self._apply_config(virtual, config)
+        self._ledfx.config_store.request_save()
+        return virtual
+
+    def set_active(self, virtual_id: VirtualIdStr, active: bool) -> Virtual:
+        """Activate or deactivate. Raises Invalid when activating is refused;
+        the refused change is undone."""
+        ensure_writable(self._ledfx)
+        virtual = self.get_or_raise(virtual_id)
+        self._apply_active(virtual, active)
+        self._ledfx.config_store.request_save()
+        return virtual
+
+    def patch(self, virtual_id: VirtualIdStr, changes: VirtualChanges) -> Virtual:
+        """Apply the parts of changes that are set: segments, config, active.
+
+        All or nothing: if a step raises, the steps before it are undone and
+        nothing is saved. Raises Invalid like set_segments, set_config and
+        set_active.
+        """
+        ensure_writable(self._ledfx)
+        virtual = self.get_or_raise(virtual_id)
         old_segments = list(virtual.segments)
         old_config = virtual.config
         attempted: list[str] = []
         try:
-            if "segments" in changed:
+            if changes.segments is not None:
                 attempted.append("segments")
-                self._apply_segments(
-                    virtual,
-                    [
-                        Segment(s.device_id, s.start, s.end, s.invert)
-                        for s in update.segments
-                    ],
-                )
-            if "config" in changed:
+                self._check_segments(changes.segments)
+                self._apply_segments(virtual, changes.segments)
+            if changes.config is not None:
                 attempted.append("config")
-                self._apply_config(
-                    virtual,
-                    VirtualConfig.model_validate(update.config.model_dump()),
-                )
-            if "active" in changed:
+                self._check_config(changes.config)
+                self._apply_config(virtual, changes.config)
+            if changes.active is not None:
                 # _apply_active undoes itself when it raises.
-                self._apply_active(virtual, update.active)
+                self._apply_active(virtual, changes.active)
         except Exception:
             # A step may have changed state before it raised, so every step
-            # tried is restored; a restore that fails must not hide the error.
+            # tried is restored, unchecked: what was stored (v1 can store what
+            # v2 refuses) must come back; a restore that fails must not hide
+            # the error.
             for step in reversed(attempted):
                 try:
                     if step == "config":
@@ -1810,16 +1841,32 @@ class Virtuals:
         config.virtuals = [v for v in config.virtuals if v.id != virtual_id]
         self._ledfx.config_store.request_save()
 
+    def _check_config(self, config: VirtualConfig) -> None:
+        if config.frequency_min >= config.frequency_max:
+            raise Invalid(
+                "frequency_min must be below frequency_max",
+                loc=("body", "config", "frequency_min"),
+            )
+        if config.rotate != 0 and config.rows <= 1:
+            raise Invalid(
+                "rotate needs more than one row", loc=("body", "config", "rotate")
+            )
+
     def _apply_config(self, virtual: Virtual, config: VirtualConfig) -> None:
-        current = virtual.config
-        changes = {
-            name: value
-            for name, value in config.model_dump().items()
-            if getattr(current, name) != value
-        }
-        virtual.update_config(changes)
+        """Apply config as it is; callers check request input first."""
+        virtual.replace_config(config)
+
+    def _check_segments(self, segments: list[Segment]) -> None:
+        """Invalid for a segment on an unknown device or outside its pixels
+        (see segment_problem)."""
+        for index, segment in enumerate(segments):
+            problem = segment_problem(self._ledfx.devices, segment)
+            if problem is not None:
+                field, reason = problem
+                raise Invalid(reason, loc=("body", "segments", index, field))
 
     def _apply_segments(self, virtual: Virtual, segments: list[Segment]) -> None:
+        """Apply segments as they are; callers check request input first."""
         try:
             # update_segments validates first and restores on a failure.
             virtual.update_segments(segments)

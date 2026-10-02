@@ -5,7 +5,9 @@ from ledfx.api.v2.core.partial import Partial
 from ledfx.api.v2.core.router import Router
 from ledfx.api.v2.models.ids import VirtualIdParam
 from ledfx.api.v2.models.virtuals import Virtual, VirtualCreate, VirtualUpdate
-from ledfx.configuration.models import VirtualConfig
+from ledfx.configuration.models import Segment, VirtualConfig
+from ledfx.errors import ensure_writable
+from ledfx.virtuals import VirtualChanges
 
 router = Router(tag="virtuals")
 
@@ -40,10 +42,30 @@ async def update_virtual(
     """Change a virtual's settings, segments or active state.
 
     Only the fields sent change; a config object merges into the current one,
-    and segments replace the list. A stored setting that the change leaves
-    alone but that is no longer valid gives 409.
+    and segments replace the list. All or nothing: a 4xx means nothing
+    changed. Values are never adjusted: a segment must name a known device
+    and pixels inside it (start not after end), frequency_min must be below
+    frequency_max, and rotate needs more than one row; anything else is 422.
+    A stored setting that the change leaves alone but that is no longer valid
+    gives 409.
     """
-    return Virtual.of(ledfx.virtuals.patch(virtual_id, body))
+    ensure_writable(ledfx)  # safe mode answers before a 404 or a 422
+    update = body.apply(VirtualUpdate.of(ledfx.virtuals.get_or_raise(virtual_id)))
+    changed = {path[0] for path in body.changed}
+    changes = VirtualChanges(
+        segments=(
+            [Segment(s.device_id, s.start, s.end, s.invert) for s in update.segments]
+            if "segments" in changed
+            else None
+        ),
+        config=(
+            VirtualConfig.model_validate(update.config.model_dump())
+            if "config" in changed
+            else None
+        ),
+        active=update.active if "active" in changed else None,
+    )
+    return Virtual.of(ledfx.virtuals.patch(virtual_id, changes))
 
 
 @router.delete("/virtuals/{virtual_id}", status=204)

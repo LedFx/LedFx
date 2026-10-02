@@ -88,9 +88,9 @@ async def test_put_refusals_are_conflicts(v2_client: Client) -> None:
     body = await expect_problem(resp, 409, "conflict")
     assert "no configured device segments" in str(body["detail"])
     core = core_of(v2_client)
-    core.virtuals.update(
+    core.virtuals.set_segments(
         VirtualIdStr("dj bird"),
-        segments=[Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)],
+        [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)],
     )
     await _put(v2_client, {"type": "rainbow"})
     resp = await v2_client.put(

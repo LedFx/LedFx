@@ -37,7 +37,7 @@ from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
 from ledfx.api.virtual_effects_delete import EffectsEndpoint as EffectsDeleteEndpoint
 from ledfx.api.virtual_presets import VirtualPresetsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
-from ledfx.configuration.models import Preset, VirtualEntry
+from ledfx.configuration.models import Preset, Segment, VirtualEntry
 from ledfx.devices import Device, Devices, SerialDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
@@ -105,6 +105,9 @@ class _Virtual:
         self.set_effect = MagicMock()
         self.update_effect_config = MagicMock()
         self.get_effects_config = MagicMock(return_value=dict[str, object]())
+
+    def validate_segment(self, segment: object) -> object:
+        return segment
 
     @property
     def active(self) -> bool:
@@ -552,12 +555,13 @@ async def test_failed_effect_restore_on_activation_is_not_a_202(failure: str) ->
 async def test_segment_errors_are_not_500s() -> None:
     ledfx, virtual = _with_virtual()
     virtual.update_segments.side_effect = ValueError("bad")
+    segments = [["gap-1", 0, 1, False]]
     status, response = await _call(
-        VirtualEndpoint(ledfx), "POST", {"segments": 5}, virtual_id="v1"
+        VirtualEndpoint(ledfx), "POST", {"segments": segments}, virtual_id="v1"
     )
     assert status == 200 and "bad" in _reason(response)
     # update_segments restores itself; the endpoint doesn't call it again.
-    virtual.update_segments.assert_called_once_with(5)
+    virtual.update_segments.assert_called_once_with([Segment("gap-1", 0, 1, False)])
     ledfx.config_store.request_save.assert_not_called()
 
 

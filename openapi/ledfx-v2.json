@@ -31151,6 +31151,7 @@
       },
       "VirtualConfig": {
         "additionalProperties": false,
+        "description": "A virtual's settings. frequency_min must be below frequency_max,\nand rotate needs more than one row; neither is adjusted.",
         "properties": {
           "center_offset": {
             "default": 0,
@@ -31277,6 +31278,7 @@
       },
       "VirtualConfigPartial": {
         "additionalProperties": false,
+        "description": "A virtual's settings. frequency_min must be below frequency_max,\nand rotate needs more than one row; neither is adjusted.",
         "properties": {
           "center_offset": {
             "default": 0,
@@ -32627,7 +32629,7 @@
         ]
       },
       "patch": {
-        "description": "Only the fields sent change; a config object merges into the current one,\nand segments replace the list. A stored setting that the change leaves\nalone but that is no longer valid gives 409.",
+        "description": "Only the fields sent change; a config object merges into the current one,\nand segments replace the list. All or nothing: a 4xx means nothing\nchanged. Values are never adjusted: a segment must name a known device\nand pixels inside it (start not after end), frequency_min must be below\nfrequency_max, and rotate needs more than one row; anything else is 422.\nA stored setting that the change leaves alone but that is no longer valid\ngives 409.",
         "operationId": "update_virtual",
         "parameters": [
           {

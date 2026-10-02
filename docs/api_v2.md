@@ -56,6 +56,10 @@ Behaviour worth knowing:
   gets a non-JSON body answers 415.
 - `PATCH` is all-or-nothing: if any part is refused, nothing changes. Arrays in
   a `PATCH` replace the stored array wholesale, so send every item complete.
+- v2 never adjusts a value it was sent. A segment must name a known device and
+  pixels inside it (start not after end; gap devices are exempt), `frequency_min`
+  must be below `frequency_max`, and `rotate` needs more than one row. Anything
+  else is a 422 at the offending field and nothing changes.
 - Responses show stored values even when they lie outside the bounds v2 accepts
   in a request.
 - New plugins add new branches to response unions. This is additive, so a

@@ -19,6 +19,7 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 from ledfx.api.v2.core.partial import PatchValidationError
 from ledfx.api.v2.core.problem import validation_errors
@@ -53,7 +54,7 @@ if TYPE_CHECKING:
     VirtualConfig = StoredVirtualConfig
     VirtualConfigView = StoredVirtualConfig
 else:
-    VirtualConfig = strict_variant(
+    _VirtualConfigFields = strict_variant(
         StoredVirtualConfig,
         "VirtualConfig",
         limits={
@@ -63,6 +64,34 @@ else:
             "rows": (Ge(1), Le(4096)),
         },
     )
+
+    class VirtualConfig(_VirtualConfigFields):
+        """A virtual's settings. frequency_min must be below frequency_max,
+        and rotate needs more than one row; neither is adjusted."""
+
+        @model_validator(mode="after")
+        def _consistent(self) -> Self:
+            problems = []
+            if self.frequency_min >= self.frequency_max:
+                problems.append(
+                    ("frequency_min", self.frequency_min, "must be below frequency_max")
+                )
+            if self.rotate != 0 and self.rows <= 1:
+                problems.append(("rotate", self.rotate, "needs more than one row"))
+            if problems:
+                raise ValidationError.from_exception_data(
+                    "VirtualConfig",
+                    [
+                        InitErrorDetails(
+                            type=PydanticCustomError("inconsistent", msg),
+                            loc=(field,),
+                            input=value,
+                        )
+                        for field, value, msg in problems
+                    ],
+                )
+            return self
+
 
 # What a response holds: strict and closed, without the request bounds, so a
 # config stored by v1 or an old file still validates.
@@ -95,6 +124,23 @@ class VirtualSegment(BaseModel):
     start: Pixel
     end: Pixel
     invert: bool = False
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.start > self.end:
+            raise ValidationError.from_exception_data(
+                "VirtualSegment",
+                [
+                    InitErrorDetails(
+                        type=PydanticCustomError(
+                            "inconsistent", "start must not be after end"
+                        ),
+                        loc=("start",),
+                        input=self.start,
+                    )
+                ],
+            )
+        return self
 
 
 class VirtualCreate(BaseModel):

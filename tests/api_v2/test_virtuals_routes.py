@@ -33,6 +33,24 @@ async def test_list_virtuals(v2_client: Client) -> None:
     assert body[3]["is_device"] == "matrix"
 
 
+@pytest.mark.parametrize(
+    ("config", "loc"),
+    [
+        ({"frequency_min": 900, "frequency_max": 100}, "frequency_min"),
+        ({"rows": 1, "rotate": 2}, "rotate"),
+    ],
+)
+async def test_create_refuses_config_it_would_repair(
+    v2_client: Client, config: dict[str, int], loc: str
+) -> None:
+    core = core_of(v2_client)
+    before = core.config.model_dump()
+    resp = await v2_client.post(V, json={"config": {"name": "A", **config}})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", loc]
+    assert core.config.model_dump() == before
+
+
 async def test_create_makes_an_id_from_the_name(v2_client: Client) -> None:
     """A non-ASCII name, and a Location the client can follow."""
     resp = await v2_client.post(V, json={"config": {"name": "Küche"}})
@@ -102,11 +120,89 @@ async def test_patch_segments_and_active(v2_client: Client) -> None:
     assert body["active"] is False
 
 
-async def test_patch_refuses_an_unknown_device(v2_client: Client) -> None:
-    segments = [{"device_id": "ghost", "start": 0, "end": 9}]
+def _segment(device_id: str, start: int, end: int) -> dict[str, object]:
+    return {"device_id": device_id, "start": start, "end": end}
+
+
+@pytest.mark.parametrize(
+    ("segments", "loc"),
+    [
+        ([_segment("strip", 0, 99)], ["body", "segments", 0, "end"]),
+        (
+            [_segment("strip", 0, 9), _segment("strip", 50, 60)],
+            ["body", "segments", 1, "start"],
+        ),
+        ([_segment("strip", 30, 10)], ["body", "segments", 0, "start"]),
+        ([_segment("ghost", 0, 9)], ["body", "segments", 0, "device_id"]),
+    ],
+    ids=["end-past-device", "start-past-device", "start-after-end", "unknown-device"],
+)
+async def test_patch_refuses_segments_it_would_repair(
+    v2_client: Client, segments: list[dict[str, object]], loc: list[str | int]
+) -> None:
+    """A 200 never carries values the client did not send: 422, nothing stored."""
+    core = core_of(v2_client)
+    before = core.config.model_dump()
     resp = await v2_client.patch(BIRD, json={"segments": segments})
     body = await expect_problem(resp, 422, "validation")
-    assert body["errors"][0]["loc"] == ["body", "segments"]
+    assert body["errors"][0]["loc"] == loc
+    assert core.config.model_dump() == before
+    core.config_store.request_save.assert_not_called()
+
+
+async def test_patch_accepts_a_gap_segment_beyond_any_range(v2_client: Client) -> None:
+    resp = await v2_client.patch(BIRD, json={"segments": [_segment("gap-1", 0, 500)]})
+    assert resp.status == 200
+    expected = [{"device_id": "gap-1", "start": 0, "end": 500, "invert": False}]
+    assert (await resp.json())["segments"] == expected
+    virtual = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    assert virtual.segments == [["gap-1", 0, 500, False]]
+    assert virtual.entry is not None
+    assert virtual.entry.segments == [["gap-1", 0, 500, False]]
+
+
+async def test_safe_mode_answers_before_a_404_or_a_422(v2_client: Client) -> None:
+    enter_safe_mode(core_of(v2_client))
+    for path, body in (
+        (f"{V}/nope", {"active": False}),
+        (BIRD, {"segments": [_segment("ghost", 0, 9)]}),
+    ):
+        resp = await v2_client.patch(path, json=body)
+        await expect_problem(resp, 409, "safe-mode")
+
+
+async def test_a_refused_patch_keeps_a_config_v1_stored(v2_client: Client) -> None:
+    virtual = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("empty"))
+    virtual._config = replace_model(virtual.config, rows=1, rotate=2)
+    assert virtual.entry is not None
+    virtual.entry.config = virtual._config
+    resp = await v2_client.patch(
+        f"{V}/empty", json={"config": {"rotate": 0}, "active": True}
+    )
+    await expect_problem(resp, 422, "validation")
+    assert virtual.config.rotate == 2
+    assert virtual.entry.config.rotate == 2
+
+
+@pytest.mark.parametrize(
+    ("config", "loc"),
+    [
+        ({"frequency_min": 900, "frequency_max": 100}, "frequency_min"),
+        ({"frequency_min": 500, "frequency_max": 500}, "frequency_min"),
+        ({"rotate": 2}, "rotate"),
+    ],
+    ids=["min-above-max", "min-equals-max", "rotate-on-one-row"],
+)
+async def test_patch_refuses_config_it_would_repair(
+    v2_client: Client, config: dict[str, int], loc: str
+) -> None:
+    core = core_of(v2_client)
+    before = core.config.model_dump()
+    resp = await v2_client.patch(BIRD, json={"config": config})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "config", loc]
+    assert core.config.model_dump() == before
+    core.config_store.request_save.assert_not_called()
 
 
 @pytest.mark.parametrize("field", ["pixel_count", "max_brightness"])

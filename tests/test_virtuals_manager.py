@@ -22,12 +22,13 @@ from ledfx.configuration.models import (
     Segment,
     SetEffectAllResult,
     VirtualConfig,
+    replace_model,
 )
 from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.errors import Conflict, Invalid, NotFound, SafeMode
 from ledfx.events import GlobalPauseEvent, VirtualConfigUpdateEvent
-from ledfx.virtuals import EffectRejected, Virtuals
+from ledfx.virtuals import EffectRejected, VirtualChanges, Virtuals
 from tests.test_utilities.virtuals_core import (
     add_virtual,
     enter_safe_mode,
@@ -41,7 +42,9 @@ BIRD = VirtualIdStr("dj bird")
 # change and its save must happen with no await in between.
 MUTATORS: tuple[str, ...] = (
     "add",
-    "update",
+    "set_segments",
+    "set_config",
+    "set_active",
     "patch",
     "remove",
     "set_paused",
@@ -106,12 +109,14 @@ def test_add_refuses_a_reserved_id(ledfx: MagicMock, name: str) -> None:
     ledfx.config_store.request_save.assert_not_called()
 
 
-def test_update_config_segments_and_active(ledfx: MagicMock) -> None:
-    virtual = ledfx.virtuals.update(
+def test_patch_config_segments_and_active(ledfx: MagicMock) -> None:
+    virtual = ledfx.virtuals.patch(
         BIRD,
-        config=VirtualConfig(name="Bird", max_brightness=0.5),
-        segments=[Segment("strip", 0, 24, False)],
-        active=False,
+        VirtualChanges(
+            config=VirtualConfig(name="Bird", max_brightness=0.5),
+            segments=[Segment("strip", 0, 24, False)],
+            active=False,
+        ),
     )
     assert virtual.config.max_brightness == 0.5
     assert virtual.name == "Bird"
@@ -123,18 +128,62 @@ def test_update_config_segments_and_active(ledfx: MagicMock) -> None:
     ledfx.config_store.request_save.assert_called_once()
 
 
-def test_update_refuses_bad_segments_and_changes_nothing(ledfx: MagicMock) -> None:
+@pytest.mark.parametrize(
+    ("segment", "field"),
+    [
+        (Segment("nope", 0, 9, False), "device_id"),
+        (Segment("strip", 0, 50, False), "end"),
+        (Segment("strip", 50, 60, False), "start"),
+        (Segment("strip", -1, 9, False), "start"),
+        (Segment("strip", 9, 0, False), "start"),
+    ],
+)
+def test_set_segments_refuses_bad_segments_and_changes_nothing(
+    ledfx: MagicMock, segment: Segment, field: str
+) -> None:
     with pytest.raises(Invalid) as caught:
-        ledfx.virtuals.update(BIRD, segments=[Segment("nope", 0, 9, False)])
-    assert caught.value.loc == ("body", "segments")
+        ledfx.virtuals.set_segments(BIRD, [Segment("strip", 0, 9, False), segment])
+    assert caught.value.loc == ("body", "segments", 1, field)
     virtual = ledfx.virtuals.get_or_raise(BIRD)
     assert virtual.segments == [["strip", 0, 49, False]]
     ledfx.config_store.request_save.assert_not_called()
 
 
-def test_update_active_without_segments_is_invalid(ledfx: MagicMock) -> None:
+def test_set_segments_accepts_a_gap_segment_beyond_any_range(ledfx: MagicMock) -> None:
+    virtual = ledfx.virtuals.set_segments(BIRD, [Segment("gap-1", 0, 500, False)])
+    assert virtual.segments == [["gap-1", 0, 500, False]]
+
+
+@pytest.mark.parametrize(
+    ("changes", "field"),
+    [
+        ({"frequency_min": 900, "frequency_max": 100}, "frequency_min"),
+        ({"frequency_min": 500, "frequency_max": 500}, "frequency_min"),
+        ({"rows": 1, "rotate": 2}, "rotate"),
+    ],
+)
+def test_set_config_refuses_what_it_would_repair(
+    ledfx: MagicMock, changes: dict[str, int], field: str
+) -> None:
+    before = ledfx.virtuals.get_or_raise(BIRD).config
     with pytest.raises(Invalid) as caught:
-        ledfx.virtuals.update(VirtualIdStr("empty"), active=True)
+        ledfx.virtuals.set_config(BIRD, replace_model(before, **changes))
+    assert caught.value.loc == ("body", "config", field)
+    assert ledfx.virtuals.get_or_raise(BIRD).config == before
+    ledfx.config_store.request_save.assert_not_called()
+
+
+def test_a_stored_config_is_still_repaired_on_load(ledfx: MagicMock) -> None:
+    config = VirtualConfig(name="Old", frequency_min=900, frequency_max=100)
+    virtual = ledfx.virtuals.create(
+        id="old", config=config, ledfx=ledfx, is_device=False
+    )
+    assert (virtual.config.frequency_min, virtual.config.frequency_max) == (100, 900)
+
+
+def test_set_active_without_segments_is_invalid(ledfx: MagicMock) -> None:
+    with pytest.raises(Invalid) as caught:
+        ledfx.virtuals.set_active(VirtualIdStr("empty"), True)
     assert caught.value.loc == ("body", "active")
     ledfx.config_store.request_save.assert_not_called()
 
@@ -169,11 +218,10 @@ def test_set_paused_is_runtime_only(ledfx: MagicMock) -> None:
 # In safe mode a change raises SafeMode and changes nothing.
 CRUD_CHANGES: dict[str, Callable[[Virtuals], object]] = {
     "add": lambda v: v.add(VirtualConfig(name="New")),
-    "update-config": lambda v: v.update(BIRD, config=VirtualConfig(name="Renamed")),
-    "update-segments": lambda v: v.update(
-        BIRD, segments=[Segment("strip", 0, 9, False)]
-    ),
-    "update-active": lambda v: v.update(BIRD, active=False),
+    "set-config": lambda v: v.set_config(BIRD, VirtualConfig(name="Renamed")),
+    "set-segments": lambda v: v.set_segments(BIRD, [Segment("strip", 0, 9, False)]),
+    "set-active": lambda v: v.set_active(BIRD, False),
+    "patch": lambda v: v.patch(BIRD, VirtualChanges(active=False)),
     "remove": lambda v: v.remove(BIRD),
 }
 
@@ -273,9 +321,8 @@ def test_set_effect_refusals(ledfx: MagicMock) -> None:
 def test_set_effect_with_fallback_on_a_streamed_virtual_conflicts(
     ledfx: MagicMock,
 ) -> None:
-    ledfx.virtuals.update(
-        BIRD,
-        segments=[Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)],
+    ledfx.virtuals.set_segments(
+        BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
     )
     ledfx.virtuals.set_effect(BIRD, "rainbow", {})
     matrix = VirtualIdStr("matrix")
@@ -410,9 +457,8 @@ def test_effect_changes_are_refused_in_safe_mode(
 
 
 def test_refused_effects_are_not_left_in_the_registry(ledfx: MagicMock) -> None:
-    ledfx.virtuals.update(
-        BIRD,
-        segments=[Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)],
+    ledfx.virtuals.set_segments(
+        BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
     )
     ledfx.virtuals.set_effect(BIRD, "singleColor", {})
     before = set(ledfx.effects)
@@ -494,9 +540,8 @@ def test_set_effect_all_counts_each_outcome(ledfx: MagicMock) -> None:
 def test_set_effect_all_blocks_streamed_virtuals_with_a_fallback(
     ledfx: MagicMock,
 ) -> None:
-    ledfx.virtuals.update(
-        BIRD,
-        segments=[Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)],
+    ledfx.virtuals.set_segments(
+        BIRD, [Segment("strip", 0, 49, False), Segment("matrix", 0, 63, False)]
     )
     ledfx.virtuals.set_effect(BIRD, "rainbow", {})
     result = ledfx.virtuals.set_effect_all("singleColor", {}, ["matrix"], fallback=5.0)
@@ -645,11 +690,11 @@ async def test_v1_apply_global_accepts_a_colour_list(ledfx: MagicMock) -> None:
 def test_refused_activations_leave_the_registry_alone(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", {})
     ledfx.virtuals.clear_effect(BIRD)
-    ledfx.virtuals.update(BIRD, segments=[], active=False)
+    ledfx.virtuals.patch(BIRD, VirtualChanges(segments=[], active=False))
     before = set(ledfx.effects)
     for _ in range(5):
         with pytest.raises(Invalid):  # no segments to run the restored effect on
-            ledfx.virtuals.update(BIRD, active=True)
+            ledfx.virtuals.set_active(BIRD, True)
     assert set(ledfx.effects) == before
 
 
@@ -658,7 +703,7 @@ async def test_v1_refused_activations_leave_the_registry_alone(
 ) -> None:
     ledfx.virtuals.set_effect(BIRD, "rainbow", {})
     ledfx.virtuals.clear_effect(BIRD)
-    ledfx.virtuals.update(BIRD, segments=[], active=False)
+    ledfx.virtuals.patch(BIRD, VirtualChanges(segments=[], active=False))
     before = set(ledfx.effects)
     app = build_app(ledfx, (VirtualEndpoint,))
     async with TestClient(TestServer(app)) as client:
@@ -683,3 +728,41 @@ async def test_v1_highlight_off_outside_calibration_is_refused(
 
 def test_v2_highlight_off_is_idempotent(ledfx: MagicMock) -> None:
     ledfx.virtuals.set_highlight(BIRD, None)  # not calibrating: still fine
+
+
+def test_a_refused_patch_restores_a_config_v2_would_refuse(ledfx: MagicMock) -> None:
+    """v1 can store rows 1 with rotate 2; the undo puts it back, unchecked."""
+    virtual = ledfx.virtuals.add(VirtualConfig(name="R", rows=1, rotate=2))
+    before = virtual.config
+    assert before.rotate == 2
+    changes = VirtualChanges(config=replace_model(before, rotate=0), active=True)
+    with pytest.raises(Invalid):  # no segments to activate on
+        ledfx.virtuals.patch(virtual.id, changes)
+    assert virtual.config == before
+    assert virtual.entry is not None
+    assert virtual.entry.config.rotate == 2
+
+
+def test_a_refused_patch_restores_segments_that_no_longer_fit(
+    ledfx: MagicMock,
+) -> None:
+    """A device that shrank leaves stored segments v2 would refuse. The undo
+    does not run the strict checks, so it restores (clamped, as a reload
+    would) instead of failing and leaving the new segments in place."""
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    ledfx.devices.get("strip").pixel_count = 30
+    changes = VirtualChanges(
+        segments=[Segment("strip", 0, 9, False)],
+        config=replace_model(virtual.config, frequency_min=900, frequency_max=100),
+    )
+    with pytest.raises(Invalid):
+        ledfx.virtuals.patch(BIRD, changes)
+    assert virtual.segments == [["strip", 0, 29, False]]
+    assert virtual.entry is not None
+    assert virtual.entry.segments == [["strip", 0, 29, False]]
+
+
+def test_stored_segments_out_of_range_load_clamped(ledfx: MagicMock) -> None:
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    virtual.update_segments([["strip", 0, 99, False], ["strip", 30, 10, False]])
+    assert virtual.segments == [["strip", 0, 49, False], ["strip", 10, 10, False]]
