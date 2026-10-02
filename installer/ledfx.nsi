@@ -35,7 +35,8 @@
 ; Instfiles page
 !insertmacro MUI_PAGE_INSTFILES
 ; Finish page
-!define MUI_FINISHPAGE_RUN "$INSTDIR\LedFx.exe"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION RunLedFx
 !define MUI_FINISHPAGE_SHOWREADME "https://docs.ledfx.app/en/stable/configuring.html"
 !insertmacro MUI_PAGE_FINISH
 
@@ -46,6 +47,12 @@
 !insertmacro MUI_LANGUAGE "English"
 
 ; MUI end ------
+
+; The setup runs as admin. Start LedFx through Explorer so it runs as the
+; signed-in user, with their config, instead of inheriting admin rights.
+Function RunLedFx
+  Exec '"$WINDIR\explorer.exe" "$INSTDIR\LedFx.exe"'
+FunctionEnd
 
 Function .onInit
   SetRegView 64
