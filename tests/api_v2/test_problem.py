@@ -7,6 +7,7 @@ import pytest
 from aiohttp import web
 from pydantic import BaseModel, ValidationError
 
+from ledfx.api.v2.core.partial import PatchValidationError
 from ledfx.api.v2.core.problem import (
     PROBLEM_PREFIX,
     Problem,
@@ -187,6 +188,18 @@ def test_a_problem_lists_at_most_100_errors() -> None:
     with pytest.raises(ValidationError) as info:
         _Many.model_validate({"items": ["x"] * 250})
     problem = validation_problem(validation_errors(info.value, ("body",)))
+    assert problem.errors is not None
+    assert len(problem.errors) == 100
+    assert problem.detail == "250 invalid value(s) (first 100 of 250 errors)"
+
+
+def test_a_patch_validation_problem_lists_at_most_100_errors() -> None:
+    errors = [
+        ProblemDetailError(loc=["body", str(i)], msg="bad", type="x")
+        for i in range(250)
+    ]
+    problem = PatchValidationError(errors, None)
+    assert problem.status == 422
     assert problem.errors is not None
     assert len(problem.errors) == 100
     assert problem.detail == "250 invalid value(s) (first 100 of 250 errors)"

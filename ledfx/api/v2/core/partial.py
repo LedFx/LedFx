@@ -44,12 +44,13 @@ class PatchValidationError(ProblemError):
     ) -> None:
         self.stored_field = stored_field
         if errors:
+            capped = validation_problem(errors)
             super().__init__(
-                422,
-                "validation",
-                "Validation failed",
-                f"{len(errors)} invalid value(s)",
-                errors,
+                capped.status,
+                capped.suffix,
+                capped.title,
+                capped.detail,
+                capped.errors,
             )
         else:
             super().__init__(
