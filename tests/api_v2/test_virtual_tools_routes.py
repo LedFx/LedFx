@@ -11,6 +11,7 @@ from ledfx.effects import DummyEffect
 from ledfx.effects.oneshots.oneshot import Flash
 from tests.api_v2.virtuals_client import BIRD, Client, V, core_of, expect_problem
 from tests.test_utilities.virtuals_core import (
+    FakeDevice,
     add_virtual,
     enter_safe_mode,
     running_core,
@@ -58,28 +59,64 @@ async def test_clear_effects(v2_client: Client) -> None:
 
 async def test_unknown_ids_are_named(v2_client: Client) -> None:
     resp = await v2_client.post(
-        f"{V}/clear-effects", json={"virtual_ids": ["dj bird", "ghost"]}
+        f"{V}/clear-effects",
+        json={"virtual_ids": ["dj bird", "ghost", "spook", "ghost"]},
     )
-    body = await expect_problem(resp, 422, "validation")
-    assert body["errors"] == [
-        {
-            "loc": ["body", "virtual_ids", 1],
-            "msg": "Virtual 'ghost' not found",
-            "type": "not_found",
-        }
-    ]
+    body = await expect_problem(resp, 404, "not-found")
+    assert body["detail"] == "Virtuals not found: 'ghost', 'spook'"
+    resp = await v2_client.post(
+        f"{V}/apply-config",
+        json={"brightness": 0.5, "virtual_ids": ["ghost", "spook", "ghost"]},
+    )
+    body = await expect_problem(resp, 404, "not-found")
+    assert body["detail"] == "Virtuals not found: 'ghost', 'spook'"
 
 
 async def test_apply_config(v2_client: Client) -> None:
     await _start(v2_client, "dj bird")
     resp = await v2_client.post(f"{V}/apply-config", json={"brightness": 0.5})
     assert resp.status == 200
-    assert await resp.json() == {"updated": 1, "skipped": 0}
+    assert await resp.json() == {"updated": 1, "skipped": 0, "failed": 0}
     effect = await (await v2_client.get(f"{BIRD}/effect")).json()
     assert effect["config"]["brightness"] == 0.5
     await expect_problem(
         await v2_client.post(f"{V}/apply-config", json={}), 422, "validation"
     )
+
+
+async def test_apply_config_counts_a_refusing_effect_as_failed(
+    v2_client: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await _start(v2_client, "dj bird")
+    await _start(v2_client, "matrix", "singleColor")
+    effect = (
+        core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("matrix")).active_effect
+    )
+    assert effect is not None
+
+    def refuse(config: object) -> None:
+        raise ValueError("refused")
+
+    monkeypatch.setattr(effect, "update_config", refuse)
+    resp = await v2_client.post(f"{V}/apply-config", json={"gradient": "Rainbow"})
+    assert resp.status == 200
+    assert await resp.json() == {"updated": 0, "skipped": 1, "failed": 1}
+
+
+async def test_apply_config_answers_500_for_a_real_error(
+    v2_client: Client, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    await _start(v2_client, "dj bird")
+    effect = core_of(v2_client).virtuals.get_or_raise(VirtualIdStr("dj bird"))
+    effect = effect.active_effect
+    assert effect is not None
+
+    def bug(config: object) -> None:
+        raise TypeError("bug")
+
+    monkeypatch.setattr(effect, "update_config", bug)
+    resp = await v2_client.post(f"{V}/apply-config", json={"brightness": 0.5})
+    assert resp.status == 500
 
 
 async def test_set_effect_on_virtuals(v2_client: Client) -> None:
@@ -113,6 +150,15 @@ async def test_a_repeated_id_is_applied_once(v2_client: Client) -> None:
         f"{V}/set-effect", json={"type": "rainbow", "virtual_ids": ["dj bird"] * 5}
     )
     assert await resp.json() == {"applied": 1, "blocked": 0, "failed": 0}
+
+
+async def test_set_effect_on_an_unknown_virtual_is_a_404(v2_client: Client) -> None:
+    resp = await v2_client.post(
+        f"{V}/set-effect", json={"type": "rainbow", "virtual_ids": ["dj bird", "ghost"]}
+    )
+    body = await expect_problem(resp, 404, "not-found")
+    assert body["detail"] == "Virtual 'ghost' not found"
+    assert _running(v2_client, "dj bird") == ""  # nothing ran before the refusal
 
 
 async def test_oneshot_on_one_virtual(v2_client: Client) -> None:
@@ -204,10 +250,20 @@ async def test_calibration_and_highlight(v2_client: Client) -> None:
         f"{BIRD}/highlight", json={**highlight, "device_id": "ghost"}
     )
     body = await expect_problem(resp, 422, "validation")
-    assert body["detail"] == "Device ghost not found"
+    assert body["detail"] == "Unknown device: ghost"
+    assert body["errors"][0]["loc"] == ["body", "device_id"]
     resp = await v2_client.put(f"{BIRD}/highlight", json={**highlight, "end": 99})
     body = await expect_problem(resp, 422, "validation")
-    assert body["detail"] == "start and end must be less than 50"
+    assert body["detail"] == "end must be within the device's pixels 0..49"
+    assert body["errors"][0]["loc"] == ["body", "end"]
+    resp = await v2_client.put(f"{BIRD}/highlight", json={**highlight, "start": 60})
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "start"]
+    resp = await v2_client.put(
+        f"{BIRD}/highlight", json={**highlight, "start": 5, "end": 2}
+    )
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "start"]
     assert (await v2_client.delete(f"{BIRD}/highlight")).status == 204
     assert not bird._hl_state
     # A refused PUT changes nothing: the cleared highlight stays off.
@@ -230,19 +286,63 @@ async def test_calibration_and_highlight(v2_client: Client) -> None:
     assert not bird._hl_state
 
 
+async def test_set_effect_answers_an_unknown_id_before_an_unknown_type(
+    v2_client: Client,
+) -> None:
+    resp = await v2_client.post(
+        f"{V}/set-effect", json={"type": "nope", "virtual_ids": ["ghost"]}
+    )
+    body = await expect_problem(resp, 404, "not-found")
+    assert "'ghost'" in body["detail"]
+
+
+async def test_a_highlight_on_a_gap_device_is_range_checked(
+    v2_client: Client,
+) -> None:
+    """Gap devices are exempt for segments, not for lit pixels."""
+    core = core_of(v2_client)
+    gap = FakeDevice(core, "gap-1", 10)
+    gap.type = "dummy"
+    core.devices._objects["gap-1"] = gap
+    assert (
+        await v2_client.put(f"{BIRD}/calibration", json={"enabled": True})
+    ).status == 204
+    resp = await v2_client.put(
+        f"{BIRD}/highlight", json={"device_id": "gap-1", "start": 0, "end": 99}
+    )
+    body = await expect_problem(resp, 422, "validation")
+    assert body["errors"][0]["loc"] == ["body", "end"]
+
+
 async def test_copy_effect(v2_client: Client) -> None:
+    # An unknown target is a 404 even when the source runs nothing.
+    resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["ghost"]})
+    await expect_problem(resp, 404, "not-found")
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["mirror"]})
     await expect_problem(resp, 409, "conflict")
     await _start(v2_client, "dj bird")
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["mirror"]})
     assert resp.status == 204
     assert _running(v2_client, "mirror") == "rainbow"
-    resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["ghost"]})
-    body = await expect_problem(resp, 422, "validation")
-    assert body["errors"][0]["loc"] == ["body", "targets", 0]
+    # An unknown target is a 404 and nothing is copied, even to the known ones.
+    resp = await v2_client.post(
+        f"{BIRD}/copy-effect", json={"targets": ["matrix", "ghost"]}
+    )
+    await expect_problem(resp, 404, "not-found")
+    assert _running(v2_client, "matrix") == ""
+    # A target that refuses is a state conflict; one that takes it is enough.
     resp = await v2_client.post(f"{BIRD}/copy-effect", json={"targets": ["empty"]})
-    body = await expect_problem(resp, 422, "validation")
-    assert body["detail"] == "Virtual copy failed, no valid targets"
+    body = await expect_problem(resp, 409, "conflict")
+    assert "errors" not in body
+    # mirror already runs the copy from before: stop it, so that only a new
+    # copy can bring the effect back.
+    assert (await v2_client.delete(f"{V}/mirror/effect")).status == 204
+    assert _running(v2_client, "mirror") == ""
+    resp = await v2_client.post(
+        f"{BIRD}/copy-effect", json={"targets": ["empty", "mirror"]}
+    )
+    assert resp.status == 204
+    assert _running(v2_client, "mirror") == "rainbow"
 
 
 async def test_safe_mode(v2_client: Client) -> None:

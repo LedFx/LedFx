@@ -4,6 +4,7 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.configuration.fields import VirtualIdStr
+from ledfx.errors import NotFound
 
 
 class EffectsEndpoint(RestEndpoint):
@@ -33,8 +34,14 @@ class EffectsEndpoint(RestEndpoint):
                 "Required attribute 'type' was not provided"
             )
 
-        self._ledfx.virtuals.delete_effect_history(
-            VirtualIdStr(virtual_id), effect_type
-        )
+        try:
+            self._ledfx.virtuals.delete_effect_history(
+                VirtualIdStr(virtual_id), effect_type
+            )
+        except NotFound as err:
+            # v1-compat: a type the virtual never ran is a success. The
+            # manager checks safe mode first, so that refusal still wins.
+            if err.kind != "Effect":
+                raise
         response = {"status": "success"}
         return await self.bare_request_success(response)

@@ -8,10 +8,7 @@ refuses both ids (RESERVED_IDS), but a virtual that already has the id
 through v2. Other methods on that id reach the virtual.
 """
 
-from typing import TYPE_CHECKING
-
 from ledfx.api.v2.core.binding import LedFxDep
-from ledfx.api.v2.core.problem import ProblemDetailError, validation_problem
 from ledfx.api.v2.core.router import Router
 from ledfx.api.v2.models.ids import VirtualIdParam
 from ledfx.api.v2.models.virtuals import (
@@ -28,35 +25,12 @@ from ledfx.api.v2.models.virtuals import (
     checked_config,
     effect_variant,
 )
-from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import GlobalEffectUpdate, OneshotParams
 from ledfx.configuration.models import Highlight as HighlightParams
-
-if TYPE_CHECKING:
-    from ledfx.core import LedFxCore
+from ledfx.configuration.plugin import PluginConfig
+from ledfx.errors import NotFound, ensure_writable
 
 router = Router(tag="virtuals")
-
-
-def _known(
-    ledfx: "LedFxCore", ids: list[VirtualIdStr] | None, field: str
-) -> list[VirtualIdStr] | None:
-    """ids without repeats, if every one names a virtual; else 422 naming
-    each unknown one."""
-    if ids is None:
-        return None
-    unknown = [
-        ProblemDetailError(
-            loc=["body", field, index],
-            msg=f"Virtual '{virtual_id}' not found",
-            type="not_found",
-        )
-        for index, virtual_id in enumerate(ids)
-        if ledfx.virtuals.get(virtual_id) is None
-    ]
-    if unknown:
-        raise validation_problem(unknown)
-    return list(dict.fromkeys(ids))
 
 
 def _params(body: Oneshot) -> OneshotParams:
@@ -69,20 +43,24 @@ def _params(body: Oneshot) -> OneshotParams:
     )
 
 
-@router.post("/virtuals/clear-effects", status=204)
+@router.post("/virtuals/clear-effects", status=204, errors=[NotFound])
 async def clear_effects(body: ClearEffects, ledfx: LedFxDep) -> None:
     """Blank the output of these virtuals (default: all).
 
-    Runtime only: their stored effects come back when LedFx restarts.
+    Runtime only: their stored effects come back when LedFx restarts. 404 if an
+    id does not exist (nothing is cleared).
     """
-    ledfx.virtuals.clear_all_effects(_known(ledfx, body.virtual_ids, "virtual_ids"))
+    ledfx.virtuals.clear_all_effects(body.virtual_ids)
 
 
-@router.post("/virtuals/apply-config")
+@router.post("/virtuals/apply-config", errors=[NotFound])
 async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfigCounts:
     """Write settings into every running effect that has them.
 
-    A gradient also sets the colours sampled from it, except those given.
+    A gradient also sets the colours sampled from it, except those given. Each
+    running effect is counted as updated, skipped (it has none of the settings)
+    or failed (it refused them). 404 if an id in virtual_ids does not exist
+    (nothing is written).
     """
     update = GlobalEffectUpdate(
         gradient=body.gradient,
@@ -92,30 +70,31 @@ async def apply_effect_config(body: ApplyConfig, ledfx: LedFxDep) -> ApplyConfig
         flip=body.flip,
         mirror=body.mirror,
     )
-    ids = _known(ledfx, body.virtual_ids, "virtual_ids")
-    updated, skipped = ledfx.virtuals.apply_global_config(update, ids)
-    return ApplyConfigCounts(updated=updated, skipped=skipped)
+    result = ledfx.virtuals.apply_global_config(update, body.virtual_ids)
+    return ApplyConfigCounts(**result._asdict())
 
 
-@router.post("/virtuals/set-effect")
+@router.post("/virtuals/set-effect", errors=[NotFound])
 async def set_effect_on_virtuals(
     body: SetEffectAll, ledfx: LedFxDep
 ) -> SetEffectAllCounts:
     """Start one effect on these virtuals (default: all).
 
-    Without config the type's defaults start. A virtual that refuses it (no
-    segments) counts as failed; with
-    fallback_s, one that is being streamed to counts as blocked.
+    Without config the type's defaults start. An unknown virtual id is a 404
+    and nothing starts. A virtual that refuses the effect (no segments) counts
+    as failed; with fallback_s, one that is being streamed to counts as
+    blocked.
     """
+    ensure_writable(ledfx)  # safe mode answers before a 404 or a 422
+    ledfx.virtuals.ensure_known(body.virtual_ids)  # and the ids before the type
     variant = effect_variant(body.type)
     config = None
     if body.config is not None:
-        config = checked_config(variant, body.config, body.config)
+        config = PluginConfig.model_validate(
+            checked_config(variant, body.config, body.config)
+        )
     result = ledfx.virtuals.set_effect_all(
-        body.type,
-        config,
-        _known(ledfx, body.virtual_ids, "virtual_ids"),
-        fallback=body.fallback_s,
+        body.type, config, body.virtual_ids, fallback=body.fallback_s
     )
     return SetEffectAllCounts(
         applied=result.applied, blocked=result.blocked, failed=result.failed
@@ -186,12 +165,14 @@ async def clear_highlight(virtual_id: VirtualIdParam, ledfx: LedFxDep) -> None:
     ledfx.virtuals.set_highlight(virtual_id, None)
 
 
-@router.post("/virtuals/{virtual_id}/copy-effect", status=204)
+@router.post("/virtuals/{virtual_id}/copy-effect", status=204, errors=[NotFound])
 async def copy_effect(
     virtual_id: VirtualIdParam, body: CopyEffect, ledfx: LedFxDep
 ) -> None:
     """Start this virtual's effect, with its settings, on the targets.
 
-    Targets that refuse it are passed over; 422 if none takes it.
+    404 if a target does not exist (nothing is copied). Targets that refuse
+    the effect are passed over; 409 if none takes it, or if this virtual runs
+    nothing.
     """
-    ledfx.virtuals.copy_effect(virtual_id, _known(ledfx, body.targets, "targets") or [])
+    ledfx.virtuals.copy_effect(virtual_id, body.targets)

@@ -43,7 +43,14 @@ import requests
 from dotenv import load_dotenv
 from PIL import Image, ImageFont
 
-from ledfx.color import LEDFX_GRADIENTS
+from ledfx.color import (
+    LEDFX_COLORS,
+    LEDFX_GRADIENTS,
+    coerce_color,
+    parse_color,
+    parse_gradient,
+    validate_gradient,
+)
 from ledfx.consts import LEDFX_ASSETS_PATH, PROJECT_VERSION
 from ledfx.events import ColorsUpdatedEvent
 from ledfx.libraries.cache import ImageCache
@@ -64,6 +71,7 @@ if TYPE_CHECKING:
     from ledfx.configuration.lenient import Quarantine
     from ledfx.configuration.models import DeviceEntry, EffectEntry, IntegrationEntry
     from ledfx.configuration.plugin import PluginConfig
+    from ledfx.core import LedFxCore
 
 # from asyncio import coroutines, ensure_future
 
@@ -773,6 +781,31 @@ class UserDefaultCollection(MutableMapping):
 
     def __len__(self):
         return len(self._default_vals) + len(self._user_vals)
+
+
+def build_user_collections(
+    ledfx: "LedFxCore",
+) -> tuple[UserDefaultCollection, UserDefaultCollection]:
+    """The colours and gradients collections over the user_colors and
+    user_gradients config sections. The one place that picks their validators:
+    colours stay lenient (v1 clients send list colours)."""
+    colors = UserDefaultCollection(
+        ledfx,
+        "Colors",
+        LEDFX_COLORS,
+        ledfx.config.user_colors,
+        coerce_color,
+        parse_color,
+    )
+    gradients = UserDefaultCollection(
+        ledfx,
+        "Gradients",
+        LEDFX_GRADIENTS,
+        ledfx.config.user_gradients,
+        validate_gradient,
+        parse_gradient,
+    )
+    return colors, gradients
 
 
 class RollingQueueHandler(QueueHandler):

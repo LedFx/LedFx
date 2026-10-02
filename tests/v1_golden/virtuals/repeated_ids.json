@@ -1,0 +1,19 @@
+[
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "rainbow",
+        "virtuals": [
+          "dj bird",
+          "dj bird",
+          "mirror"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied effect 'rainbow' to 2 virtuals (skipped 0, blocked 0, failed 0)\"}}"
+  }
+]

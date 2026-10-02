@@ -6,6 +6,7 @@ from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
 from ledfx.api.jsonutil import dumps
+from ledfx.api.v1_compat import repaired_virtual_config
 from ledfx.api.virtual import make_virtual_response
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import VirtualConfig
@@ -85,7 +86,10 @@ class VirtualsEndpoint(RestEndpoint):
                 )
             except ValidationError as err:
                 return await self.validation_error(err)
-            virtual = virtuals.update(VirtualIdStr(virtual_id), config=config)
+            # v1-compat: the manager refuses a frequency range with min >= max
+            # and a rotate on one row; v1 swapped, widened and zeroed them.
+            config = repaired_virtual_config(config)
+            virtual = virtuals.set_config(VirtualIdStr(virtual_id), config)
             _LOGGER.info("Updated virtual %s config to %s", virtual.id, virtual_config)
             reason = f"Updated Virtual {virtual.name}"
         # Or, create new virtual if id does not exist
@@ -96,7 +100,10 @@ class VirtualsEndpoint(RestEndpoint):
             except ValidationError as err:
                 return await self.validation_error(err)
             _LOGGER.info("Creating virtual with config %s", virtual_config)
-            virtual = virtuals.add(config)
+            # v1-compat: add refuses a frequency range with min >= max and a
+            # rotate on one row; v1 swaps or widens the range and zeroes the
+            # rotate, as its update does.
+            virtual = virtuals.add(repaired_virtual_config(config))
             reason = f"Created Virtual {virtual.id}"
 
         response = {

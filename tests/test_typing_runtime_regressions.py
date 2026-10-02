@@ -81,8 +81,9 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
     effect = MagicMock()
     effect.type = "test-effect"
     effect.name = "Test Effect"
-    effect.config = dict[str, object]()
+    effect.config = DemoEffectConfig()
     virtual.active_effect = effect
+    ledfx.config_store.read_only = False
     ledfx.virtuals.patch_effect.return_value = virtual
     ledfx.virtuals.set_effect.return_value = virtual
     ledfx.effects.types.return_value = ["test-effect"]
@@ -99,9 +100,10 @@ async def test_randomize_skips_unsupported_schema_without_reusing_values(
         response = await endpoint.post("virtual", request)
         generated = ledfx.virtuals.set_effect.call_args.args[2]
     assert response.status == 200
-    assert set(generated) == {"flag", "count"}
-    assert isinstance(generated["flag"], bool)
-    assert 2 <= generated["count"] <= 5
+    values = generated.as_dict()
+    assert set(values) == {"flag", "count"}
+    assert isinstance(values["flag"], bool)
+    assert isinstance(values["count"], int) and 2 <= values["count"] <= 5
 
 
 class _Bounded(BaseModel):

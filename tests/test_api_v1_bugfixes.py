@@ -33,16 +33,11 @@ from ledfx.api.virtual_tools import VirtualToolsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.color import (
     LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    parse_color,
-    parse_gradient,
-    validate_color,
-    validate_gradient,
 )
 from ledfx.integrations.spotify import Spotify
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
-from ledfx.utils import UserDefaultCollection
+from ledfx.utils import build_user_collections
 from ledfx.virtuals import Virtuals
 from tests.test_api_validation_responses import _call, _reason, _request
 from tests.test_utilities.fake_ledfx import fake_ledfx
@@ -134,22 +129,7 @@ async def test_built_in_presets_are_read_only(
 
 def _with_colors() -> MagicMock:
     ledfx = fake_ledfx({"user_colors": {"mine": "#010203"}})
-    ledfx.colors = UserDefaultCollection(
-        ledfx,
-        "Colors",
-        LEDFX_COLORS,
-        ledfx.config.user_colors,
-        validate_color,
-        parse_color,
-    )
-    ledfx.gradients = UserDefaultCollection(
-        ledfx,
-        "Gradients",
-        LEDFX_GRADIENTS,
-        ledfx.config.user_gradients,
-        validate_gradient,
-        parse_gradient,
-    )
+    ledfx.colors, ledfx.gradients = build_user_collections(ledfx)
     return ledfx
 
 

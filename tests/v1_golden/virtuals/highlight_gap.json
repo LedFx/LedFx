@@ -1,0 +1,28 @@
+[
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "on"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"calibration\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "gap-1",
+        "start": 0,
+        "stop": 99
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: start and end must be less than 10\"}}"
+  }
+]

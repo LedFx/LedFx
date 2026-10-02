@@ -12,18 +12,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from ledfx.color import (
-    LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    parse_color,
-    parse_gradient,
-    validate_color,
-    validate_gradient,
-)
+from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import VirtualEntry
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Device
 from ledfx.effects import Effects
-from ledfx.utils import UserDefaultCollection
+from ledfx.effects.oneshots.oneshot import Flash
+from ledfx.utils import build_user_collections
 from ledfx.virtuals import Virtual, Virtuals
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -94,22 +89,7 @@ def install_virtuals(ledfx: MagicMock) -> MagicMock:
         FakeDevice(ledfx, "strip", 50), FakeDevice(ledfx, "matrix", 64)
     )
     ledfx.effects = Effects(ledfx)
-    ledfx.colors = UserDefaultCollection(
-        ledfx,
-        "Colors",
-        LEDFX_COLORS,
-        ledfx.config.user_colors,
-        validate_color,
-        parse_color,
-    )
-    ledfx.gradients = UserDefaultCollection(
-        ledfx,
-        "Gradients",
-        LEDFX_GRADIENTS,
-        ledfx.config.user_gradients,
-        validate_gradient,
-        parse_gradient,
-    )
+    ledfx.colors, ledfx.gradients = build_user_collections(ledfx)
     Virtuals._instance = None
     ledfx.virtuals = Virtuals(ledfx)
     return ledfx
@@ -190,3 +170,19 @@ def running_core(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
     seed_standard(ledfx)
     yield ledfx
     stop_virtuals(ledfx)
+
+
+def cfg(values: Mapping[str, object]) -> PluginConfig:
+    """Effect settings as the manager takes them."""
+    return PluginConfig.model_validate(values)
+
+
+def entry_ids(ledfx: MagicMock) -> list[str]:
+    """The ids of the stored virtual entries."""
+    return [entry.id for entry in ledfx.config.virtuals]
+
+
+def flashes(ledfx: MagicMock, virtual_id: str) -> list[Flash]:
+    """The flashes running on a virtual."""
+    virtual = ledfx.virtuals.get_or_raise(VirtualIdStr(virtual_id))
+    return [o for o in virtual.oneshots if isinstance(o, Flash) and o.active]

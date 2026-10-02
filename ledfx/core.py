@@ -12,14 +12,6 @@ import numpy as np
 import pybase64
 from audio_hotplug import create_monitor
 
-from ledfx.color import (
-    LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    parse_color,
-    parse_gradient,
-    validate_color,
-    validate_gradient,
-)
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.paths import (
     VISUALISATION_CONFIG_KEYS,
@@ -50,8 +42,8 @@ from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
-    UserDefaultCollection,
     async_fire_and_forget,
+    build_user_collections,
     currently_frozen,
     get_sorted_physical_ips,
     init_image_cache,
@@ -500,17 +492,6 @@ class LedFxCore:
             max_items=cache_config.max_items,
         )
 
-        # Initialize Now Playing Service
-        self.now_playing = NowPlayingService(self)
-
-        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
-        self._smtc_now_playing = SMTCNowPlayingProvider(self)
-        self._smtc_now_playing.start()
-
-        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
-        self._mpris_now_playing = MPRISNowPlayingProvider(self)
-        self._mpris_now_playing.start()
-
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
@@ -520,22 +501,20 @@ class LedFxCore:
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
         self.playlists = PlaylistManager(self)
-        self.colors = UserDefaultCollection(
-            self,
-            "Colors",
-            LEDFX_COLORS,
-            self.config.user_colors,
-            validate_color,
-            parse_color,
-        )
-        self.gradients = UserDefaultCollection(
-            self,
-            "Gradients",
-            LEDFX_GRADIENTS,
-            self.config.user_gradients,
-            validate_gradient,
-            parse_gradient,
-        )
+        self.colors, self.gradients = build_user_collections(self)
+
+        # Now Playing drives virtuals through the manager, so it starts once
+        # virtuals, effects and gradients exist (Sendspin may push metadata
+        # while virtuals load, below).
+        self.now_playing = NowPlayingService(self)
+
+        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
+        self._smtc_now_playing = SMTCNowPlayingProvider(self)
+        self._smtc_now_playing.start()
+
+        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
+        self._mpris_now_playing = MPRISNowPlayingProvider(self)
+        self._mpris_now_playing.start()
 
         # TODO: Deferr
         self.devices.create_from_config(self.config.devices)

@@ -245,7 +245,7 @@ def rgb_to_hsv_vect(rgb, out=None):
     return out[0] if scalar else out
 
 
-def parse_color(color: (str, list, tuple)) -> RGB:
+def parse_color(color: str | list[int] | tuple[int, ...]) -> RGB:
     """
     Parses a color value and returns an RGB object.
 
@@ -260,12 +260,14 @@ def parse_color(color: (str, list, tuple)) -> RGB:
         ValueError: If the color value is invalid or cannot be parsed.
 
     """
+    # A list or tuple is [r, g, b] (alpha removed): refuse a channel that is
+    # not an int in 0..255 rather than format it into a malformed hex.
+    if isinstance(color, (list, tuple)):
+        if len(color) != 3 or not all(type(c) is int and 0 <= c <= 255 for c in color):
+            msg = f"colour channels must be integers from 0 to 255, got {list(color)}"
+            raise ValueError(msg)
+        return RGB(*color)
     try:
-        # If it's a list/tuple, interpret it as RGB(A removed)
-        if isinstance(color, (list, tuple)):
-            # assert 3 <= len(color) <= 4
-            assert len(color) == 3
-            return RGB(*color)
         # Otherwise, it needs to be a string to continue
         if not isinstance(color, str):
             raise ValueError  # noqa: TRY004
@@ -314,18 +316,34 @@ def parse_gradient(gradient: str):
     raise ValueError(msg)
 
 
-def validate_color(color: str | list[int] | tuple[int, ...]) -> str:
+def validate_color(color: str) -> str:
     """
     Validates and formats a color.
 
     Args:
-        color: A color name or hex string, or an [r, g, b] list or tuple.
+        color: A color name or hex string.
 
     Returns:
         str: The validated and formatted color string.
 
     """
-    return "#{:02x}{:02x}{:02x}".format(*parse_color(color))
+    if isinstance(color, str):
+        return coerce_color(color)
+    raise ValueError(f"Invalid color: {color}")
+
+
+def coerce_color(value: object) -> str:
+    """
+    Formats a color given as a name, a hex string or an [r, g, b] list or
+    tuple. This is the lenient form for config loading and v1; requests
+    use validate_color, which takes only a string.
+
+    Raises:
+        ValueError: If value is not a color.
+    """
+    if isinstance(value, (str, list, tuple)):
+        return "#{:02x}{:02x}{:02x}".format(*parse_color(value))
+    raise ValueError(f"Invalid color: {value}")
 
 
 def get_color_at_position(gradient_like, position: float) -> str:
@@ -342,7 +360,7 @@ def get_color_at_position(gradient_like, position: float) -> str:
         parsed = parse_gradient(gradient_like)
     except Exception:  # noqa: BLE001
         # If parse fails, assume it's a color string and validate
-        return validate_color(gradient_like)
+        return coerce_color(gradient_like)
 
     if isinstance(parsed, RGB):
         return "#{:02x}{:02x}{:02x}".format(*parsed)

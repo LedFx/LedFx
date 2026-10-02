@@ -23,6 +23,7 @@ from ledfx.api.v2.models.virtuals import (
     VirtualUpdate,
 )
 from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.plugin import PluginConfig
 from tests.test_utilities.virtuals_core import add_virtual, running_core
 
 SEGMENT = {"device_id": "strip", "start": 0, "end": 9}
@@ -110,7 +111,7 @@ def test_colors_are_checked_and_normalized() -> None:
 
 
 def test_highlight_range_is_ordered() -> None:
-    assert _rejects(Highlight, {**SEGMENT, "start": 9, "end": 0}) == [()]
+    assert _rejects(Highlight, {**SEGMENT, "start": 9, "end": 0}) == [("start",)]
 
 
 def test_virtual_config_is_the_strict_view() -> None:
@@ -136,7 +137,9 @@ def test_virtual_of_a_running_virtual(ledfx: MagicMock) -> None:
     )
     assert view.segments == [VirtualSegment(device_id="strip", start=0, end=49)]
     _round_trip(view)
-    ledfx.virtuals.set_effect(VirtualIdStr("dj bird"), "rainbow", {"speed": 2.0})
+    ledfx.virtuals.set_effect(
+        VirtualIdStr("dj bird"), "rainbow", PluginConfig.model_validate({"speed": 2.0})
+    )
     view = Virtual.of(bird)
     assert type(view.effect).__name__ == "EffectState_rainbow"
     assert view.model_dump(mode="json")["effect"]["config"]["speed"] == 2.0

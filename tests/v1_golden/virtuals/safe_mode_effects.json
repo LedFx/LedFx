@@ -1,0 +1,56 @@
+[
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "type": "singleColor",
+        "config": {
+          "speed": "x"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "config": {
+          "speed": "x"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Virtual dj bird has no active effect\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "rainbow",
+        "config": {
+          "speed": "x"
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "nope"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  }
+]

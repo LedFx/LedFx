@@ -241,6 +241,33 @@
       "/api/virtuals_tools/dj%20bird",
       {
         "tool": "highlight",
+        "start": 0,
+        "stop": 1
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Device None not found\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": 7,
+        "start": 0,
+        "stop": 1
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Device 7 not found\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
         "device": "strip",
         "start": 0,
         "stop": 99
@@ -484,7 +511,7 @@
       }
     ],
     "status": 200,
-    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Cannot set highlight when dj bird is not in calibration mode\"}}"
   },
   {
     "request": [

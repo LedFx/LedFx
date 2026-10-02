@@ -20,7 +20,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticCustomError, core_schema
 
 from ledfx import utils as _utils
-from ledfx.color import validate_color, validate_gradient
+from ledfx.color import coerce_color, validate_gradient
 
 X_ENUM_SOURCE = "x-ledfx-enum-source"
 X_REQUIRED = "x-ledfx-required"  # legacy: key listed as required although defaulted
@@ -190,7 +190,7 @@ register_enum_source("fps", EnumSource(options=lambda: list(_utils.AVAILABLE_FPS
 
 CoercedInt = Annotated[int, coerce(int)]
 CoercedFloat = Annotated[float, coerce(float)]
-Color = Annotated[str, coerce(validate_color), JsonExtra({"format": "color"})]
+Color = Annotated[str, coerce(coerce_color), JsonExtra({"format": "color"})]
 Gradient = Annotated[str, coerce(validate_gradient), JsonExtra({"format": "gradient"})]
 IPv4 = Annotated[str, AfterValidator(validate_ipv4), JsonExtra({"format": "ipv4"})]
 # A platform constant, not an instance: any int is accepted and clamped up, so

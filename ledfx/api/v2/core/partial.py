@@ -44,12 +44,13 @@ class PatchValidationError(ProblemError):
     ) -> None:
         self.stored_field = stored_field
         if errors:
+            capped = validation_problem(errors)
             super().__init__(
-                422,
-                "validation",
-                "Validation failed",
-                f"{len(errors)} invalid value(s)",
-                errors,
+                capped.status,
+                capped.suffix,
+                capped.title,
+                capped.detail,
+                capped.errors,
             )
         else:
             super().__init__(
@@ -89,9 +90,16 @@ class Patch(Generic[M]):
             raise validation_problem(errors)
         return cls(model, data, frozenset(changed))
 
-    def apply(self, current: BaseModel) -> M:
+    def apply(self, current: BaseModel, *, view: type[BaseModel] | None = None) -> M:
         """current merged with this patch, validated strictly as M. current is
-        never modified."""
+        never modified.
+
+        view is M without the request bounds. With it, an unchanged stored
+        field that breaks a bound (or a rule between fields) is kept as it is,
+        and only a stored field of the wrong type is a 409; a changed field is
+        always held to M. In that case the result is built from the view's
+        objects without M's checks: callers may read it and model_dump() it,
+        nothing more."""
         base: dict[str, object] = current.model_dump(mode="json")
         # Objects that replace a stored non-object (None) are the client's whole.
         replaced: set[tuple[str, ...]] = set()
@@ -100,14 +108,20 @@ class Patch(Generic[M]):
         # FromSource checks only the fields named here, like devices'
         # update_config: every key on a changed path.
         fields = frozenset(key for path in changed for key in path)
+        payload = json.dumps(merged)
+        context = {**RUNTIME_CONTEXT, "fields": fields}
         try:
-            return self.model.model_validate_json(
-                json.dumps(merged),
-                strict=True,
-                context={**RUNTIME_CONTEXT, "fields": fields},
-            )
+            return self.model.model_validate_json(payload, strict=True, context=context)
+        except ValidationError as err:
+            failure = self._error(err, changed)
+            if failure.errors or view is None:
+                raise failure from None
+        # Only unchanged stored fields failed M: they may break a bound.
+        try:
+            kept = view.model_validate_json(payload, strict=True, context=context)
         except ValidationError as err:
             raise self._error(err, changed) from None
+        return self.model.model_construct(**dict(kept))
 
     def _error(
         self, err: ValidationError, changed: frozenset[tuple[str, ...]]

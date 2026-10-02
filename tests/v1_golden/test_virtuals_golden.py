@@ -14,6 +14,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from ledfx.api import RestEndpoint
+from ledfx.api.colors import ColorEndpoint
 from ledfx.api.effects import EffectsEndpoint as GlobalEffectsEndpoint
 from ledfx.api.virtual import VirtualEndpoint
 from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
@@ -22,7 +23,14 @@ from ledfx.api.virtual_effects_fallback import EffectsEndpoint as FallbackEndpoi
 from ledfx.api.virtual_tools import VirtualToolsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
-from tests.test_utilities.virtuals_core import enter_safe_mode, running_core
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import EffectEntry
+from ledfx.configuration.plugin import PluginConfig
+from tests.test_utilities.virtuals_core import (
+    FakeDevice,
+    enter_safe_mode,
+    running_core,
+)
 from tests.v1_golden.harness import (
     Raw,
     Step,
@@ -34,6 +42,7 @@ from tests.v1_golden.harness import (
 )
 
 ENDPOINTS: tuple[type[RestEndpoint], ...] = (
+    ColorEndpoint,
     VirtualsEndpoint,
     VirtualEndpoint,
     VirtualEffectsEndpoint,
@@ -100,6 +109,56 @@ SCENARIOS: dict[str, list[Step]] = {
         ("GET", BIRD, None),
         ("DELETE", BIRD, None),
         ("DELETE", f"{V}/matrix", None),
+        ("GET", V, None),
+    ],
+    # Input the manager used to repair: the repair stays on the v1 wire.
+    "virtual_repair": [
+        ("POST", BIRD, {"segments": [["strip", 30, 10, False]]}),
+        ("POST", BIRD, {"segments": [["strip", -5, 10, True]]}),
+        ("POST", BIRD, {"segments": [["strip", 60, 70, False]]}),
+        ("POST", BIRD, {"segments": [["gap-1", 0, 500, False]]}),
+        ("POST", BIRD, {"segments": "strip"}),
+        ("POST", BIRD, {"segments": {"device": "strip"}}),
+        ("POST", BIRD, {"segments": [5]}),
+        ("POST", BIRD, {"segments": [["strip", 0, "a", False]]}),
+        ("POST", BIRD, {"segments": [["strip", 0, 9, False], ["ghost", 0, 1, False]]}),
+        ("GET", BIRD, None),
+        ("POST", V, {"id": "dj bird", "config": {"frequency_min": 500}}),
+        (
+            "POST",
+            V,
+            {"id": "dj bird", "config": {"frequency_min": 500, "frequency_max": 500}},
+        ),
+        (
+            "POST",
+            V,
+            {"id": "dj bird", "config": {"frequency_min": 900, "frequency_max": 100}},
+        ),
+        (
+            "POST",
+            V,
+            {
+                "id": "dj bird",
+                "config": {"frequency_min": 15000, "frequency_max": 15000},
+            },
+        ),
+        ("POST", V, {"id": "dj bird", "config": {"rows": 3, "rotate": 2}}),
+        ("POST", V, {"id": "dj bird", "config": {"rows": 1}}),
+        ("POST", V, {"id": "dj bird", "config": {"rotate": 3}}),
+        ("POST", V, {"id": "dj bird", "config": {"rows": 1, "rotate": 0}}),
+        ("GET", BIRD, None),
+        (
+            "POST",
+            V,
+            {"config": {"name": "r1", "frequency_min": 900, "frequency_max": 100}},
+        ),
+        (
+            "POST",
+            V,
+            {"config": {"name": "r2", "frequency_min": 500, "frequency_max": 500}},
+        ),
+        ("POST", V, {"config": {"name": "r3", "rows": 1, "rotate": 2}}),
+        ("POST", V, {"config": {"name": "r4", "rows": 3, "rotate": 2}}),
         ("GET", V, None),
     ],
     "virtual_effects": [
@@ -295,6 +354,12 @@ SCENARIOS: dict[str, list[Step]] = {
             f"{V}_tools/dj%20bird",
             {"tool": "highlight", "device": "ghost", "start": 0, "stop": 1},
         ),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "start": 0, "stop": 1}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": 7, "start": 0, "stop": 1},
+        ),
         (
             "PUT",
             f"{V}_tools/dj%20bird",
@@ -323,11 +388,214 @@ SCENARIOS: dict[str, list[Step]] = {
         ("PUT", "/api/virtuals_tools", {"tool": "force_color", "color": "notacolor"}),
         ("PUT", "/api/virtuals_tools", {"tool": "force_color"}),
         ("PUT", "/api/virtuals_tools", {"tool": "nope"}),
-        # dj bird is no longer calibrating.
+        # dj bird is no longer calibrating: v1 refuses turning its highlight off.
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
         # A cleared effect leaves a placeholder (DummyEffect) while it fades out.
         ("DELETE", f"{BIRD}/effects", None),
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["mirror"]}),
+    ],
+    # Copy and highlight refusals: what is a typo, what refused, and which
+    # message wins.
+    "conflicts": [
+        ("PUT", f"{V}_tools/empty", {"tool": "copy", "target": ["ghost"]}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["mirror"]}),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": []}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["empty"]}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "copy", "target": ["ghost", "empty"]},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "copy", "target": ["empty", "mirror"]},
+        ),
+        ("GET", f"{V}/mirror/effects", None),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "device": "strip"}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "device": "strip"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "STRIP", "start": 0, "stop": 5},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "GHOST", "start": 0, "stop": 5},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 99, "stop": 0},
+        ),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "off"}),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "highlight", "state": False}),
+    ],
+    # Which refusal v1 names first when a request is wrong in more than one way.
+    "check_order": [
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "ghost", "start": 0, "stop": 1},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 0, "stop": 99},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 60, "stop": 70},
+        ),
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 60, "stop": 70},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "ghost", "start": 60, "stop": 70},
+        ),
+        ("PUT", f"{V}_tools/nope", {"tool": "force_color", "color": "notacolor"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "copy", "target": ["ghost"]},
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "nope",
+                "virtuals": ["ghost"],
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "fast"},
+                "virtuals": ["ghost"],
+            },
+        ),
+    ],
+    # A colour with a negative channel is refused (v1 used to apply garbage).
+    "apply_global_colour": [
+        ("POST", f"{BIRD}/effects", {"type": "rainbow"}),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "background_color": [-1, 0, 0]},
+        ),
+    ],
+    # Highlight on a registered gap device is range-checked like any device.
+    "highlight_gap": [
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "gap-1", "start": 0, "stop": 99},
+        ),
+    ],
+    # Highlight ranges the manager no longer accepts, and unknown ids in bulk.
+    "ranges": [
+        ("PUT", f"{V}_tools/dj%20bird", {"tool": "calibration", "mode": "on"}),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 10, "stop": 5},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": -5, "stop": -2},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 3, "stop": 3},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "start": 2},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "strip", "stop": 2},
+        ),
+        (
+            "PUT",
+            f"{V}_tools/dj%20bird",
+            {"tool": "highlight", "device": "ghost", "start": 10, "stop": 5},
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "mirror": True, "virtuals": ["ghost"]},
+        ),
+        ("PUT", "/api/effects", {"action": "clear_all_effects"}),
+    ],
+    # "toggle" inverts each effect's own value; counts for skipped effects.
+    "apply_toggle": [
+        ("POST", BIRD, {"segments": [["strip", 0, 49, False]]}),
+        ("POST", f"{BIRD}/effects", {**SINGLE, "config": {"flip": False}}),
+        (
+            "POST",
+            f"{V}/matrix/effects",
+            {"type": "rainbow", "config": {"flip": True, "mirror": False}},
+        ),
+        ("PUT", "/api/effects", {"action": "apply_global", "flip": "toggle"}),
+        ("GET", "/api/effects", None),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global",
+                "flip": "TOGGLE",
+                "mirror": "toggle",
+                "virtuals": ["matrix"],
+            },
+        ),
+        ("GET", "/api/effects", None),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "mirror": "toggle", "virtuals": []},
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global",
+                "flip": "toggle",
+                "virtuals": ["ghost", "empty"],
+            },
+        ),
+        ("PUT", "/api/effects", {"action": "apply_global", "gradient": "Rainbow"}),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global", "flip": "toggle", "gradient": "Rainbow"},
+        ),
+        ("GET", "/api/effects", None),
+    ],
+    # Activation refused for a stale stored config.
+    "activation": [
+        ("PUT", BIRD, {"active": True}),
+        ("GET", BIRD, None),
     ],
     # Safe mode: config.json could not be loaded, so changes can't be saved.
     "safe_mode": [
@@ -341,12 +609,213 @@ SCENARIOS: dict[str, list[Step]] = {
         ("PUT", BIRD, {"active": False}),
         ("POST", f"{BIRD}/effects/delete", {"type": "rainbow"}),
         ("PUT", "/api/effects", {"action": "apply_global", "brightness": 0.5}),
+        ("PUT", "/api/effects", {"action": "apply_global", "flip": "toggle"}),
         ("PUT", "/api/effects", {"action": "apply_global_effect", "type": "rainbow"}),
         ("PUT", f"{V}_tools/dj%20bird", {"tool": "copy", "target": ["mirror"]}),
         ("DELETE", f"{BIRD}/effects", None),
         ("GET", BIRD, None),
         ("DELETE", BIRD, None),
         ("GET", V, None),
+    ],
+    # Effect configs and the bulk effect: error order and the counts on the wire.
+    "effect_typing": [
+        (
+            "POST",
+            BIRD,
+            {"segments": [["strip", 0, 49, False], ["matrix", 0, 63, False]]},
+        ),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        # A bad config answers before the streamed-to refusal.
+        (
+            "POST",
+            f"{V}/matrix/effects",
+            {**SINGLE, "config": {"speed": "x"}, "fallback": True},
+        ),
+        ("POST", f"{V}/matrix/effects", {**SINGLE, "fallback": True}),
+        ("POST", f"{V}/matrix/effects", SINGLE),
+        # PUT: the streamed-to refusal answers before the config is looked at.
+        (
+            "PUT",
+            f"{V}/matrix/effects",
+            {"config": {"speed": "x"}, "fallback": True},
+        ),
+        ("PUT", f"{V}/matrix/effects", {"config": {"color": "red"}, "fallback": True}),
+        # A stale stored config on POST without config.
+        ("POST", f"{BIRD}/effects", {"type": "rainbow"}),
+        # A colour change with a fallback restarts the effect as a fallback.
+        ("POST", f"{BIRD}/effects", SINGLE),
+        ("PUT", f"{BIRD}/effects", {"config": {"color": "#00ff00"}, "fallback": 30}),
+        ("GET", f"{BIRD}/effects", None),
+        ("PUT", f"{BIRD}/effects", {"config": {"speed": 4}, "fallback": 30}),
+        (
+            "PUT",
+            f"{BIRD}/effects",
+            {"config": {"color": "#0000ff", "speed": "x"}, "fallback": 30},
+        ),
+        (
+            "PUT",
+            f"{BIRD}/effects",
+            {"type": "singleColor", "config": {"color": "red"}, "fallback": 30},
+        ),
+        ("PUT", f"{BIRD}/effects", {"config": {"color": "nocolour"}}),
+        ("GET", f"{BIRD}/effects", None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        # The bulk effect: counts for a bad config, unknown and refusing ids.
+        # (matrix is streamed to again once it holds no effect of its own.)
+        ("PUT", f"{V}/matrix", {"active": False}),
+        ("DELETE", f"{BIRD}/effects", None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+                "virtuals": ["dj bird", "ghost", "empty"],
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+                "virtuals": ["dj bird", "matrix"],
+                "fallback": True,
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "virtuals": ["ghost"],
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "virtuals": ["dj bird", "empty", "ghost", "matrix"],
+                "fallback": True,
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": 5,
+                "virtuals": ["dj bird"],
+            },
+        ),
+        ("GET", BIRD, None),
+        ("POST", f"{BIRD}/effects", SINGLE),
+    ],
+    # The bulk effect with an id listed twice.
+    "repeated_ids": [
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "virtuals": ["dj bird", "dj bird", "mirror"],
+            },
+        ),
+    ],
+    # Safe mode answers before a bad config is looked at.
+    "safe_mode_effects": [
+        ("POST", f"{BIRD}/effects", {**SINGLE, "config": {"speed": "x"}}),
+        ("PUT", f"{BIRD}/effects", {"config": {"speed": "x"}}),
+        (
+            "PUT",
+            "/api/effects",
+            {
+                "action": "apply_global_effect",
+                "type": "rainbow",
+                "config": {"speed": "x"},
+            },
+        ),
+        (
+            "PUT",
+            "/api/effects",
+            {"action": "apply_global_effect", "type": "nope"},
+        ),
+    ],
+    # Safe mode entered while an effect runs: it answers before a bad config.
+    "safe_mode_running": [
+        ("PUT", f"{BIRD}/effects", {"config": {"speed": "x"}}),
+        ("PUT", f"{BIRD}/effects", {"config": {"color": "red"}, "fallback": 30}),
+        ("PUT", f"{BIRD}/effects", {"type": "rainbow", "config": {"speed": "x"}}),
+        ("POST", f"{BIRD}/effects", {"type": "rainbow", "config": {"speed": "x"}}),
+        ("GET", f"{BIRD}/effects", None),
+    ],
+    # Colour lists and oneshot brightness, which the manager no longer repairs,
+    # and deleting a type the virtual never ran.
+    "colors_and_history": [
+        ("POST", f"{BIRD}/effects", SINGLE),
+        *[
+            ("POST", f"{V}_tools/dj%20bird", {"tool": "oneshot", **extra})
+            for extra in (
+                {"color": [255, 0, 0]},
+                {"color": [1, 2]},
+                {"color": [300, 0, 0]},
+                {"color": 5},
+                {"color": [255, 0, 0], "brightness": 0.25},
+                {"brightness": -3},
+                {"brightness": 5},
+            )
+        ],
+        *[
+            ("PUT", url, {"tool": "force_color", "color": color})
+            for url in (f"{V}_tools/dj%20bird", f"{V}_tools")
+            for color in ([0, 255, 0], [0, 255], [0, 999, 0], 7, "")
+        ],
+        *[
+            ("PUT", "/api/effects", {"action": "apply_global", "background_color": c})
+            for c in ([1, 2, 3], [1, 2], [1, 2, 300], 7, dict[str, object]())
+        ],
+        ("POST", f"{BIRD}/effects/delete", {"type": "never-set"}),
+        ("POST", f"{BIRD}/effects/delete", {"type": "singleColor"}),
+        ("POST", f"{BIRD}/effects/delete", {"type": "singleColor"}),
+        ("GET", f"{BIRD}/effects", None),
+    ],
+    # A generated id is cut to 128 characters (a longer one cannot be addressed
+    # in v2).
+    "long_names": [
+        ("POST", V, {"config": {"name": "a" * 130}}),
+        ("POST", V, {"config": {"name": "a" * 130}}),
+        ("POST", V, {"config": {"name": "b" * 128}}),
+        ("POST", V, {"config": {"name": "b" * 128}}),
+        ("GET", V, None),
+    ],
+    # v1 /api/colors: colours (and gradients) as strings and [r, g, b] lists.
+    "user_colors": [
+        ("POST", "/api/colors", {"hexed": "#102030"}),
+        ("POST", "/api/colors", {"named": "teal"}),
+        ("POST", "/api/colors", {"listed": [1, 2, 3]}),
+        ("POST", "/api/colors", {"short": [1, 2]}),
+        ("POST", "/api/colors", {"wide": [1, 2, 300]}),
+        ("POST", "/api/colors", {"num": 5}),
+        ("POST", "/api/colors", {"obj": {"a": 1}}),
+        ("POST", "/api/colors", {"red": [1, 2, 3]}),
+        ("POST", "/api/colors", {"ok": [9, 8, 7], "bad": [1]}),
+        ("GET", "/api/colors", None),
     ],
 }
 
@@ -358,8 +827,26 @@ def ledfx(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
 
 @pytest.mark.parametrize("name", sorted(SCENARIOS))
 async def test_v1_virtuals_family_is_unchanged(name: str, ledfx: MagicMock) -> None:
-    if name == "safe_mode":
+    if name == "safe_mode_running":
+        ledfx.virtuals.set_effect(
+            VirtualIdStr("dj bird"), "singleColor", PluginConfig.model_validate({})
+        )
+    if name.startswith("safe_mode"):
         enter_safe_mode(ledfx)
+    if name == "activation":
+        entry = ledfx.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
+        assert entry is not None
+        entry.last_effect = "rainbow"
+        entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
+    if name == "highlight_gap":
+        gap = FakeDevice(ledfx, "gap-1", 10)
+        gap.type = "dummy"
+        ledfx.devices._objects["gap-1"] = gap
+    if name == "effect_typing":
+        # A stored config that no longer validates.
+        entry = ledfx.virtuals.get_or_raise(VirtualIdStr("dj bird")).entry
+        assert entry is not None
+        entry.effects["rainbow"] = EffectEntry(type="rainbow", config={"speed": "x"})
     random.seed(0)  # RANDOMIZE
     records = await replay(build_app(ledfx, ENDPOINTS), SCENARIOS[name])
     check("virtuals", name, records)

@@ -5,8 +5,9 @@ from aiohttp import web
 
 from ledfx.api import RestEndpoint
 from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import Segment
 from ledfx.effects import DummyEffect
-from ledfx.errors import Invalid
+from ledfx.errors import Conflict, Invalid
 from ledfx.virtuals import Virtual
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +37,22 @@ def make_virtual_response(virtual: Virtual) -> dict[str, object]:
         virtual_response["effect"] = effect_response
 
     return virtual_response
+
+
+def _v1_segments(virtual: Virtual, value: object) -> list[Segment]:
+    """v1-compat: the manager refuses segments outside a device's pixels; v1
+    clamped them and answered success, so clamp here. Raises ValueError with
+    v1's text."""
+    if isinstance(value, (list, tuple)):
+        return [
+            Segment._make(
+                virtual.validate_segment(
+                    list(item) if isinstance(item, (list, tuple)) else item
+                )
+            )
+            for item in value
+        ]
+    raise ValueError(f"Invalid segments: {value}, should be a list of segments")
 
 
 class VirtualEndpoint(RestEndpoint):
@@ -79,11 +96,13 @@ class VirtualEndpoint(RestEndpoint):
             return await self.invalid_request('"active" must be true or false')
 
         try:
-            virtual = self._ledfx.virtuals.update(
-                VirtualIdStr(virtual_id), active=active
+            virtual = self._ledfx.virtuals.set_active(VirtualIdStr(virtual_id), active)
+        except Conflict as err:
+            # v1-compat: v1 words the refusal as a status failure and shows the
+            # underlying error's text (the stale-config case has a cleaner v2 detail).
+            error_message = (
+                f"Unable to set virtual {virtual.id} status: {err.__cause__ or err}"
             )
-        except Invalid as err:
-            error_message = f"Unable to set virtual {virtual.id} status: {err.detail}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
 
@@ -109,12 +128,13 @@ class VirtualEndpoint(RestEndpoint):
             )
 
         try:
-            virtual = self._ledfx.virtuals.update(
-                VirtualIdStr(virtual_id), segments=virtual_segments
+            virtual = self._ledfx.virtuals.set_segments(
+                VirtualIdStr(virtual_id), _v1_segments(virtual, virtual_segments)
             )
-        except Invalid as err:
+        except (ValueError, Invalid) as err:
+            detail = err.detail if isinstance(err, Invalid) else str(err)
             error_message = (
-                f"Unable to set virtual segments {virtual_segments}: {err.detail}"
+                f"Unable to set virtual segments {virtual_segments}: {detail}"
             )
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)

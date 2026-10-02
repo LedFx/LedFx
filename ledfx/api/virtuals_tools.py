@@ -6,10 +6,11 @@ from aiohttp import web
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field
 
 from ledfx.api import RestEndpoint
-from ledfx.color import validate_color
+from ledfx.api.v1_compat import v1_color
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.models import Highlight, OneshotParams
-from ledfx.errors import Conflict, Invalid
+from ledfx.effects import DummyEffect
+from ledfx.errors import Conflict, Invalid, ensure_writable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,12 +23,11 @@ class OneshotRequest(BaseModel):
     # An infinite fade never expires and turns the pixels to NaN.
     model_config = ConfigDict(allow_inf_nan=False)
 
-    # validate_color turns a [r, g, b] list into "#rrggbb" too.
-    color: Annotated[str | list[int], AfterValidator(validate_color)] = "white"
+    # v1-compat: a colour may be an [r, g, b] list.
+    color: Annotated[str | list[int], AfterValidator(v1_color)] = "white"
     ramp: float = Field(0, ge=0)
     hold: float = Field(0, ge=0)
     fade: float = Field(0, ge=0)
-    # Values outside 0-1 are clamped, as they always were.
     brightness: float = 1
 
     def params(self) -> OneshotParams:
@@ -36,7 +36,9 @@ class OneshotRequest(BaseModel):
             ramp_ms=self.ramp,
             hold_ms=self.hold,
             fade_ms=self.fade,
-            brightness=self.brightness,
+            # v1-compat: values outside 0-1 are clamped, as they always were;
+            # the manager refuses them.
+            brightness=min(1.0, max(0.0, self.brightness)),
         )
 
 
@@ -145,7 +147,8 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 )
 
             try:
-                virtuals.force_color(vid, validate_color(color))
+                # v1-compat: a colour may be an [r, g, b] list.
+                virtuals.force_color(vid, v1_color(color))
             except (ValueError, Invalid) as e:
                 return await self.invalid_request(str(e))
 
@@ -170,10 +173,40 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request("start and end must be integers")
 
             highlight = Highlight(device, start, end, flip) if state else None
+            virtual = virtuals.get_or_raise(vid)
+            if not virtual.calibrating:
+                # v1-compat: v1 names calibration before a bad device or range
+                # (the manager checks its input first), and refuses highlight
+                # off outside calibration (the manager treats it as idempotent).
+                return await self.invalid_request(
+                    f"highlight error: Cannot set highlight when {virtual.name} is not in calibration mode"
+                )
+            # v1-compat: v1 answered 500 for a missing or non-string device.
+            if state and not isinstance(device, str):
+                return await self.invalid_request(
+                    f"highlight error: Device {device} not found"
+                )
+            unlit = state and (start < 0 or start > end)
+            if unlit:
+                # v1-compat: v1 answered success for an omitted (-1), negative
+                # or reversed range and lit nothing; the manager refuses them.
+                # Run its device and past-the-end checks on the nearest valid
+                # range, then clear what that lit.
+                nearest = max(start, end, 0)
+                highlight = Highlight(device, nearest, nearest, flip)
             try:
                 virtuals.set_highlight(vid, highlight)
-            except (Conflict, Invalid) as err:
-                return await self.invalid_request(f"highlight error: {err.detail}")
+            except Invalid as err:
+                # v1-compat: v1's own wording for what the manager reports by
+                # field (body.device_id, or body.start / body.end).
+                if err.loc[-1] == "device_id":
+                    reason = f"Device {device.lower()} not found"
+                else:
+                    pixels = self._ledfx.devices.get(device.lower()).pixel_count
+                    reason = f"start and end must be less than {pixels}"
+                return await self.invalid_request(f"highlight error: {reason}")
+            if unlit:
+                virtuals.set_highlight(vid, None)
 
         # Disable the virtual's oneshot Flashes
         if tool == "oneshot" and not virtuals.clear_oneshots(vid):
@@ -192,10 +225,23 @@ class VirtualsToolsEndpoint(RestEndpoint):
                 return await self.invalid_request(
                     "Required attribute for copy, target must be a list"
                 )
+            # v1-compat: v1 skips unknown targets and lumps "every target
+            # refused" with "none known"; the manager raises NotFound / Conflict.
+            # It also answers safe mode, then a source with no effect, before
+            # it looks at the targets, so those checks run first here.
+            ensure_writable(self._ledfx)
+            source = virtuals.get_or_raise(vid).active_effect
+            if source is None or isinstance(source, DummyEffect):
+                return await self.invalid_request(
+                    "Virtual copy failed, no active effect on source virtual"
+                )
+            known = [VirtualIdStr(t) for t in target if virtuals.get(t) is not None]
             try:
-                virtuals.copy_effect(vid, [VirtualIdStr(t) for t in target])
-            except (Conflict, Invalid) as err:
-                return await self.invalid_request(err.detail)
+                virtuals.copy_effect(vid, known)
+            except Conflict:
+                return await self.invalid_request(
+                    "Virtual copy failed, no valid targets"
+                )
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)

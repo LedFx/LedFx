@@ -19,6 +19,7 @@ from pydantic import (
     ValidationError,
     model_validator,
 )
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 from ledfx.api.v2.core.partial import PatchValidationError
 from ledfx.api.v2.core.problem import validation_errors
@@ -53,7 +54,7 @@ if TYPE_CHECKING:
     VirtualConfig = StoredVirtualConfig
     VirtualConfigView = StoredVirtualConfig
 else:
-    VirtualConfig = strict_variant(
+    _VirtualConfigFields = strict_variant(
         StoredVirtualConfig,
         "VirtualConfig",
         limits={
@@ -63,6 +64,42 @@ else:
             "rows": (Ge(1), Le(4096)),
         },
     )
+
+    class VirtualConfig(_VirtualConfigFields):
+        """A virtual's settings. frequency_min must be below frequency_max,
+        and rotate needs more than one row; neither is adjusted."""
+
+        @model_validator(mode="after")
+        def _consistent(self) -> Self:
+            # The type and text of the manager's Invalid, which answers a
+            # change that breaks a rule against a stored value.
+            problems = []
+            if self.frequency_min >= self.frequency_max:
+                problems.append(
+                    (
+                        "frequency_min",
+                        self.frequency_min,
+                        "frequency_min must be below frequency_max",
+                    )
+                )
+            if self.rotate != 0 and self.rows <= 1:
+                problems.append(
+                    ("rotate", self.rotate, "rotate needs more than one row")
+                )
+            if problems:
+                raise ValidationError.from_exception_data(
+                    "VirtualConfig",
+                    [
+                        InitErrorDetails(
+                            type=PydanticCustomError("validation", msg),
+                            loc=(field,),
+                            input=value,
+                        )
+                        for field, value, msg in problems
+                    ],
+                )
+            return self
+
 
 # What a response holds: strict and closed, without the request bounds, so a
 # config stored by v1 or an old file still validates.
@@ -86,6 +123,20 @@ VirtualIds = Annotated[
 EffectHistoryItem = EffectState | UnknownPlugin
 
 
+def _start_after_end(model: str, start: int) -> ValidationError:
+    """The error both ranges report for a reversed range, at ("start",)."""
+    return ValidationError.from_exception_data(
+        model,
+        [
+            InitErrorDetails(
+                type=PydanticCustomError("inconsistent", "start must not be after end"),
+                loc=("start",),
+                input=start,
+            )
+        ],
+    )
+
+
 class VirtualSegment(BaseModel):
     """A run of one device's pixels, start and end inclusive."""
 
@@ -95,6 +146,12 @@ class VirtualSegment(BaseModel):
     start: Pixel
     end: Pixel
     invert: bool = False
+
+    @model_validator(mode="after")
+    def _ordered(self) -> Self:
+        if self.start > self.end:
+            raise _start_after_end("VirtualSegment", self.start)
+        return self
 
 
 class VirtualCreate(BaseModel):
@@ -131,6 +188,13 @@ class VirtualUpdate(BaseModel):
             segments=_segments(virtual),
             active=virtual.active,
         )
+
+
+class VirtualUpdateView(VirtualUpdate):
+    """VirtualUpdate with the config's request bounds left out: what a PATCH is
+    checked against for the settings it does not change."""
+
+    config: VirtualConfigView
 
 
 def current_effect(virtual: "VirtualObject") -> BaseModel | None:
@@ -248,12 +312,14 @@ class ApplyConfig(BaseModel):
 
 
 class ApplyConfigCounts(BaseModel):
-    """Effects updated, and effects skipped (they have none of the settings)."""
+    """Effects updated, skipped (they have none of the settings) and failed
+    (they refused the settings)."""
 
     model_config = _CLOSED
 
     updated: int
     skipped: int
+    failed: int
 
 
 class SetEffectAll(BaseModel):
@@ -316,7 +382,7 @@ class Highlight(BaseModel):
     @model_validator(mode="after")
     def _ordered(self) -> Self:
         if self.start > self.end:
-            raise ValueError("start must not be after end")
+            raise _start_after_end("Highlight", self.start)
         return self
 
 
@@ -338,6 +404,24 @@ def effect_variant(type_id: str) -> type[BaseModel]:
     return variant
 
 
+# Pydantic error types for a value outside a bound, as opposed to the wrong type.
+_BOUNDS = frozenset(
+    {
+        "greater_than",
+        "greater_than_equal",
+        "less_than",
+        "less_than_equal",
+        "multiple_of",
+        "too_short",
+        "too_long",
+        "string_too_short",
+        "string_too_long",
+        "string_pattern_mismatch",
+        "finite_number",
+    }
+)
+
+
 def checked_config(
     variant: type[BaseModel],
     config: Mapping[str, object],
@@ -345,7 +429,8 @@ def checked_config(
 ) -> dict[str, object]:
     """Validate config strictly as variant; return the sent settings, as
     validated (colours normalised). A failing sent setting is the client's
-    error (422 at body.config.<name>); a failing stored one is a 409."""
+    error (422 at body.config.<name>). A stored setting of the wrong type is a
+    409; one outside its bounds is kept as it is (the response shows it)."""
     try:
         valid = variant.model_validate_json(json.dumps(config), strict=True)
     except ValidationError as err:
@@ -353,7 +438,19 @@ def checked_config(
         mine = [e for e in errors if len(e.loc) < 3 or e.loc[2] in sent]
         if mine:
             raise PatchValidationError(mine, None) from None
-        stored = ".".join(str(part) for part in errors[0].loc[1:])
-        raise PatchValidationError([], stored) from None
+        wrong = [e for e in errors if e.type not in _BOUNDS]
+        if wrong:
+            stored = ".".join(str(part) for part in wrong[0].loc[1:])
+            raise PatchValidationError([], stored) from None
+        # Only stored settings are out of bounds: check the rest without them.
+        # No effect variant has a rule between settings, so the rest cannot
+        # fail on a sent key (those are in mine above); a failure is stored.
+        beyond = {e.loc[2] for e in errors}
+        rest = {name: value for name, value in config.items() if name not in beyond}
+        try:
+            valid = variant.model_validate_json(json.dumps(rest), strict=True)
+        except ValidationError:
+            stored = ".".join(str(part) for part in errors[0].loc[1:])
+            raise PatchValidationError([], stored) from None
     values = valid.model_dump()
     return {name: values[name] for name in sent}

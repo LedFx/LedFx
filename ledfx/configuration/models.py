@@ -15,6 +15,7 @@ from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.json_schema import JsonDict, SkipJsonSchema
 from typing_extensions import override
 
+from ledfx.color import validate_color
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
     X_LEGACY,
@@ -35,6 +36,7 @@ from ledfx.configuration.fields import (
     VirtualId,
     coerce,
 )
+from ledfx.errors import Invalid
 from ledfx.utils import generate_title
 
 # JSON Schema readOnly: the UI shows the value but must not edit it. What the API
@@ -345,35 +347,61 @@ class SetEffectAllResult(NamedTuple):
     """How Virtuals.set_effect_all went, per virtual."""
 
     applied: int
-    skipped: int
     blocked: int
+    failed: int
+
+
+class ApplyConfigResult(NamedTuple):
+    """How Virtuals.apply_global_config went, per running effect: updated,
+    skipped (it has none of the settings) or failed (it refused them)."""
+
+    updated: int
+    skipped: int
     failed: int
 
 
 @dataclass(frozen=True)
 class GlobalEffectUpdate:
     """Settings Virtuals.apply_global_config writes into running effects
-    (None: leave as is). flip and mirror may be "toggle": each effect then
-    inverts its own value."""
+    (None: leave as is). The fractions are 0..1 and background_color a colour
+    string (Invalid at body.<field> otherwise); a gradient is resolved when
+    it is applied."""
 
     gradient: str | None = None
     background_color: str | None = None
     background_brightness: float | None = None
     brightness: float | None = None
-    flip: bool | Literal["toggle"] | None = None
-    mirror: bool | Literal["toggle"] | None = None
+    flip: bool | None = None
+    mirror: bool | None = None
+
+    def __post_init__(self) -> None:
+        for field in ("background_brightness", "brightness"):
+            value = getattr(self, field)
+            if value is not None and not 0.0 <= value <= 1.0:
+                raise Invalid(f"{field} must be between 0 and 1", loc=("body", field))
+        if self.background_color is not None:
+            try:
+                validate_color(self.background_color)
+            except ValueError as err:
+                raise Invalid(str(err), loc=("body", "background_color")) from err
 
 
 @dataclass(frozen=True)
 class OneshotParams:
     """A flash: a colour, an envelope in milliseconds and a brightness
-    (Virtuals.oneshot clamps it to 0..1)."""
+    (0..1; Invalid otherwise)."""
 
     color: str = "white"
     ramp_ms: float = 0
     hold_ms: float = 0
     fade_ms: float = 0
     brightness: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.brightness <= 1.0:
+            raise Invalid(
+                "brightness must be between 0 and 1", loc=("body", "brightness")
+            )
 
 
 @dataclass(frozen=True)

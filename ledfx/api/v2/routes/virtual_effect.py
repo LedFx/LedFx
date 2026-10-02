@@ -15,7 +15,8 @@ from ledfx.api.v2.models.virtuals import (
     current_effect,
     effect_variant,
 )
-from ledfx.errors import Conflict, NotFound
+from ledfx.configuration.plugin import PluginConfig
+from ledfx.errors import Conflict, ensure_writable
 from ledfx.virtuals import Virtual
 
 router = Router(tag="virtuals")
@@ -47,15 +48,19 @@ async def set_effect(
     """Start an effect.
 
     config is checked against the type's settings; without it the settings
-    this virtual last used for the type apply. With fallback_s the current
-    effect comes back after that many seconds (409 if the virtual is being
-    streamed to).
+    this virtual last used for the type apply (409 if they no longer pass
+    the type's checks). With fallback_s the current effect comes back after
+    that many seconds (409 if the virtual is being streamed to). Starting an
+    effect makes the virtual active.
     """
+    ensure_writable(ledfx)  # safe mode answers before a 404 or a 422
     ledfx.virtuals.get_or_raise(virtual_id)
     variant = effect_variant(body.type)
     config = None
     if body.config is not None:
-        config = checked_config(variant, body.config, body.config)
+        config = PluginConfig.model_validate(
+            checked_config(variant, body.config, body.config)
+        )
     virtual = ledfx.virtuals.set_effect(
         virtual_id, body.type, config, fallback=body.fallback_s
     )
@@ -68,9 +73,13 @@ async def update_effect(
 ) -> EffectHistoryItem:
     """Change some settings of the running effect.
 
-    The settings are checked against the running effect's type. A colour
+    The settings are checked against the running effect's type. A setting
+    the change leaves alone is kept even if it lies outside the bounds v2
+    accepts in a request. A colour
     change on an effect that blends colours restarts it, so it fades in.
+    Restarting the effect makes the virtual active.
     """
+    ensure_writable(ledfx)  # safe mode answers before a 404, a 409 or a 422
     type_id, config = ledfx.virtuals.running_effect(virtual_id)
     variant = effect_variant(type_id)
     stored = {
@@ -79,7 +88,11 @@ async def update_effect(
         if name in variant.model_fields
     }
     patch = checked_config(variant, {**stored, **body.config}, body.config)
-    return _shown(ledfx.virtuals.patch_effect(virtual_id, patch, type_id=type_id))
+    return _shown(
+        ledfx.virtuals.patch_effect(
+            virtual_id, PluginConfig.model_validate(patch), type_id=type_id
+        )
+    )
 
 
 @router.delete("/virtuals/{virtual_id}/effect", status=204)
@@ -119,10 +132,9 @@ async def list_effect_history(
 async def delete_effect_history(
     virtual_id: VirtualIdParam, effect_type: TypeId, ledfx: LedFxDep
 ) -> None:
-    """Forget an effect type's settings, stopping it if it is running."""
-    history = ledfx.virtuals.effect_history(virtual_id)
-    if effect_type not in [type_id for type_id, _ in history]:
-        raise NotFound("Effect", effect_type)
+    """Forget an effect type's settings, stopping it if it is running.
+
+    404 for a type the virtual has neither stored nor running."""
     ledfx.virtuals.delete_effect_history(virtual_id, effect_type)
 
 

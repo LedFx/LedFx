@@ -67,7 +67,12 @@ def _pickled(error: LedFxError) -> LedFxError:
 
 @pytest.mark.parametrize(
     "error",
-    [NotFound("Virtual", "dj bird"), Unavailable("Spotify"), SafeMode("bad json")],
+    [
+        NotFound("Virtual", "dj bird"),
+        NotFound("Virtual", "a", "b"),
+        Unavailable("Spotify"),
+        SafeMode("bad json"),
+    ],
 )
 @pytest.mark.parametrize("clone", [copy.copy, _pickled])
 def test_errors_survive_copy_and_pickle(

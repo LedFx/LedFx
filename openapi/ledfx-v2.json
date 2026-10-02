@@ -110,8 +110,12 @@
         "type": "object"
       },
       "ApplyConfigCounts": {
-        "description": "Effects updated, and effects skipped (they have none of the settings).",
+        "description": "Effects updated, skipped (they have none of the settings) and failed\n(they refused the settings).",
         "properties": {
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
           "skipped": {
             "title": "Skipped",
             "type": "integer"
@@ -123,7 +127,8 @@
         },
         "required": [
           "updated",
-          "skipped"
+          "skipped",
+          "failed"
         ],
         "title": "ApplyConfigCounts",
         "type": "object"
@@ -31151,6 +31156,7 @@
       },
       "VirtualConfig": {
         "additionalProperties": false,
+        "description": "A virtual's settings. frequency_min must be below frequency_max,\nand rotate needs more than one row; neither is adjusted.",
         "properties": {
           "center_offset": {
             "default": 0,
@@ -31277,6 +31283,7 @@
       },
       "VirtualConfigPartial": {
         "additionalProperties": false,
+        "description": "A virtual's settings. frequency_min must be below frequency_max,\nand rotate needs more than one row; neither is adjusted.",
         "properties": {
           "center_offset": {
             "default": 0,
@@ -31828,7 +31835,7 @@
         ]
       },
       "post": {
-        "description": "Its id is made from the name (lowercase, other characters as \"-\") and\nmade unique with a numeric suffix. The new virtual has no segments.",
+        "description": "Its id is made from the name (lowercase, other characters as \"-\") and\nmade unique with a numeric suffix; it is at most 128 characters, so a long\nname is cut. The new virtual has no segments.",
         "operationId": "create_virtual",
         "requestBody": {
           "content": {
@@ -31930,7 +31937,7 @@
     },
     "/api/v2/virtuals/apply-config": {
       "post": {
-        "description": "A gradient also sets the colours sampled from it, except those given.",
+        "description": "A gradient also sets the colours sampled from it, except those given. Each\nrunning effect is counted as updated, skipped (it has none of the settings)\nor failed (it refused them). 404 if an id in virtual_ids does not exist\n(nothing is written).",
         "operationId": "apply_effect_config",
         "requestBody": {
           "content": {
@@ -31972,6 +31979,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "409": {
             "content": {
@@ -32032,7 +32049,7 @@
     },
     "/api/v2/virtuals/clear-effects": {
       "post": {
-        "description": "Runtime only: their stored effects come back when LedFx restarts.",
+        "description": "Runtime only: their stored effects come back when LedFx restarts. 404 if an\nid does not exist (nothing is cleared).",
         "operationId": "clear_effects",
         "requestBody": {
           "content": {
@@ -32067,6 +32084,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "409": {
             "content": {
@@ -32367,7 +32394,7 @@
     },
     "/api/v2/virtuals/set-effect": {
       "post": {
-        "description": "Without config the type's defaults start. A virtual that refuses it (no\nsegments) counts as failed; with\nfallback_s, one that is being streamed to counts as blocked.",
+        "description": "Without config the type's defaults start. An unknown virtual id is a 404\nand nothing starts. A virtual that refuses the effect (no segments) counts\nas failed; with fallback_s, one that is being streamed to counts as\nblocked.",
         "operationId": "set_effect_on_virtuals",
         "requestBody": {
           "content": {
@@ -32409,6 +32436,16 @@
               }
             },
             "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Not Found"
           },
           "409": {
             "content": {
@@ -32627,7 +32664,7 @@
         ]
       },
       "patch": {
-        "description": "Only the fields sent change; a config object merges into the current one,\nand segments replace the list. A stored setting that the change leaves\nalone but that is no longer valid gives 409.",
+        "description": "Only the fields sent change; a config object merges into the current one,\nand segments replace the list. All or nothing: a 4xx means nothing\nchanged. Values are never adjusted: a segment must name a known device\nand pixels inside it (start not after end), frequency_min must be below\nfrequency_max, and rotate needs more than one row; anything else is 422.\nThose bounds apply to what the change sets: a stored setting it leaves\nalone is kept even if it lies outside them.",
         "operationId": "update_virtual",
         "parameters": [
           {
@@ -32869,7 +32906,7 @@
     },
     "/api/v2/virtuals/{virtual_id}/copy-effect": {
       "post": {
-        "description": "Targets that refuse it are passed over; 422 if none takes it.",
+        "description": "404 if a target does not exist (nothing is copied). Targets that refuse\nthe effect are passed over; 409 if none takes it, or if this virtual runs\nnothing.",
         "operationId": "copy_effect",
         "parameters": [
           {
@@ -33413,7 +33450,7 @@
         ]
       },
       "patch": {
-        "description": "The settings are checked against the running effect's type. A colour\nchange on an effect that blends colours restarts it, so it fades in.",
+        "description": "The settings are checked against the running effect's type. A setting\nthe change leaves alone is kept even if it lies outside the bounds v2\naccepts in a request. A colour\nchange on an effect that blends colours restarts it, so it fades in.\nRestarting the effect makes the virtual active.",
         "operationId": "update_effect",
         "parameters": [
           {
@@ -33801,7 +33838,7 @@
         ]
       },
       "put": {
-        "description": "config is checked against the type's settings; without it the settings\nthis virtual last used for the type apply. With fallback_s the current\neffect comes back after that many seconds (409 if the virtual is being\nstreamed to).",
+        "description": "config is checked against the type's settings; without it the settings\nthis virtual last used for the type apply (409 if they no longer pass\nthe type's checks). With fallback_s the current effect comes back after\nthat many seconds (409 if the virtual is being streamed to). Starting an\neffect makes the virtual active.",
         "operationId": "set_effect",
         "parameters": [
           {
@@ -35251,6 +35288,7 @@
     },
     "/api/v2/virtuals/{virtual_id}/effects/{effect_type}": {
       "delete": {
+        "description": "404 for a type the virtual has neither stored nor running.",
         "operationId": "delete_effect_history",
         "parameters": [
           {

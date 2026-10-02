@@ -7,7 +7,9 @@ import pytest
 from aiohttp import web
 from pydantic import BaseModel, ValidationError
 
+from ledfx.api.v2.core.partial import PatchValidationError
 from ledfx.api.v2.core.problem import (
+    MAX_PROBLEM_ERRORS,
     PROBLEM_PREFIX,
     Problem,
     ProblemDetailError,
@@ -69,6 +71,17 @@ def test_domain_errors_keep_status_suffix_and_detail(
     assert problem.detail == detail
     assert problem.instance == "req-00000000"
     assert problem.errors is None
+
+
+def test_many_missing_ids_are_capped_in_the_detail_and_listed_in_errors() -> None:
+    ids = [f"v{i}" for i in range(150)]
+    problem = problem_for(NotFound("Virtual", *ids), "req-1")
+    named = ", ".join(f"'v{i}'" for i in range(10))
+    assert problem.detail == f"Virtuals not found: {named} and 140 more"
+    assert problem.errors is not None
+    assert [e.msg for e in problem.errors] == [
+        f"Virtual 'v{i}' not found" for i in range(MAX_PROBLEM_ERRORS)
+    ]
 
 
 def test_invalid_with_a_loc_names_it_in_errors() -> None:
@@ -178,3 +191,27 @@ def test_problem_response_is_problem_json_without_null_errors() -> None:
         "detail": "x",
         "instance": "req-1",
     }
+
+
+def test_a_problem_lists_at_most_100_errors() -> None:
+    class _Many(BaseModel):
+        items: list[int]
+
+    with pytest.raises(ValidationError) as info:
+        _Many.model_validate({"items": ["x"] * 250})
+    problem = validation_problem(validation_errors(info.value, ("body",)))
+    assert problem.errors is not None
+    assert len(problem.errors) == 100
+    assert problem.detail == "250 invalid value(s) (first 100 of 250 errors)"
+
+
+def test_a_patch_validation_problem_lists_at_most_100_errors() -> None:
+    errors = [
+        ProblemDetailError(loc=["body", str(i)], msg="bad", type="x")
+        for i in range(250)
+    ]
+    problem = PatchValidationError(errors, None)
+    assert problem.status == 422
+    assert problem.errors is not None
+    assert len(problem.errors) == 100
+    assert problem.detail == "250 invalid value(s) (first 100 of 250 errors)"

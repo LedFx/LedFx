@@ -1464,13 +1464,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/color.py",
-      "name": "invalid-annotation",
-      "concise_description": "Tuple literal cannot be used in annotations",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/color.py",
       "name": "implicit-any-parameter",
@@ -17165,13 +17158,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_valid_id` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 33,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -17267,27 +17253,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`set_highlight` is missing an annotation for parameter `device_id`",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `start`",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `end`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `flip`",
       "severity": "error"
     },
     {
@@ -21414,20 +21379,6 @@
       "severity": "error"
     },
     {
-      "column": 23,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_effect` is missing an annotation for parameter `schema_keys`",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_effect` is missing an annotation for parameter `hidden_keys`",
-      "severity": "error"
-    },
-    {
       "column": 54,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21446,27 +21397,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_make_mock_virtual` is missing an annotation for parameter `effect`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__getitem__` is missing an annotation for parameter `key`",
       "severity": "error"
     },
     {
@@ -21575,13 +21505,6 @@
       "severity": "error"
     },
     {
-      "column": 50,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_skips_dummy_effect` is missing an annotation for parameter `ledfx_with_virtuals`",
-      "severity": "error"
-    },
-    {
       "column": 49,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21628,13 +21551,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_hidden_keys_skipped` is missing an annotation for parameter `service_v`",
       "severity": "error"
     },
     {
@@ -21869,20 +21785,6 @@
       "severity": "error"
     },
     {
-      "column": 40,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_virtual_with_set_effect` is missing an annotation for parameter `vid`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`create` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
       "column": 29,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21908,13 +21810,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`ledfx_album_art` is missing an annotation for parameter `tmp_path`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`service_aa` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {
@@ -21953,13 +21848,6 @@
       "severity": "error"
     },
     {
-      "column": 63,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_empty_virtual_ids_returns_zero` is missing an annotation for parameter `ledfx_album_art`",
-      "severity": "error"
-    },
-    {
       "column": 44,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21985,13 +21873,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_no_cache_key_returns_zero` is missing an annotation for parameter `ledfx_album_art`",
-      "severity": "error"
-    },
-    {
-      "column": 50,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_no_virtuals_attr_returns_zero` is missing an annotation for parameter `service`",
       "severity": "error"
     },
     {
@@ -22118,13 +21999,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_set_effect_error_skips_virtual` is missing an annotation for parameter `service_aa`",
-      "severity": "error"
-    },
-    {
-      "column": 63,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_set_effect_error_skips_virtual` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {
