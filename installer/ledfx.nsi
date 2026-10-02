@@ -2,6 +2,7 @@
 Unicode true
 !include FileFunc.nsh
 !include LogicLib.nsh
+!include Sections.nsh
 !include x64.nsh
 
 ; HM NIS Edit Wizard helper defines
@@ -53,10 +54,6 @@ Unicode true
 ; signed-in user, with their config, instead of inheriting admin rights.
 Function RunLedFx
   Exec '"$WINDIR\explorer.exe" "$INSTDIR\LedFx.exe"'
-FunctionEnd
-
-Function .onInit
-  SetRegView 64
 FunctionEnd
 
 ; A running LedFx (tray included) locks its files, so close it first.
@@ -166,6 +163,15 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
 SectionEnd
+
+Function .onInit
+  SetRegView 64
+  ; Keep "Start on login" ticked on upgrade if it was on.
+  ReadRegStr $0 HKLM "Software\Microsoft\Windows\CurrentVersion\Run" "LedFx"
+  ${If} $0 != ""
+    !insertmacro SelectSection ${SEC02}
+  ${EndIf}
+FunctionEnd
 
 ; Section descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
