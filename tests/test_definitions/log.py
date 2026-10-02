@@ -9,6 +9,7 @@ log_api_tests = {
         payload_to_send={"text": "Hello from test!"},
         expected_response_keys=["status"],
         expected_response_values=[{"status": "success"}],
+        # The log endpoint takes 1 post per second per IP: wait it out
         sleep_after_test=1.1,
     ),
     "post_non_ascii_log": APITestCase(
@@ -19,6 +20,7 @@ log_api_tests = {
         payload_to_send={"text": "Héllo 世界!"},
         expected_response_keys=["status"],
         expected_response_values=[{"status": "success"}],
+        # The log endpoint takes 1 post per second per IP: wait it out
         sleep_after_test=1.1,
     ),
     "post_too_long_log": APITestCase(
@@ -39,7 +41,6 @@ log_api_tests = {
         payload_to_send={"text": "This should be rate limited."},
         expected_response_keys=["status"],
         expected_response_values=[{"status": "failed"}],
-        sleep_after_test=1.1,
     ),
     "post_empty_log": APITestCase(
         execution_order=5,
@@ -49,6 +50,5 @@ log_api_tests = {
         payload_to_send={"text": "   "},
         expected_response_keys=["status"],
         expected_response_values=[{"status": "failed"}],
-        sleep_after_test=1.1,
     ),
 }

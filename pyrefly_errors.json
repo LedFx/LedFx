@@ -17970,34 +17970,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "tests/conftest.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`pytest_sessionstart` is missing an annotation for parameter `session`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "tests/conftest.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`pytest_sessionfinish` is missing an annotation for parameter `session`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "tests/conftest.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`pytest_sessionfinish` is missing an annotation for parameter `exitstatus`",
-      "severity": "error"
-    },
-    {
-      "column": 11,
-      "path": "tests/conftest.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `ledfx`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "tests/playlist/test_playlists.py",
       "name": "implicit-any-parameter",

@@ -1,10 +1,7 @@
 import pytest
 
-from tests.test_utilities.test_utils import (
-    SERVER_PATH,
-    APITestCase,
-    HTTPSession,
-)
+from tests.test_utilities.consts import SERVER_PATH
+from tests.test_utilities.test_utils import APITestCase, HTTPSession
 
 
 def get_ledfx_effects():
@@ -31,8 +28,6 @@ def get_ledfx_effects():
             expected_response_values=[
                 {"status": "success"},
             ],
-            # Let the effect run for a bit before checking its still active
-            sleep_after_test=0.1,
         )
         effects_to_test[effect_id + "_set"] = set_effect_test_case
 
