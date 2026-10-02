@@ -6,11 +6,22 @@ request bounds, so a stored value that breaks a v2 bound is shown as it is
 (and still passes response validation) instead of failing the request.
 """
 
+import json
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Annotated, Self
 
 from annotated_types import Ge, Le, MaxLen, MinLen
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    model_validator,
+)
 
+from ledfx.api.v2.core.partial import PatchValidationError
+from ledfx.api.v2.core.problem import validation_errors
 from ledfx.api.v2.models.ids import DeviceIdParam, VirtualIdParam
 from ledfx.api.v2.models.plugins import (
     EffectConfigBody,
@@ -19,10 +30,12 @@ from ledfx.api.v2.models.plugins import (
     UnknownPlugin,
     effect_state,
     strict_variant,
+    variants,
 )
 from ledfx.color import validate_color
 from ledfx.configuration.models import VirtualConfig as StoredVirtualConfig
 from ledfx.effects import DummyEffect
+from ledfx.errors import Invalid
 
 if TYPE_CHECKING:
     from ledfx.virtuals import Virtual as VirtualObject
@@ -314,3 +327,33 @@ class CopyEffect(BaseModel):
     model_config = _CLOSED
 
     targets: VirtualIds
+
+
+def effect_variant(type_id: str) -> type[BaseModel]:
+    """The v2 settings model of a registered effect type; Invalid (422 at
+    body.type) for any other."""
+    variant = variants("effect").get(type_id)
+    if variant is None:
+        raise Invalid(f"Unknown effect type: {type_id}", loc=("body", "type"))
+    return variant
+
+
+def checked_config(
+    variant: type[BaseModel],
+    config: Mapping[str, object],
+    sent: Mapping[str, object],
+) -> dict[str, object]:
+    """Validate config strictly as variant; return the sent settings, as
+    validated (colours normalised). A failing sent setting is the client's
+    error (422 at body.config.<name>); a failing stored one is a 409."""
+    try:
+        valid = variant.model_validate_json(json.dumps(config), strict=True)
+    except ValidationError as err:
+        errors = validation_errors(err, prefix=("body", "config"))
+        mine = [e for e in errors if len(e.loc) < 3 or e.loc[2] in sent]
+        if mine:
+            raise PatchValidationError(mine, None) from None
+        stored = ".".join(str(part) for part in errors[0].loc[1:])
+        raise PatchValidationError([], stored) from None
+    values = valid.model_dump()
+    return {name: values[name] for name in sent}

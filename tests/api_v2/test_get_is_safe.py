@@ -168,6 +168,8 @@ def test_layer_get_routes_are_discovered() -> None:
         "/docs/scalar.standalone.js",
         "/virtuals",
         "/virtuals/{virtual_id}",
+        "/virtuals/{virtual_id}/effect",
+        "/virtuals/{virtual_id}/effects",
     } <= {spec.path for spec in GET_ROUTES}
 
 

@@ -39,7 +39,10 @@ def test_committed_spec_is_current() -> None:
 # rounded up to the next 100 KB. Raise it deliberately, with the reason in the PR.
 # Raised to 800 KB with the virtuals routes (367 KB measured): every effect type
 # adds an EffectConfig_<type> and an EffectState_<type> component (63 each).
-SPEC_BUDGET_BYTES = 800_000
+# Raised to 1.3 MB with the effect routes (1.06 MB measured, 34 KB gzipped):
+# open responses split shared models into -Input/-Output, and their PATCH copies
+# aren't reused yet (#2025).
+SPEC_BUDGET_BYTES = 1_300_000
 
 
 def test_committed_spec_size_within_budget() -> None:
