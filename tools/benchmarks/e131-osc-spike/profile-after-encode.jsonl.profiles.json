@@ -1,0 +1,265 @@
+{
+  "scope": "CPU samples within measure_flushes; per sender class, including all listed cases",
+  "families": {
+    "E131Device": {
+      "cases": [
+        {
+          "sender": "e131",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 2298,
+        "active_samples": 2297,
+        "top_self": [
+          {
+            "frame": "data_packet.py:DataPacket.dmxData.<locals>.<genexpr>",
+            "samples": 1223,
+            "active_sample_pct": 53.24
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData",
+            "samples": 549,
+            "active_sample_pct": 23.9
+          },
+          {
+            "frame": "e131.py:E131Device.flush",
+            "samples": 274,
+            "active_sample_pct": 11.93
+          },
+          {
+            "frame": "data_packet.py:DataPacket.getBytes",
+            "samples": 114,
+            "active_sample_pct": 4.96
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_unicast",
+            "samples": 42,
+            "active_sample_pct": 1.83
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_packet",
+            "samples": 40,
+            "active_sample_pct": 1.74
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out",
+            "samples": 22,
+            "active_sample_pct": 0.96
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out_all_universes",
+            "samples": 14,
+            "active_sample_pct": 0.61
+          },
+          {
+            "frame": "output.py:Output.dmx_data",
+            "samples": 6,
+            "active_sample_pct": 0.26
+          },
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 3,
+            "active_sample_pct": 0.13
+          },
+          {
+            "frame": "root_layer.py:int_to_bytes",
+            "samples": 3,
+            "active_sample_pct": 0.13
+          },
+          {
+            "frame": "root_layer.py:RootLayer.getBytes",
+            "samples": 2,
+            "active_sample_pct": 0.09
+          },
+          {
+            "frame": "sender.py:sACNsender.flush",
+            "samples": 1,
+            "active_sample_pct": 0.04
+          },
+          {
+            "frame": "root_layer.py:make_flagsandlength",
+            "samples": 1,
+            "active_sample_pct": 0.04
+          },
+          {
+            "frame": "data_packet.py:DataPacket.syncAddr",
+            "samples": 1,
+            "active_sample_pct": 0.04
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "e131.py:E131Device.flush",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 2297,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "output.py:Output.dmx_data",
+            "samples": 1771,
+            "active_sample_pct": 77.1
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData",
+            "samples": 1764,
+            "active_sample_pct": 76.8
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData.<locals>.<genexpr>",
+            "samples": 1223,
+            "active_sample_pct": 53.24
+          },
+          {
+            "frame": "sender.py:sACNsender.flush",
+            "samples": 248,
+            "active_sample_pct": 10.8
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out_all_universes",
+            "samples": 244,
+            "active_sample_pct": 10.62
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out",
+            "samples": 227,
+            "active_sample_pct": 9.88
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_unicast",
+            "samples": 205,
+            "active_sample_pct": 8.92
+          },
+          {
+            "frame": "data_packet.py:DataPacket.getBytes",
+            "samples": 121,
+            "active_sample_pct": 5.27
+          }
+        ]
+      }
+    },
+    "OSCServerDevice": {
+      "cases": [
+        {
+          "sender": "osc-three",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 2164,
+        "active_samples": 2156,
+        "top_self": [
+          {
+            "frame": "osc.py:OSCServerDevice.flush",
+            "samples": 1548,
+            "active_sample_pct": 71.8
+          },
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 515,
+            "active_sample_pct": 23.89
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 92,
+            "active_sample_pct": 4.27
+          },
+          {
+            "frame": "numeric.py:array_equal",
+            "samples": 1,
+            "active_sample_pct": 0.05
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "osc.py:OSCServerDevice.flush",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 2156,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 607,
+            "active_sample_pct": 28.15
+          },
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 515,
+            "active_sample_pct": 23.89
+          },
+          {
+            "frame": "numeric.py:array_equal",
+            "samples": 1,
+            "active_sample_pct": 0.05
+          }
+        ]
+      }
+    }
+  }
+}

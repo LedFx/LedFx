@@ -1,0 +1,301 @@
+{
+  "scope": "CPU samples within measure_flushes; per sender class, including all listed cases",
+  "families": {
+    "E131Device": {
+      "cases": [
+        {
+          "sender": "e131",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        },
+        {
+          "sender": "e131",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "loopback",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 4567,
+        "active_samples": 4561,
+        "top_self": [
+          {
+            "frame": "data_packet.py:DataPacket.dmxData.<locals>.<genexpr>",
+            "samples": 1895,
+            "active_sample_pct": 41.55
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData",
+            "samples": 963,
+            "active_sample_pct": 21.11
+          },
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 655,
+            "active_sample_pct": 14.36
+          },
+          {
+            "frame": "e131.py:E131Device.flush",
+            "samples": 494,
+            "active_sample_pct": 10.83
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_packet",
+            "samples": 192,
+            "active_sample_pct": 4.21
+          },
+          {
+            "frame": "data_packet.py:DataPacket.getBytes",
+            "samples": 143,
+            "active_sample_pct": 3.14
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_unicast",
+            "samples": 87,
+            "active_sample_pct": 1.91
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out",
+            "samples": 54,
+            "active_sample_pct": 1.18
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out_all_universes",
+            "samples": 32,
+            "active_sample_pct": 0.7
+          },
+          {
+            "frame": "output.py:Output.dmx_data",
+            "samples": 18,
+            "active_sample_pct": 0.39
+          },
+          {
+            "frame": "root_layer.py:RootLayer.getBytes",
+            "samples": 7,
+            "active_sample_pct": 0.15
+          },
+          {
+            "frame": "root_layer.py:int_to_bytes",
+            "samples": 6,
+            "active_sample_pct": 0.13
+          },
+          {
+            "frame": "sender.py:sACNsender.flush",
+            "samples": 4,
+            "active_sample_pct": 0.09
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 4,
+            "active_sample_pct": 0.09
+          },
+          {
+            "frame": "root_layer.py:make_flagsandlength",
+            "samples": 2,
+            "active_sample_pct": 0.04
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "e131.py:E131Device.flush",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 4561,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "output.py:Output.dmx_data",
+            "samples": 2866,
+            "active_sample_pct": 62.84
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData",
+            "samples": 2852,
+            "active_sample_pct": 62.53
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData.<locals>.<genexpr>",
+            "samples": 1895,
+            "active_sample_pct": 41.55
+          },
+          {
+            "frame": "sender.py:sACNsender.flush",
+            "samples": 1195,
+            "active_sample_pct": 26.2
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out_all_universes",
+            "samples": 1186,
+            "active_sample_pct": 26.0
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out",
+            "samples": 1148,
+            "active_sample_pct": 25.17
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_unicast",
+            "samples": 1093,
+            "active_sample_pct": 23.96
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_packet",
+            "samples": 755,
+            "active_sample_pct": 16.55
+          }
+        ]
+      }
+    },
+    "OSCServerDevice": {
+      "cases": [
+        {
+          "sender": "osc-three",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        },
+        {
+          "sender": "osc-three",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "loopback",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 5127,
+        "active_samples": 5109,
+        "top_self": [
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 3317,
+            "active_sample_pct": 64.92
+          },
+          {
+            "frame": "osc.py:OSCServerDevice.flush",
+            "samples": 1702,
+            "active_sample_pct": 33.31
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 85,
+            "active_sample_pct": 1.66
+          },
+          {
+            "frame": "numeric.py:array_equal",
+            "samples": 2,
+            "active_sample_pct": 0.04
+          },
+          {
+            "frame": "_function_base_impl.py:copy",
+            "samples": 2,
+            "active_sample_pct": 0.04
+          },
+          {
+            "frame": "plugin.py:TypedConfig.__get__",
+            "samples": 1,
+            "active_sample_pct": 0.02
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "osc.py:OSCServerDevice.flush",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 5109,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 3402,
+            "active_sample_pct": 66.59
+          },
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 3317,
+            "active_sample_pct": 64.92
+          },
+          {
+            "frame": "numeric.py:array_equal",
+            "samples": 2,
+            "active_sample_pct": 0.04
+          },
+          {
+            "frame": "_function_base_impl.py:copy",
+            "samples": 2,
+            "active_sample_pct": 0.04
+          },
+          {
+            "frame": "plugin.py:TypedConfig.__get__",
+            "samples": 1,
+            "active_sample_pct": 0.02
+          }
+        ]
+      }
+    }
+  }
+}
