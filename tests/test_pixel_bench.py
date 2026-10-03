@@ -2,10 +2,21 @@
 
 import base64
 import struct
+import sys
 
 import pytest
 
 from tools.pixel_bench import DDPReceiver, compare_baseline, parse_args, validate_frame
+
+
+def test_sampling_requires_supported_python_and_no_cprofile(monkeypatch) -> None:
+    monkeypatch.setattr(sys, "version_info", (3, 12))
+    with pytest.raises(SystemExit):
+        parse_args(["--sampling", "cpu"])
+    monkeypatch.setattr(sys, "version_info", (3, 15))
+    with pytest.raises(SystemExit):
+        parse_args(["--sampling", "cpu", "--profile"])
+    assert parse_args(["--sampling", "gil", "--loops", "standard"]).sampling == "gil"
 
 
 def packet(

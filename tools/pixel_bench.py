@@ -6,6 +6,10 @@ Examples (run in the project environment):
       --repeats 1 --output /tmp/profile.jsonl
   uv run python tools/pixel_bench.py --baseline /tmp/pixels.jsonl \
       --max-regression 0.10 --output /tmp/after.jsonl
+  python3.15 tools/pixel_bench.py --sampling cpu --loops standard \
+      --streams full --repeats 1 --output /tmp/sampled.jsonl
+  python3.15 -m profiling.sampling replay --flamegraph \
+      /tmp/sampled.jsonl.artifacts/0-full-standard/sampling.bin
 
 Each run has a fresh server process and temporary configuration. The controller
 receives DDP on loopback and validates websocket RGB payloads; no physical device
@@ -23,6 +27,13 @@ are slower and must not be compared with unprofiled runs. Summary medians and
 min/max expose run variation; use longer intervals/repeats on an otherwise idle
 machine before treating a baseline regression as significant. This is a
 throughput/CPU benchmark, not an end-to-end audio or physical LED latency test.
+
+Python 3.15 --sampling launches the worker through profiling.sampling (all
+threads, 1 kHz). Its binary recording includes startup, warmup and shutdown;
+use sufficiently long runs to distinguish sustained costs from imports. Replay
+with the same interpreter version to produce flamegraphs, pstats or JSONL.
+Sampling runs are kept separate from unprofiled baselines. No system tracing
+permissions are changed: the sampler is the worker's parent process.
 """
 
 import argparse
@@ -46,7 +57,6 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 
@@ -159,7 +169,7 @@ def worker(args):
     Virtual.assemble_frame = timed(Virtual.assemble_frame, "assemble")
     DDPDevice.flush = timed(DDPDevice.flush, "flush")
     logging.basicConfig(level=logging.WARNING)
-    with patch.dict(sys.modules, {"uvloop": SimpleNamespace(new_event_loop=factory)}):
+    with patch("ledfx.core.asyncio.new_event_loop", factory):
         core = LedFxCore(
             args.directory, host="127.0.0.1", port=args.port, offline_mode=True
         )
@@ -361,6 +371,20 @@ async def run_one(args, loop, vis, repeat):
         ]
         if args.profile:
             command.extend(["--profile", args.profile])
+        if args.sampling:
+            command = [
+                sys.executable,
+                "-m",
+                "profiling.sampling",
+                "run",
+                "--all-threads",
+                "--mode",
+                args.sampling,
+                "--binary",
+                "-o",
+                str(Path(directory, "sampling.bin")),
+                *command[1:],
+            ]
         proc = process = None
         try:
             proc = await asyncio.to_thread(
@@ -482,7 +506,11 @@ async def run_one(args, loop, vis, repeat):
                 "preview_fps": args.preview_fps,
                 "effect_speed": args.effect_speed,
                 "stream": vis,
-                "profiled": args.profile or False,
+                "profiled": (
+                    f"sampling-{args.sampling}"
+                    if args.sampling
+                    else args.profile or False
+                ),
                 "loop_class": json.loads(ready.read_text())["loop"],
                 "seconds": round(end - begin, 3),
                 "server_cpu_pct": round((cpu1 - cpu0) / (end - begin) * 100, 1),
@@ -528,6 +556,7 @@ async def run_one(args, loop, vis, repeat):
                 "main.prof",
                 "render.prof",
                 "effect.prof",
+                "sampling.bin",
             ):
                 source = Path(directory, name)
                 if source.exists():
@@ -692,6 +721,11 @@ def parse_args(argv=None):
         help="Profile one measured thread per run (default: main). CPython 3.12 cannot run independent cProfiles simultaneously. Inspect .prof files with pstats or SnakeViz",
     )
     p.add_argument(
+        "--sampling",
+        choices=["wall", "cpu", "gil"],
+        help="Python 3.15 all-thread sampling, including startup/warmup; saves replayable sampling.bin",
+    )
+    p.add_argument(
         "--baseline",
         help="Previous JSONL results; fail when median throughput regresses",
     )
@@ -702,6 +736,10 @@ def parse_args(argv=None):
         help="Allowed fractional throughput regression (default 0.10)",
     )
     args = p.parse_args(argv)
+    if args.sampling and (sys.version_info < (3, 15) or args.profile):
+        p.error(
+            "--sampling requires Python 3.15+ and cannot be combined with --profile"
+        )
     if (
         args.pixels <= 0
         or args.vis_pixels <= 0
