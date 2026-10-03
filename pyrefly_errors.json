@@ -8198,27 +8198,6 @@
       "severity": "error"
     },
     {
-      "column": 15,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.amax` called with arguments: (ndarray | Unknown | None, axis=Literal[1], out=Unknown)",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`-` is not supported between `None` and `None`",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/effects/hsv_effect.py",
       "name": "implicit-any-parameter",

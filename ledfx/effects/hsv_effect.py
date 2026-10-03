@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import Field
 
 from ledfx.configuration.plugin import TypedConfig
@@ -48,13 +49,17 @@ class HSVEffect(GradientEffect):
         self.hsv_array = None
         # Pre-allocated working buffers for performance
         self._h_indices = None
-        self._pixel_max = None
+        self._pixel_max: NDArray[np.float64] = np.empty((0, 1))
+        self._saturation_work: NDArray[np.float64] = np.empty(0)
+        self._inverse_saturation: NDArray[np.float64] = np.empty(0)
 
     def on_activate(self, pixel_count):
         self.hsv_array = np.zeros((pixel_count, 3))
         # Pre-allocate working buffers to avoid repeated allocations
         self._h_indices = np.zeros(pixel_count, dtype=int)
         self._pixel_max = np.zeros((pixel_count, 1))
+        self._saturation_work = np.empty(pixel_count)
+        self._inverse_saturation = np.empty(pixel_count)
         # self.output = np.zeros((pixel_count, 3))
 
     def config_updated(self, config):
@@ -77,6 +82,7 @@ class HSVEffect(GradientEffect):
             self.fix_hue_fast(h)
 
         pixels = self.pixels
+        assert pixels is not None
 
         # Convert hues to gradient indexes using pre-allocated buffer
         np.mod(h, 1, out=h)
@@ -87,12 +93,23 @@ class HSVEffect(GradientEffect):
         # Grab the colors from the gradient
         pixels[:] = self.get_gradient()[:, self._h_indices].T
 
-        # Apply saturation to colors - optimized to use pre-allocated buffer
-        np.max(pixels, axis=1, out=self._pixel_max[:, 0])
-        pixels += (self._pixel_max - pixels) * (1 - s).reshape(-1, 1)
-
-        # Apply value (brightness) to colors
-        pixels *= v.reshape(-1, 1)
+        # Three explicit channels avoid the costly short-axis reduction and
+        # full RGB temporaries. Keep the arithmetic order unchanged so the
+        # saturation/value conversion preserves floating-point RGB output.
+        maximum = self._pixel_max[:, 0]
+        np.maximum(pixels[:, 0], pixels[:, 1], out=maximum)
+        np.maximum(maximum, pixels[:, 2], out=maximum)
+        np.subtract(1, s, out=self._inverse_saturation)
+        for channel in range(3):
+            column = pixels[:, channel]
+            np.subtract(maximum, column, out=self._saturation_work)
+            np.multiply(
+                self._saturation_work,
+                self._inverse_saturation,
+                out=self._saturation_work,
+            )
+            np.add(column, self._saturation_work, out=column)
+            np.multiply(column, v, out=column)
 
         self.roll_gradient()
 
