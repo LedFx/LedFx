@@ -15,7 +15,8 @@ Hue are encoding-only; baud-rate, DTLS and hardware capacity are not simulated.
 Discovery, authentication and periodic SDK discovery/keepalive threads are
 excluded; synchronous per-frame SDK serialization remains included.
 
-Frames are precomputed float64 RGB, alternating dense or 1%-changed inputs, or
+Frames are precomputed float64 RGB, alternating dense or roughly 1%-changed
+inputs (at least one pixel), or
 static. Time is spent in flush, not effects, virtual assembly or websocket work.
 --fps 0 measures saturation; use --fps 60 to measure a paced workload. Static
 suppression is reported as zero sends, never as exceptionally high delivered FPS.
@@ -642,6 +643,10 @@ def main() -> None:
         "unmeasured": UNMEASURED,
         "scope": __doc__,
         "sampling": args.sampled_worker,
+        "arguments": {
+            key: str(value) if isinstance(value, Path) else value
+            for key, value in vars(args).items()
+        },
         "loopback_probe": probe_loopback(args.bind)
         if "loopback" in args.modes
         else None,
