@@ -14,7 +14,9 @@ from tools.sender_bench import Sink
 from tools.sender_bench_protocols import make_sender
 
 
-def legacy_osc(data: NDArray[np.generic], mode: str, path: str, start: int) -> list[bytes]:
+def legacy_osc(
+    data: NDArray[np.generic], mode: str, path: str, start: int
+) -> list[bytes]:
     messages = []
     for i, color in enumerate(data.astype(int)):
         values = [value / 255 for value in color]
