@@ -10,6 +10,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable, Mapping
+from dataclasses import replace
 from pathlib import Path
 from typing import Protocol
 
@@ -991,6 +992,11 @@ class SendspinAudioStream:
             self._stop_event = asyncio.Event()
 
         identity, pairing_store = await self._get_identity_and_pairing_store()
+        pairing_config = await pairing_store.get_pairing_config()
+        if not pairing_config.unpaired_access_enabled:
+            await pairing_store.store_pairing_config(
+                replace(pairing_config, unpaired_access_enabled=True)
+            )
         _LOGGER.info(
             "Connecting to Sendspin server: %s as '%s' (id=%s) %s",
             server_url,
