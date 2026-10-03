@@ -55,15 +55,18 @@ def main() -> None:
         if row["status"] == "ok":
             families.setdefault(SPECS[row["sender"]].class_name, []).append(
                 {
-                    key: row[key]
-                    for key in (
-                        "sender",
-                        "pixels",
-                        "pattern",
-                        "mode",
-                        "repeat",
-                        "profiled",
-                    )
+                    "e131_bytes_prototype": row.get("e131_bytes_prototype", False),
+                    **{
+                        key: row[key]
+                        for key in (
+                            "sender",
+                            "pixels",
+                            "pattern",
+                            "mode",
+                            "repeat",
+                            "profiled",
+                        )
+                    },
                 }
             )
     report = {
