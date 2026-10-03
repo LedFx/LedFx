@@ -110,14 +110,8 @@ class LedFxCore:
             self.loop = uvloop.new_event_loop()
             _LOGGER.info("Using uvloop for asyncio loop")
         except ImportError:
-            try:
-                import winloop
-
-                self.loop = winloop.new_event_loop()
-                _LOGGER.info("Using winloop for asyncio loop")
-            except ImportError:
-                self.loop = asyncio.new_event_loop()
-                _LOGGER.info("Using standard asyncio loop")
+            self.loop = asyncio.new_event_loop()
+            _LOGGER.info("Using standard asyncio loop")
 
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)

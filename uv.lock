@@ -293,34 +293,34 @@ wheels = [
 
 [[package]]
 name = "aubio-ledfx"
-version = "0.4.11"
+version = "0.4.12"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version < '3.12' and platform_machine != 'aarch64' and sys_platform != 'darwin') or (python_full_version < '3.12' and platform_machine == 'aarch64' and sys_platform == 'darwin')" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "(python_full_version >= '3.12' and platform_machine != 'aarch64' and sys_platform != 'darwin') or (python_full_version >= '3.12' and platform_machine == 'aarch64' and sys_platform == 'darwin')" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/08/7c/4474bb4642dc36bc7f8931c04b89aa937f1e06d2a94d1f779e3797ec3525/aubio_ledfx-0.4.11.tar.gz", hash = "sha256:b5995b45b45780432a7cd6a6d3d8199a6f8f92adb9503cc5cdc609d3f2e15b54", size = 6253214, upload-time = "2025-11-13T07:17:41.707Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/cd/eb77d00c93d018f9ab733ed298c725f4ade6b8cc046bb21282c1a6d7c012/aubio_ledfx-0.4.12.tar.gz", hash = "sha256:a9091ffd07d35f17f70e0fa39a3463c2c463bf3fab19b0b529564b3160e64e3e", size = 6374588, upload-time = "2026-10-03T07:34:06.042Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/59/cc3825e837b620b706a066cdfef1bb26e0ea6b874fb134a1cd86da953fdd/aubio_ledfx-0.4.11-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:0914010b0776e5955bee712d5ab0a7c8ea46e7add69cc5de7699276433e3ee4c", size = 23554675, upload-time = "2025-11-13T07:16:49.882Z" },
-    { url = "https://files.pythonhosted.org/packages/95/47/1ef26da9d08de43bd7d99a471fc3cc6ddec2ab64fc4c8985a72135d42997/aubio_ledfx-0.4.11-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8da7c2e245df62a515e2a3bddea45077548f4ee76106795a26acd569f0c50ad5", size = 21988526, upload-time = "2025-11-13T07:16:53.003Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/57/34fd8d811ab1d4f35dc9afb8f4292b05ece671bbf94433598f9623dd09ae/aubio_ledfx-0.4.11-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:409cade8c866a34798cb12b166faeb1abae8cfce4de9102826c4dd33a3d2180a", size = 4998378, upload-time = "2025-11-13T07:16:55.616Z" },
-    { url = "https://files.pythonhosted.org/packages/67/e5/50fbf3499fe224e0216050dd4f6e021a83854f7e4f22a6d79a6aad15f3c4/aubio_ledfx-0.4.11-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5f9676b8f20d063ab7eca4d6c2358568d10b92ab7f1be909cfad321757c99186", size = 5067675, upload-time = "2025-11-13T07:16:57.391Z" },
-    { url = "https://files.pythonhosted.org/packages/6b/f5/471a53ff1f72f8ff009c8e40a2cfc3dccfdba1541076ec7e51c937f2780c/aubio_ledfx-0.4.11-cp311-cp311-win_amd64.whl", hash = "sha256:6dccf705f67ea2873e2189be39b53bb3276d507a2fd442e63da92f301b989e6e", size = 11361140, upload-time = "2025-11-13T07:16:59.539Z" },
-    { url = "https://files.pythonhosted.org/packages/1e/48/ca7705a8f84d4f89401355a07de96f32dd58e81c8a639968cc0ff85c8268/aubio_ledfx-0.4.11-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:77da517e2406da17977f71fed933bb890a00553208c2c76b7108af5a2cd296d7", size = 23554855, upload-time = "2025-11-13T07:17:02.946Z" },
-    { url = "https://files.pythonhosted.org/packages/31/f6/6253058c805a77e5911ae1242738a761907222a6e723eb64bc36fb3a30c6/aubio_ledfx-0.4.11-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:d3b1192dfdac62f719bc29255ce5937683deca4b74e9e39a731e17ccecfb000b", size = 21988712, upload-time = "2025-11-13T07:17:06.779Z" },
-    { url = "https://files.pythonhosted.org/packages/f9/0f/46a81a5f2ac86fc4a7c0553e1efd61419f32153dc248732464bc2e583df1/aubio_ledfx-0.4.11-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:04be6ae31e5d10a04ae216ee37a170ad754350c4754321aea0f1c3d4889be33c", size = 4998657, upload-time = "2025-11-13T07:17:09.372Z" },
-    { url = "https://files.pythonhosted.org/packages/af/3c/cf1a478593e6084ed056d62eab8917b73ef29d77d7952d6981aaa46a79e5/aubio_ledfx-0.4.11-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b68e5d8e118a4f3fd75c2c2984e8de3d35aafb2b126a5623cc0b1f051994862c", size = 5067867, upload-time = "2025-11-13T07:17:10.926Z" },
-    { url = "https://files.pythonhosted.org/packages/87/f4/06a82f9290a889928ec6a61e86469ab29efa1803d0902a41ca6c3a347a91/aubio_ledfx-0.4.11-cp312-cp312-win_amd64.whl", hash = "sha256:58cd767692c63b89e7ba156f07d10c6f6ecb5a4102d9b74ceb43dc02c8b6efc5", size = 11361422, upload-time = "2025-11-13T07:17:12.957Z" },
-    { url = "https://files.pythonhosted.org/packages/e5/a8/845aa369424433f4e1c690d9cedec03472a09cfda3a77349269f2cd02b7b/aubio_ledfx-0.4.11-cp313-cp313-macosx_10_15_x86_64.whl", hash = "sha256:c5d039a732ccf133e3f21e73614d06c4e526c97da575fc79ba2d7a3883a65970", size = 23554861, upload-time = "2025-11-13T07:17:16.449Z" },
-    { url = "https://files.pythonhosted.org/packages/15/53/ec35dc3190bbbc76a420d2e44a62584111dea88a75321023633df02f4165/aubio_ledfx-0.4.11-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:206b031f300df0fc4d336a4e8c23d9e00c94c13b256c34111f52827d804db63f", size = 21988712, upload-time = "2025-11-13T07:17:19.644Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/11/d83e850415e130c7458e4be4924249a0690109bd0f392d324714209eb173/aubio_ledfx-0.4.11-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d76212db70b2142410fdf6eb6e74fb591c9c30332e245a0e18c4850bfffab1c4", size = 4998657, upload-time = "2025-11-13T07:17:22.098Z" },
-    { url = "https://files.pythonhosted.org/packages/36/8c/4f08539c79d9231493ece54d997d0bc2ae85b8ff6349a6e37000d51e1aa6/aubio_ledfx-0.4.11-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:e8d63cabbb1fb2865bdda5858a664d94caebd8a3e9abbe7f5c2efc1b4c1190fb", size = 5067872, upload-time = "2025-11-13T07:17:23.791Z" },
-    { url = "https://files.pythonhosted.org/packages/45/1f/9b915ad110725f200f7a3b7ddb7b49138f9ea6b61e352a0829587cb8f3a3/aubio_ledfx-0.4.11-cp313-cp313-win_amd64.whl", hash = "sha256:366a91757d38b7c7ea619fc607423ab5239269c5667ebbdcb287b6f66066175f", size = 11361425, upload-time = "2025-11-13T07:17:25.595Z" },
-    { url = "https://files.pythonhosted.org/packages/19/09/a154fbdf144d0e12a92f28a631b440261782b8d3436c424f1757dff2af9c/aubio_ledfx-0.4.11-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:f4f0a20c71c03dc4760df6f638de87b137234b302b2bee605d9506ea82be98e0", size = 23555007, upload-time = "2025-11-13T07:17:29.487Z" },
-    { url = "https://files.pythonhosted.org/packages/66/3f/e50b208f04538305cacfaddab67ebac6950b1be010f2efd83caf5d4e85b4/aubio_ledfx-0.4.11-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:4d4e68a17688eadca5d1feeda319da4b14f28a935ee11b1cfe7f3b95839b8fa9", size = 21988543, upload-time = "2025-11-13T07:17:33.014Z" },
-    { url = "https://files.pythonhosted.org/packages/60/19/8524728087e83f84c86dae26dd2f48ebd2a85b6ef8bfc0362251ab31c080/aubio_ledfx-0.4.11-cp314-cp314-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:fc3d211f86a26ea753dee97a78bf3989f80e4c6a1addbbecfc41f85f34ad1ad4", size = 4998484, upload-time = "2025-11-13T07:17:35.242Z" },
-    { url = "https://files.pythonhosted.org/packages/ed/fb/99e6a74724d7c17b1458b9e9f731fc86d8841035ddb7fbcd8a08c4472165/aubio_ledfx-0.4.11-cp314-cp314-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:87b5d1c399433fc5e2195b6557db0e34e58c84354dc96c78ba6154ada1ebd706", size = 5067979, upload-time = "2025-11-13T07:17:37.187Z" },
-    { url = "https://files.pythonhosted.org/packages/01/00/ca2a0268f8d3e61238d405592f509ce1e84c4a90b8cb6f7f54b47544f6d9/aubio_ledfx-0.4.11-cp314-cp314-win_amd64.whl", hash = "sha256:99a4c32b5e418877de0ad95460c1a42fbc9c24c3430431ca200cabfee479f08a", size = 11619231, upload-time = "2025-11-13T07:17:39.213Z" },
+    { url = "https://files.pythonhosted.org/packages/40/28/e34d4d97a826e747b6178773cf33c73bd5297aa18c6055df0920f062327c/aubio_ledfx-0.4.12-cp311-cp311-macosx_10_15_x86_64.whl", hash = "sha256:514d5781132c57bd95f0a07173f5ebead4df713ac01cd46a5a9fbae5c59fa4d6", size = 23913409, upload-time = "2026-10-03T07:32:27.524Z" },
+    { url = "https://files.pythonhosted.org/packages/95/8f/eb940fd196ea30a4690f7b8483dbe4f5fbce718dea07c688feadfeab3e82/aubio_ledfx-0.4.12-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:bcc6d8f1fa6dff67164016b586efcc127575321ac3cd0be9d3c4d2a12745719f", size = 22623444, upload-time = "2026-10-03T07:32:31.071Z" },
+    { url = "https://files.pythonhosted.org/packages/0e/48/fc9551d901b55695b5792456575784463a076dbb3d2e06a65bdd167170c2/aubio_ledfx-0.4.12-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:a18e62cbf5727a4f297f780664a7d7527a0cf4fa283f7e530f3596e3fb182a41", size = 26660895, upload-time = "2026-10-03T07:32:35.247Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/1b/2dc5ac55c720be903b65f2dd7f06e02156951abdbf09c16121c0f11044ff/aubio_ledfx-0.4.12-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:dd7d4b2e5fbe0e95a9263f4109030b82e1fc04646994de8c0702e2a4cc87f7fe", size = 27464259, upload-time = "2026-10-03T07:32:39.597Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/9a/1af0e14101b6abc87b6949dda70accd8678ad39c0162da7c4e73f5819bc1/aubio_ledfx-0.4.12-cp311-cp311-win_amd64.whl", hash = "sha256:bed0cfd5e1c61c4162399dbe9fbecd7757f399bc33b168b29122ae9ed9c2bd04", size = 11828421, upload-time = "2026-10-03T07:32:43.015Z" },
+    { url = "https://files.pythonhosted.org/packages/72/ae/9b89dbb69225d9e63fd3fbc831c15bf6579f5811ceb53ca7c25d6ac4080b/aubio_ledfx-0.4.12-cp312-cp312-macosx_10_15_x86_64.whl", hash = "sha256:87ead5732cfd26c5274fb2e5db93e919b5370f85a95dad9de41ae8a4e7bb31bf", size = 23913079, upload-time = "2026-10-03T07:32:46.812Z" },
+    { url = "https://files.pythonhosted.org/packages/99/c9/127007b1d385321cded6fc140d8892a8f552fb275340749acb310066aadb/aubio_ledfx-0.4.12-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:a00a28c2449bcde046a282c1a07313a4f49f0db622136eb3c7dc6778830b4607", size = 22623670, upload-time = "2026-10-03T07:32:51.114Z" },
+    { url = "https://files.pythonhosted.org/packages/01/3a/565fa5ec37238695e345b1008f22be8d8de4b9d4f580ffddc1168dcd3e36/aubio_ledfx-0.4.12-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:3f6715cbf85bcedb27e49aae2b8cae2ed13d4b7b9ed78d6648977de46e395ed1", size = 26660812, upload-time = "2026-10-03T07:32:55.085Z" },
+    { url = "https://files.pythonhosted.org/packages/27/a2/3d5869f5c40d22fd5cf08fc24cbf6d4b94f43eecf9972a7eb3590e5bb3b5/aubio_ledfx-0.4.12-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:c6eebb4d4b92bcdfa54d3d53df15d5ff18aa983ba0ba31cb95f611ffa4cda8bc", size = 27464980, upload-time = "2026-10-03T07:32:59.903Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/d6/a469985802711085f8c142f22f4a01cc5630874da8b1554d909a16dc38fd/aubio_ledfx-0.4.12-cp312-cp312-win_amd64.whl", hash = "sha256:859ed95fd1dab89526f5eb0781a0f9760fefb1efd339811c683b06456027c271", size = 11828500, upload-time = "2026-10-03T07:33:03.317Z" },
+    { url = "https://files.pythonhosted.org/packages/d3/d6/fba4c132a0549f13f98fba02e028f3487e62c37e4de8e1d37b167d9798d8/aubio_ledfx-0.4.12-cp313-cp313-macosx_10_15_x86_64.whl", hash = "sha256:f1faabd7930081d44e3b30952198d955502dd636fdf22754c564a8a45479b385", size = 23913083, upload-time = "2026-10-03T07:33:07.647Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/b3/c762dcfe6355586a4c3c3f2c9d87b4093890144816e3f8412787df946394/aubio_ledfx-0.4.12-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:dccdc2d6a1c651b37f311f3884af3a903533c5609ee71f96cd476019e4a4a78d", size = 22623675, upload-time = "2026-10-03T07:33:11.962Z" },
+    { url = "https://files.pythonhosted.org/packages/66/89/8490f2bee8e7a2a25c2bf1603e6fd1aa4462a7f56e8735dff114df8ad26a/aubio_ledfx-0.4.12-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:27b6de1a82ce526ac6ea406874c44493e56ef0f9bcb88955603bdc20ebb9208e", size = 26660814, upload-time = "2026-10-03T07:33:16.474Z" },
+    { url = "https://files.pythonhosted.org/packages/26/f5/bcdbeb2c84f18c6082d8df6f0ea243c1145b747418cde1774c6ce851bec0/aubio_ledfx-0.4.12-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:f6dd6be22adb783ee8f9768feca241e09026bffd7c1f840a82a0ad3117f6a74f", size = 27464986, upload-time = "2026-10-03T07:33:20.758Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/8e/9613c6e5dadbd1de7a20376ca3c0f771208090c4b505384331868ad92d58/aubio_ledfx-0.4.12-cp313-cp313-win_amd64.whl", hash = "sha256:854bd39d846989a844e6f7eb6a98aa3cd12b9d8b261d132632b83ebca2026955", size = 11828504, upload-time = "2026-10-03T07:33:24.163Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/5d/513209afbac8978ea68f1e0fe7eec702758b5ca8b2d5b7220a1bf7d5c838/aubio_ledfx-0.4.12-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:adc00d7ed919b08089c28e4ee8647c0fa7824a7d7eead30bbdd262918277e19f", size = 23913349, upload-time = "2026-10-03T07:33:28.216Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/de/db231808b0729eec3df6b7fdad2a46286039ce9423d09cac7e28eda20feb/aubio_ledfx-0.4.12-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:d0ac5d760245923edc3ca8cf00b3e7f05e02b753ccdc312dd55bd0a525e6677e", size = 22623259, upload-time = "2026-10-03T07:33:32.318Z" },
+    { url = "https://files.pythonhosted.org/packages/e0/b2/0c9e4e52d39fb9b7c8db950b56dfced9c6cd44bfe19cf2b95e472f2f0b31/aubio_ledfx-0.4.12-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:7573275e817d83d4913626eb4023900d00a66d464127b737da485c3226ad1458", size = 26660633, upload-time = "2026-10-03T07:33:36.543Z" },
+    { url = "https://files.pythonhosted.org/packages/da/d2/683750f2015e00eeabe6b4eef94f88c27096a2fcae01185b2a4f53a39a19/aubio_ledfx-0.4.12-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:3b1480d8d3acb70caabd8c121fa0c231e62b47b0cbccd8a46f233ae350e1b334", size = 27465020, upload-time = "2026-10-03T07:33:40.739Z" },
+    { url = "https://files.pythonhosted.org/packages/21/f4/24e90c132861b3bc25e441fafce2271b4461b723feb9e58d1b75dcbf4168/aubio_ledfx-0.4.12-cp314-cp314-win_amd64.whl", hash = "sha256:bf33a8d52946676d876cc631eb7025b70e7f0f140317930e9cc245d676dad1d2", size = 12112408, upload-time = "2026-10-03T07:33:43.939Z" },
 ]
 
 [[package]]
@@ -1423,7 +1423,6 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "uvloop", marker = "sys_platform != 'win32'" },
     { name = "wheel" },
-    { name = "winloop", marker = "sys_platform == 'win32'" },
     { name = "winrt-windows-foundation", marker = "sys_platform == 'win32'" },
     { name = "winrt-windows-media-control", marker = "sys_platform == 'win32'" },
     { name = "xled" },
@@ -1476,7 +1475,7 @@ docs = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9.1,<4.0.0" },
     { name = "aiosendspin", marker = "python_full_version >= '3.12'", specifier = ">=9.1.1,<9.2.0" },
-    { name = "aubio-ledfx", specifier = ">=0.4.11" },
+    { name = "aubio-ledfx", specifier = ">=0.4.12" },
     { name = "audio-hotplug", specifier = ">=0.1.0" },
     { name = "certifi", specifier = ">=2023.11.17" },
     { name = "cffi", specifier = ">=0.16.0" },
@@ -1496,7 +1495,7 @@ requires-dist = [
     { name = "psutil", specifier = ">=5.9.7" },
     { name = "pybase64", specifier = "~=1.5.0" },
     { name = "pydantic", specifier = ">=2.13,<3" },
-    { name = "pyfastnoiselite-ledfx", specifier = ">=0.0.8" },
+    { name = "pyfastnoiselite-ledfx", specifier = ">=0.0.9" },
     { name = "pyflac", marker = "python_full_version >= '3.12'", specifier = ">=2.2.0" },
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pystray", specifier = ">=0.19.5" },
@@ -1514,7 +1513,6 @@ requires-dist = [
     { name = "typing-extensions", specifier = ">=4.4" },
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.16.0" },
     { name = "wheel", specifier = ">=0.36.2" },
-    { name = "winloop", marker = "sys_platform == 'win32'", specifier = ">=0.3.1" },
     { name = "winrt-windows-foundation", marker = "sys_platform == 'win32'", specifier = ">=2.0.0" },
     { name = "winrt-windows-media-control", marker = "sys_platform == 'win32'", specifier = ">=2.0.0" },
     { name = "xled", specifier = ">=0.7.0" },
@@ -2781,23 +2779,23 @@ wheels = [
 
 [[package]]
 name = "pyfastnoiselite-ledfx"
-version = "0.0.8"
+version = "0.0.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c6/b8/d08ff7221b53d4529515276a1d120d97b674b7ed44845ecd4e44ee1047a3/pyfastnoiselite_ledfx-0.0.8.tar.gz", hash = "sha256:2089dfd75e1c464a92b886140e1e7ad761d4eee5419c79180cfa2af729a61a02", size = 56908, upload-time = "2026-09-27T06:18:24.648Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/79/3b/1569011ff0a0c8cc3367e9638a532ed5b44ebfc9ec806cb44c6e85e7d850/pyfastnoiselite_ledfx-0.0.9.tar.gz", hash = "sha256:747ce100335acfd3a8c21c875009cef41c6e65095e2568e33940152ba2d5d0f5", size = 66887, upload-time = "2026-10-03T06:53:16.56Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/c2/e9a43ae362621c47d123f0752f89582e0b03cc839099cb9681bd02866ec6/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-macosx_10_9_x86_64.whl", hash = "sha256:e38da0970c15d8fbe6fe70b4cfd3c89614d467a0508127b054ffa736e4de165c", size = 104251, upload-time = "2026-09-27T06:18:11.109Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/68/c5f1b1ee21850da4d83a3168313e802d6993ffd61e4e64559482e8167944/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:ccdf045f109de07f2a0576a032211d06b04a7e0885904d3d58980d08fb59ae85", size = 103657, upload-time = "2026-09-27T06:18:12.814Z" },
-    { url = "https://files.pythonhosted.org/packages/31/0e/4247fc88367b50956d4f7970a83de70b11bfb77379f30b73722e0617e9a1/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b1b7e5af99da0f58ba97216489bf03ebe09baca358297da6d03cb2fc0c293909", size = 128197, upload-time = "2026-09-27T06:18:14.124Z" },
-    { url = "https://files.pythonhosted.org/packages/7a/78/76db902d3a8913f51c8ef6c2c4db6225b1bf80aa7cea0df21d6b9130caa4/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-manylinux_2_24_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:ea18163aff97f0646dfc3b8247f8c2d44f791f51aef7e780988c4585d7ca301c", size = 119096, upload-time = "2026-09-27T06:18:15.46Z" },
-    { url = "https://files.pythonhosted.org/packages/c7/b3/289b08d082a1aedf6fde8c2808f7c7cd98b7382170df69b8b11b6ea85ce5/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f0859b021fa38eaa7fb9ab61062fb0f7f99e49e576fe0e96c276ec6e1037ebef", size = 132707, upload-time = "2026-09-27T06:18:17.071Z" },
-    { url = "https://files.pythonhosted.org/packages/2e/de/26045e47c99586eab9a0bffd0cfef825b79d7ee39fa6c468ea77d70cfd70/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:1b92103eaea303e76c8820b38d5e358f08e03ce547c49785df66ea880ec40443", size = 1112832, upload-time = "2026-09-27T06:18:18.602Z" },
-    { url = "https://files.pythonhosted.org/packages/8e/3f/337f6b7e0af4d0f9ab1d33bfa2b738c663ccef5fbdc4a7b79889f02af308/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:2b85ee658196ddb48b77290682a196353fc0d340bb446db9ed32075c9fbdc430", size = 968265, upload-time = "2026-09-27T06:18:20.321Z" },
-    { url = "https://files.pythonhosted.org/packages/f3/16/f56f192b4f258c3ab6188b7577a5425bd9a427583640a6172eb3a5d36807/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:109541e3a05c11a13f14c9ee00884ea11e7ec8c974e637032aca7fe5efae1e97", size = 1166453, upload-time = "2026-09-27T06:18:21.915Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/12/666c776e215e401257c4a31c7c90932615547098fa99598e00b9d46eafe7/pyfastnoiselite_ledfx-0.0.8-cp311-abi3-win_amd64.whl", hash = "sha256:6feba93557b3d84db107796e3475ee32b755530ae7f629d21723673f12558515", size = 100369, upload-time = "2026-09-27T06:18:23.417Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/4d/b7635905bf5725114ac7e39e7e0b1c2364368c857bc0073b495eaf00b26f/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-macosx_10_9_x86_64.whl", hash = "sha256:488fd9c6bc991c21e33716b08904566c5e3bacb289cb4f22841fb2c7dcd4d7e6", size = 104376, upload-time = "2026-10-03T06:53:05.205Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/56/2b0ea881383792145ab5efcda81d7ba2b5f801677f011d6f62f8275b5f76/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-macosx_11_0_arm64.whl", hash = "sha256:c02c256fdbab64ffcca3c31372c485cbe3c5dd08ff266255e2093976325ceb7a", size = 103771, upload-time = "2026-10-03T06:53:06.661Z" },
+    { url = "https://files.pythonhosted.org/packages/96/c5/3f71844f8f5ca59e2f49337fb5a7894f404a52c1d93a81ef1efd95e1bc95/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-manylinux_2_24_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:bb3e8a2edaa5ca4818cea7e688403e3c670d58710e2128ead16e5cb3a7950ed9", size = 128316, upload-time = "2026-10-03T06:53:07.961Z" },
+    { url = "https://files.pythonhosted.org/packages/cf/ed/3633d370663140c38ca7d5b93d546766453605aa46e979da41dafec73963/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-manylinux_2_24_armv7l.manylinux_2_31_armv7l.whl", hash = "sha256:1b63c6d6b1ddc6991c58994e414e356c00e4233bb63a59b714504e681ae4ab96", size = 119234, upload-time = "2026-10-03T06:53:09.232Z" },
+    { url = "https://files.pythonhosted.org/packages/30/6d/3d323d2d778936ff45aad03dd63e40f0b9d832e1181dc2b45ee82984a84c/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:0bb6d8cbd16eeedeabd305b723f2109236e0436f9f56697397857fa7539330b4", size = 132828, upload-time = "2026-10-03T06:53:10.332Z" },
+    { url = "https://files.pythonhosted.org/packages/55/05/e01d64cd2624af62818580daedec363c3d4665642e194a5a17ec4f59a7d7/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:8801b77d7bc2ae3f1270be8b092228d436daeebdb2dfc65f9f92d5e2a3e853b4", size = 1112956, upload-time = "2026-10-03T06:53:11.435Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/86/c3a191c4693e24a20bb1a7401ff4daec5a9b0a0af8b2a8fae8b9b76f6831/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-musllinux_1_2_armv7l.whl", hash = "sha256:b2f400387834e8e3fd929051e8a5f3f2e654c1a77ba54c1e1b51d4750081bb4b", size = 968415, upload-time = "2026-10-03T06:53:12.775Z" },
+    { url = "https://files.pythonhosted.org/packages/31/41/4582bc259c681bc3e17255398846e6f65093db6f26854ead25e9f14bcb8e/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:3714be821cf589aef7246988afbfde752eea8797a0fcea1f005c8fca6f614a88", size = 1166573, upload-time = "2026-10-03T06:53:14.075Z" },
+    { url = "https://files.pythonhosted.org/packages/54/8d/f44728e27fa68f00dbc0b4e8805ce4be386b3fa86f5425173e35c570ccf6/pyfastnoiselite_ledfx-0.0.9-cp311-abi3-win_amd64.whl", hash = "sha256:d39340876a50fe62a673e9d5880685fa9e27cf1e6efee8f755f69f6afe16cdb6", size = 100496, upload-time = "2026-10-03T06:53:15.488Z" },
 ]
 
 [[package]]
@@ -4398,24 +4396,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/d0/20/50ed6bdf27dec98b568a8ae25dc599f35baa3d9709f9e83fd1edb56b9a90/wheel-0.48.0.tar.gz", hash = "sha256:94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322", size = 66471, upload-time = "2026-08-11T22:02:27.327Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2e/29/69cfbb602cd91690c55d38ba9fe53e6a7e76a6fa647bf38f19c138d25449/wheel-0.48.0-py3-none-any.whl", hash = "sha256:3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab", size = 33320, upload-time = "2026-08-11T22:02:26.1Z" },
-]
-
-[[package]]
-name = "winloop"
-version = "0.6.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b7/0f/cac40c803a7f0bf6a0ce6dd8f696e4029e16451233a4f2b5e96e8686fd80/winloop-0.6.3.tar.gz", hash = "sha256:1ea7b90487f720eccf984dc65b793550bc86fcdc7c2f9b9f4fbfeac23f2b8dd0", size = 2560328, upload-time = "2026-04-27T16:08:11.897Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/e3/6b7f750da99cf618f82fb64249a43b5eb6fc562daad1bc21e59a15e7e27d/winloop-0.6.3-cp311-cp311-win_amd64.whl", hash = "sha256:23f8888c193ff4667d223e7664c3d74246bb8132b3b0c17d758828ef5102effb", size = 647407, upload-time = "2026-04-27T16:07:55.257Z" },
-    { url = "https://files.pythonhosted.org/packages/26/b3/8364ca9c85627d91ae87c19a6a1ab571608ffbd4148b04d9b8206e67d2b7/winloop-0.6.3-cp311-cp311-win_arm64.whl", hash = "sha256:83c0ae348f66e162a79fdff5b681835d55383a3ac7fc9fdbce6681d5914f6a51", size = 530451, upload-time = "2026-04-27T16:07:56.911Z" },
-    { url = "https://files.pythonhosted.org/packages/3b/91/5c3fa198fa5191dbe4cfed32305687a184d3bb4998cd2d6149b2b8055b13/winloop-0.6.3-cp312-cp312-win_amd64.whl", hash = "sha256:52d2961d16d38cc6313a122567e387522092c452a78c8d0354801f31b1565ec1", size = 644940, upload-time = "2026-04-27T16:07:58.434Z" },
-    { url = "https://files.pythonhosted.org/packages/9b/a1/faa6833ac3ece9eaf23e14a695eb8baf25987e959e3abee003589e06805a/winloop-0.6.3-cp312-cp312-win_arm64.whl", hash = "sha256:33d2d275b7eca468958478555076e2e2814f5d7f94feffdc27b4e6409c645094", size = 529122, upload-time = "2026-04-27T16:07:59.737Z" },
-    { url = "https://files.pythonhosted.org/packages/5c/00/b1b78d7db4257f583b9bb514fdeca98ebd556232189f31133d88d378103b/winloop-0.6.3-cp313-cp313-win_amd64.whl", hash = "sha256:393289e579d4aa36db1521e27bfa5680b2bf995a4c4cd915df3e34abca736e2d", size = 644475, upload-time = "2026-04-27T16:08:00.858Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/aa/a0d971f1b70b7f223fd0d5e03a521fa84b605697c9b0eb764561fbb4386b/winloop-0.6.3-cp313-cp313-win_arm64.whl", hash = "sha256:42e3fee166cdd53410122f29fa1df1c6844f2a4327d8357edfb6bb24ceb65b27", size = 528391, upload-time = "2026-04-27T16:08:02.05Z" },
-    { url = "https://files.pythonhosted.org/packages/b5/a3/ba3220d03cfe592baa78776892910dd11945b133b6e41714191f3e486b53/winloop-0.6.3-cp314-cp314-win_amd64.whl", hash = "sha256:2d57782d2191c5e83475f58fb6423af9fb4bf3823fb05771e9a3caa5bb870e0d", size = 655543, upload-time = "2026-04-27T16:08:03.223Z" },
-    { url = "https://files.pythonhosted.org/packages/7a/02/0dddf67968e25c44fe112ac8652eb83c86e8d5c75ae333b2795ee6da4a6f/winloop-0.6.3-cp314-cp314-win_arm64.whl", hash = "sha256:e04cc1bf248919444afa5aefe04328c2064a89a6d98fe3c0fcb9e65323068126", size = 547130, upload-time = "2026-04-27T16:08:04.394Z" },
-    { url = "https://files.pythonhosted.org/packages/83/26/68e5efa454b418a2df92ece323029f2f917573726ab8b1a98e334c77d367/winloop-0.6.3-cp314-cp314t-win_amd64.whl", hash = "sha256:d8fe1fce02c390836248f97403666d3b2e20c661820535e9b60330a60e86ffe6", size = 805006, upload-time = "2026-04-27T16:08:05.654Z" },
-    { url = "https://files.pythonhosted.org/packages/0f/8d/52eaa9187b88596b0a8b646874cfec5a5c3fce8c52b5182be1a0253203a3/winloop-0.6.3-cp314-cp314t-win_arm64.whl", hash = "sha256:447006f38f13827ff4600e7beeda70367370cb8dab8ea84042e8fa1749f32b1c", size = 576206, upload-time = "2026-04-27T16:08:07.007Z" },
 ]
 
 [[package]]
