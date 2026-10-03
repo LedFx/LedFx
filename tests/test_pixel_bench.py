@@ -6,7 +6,13 @@ import sys
 
 import pytest
 
-from tools.pixel_bench import DDPReceiver, compare_baseline, parse_args, validate_frame
+from tools.pixel_bench import (
+    DDPReceiver,
+    UnpacedClock,
+    compare_baseline,
+    parse_args,
+    validate_frame,
+)
 
 
 def test_sampling_requires_supported_python_and_no_cprofile(
@@ -101,6 +107,11 @@ def test_baseline_uses_medians_and_rejects_unmatched_scenarios() -> None:
     assert len(failures) == 1
     assert "ws_fps" in failures[0]
     assert compare_baseline(baseline, baseline, 0.1) == []
+    for flag in ("unpaced", "unpaced_preview"):
+        assert (
+            "no matching"
+            in compare_baseline([{**baseline[0], flag: True}], baseline, 0.1)[0]
+        )
     assert (
         "no matching"
         in compare_baseline([{**baseline[0], "profiled": True}], baseline, 0.1)[0]
@@ -123,3 +134,35 @@ def test_baseline_uses_medians_and_rejects_unmatched_scenarios() -> None:
 def test_invalid_benchmark_parameters_fail_early(arguments: list[str]) -> None:
     with pytest.raises(SystemExit):
         parse_args(["--loops", "standard", *arguments])
+
+
+def test_unpaced_clock_yields_without_requested_delay(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[float] = []
+    monkeypatch.setattr("tools.pixel_bench.time.sleep", calls.append)
+    clock = UnpacedClock()
+    before = clock.perf_counter()
+    clock.sleep(10)
+    assert calls == [0]
+    assert clock.perf_counter() >= before
+
+
+def test_process_receiver_snapshots_complete_frames_and_stops() -> None:
+    import socket
+
+    from tools.pixel_bench import DDPCollector
+
+    collector = DDPCollector(1, "127.0.0.2")
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.sendto(packet(0, b"rgb", push=True), ("127.0.0.2", collector.port))
+        # Snapshot requests can arrive before the UDP packet; retry with a bound.
+        for _ in range(100):
+            counts = collector.snapshot()
+            if counts[3]:
+                break
+        assert counts == [1, 13, 1, 1, 0]
+    finally:
+        collector.close()
+    assert not collector.process.is_alive()
