@@ -1,0 +1,442 @@
+{
+  "purpose": "Python 3.15 sampling spike: 500,000 Rainbow pixels, real rendering, loopback DDP and validated websocket RGB.",
+  "date": "2026-10-03",
+  "baseline_code": "327e85fc (same production code as baseline working tree; metadata predates commit)",
+  "optimized_code": "e7e21f2f",
+  "environment": {
+    "python": "3.15.0rc2 (main, Sep 24 2026, 17:59:02) [Clang 22.1.3 ]",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+    "cpu_count": 24,
+    "packages": {
+      "aiohttp": "3.14.3",
+      "numpy": "2.5.3",
+      "uvloop": "0.22.1",
+      "winloop": null,
+      "aubio-ledfx": "0.4.12",
+      "pyfastnoiselite-ledfx": "0.0.9",
+      "samplerate-ledfx": "0.4.0",
+      "audio-hotplug": "0.1.0",
+      "python-rtmidi": "1.5.8",
+      "pyflac": "3.0.0",
+      "psutil": "7.2.2"
+    }
+  },
+  "method": {
+    "pixels": 500000,
+    "requested_output_fps": 60,
+    "effective_output_fps": 62,
+    "preview_fps": 60,
+    "effect_speed": 6,
+    "warmup_seconds": 2,
+    "measured_seconds": 8,
+    "repeats": 3,
+    "loop": "standard",
+    "profiled_throughput_runs": false
+  },
+  "commands": [
+    "python tools/pixel_bench.py --loops standard --output /tmp/before.jsonl",
+    "python tools/pixel_bench.py --loops standard --baseline /tmp/before.jsonl --output /tmp/after.jsonl",
+    "python3.15 tools/pixel_bench.py --sampling cpu --loops standard --streams full --seconds 15 --repeats 1 --output /tmp/sampled.jsonl",
+    "python3.15 -m profiling.sampling replay --flamegraph -o /tmp/pixels.html /tmp/sampled.jsonl.artifacts/0-full-standard/sampling.bin"
+  ],
+  "sampling": {
+    "method": "Python 3.15.0rc2 profiling.sampling, all threads, 1 kHz; 15 measured seconds plus startup/warmup/shutdown. Percentages are inclusive stack sample shares, not wall-clock percentages.",
+    "before_cpu": {
+      "samples": 27173,
+      "hsv_to_rgb_pct": 52.7,
+      "ddp_send_out_pct": 25.1,
+      "json_encoding_pct": 3.4
+    },
+    "after_cpu": {
+      "samples": 19616,
+      "hsv_to_rgb_pct": 37.8,
+      "ddp_send_out_pct": 32.9,
+      "json_encoding_pct": 4.1
+    },
+    "after_gil": {
+      "samples": 3625,
+      "hsv_to_rgb_pct": 11.9,
+      "ddp_send_out_pct": 31.9,
+      "json_encoding_pct": 23.6
+    },
+    "no_subscriber": "Before the guard, roughly 10% of CPU samples resized an unused preview."
+  },
+  "changes": [
+    "Remove uvloop and winloop runtime dependencies; use standard asyncio across platforms.",
+    "Replace six-way HSV selection, retaining arithmetic and RGB rounding.",
+    "Skip preview preparation without visualisation listeners, supporting later subscriptions.",
+    "Avoid unnecessary preview flattening and uint8 copies."
+  ],
+  "next_candidates": [
+    "DDP sends 1,042 UDP packets per frame: investigate batching/device output isolation, validating delivered frames.",
+    "JSON encoding is a substantial remaining GIL cost: assess binary pixel websocket messages with frontend compatibility."
+  ],
+  "limitations": [
+    "Synthetic Rainbow workload on one WSL2 host, not all effects or physical hardware/audio latency.",
+    "Server CPU excludes sampler/receiver; 100% means one core.",
+    "Output is rate limited. Gains mainly free CPU capacity; full websocket FPS did not materially improve.",
+    "Loopback UDP can drop packets; complete-frame rates are recorded separately and malformed packets fail validation.",
+    "Full preview bypasses the product cap only inside the benchmark worker.",
+    "Python 3.15 uses an isolated experimental environment, including samplerate-ledfx 0.4.0. Project support remains below 3.15.",
+    "Sampling includes startup/shutdown. Use unprofiled runs to compare throughput.",
+    "Loop accelerators must be installed separately for optional comparisons.",
+    "Native Windows comparisons exclude unused FLAC/MIDI modules whose source builds require MSVC."
+  ],
+  "validation": [
+    "109 focused tests passed on Python 3.12 and 3.15.",
+    "Ruff lint/format, repository Pyrefly baseline and git diff checks passed.",
+    "CI smoke startup passed on Python 3.12 and 3.15 using standard asyncio.",
+    "Three-run throughput comparison passed the 10% regression gate for all scenarios."
+  ],
+  "results": {
+    "before": {
+      "linux/3.15/standard/ddp/500000/60/60/6/none/False": {
+        "runs": 3,
+        "metrics": {
+          "render_fps": {
+            "median": 61.32,
+            "min": 60.07,
+            "max": 61.33
+          },
+          "effect_fps": {
+            "median": 53.7,
+            "min": 53.32,
+            "max": 54.46
+          },
+          "ws_fps": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "ws_changed_fps": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "ddp_complete_fps": {
+            "median": 59.07,
+            "min": 56.08,
+            "max": 59.96
+          },
+          "server_cpu_pct": {
+            "median": 152.5,
+            "min": 150.5,
+            "max": 154.0
+          },
+          "rss_mb": {
+            "median": 288.9,
+            "min": 282.6,
+            "max": 292.8
+          }
+        }
+      },
+      "linux/3.15/standard/ddp/500000/60/60/6/default/False": {
+        "runs": 3,
+        "metrics": {
+          "render_fps": {
+            "median": 60.48,
+            "min": 59.87,
+            "max": 61.87
+          },
+          "effect_fps": {
+            "median": 53.36,
+            "min": 51.49,
+            "max": 54.24
+          },
+          "ws_fps": {
+            "median": 37.25,
+            "min": 36.25,
+            "max": 37.61
+          },
+          "ws_changed_fps": {
+            "median": 34.25,
+            "min": 33.62,
+            "max": 34.37
+          },
+          "ddp_complete_fps": {
+            "median": 56.98,
+            "min": 56.24,
+            "max": 60.37
+          },
+          "server_cpu_pct": {
+            "median": 153.5,
+            "min": 151.0,
+            "max": 154.6
+          },
+          "rss_mb": {
+            "median": 294.7,
+            "min": 290.9,
+            "max": 301.6
+          }
+        }
+      },
+      "linux/3.15/standard/ddp/500000/60/60/6/full/False": {
+        "runs": 3,
+        "metrics": {
+          "render_fps": {
+            "median": 61.08,
+            "min": 60.62,
+            "max": 61.7
+          },
+          "effect_fps": {
+            "median": 54.96,
+            "min": 53.99,
+            "max": 54.96
+          },
+          "ws_fps": {
+            "median": 37.6,
+            "min": 37.47,
+            "max": 38.24
+          },
+          "ws_changed_fps": {
+            "median": 34.87,
+            "min": 34.73,
+            "max": 35.85
+          },
+          "ddp_complete_fps": {
+            "median": 57.96,
+            "min": 55.24,
+            "max": 60.21
+          },
+          "server_cpu_pct": {
+            "median": 150.1,
+            "min": 150.0,
+            "max": 153.0
+          },
+          "rss_mb": {
+            "median": 285.0,
+            "min": 279.2,
+            "max": 308.1
+          }
+        }
+      }
+    },
+    "after": {
+      "linux/3.15/standard/ddp/500000/60/60/6/none/False": {
+        "runs": 3,
+        "metrics": {
+          "render_fps": {
+            "median": 61.94,
+            "min": 61.71,
+            "max": 61.95
+          },
+          "effect_fps": {
+            "median": 59.58,
+            "min": 58.45,
+            "max": 59.71
+          },
+          "ws_fps": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "ws_changed_fps": {
+            "median": 0.0,
+            "min": 0.0,
+            "max": 0.0
+          },
+          "ddp_complete_fps": {
+            "median": 59.95,
+            "min": 58.84,
+            "max": 60.82
+          },
+          "server_cpu_pct": {
+            "median": 91.1,
+            "min": 90.4,
+            "max": 107.7
+          },
+          "rss_mb": {
+            "median": 270.7,
+            "min": 238.8,
+            "max": 272.2
+          }
+        }
+      },
+      "linux/3.15/standard/ddp/500000/60/60/6/default/False": {
+        "runs": 3,
+        "metrics": {
+          "render_fps": {
+            "median": 59.75,
+            "min": 55.48,
+            "max": 60.62
+          },
+          "effect_fps": {
+            "median": 58.75,
+            "min": 57.23,
+            "max": 59.12
+          },
+          "ws_fps": {
+            "median": 40.0,
+            "min": 40.0,
+            "max": 49.23
+          },
+          "ws_changed_fps": {
+            "median": 35.0,
+            "min": 33.0,
+            "max": 46.98
+          },
+          "ddp_complete_fps": {
+            "median": 53.75,
+            "min": 31.75,
+            "max": 54.11
+          },
+          "server_cpu_pct": {
+            "median": 114.5,
+            "min": 110.6,
+            "max": 114.5
+          },
+          "rss_mb": {
+            "median": 288.5,
+            "min": 285.7,
+            "max": 298.5
+          }
+        }
+      },
+      "linux/3.15/standard/ddp/500000/60/60/6/full/False": {
+        "runs": 3,
+        "metrics": {
+          "render_fps": {
+            "median": 61.86,
+            "min": 61.37,
+            "max": 61.87
+          },
+          "effect_fps": {
+            "median": 59.36,
+            "min": 59.25,
+            "max": 59.49
+          },
+          "ws_fps": {
+            "median": 37.0,
+            "min": 36.49,
+            "max": 39.0
+          },
+          "ws_changed_fps": {
+            "median": 33.75,
+            "min": 33.12,
+            "max": 35.25
+          },
+          "ddp_complete_fps": {
+            "median": 59.86,
+            "min": 25.37,
+            "max": 60.49
+          },
+          "server_cpu_pct": {
+            "median": 102.1,
+            "min": 100.7,
+            "max": 112.4
+          },
+          "rss_mb": {
+            "median": 286.0,
+            "min": 281.7,
+            "max": 308.4
+          }
+        }
+      }
+    }
+  },
+  "loop_comparisons": {
+    "linux_python312": {
+      "none/standard": {
+        "runs": 3,
+        "median_render_fps": 58.57,
+        "median_ws_fps": 0.0,
+        "median_server_cpu_pct": 158.1
+      },
+      "none/uvloop": {
+        "runs": 3,
+        "median_render_fps": 59.69,
+        "median_ws_fps": 0.0,
+        "median_server_cpu_pct": 153.9
+      },
+      "default/standard": {
+        "runs": 3,
+        "median_render_fps": 61.17,
+        "median_ws_fps": 36.45,
+        "median_server_cpu_pct": 153.6
+      },
+      "default/uvloop": {
+        "runs": 3,
+        "median_render_fps": 57.36,
+        "median_ws_fps": 42.86,
+        "median_server_cpu_pct": 155.7
+      },
+      "full/standard": {
+        "runs": 3,
+        "median_render_fps": 60.82,
+        "median_ws_fps": 39.59,
+        "median_server_cpu_pct": 153.7
+      },
+      "full/uvloop": {
+        "runs": 3,
+        "median_render_fps": 60.62,
+        "median_ws_fps": 39.99,
+        "median_server_cpu_pct": 152.2
+      }
+    },
+    "windows_python314": {
+      "none/standard": {
+        "runs": 3,
+        "median_render_fps": 52.03,
+        "median_ws_fps": 0.0,
+        "median_server_cpu_pct": 183.3
+      },
+      "none/winloop": {
+        "runs": 3,
+        "median_render_fps": 55.9,
+        "median_ws_fps": 0.0,
+        "median_server_cpu_pct": 181.8
+      },
+      "default/standard": {
+        "runs": 3,
+        "median_render_fps": 53.37,
+        "median_ws_fps": 49.21,
+        "median_server_cpu_pct": 188.3
+      },
+      "default/winloop": {
+        "runs": 3,
+        "median_render_fps": 53.46,
+        "median_ws_fps": 47.96,
+        "median_server_cpu_pct": 184.7
+      },
+      "full/standard": {
+        "runs": 3,
+        "median_render_fps": 47.76,
+        "median_ws_fps": 46.89,
+        "median_server_cpu_pct": 190.7
+      },
+      "full/winloop": {
+        "runs": 3,
+        "median_render_fps": 45.96,
+        "median_ws_fps": 45.96,
+        "median_server_cpu_pct": 175.8
+      }
+    }
+  },
+  "python315_remaining_work": {
+    "metadata_blockers": [
+      "LedFx requires-python <3.15 and CI matrix require a separate support change.",
+      "audio-hotplug 0.1.0 caps Python <3.14; fixes in https://github.com/LedFx/audio-hotplug/pull/10 await merge/release."
+    ],
+    "missing_locked_wheels": [
+      "aiohttp 3.14.3",
+      "pydantic-core 2.46.5",
+      "python-rtmidi 1.5.8",
+      "pyflac 3.0.0",
+      "samplerate-ledfx 0.3.0",
+      "dbus-fast 5.0.22 (Linux)",
+      "rpi-ws281x 5.0.0 (Linux)",
+      "winrt-runtime, winrt-windows-foundation, winrt-windows-media-control 3.2.1 (Windows)",
+      "zeroconf 0.151.3 (macOS Intel)",
+      "netifaces2 0.0.22 (macOS ARM64)"
+    ],
+    "source_builds_verified_linux": [
+      "aiohttp 3.14.3",
+      "pydantic-core 2.46.5",
+      "python-rtmidi 1.5.8 (native pkg-config and audio development libraries required)",
+      "pyflac 3.0.0",
+      "dbus-fast 5.0.22",
+      "rpi-ws281x 5.0.0"
+    ],
+    "note": "Missing wheels are packaging gaps, not proven source incompatibilities. Windows/macOS native builds remain unvalidated. Not only python-rtmidi. samplerate-ledfx 0.4.0 already supplies cp315 wheels."
+  }
+}

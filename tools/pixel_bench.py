@@ -34,6 +34,9 @@ use sufficiently long runs to distinguish sustained costs from imports. Replay
 with the same interpreter version to produce flamegraphs, pstats or JSONL.
 Sampling runs are kept separate from unprofiled baselines. No system tracing
 permissions are changed: the sampler is the worker's parent process.
+
+Recorded spike evidence is in tools/benchmarks/python315-spike/report.json.
+Those results are hardware-specific; capture a fresh local baseline for gates.
 """
 
 import argparse
