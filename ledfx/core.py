@@ -322,6 +322,8 @@ class LedFxCore:
         max_len = self.config.visualisation_maxlen
 
         def handle_visualisation_update(event):
+            if not self.events.has_listeners(Event.VISUALISATION_UPDATE):
+                return
             is_device = event.event_type == Event.DEVICE_UPDATE
             time_now = time.time()
 
@@ -361,7 +363,7 @@ class LedFxCore:
                 pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
 
             if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
-                b_arr = bytes(pixels.astype(np.uint8).flatten())
+                b_arr = pixels.astype(np.uint8, copy=False).tobytes()
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
                 pixels = pixels.astype(np.uint8).T.tolist()

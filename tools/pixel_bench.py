@@ -485,6 +485,10 @@ async def run_one(args, loop, vis, repeat):
                 async with session.post(f"http://127.0.0.1:{port}/api/power", json={}):
                     pass
             await asyncio.to_thread(proc.wait, 30)
+            if proc.returncode != 0:
+                raise RuntimeError(Path(directory, "server.log").read_text())
+            if args.sampling and not Path(directory, "sampling.bin").is_file():
+                raise RuntimeError("Sampling completed without a binary recording")
             metrics = json.loads(Path(directory, "metrics.json").read_text())
             server_log = Path(directory, "server.log").read_text(encoding="utf-8")
             if (
