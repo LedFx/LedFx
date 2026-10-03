@@ -1346,7 +1346,19 @@
       "3.15"
     ],
     "scope": "Accumulated performance suite, prototype packet equivalence and instance isolation, full 50k TCP partial-write regression, frozen schemas, static checks.",
-    "static_checks": "Ruff, ClassVar audit and strict Pyrefly baseline ratchet pass; no suppressions added."
+    "static_checks": "Ruff, ClassVar audit and strict Pyrefly baseline ratchet pass; no suppressions added.",
+    "extended_experiments": {
+      "focused_tests_per_python": 398,
+      "python_versions": [
+        "3.12.14",
+        "3.15.0rc2"
+      ],
+      "strict_pyrefly_errors": 0,
+      "classvar_files_checked": 403,
+      "classvar_problems": 0,
+      "ruff": "passed",
+      "source_ci": "https://github.com/LedFx/LedFx/actions/runs/37126675328"
+    }
   },
   "reproduce": [
     "python3.15 tools/sender_bench.py --senders all --pixels 50000 --max-packets 150000 --bind 127.0.0.2 --seconds 2 --repeats 3 --output /tmp/50k.jsonl",
@@ -4491,6 +4503,33 @@
     }
   },
   "next_priorities": [
+    {
+      "target": "Supported sACN byte-buffer API",
+      "evidence": "132-trial extension: around 2.4\u20132.5x encoding and 1.6x loopback E1.31 throughput across dense/sparse/static input, with expanded layout/dtype equivalence checks.",
+      "proposal": "Seek an upstream supported immutable-byte setter; leave the private experiment confined to tools."
+    },
+    {
+      "target": "Smoke 2D noise/draw kernel",
+      "evidence": "59.38% of active CPU samples in Smoke2d.draw at 50k.",
+      "proposal": "Separate coordinate construction from native noise generation, then investigate batched/native optimizations without reducing noise octaves or visual quality."
+    },
+    {
+      "target": "Melt and Sparkle numeric kernels",
+      "evidence": "23.28% triangle, 17.20% array_sin; repeated full-stream delivery ~166.89 FPS.",
+      "proposal": "Profile/reuse numeric workspaces or fuse kernels with exact numeric-reference tests before claiming gains."
+    },
+    {
+      "target": "DDP packet sending",
+      "evidence": "51.49% of active samples in DDPDevice.send_packet after the Fade on-demand prototype.",
+      "proposal": "Measure packet construction separately from socket calls; batching needs portable transport/receiver compatibility work."
+    }
+  ],
+  "extended_experiments": {
+    "report": "experiments.json",
+    "valid_paired_trials": 132,
+    "conclusion": "Cadence-controlled results do not justify a production temporal scheduler rewrite; sACN bytes path retains a repeatable gain. See experiments.json for paired ranges, animated cases, semantic validation and limits."
+  },
+  "earlier_next_priorities": [
     {
       "target": "Temporal scheduling",
       "evidence": "Repeated full-stream Fade delivery 91.14 -> 575.57 FPS, changed images 90.81 -> 503.91; Rainbow delivery 333.81 -> 443.55 FPS with server CPU ~160% -> ~107%.",

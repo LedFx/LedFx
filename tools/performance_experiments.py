@@ -2,10 +2,14 @@
 
 Example (Python 3.15 environment with LedFx installed):
   python tools/performance_experiments.py --output /tmp/experiments
+  python tools/performance_experiments.py --suite dynamic --output /tmp/animated
+  python tools/performance_experiments.py --output /tmp/experiments --resume
+  python tools/performance_experiments.py --output /tmp/experiments --summarize
 
 Each repeat shuffles treatments within workload blocks and shuffles the blocks.
-Seeds match within each block. No CPU workloads run concurrently. The manifest
-records every command, order, return code and log, including failed trials.
+Temporal seeds match within each block; sender_bench uses its fixed 2058 seed.
+No CPU workloads run concurrently. The manifest records every command, order,
+return code and log, including failed trials.
 Summaries include individual observations and paired ratios, not just best FPS.
 Full raw metrics and environment metadata remain beside each trial.
 """
@@ -74,7 +78,7 @@ def design(args):
                         "workload": workload,
                         "treatment": treatment,
                         "repeat": repeat,
-                        "seed": args.seed + repeat,
+                        "seed": args.seed + repeat if suite == "temporal" else 2058,
                     }
                 )
     for trial in trials:
@@ -162,6 +166,7 @@ def summarize(trials):
             "cpu_ms_per_flush",
             "application_MB_s",
             "flush_mean_ms",
+            "flush_p95_ms",
         ):
             if row.get(name) is not None:
                 metrics.setdefault(name, []).append(row[name])
@@ -293,8 +298,11 @@ def main():
         or args.warmup < 0
         or args.repeats < 1
         or args.pixels < 1
+        or not 0 <= args.seed <= 2**32 - args.repeats
     ):
-        parser.error("Require positive seconds/repeats/pixels and nonnegative warmup")
+        parser.error(
+            "Require finite positive seconds/repeats/pixels, nonnegative warmup and valid seeds"
+        )
     args.output.mkdir(parents=True, exist_ok=True)
     manifest = args.output / "manifest.json"
     if args.summarize:

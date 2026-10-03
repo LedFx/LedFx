@@ -1,0 +1,992 @@
+[
+  {
+    "suite": "e131",
+    "workload": "dense-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "cpu_ms_per_flush",
+    "paired_ratios": [
+      0.4006108563259195,
+      0.39174556338331545,
+      0.42311625360525024
+    ],
+    "median_ratio": 0.4006108563259195,
+    "minimum_ratio": 0.39174556338331545,
+    "maximum_ratio": 0.42311625360525024
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "flush_fps",
+    "paired_ratios": [
+      2.496280891244371,
+      2.5526714900176524,
+      2.3632254406350577
+    ],
+    "median_ratio": 2.496280891244371,
+    "minimum_ratio": 2.3632254406350577,
+    "maximum_ratio": 2.5526714900176524
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "sender_cpu_pct",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      0.999899989999
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 0.999899989999,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "cpu_ms_per_flush",
+    "paired_ratios": [
+      0.6246494844948077,
+      0.633427974351244,
+      0.6402046317248147
+    ],
+    "median_ratio": 0.633427974351244,
+    "minimum_ratio": 0.6246494844948077,
+    "maximum_ratio": 0.6402046317248147
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "flush_fps",
+    "paired_ratios": [
+      1.6015366212734634,
+      1.5773408305102503,
+      1.5606332138590202
+    ],
+    "median_ratio": 1.5773408305102503,
+    "minimum_ratio": 1.5606332138590202,
+    "maximum_ratio": 1.6015366212734634
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "sender_cpu_pct",
+    "paired_ratios": [
+      1.000400440484533,
+      0.9990992794235388,
+      0.9991995997998999
+    ],
+    "median_ratio": 0.9991995997998999,
+    "minimum_ratio": 0.9990992794235388,
+    "maximum_ratio": 1.000400440484533
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "cpu_ms_per_flush",
+    "paired_ratios": [
+      0.4037618092120151,
+      0.4232419241556938,
+      0.4031832407329454
+    ],
+    "median_ratio": 0.4037618092120151,
+    "minimum_ratio": 0.4031832407329454,
+    "maximum_ratio": 0.4232419241556938
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "flush_fps",
+    "paired_ratios": [
+      2.475691711068206,
+      2.3625304725464553,
+      2.480349201390887
+    ],
+    "median_ratio": 2.475691711068206,
+    "minimum_ratio": 2.3625304725464553,
+    "maximum_ratio": 2.480349201390887
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "sender_cpu_pct",
+    "paired_ratios": [
+      0.9995999599959997,
+      0.999899989999,
+      1.0
+    ],
+    "median_ratio": 0.999899989999,
+    "minimum_ratio": 0.9995999599959997,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "cpu_ms_per_flush",
+    "paired_ratios": [
+      0.6077670175773282,
+      0.6025933464001527,
+      0.6280607363905293
+    ],
+    "median_ratio": 0.6077670175773282,
+    "minimum_ratio": 0.6025933464001527,
+    "maximum_ratio": 0.6280607363905293
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "flush_fps",
+    "paired_ratios": [
+      1.644598484403454,
+      1.6596351264152052,
+      1.5917335473515248
+    ],
+    "median_ratio": 1.644598484403454,
+    "minimum_ratio": 1.5917335473515248,
+    "maximum_ratio": 1.6596351264152052
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "sender_cpu_pct",
+    "paired_ratios": [
+      0.999499699819892,
+      1.0001001101211333,
+      0.999699639567481
+    ],
+    "median_ratio": 0.999699639567481,
+    "minimum_ratio": 0.999499699819892,
+    "maximum_ratio": 1.0001001101211333
+  },
+  {
+    "suite": "e131",
+    "workload": "static-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "cpu_ms_per_flush",
+    "paired_ratios": [
+      0.41021814219544,
+      0.4106098618659716,
+      0.412029332275668
+    ],
+    "median_ratio": 0.4106098618659716,
+    "minimum_ratio": 0.41021814219544,
+    "maximum_ratio": 0.412029332275668
+  },
+  {
+    "suite": "e131",
+    "workload": "static-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "flush_fps",
+    "paired_ratios": [
+      2.4376656094836653,
+      2.4355118192735157,
+      2.426754762726696
+    ],
+    "median_ratio": 2.4355118192735157,
+    "minimum_ratio": 2.426754762726696,
+    "maximum_ratio": 2.4376656094836653
+  },
+  {
+    "suite": "e131",
+    "workload": "static-encode",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "sender_cpu_pct",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      0.999899989999
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 0.999899989999,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "e131",
+    "workload": "static-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "cpu_ms_per_flush",
+    "paired_ratios": [
+      0.6421197209291025,
+      0.596271370467465,
+      0.6269677743302101
+    ],
+    "median_ratio": 0.6269677743302101,
+    "minimum_ratio": 0.596271370467465,
+    "maximum_ratio": 0.6421197209291025
+  },
+  {
+    "suite": "e131",
+    "workload": "static-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "flush_fps",
+    "paired_ratios": [
+      1.5577171146672242,
+      1.6750862861715212,
+      1.593159985802448
+    ],
+    "median_ratio": 1.593159985802448,
+    "minimum_ratio": 1.5577171146672242,
+    "maximum_ratio": 1.6750862861715212
+  },
+  {
+    "suite": "e131",
+    "workload": "static-loopback",
+    "treatment": "bytes",
+    "baseline": "stock",
+    "metric": "sender_cpu_pct",
+    "paired_ratios": [
+      1.000200240288346,
+      0.998799159411588,
+      0.9988982371794872
+    ],
+    "median_ratio": 0.9988982371794872,
+    "minimum_ratio": 0.998799159411588,
+    "maximum_ratio": 1.000200240288346
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.005609171379395,
+      1.0263125174846912,
+      0.950928422600809
+    ],
+    "median_ratio": 1.005609171379395,
+    "minimum_ratio": 0.950928422600809,
+    "maximum_ratio": 1.0263125174846912
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9931350114416475,
+      0.9977142857142857,
+      0.9908519153802173
+    ],
+    "median_ratio": 0.9931350114416475,
+    "minimum_ratio": 0.9908519153802173,
+    "maximum_ratio": 0.9977142857142857
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      1.0045495905368518,
+      1.0,
+      0.9981801637852593
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 0.9981801637852593,
+    "maximum_ratio": 1.0045495905368518
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      5.964618644067795,
+      6.080847968409019,
+      6.375053533190577
+    ],
+    "median_ratio": 6.080847968409019,
+    "minimum_ratio": 5.964618644067795,
+    "maximum_ratio": 6.375053533190577
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9692565679150363,
+      0.9709821428571429,
+      0.9704406023424428
+    ],
+    "median_ratio": 0.9704406023424428,
+    "minimum_ratio": 0.9692565679150363,
+    "maximum_ratio": 0.9709821428571429
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9633507853403143,
+      0.9563318777292577,
+      0.9580786026200874
+    ],
+    "median_ratio": 0.9580786026200874,
+    "minimum_ratio": 0.9563318777292577,
+    "maximum_ratio": 0.9633507853403143
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      5.247033898305085,
+      5.38132498695879,
+      5.617665952890793
+    ],
+    "median_ratio": 5.38132498695879,
+    "minimum_ratio": 5.247033898305085,
+    "maximum_ratio": 5.617665952890793
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.0094971293118045,
+      0.9674878152930955,
+      0.9905679004845152
+    ],
+    "median_ratio": 0.9905679004845152,
+    "minimum_ratio": 0.9674878152930955,
+    "maximum_ratio": 1.0094971293118045
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9862935465448315,
+      0.9874357509994289,
+      0.985730593607306
+    ],
+    "median_ratio": 0.9862935465448315,
+    "minimum_ratio": 0.985730593607306,
+    "maximum_ratio": 0.9874357509994289
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9830205540661304,
+      0.9981834695731154,
+      0.9675153643546971
+    ],
+    "median_ratio": 0.9830205540661304,
+    "minimum_ratio": 0.9675153643546971,
+    "maximum_ratio": 0.9981834695731154
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.9351259465306754,
+      1.9309318944144669,
+      1.7660132562403046
+    ],
+    "median_ratio": 1.9309318944144669,
+    "minimum_ratio": 1.7660132562403046,
+    "maximum_ratio": 1.9351259465306754
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9554210236653825,
+      0.9578313253012049,
+      0.9507389162561576
+    ],
+    "median_ratio": 0.9554210236653825,
+    "minimum_ratio": 0.9507389162561576,
+    "maximum_ratio": 0.9578313253012049
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.7888332140300645,
+      0.8008720930232559,
+      0.8007272727272727
+    ],
+    "median_ratio": 0.8007272727272727,
+    "minimum_ratio": 0.7888332140300645,
+    "maximum_ratio": 0.8008720930232559
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.0239690801982357,
+      1.0089453071425305,
+      0.9880266886025043
+    ],
+    "median_ratio": 1.0089453071425305,
+    "minimum_ratio": 0.9880266886025043,
+    "maximum_ratio": 1.0239690801982357
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9994199535962878,
+      0.9965177016831107,
+      0.993063583815029
+    ],
+    "median_ratio": 0.9965177016831107,
+    "minimum_ratio": 0.993063583815029,
+    "maximum_ratio": 0.9994199535962878
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.994579945799458,
+      0.992773261065944,
+      0.9918625678119349
+    ],
+    "median_ratio": 0.992773261065944,
+    "minimum_ratio": 0.9918625678119349,
+    "maximum_ratio": 0.994579945799458
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      0.8960000000000001,
+      0.8960000000000001
+    ],
+    "median_ratio": 0.8960000000000001,
+    "minimum_ratio": 0.8960000000000001,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.730644540908841,
+      1.7651756326552634,
+      1.8246314155858554
+    ],
+    "median_ratio": 1.7651756326552634,
+    "minimum_ratio": 1.730644540908841,
+    "maximum_ratio": 1.8246314155858554
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9387201735357917,
+      0.9412084921066958,
+      0.9428415895481763
+    ],
+    "median_ratio": 0.9412084921066958,
+    "minimum_ratio": 0.9387201735357917,
+    "maximum_ratio": 0.9428415895481763
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.8943948009748173,
+      0.8959349593495936,
+      0.8920454545454546
+    ],
+    "median_ratio": 0.8943948009748173,
+    "minimum_ratio": 0.8920454545454546,
+    "maximum_ratio": 0.8959349593495936
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.027917627570078,
+      0.9784793550117543,
+      0.9693256273952281
+    ],
+    "median_ratio": 0.9784793550117543,
+    "minimum_ratio": 0.9693256273952281,
+    "maximum_ratio": 1.027917627570078
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9865470852017937,
+      0.9865395401009535,
+      0.9910162829870859
+    ],
+    "median_ratio": 0.9865470852017937,
+    "minimum_ratio": 0.9865395401009535,
+    "maximum_ratio": 0.9910162829870859
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9538729329852045,
+      0.9572052401746725,
+      0.962280701754386
+    ],
+    "median_ratio": 0.9572052401746725,
+    "minimum_ratio": 0.9538729329852045,
+    "maximum_ratio": 0.962280701754386
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      0.9622609862462261,
+      0.9642737336464274,
+      0.9624224123469216
+    ],
+    "median_ratio": 0.9624224123469216,
+    "minimum_ratio": 0.9622609862462261,
+    "maximum_ratio": 0.9642737336464274
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.2915396341463414,
+      1.5292086422099727,
+      1.3064547179670527
+    ],
+    "median_ratio": 1.3064547179670527,
+    "minimum_ratio": 1.2915396341463414,
+    "maximum_ratio": 1.5292086422099727
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9909604519774011,
+      0.9932165065008478,
+      1.0005698005698005
+    ],
+    "median_ratio": 0.9932165065008478,
+    "minimum_ratio": 0.9909604519774011,
+    "maximum_ratio": 1.0005698005698005
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.6450450450450451,
+      0.6784586228679722,
+      0.652887537993921
+    ],
+    "median_ratio": 0.652887537993921,
+    "minimum_ratio": 0.6450450450450451,
+    "maximum_ratio": 0.6784586228679722
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.3674969728420687,
+      1.5296281031038963,
+      1.342238430441297
+    ],
+    "median_ratio": 1.3674969728420687,
+    "minimum_ratio": 1.342238430441297,
+    "maximum_ratio": 1.5296281031038963
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      0.9353992002099836,
+      0.9986149584487535,
+      1.0192684469539193
+    ],
+    "median_ratio": 0.9986149584487535,
+    "minimum_ratio": 0.9353992002099836,
+    "maximum_ratio": 1.0192684469539193
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9824163357912647,
+      0.9863481228668942,
+      0.9841179807146908
+    ],
+    "median_ratio": 0.9841179807146908,
+    "minimum_ratio": 0.9824163357912647,
+    "maximum_ratio": 0.9863481228668942
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9963800904977375,
+      0.9945750452079567,
+      0.9918918918918919
+    ],
+    "median_ratio": 0.9945750452079567,
+    "minimum_ratio": 0.9918918918918919,
+    "maximum_ratio": 0.9963800904977375
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      0.9649087627832365,
+      0.9649087627832365,
+      0.9672361809045226
+    ],
+    "median_ratio": 0.9649087627832365,
+    "minimum_ratio": 0.9649087627832365,
+    "maximum_ratio": 0.9672361809045226
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.8151035118598606,
+      1.7292194832515237,
+      1.730543562493081
+    ],
+    "median_ratio": 1.730543562493081,
+    "minimum_ratio": 1.7292194832515237,
+    "maximum_ratio": 1.8151035118598606
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9498637602179837,
+      0.9544956140350876,
+      0.9508196721311475
+    ],
+    "median_ratio": 0.9508196721311475,
+    "minimum_ratio": 0.9498637602179837,
+    "maximum_ratio": 0.9544956140350876
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.7936736161035227,
+      0.7909156452775776,
+      0.7928057553956834
+    ],
+    "median_ratio": 0.7928057553956834,
+    "minimum_ratio": 0.7909156452775776,
+    "maximum_ratio": 0.7936736161035227
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.4096890453440616,
+      1.3593501200982379,
+      1.3856038995208686
+    ],
+    "median_ratio": 1.3856038995208686,
+    "minimum_ratio": 1.3593501200982379,
+    "maximum_ratio": 1.4096890453440616
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.0193551403325594,
+      1.0081248730488588,
+      1.0289303079416532
+    ],
+    "median_ratio": 1.0193551403325594,
+    "minimum_ratio": 1.0081248730488588,
+    "maximum_ratio": 1.0289303079416532
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.992507204610951,
+      0.9919401266551527,
+      0.9907834101382489
+    ],
+    "median_ratio": 0.9919401266551527,
+    "minimum_ratio": 0.9907834101382489,
+    "maximum_ratio": 0.992507204610951
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.995475113122172,
+      0.9945701357466064,
+      1.0054744525547445
+    ],
+    "median_ratio": 0.995475113122172,
+    "minimum_ratio": 0.9945701357466064,
+    "maximum_ratio": 1.0054744525547445
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      5.296559905100831,
+      4.869032845205592,
+      5.162531433361274
+    ],
+    "median_ratio": 5.162531433361274,
+    "minimum_ratio": 4.869032845205592,
+    "maximum_ratio": 5.296559905100831
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9681208053691274,
+      0.9631696428571429,
+      0.9675615212527964
+    ],
+    "median_ratio": 0.9675615212527964,
+    "minimum_ratio": 0.9631696428571429,
+    "maximum_ratio": 0.9681208053691274
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9715555555555555,
+      0.9733570159857904,
+      0.9733570159857904
+    ],
+    "median_ratio": 0.9733570159857904,
+    "minimum_ratio": 0.9715555555555555,
+    "maximum_ratio": 0.9733570159857904
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-max",
+    "baseline": "threaded-max",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  }
+]

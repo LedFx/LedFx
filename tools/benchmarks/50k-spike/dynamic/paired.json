@@ -1,0 +1,242 @@
+[
+  {
+    "suite": "temporal",
+    "workload": "gradient-roll",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      0.9935142115071388,
+      0.9255619165797119,
+      0.9724378938749251
+    ],
+    "median_ratio": 0.9724378938749251,
+    "minimum_ratio": 0.9255619165797119,
+    "maximum_ratio": 0.9935142115071388
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient-roll",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9994219653179192,
+      0.9971131639722863,
+      0.9924812030075187
+    ],
+    "median_ratio": 0.9971131639722863,
+    "minimum_ratio": 0.9924812030075187,
+    "maximum_ratio": 0.9994219653179192
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient-roll",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9927797833935018,
+      0.990990990990991,
+      0.9945750452079567
+    ],
+    "median_ratio": 0.9927797833935018,
+    "minimum_ratio": 0.990990990990991,
+    "maximum_ratio": 0.9945750452079567
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient-roll",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash-probability",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      0.9802277079282142,
+      0.9132783087170576,
+      0.9760535380973338
+    ],
+    "median_ratio": 0.9760535380973338,
+    "minimum_ratio": 0.9132783087170576,
+    "maximum_ratio": 0.9802277079282142
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash-probability",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.994806693594922,
+      0.9902073732718895,
+      0.9902130109383996
+    ],
+    "median_ratio": 0.9902130109383996,
+    "minimum_ratio": 0.9902073732718895,
+    "maximum_ratio": 0.994806693594922
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash-probability",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      1.001814882032668,
+      0.9981818181818182,
+      0.9945652173913043
+    ],
+    "median_ratio": 0.9981818181818182,
+    "minimum_ratio": 0.9945652173913043,
+    "maximum_ratio": 1.001814882032668
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash-probability",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      0.9811320754716982,
+      0.9740506329113924
+    ],
+    "median_ratio": 0.9811320754716982,
+    "minimum_ratio": 0.9740506329113924,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-breath",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      1.0093571198478317,
+      0.9883848957121811,
+      0.9886733288397854
+    ],
+    "median_ratio": 0.9886733288397854,
+    "minimum_ratio": 0.9883848957121811,
+    "maximum_ratio": 1.0093571198478317
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-breath",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9936157864190365,
+      0.9959278650378126,
+      0.9884526558891455
+    ],
+    "median_ratio": 0.9936157864190365,
+    "minimum_ratio": 0.9884526558891455,
+    "maximum_ratio": 0.9959278650378126
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-breath",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      1.001814882032668,
+      0.9963702359346642,
+      1.0018214936247722
+    ],
+    "median_ratio": 1.001814882032668,
+    "minimum_ratio": 0.9963702359346642,
+    "maximum_ratio": 1.0018214936247722
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-breath",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "median_ratio": 1.0,
+    "minimum_ratio": 1.0,
+    "maximum_ratio": 1.0
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-sine",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ddp_complete_fps",
+    "paired_ratios": [
+      0.9638379723919438,
+      1.0184887835752257,
+      0.9853312492485271
+    ],
+    "median_ratio": 0.9853312492485271,
+    "minimum_ratio": 0.9638379723919438,
+    "maximum_ratio": 1.0184887835752257
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-sine",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "rss_mb",
+    "paired_ratios": [
+      0.9808450704225352,
+      0.9825155104342921,
+      0.9880749574105622
+    ],
+    "median_ratio": 0.9825155104342921,
+    "minimum_ratio": 0.9808450704225352,
+    "maximum_ratio": 0.9880749574105622
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-sine",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "server_cpu_pct",
+    "paired_ratios": [
+      0.9981949458483754,
+      0.9981818181818182,
+      0.9927927927927929
+    ],
+    "median_ratio": 0.9981818181818182,
+    "minimum_ratio": 0.9927927927927929,
+    "maximum_ratio": 0.9981949458483754
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor-sine",
+    "treatment": "render-cadence",
+    "baseline": "threaded-cadence",
+    "metric": "ws_changed_fps",
+    "paired_ratios": [
+      0.9803921568627452,
+      1.0,
+      0.9803921568627452
+    ],
+    "median_ratio": 0.9803921568627452,
+    "minimum_ratio": 0.9803921568627452,
+    "maximum_ratio": 1.0
+  }
+]

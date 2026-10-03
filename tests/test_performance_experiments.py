@@ -21,7 +21,12 @@ def test_design_is_reproducible_balanced_and_paired() -> None:
     for repeat in range(3):
         selected = [trial for trial in trials if trial["repeat"] == repeat]
         assert len(selected) == 36
-        assert {trial["seed"] for trial in selected} == {2058 + repeat}
+        assert {
+            trial["seed"] for trial in selected if trial["suite"] == "temporal"
+        } == {2058 + repeat}
+        assert {trial["seed"] for trial in selected if trial["suite"] == "e131"} == {
+            2058
+        }
         for effect in (
             "fade",
             "rainbow",
