@@ -74,6 +74,19 @@ class E131Device(NetworkedDevice):
             channel_count=channel_count,
             universe_end=universe_end,
         )
+        # Cache intersections once per configuration, including offsets that
+        # skip entire universes. Slots outside these slices retain their values.
+        size = self.config.universe_size
+        offset = self.config.channel_offset
+        self._channel_slices = []
+        for universe in range(self.config.universe, universe_end + 1):
+            base = (universe - self.config.universe) * size
+            start = max(base, offset)
+            end = min(base + size, offset + channel_count)
+            if start < end:
+                self._channel_slices.append(
+                    (universe, start - base, end - base, start - offset, end - offset)
+                )
 
     def config_updated(self, config: object) -> None:
         # The stored channel_count and universe_end are stale until recomputed.
@@ -149,45 +162,19 @@ class E131Device(NetworkedDevice):
                         f"Invalid buffer size. {data.size} != {getattr(self.config, 'channel_count')}"  # noqa: B009 - stored extra, not a declared field
                     )
 
-                data = data.flatten()
-                current_index = 0
-                for universe in range(
-                    self.config.universe,
-                    getattr(self.config, "universe_end") + 1,  # noqa: B009 - stored extra, not a declared field
-                ):
-                    # Calculate offset into the provide input buffer for the channel. There are some
-                    # cleaner ways this can be done... This is just the quick and dirty
-                    universe_start = (
-                        universe - self.config.universe
-                    ) * self.config.universe_size
-                    universe_end = (
-                        universe - self.config.universe + 1
-                    ) * self.config.universe_size
-
-                    dmx_start = (
-                        max(universe_start, self.config.channel_offset)
-                        % self.config.universe_size
-                    )
-                    dmx_end = (
-                        min(
-                            universe_end,
-                            self.config.channel_offset
-                            + getattr(self.config, "channel_count"),  # noqa: B009 - stored extra, not a declared field
-                        )
-                        % self.config.universe_size
-                    )
-                    if dmx_end == 0:
-                        dmx_end = self.config.universe_size
-
-                    input_start = current_index
-                    input_end = current_index + dmx_end - dmx_start
-                    current_index = input_end
-
-                    dmx_data = np.array(self._sacn[universe].dmx_data)
-                    dmx_data[dmx_start:dmx_end] = data[input_start:input_end]
-
-                    # Because the sACN library checks for data to be of int type, we have to
-                    # convert the numpy array into a python list of ints using tolist()
-                    self._sacn[universe].dmx_data = dmx_data.tolist()
+                # Convert once for the whole frame. The public sACN setter
+                # still validates bytes and marks the output as changed.
+                channels = data.astype(int).ravel().tolist()
+                for (
+                    universe,
+                    start,
+                    end,
+                    input_start,
+                    input_end,
+                ) in self._channel_slices:
+                    output = self._sacn[universe]
+                    dmx_data = list(output.dmx_data)
+                    dmx_data[start:end] = channels[input_start:input_end]
+                    output.dmx_data = dmx_data
 
                 self._sacn.flush()
