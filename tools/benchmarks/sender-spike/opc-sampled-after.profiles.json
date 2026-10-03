@@ -1,0 +1,135 @@
+{
+  "scope": "CPU samples within measure_flushes; per sender class, including all listed cases",
+  "families": {
+    "OpenPixelControl": {
+      "cases": [
+        {
+          "sender": "opc",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 1607,
+        "active_samples": 1607,
+        "top_self": [
+          {
+            "frame": "open_pixel_control.py:OpenPixelControl.send_out",
+            "samples": 1497,
+            "active_sample_pct": 93.15
+          },
+          {
+            "frame": "_methods.py:_clip",
+            "samples": 31,
+            "active_sample_pct": 1.93
+          },
+          {
+            "frame": "open_pixel_control.py:OpenPixelControl.flush",
+            "samples": 24,
+            "active_sample_pct": 1.49
+          },
+          {
+            "frame": "fromnumeric.py:clip",
+            "samples": 17,
+            "active_sample_pct": 1.06
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 15,
+            "active_sample_pct": 0.93
+          },
+          {
+            "frame": "_methods.py:_all",
+            "samples": 11,
+            "active_sample_pct": 0.68
+          },
+          {
+            "frame": "fromnumeric.py:_wrapfunc",
+            "samples": 7,
+            "active_sample_pct": 0.44
+          },
+          {
+            "frame": "__init__.py:NetworkedDevice.destination",
+            "samples": 5,
+            "active_sample_pct": 0.31
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "open_pixel_control.py:OpenPixelControl.flush",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 1607,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "open_pixel_control.py:OpenPixelControl.send_out",
+            "samples": 1578,
+            "active_sample_pct": 98.2
+          },
+          {
+            "frame": "fromnumeric.py:clip",
+            "samples": 51,
+            "active_sample_pct": 3.17
+          },
+          {
+            "frame": "fromnumeric.py:_wrapfunc",
+            "samples": 38,
+            "active_sample_pct": 2.36
+          },
+          {
+            "frame": "_methods.py:_clip",
+            "samples": 31,
+            "active_sample_pct": 1.93
+          },
+          {
+            "frame": "sender_bench.py:Sink.sendto",
+            "samples": 16,
+            "active_sample_pct": 1.0
+          },
+          {
+            "frame": "_methods.py:_all",
+            "samples": 12,
+            "active_sample_pct": 0.75
+          },
+          {
+            "frame": "__init__.py:NetworkedDevice.destination",
+            "samples": 5,
+            "active_sample_pct": 0.31
+          }
+        ]
+      }
+    }
+  }
+}

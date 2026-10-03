@@ -162,6 +162,13 @@ class ArtNetDevice(NetworkedDevice):
             self.dmx_start_address + total_pixels_per_device * self.num_devices
         )
         self.universe_count = math.ceil(self.channel_count / self.packet_size)
+        if self.config.universe + self.universe_count > 32768:
+            raise ValueError("Art-Net channel layout exceeds universe 32767")
+        if self._artnet is not None:
+            # The library's simplified setter clamps universe addresses to 255.
+            # Select explicit Net/Sub-Net/Universe addressing before any sends.
+            self._artnet.set_universe(0)
+            self._artnet.set_simplified(False)
         self.init = False
 
     def flush(self, data):
@@ -212,7 +219,11 @@ class ArtNetDevice(NetworkedDevice):
                         packet[: min(self.packet_size, self.channel_count - start)] = (
                             devices_data[start:end]
                         )
-                        self._artnet.set_universe(i + self.config.universe)
+                        address = i + self.config.universe
+                        # Set the address fields, then rebuild the header once.
+                        self._artnet.net = address >> 8
+                        self._artnet.subnet = (address >> 4) & 0x0F
+                        self._artnet.set_universe(address & 0x0F)
                         self._artnet.set(packet)
                         self._artnet.show()
             finally:

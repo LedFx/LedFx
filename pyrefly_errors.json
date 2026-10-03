@@ -8109,20 +8109,6 @@
     {
       "column": 27,
       "path": "ledfx/effects/hsv_effect.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/hsv_effect.py",
       "name": "implicit-any-parameter",
       "concise_description": "`on_activate` is missing an annotation for parameter `pixel_count`",
       "severity": "error"
@@ -8164,27 +8150,6 @@
     },
     {
       "column": 13,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
       "path": "ledfx/effects/hsv_effect.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",

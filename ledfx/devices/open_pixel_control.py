@@ -2,6 +2,7 @@ import logging
 import socket
 import struct
 
+import numpy as np
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -64,16 +65,18 @@ class OpenPixelControl(NetworkedDevice):
         header = struct.pack(
             ">BBH", self.config.channel, 0, self.config.pixel_count * 3
         )
-        pieces = [
-            struct.pack(
-                "BBB",
-                min(255, max(0, int(r))),
-                min(255, max(0, int(g))),
-                min(255, max(0, int(b))),
+        pixels = np.asarray(data)
+        if pixels.shape != (self.config.pixel_count, 3):
+            raise ValueError(
+                "OPC data must contain the configured number of RGB pixels"
             )
-            for r, g, b in data
-        ]
-        message = header + b"".join(pieces)
+        finite = np.isfinite(pixels)
+        if not finite.all():
+            # Preserve int()'s rejection of NaN/inf instead of silently casting
+            # them to zero. This exceptional path is outside normal rendering.
+            int(pixels.ravel()[np.flatnonzero(~finite)[0]])
+        # Clamp before casting, matching min/max/int for finite RGB values.
+        message = header + np.clip(pixels, 0, 255).astype(np.uint8).tobytes()
         sock.sendto(
             bytes(message),
             (dest, port),

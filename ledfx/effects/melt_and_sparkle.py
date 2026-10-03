@@ -62,7 +62,14 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
         self.onsets_queue = queue.Queue()
 
     def on_activate(self, pixel_count):
-        self.h = np.linspace(0, 1, pixel_count)
+        # This initial wave depends only on pixel count. Cache its exact
+        # arithmetic once per activation, then copy into mutable frame buffers.
+        self._initial_wave = np.linspace(0, 1, pixel_count)
+        np.subtract(1, self._initial_wave, out=self._initial_wave)
+        self.array_sin(self._initial_wave)
+        self.h = np.empty(pixel_count)
+        self.s = np.ones(pixel_count)
+        self.v = np.empty(pixel_count)
 
         self.timestep = 0
         self.last_time = time.time_ns()
@@ -130,11 +137,9 @@ class MeltSparkle(AudioReactiveEffect, HSVEffect):
 
         # Initialization: Hue is a ramp of the gradient from beginning to end,
         # Saturation is full, and Value is a sine version of the hue ramp.
-        self.h[:] = np.linspace(0, 1, self.pixel_count)
-        np.subtract(1, self.h, out=self.h)
-        self.array_sin(self.h)
-        self.s = np.ones(self.pixel_count)
-        self.v = np.copy(self.h)
+        np.copyto(self.h, self._initial_wave)
+        self.s.fill(1)
+        np.copyto(self.v, self._initial_wave)
 
         # Use the bass to roll the hue gradient, then use repeated sine
         # calls to have the hues cycle more often.

@@ -1,0 +1,207 @@
+{
+  "finding": "127.0.0.1 is redirected through an MTU-1500 loopback0 interface in this environment; 127.0.0.2 routes through actual lo with MTU65536. No routing/sysctl changes were made.",
+  "direct_socket_probe": {
+    "127.0.0.1": {
+      "1400": true,
+      "1472": true,
+      "1473": true,
+      "1500": false,
+      "2000": false,
+      "3004": false,
+      "16000": false,
+      "65507": false
+    },
+    "127.0.0.2": {
+      "1400": true,
+      "3004": true,
+      "16000": true,
+      "65507": true
+    },
+    "::1": {
+      "1400": true,
+      "3004": true,
+      "16000": true,
+      "65507": true
+    }
+  },
+  "redirected_route_failures": [
+    {
+      "sender": "nanoleaf",
+      "pixels": 300,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 0,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 300,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 0,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "opc",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 0,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "nanoleaf",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 0,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 0,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "nanoleaf",
+      "pixels": 300,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 1,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 300,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 1,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "opc",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 1,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "nanoleaf",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 1,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 1,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "nanoleaf",
+      "pixels": 300,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 2,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 300,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 2,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "opc",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 2,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "nanoleaf",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 2,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "ValueError(\"No complete frames received: {'packets': 0, 'bytes': 0, 'complete_frames': 0, 'partial_keepalive_sets': 0, 'invalid_packets': 0, 'trailing_tcp_bytes': 0}\")"
+    },
+    {
+      "sender": "osc-channels",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 2,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "EOFError()"
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "repeat": 2,
+      "requested_fps": 0,
+      "profiled": false,
+      "status": "failed",
+      "error": "EOFError()"
+    }
+  ],
+  "corrected_route_validation": "sender-catalog.jsonl: 264 successful cases, 78 explicit skips, zero failures",
+  "note": "Do not generalize the redirected route failure to normal WSL2 or to sender implementations."
+}

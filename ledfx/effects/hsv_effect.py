@@ -48,7 +48,7 @@ class HSVEffect(GradientEffect):
         self._dt = 0
         self.hsv_array = None
         # Pre-allocated working buffers for performance
-        self._h_indices = None
+        self._h_indices: NDArray[np.intp] = np.empty(0, dtype=int)
         self._pixel_max: NDArray[np.float64] = np.empty((0, 1))
         self._saturation_work: NDArray[np.float64] = np.empty(0)
         self._inverse_saturation: NDArray[np.float64] = np.empty(0)
@@ -91,7 +91,9 @@ class HSVEffect(GradientEffect):
         self._h_indices[:] = h.astype(int, copy=False)
 
         # Grab the colors from the gradient
-        pixels[:] = self.get_gradient()[:, self._h_indices].T
+        gradient = self.get_gradient()
+        assert gradient is not None
+        np.take(gradient.T, self._h_indices, axis=0, out=pixels)
 
         # Three explicit channels avoid the costly short-axis reduction and
         # full RGB temporaries. Keep the arithmetic order unchanged so the
