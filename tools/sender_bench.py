@@ -4,6 +4,7 @@
   python tools/sender_bench.py --senders ddp,artnet,e131 --pixels 500000 --seconds 3 --repeats 3 --output /tmp/large.jsonl
   python tools/sender_bench.py --senders udp-adaptive,udp-warls --patterns dense,sparse,static --pixels 60 --output /tmp/deltas.jsonl
   python3.15 tools/sender_bench.py --senders e131 --pixels 10000 --sampling cpu --output /tmp/profile.jsonl
+  python3.15 tools/sender_profile_report.py /tmp/profile.jsonl
 
 encode measures real flush/serialization with a counting sink. loopback uses real
 UDP or TCP writes and a separate receiver process (excluded from sender CPU).
