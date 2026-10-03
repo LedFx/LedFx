@@ -1,0 +1,345 @@
+{
+  "scope": "CPU samples within measure_flushes; per sender class, including all listed cases",
+  "families": {
+    "E131Device": {
+      "cases": [
+        {
+          "sender": "e131",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 1912,
+        "active_samples": 1908,
+        "top_self": [
+          {
+            "frame": "e131.py:E131Device.flush",
+            "samples": 885,
+            "active_sample_pct": 46.38
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData.<locals>.<genexpr>",
+            "samples": 422,
+            "active_sample_pct": 22.12
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData",
+            "samples": 339,
+            "active_sample_pct": 17.77
+          },
+          {
+            "frame": "data_packet.py:DataPacket.getBytes",
+            "samples": 76,
+            "active_sample_pct": 3.98
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_packet",
+            "samples": 56,
+            "active_sample_pct": 2.94
+          },
+          {
+            "frame": "output.py:Output.dmx_data",
+            "samples": 47,
+            "active_sample_pct": 2.46
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_unicast",
+            "samples": 36,
+            "active_sample_pct": 1.89
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out",
+            "samples": 24,
+            "active_sample_pct": 1.26
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out_all_universes",
+            "samples": 14,
+            "active_sample_pct": 0.73
+          },
+          {
+            "frame": "sender.py:sACNsender.__getitem__",
+            "samples": 3,
+            "active_sample_pct": 0.16
+          },
+          {
+            "frame": "data_packet.py:calculate_multicast_addr",
+            "samples": 2,
+            "active_sample_pct": 0.1
+          },
+          {
+            "frame": "sender.py:sACNsender.flush",
+            "samples": 1,
+            "active_sample_pct": 0.05
+          },
+          {
+            "frame": "root_layer.py:RootLayer.length",
+            "samples": 1,
+            "active_sample_pct": 0.05
+          },
+          {
+            "frame": "root_layer.py:make_flagsandlength",
+            "samples": 1,
+            "active_sample_pct": 0.05
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_multicast",
+            "samples": 1,
+            "active_sample_pct": 0.05
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "e131.py:E131Device.flush",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 1908,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "output.py:Output.dmx_data",
+            "samples": 805,
+            "active_sample_pct": 42.19
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData",
+            "samples": 761,
+            "active_sample_pct": 39.88
+          },
+          {
+            "frame": "data_packet.py:DataPacket.dmxData.<locals>.<genexpr>",
+            "samples": 422,
+            "active_sample_pct": 22.12
+          },
+          {
+            "frame": "sender.py:sACNsender.flush",
+            "samples": 214,
+            "active_sample_pct": 11.22
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out_all_universes",
+            "samples": 211,
+            "active_sample_pct": 11.06
+          },
+          {
+            "frame": "sender_handler.py:SenderHandler.send_out",
+            "samples": 194,
+            "active_sample_pct": 10.17
+          },
+          {
+            "frame": "sender_socket_udp.py:SenderSocketUDP.send_unicast",
+            "samples": 170,
+            "active_sample_pct": 8.91
+          },
+          {
+            "frame": "data_packet.py:DataPacket.getBytes",
+            "samples": 78,
+            "active_sample_pct": 4.09
+          }
+        ]
+      }
+    },
+    "OSCServerDevice": {
+      "cases": [
+        {
+          "sender": "osc-three",
+          "pixels": 10000,
+          "pattern": "dense",
+          "mode": "encode",
+          "repeat": 0,
+          "profiled": "cpu"
+        }
+      ],
+      "profile": {
+        "all_samples": 2142,
+        "active_samples": 2064,
+        "top_self": [
+          {
+            "frame": "osc.py:OSCServerDevice.flush",
+            "samples": 754,
+            "active_sample_pct": 36.53
+          },
+          {
+            "frame": "osc_message_builder.py:OscMessageBuilder.build",
+            "samples": 319,
+            "active_sample_pct": 15.46
+          },
+          {
+            "frame": "osc_message.py:OscMessage._parse_datagram",
+            "samples": 184,
+            "active_sample_pct": 8.91
+          },
+          {
+            "frame": "<GC>",
+            "samples": 165,
+            "active_sample_pct": 7.99
+          },
+          {
+            "frame": "osc_types.py:get_string",
+            "samples": 147,
+            "active_sample_pct": 7.12
+          },
+          {
+            "frame": "__init__:__init__",
+            "samples": 135,
+            "active_sample_pct": 6.54
+          },
+          {
+            "frame": "osc_message_builder.py:OscMessageBuilder.add_arg",
+            "samples": 89,
+            "active_sample_pct": 4.31
+          },
+          {
+            "frame": "osc_types.py:get_float",
+            "samples": 83,
+            "active_sample_pct": 4.02
+          },
+          {
+            "frame": "osc.py:OSCServerDevice.__generate_path",
+            "samples": 52,
+            "active_sample_pct": 2.52
+          },
+          {
+            "frame": "udp_client.py:UDPClient.send",
+            "samples": 34,
+            "active_sample_pct": 1.65
+          },
+          {
+            "frame": "osc_message_builder.py:OscMessageBuilder._get_arg_type",
+            "samples": 33,
+            "active_sample_pct": 1.6
+          },
+          {
+            "frame": "osc_types.py:write_string",
+            "samples": 25,
+            "active_sample_pct": 1.21
+          },
+          {
+            "frame": "osc_message.py:OscMessage.__init__",
+            "samples": 21,
+            "active_sample_pct": 1.02
+          },
+          {
+            "frame": "osc_types.py:write_float",
+            "samples": 13,
+            "active_sample_pct": 0.63
+          },
+          {
+            "frame": "sender_bench.py:Sink.send",
+            "samples": 4,
+            "active_sample_pct": 0.19
+          }
+        ],
+        "top_inclusive": [
+          {
+            "frame": "sender_bench.py:measure_flushes",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "osc.py:OSCServerDevice.flush",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:run_case",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_code",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "<frozen runpy>:_run_module_as_main",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:main",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "sender_bench.py:<module>",
+            "samples": 2064,
+            "active_sample_pct": 100.0
+          },
+          {
+            "frame": "osc_message_builder.py:OscMessageBuilder.build",
+            "samples": 898,
+            "active_sample_pct": 43.51
+          },
+          {
+            "frame": "__init__:__init__",
+            "samples": 552,
+            "active_sample_pct": 26.74
+          },
+          {
+            "frame": "osc_message.py:OscMessage.__init__",
+            "samples": 433,
+            "active_sample_pct": 20.98
+          },
+          {
+            "frame": "osc_message.py:OscMessage._parse_datagram",
+            "samples": 414,
+            "active_sample_pct": 20.06
+          },
+          {
+            "frame": "<GC>",
+            "samples": 165,
+            "active_sample_pct": 7.99
+          },
+          {
+            "frame": "osc_types.py:get_string",
+            "samples": 147,
+            "active_sample_pct": 7.12
+          },
+          {
+            "frame": "plugin.py:TypedConfig.__get__",
+            "samples": 146,
+            "active_sample_pct": 7.07
+          },
+          {
+            "frame": "osc_message_builder.py:OscMessageBuilder.add_arg",
+            "samples": 127,
+            "active_sample_pct": 6.15
+          }
+        ]
+      }
+    }
+  }
+}

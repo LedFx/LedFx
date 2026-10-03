@@ -1,0 +1,567 @@
+{
+  "scope": "E1.31 and all four OSC modes; sender-only encoding and validated local UDP delivery, not effect/websocket or hardware performance.",
+  "method": {
+    "python": "3.15.0rc2",
+    "baseline_commit": "b15bd5cc",
+    "implementation_commit": "ff1ad3c4",
+    "network": "127.0.0.2 verified local loopback",
+    "input": "Seeded float64 RGB, dense/sparse/static. Encoding excludes setup and receiver. Preflight independently decodes RGB; loopback requires complete frames.",
+    "comparison": "Three sequential one-second repetitions before and after. Min/max retained; runs not randomized. Timing claims use unprofiled data only.",
+    "sampling": "profiling.sampling CPU, three seconds per case, scoped to measure_flushes; Matched before/after encoding-only profiles plus isolated after-loopback profile; mixed after profile also retained.",
+    "limits": "OSC All_To_One exceeds selected UDP datagram limit above 3851 pixels. Per-address cases above 10000 packets/frame explicitly skipped; 500k measured only for E1.31. Header setup cost and cache memory excluded from steady-state timing."
+  },
+  "coverage": {
+    "before": {
+      "ok": 54,
+      "skipped": 36
+    },
+    "final": {
+      "ok": 54,
+      "skipped": 36
+    },
+    "paced": {
+      "ok": 27,
+      "skipped": 18
+    },
+    "traffic": {
+      "ok": 40
+    },
+    "profile-before": {
+      "ok": 2
+    },
+    "profile-after": {
+      "ok": 4
+    },
+    "profile-after-encode": {
+      "ok": 2
+    },
+    "profile-after-loopback": {
+      "ok": 2
+    }
+  },
+  "comparison": [
+    {
+      "sender": "e131",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 0.202113,
+        "min": 0.200048,
+        "max": 0.232412
+      },
+      "after_ms": {
+        "median": 0.167326,
+        "min": 0.166109,
+        "max": 0.194546
+      },
+      "speedup": 1.207899549382642
+    },
+    {
+      "sender": "e131",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 0.335771,
+        "min": 0.330292,
+        "max": 0.344334
+      },
+      "after_ms": {
+        "median": 0.292411,
+        "min": 0.287424,
+        "max": 0.364613
+      },
+      "speedup": 1.1482844352640633
+    },
+    {
+      "sender": "osc-one",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 5.280884,
+        "min": 4.89441,
+        "max": 5.475208
+      },
+      "after_ms": {
+        "median": 0.214261,
+        "min": 0.189833,
+        "max": 0.239039
+      },
+      "speedup": 24.6469679503036
+    },
+    {
+      "sender": "osc-one",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 17.785014,
+        "min": 17.374937,
+        "max": 17.787555
+      },
+      "after_ms": {
+        "median": 5.908673,
+        "min": 5.778624,
+        "max": 6.303988
+      },
+      "speedup": 3.0099844753635883
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 4.023739,
+        "min": 3.718495,
+        "max": 4.204778
+      },
+      "after_ms": {
+        "median": 0.189274,
+        "min": 0.182826,
+        "max": 0.194874
+      },
+      "speedup": 21.25880469583778
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 14.894317,
+        "min": 14.796344,
+        "max": 15.646953
+      },
+      "after_ms": {
+        "median": 6.037277,
+        "min": 5.600664,
+        "max": 8.04646
+      },
+      "speedup": 2.4670587418798244
+    },
+    {
+      "sender": "osc-channels",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 8.092734,
+        "min": 8.02289,
+        "max": 8.20551
+      },
+      "after_ms": {
+        "median": 0.572286,
+        "min": 0.568079,
+        "max": 0.64052
+      },
+      "speedup": 14.141065830721004
+    },
+    {
+      "sender": "osc-channels",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 35.130799,
+        "min": 34.976611,
+        "max": 37.11882
+      },
+      "after_ms": {
+        "median": 17.252218,
+        "min": 15.907877,
+        "max": 17.804252
+      },
+      "speedup": 2.0363062303061557
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 3.46532,
+        "min": 3.363166,
+        "max": 3.835378
+      },
+      "after_ms": {
+        "median": 0.0075,
+        "min": 0.007385,
+        "max": 0.007762
+      },
+      "speedup": 462.0426666666667
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 3.520673,
+        "min": 3.423946,
+        "max": 3.594999
+      },
+      "after_ms": {
+        "median": 0.046436,
+        "min": 0.042038,
+        "max": 0.048575
+      },
+      "speedup": 75.81774916013438
+    },
+    {
+      "sender": "e131",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 1.890515,
+        "min": 1.838587,
+        "max": 1.942512
+      },
+      "after_ms": {
+        "median": 1.514407,
+        "min": 1.497385,
+        "max": 1.547414
+      },
+      "speedup": 1.2483533158523434
+    },
+    {
+      "sender": "e131",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 2.61617,
+        "min": 2.578653,
+        "max": 2.933248
+      },
+      "after_ms": {
+        "median": 2.243061,
+        "min": 2.156233,
+        "max": 2.592857
+      },
+      "speedup": 1.166339212353119
+    },
+    {
+      "sender": "osc-one",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 58.84226,
+        "min": 54.767788,
+        "max": 61.275958
+      },
+      "after_ms": {
+        "median": 1.781091,
+        "min": 1.780971,
+        "max": 1.868802
+      },
+      "speedup": 33.03720023289097
+    },
+    {
+      "sender": "osc-one",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 174.855858,
+        "min": 169.024144,
+        "max": 181.013653
+      },
+      "after_ms": {
+        "median": 56.867394,
+        "min": 56.318631,
+        "max": 57.63128
+      },
+      "speedup": 3.074799910824119
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 42.168289,
+        "min": 41.491104,
+        "max": 54.521815
+      },
+      "after_ms": {
+        "median": 1.837583,
+        "min": 1.811233,
+        "max": 2.036726
+      },
+      "speedup": 22.94769215866712
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 141.166346,
+        "min": 139.339507,
+        "max": 141.841207
+      },
+      "after_ms": {
+        "median": 56.496608,
+        "min": 55.818545,
+        "max": 59.27532
+      },
+      "speedup": 2.4986694068429736
+    },
+    {
+      "sender": "e131",
+      "pixels": 500000,
+      "pattern": "dense",
+      "mode": "encode",
+      "before_ms": {
+        "median": 96.75198,
+        "min": 93.85935,
+        "max": 106.308724
+      },
+      "after_ms": {
+        "median": 81.388577,
+        "min": 78.829494,
+        "max": 82.211834
+      },
+      "speedup": 1.188766084459248
+    },
+    {
+      "sender": "e131",
+      "pixels": 500000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "before_ms": {
+        "median": 129.910931,
+        "min": 127.373317,
+        "max": 134.970948
+      },
+      "after_ms": {
+        "median": 114.595062,
+        "min": 109.831485,
+        "max": 126.498086
+      },
+      "speedup": 1.1336520852879333
+    }
+  ],
+  "paced_target_60": [
+    {
+      "sender": "e131",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 59.994,
+        "min": 59.993,
+        "max": 59.994
+      },
+      "sender_cpu_pct": {
+        "median": 2.41,
+        "min": 2.35,
+        "max": 2.55
+      },
+      "flush_ms": {
+        "median": 0.376789,
+        "min": 0.367097,
+        "max": 0.395516
+      }
+    },
+    {
+      "sender": "osc-one",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 59.994,
+        "min": 59.993,
+        "max": 59.995
+      },
+      "sender_cpu_pct": {
+        "median": 34.81,
+        "min": 34.61,
+        "max": 34.94
+      },
+      "flush_ms": {
+        "median": 5.78253,
+        "min": 5.744724,
+        "max": 5.80112
+      }
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 59.994,
+        "min": 59.993,
+        "max": 59.994
+      },
+      "sender_cpu_pct": {
+        "median": 33.93,
+        "min": 33.38,
+        "max": 34.68
+      },
+      "flush_ms": {
+        "median": 5.67356,
+        "min": 5.543196,
+        "max": 5.760968
+      }
+    },
+    {
+      "sender": "osc-channels",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 59.212,
+        "min": 57.768,
+        "max": 59.856
+      },
+      "sender_cpu_pct": {
+        "median": 98.64,
+        "min": 97.23,
+        "max": 99.01
+      },
+      "flush_ms": {
+        "median": 16.782399,
+        "min": 16.344318,
+        "max": 17.307221
+      }
+    },
+    {
+      "sender": "osc-all",
+      "pixels": 1000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 59.994,
+        "min": 59.994,
+        "max": 59.994
+      },
+      "sender_cpu_pct": {
+        "median": 1.17,
+        "min": 1.17,
+        "max": 1.38
+      },
+      "flush_ms": {
+        "median": 0.169371,
+        "min": 0.168691,
+        "max": 0.200568
+      }
+    },
+    {
+      "sender": "e131",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 59.993,
+        "min": 59.992,
+        "max": 59.994
+      },
+      "sender_cpu_pct": {
+        "median": 14.08,
+        "min": 13.88,
+        "max": 14.28
+      },
+      "flush_ms": {
+        "median": 2.352614,
+        "min": 2.303272,
+        "max": 2.371677
+      }
+    },
+    {
+      "sender": "osc-one",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 17.357,
+        "min": 16.14,
+        "max": 17.898
+      },
+      "sender_cpu_pct": {
+        "median": 99.98,
+        "min": 99.92,
+        "max": 99.98
+      },
+      "flush_ms": {
+        "median": 57.607518,
+        "min": 55.865648,
+        "max": 61.952955
+      }
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 10000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 17.604,
+        "min": 17.531,
+        "max": 18.318
+      },
+      "sender_cpu_pct": {
+        "median": 99.97,
+        "min": 99.97,
+        "max": 99.97
+      },
+      "flush_ms": {
+        "median": 56.799896,
+        "min": 54.585013,
+        "max": 57.038045
+      }
+    },
+    {
+      "sender": "e131",
+      "pixels": 500000,
+      "pattern": "dense",
+      "mode": "loopback",
+      "delivered_fps": {
+        "median": 8.318,
+        "min": 8.12,
+        "max": 8.506
+      },
+      "sender_cpu_pct": {
+        "median": 99.69,
+        "min": 99.67,
+        "max": 99.99
+      },
+      "flush_ms": {
+        "median": 120.211041,
+        "min": 117.562721,
+        "max": 123.145381
+      }
+    }
+  ],
+  "changes": [
+    "OSC caches padded addresses and type tags; bulk integer truncation, normalization and big-endian float32 encoding replace per-message builder/reparse. Packet count, arrays, destination and duplicate suppression unchanged.",
+    "E1.31 precomputes channel intersections and converts each input frame once. The public sACN setter still validates bytes and marks output changes; synchronization and sender lifecycle retained.",
+    "E1.31 whole-universe channel offsets previously crashed (8 failing parameterized tests before fix); intersections now correctly skip untouched universes."
+  ],
+  "remaining_hotspots": [
+    "E1.31 encoding: 53.24% validation generator plus 23.90% setter in sACN DataPacket.dmxData; LedFx flush self share falls from 46.38% to 11.93%.",
+    "OSC loopback: 95.56% of samples in benchmark Sink.send (socket send plus accounting). Per-address datagram count now dominates; reducing it requires receiver/protocol compatibility work."
+  ],
+  "validation": {
+    "focused_tests": 331,
+    "interpreters": [
+      "3.12",
+      "3.15"
+    ],
+    "packet_checks": "Original OSC builder byte equivalence, four dtypes, reversed/strided input, all modes, path padding, starting addresses, repeated frames and config changes. E1.31 actual serialized packets, offsets across universes, untouched slots, channel validation, lifecycle and frozen schemas.",
+    "ruff": "passed",
+    "pyrefly": "passed; three obsolete suppressions removed, none added",
+    "classvar_audit": "399 files, zero problems"
+  },
+  "reproduce": [
+    "python3.15 tools/sender_bench.py --senders e131,osc-one,osc-three,osc-channels,osc-all --pixels 1000,10000,500000 --bind 127.0.0.2 --seconds 1 --repeats 3 --output /tmp/senders.jsonl",
+    "Add --modes loopback --fps 60 for paced delivery/CPU.",
+    "Use --pixels 1000 --patterns sparse,static --seconds .5 --repeats 2 for traffic cases.",
+    "Use --senders e131,osc-three --pixels 10000 --seconds 3 --repeats 1 --sampling cpu for profiles, then python3.15 tools/sender_profile_report.py /tmp/senders.jsonl."
+  ]
+}

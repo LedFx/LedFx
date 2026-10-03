@@ -3,7 +3,7 @@ from typing import Literal
 
 import numpy as np
 from pydantic import Field
-from pythonosc.osc_message_builder import OscMessageBuilder
+from pythonosc.parsing.osc_types import write_string
 from pythonosc.udp_client import SimpleUDPClient
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -54,6 +54,9 @@ class OSCServerDevice(NetworkedDevice):
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "OSC"
+        self._client: SimpleUDPClient | None = None
+        self._osc_header_key: tuple[int, str, int, str] | None = None
+        self._osc_headers: tuple[bytes, ...] = ()
         self.last_frame = np.full((self.config.pixel_count, 3), -1)
 
     OUTPUT_KEYS = (
@@ -102,73 +105,48 @@ class OSCServerDevice(NetworkedDevice):
                 f"Invalid buffer size. {data.size} != {self.config.pixel_count * 3}"
             )
 
-        # Get the config values to variables
-        starting_addr = self.config.starting_addr
+        # Paths and type tags depend only on output configuration. Keep the
+        # exact OSC array tags used by python-osc, including All_To_One's
+        # separate RGB arrays, rather than changing receivers' argument shape.
+        key = (
+            self.config.pixel_count,
+            self.config.send_type,
+            self.config.starting_addr,
+            self.config.path,
+        )
+        count, mode, start, path = key
+        if key != self._osc_header_key:
+            if mode == "Three_Addresses":
+                addresses, tags = count * 3, ",f"
+            elif mode == "All_To_One":
+                addresses, tags = 1, "," + "[fff]" * count
+            else:
+                addresses = count
+                tags = ",[fff]" if mode == "One_Argument" else ",fff"
+            type_tags = write_string(tags)
+            self._osc_headers = tuple(
+                write_string(path.format(address=start + i)) + type_tags
+                for i in range(addresses)
+            )
+            self._osc_header_key = key
 
-        # Convert data to rgb tuple
-        colors = data.astype(int)
-
-        # Create array for messages
-        messages = []
-
-        # Go though all the pixels
-        for i in range(self.config.pixel_count):
-            # Get the rgb values from the colors array
-            r, g, b = colors[i % len(colors)]
-            if self.config.send_type == "One_Argument":
-                send_data = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + i)
-                )
-                send_data.add_arg([r / 255, g / 255, b / 255])
-                messages.append(send_data)
-            elif self.config.send_type == "Three_Arguments":
-                # this one needs editing + saving the device after EVERY restart (atm) for some reason
-                send_data = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + i)
-                )
-                send_data.add_arg(r / 255)
-                send_data.add_arg(g / 255)
-                send_data.add_arg(b / 255)
-                messages.append(send_data)
-            elif self.config.send_type == "Three_Addresses":
-                send_data_r = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + (i * 3))
-                )
-                send_data_r.add_arg(r / 255)
-                send_data_g = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + (i * 3) + 1)
-                )
-                send_data_g.add_arg(g / 255)
-                send_data_b = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + (i * 3) + 2)
-                )
-                send_data_b.add_arg(b / 255)
-                messages.append(send_data_r)
-                messages.append(send_data_g)
-                messages.append(send_data_b)
-            elif self.config.send_type == "All_To_One":
-                if len(messages) == 0:
-                    send_data = OscMessageBuilder(
-                        self.__generate_path(address=starting_addr)
-                    )
-                    send_data.add_arg([r / 255, g / 255, b / 255])
-                    messages.append(send_data)
-                else:
-                    send_data = messages[0]
-                    send_data.add_arg([r / 255, g / 255, b / 255])
-                    messages[0] = send_data
-
-        for message in messages:
+        # Preserve integer truncation before normalization and OSC's float32
+        # rounding, but perform conversion for the whole frame in NumPy.
+        payload = (data.astype(int) / 255).astype(">f4").tobytes()
+        stride = len(payload) // len(self._osc_headers)
+        for index, header in enumerate(self._osc_headers):
+            packet = header + payload[index * stride : (index + 1) * stride]
+            client = self._client
+            if client is None:
+                self.activate()
+                continue
             try:
-                self._client.send(message.build())
+                # UDPClient.send simply sends content.dgram through this socket.
+                # Avoid constructing/parsing an OscMessage for already encoded
+                # bytes; retain its resolved destination and socket lifecycle.
+                client._sock.sendto(packet, (client._address, client._port))
             except AttributeError:
                 self.activate()
                 continue
 
         self.last_frame = np.copy(data)
-
-    def __generate_path(self, path=None, address=None):
-        path = self.config.path if path is None else path
-        address = self.config.starting_addr if address is None else address
-
-        return path.format(address=address)
