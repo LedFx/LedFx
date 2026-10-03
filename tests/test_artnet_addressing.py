@@ -7,7 +7,6 @@ from typing import cast
 
 import numpy as np
 import pytest
-from pydantic import ValidationError
 from stupidArtnet import StupidArtnet
 
 from ledfx.devices.artnet import ArtNetDevice
@@ -45,15 +44,18 @@ def test_artnet_serializes_full_universe_address_without_clamping(start: int) ->
         artnet.close()
 
 
-def test_artnet_rejects_out_of_range_start_and_layout() -> None:
+@pytest.mark.parametrize(("start", "pixels"), [(32768, 1), (32767, 171)])
+def test_artnet_rejects_out_of_range_layout_before_sending(
+    start: int, pixels: int
+) -> None:
     values = {
         "name": "address-test",
         "ip_address": "127.0.0.1",
-        "pixel_count": 171,
-        "universe": 32767,
+        "pixel_count": pixels,
+        "universe": start,
     }
-    with pytest.raises(ValidationError):
-        ArtNetDevice.config_model().model_validate(values | {"universe": 32768})
+    # Preserve the legacy config schema; validate the complete channel span
+    # when preparing output, before the first packet can be emitted.
     device = ArtNetDevice(
         SimpleNamespace(), ArtNetDevice.config_model().model_validate(values)
     )

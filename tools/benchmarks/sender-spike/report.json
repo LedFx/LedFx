@@ -1,0 +1,3571 @@
+{
+  "title": "Device sender characterization and remaining HSV kernels",
+  "branch": "spike/device-senders-and-effect-kernels",
+  "pr": "https://github.com/LedFx/LedFx/pull/2060",
+  "stacked_on": "https://github.com/LedFx/LedFx/pull/2059",
+  "code_commits": {
+    "harness_and_effects": "854848b1",
+    "artnet_address_fix": "1c9ae015",
+    "opc_encoding": "f568996a"
+  },
+  "method": {
+    "python": "3.15.0rc2",
+    "host": "WSL2 Linux",
+    "input": "Precomputed float64 RGB; fixed random seed 2058; dense alternation, sparse max(1,floor(pixels/100)) changes, static frames",
+    "sender_scope": "Real flush, synchronous library serialization and intercepted transport; discovery/authentication/periodic SDK threads excluded",
+    "encode_mode": "Counting sink; does not simulate wire capacity",
+    "loopback_mode": "Real UDP/TCP on 127.0.0.2, separate validating receiver process; sender CPU excludes receiver",
+    "cpu_scale": "100% is one CPU core",
+    "timing": "Per-flush and per-write instrumentation included. Receiver backpressure and scheduling can affect loopback rates. Preflight/seed delivery is outside measured interval.",
+    "catalog": "3 repeats x 0.7 s at 60/300/1000 pixels; screening duration, not universal capacity claims",
+    "large": "3 repeats x 2 s at 10000/500000 pixels, unpaced; explicit skips for format/packet-count limits",
+    "paced": "3 repeats x 2 s, target 60 flushes/s; missed timing is not hidden by queuing",
+    "traffic": "3 repeats x 1.2 s, static/sparse; partial DNRGB keepalives are not counted as complete frames",
+    "effects": "3 repeats x 8 s + 2 s warmup, 500000 pixels, synthetic audio, standard asyncio, full websocket and loopback DDP; effect harness retains its original 127.0.0.1 route in both before/after",
+    "profiling": "Separate 3 s CPU sampling per sender family and 5 s per affected effect. Sender shares filter measure_flushes; effect shares filter active render/audio/preview stacks. No profiled timings used for speedup claims.",
+    "data_state": "Raw metadata records revision and dirty status; some measurements preceded their equivalent code commit. Original invalid Art-Net measurements are retained and replaced by repaired runs in final comparison tables."
+  },
+  "coverage": {
+    "sender-catalog": {
+      "total": 342,
+      "ok": 264,
+      "skipped": 78,
+      "failed": 0
+    },
+    "sender-large-before-artnet-opc": {
+      "total": 84,
+      "ok": 54,
+      "skipped": 24,
+      "failed": 6
+    },
+    "sender-paced-before-artnet-opc": {
+      "total": 63,
+      "ok": 48,
+      "skipped": 12,
+      "failed": 3
+    },
+    "sender-traffic": {
+      "total": 120,
+      "ok": 96,
+      "skipped": 24,
+      "failed": 0
+    },
+    "sender-sampled-encode": {
+      "total": 7,
+      "ok": 7,
+      "skipped": 0,
+      "failed": 0
+    },
+    "sender-sampled-loopback": {
+      "total": 4,
+      "ok": 4,
+      "skipped": 0,
+      "failed": 0
+    },
+    "artnet-fixed": {
+      "total": 18,
+      "ok": 18,
+      "skipped": 0,
+      "failed": 0
+    },
+    "artnet-paced-fixed": {
+      "total": 9,
+      "ok": 9,
+      "skipped": 0,
+      "failed": 0
+    },
+    "opc-after": {
+      "total": 12,
+      "ok": 12,
+      "skipped": 0,
+      "failed": 0
+    },
+    "opc-paced-after": {
+      "total": 3,
+      "ok": 3,
+      "skipped": 0,
+      "failed": 0
+    },
+    "opc-sampled-after": {
+      "total": 1,
+      "ok": 1,
+      "skipped": 0,
+      "failed": 0
+    },
+    "effects-before": {
+      "total": 9,
+      "ok": 9,
+      "skipped": 0,
+      "failed": 0
+    },
+    "effects-after": {
+      "total": 9,
+      "ok": 9,
+      "skipped": 0,
+      "failed": 0
+    },
+    "effects-sampled": {
+      "total": 11,
+      "ok": 11,
+      "skipped": 0,
+      "failed": 0
+    }
+  },
+  "formats": {
+    "ddp": {
+      "module": "ddp",
+      "class_name": "DDPDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "480 RGB pixels/datagram; benchmark cap 1M, not protocol limit",
+      "option": ""
+    },
+    "artnet": {
+      "module": "artnet",
+      "class_name": "ArtNetDevice",
+      "transport": "udp",
+      "max_pixels": 5570560,
+      "note": "510 channels/universe; ordered universe sets, no atomic frame ID",
+      "option": ""
+    },
+    "e131": {
+      "module": "e131",
+      "class_name": "E131Device",
+      "transport": "udp",
+      "max_pixels": 10879660,
+      "note": "510 channels/universe plus sync; sync multicast redirected to loopback; periodic discovery excluded",
+      "option": ""
+    },
+    "opc": {
+      "module": "open_pixel_control",
+      "class_name": "OpenPixelControl",
+      "transport": "udp",
+      "max_pixels": 21834,
+      "note": "LedFx currently uses a single UDP datagram, not TCP; IPv4 datagram limit",
+      "option": ""
+    },
+    "openrgb": {
+      "module": "openrgb",
+      "class_name": "OpenRGB",
+      "transport": "tcp",
+      "max_pixels": 65535,
+      "note": "16-bit pixel count; direct update only, discovery excluded",
+      "option": ""
+    },
+    "adalight": {
+      "module": "adalight",
+      "class_name": "AdalightDevice",
+      "transport": "serial",
+      "max_pixels": 65535,
+      "note": "encoding only; real baud rate and hardware excluded",
+      "option": ""
+    },
+    "nanoleaf": {
+      "module": "nanoleaf",
+      "class_name": "NanoleafDevice",
+      "transport": "udp",
+      "max_pixels": 8188,
+      "note": "v2 UDP, synthetic sequential panel IDs; discovery/authentication excluded",
+      "option": ""
+    },
+    "govee": {
+      "module": "govee",
+      "class_name": "Govee",
+      "transport": "udp",
+      "max_pixels": 255,
+      "note": "8-bit segment count; JSON/base64 Razer payload; activation excluded",
+      "option": ""
+    },
+    "hue": {
+      "module": "hue",
+      "class_name": "HueDevice",
+      "transport": "dtls",
+      "max_pixels": 256,
+      "note": "plaintext encoding only; DTLS, pairing and bridge channel limits excluded",
+      "option": ""
+    },
+    "udp-drgb": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 490,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "DRGB"
+    },
+    "udp-warls": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 255,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "WARLS"
+    },
+    "udp-drgbw": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 367,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "DRGBW"
+    },
+    "udp-dnrgb": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 65536,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "DNRGB"
+    },
+    "udp-adaptive": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 255,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "adaptive_smallest"
+    },
+    "udp-raw": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 500,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "RGB (HyperHDR)"
+    },
+    "osc-one": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "One_Argument"
+    },
+    "osc-three": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "Three_Arguments"
+    },
+    "osc-channels": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "Three_Addresses"
+    },
+    "osc-all": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 3851,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "All_To_One"
+    }
+  },
+  "unmeasured": {
+    "wled": "Delegates flush to measured DDP, E131 or UDP senders; discovery and WLED firmware capacity excluded.",
+    "lifx": "RGB-to-HSBK plus device-specific Animator, or asynchronous single-bulb fallback; scheduling time alone is not delivery time. Needs a separate SDK/device fixture.",
+    "twinkly_squares": "Permutation plus xled v3 realtime chunks; xled creates sockets and needs authenticated session/device layout. Needs an SDK fixture.",
+    "zengee": "Uses only the first RGB triple and calls flux_led setRgb; not a per-pixel strip transport. SDK/device fixture required.",
+    "launchpad": "Model-specific MIDI messages and USB/MIDI transport require hardware coverage.",
+    "rpi_ws281x": "Native GPIO/DMA and output-mode conversion require Raspberry Pi hardware.",
+    "dummy": "No output transport; use pixel_bench --device dummy for rendering-only baseline.",
+    "nanoleaf_tcp": "HTTP request/response path excluded; measured variant is v2 UDP."
+  },
+  "large_500000_unpaced": [
+    {
+      "sender": "ddp",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 6.812558,
+          "min": 6.75732,
+          "max": 6.83498
+        },
+        "flush_fps": {
+          "median": 146.762,
+          "min": 146.275,
+          "max": 147.964
+        },
+        "sender_cpu_pct": {
+          "median": 99.94,
+          "min": 99.2,
+          "max": 99.95
+        },
+        "received_complete_fps": {
+          "median": 146.762,
+          "min": 146.275,
+          "max": 147.964
+        },
+        "write_calls_per_flush": {
+          "median": 1042.0,
+          "min": 1042.0,
+          "max": 1042.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1510420.0,
+          "min": 1510420.0,
+          "max": 1510420.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "source": "artnet-fixed.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 35.65035,
+          "min": 35.395439,
+          "max": 35.732498
+        },
+        "flush_fps": {
+          "median": 28.048,
+          "min": 27.984,
+          "max": 28.25
+        },
+        "sender_cpu_pct": {
+          "median": 99.79,
+          "min": 99.56,
+          "max": 99.97
+        },
+        "received_complete_fps": {
+          "median": 28.048,
+          "min": 27.984,
+          "max": 28.25
+        },
+        "write_calls_per_flush": {
+          "median": 2942.0,
+          "min": 2942.0,
+          "max": 2942.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1553376.0,
+          "min": 1553376.0,
+          "max": 1553376.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "e131",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 131.823798,
+          "min": 125.338878,
+          "max": 132.363113
+        },
+        "flush_fps": {
+          "median": 7.586,
+          "min": 7.555,
+          "max": 7.978
+        },
+        "sender_cpu_pct": {
+          "median": 99.92,
+          "min": 99.82,
+          "max": 99.98
+        },
+        "received_complete_fps": {
+          "median": 7.586,
+          "min": 7.555,
+          "max": 7.978
+        },
+        "write_calls_per_flush": {
+          "median": 2943.0,
+          "min": 2943.0,
+          "max": 2943.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1877045.0,
+          "min": 1877045.0,
+          "max": 1877045.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "status": "skipped",
+      "reason": "selected implementation/format limit: 65536 pixels; traffic minimization enabled; no sequence/frame ID"
+    },
+    {
+      "sender": "opc",
+      "status": "skipped",
+      "reason": "selected implementation/format limit: 21834 pixels; LedFx currently uses a single UDP datagram, not TCP; IPv4 datagram limit"
+    },
+    {
+      "sender": "openrgb",
+      "status": "skipped",
+      "reason": "selected implementation/format limit: 65535 pixels; 16-bit pixel count; direct update only, discovery excluded"
+    },
+    {
+      "sender": "osc-three",
+      "status": "skipped",
+      "reason": "benchmark packet budget: estimated 500000 > 10000; increase --max-packets to include"
+    }
+  ],
+  "large_500000_paced_60": [
+    {
+      "sender": "ddp",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 6.683506,
+          "min": 6.648037,
+          "max": 6.872049
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "sender_cpu_pct": {
+          "median": 40.2,
+          "min": 39.99,
+          "max": 41.17
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "write_calls_per_flush": {
+          "median": 1042.0,
+          "min": 1042.0,
+          "max": 1042.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1510420.0,
+          "min": 1510420.0,
+          "max": 1510420.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "source": "artnet-paced-fixed.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 35.277249,
+          "min": 35.157447,
+          "max": 38.36233
+        },
+        "flush_fps": {
+          "median": 28.344,
+          "min": 26.064,
+          "max": 28.441
+        },
+        "sender_cpu_pct": {
+          "median": 99.85,
+          "min": 99.62,
+          "max": 99.96
+        },
+        "received_complete_fps": {
+          "median": 28.344,
+          "min": 26.064,
+          "max": 28.441
+        },
+        "write_calls_per_flush": {
+          "median": 2942.0,
+          "min": 2942.0,
+          "max": 2942.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1553376.0,
+          "min": 1553376.0,
+          "max": 1553376.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "e131",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 134.158136,
+          "min": 133.561867,
+          "max": 138.597184
+        },
+        "flush_fps": {
+          "median": 7.454,
+          "min": 7.215,
+          "max": 7.487
+        },
+        "sender_cpu_pct": {
+          "median": 99.94,
+          "min": 99.89,
+          "max": 99.95
+        },
+        "received_complete_fps": {
+          "median": 7.454,
+          "min": 7.215,
+          "max": 7.487
+        },
+        "write_calls_per_flush": {
+          "median": 2943.0,
+          "min": 2943.0,
+          "max": 2943.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1877045.0,
+          "min": 1877045.0,
+          "max": 1877045.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "status": "skipped",
+      "reason": "selected implementation/format limit: 65536 pixels; traffic minimization enabled; no sequence/frame ID"
+    },
+    {
+      "sender": "opc",
+      "status": "skipped",
+      "reason": "selected implementation/format limit: 21834 pixels; LedFx currently uses a single UDP datagram, not TCP; IPv4 datagram limit"
+    },
+    {
+      "sender": "openrgb",
+      "status": "skipped",
+      "reason": "selected implementation/format limit: 65535 pixels; 16-bit pixel count; direct update only, discovery excluded"
+    },
+    {
+      "sender": "osc-three",
+      "status": "skipped",
+      "reason": "benchmark packet budget: estimated 500000 > 10000; increase --max-packets to include"
+    }
+  ],
+  "comparison_10000_unpaced": [
+    {
+      "sender": "ddp",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.15823,
+          "min": 0.155032,
+          "max": 0.165275
+        },
+        "flush_fps": {
+          "median": 6299.889,
+          "min": 6029.325,
+          "max": 6429.704
+        },
+        "sender_cpu_pct": {
+          "median": 99.86,
+          "min": 99.77,
+          "max": 99.96
+        },
+        "received_complete_fps": {
+          "median": 6299.889,
+          "min": 6029.325,
+          "max": 6429.704
+        },
+        "write_calls_per_flush": {
+          "median": 21.0,
+          "min": 21.0,
+          "max": 21.0
+        },
+        "application_bytes_per_flush": {
+          "median": 30210.0,
+          "min": 30210.0,
+          "max": 30210.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "source": "artnet-fixed.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.766926,
+          "min": 0.763545,
+          "max": 0.772833
+        },
+        "flush_fps": {
+          "median": 1302.764,
+          "min": 1292.909,
+          "max": 1308.595
+        },
+        "sender_cpu_pct": {
+          "median": 99.32,
+          "min": 99.25,
+          "max": 99.6
+        },
+        "received_complete_fps": {
+          "median": 1302.764,
+          "min": 1292.909,
+          "max": 1308.595
+        },
+        "write_calls_per_flush": {
+          "median": 59.0,
+          "min": 59.0,
+          "max": 59.0
+        },
+        "application_bytes_per_flush": {
+          "median": 31152.0,
+          "min": 31152.0,
+          "max": 31152.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "e131",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 2.536419,
+          "min": 2.518501,
+          "max": 2.703964
+        },
+        "flush_fps": {
+          "median": 394.155,
+          "min": 369.73,
+          "max": 396.962
+        },
+        "sender_cpu_pct": {
+          "median": 99.95,
+          "min": 99.78,
+          "max": 99.97
+        },
+        "received_complete_fps": {
+          "median": 394.155,
+          "min": 369.73,
+          "max": 396.962
+        },
+        "write_calls_per_flush": {
+          "median": 60.0,
+          "min": 60.0,
+          "max": 60.0
+        },
+        "application_bytes_per_flush": {
+          "median": 37691.0,
+          "min": 37691.0,
+          "max": 37691.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.295475,
+          "min": 0.293137,
+          "max": 0.30785
+        },
+        "flush_fps": {
+          "median": 3377.33,
+          "min": 3241.981,
+          "max": 3404.353
+        },
+        "sender_cpu_pct": {
+          "median": 99.36,
+          "min": 98.67,
+          "max": 99.63
+        },
+        "received_complete_fps": {
+          "median": 3377.33,
+          "min": 3241.981,
+          "max": 3404.353
+        },
+        "write_calls_per_flush": {
+          "median": 21.0,
+          "min": 21.0,
+          "max": 21.0
+        },
+        "application_bytes_per_flush": {
+          "median": 30084.0,
+          "min": 30084.0,
+          "max": 30084.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "opc",
+      "source": "opc-after.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.054948,
+          "min": 0.054508,
+          "max": 0.059544
+        },
+        "flush_fps": {
+          "median": 17999.361,
+          "min": 16603.846,
+          "max": 18141.67
+        },
+        "sender_cpu_pct": {
+          "median": 99.45,
+          "min": 99.22,
+          "max": 99.78
+        },
+        "received_complete_fps": {
+          "median": 17999.361,
+          "min": 16603.846,
+          "max": 18141.67
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 30004.0,
+          "min": 30004.0,
+          "max": 30004.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "openrgb",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.062354,
+          "min": 0.061301,
+          "max": 0.072931
+        },
+        "flush_fps": {
+          "median": 15938.735,
+          "min": 13614.112,
+          "max": 16213.733
+        },
+        "sender_cpu_pct": {
+          "median": 99.84,
+          "min": 99.43,
+          "max": 99.9
+        },
+        "received_complete_fps": {
+          "median": 15938.735,
+          "min": 13614.112,
+          "max": 16213.733
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 40022.0,
+          "min": 40022.0,
+          "max": 40022.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "osc-three",
+      "source": "sender-large-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 146.580073,
+          "min": 141.646726,
+          "max": 148.872349
+        },
+        "flush_fps": {
+          "median": 6.822,
+          "min": 6.717,
+          "max": 7.06
+        },
+        "sender_cpu_pct": {
+          "median": 99.97,
+          "min": 99.82,
+          "max": 99.97
+        },
+        "received_complete_fps": {
+          "median": 6.822,
+          "min": 6.717,
+          "max": 7.06
+        },
+        "write_calls_per_flush": {
+          "median": 10000.0,
+          "min": 10000.0,
+          "max": 10000.0
+        },
+        "application_bytes_per_flush": {
+          "median": 320000.0,
+          "min": 320000.0,
+          "max": 320000.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    }
+  ],
+  "comparison_10000_paced_60": [
+    {
+      "sender": "ddp",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.235293,
+          "min": 0.228787,
+          "max": 0.248995
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.996,
+          "max": 59.997
+        },
+        "sender_cpu_pct": {
+          "median": 1.55,
+          "min": 1.51,
+          "max": 1.62
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.996,
+          "max": 59.997
+        },
+        "write_calls_per_flush": {
+          "median": 21.0,
+          "min": 21.0,
+          "max": 21.0
+        },
+        "application_bytes_per_flush": {
+          "median": 30210.0,
+          "min": 30210.0,
+          "max": 30210.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "source": "artnet-paced-fixed.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.817346,
+          "min": 0.761154,
+          "max": 0.851146
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.998
+        },
+        "sender_cpu_pct": {
+          "median": 4.92,
+          "min": 4.69,
+          "max": 5.21
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.998
+        },
+        "write_calls_per_flush": {
+          "median": 59.0,
+          "min": 59.0,
+          "max": 59.0
+        },
+        "application_bytes_per_flush": {
+          "median": 31152.0,
+          "min": 31152.0,
+          "max": 31152.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "e131",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 2.596432,
+          "min": 2.56458,
+          "max": 2.615373
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "sender_cpu_pct": {
+          "median": 15.7,
+          "min": 15.36,
+          "max": 15.83
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "write_calls_per_flush": {
+          "median": 60.0,
+          "min": 60.0,
+          "max": 60.0
+        },
+        "application_bytes_per_flush": {
+          "median": 37691.0,
+          "min": 37691.0,
+          "max": 37691.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.385945,
+          "min": 0.370906,
+          "max": 0.405587
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.996,
+          "max": 59.997
+        },
+        "sender_cpu_pct": {
+          "median": 2.43,
+          "min": 2.29,
+          "max": 2.54
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.996,
+          "max": 59.997
+        },
+        "write_calls_per_flush": {
+          "median": 21.0,
+          "min": 21.0,
+          "max": 21.0
+        },
+        "application_bytes_per_flush": {
+          "median": 30084.0,
+          "min": 30084.0,
+          "max": 30084.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "opc",
+      "source": "opc-paced-after.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.167358,
+          "min": 0.149603,
+          "max": 0.204066
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "sender_cpu_pct": {
+          "median": 1.18,
+          "min": 1.03,
+          "max": 1.19
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 30004.0,
+          "min": 30004.0,
+          "max": 30004.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "openrgb",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 0.148401,
+          "min": 0.143963,
+          "max": 0.154643
+        },
+        "flush_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "sender_cpu_pct": {
+          "median": 1.01,
+          "min": 1.0,
+          "max": 1.07
+        },
+        "received_complete_fps": {
+          "median": 59.997,
+          "min": 59.997,
+          "max": 59.997
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 40022.0,
+          "min": 40022.0,
+          "max": 40022.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "osc-three",
+      "source": "sender-paced-before-artnet-opc.jsonl",
+      "repeats": 3,
+      "metrics": {
+        "flush_mean_ms": {
+          "median": 147.411645,
+          "min": 143.632822,
+          "max": 150.40011
+        },
+        "flush_fps": {
+          "median": 6.784,
+          "min": 6.649,
+          "max": 6.962
+        },
+        "sender_cpu_pct": {
+          "median": 99.89,
+          "min": 99.83,
+          "max": 99.96
+        },
+        "received_complete_fps": {
+          "median": 6.784,
+          "min": 6.649,
+          "max": 6.962
+        },
+        "write_calls_per_flush": {
+          "median": 10000.0,
+          "min": 10000.0,
+          "max": 10000.0
+        },
+        "application_bytes_per_flush": {
+          "median": 320000.0,
+          "min": 320000.0,
+          "max": 320000.0
+        }
+      },
+      "delivery_ratio": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    }
+  ],
+  "opc_10000_speedups": [
+    {
+      "mode": "encode",
+      "pixels": 10000,
+      "before": {
+        "median": 4.954635,
+        "min": 4.88823,
+        "max": 5.020721
+      },
+      "after": {
+        "median": 0.014194,
+        "min": 0.012828,
+        "max": 0.014797
+      },
+      "speedup": 349.07
+    },
+    {
+      "mode": "loopback",
+      "pixels": 10000,
+      "before": {
+        "median": 5.061879,
+        "min": 5.01059,
+        "max": 5.292174
+      },
+      "after": {
+        "median": 0.054948,
+        "min": 0.054508,
+        "max": 0.059544
+      },
+      "speedup": 92.12
+    }
+  ],
+  "effect_comparisons": [
+    {
+      "effect": "melt_and_sparkle",
+      "metrics": {
+        "assemble.fps": {
+          "before": {
+            "median": 15.5,
+            "min": 15.37,
+            "max": 16.12
+          },
+          "after": {
+            "median": 17.62,
+            "min": 17.37,
+            "max": 17.87
+          }
+        },
+        "effect.mean_ms": {
+          "before": {
+            "median": 50.417,
+            "min": 48.948,
+            "max": 50.86
+          },
+          "after": {
+            "median": 43.845,
+            "min": 43.227,
+            "max": 43.975
+          }
+        },
+        "audio.fps": {
+          "before": {
+            "median": 31.62,
+            "min": 31.37,
+            "max": 32.37
+          },
+          "after": {
+            "median": 35.25,
+            "min": 34.99,
+            "max": 35.87
+          }
+        },
+        "ws_changed_fps": {
+          "before": {
+            "median": 15.5,
+            "min": 15.37,
+            "max": 16.25
+          },
+          "after": {
+            "median": 17.62,
+            "min": 17.37,
+            "max": 17.87
+          }
+        },
+        "server_cpu_pct": {
+          "before": {
+            "median": 97.2,
+            "min": 97.0,
+            "max": 97.9
+          },
+          "after": {
+            "median": 96.9,
+            "min": 96.5,
+            "max": 97.0
+          }
+        },
+        "rss_mb": {
+          "before": {
+            "median": 325.5,
+            "min": 325.3,
+            "max": 326.0
+          },
+          "after": {
+            "median": 326.2,
+            "min": 325.8,
+            "max": 326.3
+          }
+        }
+      }
+    },
+    {
+      "effect": "crawler",
+      "metrics": {
+        "assemble.fps": {
+          "before": {
+            "median": 25.75,
+            "min": 25.12,
+            "max": 25.87
+          },
+          "after": {
+            "median": 26.12,
+            "min": 25.22,
+            "max": 26.87
+          }
+        },
+        "effect.mean_ms": {
+          "before": {
+            "median": 25.859,
+            "min": 25.548,
+            "max": 26.161
+          },
+          "after": {
+            "median": 23.992,
+            "min": 23.594,
+            "max": 24.459
+          }
+        },
+        "audio.fps": {
+          "before": {
+            "median": 51.99,
+            "min": 50.25,
+            "max": 52.24
+          },
+          "after": {
+            "median": 53.99,
+            "min": 52.44,
+            "max": 55.37
+          }
+        },
+        "ws_changed_fps": {
+          "before": {
+            "median": 25.87,
+            "min": 25.0,
+            "max": 25.87
+          },
+          "after": {
+            "median": 26.12,
+            "min": 25.22,
+            "max": 26.87
+          }
+        },
+        "server_cpu_pct": {
+          "before": {
+            "median": 95.7,
+            "min": 93.7,
+            "max": 96.5
+          },
+          "after": {
+            "median": 95.4,
+            "min": 87.3,
+            "max": 98.0
+          }
+        },
+        "rss_mb": {
+          "before": {
+            "median": 292.9,
+            "min": 292.2,
+            "max": 294.7
+          },
+          "after": {
+            "median": 292.5,
+            "min": 292.5,
+            "max": 292.6
+          }
+        }
+      }
+    },
+    {
+      "effect": "water",
+      "metrics": {
+        "assemble.fps": {
+          "before": {
+            "median": 25.37,
+            "min": 24.62,
+            "max": 25.87
+          },
+          "after": {
+            "median": 26.62,
+            "min": 26.12,
+            "max": 28.0
+          }
+        },
+        "effect.mean_ms": {
+          "before": {
+            "median": 26.461,
+            "min": 26.164,
+            "max": 27.31
+          },
+          "after": {
+            "median": 23.575,
+            "min": 23.352,
+            "max": 23.693
+          }
+        },
+        "audio.fps": {
+          "before": {
+            "median": 51.48,
+            "min": 49.87,
+            "max": 52.11
+          },
+          "after": {
+            "median": 53.74,
+            "min": 53.37,
+            "max": 55.99
+          }
+        },
+        "ws_changed_fps": {
+          "before": {
+            "median": 25.37,
+            "min": 24.75,
+            "max": 25.87
+          },
+          "after": {
+            "median": 26.62,
+            "min": 26.12,
+            "max": 28.0
+          }
+        },
+        "server_cpu_pct": {
+          "before": {
+            "median": 95.5,
+            "min": 95.4,
+            "max": 95.6
+          },
+          "after": {
+            "median": 91.7,
+            "min": 91.5,
+            "max": 94.6
+          }
+        },
+        "rss_mb": {
+          "before": {
+            "median": 296.7,
+            "min": 296.6,
+            "max": 297.0
+          },
+          "after": {
+            "median": 296.3,
+            "min": 296.1,
+            "max": 296.5
+          }
+        }
+      }
+    }
+  ],
+  "traffic_summary": [
+    {
+      "sender": "ddp",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 821396.78,
+          "min": 729724.674,
+          "max": 822428.345
+        },
+        "flush_mean_ms": {
+          "median": 0.001092,
+          "min": 0.001085,
+          "max": 0.001234
+        },
+        "flush_p95_ms": {
+          "median": 0.001072,
+          "min": 0.001072,
+          "max": 0.001543
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.001217,
+          "min": 0.001216,
+          "max": 0.00137
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.98,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 156.065,
+          "min": 138.648,
+          "max": 156.261
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 190.0,
+          "min": 190.0,
+          "max": 190.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 96632.415,
+          "min": 93913.413,
+          "max": 99252.092
+        },
+        "flush_mean_ms": {
+          "median": 0.010126,
+          "min": 0.009879,
+          "max": 0.010438
+        },
+        "flush_p95_ms": {
+          "median": 0.024927,
+          "min": 0.024867,
+          "max": 0.025077
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.010346,
+          "min": 0.010035,
+          "max": 0.010612
+        },
+        "sender_cpu_pct": {
+          "median": 99.66,
+          "min": 99.6,
+          "max": 99.98
+        },
+        "application_MB_s": {
+          "median": 18.36,
+          "min": 17.844,
+          "max": 18.858
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 190.0,
+          "min": 190.0,
+          "max": 190.0
+        },
+        "received_complete_fps": {
+          "median": 96632.415,
+          "min": 93913.413,
+          "max": 99252.092
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 725636.47,
+          "min": 695228.755,
+          "max": 843206.114
+        },
+        "flush_mean_ms": {
+          "median": 0.001246,
+          "min": 0.001066,
+          "max": 0.001289
+        },
+        "flush_p95_ms": {
+          "median": 0.001553,
+          "min": 0.001072,
+          "max": 0.001573
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.001378,
+          "min": 0.001186,
+          "max": 0.001437
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.89,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 137.871,
+          "min": 132.093,
+          "max": 160.209
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 190.0,
+          "min": 190.0,
+          "max": 190.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 101595.711,
+          "min": 95106.681,
+          "max": 102911.474
+        },
+        "flush_mean_ms": {
+          "median": 0.00965,
+          "min": 0.009513,
+          "max": 0.010309
+        },
+        "flush_p95_ms": {
+          "median": 0.024837,
+          "min": 0.024777,
+          "max": 0.024987
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.009804,
+          "min": 0.009663,
+          "max": 0.010452
+        },
+        "sender_cpu_pct": {
+          "median": 99.45,
+          "min": 99.41,
+          "max": 99.61
+        },
+        "application_MB_s": {
+          "median": 19.303,
+          "min": 18.07,
+          "max": 19.553
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 190.0,
+          "min": 190.0,
+          "max": 190.0
+        },
+        "received_complete_fps": {
+          "median": 101595.711,
+          "min": 95106.681,
+          "max": 102911.474
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 306245.065,
+          "min": 257803.361,
+          "max": 310611.744
+        },
+        "flush_mean_ms": {
+          "median": 0.00315,
+          "min": 0.003106,
+          "max": 0.003746
+        },
+        "flush_p95_ms": {
+          "median": 0.003787,
+          "min": 0.003106,
+          "max": 0.004689
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.003265,
+          "min": 0.003219,
+          "max": 0.003878
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.98,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 56.349,
+          "min": 47.436,
+          "max": 57.153
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 184.0,
+          "min": 184.0,
+          "max": 184.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 34034.385,
+          "min": 33855.508,
+          "max": 39237.178
+        },
+        "flush_mean_ms": {
+          "median": 0.028989,
+          "min": 0.025146,
+          "max": 0.029146
+        },
+        "flush_p95_ms": {
+          "median": 0.052817,
+          "min": 0.051908,
+          "max": 0.060605
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.029372,
+          "min": 0.025289,
+          "max": 0.029529
+        },
+        "sender_cpu_pct": {
+          "median": 99.96,
+          "min": 99.23,
+          "max": 99.97
+        },
+        "application_MB_s": {
+          "median": 6.262,
+          "min": 6.229,
+          "max": 7.22
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 184.0,
+          "min": 184.0,
+          "max": 184.0
+        },
+        "received_complete_fps": {
+          "median": 34034.385,
+          "min": 33855.508,
+          "max": 39237.178
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 289483.549,
+          "min": 272563.495,
+          "max": 312629.197
+        },
+        "flush_mean_ms": {
+          "median": 0.003334,
+          "min": 0.003086,
+          "max": 0.003547
+        },
+        "flush_p95_ms": {
+          "median": 0.004228,
+          "min": 0.003136,
+          "max": 0.004539
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.003454,
+          "min": 0.003197,
+          "max": 0.003669
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.93,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.001,
+          "min": 0.001,
+          "max": 0.001
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 314782.361,
+          "min": 309853.22,
+          "max": 316431.814
+        },
+        "flush_mean_ms": {
+          "median": 0.003066,
+          "min": 0.003048,
+          "max": 0.003113
+        },
+        "flush_p95_ms": {
+          "median": 0.003988,
+          "min": 0.003206,
+          "max": 0.004058
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.003175,
+          "min": 0.00316,
+          "max": 0.003227
+        },
+        "sender_cpu_pct": {
+          "median": 100.0,
+          "min": 99.93,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.001,
+          "min": 0.001,
+          "max": 0.001
+        },
+        "received_complete_fps": {
+          "median": 1.667,
+          "min": 1.667,
+          "max": 1.667
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 151708.559,
+          "min": 143569.528,
+          "max": 154169.866
+        },
+        "flush_mean_ms": {
+          "median": 0.00647,
+          "min": 0.006366,
+          "max": 0.00684
+        },
+        "flush_p95_ms": {
+          "median": 0.008196,
+          "min": 0.008105,
+          "max": 0.008627
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.006591,
+          "min": 0.006486,
+          "max": 0.006965
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.99,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.91,
+          "min": 0.861,
+          "max": 0.925
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 6.0,
+          "min": 6.0,
+          "max": 6.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 18258.499,
+          "min": 17363.055,
+          "max": 19162.226
+        },
+        "flush_mean_ms": {
+          "median": 0.054203,
+          "min": 0.051648,
+          "max": 0.057003
+        },
+        "flush_p95_ms": {
+          "median": 0.078028,
+          "min": 0.075538,
+          "max": 0.080899
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.054758,
+          "min": 0.05202,
+          "max": 0.057549
+        },
+        "sender_cpu_pct": {
+          "median": 99.92,
+          "min": 99.68,
+          "max": 99.98
+        },
+        "application_MB_s": {
+          "median": 0.11,
+          "min": 0.104,
+          "max": 0.115
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 6.0,
+          "min": 6.0,
+          "max": 6.0
+        },
+        "received_complete_fps": {
+          "median": 18258.499,
+          "min": 17363.055,
+          "max": 19162.226
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 157824.918,
+          "min": 151705.69,
+          "max": 167604.067
+        },
+        "flush_mean_ms": {
+          "median": 0.006217,
+          "min": 0.005854,
+          "max": 0.00647
+        },
+        "flush_p95_ms": {
+          "median": 0.007755,
+          "min": 0.007183,
+          "max": 0.008136
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.006336,
+          "min": 0.005958,
+          "max": 0.00659
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.86,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 158602.423,
+          "min": 150352.981,
+          "max": 160261.868
+        },
+        "flush_mean_ms": {
+          "median": 0.006189,
+          "min": 0.006123,
+          "max": 0.006526
+        },
+        "flush_p95_ms": {
+          "median": 0.008106,
+          "min": 0.007635,
+          "max": 0.008286
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.006278,
+          "min": 0.00624,
+          "max": 0.006636
+        },
+        "sender_cpu_pct": {
+          "median": 99.77,
+          "min": 99.58,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "received_complete_fps": {
+          "median": 1.667,
+          "min": 1.667,
+          "max": 1.667
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 115999.44,
+          "min": 115419.706,
+          "max": 116121.063
+        },
+        "flush_mean_ms": {
+          "median": 0.008503,
+          "min": 0.008494,
+          "max": 0.008544
+        },
+        "flush_p95_ms": {
+          "median": 0.0106,
+          "min": 0.010449,
+          "max": 0.01071
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.00862,
+          "min": 0.00861,
+          "max": 0.00866
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.95,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 0.696,
+          "min": 0.693,
+          "max": 0.697
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 6.0,
+          "min": 6.0,
+          "max": 6.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 14980.568,
+          "min": 14904.535,
+          "max": 17096.002
+        },
+        "flush_mean_ms": {
+          "median": 0.066113,
+          "min": 0.057937,
+          "max": 0.066455
+        },
+        "flush_p95_ms": {
+          "median": 0.08834,
+          "min": 0.084134,
+          "max": 0.091726
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.066722,
+          "min": 0.058005,
+          "max": 0.067061
+        },
+        "sender_cpu_pct": {
+          "median": 99.95,
+          "min": 99.17,
+          "max": 99.95
+        },
+        "application_MB_s": {
+          "median": 0.09,
+          "min": 0.089,
+          "max": 0.103
+        },
+        "write_calls_per_flush": {
+          "median": 1.0,
+          "min": 1.0,
+          "max": 1.0
+        },
+        "application_bytes_per_flush": {
+          "median": 6.0,
+          "min": 6.0,
+          "max": 6.0
+        },
+        "received_complete_fps": {
+          "median": 14980.568,
+          "min": 14904.535,
+          "max": 17096.002
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 119586.72,
+          "min": 117637.516,
+          "max": 121837.915
+        },
+        "flush_mean_ms": {
+          "median": 0.008244,
+          "min": 0.008091,
+          "max": 0.008382
+        },
+        "flush_p95_ms": {
+          "median": 0.010219,
+          "min": 0.010209,
+          "max": 0.010339
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.00836,
+          "min": 0.008207,
+          "max": 0.008497
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.96,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 104839.744,
+          "min": 94051.362,
+          "max": 119319.569
+        },
+        "flush_mean_ms": {
+          "median": 0.009403,
+          "min": 0.008262,
+          "max": 0.01048
+        },
+        "flush_p95_ms": {
+          "median": 0.013927,
+          "min": 0.01041,
+          "max": 0.020197
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.009536,
+          "min": 0.00838,
+          "max": 0.010624
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.92,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "received_complete_fps": {
+          "median": 1.667,
+          "min": 1.667,
+          "max": 1.667
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 4403.555,
+          "min": 4254.42,
+          "max": 4488.256
+        },
+        "flush_mean_ms": {
+          "median": 0.226825,
+          "min": 0.222543,
+          "max": 0.234744
+        },
+        "flush_p95_ms": {
+          "median": 0.287336,
+          "min": 0.268127,
+          "max": 0.314949
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.227052,
+          "min": 0.222786,
+          "max": 0.235041
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.98,
+          "max": 100.0
+        },
+        "application_MB_s": {
+          "median": 8.455,
+          "min": 8.168,
+          "max": 8.617
+        },
+        "write_calls_per_flush": {
+          "median": 60.0,
+          "min": 60.0,
+          "max": 60.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1920.0,
+          "min": 1920.0,
+          "max": 1920.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 60,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 1104.091,
+          "min": 1066.945,
+          "max": 1116.565
+        },
+        "flush_mean_ms": {
+          "median": 0.905179,
+          "min": 0.895042,
+          "max": 0.936732
+        },
+        "flush_p95_ms": {
+          "median": 1.20758,
+          "min": 1.187579,
+          "max": 1.253527
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.905507,
+          "min": 0.883124,
+          "max": 0.929854
+        },
+        "sender_cpu_pct": {
+          "median": 99.21,
+          "min": 98.61,
+          "max": 99.98
+        },
+        "application_MB_s": {
+          "median": 2.12,
+          "min": 2.049,
+          "max": 2.144
+        },
+        "write_calls_per_flush": {
+          "median": 60.0,
+          "min": 60.0,
+          "max": 60.0
+        },
+        "application_bytes_per_flush": {
+          "median": 1920.0,
+          "min": 1920.0,
+          "max": 1920.0
+        },
+        "received_complete_fps": {
+          "median": 1104.091,
+          "min": 1066.945,
+          "max": 1116.565
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 1038397.95,
+          "min": 1027011.548,
+          "max": 1044278.22
+        },
+        "flush_mean_ms": {
+          "median": 0.000837,
+          "min": 0.000837,
+          "max": 0.00085
+        },
+        "flush_p95_ms": {
+          "median": 0.000832,
+          "min": 0.000821,
+          "max": 0.001072
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.000963,
+          "min": 0.000957,
+          "max": 0.000973
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.97,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 60,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 950730.906,
+          "min": 934166.639,
+          "max": 1045326.803
+        },
+        "flush_mean_ms": {
+          "median": 0.000922,
+          "min": 0.000835,
+          "max": 0.000937
+        },
+        "flush_p95_ms": {
+          "median": 0.001163,
+          "min": 0.000841,
+          "max": 0.001172
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.001048,
+          "min": 0.000957,
+          "max": 0.001069
+        },
+        "sender_cpu_pct": {
+          "median": 99.89,
+          "min": 99.68,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "received_complete_fps": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 387509.071,
+          "min": 387321.088,
+          "max": 392976.503
+        },
+        "flush_mean_ms": {
+          "median": 0.002437,
+          "min": 0.00242,
+          "max": 0.002455
+        },
+        "flush_p95_ms": {
+          "median": 0.002825,
+          "min": 0.002365,
+          "max": 0.002986
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.002578,
+          "min": 0.002544,
+          "max": 0.002582
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.91,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 1174.152,
+          "min": 1173.583,
+          "max": 1190.719
+        },
+        "write_calls_per_flush": {
+          "median": 3.0,
+          "min": 3.0,
+          "max": 3.0
+        },
+        "application_bytes_per_flush": {
+          "median": 3030.0,
+          "min": 3030.0,
+          "max": 3030.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 37023.622,
+          "min": 36546.277,
+          "max": 39179.593
+        },
+        "flush_mean_ms": {
+          "median": 0.026749,
+          "min": 0.025283,
+          "max": 0.027098
+        },
+        "flush_p95_ms": {
+          "median": 0.050074,
+          "min": 0.049844,
+          "max": 0.060364
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.026958,
+          "min": 0.025515,
+          "max": 0.027355
+        },
+        "sender_cpu_pct": {
+          "median": 99.97,
+          "min": 99.81,
+          "max": 99.97
+        },
+        "application_MB_s": {
+          "median": 112.182,
+          "min": 110.735,
+          "max": 118.714
+        },
+        "write_calls_per_flush": {
+          "median": 3.0,
+          "min": 3.0,
+          "max": 3.0
+        },
+        "application_bytes_per_flush": {
+          "median": 3030.0,
+          "min": 3030.0,
+          "max": 3030.0
+        },
+        "received_complete_fps": {
+          "median": 37023.622,
+          "min": 36546.277,
+          "max": 39179.593
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 395564.119,
+          "min": 388740.492,
+          "max": 397334.157
+        },
+        "flush_mean_ms": {
+          "median": 0.002408,
+          "min": 0.002402,
+          "max": 0.002453
+        },
+        "flush_p95_ms": {
+          "median": 0.002956,
+          "min": 0.002405,
+          "max": 0.003095
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.002528,
+          "min": 0.002516,
+          "max": 0.002572
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.98,
+          "max": 99.98
+        },
+        "application_MB_s": {
+          "median": 1198.559,
+          "min": 1177.884,
+          "max": 1203.922
+        },
+        "write_calls_per_flush": {
+          "median": 3.0,
+          "min": 3.0,
+          "max": 3.0
+        },
+        "application_bytes_per_flush": {
+          "median": 3030.0,
+          "min": 3030.0,
+          "max": 3030.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "ddp",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 38816.294,
+          "min": 37373.751,
+          "max": 39705.763
+        },
+        "flush_mean_ms": {
+          "median": 0.025516,
+          "min": 0.024948,
+          "max": 0.026505
+        },
+        "flush_p95_ms": {
+          "median": 0.050686,
+          "min": 0.049103,
+          "max": 0.052349
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.025689,
+          "min": 0.024991,
+          "max": 0.026517
+        },
+        "sender_cpu_pct": {
+          "median": 99.23,
+          "min": 99.1,
+          "max": 99.72
+        },
+        "application_MB_s": {
+          "median": 117.613,
+          "min": 113.242,
+          "max": 120.308
+        },
+        "write_calls_per_flush": {
+          "median": 3.0,
+          "min": 3.0,
+          "max": 3.0
+        },
+        "application_bytes_per_flush": {
+          "median": 3030.0,
+          "min": 3030.0,
+          "max": 3030.0
+        },
+        "received_complete_fps": {
+          "median": 38816.294,
+          "min": 37373.751,
+          "max": 39705.763
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 133854.025,
+          "min": 124398.29,
+          "max": 134401.528
+        },
+        "flush_mean_ms": {
+          "median": 0.007346,
+          "min": 0.007317,
+          "max": 0.007907
+        },
+        "flush_p95_ms": {
+          "median": 0.009819,
+          "min": 0.008366,
+          "max": 0.010149
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.00747,
+          "min": 0.007438,
+          "max": 0.008038
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.97,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 403.168,
+          "min": 374.688,
+          "max": 404.817
+        },
+        "write_calls_per_flush": {
+          "median": 3.0,
+          "min": 3.0,
+          "max": 3.0
+        },
+        "application_bytes_per_flush": {
+          "median": 3012.0,
+          "min": 3012.0,
+          "max": 3012.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 16100.735,
+          "min": 15457.368,
+          "max": 16725.214
+        },
+        "flush_mean_ms": {
+          "median": 0.061623,
+          "min": 0.059347,
+          "max": 0.064222
+        },
+        "flush_p95_ms": {
+          "median": 0.110409,
+          "min": 0.104037,
+          "max": 0.115481
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.062012,
+          "min": 0.059774,
+          "max": 0.064675
+        },
+        "sender_cpu_pct": {
+          "median": 99.97,
+          "min": 99.84,
+          "max": 99.97
+        },
+        "application_MB_s": {
+          "median": 48.495,
+          "min": 46.558,
+          "max": 50.376
+        },
+        "write_calls_per_flush": {
+          "median": 3.0,
+          "min": 3.0,
+          "max": 3.0
+        },
+        "application_bytes_per_flush": {
+          "median": 3012.0,
+          "min": 3012.0,
+          "max": 3012.0
+        },
+        "received_complete_fps": {
+          "median": 16100.735,
+          "min": 15457.368,
+          "max": 16725.214
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 147345.937,
+          "min": 125503.206,
+          "max": 148130.176
+        },
+        "flush_mean_ms": {
+          "median": 0.006669,
+          "min": 0.006633,
+          "max": 0.007832
+        },
+        "flush_p95_ms": {
+          "median": 0.008677,
+          "min": 0.008676,
+          "max": 0.01047
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.006786,
+          "min": 0.00675,
+          "max": 0.007937
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.62,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.002,
+          "min": 0.002,
+          "max": 0.002
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.017,
+          "min": 0.017,
+          "max": 0.02
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-dnrgb",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 144428.888,
+          "min": 143692.193,
+          "max": 147871.435
+        },
+        "flush_mean_ms": {
+          "median": 0.006805,
+          "min": 0.006646,
+          "max": 0.006841
+        },
+        "flush_p95_ms": {
+          "median": 0.008035,
+          "min": 0.007206,
+          "max": 0.008897
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.006911,
+          "min": 0.006762,
+          "max": 0.006959
+        },
+        "sender_cpu_pct": {
+          "median": 99.99,
+          "min": 99.82,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.002,
+          "min": 0.001,
+          "max": 0.002
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.017,
+          "min": 0.009,
+          "max": 0.017
+        },
+        "received_complete_fps": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-warls",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "udp-adaptive",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "skipped",
+        "skipped",
+        "skipped"
+      ],
+      "metrics": {},
+      "issues": [
+        "selected implementation/format limit: 255 pixels; traffic minimization enabled; no sequence/frame ID"
+      ]
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 233.499,
+          "min": 227.328,
+          "max": 255.627
+        },
+        "flush_mean_ms": {
+          "median": 4.281892,
+          "min": 3.911242,
+          "max": 4.398016
+        },
+        "flush_p95_ms": {
+          "median": 5.525911,
+          "min": 4.54261,
+          "max": 5.926771
+        },
+        "cpu_ms_per_flush": {
+          "median": 4.282061,
+          "min": 3.910504,
+          "max": 4.397622
+        },
+        "sender_cpu_pct": {
+          "median": 99.97,
+          "min": 99.96,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 7.472,
+          "min": 7.274,
+          "max": 8.18
+        },
+        "write_calls_per_flush": {
+          "median": 1000.0,
+          "min": 1000.0,
+          "max": 1000.0
+        },
+        "application_bytes_per_flush": {
+          "median": 32000.0,
+          "min": 32000.0,
+          "max": 32000.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "sparse",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 71.406,
+          "min": 70.658,
+          "max": 72.154
+        },
+        "flush_mean_ms": {
+          "median": 14.003231,
+          "min": 13.858066,
+          "max": 14.15122
+        },
+        "flush_p95_ms": {
+          "median": 15.992152,
+          "min": 15.06014,
+          "max": 16.696307
+        },
+        "cpu_ms_per_flush": {
+          "median": 13.998014,
+          "min": 13.854658,
+          "max": 14.024
+        },
+        "sender_cpu_pct": {
+          "median": 99.95,
+          "min": 99.09,
+          "max": 99.97
+        },
+        "application_MB_s": {
+          "median": 2.285,
+          "min": 2.261,
+          "max": 2.309
+        },
+        "write_calls_per_flush": {
+          "median": 1000.0,
+          "min": 1000.0,
+          "max": 1000.0
+        },
+        "application_bytes_per_flush": {
+          "median": 32000.0,
+          "min": 32000.0,
+          "max": 32000.0
+        },
+        "received_complete_fps": {
+          "median": 71.406,
+          "min": 70.658,
+          "max": 72.154
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "encode",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": null,
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 763733.012,
+          "min": 692888.948,
+          "max": 788716.507
+        },
+        "flush_mean_ms": {
+          "median": 0.00119,
+          "min": 0.001144,
+          "max": 0.001314
+        },
+        "flush_p95_ms": {
+          "median": 0.001432,
+          "min": 0.001163,
+          "max": 0.001633
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.001309,
+          "min": 0.001268,
+          "max": 0.00144
+        },
+        "sender_cpu_pct": {
+          "median": 99.98,
+          "min": 99.77,
+          "max": 99.99
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    },
+    {
+      "sender": "osc-three",
+      "pixels": 1000,
+      "pattern": "static",
+      "mode": "loopback",
+      "requested_fps": 0,
+      "profiled": false,
+      "loopback_address": "127.0.0.2",
+      "runs": 3,
+      "statuses": [
+        "ok",
+        "ok",
+        "ok"
+      ],
+      "metrics": {
+        "flush_fps": {
+          "median": 768729.353,
+          "min": 747480.853,
+          "max": 778576.263
+        },
+        "flush_mean_ms": {
+          "median": 0.00118,
+          "min": 0.00116,
+          "max": 0.001214
+        },
+        "flush_p95_ms": {
+          "median": 0.001223,
+          "min": 0.001172,
+          "max": 0.001533
+        },
+        "cpu_ms_per_flush": {
+          "median": 0.001298,
+          "min": 0.001284,
+          "max": 0.001325
+        },
+        "sender_cpu_pct": {
+          "median": 99.78,
+          "min": 99.04,
+          "max": 99.98
+        },
+        "application_MB_s": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "write_calls_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "application_bytes_per_flush": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        },
+        "received_complete_fps": {
+          "median": 0.0,
+          "min": 0.0,
+          "max": 0.0
+        }
+      },
+      "issues": []
+    }
+  ],
+  "findings": [
+    "Art-Net validation found the library simplified-mode setter clamps universe addresses above 255. Default RGB/510-channel layouts therefore break above 43520 pixels. The fix selects explicit Net/Sub-Net/Universe addressing, rebuilds the header once per packet, and rejects addresses/layouts beyond universe 32767. Eight regression cases cover valid address boundaries and invalid output layouts; the original regression run failed five cases before the fix. The legacy config schema is unchanged.",
+    "OPC originally spent 99.47% of measured encoding samples in its per-pixel send_out loop. Vectorized clipping/casting preserves scalar RGB bytes for common numeric types and strided inputs, rejects malformed shapes and preserves NaN/inf errors before transmission.",
+    "DDP loopback CPU is largely socket writing (85.50% at Sink.send, including benchmark transport/counters). Sender-only results omit effect rendering and websocket costs.",
+    "E131 encoding samples: 44.46% in LedFx flush, 22.56% in the library DMX validation generator, 20.98% in the library DMX setter. Array/list/tuple conversion and validation are the next strong candidate, rather than an event-loop change.",
+    "OSC per-address modes create one or three messages per pixel; all-to-one reduces message count but creates large single UDP datagrams with a hard size limit.",
+    "DNRGB uses partial static keepalive traffic; the benchmark seeds a full image before sparse/static measurements and records partial refreshes separately.",
+    "Melt & Sparkle caches a pixel-count-only initial wave and reuses frame buffers; the extra persistent cache costs 8 bytes/pixel (about 3.8 MiB at 500000 pixels). HSV gradient gathers now write directly into the output buffer. Crawler effect time improves, but its render FPS ranges overlap; no clear throughput claim for Crawler.",
+    "OpenRGB currently uses one TCP send call, not sendall. These measurements observed no short writes; the harness rejects short writes or trailing incomplete TCP messages. Congested links are not covered."
+  ],
+  "serial_example": {
+    "sender": "adalight",
+    "baudrate_default": 500000,
+    "framing": "8N1, 10 wire bits/byte",
+    "pixels": 1000,
+    "application_bytes_per_frame": 3006,
+    "ideal_serial_fps_ceiling": 16.633399866932802,
+    "note": "Theoretical transport ceiling only; encoding measurements exclude physical serial transmission and controller/display time."
+  },
+  "limitations": [
+    "Single-host synthetic tests, not device firmware/Wi-Fi/physical LED latency or all configurations.",
+    "Application bytes exclude UDP/IP/Ethernet overhead. TCP writes and parsed messages are not network packet counts.",
+    "Protocols lacking a frame ID support matching ordered packet sets, not proof of atomic hardware display updates.",
+    "Serial/Hue cover encoding only. LIFX, Twinkly, Zengge, Launchpad and Raspberry Pi require additional SDK/hardware fixtures; WLED delegates to measured senders.",
+    "Python 3.15 remains experimental; project Python support metadata is unchanged.",
+    "Sequential repeated runs, not randomized trials; raw results and min/max ranges are retained."
+  ],
+  "validation": {
+    "focused_tests": 255,
+    "python_versions": [
+      "3.12",
+      "3.15"
+    ],
+    "effect_followup_cases": 11,
+    "effect_followup_failures": 0,
+    "numeric_and_protocol_checks": "Byte-level decoding, scalar RGB equivalence, missing/mixed DDP packets, partial keepalives, TCP short-write detection, Art-Net addressing boundaries, profile-scope isolation",
+    "ruff": "passed",
+    "classvar_audit": "398 files, zero problems",
+    "pyrefly": "zero new errors; five old suppressions removed",
+    "schema_compatibility": "Frozen legacy and model schemas preserved; full Art-Net channel span checked during output setup."
+  },
+  "reproduce": [
+    "python3.15 tools/sender_bench.py --senders all --pixels 60,300,1000 --bind 127.0.0.2 --seconds 0.7 --repeats 3 --output /tmp/catalog.jsonl",
+    "python3.15 tools/sender_bench.py --senders ddp,artnet,e131,udp-dnrgb,opc,openrgb,osc-three --pixels 10000,500000 --bind 127.0.0.2 --seconds 2 --repeats 3 --output /tmp/large.jsonl",
+    "Repeat selected senders with --fps 60 --modes loopback for paced CPU/delivery, or --patterns sparse,static --seconds 1.2 for traffic suppression.",
+    "python3.15 tools/sender_bench.py --senders ddp,artnet,e131,udp-dnrgb,opc,openrgb,osc-three --pixels 10000 --modes encode --sampling cpu --seconds 3 --repeats 1 --output /tmp/profile.jsonl",
+    "python3.15 tools/sender_profile_report.py /tmp/profile.jsonl",
+    "python3.15 tools/pixel_bench.py --effects melt_and_sparkle,crawler,water --synthetic-audio --fixtures --loops standard --streams full --seconds 8 --warmup 2 --repeats 3 --output /tmp/effects.jsonl",
+    "For the affected HSV profile sweep use --effects blade_power_plus,block_reflections,crawler,energy2,fire,glitch,lava_lamp,marching,melt,melt_and_sparkle,water --sampling cpu --seconds 5 --repeats 1, then tools/effect_profile_report.py."
+  ]
+}

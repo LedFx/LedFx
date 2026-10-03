@@ -29,9 +29,7 @@ class ArtNetDevice(NetworkedDevice):
             ge=1,
             json_schema_extra={X_REQUIRED: True},
         )
-        universe: int = Field(
-            0, description="DMX universe for the device", ge=0, le=32767
-        )
+        universe: int = Field(0, description="DMX universe for the device", ge=0)
         packet_size: int = Field(
             510, description="Size of each DMX universe", ge=1, le=512
         )
