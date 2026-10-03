@@ -10,6 +10,10 @@ Examples (run in the project environment):
       --streams full --repeats 1 --output /tmp/sampled.jsonl
   python3.15 -m profiling.sampling replay --flamegraph \
       /tmp/sampled.jsonl.artifacts/0-full-standard/sampling.bin
+  python3.15 tools/pixel_bench.py --effects all --synthetic-audio --fixtures \
+      --sampling cpu --loops standard --streams full --seconds 10 \
+      --repeats 1 --keep-going --output /tmp/catalog.jsonl
+  python3.15 tools/effect_profile_report.py /tmp/catalog.jsonl
 
 Each run has a fresh server process and temporary configuration. The controller
 receives DDP on loopback and validates websocket RGB payloads; no physical device
@@ -37,11 +41,27 @@ permissions are changed: the sampler is the worker's parent process.
 
 Recorded spike evidence is in tools/benchmarks/python315-spike/report.json.
 Those results are hardware-specific; capture a fresh local baseline for gates.
+
+Catalog mode uses effect defaults (except Rainbow's speed/blur settings above).
+Matrix effects receive a near-square layout unless --rows is supplied. Synthetic
+PCM replaces audio hardware, retaining real aubio/melbank analysis. Local fixtures
+provide GIFs, screen frames, frontend events and a source virtual for Blender
+and Radial. Fixtures also enable Image Spin rotation and frequent Random Flash
+hits so short runs exercise those paths; effective overrides are recorded.
+Screen capture and frontend transport costs are consequently not measured.
+For temporal effects, 'effect' times their effect_loop; for other effects it
+times _render including its lock. 'audio_update' measures the effect's audio
+callback separately and 'audio' covers the complete DSP callback. Do not compare
+effect FPS between those two execution models. Static effects can legitimately
+have near-zero changed-preview FPS. A catalog sweep covers defaults, not every
+configuration or preset. Short sampled runs identify candidates; repeat longer
+unprofiled runs before claiming a regression or improvement.
 """
 
 import argparse
 import asyncio
 import base64
+import copy
 import cProfile
 import importlib.metadata
 import importlib.util
@@ -128,6 +148,10 @@ class DDPReceiver:
 
 def worker(args):
     sys.path.insert(0, args.repo)
+    from tools.pixel_bench_fixtures import install_audio, local_config, matrix_rows
+
+    if args.synthetic_audio:
+        install_audio()
     if args.loop == "uvloop":
         import uvloop
 
@@ -142,7 +166,11 @@ def worker(args):
 
     from ledfx.core import LedFxCore
     from ledfx.devices.ddp import DDPDevice
-    from ledfx.events import Event
+    from ledfx.effects.audio import AudioInputSource, AudioReactiveEffect
+    from ledfx.effects.temporal import TemporalEffect
+    from ledfx.effects.twod import Twod
+    from ledfx.events import Event, FrontendVisualiserDataEvent
+    from ledfx.utils import shape_to_fit_len
     from ledfx.virtuals import Virtual
 
     metrics = {
@@ -150,6 +178,8 @@ def worker(args):
         "flush": [],
         "visualise": [],
         "effect": [],
+        "audio": [],
+        "audio_update": [],
         "loop_lag": [],
     }
     profiles = {name: cProfile.Profile() for name in ("main", "render", "effect")}
@@ -157,6 +187,9 @@ def worker(args):
 
     def timed(fn, key):
         def call(*a, **kw):
+            # Blender's source virtual is fixture work, not another output frame.
+            if key == "assemble" and a[0].id != "benchmark":
+                return fn(*a, **kw)
             start = time.perf_counter()
             profile = profiles.get("render" if key in ("assemble", "flush") else key)
             selected = "render" if key in ("assemble", "flush") else key
@@ -171,6 +204,9 @@ def worker(args):
 
     Virtual.assemble_frame = timed(Virtual.assemble_frame, "assemble")
     DDPDevice.flush = timed(DDPDevice.flush, "flush")
+    AudioInputSource._audio_sample_callback = timed(
+        AudioInputSource._audio_sample_callback, "audio"
+    )
     logging.basicConfig(level=logging.WARNING)
     with patch("ledfx.core.asyncio.new_event_loop", factory):
         core = LedFxCore(
@@ -226,22 +262,92 @@ def worker(args):
             if args.device == "ddp":
                 config.update(ip_address="127.0.0.1", port=args.sink_port)
             await core.devices.add_new_device(args.device, config)
-            cls = core.effects.get_class("rainbow")
-            cls.effect_loop = timed(cls.effect_loop, "effect")
+            cls = core.effects.get_class(args.effect)
+            if issubclass(cls, AudioReactiveEffect) and not args.synthetic_audio:
+                raise ValueError(
+                    "Audio-reactive effects require --synthetic-audio; this benchmark does not capture hardware audio"
+                )
+            rows = args.rows or (
+                matrix_rows(args.pixels)
+                if issubclass(cls, Twod) or cls.CATEGORY == "Matrix"
+                else 1
+            )
+            core.virtuals.get("benchmark").rows = rows
+            if issubclass(cls, TemporalEffect):
+                cls.effect_loop = timed(cls.effect_loop, "effect")
+            else:
+                cls._render = timed(cls._render, "effect")
+            if issubclass(cls, AudioReactiveEffect):
+                cls.audio_data_updated = timed(cls.audio_data_updated, "audio_update")
+            effect_config = (
+                local_config(args.effect, args.directory) if args.fixtures else {}
+            )
+            if args.fixtures and args.effect in {"blender", "radial"}:
+                await core.devices.add_new_device(
+                    "dummy", {"name": "Fixture", "pixel_count": 1024}
+                )
+                core.virtuals.get("fixture").rows = 32
+                core.virtuals.set_effect(
+                    "fixture",
+                    "rainbow",
+                    core.effects.get_class("rainbow")
+                    .config_model()
+                    .model_validate({"speed": 6}),
+                    store=False,
+                )
+                if args.effect == "blender":
+                    effect_config.update(
+                        mask="fixture", foreground="fixture", background="fixture"
+                    )
+                else:
+                    effect_config.update(source_virtual="fixture")
+            if args.effect == "rainbow":
+                effect_config.update(speed=args.effect_speed, blur=0)
+            effect_config.update(json.loads(args.effect_config))
             core.virtuals.set_effect(
                 "benchmark",
-                "rainbow",
-                cls.config_model().model_validate(
-                    {"speed": args.effect_speed, "blur": 0}
-                ),
+                args.effect,
+                cls.config_model().model_validate(effect_config),
                 store=False,
             )
+            if args.synthetic_audio and AudioInputSource._stream is not None:
+                AudioInputSource._stream.begin()
+            if args.fixtures and args.effect == "frontend":
+
+                async def feed_frontend():
+                    import numpy as np
+
+                    frame = np.zeros((128, 128, 3), dtype=np.uint8)
+                    n = 0
+                    while True:
+                        frame[:, :, 0] = n % 256
+                        frame[:, :, 1] = np.arange(128, dtype=np.uint8)
+                        core.events.fire_event(
+                            FrontendVisualiserDataEvent(
+                                "benchmark", frame.copy(), (128, 128), "benchmark"
+                            )
+                        )
+                        n += 7
+                        await asyncio.sleep(1 / 60)
+
+                core.loop.create_task(feed_frontend())
             Path(args.directory, "ready.json").write_text(
                 json.dumps(
                     {
                         "loop": str(type(core.loop)),
                         "pid": os.getpid(),
                         "refresh_rate": core.virtuals.get("benchmark").refresh_rate,
+                        "rows": rows,
+                        "effect_config": effect_config,
+                        "preview_pixels": math.prod(
+                            shape_to_fit_len(
+                                args.vis_pixels,
+                                (rows, args.pixels // rows),
+                                args.pixels,
+                            )[0]
+                        )
+                        if args.pixels > args.vis_pixels
+                        else args.pixels,
                     }
                 )
             )
@@ -371,7 +477,17 @@ async def run_one(args, loop, vis, repeat):
             str(args.preview_fps),
             "--effect-speed",
             str(args.effect_speed),
+            "--effect",
+            args.effect,
+            "--rows",
+            str(args.rows),
+            "--effect-config",
+            args.effect_config,
         ]
+        if args.synthetic_audio:
+            command.append("--synthetic-audio")
+        if args.fixtures:
+            command.append("--fixtures")
         if args.profile:
             command.extend(["--profile", args.profile])
         if args.sampling:
@@ -415,6 +531,7 @@ async def run_one(args, loop, vis, repeat):
                             "id": 1,
                             "type": "subscribe_event",
                             "event_type": "visualisation_update",
+                            "event_filter": {"vis_id": "benchmark"},
                         }
                     )
                 ws_count = ws_bytes = 0
@@ -458,9 +575,9 @@ async def run_one(args, loop, vis, repeat):
                             ws_count += 1
                             ws_bytes += len(msg.data.encode())
                             event = json.loads(msg.data)
-                            decoded_pixels = (
-                                args.pixels if vis == "full" else min(81, args.pixels)
-                            )
+                            decoded_pixels = json.loads(ready.read_text())[
+                                "preview_pixels"
+                            ]
                             shape = validate_frame(event, decoded_pixels)
                             if event["pixels"] != previous_pixels:
                                 ws_changed += 1
@@ -497,6 +614,7 @@ async def run_one(args, loop, vis, repeat):
             if (
                 "frame render failed" in server_log
                 or "Exception in thread" in server_log
+                or "Exception in core event loop" in server_log
             ):
                 raise RuntimeError(
                     f"Worker thread failed during benchmark:\n{server_log}"
@@ -512,6 +630,12 @@ async def run_one(args, loop, vis, repeat):
                 "effective_refresh_rate": json.loads(ready.read_text())["refresh_rate"],
                 "preview_fps": args.preview_fps,
                 "effect_speed": args.effect_speed,
+                "effect_id": args.effect,
+                "rows": json.loads(ready.read_text())["rows"],
+                "effect_config": json.loads(ready.read_text())["effect_config"],
+                "config_overrides": json.loads(args.effect_config),
+                "synthetic_audio": args.synthetic_audio,
+                "fixtures": args.fixtures,
                 "stream": vis,
                 "profiled": (
                     f"sampling-{args.sampling}"
@@ -554,7 +678,9 @@ async def run_one(args, loop, vis, repeat):
             sink.close()
             # Preserve diagnostics even when validation/startup fails.
             artifact_dir = (
-                Path(str(args.output) + ".artifacts") / f"{repeat}-{vis}-{loop}"
+                Path(str(args.output) + ".artifacts")
+                / (f"{args.effect}-" if args.effects != "rainbow" else "")
+                / f"{repeat}-{vis}-{loop}"
             )
             artifact_dir.mkdir(parents=True, exist_ok=True)
             for name in (
@@ -572,17 +698,54 @@ async def run_one(args, loop, vis, repeat):
 
 async def driver(args):
     rows = []
+    failures = []
+    effects = args.effects.split(",")
+    if args.effects == "all":
+        from tools.pixel_bench_fixtures import catalog
+
+        descriptions = catalog()
+        Path(str(args.output) + ".catalog.json").write_text(
+            json.dumps(descriptions, indent=2)
+        )
+        effects = list(descriptions)
     for repeat in range(args.repeats):
         loops = args.loops.split(",")
         if repeat % 2:
             loops.reverse()
-        for vis in args.streams.split(","):
-            for loop in loops:
-                rows.append(await run_one(args, loop, vis, repeat))
+        for effect in effects:
+            case = copy.copy(args)
+            case.effect = effect
+            for vis in args.streams.split(","):
+                for loop in loops:
+                    try:
+                        rows.append(
+                            await asyncio.wait_for(
+                                run_one(case, loop, vis, repeat), args.case_timeout
+                            )
+                        )
+                    except Exception as error:
+                        if not args.keep_going:
+                            raise
+                        failure = {
+                            "effect": effect,
+                            "stream": vis,
+                            "loop": loop,
+                            "repeat": repeat,
+                            "error": f"{type(error).__name__}: {error}",
+                        }
+                        failures.append(failure)
+                        print(json.dumps(failure), file=sys.stderr, flush=True)
+                        Path(str(args.output) + ".failures.json").write_text(
+                            json.dumps(failures, indent=2)
+                        )
     summary = summarize_runs(rows)
     Path(str(args.output) + ".summary.json").write_text(
         json.dumps(summary, indent=2), encoding="utf-8"
     )
+    if failures:
+        raise RuntimeError(
+            f"{len(failures)} cases failed; see {args.output}.failures.json"
+        )
     if args.baseline:
         baseline = [
             json.loads(line)
@@ -597,19 +760,34 @@ async def driver(args):
 
 
 def scenario_key(row: dict) -> str:
-    return "/".join(
-        str(row[k])
-        for k in (
-            "platform",
-            "python",
-            "loop",
-            "device",
-            "pixels",
-            "refresh_rate",
-            "preview_fps",
-            "effect_speed",
-            "stream",
-            "profiled",
+    workload = "/".join(
+        str(row.get(k, default))
+        for k, default in (
+            ("effect_id", "rainbow"),
+            ("rows", 1),
+            ("synthetic_audio", False),
+            ("fixtures", False),
+        )
+    )
+    return (
+        workload
+        + "/"
+        + json.dumps(row.get("config_overrides", {}), sort_keys=True)
+        + "/"
+        + "/".join(
+            str(row[k])
+            for k in (
+                "platform",
+                "python",
+                "loop",
+                "device",
+                "pixels",
+                "refresh_rate",
+                "preview_fps",
+                "effect_speed",
+                "stream",
+                "profiled",
+            )
         )
     )
 
@@ -696,6 +874,44 @@ def parse_args(argv=None):
     p.add_argument("--sink-port", type=int, help=argparse.SUPPRESS)
     p.add_argument("--pixels", type=int, default=500000)
     p.add_argument(
+        "--case-timeout",
+        type=float,
+        default=120,
+        help="Per-case deadline, including startup",
+    )
+    p.add_argument(
+        "--effects",
+        default="rainbow",
+        help="Comma-separated registered effects, or all",
+    )
+    p.add_argument("--effect", default="rainbow", help=argparse.SUPPRESS)
+    p.add_argument(
+        "--effect-config",
+        default="{}",
+        help="JSON config overrides applied to each effect",
+    )
+    p.add_argument(
+        "--rows",
+        type=int,
+        default=0,
+        help="0 chooses a near-square layout for matrix effects and a strip otherwise",
+    )
+    p.add_argument(
+        "--synthetic-audio",
+        action="store_true",
+        help="Feed deterministic PCM through real LedFx audio analysis",
+    )
+    p.add_argument(
+        "--fixtures",
+        action="store_true",
+        help="Use local media and fake screen input for dependent effects",
+    )
+    p.add_argument(
+        "--keep-going",
+        action="store_true",
+        help="Record failures and continue the catalog; exit nonzero if any fail",
+    )
+    p.add_argument(
         "--refresh-rate",
         type=int,
         default=60,
@@ -743,6 +959,15 @@ def parse_args(argv=None):
         help="Allowed fractional throughput regression (default 0.10)",
     )
     args = p.parse_args(argv)
+    try:
+        if not isinstance(json.loads(args.effect_config), dict):
+            raise TypeError
+    except (TypeError, ValueError):
+        p.error("--effect-config must be a JSON object")
+    if args.rows < 0 or (args.rows and args.pixels % args.rows):
+        p.error("--rows must be nonnegative and divide --pixels exactly")
+    if not math.isfinite(args.case_timeout) or args.case_timeout <= 0:
+        p.error("--case-timeout must be finite and positive")
     if args.sampling and (sys.version_info < (3, 15) or args.profile):
         p.error(
             "--sampling requires Python 3.15+ and cannot be combined with --profile"
@@ -838,6 +1063,7 @@ def write_metadata(args) -> None:
 
 def main() -> None:
     args = parse_args()
+    sys.path.insert(0, args.repo)
     if args.worker:
         worker(args)
     else:
