@@ -107,7 +107,7 @@ def test_baseline_uses_medians_and_rejects_unmatched_scenarios() -> None:
     assert len(failures) == 1
     assert "ws_fps" in failures[0]
     assert compare_baseline(baseline, baseline, 0.1) == []
-    for flag in ("unpaced", "unpaced_preview"):
+    for flag in ("unpaced", "unpaced_preview", "temporal_render"):
         assert (
             "no matching"
             in compare_baseline([{**baseline[0], flag: True}], baseline, 0.1)[0]
@@ -129,6 +129,9 @@ def test_baseline_uses_medians_and_rejects_unmatched_scenarios() -> None:
         ["--streams", "typo"],
         ["--loops", "typo"],
         ["--max-regression", "1"],
+        ["--bind", "192.0.2.1"],
+        ["--bind", "::1"],
+        ["--temporal-render"],
     ],
 )
 def test_invalid_benchmark_parameters_fail_early(arguments: list[str]) -> None:
@@ -146,6 +149,8 @@ def test_unpaced_clock_yields_without_requested_delay(
     clock.sleep(10)
     assert calls == [0]
     assert clock.perf_counter() >= before
+    UnpacedClock({"Virtual: benchmark"}).sleep(0.25)
+    assert calls == [0, 0.25]  # The test thread is not the target render thread.
 
 
 def test_process_receiver_snapshots_complete_frames_and_stops() -> None:

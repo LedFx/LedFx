@@ -1,0 +1,4515 @@
+{
+  "scope": "50,000 LEDs: production sender characterization; real OpenRGB/preview fixes; isolated E1.31 and temporal scheduling prototypes; paced and maximum-throughput full effect catalogs.",
+  "method": {
+    "python": "3.15.0rc2",
+    "base_commit": "f7c58ec6",
+    "pixels": 50000,
+    "sender_trials": "Three repetitions, 2 seconds for stock/fixed, 3 seconds for prototype. Dense deterministic float64 input. Encoding and loopback separate. Target 60 FPS paced runs separate from saturation.",
+    "loopback": "127.0.0.2 verified real local loopback; receiver CPU excluded from sender CPU.",
+    "packet_budget": 150000,
+    "effect_trials": "One 2-second measurement after 1-second warmup per effect, synthetic PCM, media/screen fixtures, full websocket pixels, standard asyncio, fake DDP device. Screening results, not repeated causal comparisons. Effective refresh rate rounded by LedFx.",
+    "limitations": [
+      "Single WSL2 host; no physical LED, firmware, LAN or Wi-Fi claims.",
+      "Sender timing excludes rendering and websocket work. CPU percentages use 100% for one core.",
+      "Per-pixel OSC at 50k produces 50k or 150k datagrams per frame; 2-second windows contain few frames, so inspect ranges.",
+      "Prototype changes only benchmark-local sACN output/packet instances. It is not enabled by LedFx or a released dependency.",
+      "Adalight is encoding only: at default 500000 baud/8N1, 150006 bytes imply a theoretical ceiling around 0.333 FPS.",
+      "Initial unpaced pilot used a receiver thread and unusual 127.0.0.1 route; it lost complete DDP frames and is retained as a diagnostic only.",
+      "max-catalog is an interrupted diagnostic with all fixture threads also unpaced. max-target is the completed corrected catalog. Do not rank Blender/Radial using the aborted diagnostic.",
+      "Temporal on-demand prototype changes animation timing: it ignores effect_loop timing multipliers/speed pacing. It is not production code.",
+      "Synthetic audio updates at 60 Hz, so some effects generate only about 60 distinct images/s even when transport FPS is much higher. Static outputs similarly do not become useful new images simply by retransmission."
+    ],
+    "maximum_fps": "Target render/temporal sleeps replaced by scheduler yields; fixture threads retain pacing. Preview cap bypassed only in benchmark workers (1M FPS). Configured effective_refresh_rate is not a ceiling in these rows. Independent DDP receiver process, IPv4 loopback 127.0.0.2. Report changed websocket frames separately from repeated frames.",
+    "confirmation": "Three 3-second repetitions of Fade, Rainbow, Smoke 2D and Melt & Sparkle with/without full streaming. Temporal on-demand prototype: Fade/Rainbow full streaming, three 3-second repetitions. CPU sampling uses separate five-second runs.",
+    "preview_comparison": "Same new harness/receiver/loopback, three four-second repeats at normal pacing, baseline repository f075f3af versus phase-scheduled preview. No schema/rate-cap change."
+  },
+  "coverage": {
+    "baseline": {
+      "ok": 48,
+      "skipped": 63,
+      "failed": 3
+    },
+    "openrgb-diagnostic": {
+      "failed": 1
+    },
+    "openrgb-fixed": {
+      "ok": 6
+    },
+    "paced": {
+      "ok": 24
+    },
+    "prototype": {
+      "ok": 6
+    },
+    "prototype-paced": {
+      "ok": 3
+    },
+    "profile-stock": {
+      "ok": 1
+    },
+    "profile-prototype": {
+      "ok": 1
+    },
+    "effects": {
+      "effect_result": 63
+    }
+  },
+  "production_saturation": [
+    {
+      "sender": "ddp",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 0.067568,
+        "min": 0.065067,
+        "max": 0.067732
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "min": 99.98,
+        "max": 99.99
+      },
+      "application_bytes_per_flush": {
+        "median": 151050.0,
+        "min": 151050.0,
+        "max": 151050.0
+      },
+      "write_calls_per_flush": {
+        "median": 105.0,
+        "min": 105.0,
+        "max": 105.0
+      }
+    },
+    {
+      "sender": "ddp",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 0.693316,
+        "min": 0.691009,
+        "max": 0.711043
+      },
+      "received_complete_fps": {
+        "median": 1441.032,
+        "min": 1405.063,
+        "max": 1445.893
+      },
+      "sender_cpu_pct": {
+        "median": 99.95,
+        "min": 99.84,
+        "max": 99.96
+      },
+      "application_bytes_per_flush": {
+        "median": 151050.0,
+        "min": 151050.0,
+        "max": 151050.0
+      },
+      "write_calls_per_flush": {
+        "median": 105.0,
+        "min": 105.0,
+        "max": 105.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 0.741601,
+        "min": 0.715338,
+        "max": 1.502423
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "min": 99.98,
+        "max": 99.99
+      },
+      "application_bytes_per_flush": {
+        "median": 155760.0,
+        "min": 155760.0,
+        "max": 155760.0
+      },
+      "write_calls_per_flush": {
+        "median": 295.0,
+        "min": 295.0,
+        "max": 295.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 3.76694,
+        "min": 3.711258,
+        "max": 4.305369
+      },
+      "received_complete_fps": {
+        "median": 265.394,
+        "min": 232.21,
+        "max": 269.391
+      },
+      "sender_cpu_pct": {
+        "median": 99.86,
+        "min": 99.86,
+        "max": 99.96
+      },
+      "application_bytes_per_flush": {
+        "median": 155760.0,
+        "min": 155760.0,
+        "max": 155760.0
+      },
+      "write_calls_per_flush": {
+        "median": 295.0,
+        "min": 295.0,
+        "max": 295.0
+      }
+    },
+    {
+      "sender": "e131",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 7.448647,
+        "min": 7.309928,
+        "max": 8.165275
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "min": 99.98,
+        "max": 100.0
+      },
+      "application_bytes_per_flush": {
+        "median": 188259.0,
+        "min": 188259.0,
+        "max": 188259.0
+      },
+      "write_calls_per_flush": {
+        "median": 296.0,
+        "min": 296.0,
+        "max": 296.0
+      }
+    },
+    {
+      "sender": "e131",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 11.270353,
+        "min": 11.175808,
+        "max": 12.246857
+      },
+      "received_complete_fps": {
+        "median": 88.715,
+        "min": 81.64,
+        "max": 89.467
+      },
+      "sender_cpu_pct": {
+        "median": 99.64,
+        "min": 99.54,
+        "max": 99.79
+      },
+      "application_bytes_per_flush": {
+        "median": 188259.0,
+        "min": 188259.0,
+        "max": 188259.0
+      },
+      "write_calls_per_flush": {
+        "median": 296.0,
+        "min": 296.0,
+        "max": 296.0
+      }
+    },
+    {
+      "sender": "openrgb",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 0.159338,
+        "min": 0.150947,
+        "max": 0.164246
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "min": 99.99,
+        "max": 99.99
+      },
+      "application_bytes_per_flush": {
+        "median": 200022.0,
+        "min": 200022.0,
+        "max": 200022.0
+      },
+      "write_calls_per_flush": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "adalight",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 0.018651,
+        "min": 0.018039,
+        "max": 0.018664
+      },
+      "sender_cpu_pct": {
+        "median": 99.96,
+        "min": 99.96,
+        "max": 99.98
+      },
+      "application_bytes_per_flush": {
+        "median": 150006.0,
+        "min": 150006.0,
+        "max": 150006.0
+      },
+      "write_calls_per_flush": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 0.211593,
+        "min": 0.211133,
+        "max": 0.213424
+      },
+      "sender_cpu_pct": {
+        "median": 100.0,
+        "min": 100.0,
+        "max": 100.0
+      },
+      "application_bytes_per_flush": {
+        "median": 150412.0,
+        "min": 150412.0,
+        "max": 150412.0
+      },
+      "write_calls_per_flush": {
+        "median": 103.0,
+        "min": 103.0,
+        "max": 103.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 1.372837,
+        "min": 1.34707,
+        "max": 1.439041
+      },
+      "received_complete_fps": {
+        "median": 727.973,
+        "min": 694.511,
+        "max": 741.845
+      },
+      "sender_cpu_pct": {
+        "median": 99.66,
+        "min": 99.3,
+        "max": 99.69
+      },
+      "application_bytes_per_flush": {
+        "median": 150412.0,
+        "min": 150412.0,
+        "max": 150412.0
+      },
+      "write_calls_per_flush": {
+        "median": 103.0,
+        "min": 103.0,
+        "max": 103.0
+      }
+    },
+    {
+      "sender": "osc-one",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 9.199613,
+        "min": 8.968057,
+        "max": 9.303337
+      },
+      "sender_cpu_pct": {
+        "median": 99.98,
+        "min": 99.95,
+        "max": 100.0
+      },
+      "application_bytes_per_flush": {
+        "median": 1760000.0,
+        "min": 1760000.0,
+        "max": 1760000.0
+      },
+      "write_calls_per_flush": {
+        "median": 50000.0,
+        "min": 50000.0,
+        "max": 50000.0
+      }
+    },
+    {
+      "sender": "osc-one",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 275.322681,
+        "min": 273.476477,
+        "max": 280.624598
+      },
+      "received_complete_fps": {
+        "median": 3.632,
+        "min": 3.563,
+        "max": 3.657
+      },
+      "sender_cpu_pct": {
+        "median": 99.91,
+        "min": 99.87,
+        "max": 99.96
+      },
+      "application_bytes_per_flush": {
+        "median": 1760000.0,
+        "min": 1760000.0,
+        "max": 1760000.0
+      },
+      "write_calls_per_flush": {
+        "median": 50000.0,
+        "min": 50000.0,
+        "max": 50000.0
+      }
+    },
+    {
+      "sender": "osc-three",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 9.115924,
+        "min": 8.875925,
+        "max": 9.872851
+      },
+      "sender_cpu_pct": {
+        "median": 99.98,
+        "min": 99.96,
+        "max": 100.0
+      },
+      "application_bytes_per_flush": {
+        "median": 1760000.0,
+        "min": 1760000.0,
+        "max": 1760000.0
+      },
+      "write_calls_per_flush": {
+        "median": 50000.0,
+        "min": 50000.0,
+        "max": 50000.0
+      }
+    },
+    {
+      "sender": "osc-three",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 274.062894,
+        "min": 269.437492,
+        "max": 277.263491
+      },
+      "received_complete_fps": {
+        "median": 3.649,
+        "min": 3.607,
+        "max": 3.711
+      },
+      "sender_cpu_pct": {
+        "median": 99.96,
+        "min": 99.96,
+        "max": 99.98
+      },
+      "application_bytes_per_flush": {
+        "median": 1760000.0,
+        "min": 1760000.0,
+        "max": 1760000.0
+      },
+      "write_calls_per_flush": {
+        "median": 50000.0,
+        "min": 50000.0,
+        "max": 50000.0
+      }
+    },
+    {
+      "sender": "osc-channels",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 27.686724,
+        "min": 27.627856,
+        "max": 28.063467
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "min": 99.99,
+        "max": 99.99
+      },
+      "application_bytes_per_flush": {
+        "median": 3560000.0,
+        "min": 3560000.0,
+        "max": 3560000.0
+      },
+      "write_calls_per_flush": {
+        "median": 150000.0,
+        "min": 150000.0,
+        "max": 150000.0
+      }
+    },
+    {
+      "sender": "osc-channels",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 843.171169,
+        "min": 776.496516,
+        "max": 846.292904
+      },
+      "received_complete_fps": {
+        "median": 1.186,
+        "min": 1.182,
+        "max": 1.288
+      },
+      "sender_cpu_pct": {
+        "median": 99.95,
+        "min": 99.56,
+        "max": 99.97
+      },
+      "application_bytes_per_flush": {
+        "median": 3560000.0,
+        "min": 3560000.0,
+        "max": 3560000.0
+      },
+      "write_calls_per_flush": {
+        "median": 150000.0,
+        "min": 150000.0,
+        "max": 150000.0
+      }
+    },
+    {
+      "sender": "openrgb",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 0.234291,
+        "min": 0.212448,
+        "max": 0.266131
+      },
+      "received_complete_fps": {
+        "median": 4254.254,
+        "min": 3743.345,
+        "max": 4693.771
+      },
+      "sender_cpu_pct": {
+        "median": 96.65,
+        "min": 96.4,
+        "max": 98.55
+      },
+      "application_bytes_per_flush": {
+        "median": 200022.0,
+        "min": 200022.0,
+        "max": 200022.0
+      },
+      "write_calls_per_flush": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    }
+  ],
+  "production_paced_60": [
+    {
+      "sender": "ddp",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 0.819916,
+        "min": 0.800111,
+        "max": 0.820778
+      },
+      "received_complete_fps": {
+        "median": 59.997,
+        "min": 59.997,
+        "max": 59.997
+      },
+      "sender_cpu_pct": {
+        "median": 5.0,
+        "min": 4.95,
+        "max": 5.04
+      },
+      "application_bytes_per_flush": {
+        "median": 151050.0,
+        "min": 151050.0,
+        "max": 151050.0
+      },
+      "write_calls_per_flush": {
+        "median": 105.0,
+        "min": 105.0,
+        "max": 105.0
+      }
+    },
+    {
+      "sender": "artnet",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 3.603975,
+        "min": 3.545874,
+        "max": 3.64023
+      },
+      "received_complete_fps": {
+        "median": 59.997,
+        "min": 59.997,
+        "max": 59.997
+      },
+      "sender_cpu_pct": {
+        "median": 21.72,
+        "min": 21.18,
+        "max": 22.01
+      },
+      "application_bytes_per_flush": {
+        "median": 155760.0,
+        "min": 155760.0,
+        "max": 155760.0
+      },
+      "write_calls_per_flush": {
+        "median": 295.0,
+        "min": 295.0,
+        "max": 295.0
+      }
+    },
+    {
+      "sender": "e131",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 10.827934,
+        "min": 10.627649,
+        "max": 11.972621
+      },
+      "received_complete_fps": {
+        "median": 59.997,
+        "min": 59.996,
+        "max": 59.997
+      },
+      "sender_cpu_pct": {
+        "median": 65.08,
+        "min": 63.56,
+        "max": 71.92
+      },
+      "application_bytes_per_flush": {
+        "median": 188259.0,
+        "min": 188259.0,
+        "max": 188259.0
+      },
+      "write_calls_per_flush": {
+        "median": 296.0,
+        "min": 296.0,
+        "max": 296.0
+      }
+    },
+    {
+      "sender": "openrgb",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 0.341427,
+        "min": 0.315322,
+        "max": 0.353588
+      },
+      "received_complete_fps": {
+        "median": 59.997,
+        "min": 59.997,
+        "max": 59.997
+      },
+      "sender_cpu_pct": {
+        "median": 2.1,
+        "min": 2.01,
+        "max": 2.15
+      },
+      "application_bytes_per_flush": {
+        "median": 200022.0,
+        "min": 200022.0,
+        "max": 200022.0
+      },
+      "write_calls_per_flush": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      }
+    },
+    {
+      "sender": "udp-dnrgb",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 1.474302,
+        "min": 1.451592,
+        "max": 1.478509
+      },
+      "received_complete_fps": {
+        "median": 59.997,
+        "min": 59.997,
+        "max": 59.997
+      },
+      "sender_cpu_pct": {
+        "median": 8.84,
+        "min": 8.83,
+        "max": 8.88
+      },
+      "application_bytes_per_flush": {
+        "median": 150412.0,
+        "min": 150412.0,
+        "max": 150412.0
+      },
+      "write_calls_per_flush": {
+        "median": 103.0,
+        "min": 103.0,
+        "max": 103.0
+      }
+    },
+    {
+      "sender": "osc-one",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 271.704287,
+        "min": 265.828042,
+        "max": 275.44969
+      },
+      "received_complete_fps": {
+        "median": 3.68,
+        "min": 3.63,
+        "max": 3.762
+      },
+      "sender_cpu_pct": {
+        "median": 99.96,
+        "min": 99.96,
+        "max": 99.97
+      },
+      "application_bytes_per_flush": {
+        "median": 1760000.0,
+        "min": 1760000.0,
+        "max": 1760000.0
+      },
+      "write_calls_per_flush": {
+        "median": 50000.0,
+        "min": 50000.0,
+        "max": 50000.0
+      }
+    },
+    {
+      "sender": "osc-three",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 279.005587,
+        "min": 272.528074,
+        "max": 283.088094
+      },
+      "received_complete_fps": {
+        "median": 3.584,
+        "min": 3.532,
+        "max": 3.669
+      },
+      "sender_cpu_pct": {
+        "median": 99.96,
+        "min": 99.92,
+        "max": 99.97
+      },
+      "application_bytes_per_flush": {
+        "median": 1760000.0,
+        "min": 1760000.0,
+        "max": 1760000.0
+      },
+      "write_calls_per_flush": {
+        "median": 50000.0,
+        "min": 50000.0,
+        "max": 50000.0
+      }
+    },
+    {
+      "sender": "osc-channels",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 803.659122,
+        "min": 790.055078,
+        "max": 852.650808
+      },
+      "received_complete_fps": {
+        "median": 1.244,
+        "min": 1.173,
+        "max": 1.266
+      },
+      "sender_cpu_pct": {
+        "median": 99.94,
+        "min": 99.92,
+        "max": 99.97
+      },
+      "application_bytes_per_flush": {
+        "median": 3560000.0,
+        "min": 3560000.0,
+        "max": 3560000.0
+      },
+      "write_calls_per_flush": {
+        "median": 150000.0,
+        "min": 150000.0,
+        "max": 150000.0
+      }
+    }
+  ],
+  "e131_prototype_saturation": [
+    {
+      "sender": "e131",
+      "mode": "encode",
+      "flush_mean_ms": {
+        "median": 3.391728,
+        "min": 3.337728,
+        "max": 3.463964
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "min": 99.97,
+        "max": 100.0
+      },
+      "application_bytes_per_flush": {
+        "median": 188259.0,
+        "min": 188259.0,
+        "max": 188259.0
+      },
+      "write_calls_per_flush": {
+        "median": 296.0,
+        "min": 296.0,
+        "max": 296.0
+      }
+    },
+    {
+      "sender": "e131",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 7.387896,
+        "min": 7.02495,
+        "max": 7.618659
+      },
+      "received_complete_fps": {
+        "median": 135.323,
+        "min": 131.228,
+        "max": 142.317
+      },
+      "sender_cpu_pct": {
+        "median": 99.9,
+        "min": 99.78,
+        "max": 99.93
+      },
+      "application_bytes_per_flush": {
+        "median": 188259.0,
+        "min": 188259.0,
+        "max": 188259.0
+      },
+      "write_calls_per_flush": {
+        "median": 296.0,
+        "min": 296.0,
+        "max": 296.0
+      }
+    }
+  ],
+  "e131_prototype_paced_60": [
+    {
+      "sender": "e131",
+      "mode": "loopback",
+      "flush_mean_ms": {
+        "median": 7.448977,
+        "min": 7.4171,
+        "max": 7.693832
+      },
+      "received_complete_fps": {
+        "median": 59.998,
+        "min": 59.998,
+        "max": 59.998
+      },
+      "sender_cpu_pct": {
+        "median": 44.68,
+        "min": 44.59,
+        "max": 46.26
+      },
+      "application_bytes_per_flush": {
+        "median": 188259.0,
+        "min": 188259.0,
+        "max": 188259.0
+      },
+      "write_calls_per_flush": {
+        "median": 296.0,
+        "min": 296.0,
+        "max": 296.0
+      }
+    }
+  ],
+  "effect_ranking": [
+    {
+      "effect": "smoke2d",
+      "render_fps": 61.47,
+      "effect_ms": 4.41,
+      "ws_fps": 33.98,
+      "server_cpu_pct": 36.0,
+      "ddp_complete_fps": 61.47
+    },
+    {
+      "effect": "melt_and_sparkle",
+      "render_fps": 61.96,
+      "effect_ms": 4.115,
+      "ws_fps": 34.48,
+      "server_cpu_pct": 35.5,
+      "ddp_complete_fps": 61.96
+    },
+    {
+      "effect": "soap2d",
+      "render_fps": 61.44,
+      "effect_ms": 3.486,
+      "ws_fps": 34.97,
+      "server_cpu_pct": 30.0,
+      "ddp_complete_fps": 57.94
+    },
+    {
+      "effect": "flame2d",
+      "render_fps": 62.2,
+      "effect_ms": 3.316,
+      "ws_fps": 33.84,
+      "server_cpu_pct": 29.4,
+      "ddp_complete_fps": 61.71
+    },
+    {
+      "effect": "marching",
+      "render_fps": 61.94,
+      "effect_ms": 3.118,
+      "ws_fps": 33.97,
+      "server_cpu_pct": 29.0,
+      "ddp_complete_fps": 61.94
+    },
+    {
+      "effect": "lava_lamp",
+      "render_fps": 61.99,
+      "effect_ms": 2.956,
+      "ws_fps": 34.5,
+      "server_cpu_pct": 28.5,
+      "ddp_complete_fps": 59.49
+    },
+    {
+      "effect": "melt",
+      "render_fps": 61.97,
+      "effect_ms": 2.665,
+      "ws_fps": 33.48,
+      "server_cpu_pct": 25.5,
+      "ddp_complete_fps": 61.47
+    },
+    {
+      "effect": "glitch",
+      "render_fps": 61.46,
+      "effect_ms": 2.453,
+      "ws_fps": 32.98,
+      "server_cpu_pct": 24.0,
+      "ddp_complete_fps": 61.96
+    },
+    {
+      "effect": "crawler",
+      "render_fps": 61.91,
+      "effect_ms": 2.216,
+      "ws_fps": 33.95,
+      "server_cpu_pct": 23.0,
+      "ddp_complete_fps": 61.41
+    },
+    {
+      "effect": "water",
+      "render_fps": 61.46,
+      "effect_ms": 2.142,
+      "ws_fps": 32.98,
+      "server_cpu_pct": 23.0,
+      "ddp_complete_fps": 61.95
+    },
+    {
+      "effect": "block_reflections",
+      "render_fps": 61.91,
+      "effect_ms": 2.05,
+      "ws_fps": 33.45,
+      "server_cpu_pct": 22.5,
+      "ddp_complete_fps": 61.91
+    },
+    {
+      "effect": "energy2",
+      "render_fps": 62.46,
+      "effect_ms": 1.805,
+      "ws_fps": 32.48,
+      "server_cpu_pct": 20.0,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "fire",
+      "render_fps": 61.98,
+      "effect_ms": 1.799,
+      "ws_fps": 32.49,
+      "server_cpu_pct": 21.0,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "noise2d",
+      "render_fps": 61.48,
+      "effect_ms": 1.745,
+      "ws_fps": 33.49,
+      "server_cpu_pct": 21.0,
+      "ddp_complete_fps": 61.48
+    },
+    {
+      "effect": "imagespin",
+      "render_fps": 61.85,
+      "effect_ms": 1.646,
+      "ws_fps": 32.92,
+      "server_cpu_pct": 20.0,
+      "ddp_complete_fps": 61.85
+    },
+    {
+      "effect": "plasma2d",
+      "render_fps": 61.84,
+      "effect_ms": 1.594,
+      "ws_fps": 32.41,
+      "server_cpu_pct": 19.4,
+      "ddp_complete_fps": 61.84
+    },
+    {
+      "effect": "blade_power_plus",
+      "render_fps": 61.86,
+      "effect_ms": 1.529,
+      "ws_fps": 33.42,
+      "server_cpu_pct": 22.9,
+      "ddp_complete_fps": 61.86
+    },
+    {
+      "effect": "game_of_life",
+      "render_fps": 61.47,
+      "effect_ms": 1.37,
+      "ws_fps": 34.98,
+      "server_cpu_pct": 19.5,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "radial",
+      "render_fps": 61.46,
+      "effect_ms": 1.322,
+      "ws_fps": 33.48,
+      "server_cpu_pct": 22.0,
+      "ddp_complete_fps": 60.46
+    },
+    {
+      "effect": "rain",
+      "render_fps": 61.97,
+      "effect_ms": 1.271,
+      "ws_fps": 34.48,
+      "server_cpu_pct": 20.5,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "rainbow",
+      "render_fps": 59.49,
+      "effect_ms": 1.186,
+      "ws_fps": 33.5,
+      "server_cpu_pct": 14.0,
+      "ddp_complete_fps": 62.49
+    },
+    {
+      "effect": "digitalrain2d",
+      "render_fps": 61.49,
+      "effect_ms": 1.118,
+      "ws_fps": 32.49,
+      "server_cpu_pct": 16.0,
+      "ddp_complete_fps": 61.99
+    },
+    {
+      "effect": "blender",
+      "render_fps": 62.48,
+      "effect_ms": 1.049,
+      "ws_fps": 32.99,
+      "server_cpu_pct": 18.5,
+      "ddp_complete_fps": 60.98
+    },
+    {
+      "effect": "spotlight",
+      "render_fps": 61.96,
+      "effect_ms": 1.039,
+      "ws_fps": 33.48,
+      "server_cpu_pct": 15.5,
+      "ddp_complete_fps": 61.96
+    },
+    {
+      "effect": "pitchSpectrum",
+      "render_fps": 61.98,
+      "effect_ms": 0.756,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 19.0,
+      "ddp_complete_fps": 61.48
+    },
+    {
+      "effect": "concentric",
+      "render_fps": 61.98,
+      "effect_ms": 0.733,
+      "ws_fps": 34.49,
+      "server_cpu_pct": 14.0,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "energy",
+      "render_fps": 61.81,
+      "effect_ms": 0.656,
+      "ws_fps": 33.89,
+      "server_cpu_pct": 23.4,
+      "ddp_complete_fps": 61.31
+    },
+    {
+      "effect": "plasmawled",
+      "render_fps": 61.93,
+      "effect_ms": 0.625,
+      "ws_fps": 33.96,
+      "server_cpu_pct": 13.5,
+      "ddp_complete_fps": 61.93
+    },
+    {
+      "effect": "texter2d",
+      "render_fps": 61.99,
+      "effect_ms": 0.527,
+      "ws_fps": 34.0,
+      "server_cpu_pct": 13.5,
+      "ddp_complete_fps": 61.0
+    },
+    {
+      "effect": "bands_matrix",
+      "render_fps": 62.49,
+      "effect_ms": 0.524,
+      "ws_fps": 32.5,
+      "server_cpu_pct": 14.5,
+      "ddp_complete_fps": 61.99
+    },
+    {
+      "effect": "frontend",
+      "render_fps": 62.47,
+      "effect_ms": 0.455,
+      "ws_fps": 32.49,
+      "server_cpu_pct": 12.5,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "clone",
+      "render_fps": 61.99,
+      "effect_ms": 0.441,
+      "ws_fps": 32.99,
+      "server_cpu_pct": 13.5,
+      "ddp_complete_fps": 60.99
+    },
+    {
+      "effect": "bleep",
+      "render_fps": 61.98,
+      "effect_ms": 0.418,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 12.0,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "blocks",
+      "render_fps": 61.99,
+      "effect_ms": 0.413,
+      "ws_fps": 33.0,
+      "server_cpu_pct": 14.5,
+      "ddp_complete_fps": 61.99
+    },
+    {
+      "effect": "bands",
+      "render_fps": 61.97,
+      "effect_ms": 0.411,
+      "ws_fps": 32.98,
+      "server_cpu_pct": 15.0,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "equalizer2d",
+      "render_fps": 61.97,
+      "effect_ms": 0.41,
+      "ws_fps": 33.48,
+      "server_cpu_pct": 13.0,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "waterfall2d",
+      "render_fps": 61.98,
+      "effect_ms": 0.388,
+      "ws_fps": 32.99,
+      "server_cpu_pct": 13.0,
+      "ddp_complete_fps": 58.48
+    },
+    {
+      "effect": "equalizer",
+      "render_fps": 61.49,
+      "effect_ms": 0.38,
+      "ws_fps": 34.99,
+      "server_cpu_pct": 14.0,
+      "ddp_complete_fps": 53.99
+    },
+    {
+      "effect": "number",
+      "render_fps": 62.48,
+      "effect_ms": 0.368,
+      "ws_fps": 32.49,
+      "server_cpu_pct": 13.0,
+      "ddp_complete_fps": 57.48
+    },
+    {
+      "effect": "scan_multi",
+      "render_fps": 61.87,
+      "effect_ms": 0.365,
+      "ws_fps": 32.93,
+      "server_cpu_pct": 18.0,
+      "ddp_complete_fps": 60.37
+    },
+    {
+      "effect": "scan_and_flare",
+      "render_fps": 61.98,
+      "effect_ms": 0.281,
+      "ws_fps": 33.99,
+      "server_cpu_pct": 17.5,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "multiBar",
+      "render_fps": 61.24,
+      "effect_ms": 0.263,
+      "ws_fps": 33.86,
+      "server_cpu_pct": 11.5,
+      "ddp_complete_fps": 61.24
+    },
+    {
+      "effect": "bar",
+      "render_fps": 61.88,
+      "effect_ms": 0.25,
+      "ws_fps": 32.44,
+      "server_cpu_pct": 12.5,
+      "ddp_complete_fps": 61.88
+    },
+    {
+      "effect": "wavelength",
+      "render_fps": 60.84,
+      "effect_ms": 0.248,
+      "ws_fps": 34.91,
+      "server_cpu_pct": 18.5,
+      "ddp_complete_fps": 60.84
+    },
+    {
+      "effect": "power",
+      "render_fps": 62.49,
+      "effect_ms": 0.231,
+      "ws_fps": 32.5,
+      "server_cpu_pct": 16.0,
+      "ddp_complete_fps": 61.49
+    },
+    {
+      "effect": "keybeat2d",
+      "render_fps": 62.47,
+      "effect_ms": 0.222,
+      "ws_fps": 32.48,
+      "server_cpu_pct": 11.5,
+      "ddp_complete_fps": 61.97
+    },
+    {
+      "effect": "vumeter",
+      "render_fps": 61.98,
+      "effect_ms": 0.203,
+      "ws_fps": 32.99,
+      "server_cpu_pct": 11.0,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "filter",
+      "render_fps": 61.96,
+      "effect_ms": 0.201,
+      "ws_fps": 32.48,
+      "server_cpu_pct": 11.0,
+      "ddp_complete_fps": 61.46
+    },
+    {
+      "effect": "hierarchy",
+      "render_fps": 61.97,
+      "effect_ms": 0.198,
+      "ws_fps": 32.48,
+      "server_cpu_pct": 11.0,
+      "ddp_complete_fps": 61.47
+    },
+    {
+      "effect": "gifplayer",
+      "render_fps": 61.75,
+      "effect_ms": 0.186,
+      "ws_fps": 33.87,
+      "server_cpu_pct": 12.9,
+      "ddp_complete_fps": 34.36
+    },
+    {
+      "effect": "strobe",
+      "render_fps": 61.73,
+      "effect_ms": 0.182,
+      "ws_fps": 33.85,
+      "server_cpu_pct": 11.0,
+      "ddp_complete_fps": 61.73
+    },
+    {
+      "effect": "fade",
+      "render_fps": 5.0,
+      "effect_ms": 0.166,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 6.5,
+      "ddp_complete_fps": 62.47
+    },
+    {
+      "effect": "real_strobe",
+      "render_fps": 61.94,
+      "effect_ms": 0.162,
+      "ws_fps": 33.47,
+      "server_cpu_pct": 11.0,
+      "ddp_complete_fps": 53.95
+    },
+    {
+      "effect": "scroll_plus",
+      "render_fps": 61.98,
+      "effect_ms": 0.137,
+      "ws_fps": 32.49,
+      "server_cpu_pct": 19.5,
+      "ddp_complete_fps": 62.48
+    },
+    {
+      "effect": "scroll",
+      "render_fps": 61.99,
+      "effect_ms": 0.121,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 18.0,
+      "ddp_complete_fps": 61.99
+    },
+    {
+      "effect": "singleColor",
+      "render_fps": 10.0,
+      "effect_ms": 0.12,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 7.5,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "scan",
+      "render_fps": 62.48,
+      "effect_ms": 0.108,
+      "ws_fps": 32.99,
+      "server_cpu_pct": 16.0,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "gradient",
+      "render_fps": 9.99,
+      "effect_ms": 0.098,
+      "ws_fps": 32.46,
+      "server_cpu_pct": 7.5,
+      "ddp_complete_fps": 61.93
+    },
+    {
+      "effect": "magnitude",
+      "render_fps": 61.97,
+      "effect_ms": 0.091,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 10.0,
+      "ddp_complete_fps": 62.47
+    },
+    {
+      "effect": "random_flash",
+      "render_fps": 49.99,
+      "effect_ms": 0.075,
+      "ws_fps": 31.99,
+      "server_cpu_pct": 7.0,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "spectrum",
+      "render_fps": 61.98,
+      "effect_ms": 0.046,
+      "ws_fps": 32.49,
+      "server_cpu_pct": 13.5,
+      "ddp_complete_fps": 59.98
+    },
+    {
+      "effect": "metro",
+      "render_fps": 61.98,
+      "effect_ms": 0.016,
+      "ws_fps": 32.99,
+      "server_cpu_pct": 10.5,
+      "ddp_complete_fps": 61.98
+    },
+    {
+      "effect": "pixels",
+      "render_fps": 196.46,
+      "effect_ms": 0.007,
+      "ws_fps": 33.49,
+      "server_cpu_pct": 10.0,
+      "ddp_complete_fps": 61.99
+    }
+  ],
+  "effect_failures": [],
+  "findings": [
+    "50k OpenRGB exposed ignored partial TCP writes. Three initial loopback runs failed stream validation. A diagnostic reproduced two short writes and ten invalid packets. Production now uses socket.sendall; corrected runs retain identical packet bytes.",
+    "Experimental sACN adapter converts the built-in int list produced by E131Device to bytes with C-level range validation, then uses an immutable-byte packet setter with tuple padding. Public transport/sync machinery remains unchanged; out-of-range channels are rejected.",
+    "Preview rate limiting reset its timer to each accepted frame, causing a 62 FPS source to fall near half the requested 60 FPS preview rate. Monotonic scheduled deadlines fix this while skipping missed slots and preventing duplicate-time/catch-up bursts. Four deterministic rate tests failed before the fix.",
+    "At maximum throughput the old receiver thread competed with websocket decoding and lost UDP frames. The benchmark now isolates DDP collection in a separate process and rejects baseline comparisons across different receiver/pacing/bind scenarios.",
+    "Unpacing a fixture virtual overwhelmed Blender: the aborted diagnostic delivered ~39 FPS; correctly scoping unpaced work to the target measured ~373 FPS. This is a benchmark correction, not a claimed application speedup.",
+    "Matched normal-pacing preview medians: Rainbow 32.74 -> 60.20 FPS; Melt and Sparkle 34.24 -> 59.98; Noise 2D 32.99 -> 60.20. Retained render cadence and packet bytes."
+  ],
+  "validation": {
+    "tests": 361,
+    "python": [
+      "3.12",
+      "3.15"
+    ],
+    "scope": "Accumulated performance suite, prototype packet equivalence and instance isolation, full 50k TCP partial-write regression, frozen schemas, static checks.",
+    "static_checks": "Ruff, ClassVar audit and strict Pyrefly baseline ratchet pass; no suppressions added."
+  },
+  "reproduce": [
+    "python3.15 tools/sender_bench.py --senders all --pixels 50000 --max-packets 150000 --bind 127.0.0.2 --seconds 2 --repeats 3 --output /tmp/50k.jsonl",
+    "Add --modes loopback --fps 60 for paced characterization.",
+    "Use --senders e131 --e131-bytes-prototype --seconds 3 for isolated byte-buffer comparison. Add --modes encode --sampling cpu --seconds 4 --repeats 1 to profile stock and prototype separately.",
+    "python3.15 tools/pixel_bench.py --pixels 50000 --effects all --synthetic-audio --fixtures --loops standard --streams full --seconds 2 --warmup 1 --repeats 1 --keep-going --output /tmp/effects50k.jsonl",
+    "python3.15 tools/pixel_bench.py --pixels 50000 --bind 127.0.0.2 --effects all --synthetic-audio --fixtures --loops standard --streams full --unpaced --unpaced-preview --seconds 2 --warmup .5 --repeats 1 --keep-going --output /tmp/max50k.jsonl",
+    "For repeated limits use --effects fade,rainbow,smoke2d,melt_and_sparkle --streams none,full --seconds 3 --repeats 3.",
+    "For the temporal experiment use --effects fade,rainbow --streams full --temporal-render with both unpaced flags. Add --sampling cpu --seconds 5 --repeats 1 for separate profiles, then tools/effect_profile_report.py."
+  ],
+  "preview-before": [
+    {
+      "effect": "rainbow",
+      "stream": "full",
+      "render_fps": {
+        "median": 61.98,
+        "min": 61.98,
+        "max": 62.24
+      },
+      "effect_fps": {
+        "median": 59.73,
+        "min": 59.48,
+        "max": 59.74
+      },
+      "effect_ms": {
+        "median": 0.748,
+        "min": 0.678,
+        "max": 0.764
+      },
+      "ddp_complete_fps": {
+        "median": 62.23,
+        "min": 61.98,
+        "max": 62.24
+      },
+      "ws_changed_fps": {
+        "median": 32.49,
+        "min": 32.0,
+        "max": 32.74
+      },
+      "ws_fps": {
+        "median": 32.74,
+        "min": 32.0,
+        "max": 33.24
+      },
+      "server_cpu_pct": {
+        "median": 16.0,
+        "min": 14.7,
+        "max": 16.2
+      }
+    },
+    {
+      "effect": "melt_and_sparkle",
+      "stream": "full",
+      "render_fps": {
+        "median": 61.49,
+        "min": 61.44,
+        "max": 61.99
+      },
+      "effect_fps": {
+        "median": 61.49,
+        "min": 61.44,
+        "max": 61.99
+      },
+      "effect_ms": {
+        "median": 4.197,
+        "min": 4.146,
+        "max": 4.327
+      },
+      "ddp_complete_fps": {
+        "median": 61.74,
+        "min": 61.68,
+        "max": 61.74
+      },
+      "ws_changed_fps": {
+        "median": 34.24,
+        "min": 33.71,
+        "max": 35.74
+      },
+      "ws_fps": {
+        "median": 34.24,
+        "min": 33.71,
+        "max": 35.74
+      },
+      "server_cpu_pct": {
+        "median": 39.2,
+        "min": 39.0,
+        "max": 40.5
+      }
+    },
+    {
+      "effect": "noise2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 61.99,
+        "min": 61.99,
+        "max": 61.99
+      },
+      "effect_fps": {
+        "median": 61.99,
+        "min": 61.99,
+        "max": 61.99
+      },
+      "effect_ms": {
+        "median": 1.646,
+        "min": 1.641,
+        "max": 1.656
+      },
+      "ddp_complete_fps": {
+        "median": 62.24,
+        "min": 61.99,
+        "max": 62.24
+      },
+      "ws_changed_fps": {
+        "median": 32.99,
+        "min": 32.0,
+        "max": 33.49
+      },
+      "ws_fps": {
+        "median": 32.99,
+        "min": 32.0,
+        "max": 33.49
+      },
+      "server_cpu_pct": {
+        "median": 23.5,
+        "min": 23.2,
+        "max": 24.0
+      }
+    }
+  ],
+  "preview-after": [
+    {
+      "effect": "rainbow",
+      "stream": "full",
+      "render_fps": {
+        "median": 61.95,
+        "min": 61.94,
+        "max": 62.22
+      },
+      "effect_fps": {
+        "median": 59.69,
+        "min": 59.47,
+        "max": 59.7
+      },
+      "effect_ms": {
+        "median": 0.65,
+        "min": 0.642,
+        "max": 0.657
+      },
+      "ddp_complete_fps": {
+        "median": 62.19,
+        "min": 61.97,
+        "max": 62.2
+      },
+      "ws_changed_fps": {
+        "median": 57.95,
+        "min": 57.44,
+        "max": 57.97
+      },
+      "ws_fps": {
+        "median": 60.2,
+        "min": 59.94,
+        "max": 60.22
+      },
+      "server_cpu_pct": {
+        "median": 16.0,
+        "min": 15.5,
+        "max": 16.0
+      }
+    },
+    {
+      "effect": "melt_and_sparkle",
+      "stream": "full",
+      "render_fps": {
+        "median": 62.1,
+        "min": 61.98,
+        "max": 62.21
+      },
+      "effect_fps": {
+        "median": 62.1,
+        "min": 61.98,
+        "max": 62.21
+      },
+      "effect_ms": {
+        "median": 4.237,
+        "min": 4.123,
+        "max": 4.265
+      },
+      "ddp_complete_fps": {
+        "median": 61.96,
+        "min": 61.85,
+        "max": 61.98
+      },
+      "ws_changed_fps": {
+        "median": 59.98,
+        "min": 59.97,
+        "max": 60.11
+      },
+      "ws_fps": {
+        "median": 59.98,
+        "min": 59.97,
+        "max": 60.11
+      },
+      "server_cpu_pct": {
+        "median": 40.4,
+        "min": 39.2,
+        "max": 41.0
+      }
+    },
+    {
+      "effect": "noise2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 61.7,
+        "min": 61.66,
+        "max": 61.72
+      },
+      "effect_fps": {
+        "median": 61.7,
+        "min": 61.66,
+        "max": 61.72
+      },
+      "effect_ms": {
+        "median": 1.563,
+        "min": 1.548,
+        "max": 1.583
+      },
+      "ddp_complete_fps": {
+        "median": 61.95,
+        "min": 61.91,
+        "max": 61.97
+      },
+      "ws_changed_fps": {
+        "median": 60.2,
+        "min": 59.91,
+        "max": 60.22
+      },
+      "ws_fps": {
+        "median": 60.2,
+        "min": 59.91,
+        "max": 60.22
+      },
+      "server_cpu_pct": {
+        "median": 23.5,
+        "min": 23.5,
+        "max": 24.0
+      }
+    }
+  ],
+  "max-repeat": [
+    {
+      "effect": "fade",
+      "stream": "none",
+      "render_fps": {
+        "median": 104.89,
+        "min": 98.95,
+        "max": 106.3
+      },
+      "effect_fps": {
+        "median": 4579.42,
+        "min": 4466.15,
+        "max": 4714.76
+      },
+      "effect_ms": {
+        "median": 0.126,
+        "min": 0.121,
+        "max": 0.129
+      },
+      "ddp_complete_fps": {
+        "median": 105.22,
+        "min": 98.95,
+        "max": 106.3
+      },
+      "ws_changed_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "ws_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "server_cpu_pct": {
+        "median": 112.2,
+        "min": 112.0,
+        "max": 112.3
+      }
+    },
+    {
+      "effect": "fade",
+      "stream": "full",
+      "render_fps": {
+        "median": 90.81,
+        "min": 89.05,
+        "max": 94.5
+      },
+      "effect_fps": {
+        "median": 4320.28,
+        "min": 4209.48,
+        "max": 4346.48
+      },
+      "effect_ms": {
+        "median": 0.127,
+        "min": 0.126,
+        "max": 0.132
+      },
+      "ddp_complete_fps": {
+        "median": 91.14,
+        "min": 89.38,
+        "max": 94.83
+      },
+      "ws_changed_fps": {
+        "median": 90.81,
+        "min": 89.05,
+        "max": 94.16
+      },
+      "ws_fps": {
+        "median": 104.0,
+        "min": 103.45,
+        "max": 109.8
+      },
+      "server_cpu_pct": {
+        "median": 114.6,
+        "min": 114.5,
+        "max": 114.8
+      }
+    },
+    {
+      "effect": "rainbow",
+      "stream": "none",
+      "render_fps": {
+        "median": 420.38,
+        "min": 417.26,
+        "max": 429.56
+      },
+      "effect_fps": {
+        "median": 1034.6,
+        "min": 1006.02,
+        "max": 1039.3
+      },
+      "effect_ms": {
+        "median": 0.873,
+        "min": 0.865,
+        "max": 0.897
+      },
+      "ddp_complete_fps": {
+        "median": 420.38,
+        "min": 417.26,
+        "max": 429.56
+      },
+      "ws_changed_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "ws_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "server_cpu_pct": {
+        "median": 163.2,
+        "min": 162.9,
+        "max": 165.2
+      }
+    },
+    {
+      "effect": "rainbow",
+      "stream": "full",
+      "render_fps": {
+        "median": 333.81,
+        "min": 322.19,
+        "max": 336.41
+      },
+      "effect_fps": {
+        "median": 809.97,
+        "min": 774.23,
+        "max": 821.7
+      },
+      "effect_ms": {
+        "median": 1.134,
+        "min": 1.117,
+        "max": 1.19
+      },
+      "ddp_complete_fps": {
+        "median": 333.81,
+        "min": 322.19,
+        "max": 336.41
+      },
+      "ws_changed_fps": {
+        "median": 333.81,
+        "min": 322.19,
+        "max": 336.41
+      },
+      "ws_fps": {
+        "median": 335.48,
+        "min": 325.86,
+        "max": 339.07
+      },
+      "server_cpu_pct": {
+        "median": 159.9,
+        "min": 158.6,
+        "max": 160.2
+      }
+    },
+    {
+      "effect": "smoke2d",
+      "stream": "none",
+      "render_fps": {
+        "median": 179.15,
+        "min": 173.28,
+        "max": 179.48
+      },
+      "effect_fps": {
+        "median": 179.15,
+        "min": 173.28,
+        "max": 179.48
+      },
+      "effect_ms": {
+        "median": 4.164,
+        "min": 4.149,
+        "max": 4.302
+      },
+      "ddp_complete_fps": {
+        "median": 179.15,
+        "min": 173.28,
+        "max": 179.48
+      },
+      "ws_changed_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "ws_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "server_cpu_pct": {
+        "median": 101.9,
+        "min": 101.9,
+        "max": 102.3
+      }
+    },
+    {
+      "effect": "smoke2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 162.24,
+        "min": 159.66,
+        "max": 163.16
+      },
+      "effect_fps": {
+        "median": 162.24,
+        "min": 159.66,
+        "max": 163.16
+      },
+      "effect_ms": {
+        "median": 4.703,
+        "min": 4.675,
+        "max": 4.813
+      },
+      "ddp_complete_fps": {
+        "median": 162.24,
+        "min": 159.66,
+        "max": 163.16
+      },
+      "ws_changed_fps": {
+        "median": 162.24,
+        "min": 159.66,
+        "max": 163.16
+      },
+      "ws_fps": {
+        "median": 162.24,
+        "min": 160.0,
+        "max": 163.16
+      },
+      "server_cpu_pct": {
+        "median": 105.3,
+        "min": 105.3,
+        "max": 105.6
+      }
+    },
+    {
+      "effect": "melt_and_sparkle",
+      "stream": "none",
+      "render_fps": {
+        "median": 176.9,
+        "min": 176.82,
+        "max": 184.88
+      },
+      "effect_fps": {
+        "median": 176.9,
+        "min": 176.82,
+        "max": 184.88
+      },
+      "effect_ms": {
+        "median": 4.124,
+        "min": 3.94,
+        "max": 4.185
+      },
+      "ddp_complete_fps": {
+        "median": 176.9,
+        "min": 176.82,
+        "max": 184.88
+      },
+      "ws_changed_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "ws_fps": {
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "server_cpu_pct": {
+        "median": 100.9,
+        "min": 100.9,
+        "max": 100.9
+      }
+    },
+    {
+      "effect": "melt_and_sparkle",
+      "stream": "full",
+      "render_fps": {
+        "median": 166.89,
+        "min": 166.86,
+        "max": 171.52
+      },
+      "effect_fps": {
+        "median": 166.89,
+        "min": 166.86,
+        "max": 171.52
+      },
+      "effect_ms": {
+        "median": 4.457,
+        "min": 4.341,
+        "max": 4.476
+      },
+      "ddp_complete_fps": {
+        "median": 166.89,
+        "min": 166.86,
+        "max": 171.52
+      },
+      "ws_changed_fps": {
+        "median": 166.89,
+        "min": 166.86,
+        "max": 171.52
+      },
+      "ws_fps": {
+        "median": 167.19,
+        "min": 166.89,
+        "max": 171.52
+      },
+      "server_cpu_pct": {
+        "median": 104.6,
+        "min": 104.6,
+        "max": 104.6
+      }
+    }
+  ],
+  "temporal-prototype": [
+    {
+      "effect": "fade",
+      "stream": "full",
+      "render_fps": {
+        "median": 575.57,
+        "min": 564.13,
+        "max": 612.13
+      },
+      "effect_fps": {
+        "median": 575.57,
+        "min": 564.13,
+        "max": 612.13
+      },
+      "effect_ms": {
+        "median": 0.138,
+        "min": 0.134,
+        "max": 0.147
+      },
+      "ddp_complete_fps": {
+        "median": 575.57,
+        "min": 564.13,
+        "max": 612.13
+      },
+      "ws_changed_fps": {
+        "median": 503.91,
+        "min": 501.82,
+        "max": 536.82
+      },
+      "ws_fps": {
+        "median": 576.23,
+        "min": 564.13,
+        "max": 612.13
+      },
+      "server_cpu_pct": {
+        "median": 109.6,
+        "min": 109.6,
+        "max": 110.0
+      }
+    },
+    {
+      "effect": "rainbow",
+      "stream": "full",
+      "render_fps": {
+        "median": 443.55,
+        "min": 440.25,
+        "max": 468.51
+      },
+      "effect_fps": {
+        "median": 443.55,
+        "min": 440.25,
+        "max": 468.51
+      },
+      "effect_ms": {
+        "median": 0.905,
+        "min": 0.903,
+        "max": 0.963
+      },
+      "ddp_complete_fps": {
+        "median": 443.55,
+        "min": 440.25,
+        "max": 468.51
+      },
+      "ws_changed_fps": {
+        "median": 443.55,
+        "min": 439.58,
+        "max": 468.51
+      },
+      "ws_fps": {
+        "median": 443.89,
+        "min": 440.58,
+        "max": 468.84
+      },
+      "server_cpu_pct": {
+        "median": 107.3,
+        "min": 107.3,
+        "max": 107.6
+      }
+    }
+  ],
+  "max_catalog": [
+    {
+      "effect": "fade",
+      "stream": "full",
+      "render_fps": {
+        "median": 91.54,
+        "min": 91.54,
+        "max": 91.54
+      },
+      "effect_fps": {
+        "median": 4376.61,
+        "min": 4376.61,
+        "max": 4376.61
+      },
+      "effect_ms": {
+        "median": 0.125,
+        "min": 0.125,
+        "max": 0.125
+      },
+      "ddp_complete_fps": {
+        "median": 91.54,
+        "min": 91.54,
+        "max": 91.54
+      },
+      "ws_changed_fps": {
+        "median": 91.04,
+        "min": 91.04,
+        "max": 91.04
+      },
+      "ws_fps": {
+        "median": 105.97,
+        "min": 105.97,
+        "max": 105.97
+      },
+      "server_cpu_pct": {
+        "median": 114.9,
+        "min": 114.9,
+        "max": 114.9
+      }
+    },
+    {
+      "effect": "singleColor",
+      "stream": "full",
+      "render_fps": {
+        "median": 112.48,
+        "min": 112.48,
+        "max": 112.48
+      },
+      "effect_fps": {
+        "median": 5235.46,
+        "min": 5235.46,
+        "max": 5235.46
+      },
+      "effect_ms": {
+        "median": 0.087,
+        "min": 0.087,
+        "max": 0.087
+      },
+      "ddp_complete_fps": {
+        "median": 112.48,
+        "min": 112.48,
+        "max": 112.48
+      },
+      "ws_changed_fps": {
+        "median": 0.5,
+        "min": 0.5,
+        "max": 0.5
+      },
+      "ws_fps": {
+        "median": 112.48,
+        "min": 112.48,
+        "max": 112.48
+      },
+      "server_cpu_pct": {
+        "median": 112.5,
+        "min": 112.5,
+        "max": 112.5
+      }
+    },
+    {
+      "effect": "smoke2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 162.08,
+        "min": 162.08,
+        "max": 162.08
+      },
+      "effect_fps": {
+        "median": 162.08,
+        "min": 162.08,
+        "max": 162.08
+      },
+      "effect_ms": {
+        "median": 4.736,
+        "min": 4.736,
+        "max": 4.736
+      },
+      "ddp_complete_fps": {
+        "median": 162.08,
+        "min": 162.08,
+        "max": 162.08
+      },
+      "ws_changed_fps": {
+        "median": 162.08,
+        "min": 162.08,
+        "max": 162.08
+      },
+      "ws_fps": {
+        "median": 162.08,
+        "min": 162.08,
+        "max": 162.08
+      },
+      "server_cpu_pct": {
+        "median": 105.2,
+        "min": 105.2,
+        "max": 105.2
+      }
+    },
+    {
+      "effect": "melt_and_sparkle",
+      "stream": "full",
+      "render_fps": {
+        "median": 167.74,
+        "min": 167.74,
+        "max": 167.74
+      },
+      "effect_fps": {
+        "median": 167.74,
+        "min": 167.74,
+        "max": 167.74
+      },
+      "effect_ms": {
+        "median": 4.409,
+        "min": 4.409,
+        "max": 4.409
+      },
+      "ddp_complete_fps": {
+        "median": 167.74,
+        "min": 167.74,
+        "max": 167.74
+      },
+      "ws_changed_fps": {
+        "median": 167.74,
+        "min": 167.74,
+        "max": 167.74
+      },
+      "ws_fps": {
+        "median": 167.74,
+        "min": 167.74,
+        "max": 167.74
+      },
+      "server_cpu_pct": {
+        "median": 104.3,
+        "min": 104.3,
+        "max": 104.3
+      }
+    },
+    {
+      "effect": "flame2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 194.27,
+        "min": 194.27,
+        "max": 194.27
+      },
+      "effect_fps": {
+        "median": 194.27,
+        "min": 194.27,
+        "max": 194.27
+      },
+      "effect_ms": {
+        "median": 3.664,
+        "min": 3.664,
+        "max": 3.664
+      },
+      "ddp_complete_fps": {
+        "median": 194.27,
+        "min": 194.27,
+        "max": 194.27
+      },
+      "ws_changed_fps": {
+        "median": 194.27,
+        "min": 194.27,
+        "max": 194.27
+      },
+      "ws_fps": {
+        "median": 195.27,
+        "min": 195.27,
+        "max": 195.27
+      },
+      "server_cpu_pct": {
+        "median": 104.4,
+        "min": 104.4,
+        "max": 104.4
+      }
+    },
+    {
+      "effect": "soap2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 194.62,
+        "min": 194.62,
+        "max": 194.62
+      },
+      "effect_fps": {
+        "median": 194.62,
+        "min": 194.62,
+        "max": 194.62
+      },
+      "effect_ms": {
+        "median": 3.694,
+        "min": 3.694,
+        "max": 3.694
+      },
+      "ddp_complete_fps": {
+        "median": 194.62,
+        "min": 194.62,
+        "max": 194.62
+      },
+      "ws_changed_fps": {
+        "median": 189.13,
+        "min": 189.13,
+        "max": 189.13
+      },
+      "ws_fps": {
+        "median": 194.62,
+        "min": 194.62,
+        "max": 194.62
+      },
+      "server_cpu_pct": {
+        "median": 105.3,
+        "min": 105.3,
+        "max": 105.3
+      }
+    },
+    {
+      "effect": "marching",
+      "stream": "full",
+      "render_fps": {
+        "median": 212.47,
+        "min": 212.47,
+        "max": 212.47
+      },
+      "effect_fps": {
+        "median": 212.47,
+        "min": 212.47,
+        "max": 212.47
+      },
+      "effect_ms": {
+        "median": 3.172,
+        "min": 3.172,
+        "max": 3.172
+      },
+      "ddp_complete_fps": {
+        "median": 212.47,
+        "min": 212.47,
+        "max": 212.47
+      },
+      "ws_changed_fps": {
+        "median": 212.47,
+        "min": 212.47,
+        "max": 212.47
+      },
+      "ws_fps": {
+        "median": 212.47,
+        "min": 212.47,
+        "max": 212.47
+      },
+      "server_cpu_pct": {
+        "median": 106.5,
+        "min": 106.5,
+        "max": 106.5
+      }
+    },
+    {
+      "effect": "lava_lamp",
+      "stream": "full",
+      "render_fps": {
+        "median": 216.34,
+        "min": 216.34,
+        "max": 216.34
+      },
+      "effect_fps": {
+        "median": 216.34,
+        "min": 216.34,
+        "max": 216.34
+      },
+      "effect_ms": {
+        "median": 3.139,
+        "min": 3.139,
+        "max": 3.139
+      },
+      "ddp_complete_fps": {
+        "median": 216.34,
+        "min": 216.34,
+        "max": 216.34
+      },
+      "ws_changed_fps": {
+        "median": 216.34,
+        "min": 216.34,
+        "max": 216.34
+      },
+      "ws_fps": {
+        "median": 216.34,
+        "min": 216.34,
+        "max": 216.34
+      },
+      "server_cpu_pct": {
+        "median": 106.2,
+        "min": 106.2,
+        "max": 106.2
+      }
+    },
+    {
+      "effect": "melt",
+      "stream": "full",
+      "render_fps": {
+        "median": 224.38,
+        "min": 224.38,
+        "max": 224.38
+      },
+      "effect_fps": {
+        "median": 224.38,
+        "min": 224.38,
+        "max": 224.38
+      },
+      "effect_ms": {
+        "median": 3.007,
+        "min": 3.007,
+        "max": 3.007
+      },
+      "ddp_complete_fps": {
+        "median": 224.38,
+        "min": 224.38,
+        "max": 224.38
+      },
+      "ws_changed_fps": {
+        "median": 224.38,
+        "min": 224.38,
+        "max": 224.38
+      },
+      "ws_fps": {
+        "median": 225.88,
+        "min": 225.88,
+        "max": 225.88
+      },
+      "server_cpu_pct": {
+        "median": 105.9,
+        "min": 105.9,
+        "max": 105.9
+      }
+    },
+    {
+      "effect": "blade_power_plus",
+      "stream": "full",
+      "render_fps": {
+        "median": 233.02,
+        "min": 233.02,
+        "max": 233.02
+      },
+      "effect_fps": {
+        "median": 233.02,
+        "min": 233.02,
+        "max": 233.02
+      },
+      "effect_ms": {
+        "median": 1.973,
+        "min": 1.973,
+        "max": 1.973
+      },
+      "ddp_complete_fps": {
+        "median": 233.02,
+        "min": 233.02,
+        "max": 233.02
+      },
+      "ws_changed_fps": {
+        "median": 208.57,
+        "min": 208.57,
+        "max": 208.57
+      },
+      "ws_fps": {
+        "median": 234.51,
+        "min": 234.51,
+        "max": 234.51
+      },
+      "server_cpu_pct": {
+        "median": 105.8,
+        "min": 105.8,
+        "max": 105.8
+      }
+    },
+    {
+      "effect": "glitch",
+      "stream": "full",
+      "render_fps": {
+        "median": 247.89,
+        "min": 247.89,
+        "max": 247.89
+      },
+      "effect_fps": {
+        "median": 247.89,
+        "min": 247.89,
+        "max": 247.89
+      },
+      "effect_ms": {
+        "median": 2.651,
+        "min": 2.651,
+        "max": 2.651
+      },
+      "ddp_complete_fps": {
+        "median": 247.89,
+        "min": 247.89,
+        "max": 247.89
+      },
+      "ws_changed_fps": {
+        "median": 247.89,
+        "min": 247.89,
+        "max": 247.89
+      },
+      "ws_fps": {
+        "median": 247.89,
+        "min": 247.89,
+        "max": 247.89
+      },
+      "server_cpu_pct": {
+        "median": 107.0,
+        "min": 107.0,
+        "max": 107.0
+      }
+    },
+    {
+      "effect": "energy",
+      "stream": "full",
+      "render_fps": {
+        "median": 251.26,
+        "min": 251.26,
+        "max": 251.26
+      },
+      "effect_fps": {
+        "median": 251.26,
+        "min": 251.26,
+        "max": 251.26
+      },
+      "effect_ms": {
+        "median": 1.007,
+        "min": 1.007,
+        "max": 1.007
+      },
+      "ddp_complete_fps": {
+        "median": 251.26,
+        "min": 251.26,
+        "max": 251.26
+      },
+      "ws_changed_fps": {
+        "median": 251.26,
+        "min": 251.26,
+        "max": 251.26
+      },
+      "ws_fps": {
+        "median": 253.76,
+        "min": 253.76,
+        "max": 253.76
+      },
+      "server_cpu_pct": {
+        "median": 106.9,
+        "min": 106.9,
+        "max": 106.9
+      }
+    },
+    {
+      "effect": "water",
+      "stream": "full",
+      "render_fps": {
+        "median": 253.44,
+        "min": 253.44,
+        "max": 253.44
+      },
+      "effect_fps": {
+        "median": 253.44,
+        "min": 253.44,
+        "max": 253.44
+      },
+      "effect_ms": {
+        "median": 2.488,
+        "min": 2.488,
+        "max": 2.488
+      },
+      "ddp_complete_fps": {
+        "median": 253.44,
+        "min": 253.44,
+        "max": 253.44
+      },
+      "ws_changed_fps": {
+        "median": 253.44,
+        "min": 253.44,
+        "max": 253.44
+      },
+      "ws_fps": {
+        "median": 253.44,
+        "min": 253.44,
+        "max": 253.44
+      },
+      "server_cpu_pct": {
+        "median": 105.3,
+        "min": 105.3,
+        "max": 105.3
+      }
+    },
+    {
+      "effect": "crawler",
+      "stream": "full",
+      "render_fps": {
+        "median": 257.84,
+        "min": 257.84,
+        "max": 257.84
+      },
+      "effect_fps": {
+        "median": 257.84,
+        "min": 257.84,
+        "max": 257.84
+      },
+      "effect_ms": {
+        "median": 2.498,
+        "min": 2.498,
+        "max": 2.498
+      },
+      "ddp_complete_fps": {
+        "median": 257.84,
+        "min": 257.84,
+        "max": 257.84
+      },
+      "ws_changed_fps": {
+        "median": 257.84,
+        "min": 257.84,
+        "max": 257.84
+      },
+      "ws_fps": {
+        "median": 258.84,
+        "min": 258.84,
+        "max": 258.84
+      },
+      "server_cpu_pct": {
+        "median": 107.4,
+        "min": 107.4,
+        "max": 107.4
+      }
+    },
+    {
+      "effect": "fire",
+      "stream": "full",
+      "render_fps": {
+        "median": 265.49,
+        "min": 265.49,
+        "max": 265.49
+      },
+      "effect_fps": {
+        "median": 265.49,
+        "min": 265.49,
+        "max": 265.49
+      },
+      "effect_ms": {
+        "median": 2.284,
+        "min": 2.284,
+        "max": 2.284
+      },
+      "ddp_complete_fps": {
+        "median": 265.49,
+        "min": 265.49,
+        "max": 265.49
+      },
+      "ws_changed_fps": {
+        "median": 265.49,
+        "min": 265.49,
+        "max": 265.49
+      },
+      "ws_fps": {
+        "median": 265.49,
+        "min": 265.49,
+        "max": 265.49
+      },
+      "server_cpu_pct": {
+        "median": 106.3,
+        "min": 106.3,
+        "max": 106.3
+      }
+    },
+    {
+      "effect": "block_reflections",
+      "stream": "full",
+      "render_fps": {
+        "median": 279.98,
+        "min": 279.98,
+        "max": 279.98
+      },
+      "effect_fps": {
+        "median": 279.98,
+        "min": 279.98,
+        "max": 279.98
+      },
+      "effect_ms": {
+        "median": 2.209,
+        "min": 2.209,
+        "max": 2.209
+      },
+      "ddp_complete_fps": {
+        "median": 279.98,
+        "min": 279.98,
+        "max": 279.98
+      },
+      "ws_changed_fps": {
+        "median": 279.98,
+        "min": 279.98,
+        "max": 279.98
+      },
+      "ws_fps": {
+        "median": 279.98,
+        "min": 279.98,
+        "max": 279.98
+      },
+      "server_cpu_pct": {
+        "median": 107.5,
+        "min": 107.5,
+        "max": 107.5
+      }
+    },
+    {
+      "effect": "noise2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 281.35,
+        "min": 281.35,
+        "max": 281.35
+      },
+      "effect_fps": {
+        "median": 281.35,
+        "min": 281.35,
+        "max": 281.35
+      },
+      "effect_ms": {
+        "median": 2.097,
+        "min": 2.097,
+        "max": 2.097
+      },
+      "ddp_complete_fps": {
+        "median": 281.35,
+        "min": 281.35,
+        "max": 281.35
+      },
+      "ws_changed_fps": {
+        "median": 281.35,
+        "min": 281.35,
+        "max": 281.35
+      },
+      "ws_fps": {
+        "median": 287.35,
+        "min": 287.35,
+        "max": 287.35
+      },
+      "server_cpu_pct": {
+        "median": 107.9,
+        "min": 107.9,
+        "max": 107.9
+      }
+    },
+    {
+      "effect": "scroll",
+      "stream": "full",
+      "render_fps": {
+        "median": 285.21,
+        "min": 285.21,
+        "max": 285.21
+      },
+      "effect_fps": {
+        "median": 285.21,
+        "min": 285.21,
+        "max": 285.21
+      },
+      "effect_ms": {
+        "median": 0.373,
+        "min": 0.373,
+        "max": 0.373
+      },
+      "ddp_complete_fps": {
+        "median": 285.21,
+        "min": 285.21,
+        "max": 285.21
+      },
+      "ws_changed_fps": {
+        "median": 285.21,
+        "min": 285.21,
+        "max": 285.21
+      },
+      "ws_fps": {
+        "median": 286.21,
+        "min": 286.21,
+        "max": 286.21
+      },
+      "server_cpu_pct": {
+        "median": 105.9,
+        "min": 105.9,
+        "max": 105.9
+      }
+    },
+    {
+      "effect": "energy2",
+      "stream": "full",
+      "render_fps": {
+        "median": 293.65,
+        "min": 293.65,
+        "max": 293.65
+      },
+      "effect_fps": {
+        "median": 293.65,
+        "min": 293.65,
+        "max": 293.65
+      },
+      "effect_ms": {
+        "median": 1.942,
+        "min": 1.942,
+        "max": 1.942
+      },
+      "ddp_complete_fps": {
+        "median": 293.65,
+        "min": 293.65,
+        "max": 293.65
+      },
+      "ws_changed_fps": {
+        "median": 293.65,
+        "min": 293.65,
+        "max": 293.65
+      },
+      "ws_fps": {
+        "median": 293.65,
+        "min": 293.65,
+        "max": 293.65
+      },
+      "server_cpu_pct": {
+        "median": 108.4,
+        "min": 108.4,
+        "max": 108.4
+      }
+    },
+    {
+      "effect": "scroll_plus",
+      "stream": "full",
+      "render_fps": {
+        "median": 302.83,
+        "min": 302.83,
+        "max": 302.83
+      },
+      "effect_fps": {
+        "median": 302.83,
+        "min": 302.83,
+        "max": 302.83
+      },
+      "effect_ms": {
+        "median": 0.372,
+        "min": 0.372,
+        "max": 0.372
+      },
+      "ddp_complete_fps": {
+        "median": 302.83,
+        "min": 302.83,
+        "max": 302.83
+      },
+      "ws_changed_fps": {
+        "median": 302.83,
+        "min": 302.83,
+        "max": 302.83
+      },
+      "ws_fps": {
+        "median": 303.83,
+        "min": 303.83,
+        "max": 303.83
+      },
+      "server_cpu_pct": {
+        "median": 106.4,
+        "min": 106.4,
+        "max": 106.4
+      }
+    },
+    {
+      "effect": "rainbow",
+      "stream": "full",
+      "render_fps": {
+        "median": 316.69,
+        "min": 316.69,
+        "max": 316.69
+      },
+      "effect_fps": {
+        "median": 833.68,
+        "min": 833.68,
+        "max": 833.68
+      },
+      "effect_ms": {
+        "median": 1.101,
+        "min": 1.101,
+        "max": 1.101
+      },
+      "ddp_complete_fps": {
+        "median": 316.69,
+        "min": 316.69,
+        "max": 316.69
+      },
+      "ws_changed_fps": {
+        "median": 316.69,
+        "min": 316.69,
+        "max": 316.69
+      },
+      "ws_fps": {
+        "median": 319.68,
+        "min": 319.68,
+        "max": 319.68
+      },
+      "server_cpu_pct": {
+        "median": 159.8,
+        "min": 159.8,
+        "max": 159.8
+      }
+    },
+    {
+      "effect": "rain",
+      "stream": "full",
+      "render_fps": {
+        "median": 319.5,
+        "min": 319.5,
+        "max": 319.5
+      },
+      "effect_fps": {
+        "median": 319.5,
+        "min": 319.5,
+        "max": 319.5
+      },
+      "effect_ms": {
+        "median": 1.347,
+        "min": 1.347,
+        "max": 1.347
+      },
+      "ddp_complete_fps": {
+        "median": 319.5,
+        "min": 319.5,
+        "max": 319.5
+      },
+      "ws_changed_fps": {
+        "median": 60.5,
+        "min": 60.5,
+        "max": 60.5
+      },
+      "ws_fps": {
+        "median": 319.5,
+        "min": 319.5,
+        "max": 319.5
+      },
+      "server_cpu_pct": {
+        "median": 115.0,
+        "min": 115.0,
+        "max": 115.0
+      }
+    },
+    {
+      "effect": "plasma2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 320.89,
+        "min": 320.89,
+        "max": 320.89
+      },
+      "effect_fps": {
+        "median": 320.89,
+        "min": 320.89,
+        "max": 320.89
+      },
+      "effect_ms": {
+        "median": 1.698,
+        "min": 1.698,
+        "max": 1.698
+      },
+      "ddp_complete_fps": {
+        "median": 320.89,
+        "min": 320.89,
+        "max": 320.89
+      },
+      "ws_changed_fps": {
+        "median": 320.89,
+        "min": 320.89,
+        "max": 320.89
+      },
+      "ws_fps": {
+        "median": 320.89,
+        "min": 320.89,
+        "max": 320.89
+      },
+      "server_cpu_pct": {
+        "median": 108.5,
+        "min": 108.5,
+        "max": 108.5
+      }
+    },
+    {
+      "effect": "gradient",
+      "stream": "full",
+      "render_fps": {
+        "median": 326.94,
+        "min": 326.94,
+        "max": 326.94
+      },
+      "effect_fps": {
+        "median": 4864.14,
+        "min": 4864.14,
+        "max": 4864.14
+      },
+      "effect_ms": {
+        "median": 0.093,
+        "min": 0.093,
+        "max": 0.093
+      },
+      "ddp_complete_fps": {
+        "median": 326.94,
+        "min": 326.94,
+        "max": 326.94
+      },
+      "ws_changed_fps": {
+        "median": 0.5,
+        "min": 0.5,
+        "max": 0.5
+      },
+      "ws_fps": {
+        "median": 330.44,
+        "min": 330.44,
+        "max": 330.44
+      },
+      "server_cpu_pct": {
+        "median": 139.5,
+        "min": 139.5,
+        "max": 139.5
+      }
+    },
+    {
+      "effect": "pixels",
+      "stream": "full",
+      "render_fps": {
+        "median": 331.44,
+        "min": 331.44,
+        "max": 331.44
+      },
+      "effect_fps": {
+        "median": 8757.31,
+        "min": 8757.31,
+        "max": 8757.31
+      },
+      "effect_ms": {
+        "median": 0.004,
+        "min": 0.004,
+        "max": 0.004
+      },
+      "ddp_complete_fps": {
+        "median": 331.44,
+        "min": 331.44,
+        "max": 331.44
+      },
+      "ws_changed_fps": {
+        "median": 1.5,
+        "min": 1.5,
+        "max": 1.5
+      },
+      "ws_fps": {
+        "median": 332.44,
+        "min": 332.44,
+        "max": 332.44
+      },
+      "server_cpu_pct": {
+        "median": 124.0,
+        "min": 124.0,
+        "max": 124.0
+      }
+    },
+    {
+      "effect": "scan_and_flare",
+      "stream": "full",
+      "render_fps": {
+        "median": 342.13,
+        "min": 342.13,
+        "max": 342.13
+      },
+      "effect_fps": {
+        "median": 342.13,
+        "min": 342.13,
+        "max": 342.13
+      },
+      "effect_ms": {
+        "median": 0.451,
+        "min": 0.451,
+        "max": 0.451
+      },
+      "ddp_complete_fps": {
+        "median": 342.13,
+        "min": 342.13,
+        "max": 342.13
+      },
+      "ws_changed_fps": {
+        "median": 342.13,
+        "min": 342.13,
+        "max": 342.13
+      },
+      "ws_fps": {
+        "median": 342.13,
+        "min": 342.13,
+        "max": 342.13
+      },
+      "server_cpu_pct": {
+        "median": 108.4,
+        "min": 108.4,
+        "max": 108.4
+      }
+    },
+    {
+      "effect": "pitchSpectrum",
+      "stream": "full",
+      "render_fps": {
+        "median": 350.8,
+        "min": 350.8,
+        "max": 350.8
+      },
+      "effect_fps": {
+        "median": 350.8,
+        "min": 350.8,
+        "max": 350.8
+      },
+      "effect_ms": {
+        "median": 0.821,
+        "min": 0.821,
+        "max": 0.821
+      },
+      "ddp_complete_fps": {
+        "median": 350.8,
+        "min": 350.8,
+        "max": 350.8
+      },
+      "ws_changed_fps": {
+        "median": 350.8,
+        "min": 350.8,
+        "max": 350.8
+      },
+      "ws_fps": {
+        "median": 350.8,
+        "min": 350.8,
+        "max": 350.8
+      },
+      "server_cpu_pct": {
+        "median": 108.9,
+        "min": 108.9,
+        "max": 108.9
+      }
+    },
+    {
+      "effect": "scan_multi",
+      "stream": "full",
+      "render_fps": {
+        "median": 353.87,
+        "min": 353.87,
+        "max": 353.87
+      },
+      "effect_fps": {
+        "median": 353.87,
+        "min": 353.87,
+        "max": 353.87
+      },
+      "effect_ms": {
+        "median": 0.477,
+        "min": 0.477,
+        "max": 0.477
+      },
+      "ddp_complete_fps": {
+        "median": 353.87,
+        "min": 353.87,
+        "max": 353.87
+      },
+      "ws_changed_fps": {
+        "median": 353.37,
+        "min": 353.37,
+        "max": 353.37
+      },
+      "ws_fps": {
+        "median": 353.87,
+        "min": 353.87,
+        "max": 353.87
+      },
+      "server_cpu_pct": {
+        "median": 108.5,
+        "min": 108.5,
+        "max": 108.5
+      }
+    },
+    {
+      "effect": "game_of_life",
+      "stream": "full",
+      "render_fps": {
+        "median": 355.2,
+        "min": 355.2,
+        "max": 355.2
+      },
+      "effect_fps": {
+        "median": 355.2,
+        "min": 355.2,
+        "max": 355.2
+      },
+      "effect_ms": {
+        "median": 1.465,
+        "min": 1.465,
+        "max": 1.465
+      },
+      "ddp_complete_fps": {
+        "median": 355.2,
+        "min": 355.2,
+        "max": 355.2
+      },
+      "ws_changed_fps": {
+        "median": 12.99,
+        "min": 12.99,
+        "max": 12.99
+      },
+      "ws_fps": {
+        "median": 355.7,
+        "min": 355.7,
+        "max": 355.7
+      },
+      "server_cpu_pct": {
+        "median": 106.9,
+        "min": 106.9,
+        "max": 106.9
+      }
+    },
+    {
+      "effect": "scan",
+      "stream": "full",
+      "render_fps": {
+        "median": 361.9,
+        "min": 361.9,
+        "max": 361.9
+      },
+      "effect_fps": {
+        "median": 361.9,
+        "min": 361.9,
+        "max": 361.9
+      },
+      "effect_ms": {
+        "median": 0.191,
+        "min": 0.191,
+        "max": 0.191
+      },
+      "ddp_complete_fps": {
+        "median": 361.9,
+        "min": 361.9,
+        "max": 361.9
+      },
+      "ws_changed_fps": {
+        "median": 359.4,
+        "min": 359.4,
+        "max": 359.4
+      },
+      "ws_fps": {
+        "median": 361.9,
+        "min": 361.9,
+        "max": 361.9
+      },
+      "server_cpu_pct": {
+        "median": 107.5,
+        "min": 107.5,
+        "max": 107.5
+      }
+    },
+    {
+      "effect": "random_flash",
+      "stream": "full",
+      "render_fps": {
+        "median": 362.91,
+        "min": 362.91,
+        "max": 362.91
+      },
+      "effect_fps": {
+        "median": 5233.14,
+        "min": 5233.14,
+        "max": 5233.14
+      },
+      "effect_ms": {
+        "median": 0.078,
+        "min": 0.078,
+        "max": 0.078
+      },
+      "ddp_complete_fps": {
+        "median": 362.91,
+        "min": 362.91,
+        "max": 362.91
+      },
+      "ws_changed_fps": {
+        "median": 362.91,
+        "min": 362.91,
+        "max": 362.91
+      },
+      "ws_fps": {
+        "median": 364.9,
+        "min": 364.9,
+        "max": 364.9
+      },
+      "server_cpu_pct": {
+        "median": 138.5,
+        "min": 138.5,
+        "max": 138.5
+      }
+    },
+    {
+      "effect": "spotlight",
+      "stream": "full",
+      "render_fps": {
+        "median": 372.26,
+        "min": 372.26,
+        "max": 372.26
+      },
+      "effect_fps": {
+        "median": 372.26,
+        "min": 372.26,
+        "max": 372.26
+      },
+      "effect_ms": {
+        "median": 1.324,
+        "min": 1.324,
+        "max": 1.324
+      },
+      "ddp_complete_fps": {
+        "median": 372.26,
+        "min": 372.26,
+        "max": 372.26
+      },
+      "ws_changed_fps": {
+        "median": 372.26,
+        "min": 372.26,
+        "max": 372.26
+      },
+      "ws_fps": {
+        "median": 372.26,
+        "min": 372.26,
+        "max": 372.26
+      },
+      "server_cpu_pct": {
+        "median": 107.9,
+        "min": 107.9,
+        "max": 107.9
+      }
+    },
+    {
+      "effect": "blender",
+      "stream": "full",
+      "render_fps": {
+        "median": 372.65,
+        "min": 372.65,
+        "max": 372.65
+      },
+      "effect_fps": {
+        "median": 372.65,
+        "min": 372.65,
+        "max": 372.65
+      },
+      "effect_ms": {
+        "median": 1.352,
+        "min": 1.352,
+        "max": 1.352
+      },
+      "ddp_complete_fps": {
+        "median": 372.65,
+        "min": 372.65,
+        "max": 372.65
+      },
+      "ws_changed_fps": {
+        "median": 60.94,
+        "min": 60.94,
+        "max": 60.94
+      },
+      "ws_fps": {
+        "median": 372.15,
+        "min": 372.15,
+        "max": 372.15
+      },
+      "server_cpu_pct": {
+        "median": 112.4,
+        "min": 112.4,
+        "max": 112.4
+      }
+    },
+    {
+      "effect": "wavelength",
+      "stream": "full",
+      "render_fps": {
+        "median": 374.22,
+        "min": 374.22,
+        "max": 374.22
+      },
+      "effect_fps": {
+        "median": 374.22,
+        "min": 374.22,
+        "max": 374.22
+      },
+      "effect_ms": {
+        "median": 0.273,
+        "min": 0.273,
+        "max": 0.273
+      },
+      "ddp_complete_fps": {
+        "median": 374.22,
+        "min": 374.22,
+        "max": 374.22
+      },
+      "ws_changed_fps": {
+        "median": 60.45,
+        "min": 60.45,
+        "max": 60.45
+      },
+      "ws_fps": {
+        "median": 374.22,
+        "min": 374.22,
+        "max": 374.22
+      },
+      "server_cpu_pct": {
+        "median": 109.4,
+        "min": 109.4,
+        "max": 109.4
+      }
+    },
+    {
+      "effect": "radial",
+      "stream": "full",
+      "render_fps": {
+        "median": 374.96,
+        "min": 374.96,
+        "max": 374.96
+      },
+      "effect_fps": {
+        "median": 374.96,
+        "min": 374.96,
+        "max": 374.96
+      },
+      "effect_ms": {
+        "median": 1.353,
+        "min": 1.353,
+        "max": 1.353
+      },
+      "ddp_complete_fps": {
+        "median": 374.96,
+        "min": 374.96,
+        "max": 374.96
+      },
+      "ws_changed_fps": {
+        "median": 60.49,
+        "min": 60.49,
+        "max": 60.49
+      },
+      "ws_fps": {
+        "median": 375.46,
+        "min": 375.46,
+        "max": 375.46
+      },
+      "server_cpu_pct": {
+        "median": 110.5,
+        "min": 110.5,
+        "max": 110.5
+      }
+    },
+    {
+      "effect": "digitalrain2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 389.54,
+        "min": 389.54,
+        "max": 389.54
+      },
+      "effect_fps": {
+        "median": 389.54,
+        "min": 389.54,
+        "max": 389.54
+      },
+      "effect_ms": {
+        "median": 1.082,
+        "min": 1.082,
+        "max": 1.082
+      },
+      "ddp_complete_fps": {
+        "median": 389.54,
+        "min": 389.54,
+        "max": 389.54
+      },
+      "ws_changed_fps": {
+        "median": 390.04,
+        "min": 390.04,
+        "max": 390.04
+      },
+      "ws_fps": {
+        "median": 390.54,
+        "min": 390.54,
+        "max": 390.54
+      },
+      "server_cpu_pct": {
+        "median": 107.9,
+        "min": 107.9,
+        "max": 107.9
+      }
+    },
+    {
+      "effect": "bands_matrix",
+      "stream": "full",
+      "render_fps": {
+        "median": 398.42,
+        "min": 398.42,
+        "max": 398.42
+      },
+      "effect_fps": {
+        "median": 398.42,
+        "min": 398.42,
+        "max": 398.42
+      },
+      "effect_ms": {
+        "median": 0.979,
+        "min": 0.979,
+        "max": 0.979
+      },
+      "ddp_complete_fps": {
+        "median": 398.42,
+        "min": 398.42,
+        "max": 398.42
+      },
+      "ws_changed_fps": {
+        "median": 60.41,
+        "min": 60.41,
+        "max": 60.41
+      },
+      "ws_fps": {
+        "median": 398.92,
+        "min": 398.92,
+        "max": 398.92
+      },
+      "server_cpu_pct": {
+        "median": 113.8,
+        "min": 113.8,
+        "max": 113.8
+      }
+    },
+    {
+      "effect": "imagespin",
+      "stream": "full",
+      "render_fps": {
+        "median": 401.83,
+        "min": 401.83,
+        "max": 401.83
+      },
+      "effect_fps": {
+        "median": 401.83,
+        "min": 401.83,
+        "max": 401.83
+      },
+      "effect_ms": {
+        "median": 1.079,
+        "min": 1.079,
+        "max": 1.079
+      },
+      "ddp_complete_fps": {
+        "median": 401.83,
+        "min": 401.83,
+        "max": 401.83
+      },
+      "ws_changed_fps": {
+        "median": 390.34,
+        "min": 390.34,
+        "max": 390.34
+      },
+      "ws_fps": {
+        "median": 402.83,
+        "min": 402.83,
+        "max": 402.83
+      },
+      "server_cpu_pct": {
+        "median": 113.5,
+        "min": 113.5,
+        "max": 113.5
+      }
+    },
+    {
+      "effect": "bands",
+      "stream": "full",
+      "render_fps": {
+        "median": 427.97,
+        "min": 427.97,
+        "max": 427.97
+      },
+      "effect_fps": {
+        "median": 427.97,
+        "min": 427.97,
+        "max": 427.97
+      },
+      "effect_ms": {
+        "median": 0.714,
+        "min": 0.714,
+        "max": 0.714
+      },
+      "ddp_complete_fps": {
+        "median": 427.97,
+        "min": 427.97,
+        "max": 427.97
+      },
+      "ws_changed_fps": {
+        "median": 60.5,
+        "min": 60.5,
+        "max": 60.5
+      },
+      "ws_fps": {
+        "median": 427.97,
+        "min": 427.97,
+        "max": 427.97
+      },
+      "server_cpu_pct": {
+        "median": 114.0,
+        "min": 114.0,
+        "max": 114.0
+      }
+    },
+    {
+      "effect": "plasmawled",
+      "stream": "full",
+      "render_fps": {
+        "median": 441.24,
+        "min": 441.24,
+        "max": 441.24
+      },
+      "effect_fps": {
+        "median": 441.24,
+        "min": 441.24,
+        "max": 441.24
+      },
+      "effect_ms": {
+        "median": 0.948,
+        "min": 0.948,
+        "max": 0.948
+      },
+      "ddp_complete_fps": {
+        "median": 441.24,
+        "min": 441.24,
+        "max": 441.24
+      },
+      "ws_changed_fps": {
+        "median": 438.74,
+        "min": 438.74,
+        "max": 438.74
+      },
+      "ws_fps": {
+        "median": 442.24,
+        "min": 442.24,
+        "max": 442.24
+      },
+      "server_cpu_pct": {
+        "median": 109.4,
+        "min": 109.4,
+        "max": 109.4
+      }
+    },
+    {
+      "effect": "blocks",
+      "stream": "full",
+      "render_fps": {
+        "median": 449.32,
+        "min": 449.32,
+        "max": 449.32
+      },
+      "effect_fps": {
+        "median": 449.32,
+        "min": 449.32,
+        "max": 449.32
+      },
+      "effect_ms": {
+        "median": 0.546,
+        "min": 0.546,
+        "max": 0.546
+      },
+      "ddp_complete_fps": {
+        "median": 449.32,
+        "min": 449.32,
+        "max": 449.32
+      },
+      "ws_changed_fps": {
+        "median": 60.48,
+        "min": 60.48,
+        "max": 60.48
+      },
+      "ws_fps": {
+        "median": 449.32,
+        "min": 449.32,
+        "max": 449.32
+      },
+      "server_cpu_pct": {
+        "median": 116.0,
+        "min": 116.0,
+        "max": 116.0
+      }
+    },
+    {
+      "effect": "power",
+      "stream": "full",
+      "render_fps": {
+        "median": 453.97,
+        "min": 453.97,
+        "max": 453.97
+      },
+      "effect_fps": {
+        "median": 453.97,
+        "min": 453.97,
+        "max": 453.97
+      },
+      "effect_ms": {
+        "median": 0.322,
+        "min": 0.322,
+        "max": 0.322
+      },
+      "ddp_complete_fps": {
+        "median": 453.97,
+        "min": 453.97,
+        "max": 453.97
+      },
+      "ws_changed_fps": {
+        "median": 60.5,
+        "min": 60.5,
+        "max": 60.5
+      },
+      "ws_fps": {
+        "median": 453.97,
+        "min": 453.97,
+        "max": 453.97
+      },
+      "server_cpu_pct": {
+        "median": 111.0,
+        "min": 111.0,
+        "max": 111.0
+      }
+    },
+    {
+      "effect": "texter2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 463.96,
+        "min": 463.96,
+        "max": 463.96
+      },
+      "effect_fps": {
+        "median": 463.96,
+        "min": 463.96,
+        "max": 463.96
+      },
+      "effect_ms": {
+        "median": 0.811,
+        "min": 0.811,
+        "max": 0.811
+      },
+      "ddp_complete_fps": {
+        "median": 463.96,
+        "min": 463.96,
+        "max": 463.96
+      },
+      "ws_changed_fps": {
+        "median": 125.85,
+        "min": 125.85,
+        "max": 125.85
+      },
+      "ws_fps": {
+        "median": 464.96,
+        "min": 464.96,
+        "max": 464.96
+      },
+      "server_cpu_pct": {
+        "median": 110.9,
+        "min": 110.9,
+        "max": 110.9
+      }
+    },
+    {
+      "effect": "waterfall2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 482.55,
+        "min": 482.55,
+        "max": 482.55
+      },
+      "effect_fps": {
+        "median": 482.55,
+        "min": 482.55,
+        "max": 482.55
+      },
+      "effect_ms": {
+        "median": 0.784,
+        "min": 0.784,
+        "max": 0.784
+      },
+      "ddp_complete_fps": {
+        "median": 482.55,
+        "min": 482.55,
+        "max": 482.55
+      },
+      "ws_changed_fps": {
+        "median": 116.39,
+        "min": 116.39,
+        "max": 116.39
+      },
+      "ws_fps": {
+        "median": 483.54,
+        "min": 483.54,
+        "max": 483.54
+      },
+      "server_cpu_pct": {
+        "median": 110.4,
+        "min": 110.4,
+        "max": 110.4
+      }
+    },
+    {
+      "effect": "clone",
+      "stream": "full",
+      "render_fps": {
+        "median": 492.78,
+        "min": 492.78,
+        "max": 492.78
+      },
+      "effect_fps": {
+        "median": 492.78,
+        "min": 492.78,
+        "max": 492.78
+      },
+      "effect_ms": {
+        "median": 0.692,
+        "min": 0.692,
+        "max": 0.692
+      },
+      "ddp_complete_fps": {
+        "median": 492.78,
+        "min": 492.78,
+        "max": 492.78
+      },
+      "ws_changed_fps": {
+        "median": 60.47,
+        "min": 60.47,
+        "max": 60.47
+      },
+      "ws_fps": {
+        "median": 493.78,
+        "min": 493.78,
+        "max": 493.78
+      },
+      "server_cpu_pct": {
+        "median": 111.0,
+        "min": 111.0,
+        "max": 111.0
+      }
+    },
+    {
+      "effect": "frontend",
+      "stream": "full",
+      "render_fps": {
+        "median": 493.47,
+        "min": 493.47,
+        "max": 493.47
+      },
+      "effect_fps": {
+        "median": 493.47,
+        "min": 493.47,
+        "max": 493.47
+      },
+      "effect_ms": {
+        "median": 0.69,
+        "min": 0.69,
+        "max": 0.69
+      },
+      "ddp_complete_fps": {
+        "median": 493.47,
+        "min": 493.47,
+        "max": 493.47
+      },
+      "ws_changed_fps": {
+        "median": 58.5,
+        "min": 58.5,
+        "max": 58.5
+      },
+      "ws_fps": {
+        "median": 493.47,
+        "min": 493.47,
+        "max": 493.47
+      },
+      "server_cpu_pct": {
+        "median": 111.0,
+        "min": 111.0,
+        "max": 111.0
+      }
+    },
+    {
+      "effect": "equalizer2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 498.42,
+        "min": 498.42,
+        "max": 498.42
+      },
+      "effect_fps": {
+        "median": 498.42,
+        "min": 498.42,
+        "max": 498.42
+      },
+      "effect_ms": {
+        "median": 0.753,
+        "min": 0.753,
+        "max": 0.753
+      },
+      "ddp_complete_fps": {
+        "median": 498.42,
+        "min": 498.42,
+        "max": 498.42
+      },
+      "ws_changed_fps": {
+        "median": 60.49,
+        "min": 60.49,
+        "max": 60.49
+      },
+      "ws_fps": {
+        "median": 498.92,
+        "min": 498.92,
+        "max": 498.92
+      },
+      "server_cpu_pct": {
+        "median": 111.5,
+        "min": 111.5,
+        "max": 111.5
+      }
+    },
+    {
+      "effect": "number",
+      "stream": "full",
+      "render_fps": {
+        "median": 509.32,
+        "min": 509.32,
+        "max": 509.32
+      },
+      "effect_fps": {
+        "median": 509.32,
+        "min": 509.32,
+        "max": 509.32
+      },
+      "effect_ms": {
+        "median": 0.583,
+        "min": 0.583,
+        "max": 0.583
+      },
+      "ddp_complete_fps": {
+        "median": 509.32,
+        "min": 509.32,
+        "max": 509.32
+      },
+      "ws_changed_fps": {
+        "median": 1.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "ws_fps": {
+        "median": 510.32,
+        "min": 510.32,
+        "max": 510.32
+      },
+      "server_cpu_pct": {
+        "median": 110.0,
+        "min": 110.0,
+        "max": 110.0
+      }
+    },
+    {
+      "effect": "equalizer",
+      "stream": "full",
+      "render_fps": {
+        "median": 509.41,
+        "min": 509.41,
+        "max": 509.41
+      },
+      "effect_fps": {
+        "median": 509.41,
+        "min": 509.41,
+        "max": 509.41
+      },
+      "effect_ms": {
+        "median": 0.646,
+        "min": 0.646,
+        "max": 0.646
+      },
+      "ddp_complete_fps": {
+        "median": 509.41,
+        "min": 509.41,
+        "max": 509.41
+      },
+      "ws_changed_fps": {
+        "median": 62.99,
+        "min": 62.99,
+        "max": 62.99
+      },
+      "ws_fps": {
+        "median": 510.41,
+        "min": 510.41,
+        "max": 510.41
+      },
+      "server_cpu_pct": {
+        "median": 111.5,
+        "min": 111.5,
+        "max": 111.5
+      }
+    },
+    {
+      "effect": "bleep",
+      "stream": "full",
+      "render_fps": {
+        "median": 512.39,
+        "min": 512.39,
+        "max": 512.39
+      },
+      "effect_fps": {
+        "median": 512.39,
+        "min": 512.39,
+        "max": 512.39
+      },
+      "effect_ms": {
+        "median": 0.592,
+        "min": 0.592,
+        "max": 0.592
+      },
+      "ddp_complete_fps": {
+        "median": 512.39,
+        "min": 512.39,
+        "max": 512.39
+      },
+      "ws_changed_fps": {
+        "median": 60.49,
+        "min": 60.49,
+        "max": 60.49
+      },
+      "ws_fps": {
+        "median": 512.89,
+        "min": 512.89,
+        "max": 512.89
+      },
+      "server_cpu_pct": {
+        "median": 110.0,
+        "min": 110.0,
+        "max": 110.0
+      }
+    },
+    {
+      "effect": "magnitude",
+      "stream": "full",
+      "render_fps": {
+        "median": 526.66,
+        "min": 526.66,
+        "max": 526.66
+      },
+      "effect_fps": {
+        "median": 526.66,
+        "min": 526.66,
+        "max": 526.66
+      },
+      "effect_ms": {
+        "median": 0.185,
+        "min": 0.185,
+        "max": 0.185
+      },
+      "ddp_complete_fps": {
+        "median": 526.66,
+        "min": 526.66,
+        "max": 526.66
+      },
+      "ws_changed_fps": {
+        "median": 58.46,
+        "min": 58.46,
+        "max": 58.46
+      },
+      "ws_fps": {
+        "median": 526.66,
+        "min": 526.66,
+        "max": 526.66
+      },
+      "server_cpu_pct": {
+        "median": 111.9,
+        "min": 111.9,
+        "max": 111.9
+      }
+    },
+    {
+      "effect": "multiBar",
+      "stream": "full",
+      "render_fps": {
+        "median": 532.92,
+        "min": 532.92,
+        "max": 532.92
+      },
+      "effect_fps": {
+        "median": 532.92,
+        "min": 532.92,
+        "max": 532.92
+      },
+      "effect_ms": {
+        "median": 0.454,
+        "min": 0.454,
+        "max": 0.454
+      },
+      "ddp_complete_fps": {
+        "median": 532.92,
+        "min": 532.92,
+        "max": 532.92
+      },
+      "ws_changed_fps": {
+        "median": 60.49,
+        "min": 60.49,
+        "max": 60.49
+      },
+      "ws_fps": {
+        "median": 533.42,
+        "min": 533.42,
+        "max": 533.42
+      },
+      "server_cpu_pct": {
+        "median": 112.5,
+        "min": 112.5,
+        "max": 112.5
+      }
+    },
+    {
+      "effect": "concentric",
+      "stream": "full",
+      "render_fps": {
+        "median": 535.08,
+        "min": 535.08,
+        "max": 535.08
+      },
+      "effect_fps": {
+        "median": 535.08,
+        "min": 535.08,
+        "max": 535.08
+      },
+      "effect_ms": {
+        "median": 0.691,
+        "min": 0.691,
+        "max": 0.691
+      },
+      "ddp_complete_fps": {
+        "median": 535.08,
+        "min": 535.08,
+        "max": 535.08
+      },
+      "ws_changed_fps": {
+        "median": 535.08,
+        "min": 535.08,
+        "max": 535.08
+      },
+      "ws_fps": {
+        "median": 535.08,
+        "min": 535.08,
+        "max": 535.08
+      },
+      "server_cpu_pct": {
+        "median": 114.9,
+        "min": 114.9,
+        "max": 114.9
+      }
+    },
+    {
+      "effect": "metro",
+      "stream": "full",
+      "render_fps": {
+        "median": 559.24,
+        "min": 559.24,
+        "max": 559.24
+      },
+      "effect_fps": {
+        "median": 559.24,
+        "min": 559.24,
+        "max": 559.24
+      },
+      "effect_ms": {
+        "median": 0.008,
+        "min": 0.008,
+        "max": 0.008
+      },
+      "ddp_complete_fps": {
+        "median": 559.24,
+        "min": 559.24,
+        "max": 559.24
+      },
+      "ws_changed_fps": {
+        "median": 2.5,
+        "min": 2.5,
+        "max": 2.5
+      },
+      "ws_fps": {
+        "median": 559.74,
+        "min": 559.74,
+        "max": 559.74
+      },
+      "server_cpu_pct": {
+        "median": 110.4,
+        "min": 110.4,
+        "max": 110.4
+      }
+    },
+    {
+      "effect": "keybeat2d",
+      "stream": "full",
+      "render_fps": {
+        "median": 560.52,
+        "min": 560.52,
+        "max": 560.52
+      },
+      "effect_fps": {
+        "median": 560.52,
+        "min": 560.52,
+        "max": 560.52
+      },
+      "effect_ms": {
+        "median": 0.317,
+        "min": 0.317,
+        "max": 0.317
+      },
+      "ddp_complete_fps": {
+        "median": 560.52,
+        "min": 560.52,
+        "max": 560.52
+      },
+      "ws_changed_fps": {
+        "median": 2.0,
+        "min": 2.0,
+        "max": 2.0
+      },
+      "ws_fps": {
+        "median": 561.02,
+        "min": 561.02,
+        "max": 561.02
+      },
+      "server_cpu_pct": {
+        "median": 109.9,
+        "min": 109.9,
+        "max": 109.9
+      }
+    },
+    {
+      "effect": "vumeter",
+      "stream": "full",
+      "render_fps": {
+        "median": 562.27,
+        "min": 562.27,
+        "max": 562.27
+      },
+      "effect_fps": {
+        "median": 562.27,
+        "min": 562.27,
+        "max": 562.27
+      },
+      "effect_ms": {
+        "median": 0.436,
+        "min": 0.436,
+        "max": 0.436
+      },
+      "ddp_complete_fps": {
+        "median": 562.27,
+        "min": 562.27,
+        "max": 562.27
+      },
+      "ws_changed_fps": {
+        "median": 60.48,
+        "min": 60.48,
+        "max": 60.48
+      },
+      "ws_fps": {
+        "median": 563.27,
+        "min": 563.27,
+        "max": 563.27
+      },
+      "server_cpu_pct": {
+        "median": 111.0,
+        "min": 111.0,
+        "max": 111.0
+      }
+    },
+    {
+      "effect": "gifplayer",
+      "stream": "full",
+      "render_fps": {
+        "median": 570.33,
+        "min": 570.33,
+        "max": 570.33
+      },
+      "effect_fps": {
+        "median": 570.33,
+        "min": 570.33,
+        "max": 570.33
+      },
+      "effect_ms": {
+        "median": 0.341,
+        "min": 0.341,
+        "max": 0.341
+      },
+      "ddp_complete_fps": {
+        "median": 570.33,
+        "min": 570.33,
+        "max": 570.33
+      },
+      "ws_changed_fps": {
+        "median": 10.5,
+        "min": 10.5,
+        "max": 10.5
+      },
+      "ws_fps": {
+        "median": 571.33,
+        "min": 571.33,
+        "max": 571.33
+      },
+      "server_cpu_pct": {
+        "median": 110.0,
+        "min": 110.0,
+        "max": 110.0
+      }
+    },
+    {
+      "effect": "bar",
+      "stream": "full",
+      "render_fps": {
+        "median": 573.17,
+        "min": 573.17,
+        "max": 573.17
+      },
+      "effect_fps": {
+        "median": 573.17,
+        "min": 573.17,
+        "max": 573.17
+      },
+      "effect_ms": {
+        "median": 0.304,
+        "min": 0.304,
+        "max": 0.304
+      },
+      "ddp_complete_fps": {
+        "median": 573.17,
+        "min": 573.17,
+        "max": 573.17
+      },
+      "ws_changed_fps": {
+        "median": 60.46,
+        "min": 60.46,
+        "max": 60.46
+      },
+      "ws_fps": {
+        "median": 573.17,
+        "min": 573.17,
+        "max": 573.17
+      },
+      "server_cpu_pct": {
+        "median": 110.4,
+        "min": 110.4,
+        "max": 110.4
+      }
+    },
+    {
+      "effect": "hierarchy",
+      "stream": "full",
+      "render_fps": {
+        "median": 580.77,
+        "min": 580.77,
+        "max": 580.77
+      },
+      "effect_fps": {
+        "median": 580.77,
+        "min": 580.77,
+        "max": 580.77
+      },
+      "effect_ms": {
+        "median": 0.288,
+        "min": 0.288,
+        "max": 0.288
+      },
+      "ddp_complete_fps": {
+        "median": 580.77,
+        "min": 580.77,
+        "max": 580.77
+      },
+      "ws_changed_fps": {
+        "median": 52.48,
+        "min": 52.48,
+        "max": 52.48
+      },
+      "ws_fps": {
+        "median": 581.27,
+        "min": 581.27,
+        "max": 581.27
+      },
+      "server_cpu_pct": {
+        "median": 114.0,
+        "min": 114.0,
+        "max": 114.0
+      }
+    },
+    {
+      "effect": "filter",
+      "stream": "full",
+      "render_fps": {
+        "median": 590.28,
+        "min": 590.28,
+        "max": 590.28
+      },
+      "effect_fps": {
+        "median": 590.28,
+        "min": 590.28,
+        "max": 590.28
+      },
+      "effect_ms": {
+        "median": 0.311,
+        "min": 0.311,
+        "max": 0.311
+      },
+      "ddp_complete_fps": {
+        "median": 590.28,
+        "min": 590.28,
+        "max": 590.28
+      },
+      "ws_changed_fps": {
+        "median": 50.48,
+        "min": 50.48,
+        "max": 50.48
+      },
+      "ws_fps": {
+        "median": 590.28,
+        "min": 590.28,
+        "max": 590.28
+      },
+      "server_cpu_pct": {
+        "median": 114.0,
+        "min": 114.0,
+        "max": 114.0
+      }
+    },
+    {
+      "effect": "real_strobe",
+      "stream": "full",
+      "render_fps": {
+        "median": 592.98,
+        "min": 592.98,
+        "max": 592.98
+      },
+      "effect_fps": {
+        "median": 592.98,
+        "min": 592.98,
+        "max": 592.98
+      },
+      "effect_ms": {
+        "median": 0.384,
+        "min": 0.384,
+        "max": 0.384
+      },
+      "ddp_complete_fps": {
+        "median": 592.98,
+        "min": 592.98,
+        "max": 592.98
+      },
+      "ws_changed_fps": {
+        "median": 36.5,
+        "min": 36.5,
+        "max": 36.5
+      },
+      "ws_fps": {
+        "median": 593.48,
+        "min": 593.48,
+        "max": 593.48
+      },
+      "server_cpu_pct": {
+        "median": 109.5,
+        "min": 109.5,
+        "max": 109.5
+      }
+    },
+    {
+      "effect": "spectrum",
+      "stream": "full",
+      "render_fps": {
+        "median": 595.13,
+        "min": 595.13,
+        "max": 595.13
+      },
+      "effect_fps": {
+        "median": 595.13,
+        "min": 595.13,
+        "max": 595.13
+      },
+      "effect_ms": {
+        "median": 0.019,
+        "min": 0.019,
+        "max": 0.019
+      },
+      "ddp_complete_fps": {
+        "median": 595.13,
+        "min": 595.13,
+        "max": 595.13
+      },
+      "ws_changed_fps": {
+        "median": 60.46,
+        "min": 60.46,
+        "max": 60.46
+      },
+      "ws_fps": {
+        "median": 595.13,
+        "min": 595.13,
+        "max": 595.13
+      },
+      "server_cpu_pct": {
+        "median": 112.4,
+        "min": 112.4,
+        "max": 112.4
+      }
+    },
+    {
+      "effect": "strobe",
+      "stream": "full",
+      "render_fps": {
+        "median": 612.39,
+        "min": 612.39,
+        "max": 612.39
+      },
+      "effect_fps": {
+        "median": 612.39,
+        "min": 612.39,
+        "max": 612.39
+      },
+      "effect_ms": {
+        "median": 0.296,
+        "min": 0.296,
+        "max": 0.296
+      },
+      "ddp_complete_fps": {
+        "median": 612.39,
+        "min": 612.39,
+        "max": 612.39
+      },
+      "ws_changed_fps": {
+        "median": 29.49,
+        "min": 29.49,
+        "max": 29.49
+      },
+      "ws_fps": {
+        "median": 612.39,
+        "min": 612.39,
+        "max": 612.39
+      },
+      "server_cpu_pct": {
+        "median": 115.0,
+        "min": 115.0,
+        "max": 115.0
+      }
+    }
+  ],
+  "maximum_coverage": {
+    "preview-before": {
+      "rows": 9,
+      "errors": 0
+    },
+    "preview-after": {
+      "rows": 9,
+      "errors": 0
+    },
+    "max-target": {
+      "rows": 63,
+      "errors": 0
+    },
+    "max-repeat": {
+      "rows": 24,
+      "errors": 0
+    },
+    "temporal-prototype": {
+      "rows": 6,
+      "errors": 0
+    },
+    "max-profile": {
+      "rows": 4,
+      "errors": 0
+    },
+    "temporal-profile": {
+      "rows": 1,
+      "errors": 0
+    },
+    "unpaced-pilot": {
+      "rows": 2,
+      "errors": 0
+    },
+    "max-pilot": {
+      "rows": 2,
+      "errors": 0
+    },
+    "max-catalog": {
+      "rows": 16,
+      "errors": 0
+    }
+  },
+  "next_priorities": [
+    {
+      "target": "Temporal scheduling",
+      "evidence": "Repeated full-stream Fade delivery 91.14 -> 575.57 FPS, changed images 90.81 -> 503.91; Rainbow delivery 333.81 -> 443.55 FPS with server CPU ~160% -> ~107%.",
+      "proposal": "Elapsed-time-driven temporal effects computed on demand, or a bounded producer/consumer handoff. Preserve speed/multiplier semantics, shutdown and transition behavior before promoting prototype."
+    },
+    {
+      "target": "Smoke 2D noise/draw kernel",
+      "evidence": "59.38% of active CPU samples in Smoke2d.draw at 50k.",
+      "proposal": "Separate coordinate construction from native noise generation, then investigate batched/native optimizations without reducing noise octaves or visual quality."
+    },
+    {
+      "target": "Melt and Sparkle numeric kernels",
+      "evidence": "23.28% triangle, 17.20% array_sin; repeated full-stream delivery ~166.89 FPS.",
+      "proposal": "Profile/reuse numeric workspaces or fuse kernels with exact numeric-reference tests before claiming gains."
+    },
+    {
+      "target": "DDP packet sending",
+      "evidence": "51.49% of active samples in DDPDevice.send_packet after the Fade on-demand prototype.",
+      "proposal": "Measure packet construction separately from socket calls; batching needs portable transport/receiver compatibility work."
+    }
+  ]
+}

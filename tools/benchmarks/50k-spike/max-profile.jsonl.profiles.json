@@ -1,0 +1,702 @@
+[
+  {
+    "effect": "smoke2d",
+    "rows": 200,
+    "unpaced": true,
+    "unpaced_preview": true,
+    "stream": "full",
+    "temporal_render": false,
+    "pixels": 50000,
+    "render_fps": 160.85,
+    "effect_ms": 4.781,
+    "audio_fps": 60.14,
+    "audio_update_ms": 0.015,
+    "server_cpu_pct": 105.9,
+    "rss_mb": 184.2,
+    "ws_changed_fps": 160.85,
+    "ddp_complete_fps": 160.85,
+    "profile": {
+      "all_samples": 6131,
+      "active_samples": 5406,
+      "top_self": [
+        {
+          "frame": "smoke2d.py:Smoke2d.draw",
+          "samples": 3210,
+          "active_sample_pct": 59.38
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 856,
+          "active_sample_pct": 15.83
+        },
+        {
+          "frame": "core.py:LedFxCore.setup_visualisation_events.<locals>.handle_visualisation_update",
+          "samples": 179,
+          "active_sample_pct": 3.31
+        },
+        {
+          "frame": "fromnumeric.py:_wrapfunc",
+          "samples": 174,
+          "active_sample_pct": 3.22
+        },
+        {
+          "frame": "encoder.py:JSONEncoder.iterencode",
+          "samples": 110,
+          "active_sample_pct": 2.03
+        },
+        {
+          "frame": "shape_base.py:stack",
+          "samples": 81,
+          "active_sample_pct": 1.5
+        },
+        {
+          "frame": "_function_base_impl.py:meshgrid.<locals>.<genexpr>",
+          "samples": 74,
+          "active_sample_pct": 1.37
+        },
+        {
+          "frame": "selector_events.py:_SelectorSocketTransport.write",
+          "samples": 54,
+          "active_sample_pct": 1.0
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 47,
+          "active_sample_pct": 0.87
+        },
+        {
+          "frame": "twod.py:Twod.image_to_pixels",
+          "samples": 46,
+          "active_sample_pct": 0.85
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 44,
+          "active_sample_pct": 0.81
+        },
+        {
+          "frame": "function_base.py:linspace",
+          "samples": 40,
+          "active_sample_pct": 0.74
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 39,
+          "active_sample_pct": 0.72
+        },
+        {
+          "frame": "selector_events.py:BaseSelectorEventLoop._write_to_self",
+          "samples": 35,
+          "active_sample_pct": 0.65
+        },
+        {
+          "frame": "pixel_bench.py:UnpacedClock.sleep",
+          "samples": 33,
+          "active_sample_pct": 0.61
+        }
+      ],
+      "top_inclusive": [
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 5126,
+          "active_sample_pct": 94.82
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap",
+          "samples": 5023,
+          "active_sample_pct": 92.92
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap_inner",
+          "samples": 5023,
+          "active_sample_pct": 92.92
+        },
+        {
+          "frame": "threading.py:Thread.run",
+          "samples": 5023,
+          "active_sample_pct": 92.92
+        },
+        {
+          "frame": "virtuals.py:Virtual.thread_function",
+          "samples": 4903,
+          "active_sample_pct": 90.7
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 3884,
+          "active_sample_pct": 71.85
+        },
+        {
+          "frame": "__init__.py:Effect._render",
+          "samples": 3810,
+          "active_sample_pct": 70.48
+        },
+        {
+          "frame": "twod.py:Twod.render",
+          "samples": 3803,
+          "active_sample_pct": 70.35
+        },
+        {
+          "frame": "smoke2d.py:Smoke2d.draw",
+          "samples": 3691,
+          "active_sample_pct": 68.28
+        },
+        {
+          "frame": "virtuals.py:Virtual.flush",
+          "samples": 968,
+          "active_sample_pct": 17.91
+        },
+        {
+          "frame": "virtuals.py:Virtual._flush_simple_segments",
+          "samples": 966,
+          "active_sample_pct": 17.87
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 965,
+          "active_sample_pct": 17.85
+        },
+        {
+          "frame": "ddp.py:DDPDevice.flush",
+          "samples": 904,
+          "active_sample_pct": 16.72
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 903,
+          "active_sample_pct": 16.7
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 856,
+          "active_sample_pct": 15.83
+        }
+      ]
+    }
+  },
+  {
+    "effect": "melt_and_sparkle",
+    "rows": 1,
+    "unpaced": true,
+    "unpaced_preview": true,
+    "stream": "full",
+    "temporal_render": false,
+    "pixels": 50000,
+    "render_fps": 165.71,
+    "effect_ms": 4.466,
+    "audio_fps": 59.97,
+    "audio_update_ms": 0.071,
+    "server_cpu_pct": 104.5,
+    "rss_mb": 187.2,
+    "ws_changed_fps": 165.71,
+    "ddp_complete_fps": 165.71,
+    "profile": {
+      "all_samples": 6179,
+      "active_samples": 5495,
+      "top_self": [
+        {
+          "frame": "math.py:triangle",
+          "samples": 1279,
+          "active_sample_pct": 23.28
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 962,
+          "active_sample_pct": 17.51
+        },
+        {
+          "frame": "hsv_effect.py:HSVEffect.array_sin",
+          "samples": 945,
+          "active_sample_pct": 17.2
+        },
+        {
+          "frame": "hsv_effect.py:HSVEffect.render",
+          "samples": 528,
+          "active_sample_pct": 9.61
+        },
+        {
+          "frame": "melt_and_sparkle.py:MeltSparkle.render_hsv",
+          "samples": 358,
+          "active_sample_pct": 6.52
+        },
+        {
+          "frame": "hsv_effect.py:HSVEffect.fix_hue_fast",
+          "samples": 284,
+          "active_sample_pct": 5.17
+        },
+        {
+          "frame": "numeric.py:convolve",
+          "samples": 221,
+          "active_sample_pct": 4.02
+        },
+        {
+          "frame": "fromnumeric.py:_wrapfunc",
+          "samples": 175,
+          "active_sample_pct": 3.18
+        },
+        {
+          "frame": "core.py:LedFxCore.setup_visualisation_events.<locals>.handle_visualisation_update",
+          "samples": 153,
+          "active_sample_pct": 2.78
+        },
+        {
+          "frame": "encoder.py:JSONEncoder.iterencode",
+          "samples": 129,
+          "active_sample_pct": 2.35
+        },
+        {
+          "frame": "selector_events.py:_SelectorSocketTransport.write",
+          "samples": 57,
+          "active_sample_pct": 1.04
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 55,
+          "active_sample_pct": 1.0
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 52,
+          "active_sample_pct": 0.95
+        },
+        {
+          "frame": "melbank.py:Melbank.__call__",
+          "samples": 39,
+          "active_sample_pct": 0.71
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 27,
+          "active_sample_pct": 0.49
+        }
+      ],
+      "top_inclusive": [
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 5209,
+          "active_sample_pct": 94.8
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap",
+          "samples": 5109,
+          "active_sample_pct": 92.98
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap_inner",
+          "samples": 5109,
+          "active_sample_pct": 92.98
+        },
+        {
+          "frame": "threading.py:Thread.run",
+          "samples": 5109,
+          "active_sample_pct": 92.98
+        },
+        {
+          "frame": "virtuals.py:Virtual.thread_function",
+          "samples": 4998,
+          "active_sample_pct": 90.96
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 3886,
+          "active_sample_pct": 70.72
+        },
+        {
+          "frame": "__init__.py:Effect._render",
+          "samples": 3807,
+          "active_sample_pct": 69.28
+        },
+        {
+          "frame": "hsv_effect.py:HSVEffect.render",
+          "samples": 3802,
+          "active_sample_pct": 69.19
+        },
+        {
+          "frame": "melt_and_sparkle.py:MeltSparkle.render_hsv",
+          "samples": 2493,
+          "active_sample_pct": 45.37
+        },
+        {
+          "frame": "math.py:triangle",
+          "samples": 1279,
+          "active_sample_pct": 23.28
+        },
+        {
+          "frame": "virtuals.py:Virtual.flush",
+          "samples": 1076,
+          "active_sample_pct": 19.58
+        },
+        {
+          "frame": "virtuals.py:Virtual._flush_simple_segments",
+          "samples": 1075,
+          "active_sample_pct": 19.56
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 1067,
+          "active_sample_pct": 19.42
+        },
+        {
+          "frame": "ddp.py:DDPDevice.flush",
+          "samples": 1018,
+          "active_sample_pct": 18.53
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 1017,
+          "active_sample_pct": 18.51
+        }
+      ]
+    }
+  },
+  {
+    "effect": "rainbow",
+    "rows": 1,
+    "unpaced": true,
+    "unpaced_preview": true,
+    "stream": "full",
+    "temporal_render": false,
+    "pixels": 50000,
+    "render_fps": 337.88,
+    "effect_ms": 1.181,
+    "audio_fps": 0.0,
+    "audio_update_ms": 0,
+    "server_cpu_pct": 160.5,
+    "rss_mb": 174.6,
+    "ws_changed_fps": 337.28,
+    "ddp_complete_fps": 337.88,
+    "profile": {
+      "all_samples": 10178,
+      "active_samples": 9265,
+      "top_self": [
+        {
+          "frame": "color.py:hsv_to_rgb",
+          "samples": 3743,
+          "active_sample_pct": 40.4
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 2754,
+          "active_sample_pct": 29.72
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 540,
+          "active_sample_pct": 5.83
+        },
+        {
+          "frame": "core.py:LedFxCore.setup_visualisation_events.<locals>.handle_visualisation_update",
+          "samples": 474,
+          "active_sample_pct": 5.12
+        },
+        {
+          "frame": "_function_base_impl.py:copy",
+          "samples": 218,
+          "active_sample_pct": 2.35
+        },
+        {
+          "frame": "encoder.py:JSONEncoder.iterencode",
+          "samples": 214,
+          "active_sample_pct": 2.31
+        },
+        {
+          "frame": "selector_events.py:_SelectorSocketTransport.write",
+          "samples": 203,
+          "active_sample_pct": 2.19
+        },
+        {
+          "frame": "pixel_bench.py:UnpacedClock.sleep",
+          "samples": 196,
+          "active_sample_pct": 2.12
+        },
+        {
+          "frame": "__init__.py:fill_rainbow",
+          "samples": 186,
+          "active_sample_pct": 2.01
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 168,
+          "active_sample_pct": 1.81
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 141,
+          "active_sample_pct": 1.52
+        },
+        {
+          "frame": "selector_events.py:BaseSelectorEventLoop._write_to_self",
+          "samples": 133,
+          "active_sample_pct": 1.44
+        },
+        {
+          "frame": "__init__.py:Effect.get_pixels",
+          "samples": 104,
+          "active_sample_pct": 1.12
+        },
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 67,
+          "active_sample_pct": 0.72
+        },
+        {
+          "frame": "temporal.py:TemporalEffect.thread_function",
+          "samples": 25,
+          "active_sample_pct": 0.27
+        }
+      ],
+      "top_inclusive": [
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 8360,
+          "active_sample_pct": 90.23
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap",
+          "samples": 8267,
+          "active_sample_pct": 89.23
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap_inner",
+          "samples": 8267,
+          "active_sample_pct": 89.23
+        },
+        {
+          "frame": "threading.py:Thread.run",
+          "samples": 8267,
+          "active_sample_pct": 89.23
+        },
+        {
+          "frame": "virtuals.py:Virtual.thread_function",
+          "samples": 4159,
+          "active_sample_pct": 44.89
+        },
+        {
+          "frame": "temporal.py:TemporalEffect.thread_function",
+          "samples": 4108,
+          "active_sample_pct": 44.34
+        },
+        {
+          "frame": "rainbow.py:RainbowEffect.effect_loop",
+          "samples": 3940,
+          "active_sample_pct": 42.53
+        },
+        {
+          "frame": "__init__.py:fill_rainbow",
+          "samples": 3929,
+          "active_sample_pct": 42.41
+        },
+        {
+          "frame": "color.py:hsv_to_rgb",
+          "samples": 3743,
+          "active_sample_pct": 40.4
+        },
+        {
+          "frame": "virtuals.py:Virtual.flush",
+          "samples": 3136,
+          "active_sample_pct": 33.85
+        },
+        {
+          "frame": "virtuals.py:Virtual._flush_simple_segments",
+          "samples": 3127,
+          "active_sample_pct": 33.75
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 3121,
+          "active_sample_pct": 33.69
+        },
+        {
+          "frame": "ddp.py:DDPDevice.flush",
+          "samples": 2925,
+          "active_sample_pct": 31.57
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 2922,
+          "active_sample_pct": 31.54
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 2754,
+          "active_sample_pct": 29.72
+        }
+      ]
+    }
+  },
+  {
+    "effect": "fade",
+    "rows": 1,
+    "unpaced": true,
+    "unpaced_preview": true,
+    "stream": "full",
+    "temporal_render": false,
+    "pixels": 50000,
+    "render_fps": 91.55,
+    "effect_ms": 0.13,
+    "audio_fps": 0.0,
+    "audio_update_ms": 0,
+    "server_cpu_pct": 113.9,
+    "rss_mb": 173.6,
+    "ws_changed_fps": 91.55,
+    "ddp_complete_fps": 91.75,
+    "profile": {
+      "all_samples": 6319,
+      "active_samples": 5559,
+      "top_self": [
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 1866,
+          "active_sample_pct": 33.57
+        },
+        {
+          "frame": "_shape_base_impl.py:tile",
+          "samples": 1507,
+          "active_sample_pct": 27.11
+        },
+        {
+          "frame": "pixel_bench.py:UnpacedClock.sleep",
+          "samples": 541,
+          "active_sample_pct": 9.73
+        },
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 246,
+          "active_sample_pct": 4.43
+        },
+        {
+          "frame": "fromnumeric.py:_wrapfunc",
+          "samples": 193,
+          "active_sample_pct": 3.47
+        },
+        {
+          "frame": "gradient.py:GradientEffect._get_gradient_colors",
+          "samples": 178,
+          "active_sample_pct": 3.2
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 142,
+          "active_sample_pct": 2.55
+        },
+        {
+          "frame": "core.py:LedFxCore.setup_visualisation_events.<locals>.handle_visualisation_update",
+          "samples": 129,
+          "active_sample_pct": 2.32
+        },
+        {
+          "frame": "temporal.py:TemporalEffect.thread_function",
+          "samples": 89,
+          "active_sample_pct": 1.6
+        },
+        {
+          "frame": "selector_events.py:_SelectorSocketTransport.write",
+          "samples": 82,
+          "active_sample_pct": 1.48
+        },
+        {
+          "frame": "fromnumeric.py:clip",
+          "samples": 80,
+          "active_sample_pct": 1.44
+        },
+        {
+          "frame": "encoder.py:JSONEncoder.iterencode",
+          "samples": 79,
+          "active_sample_pct": 1.42
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 76,
+          "active_sample_pct": 1.37
+        },
+        {
+          "frame": "selector_events.py:BaseSelectorEventLoop._write_to_self",
+          "samples": 67,
+          "active_sample_pct": 1.21
+        },
+        {
+          "frame": "_function_base_impl.py:copy",
+          "samples": 55,
+          "active_sample_pct": 0.99
+        }
+      ],
+      "top_inclusive": [
+        {
+          "frame": "threading.py:Thread._bootstrap",
+          "samples": 5217,
+          "active_sample_pct": 93.85
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap_inner",
+          "samples": 5217,
+          "active_sample_pct": 93.85
+        },
+        {
+          "frame": "threading.py:Thread.run",
+          "samples": 5217,
+          "active_sample_pct": 93.85
+        },
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 4641,
+          "active_sample_pct": 83.49
+        },
+        {
+          "frame": "temporal.py:TemporalEffect.thread_function",
+          "samples": 2902,
+          "active_sample_pct": 52.2
+        },
+        {
+          "frame": "virtuals.py:Virtual.thread_function",
+          "samples": 2315,
+          "active_sample_pct": 41.64
+        },
+        {
+          "frame": "fade.py:FadeEffect.effect_loop",
+          "samples": 2049,
+          "active_sample_pct": 36.86
+        },
+        {
+          "frame": "virtuals.py:Virtual.flush",
+          "samples": 2015,
+          "active_sample_pct": 36.25
+        },
+        {
+          "frame": "virtuals.py:Virtual._flush_simple_segments",
+          "samples": 2012,
+          "active_sample_pct": 36.19
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 2009,
+          "active_sample_pct": 36.14
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 1942,
+          "active_sample_pct": 34.93
+        },
+        {
+          "frame": "ddp.py:DDPDevice.flush",
+          "samples": 1942,
+          "active_sample_pct": 34.93
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 1866,
+          "active_sample_pct": 33.57
+        },
+        {
+          "frame": "_shape_base_impl.py:tile",
+          "samples": 1508,
+          "active_sample_pct": 27.13
+        },
+        {
+          "frame": "pixel_bench.py:UnpacedClock.sleep",
+          "samples": 541,
+          "active_sample_pct": 9.73
+        }
+      ]
+    }
+  }
+]

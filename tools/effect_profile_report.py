@@ -107,6 +107,10 @@ def main():
             {
                 "effect": effect,
                 "rows": row.get("rows", 1),
+                "unpaced": row.get("unpaced", False),
+                "unpaced_preview": row.get("unpaced_preview", False),
+                "stream": row["stream"],
+                "temporal_render": row.get("temporal_render", False),
                 "pixels": row["pixels"],
                 "render_fps": row["assemble"]["fps"],
                 "effect_ms": row["effect"]["mean_ms"],

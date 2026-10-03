@@ -23,10 +23,16 @@ preview cap only inside the worker. Both default to a requested preview rate of
 output rates are measured separately. ws_changed_fps distinguishes new images
 from repeated previews of the same effect frame.
 --unpaced replaces only render/temporal pacing sleeps with time.sleep(0) yields;
-production rate limits, audio pacing and transport code are unchanged.
+only for the target virtual/effect; fixture virtuals retain their pacing.
+Production rate limits, audio pacing and transport code are unchanged.
 --unpaced-preview separately bypasses the preview cap in the worker (1M FPS).
 Use ws_changed_fps, not repeated-frame delivery, to assess useful preview FPS.
-Both flags are recorded and kept separate in baseline comparisons.
+--temporal-render is an additional benchmark-only on-demand computation
+prototype; it ignores temporal speed/interval semantics and requires --unpaced.
+Both flags are recorded and kept separate in baseline comparisons. In unpaced
+runs effective_refresh_rate remains the configured rate, not a pacing ceiling.
+An independent DDP receiver process avoids contention with websocket decoding;
+--bind selects an IPv4 loopback address for all local benchmark traffic.
 
 CPU is server process CPU (100% = one core), excluding the receiver. Callback
 timings include instrumentation overhead. DDP complete frames and packet counts
@@ -84,6 +90,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 from unittest.mock import patch
@@ -92,12 +99,18 @@ from unittest.mock import patch
 class UnpacedClock:
     """Worker-local clock proxy: omit pacing delays but yield to other threads."""
 
+    def __init__(self, thread_names=None):
+        self.thread_names = thread_names
+
     def __getattr__(self, name):
         return getattr(time, name)
 
-    @staticmethod
-    def sleep(seconds):
-        time.sleep(0)
+    def sleep(self, seconds):
+        selected = (
+            self.thread_names is None
+            or threading.current_thread().name in self.thread_names
+        )
+        time.sleep(0 if selected else seconds)
 
 
 def validate_frame(event: dict, expected_pixels: int) -> list[int]:
@@ -247,7 +260,7 @@ def worker(args):
         import ledfx.virtuals as virtuals_module
 
         # Replace module references, never the process-wide time.sleep function.
-        virtuals_module.time = UnpacedClock()
+        virtuals_module.time = UnpacedClock({"Virtual: benchmark"})
         temporal_module.time = UnpacedClock()
 
     metrics = {
@@ -343,6 +356,16 @@ def worker(args):
                 config.update(ip_address=args.bind, port=args.sink_port)
             await core.devices.add_new_device(args.device, config)
             cls = core.effects.get_class(args.effect)
+            if args.temporal_render:
+                if not issubclass(cls, TemporalEffect):
+                    raise ValueError("--temporal-render requires a temporal effect")
+                from tools.temporal_render_prototype import (
+                    install_temporal_render_prototype,
+                )
+
+                install_temporal_render_prototype(cls)
+            if args.unpaced:
+                temporal_module.time = UnpacedClock({f"Effect: {cls.NAME}"})
             if issubclass(cls, AudioReactiveEffect) and not args.synthetic_audio:
                 raise ValueError(
                     "Audio-reactive effects require --synthetic-audio; this benchmark does not capture hardware audio"
@@ -550,6 +573,8 @@ async def run_one(args, loop, vis, repeat):
             "--effect-config",
             args.effect_config,
         ]
+        if args.temporal_render:
+            command.append("--temporal-render")
         if args.unpaced:
             command.append("--unpaced")
         if args.unpaced_preview:
@@ -701,7 +726,9 @@ async def run_one(args, loop, vis, repeat):
                 "refresh_rate": args.refresh_rate,
                 "bind": args.bind,
                 "receiver_mode": "process",
+                "temporal_render": args.temporal_render,
                 "unpaced": args.unpaced,
+                "unpaced_scope": "target" if args.unpaced else "none",
                 "unpaced_preview": args.unpaced_preview,
                 "effective_refresh_rate": json.loads(ready.read_text())["refresh_rate"],
                 "preview_fps": args.preview_fps,
@@ -843,7 +870,9 @@ def scenario_key(row: dict) -> str:
             ("fixtures", False),
             ("bind", "127.0.0.1"),
             ("receiver_mode", "thread"),
+            ("temporal_render", False),
             ("unpaced", False),
+            ("unpaced_scope", "none"),
             ("unpaced_preview", False),
         )
     )
@@ -951,6 +980,11 @@ def parse_args(argv=None):
     p.add_argument("--port", type=int, help=argparse.SUPPRESS)
     p.add_argument("--sink-port", type=int, help=argparse.SUPPRESS)
     p.add_argument("--pixels", type=int, default=500000)
+    p.add_argument(
+        "--temporal-render",
+        action="store_true",
+        help="Benchmark-only prototype: compute temporal effects on render; requires --unpaced and changes animation timing",
+    )
     p.add_argument(
         "--bind",
         default="127.0.0.1",
@@ -1067,6 +1101,8 @@ def parse_args(argv=None):
         p.error("--rows must be nonnegative and divide --pixels exactly")
     if not math.isfinite(args.case_timeout) or args.case_timeout <= 0:
         p.error("--case-timeout must be finite and positive")
+    if args.temporal_render and not args.unpaced:
+        p.error("--temporal-render requires --unpaced; not production animation timing")
     if args.sampling and (sys.version_info < (3, 15) or args.profile):
         p.error(
             "--sampling requires Python 3.15+ and cannot be combined with --profile"
@@ -1153,7 +1189,7 @@ def write_metadata(args) -> None:
         "revision": git("rev-parse", "HEAD"),
         "working_tree": git("status", "--short"),
         "arguments": vars(args),
-        "notes": "Loopback synthetic Rainbow workload. 100% CPU is one server core. Receiver CPU excluded. Full stream bypasses UI cap. Profiled runs include profiler overhead.",
+        "notes": "Loopback synthetic selected-effect workload. 100% CPU is one server core; independent receiver CPU excluded. Full stream bypasses pixel cap. Unpaced flags bypass timing caps only in benchmark workers. Profiled runs include profiler overhead.",
     }
     Path(str(args.output) + ".metadata.json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"
