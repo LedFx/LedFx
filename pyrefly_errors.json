@@ -7946,13 +7946,6 @@
       "severity": "error"
     },
     {
-      "column": 16,
-      "path": "ledfx/effects/gradient.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 34,
       "path": "ledfx/effects/gradient.py",
       "name": "implicit-any-parameter",
