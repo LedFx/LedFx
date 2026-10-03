@@ -109,7 +109,7 @@ def test_real_effect_activation_render_shutdown_and_reactivation(
     cls = getattr(importlib.import_module("ledfx.effects." + module), name)
     clock = [1.0]
     restore = install_temporal_render_prototype(
-        cls, cadence=True, clock=lambda: clock[0]
+        cls, cadence=True, clock=lambda clock=clock: clock[0]
     )
     effect = cls(SimpleNamespace(), cls.config_model().model_validate({}))
     virtual = SimpleNamespace(id="benchmark", effective_pixel_count=32)
@@ -140,7 +140,7 @@ def test_fade_cadence_preserves_phase_and_rainbow_exposes_quantization() -> None
     for cls, speed in ((FadeEffect, 0.5), (RainbowEffect, 6)):
         clock = [0.0]
         restore = install_temporal_render_prototype(
-            cls, cadence=True, clock=lambda: clock[0]
+            cls, cadence=True, clock=lambda clock=clock: clock[0]
         )
         effect = cls(
             SimpleNamespace(), cls.config_model().model_validate({"speed": speed})
