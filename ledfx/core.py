@@ -104,14 +104,8 @@ class LedFxCore:
         self.ci_testing = ci_testing
         self.offline_mode = offline_mode
 
-        try:
-            import uvloop
-
-            self.loop = uvloop.new_event_loop()
-            _LOGGER.info("Using uvloop for asyncio loop")
-        except ImportError:
-            self.loop = asyncio.new_event_loop()
-            _LOGGER.info("Using standard asyncio loop")
+        self.loop = asyncio.new_event_loop()
+        _LOGGER.info("Using standard asyncio loop")
 
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)
