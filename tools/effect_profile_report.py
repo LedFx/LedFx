@@ -24,7 +24,9 @@ ACTIVE_STACKS = (
 )
 
 
-def summarize_stacks(lines: list[str]) -> dict:
+def summarize_stacks(
+    lines: list[str], active_stacks: tuple[str, ...] = ACTIVE_STACKS
+) -> dict:
     total = active = 0
     leaf = collections.Counter()
     inclusive = collections.Counter()
@@ -32,7 +34,7 @@ def summarize_stacks(lines: list[str]) -> dict:
         stack, count = line.rsplit(" ", 1)
         count = int(count)
         total += count
-        if not any(marker in stack for marker in ACTIVE_STACKS):
+        if not any(marker in stack for marker in active_stacks):
             continue
         active += count
         frames = [
