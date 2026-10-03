@@ -107,7 +107,7 @@ def test_baseline_uses_medians_and_rejects_unmatched_scenarios() -> None:
     assert len(failures) == 1
     assert "ws_fps" in failures[0]
     assert compare_baseline(baseline, baseline, 0.1) == []
-    for flag in ("unpaced", "unpaced_preview", "temporal_render"):
+    for flag in ("unpaced", "unpaced_preview", "temporal_render", "temporal_cadence"):
         assert (
             "no matching"
             in compare_baseline([{**baseline[0], flag: True}], baseline, 0.1)[0]
@@ -144,13 +144,17 @@ def test_unpaced_clock_yields_without_requested_delay(
 ) -> None:
     calls: list[float] = []
     monkeypatch.setattr("tools.pixel_bench.time.sleep", calls.append)
-    clock = UnpacedClock()
+    import threading
+
+    clock = UnpacedClock({threading.current_thread().name})
     before = clock.perf_counter()
     clock.sleep(10)
     assert calls == [0]
     assert clock.perf_counter() >= before
     UnpacedClock({"Virtual: benchmark"}).sleep(0.25)
     assert calls == [0, 0.25]  # The test thread is not the target render thread.
+    UnpacedClock(set()).sleep(0.2)
+    assert calls == [0, 0.25, 0.2]  # Cadence control must preserve the delay.
 
 
 def test_process_receiver_snapshots_complete_frames_and_stops() -> None:

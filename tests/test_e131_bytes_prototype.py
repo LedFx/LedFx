@@ -51,3 +51,72 @@ def test_prototype_is_never_merged_with_production_summary() -> None:
     common = {"sender": "e131", "pixels": 50000, "status": "ok", "flush_mean_ms": 1}
     rows = [common | {"e131_bytes_prototype": value} for value in (False, True)]
     assert len(summarize(rows)) == 2
+
+
+@pytest.mark.parametrize("dtype", [np.uint8, np.float32, np.float64])
+@pytest.mark.parametrize(
+    "count,size,offset",
+    [
+        (1, 510, 0),
+        (170, 510, 0),
+        (171, 510, 0),
+        (171, 512, 1),
+        (1000, 512, 513),
+        (50000, 510, 7),
+        (50000, 512, 511),
+    ],
+)
+def test_layout_channels_flags_and_restore(
+    count: int,
+    size: int,
+    offset: int,
+    dtype: type[np.uint8] | type[np.float32] | type[np.float64],
+) -> None:
+    sink = Sink()
+    device = make_sender(
+        "e131",
+        count,
+        sink,
+        e131_layout={
+            "universe": 17,
+            "universe_size": size,
+            "channel_offset": offset,
+            "packet_priority": 177,
+        },
+    )
+    outputs = [device._sacn[u] for u in range(17, device.config.universe_end + 1)]
+    for output in outputs:
+        output.dmx_data = [93] * 512
+    values = np.random.default_rng(2058).integers(0, 256, (count, 3)).astype(dtype)
+    if dtype != np.uint8:
+        values += 0.75  # Preserve production truncation, not rounding.
+    device.flush(values)
+    assert sink.capture is not None
+    expected_packets = [canonical_packet("e131", packet) for packet in sink.capture]
+    expected_slots = [list(output.dmx_data) for output in outputs]
+    expected = [93] * (len(outputs) * size)
+    expected[offset : offset + count * 3] = values.astype(int).ravel().tolist()
+    assert [slot for output in outputs for slot in output.dmx_data[:size]] == expected
+    for output in outputs:
+        assert output.dmx_data[size:] == (93,) * (512 - size)
+        output.dmx_data = [93] * 512
+    restore = enable_e131_bytes_prototype(device)
+    sink.capture = []
+    device.flush(values)
+    assert [
+        canonical_packet("e131", packet) for packet in sink.capture
+    ] == expected_packets
+    assert [list(output.dmx_data) for output in outputs] == expected_slots
+    for output in outputs:
+        output._changed = False
+        output.dmx_data = output.dmx_data
+        assert output._changed
+        assert output.priority == 177
+        assert output.destination == "127.0.0.1"
+    restore()
+    assert all(type(output._packet) is DataPacket for output in outputs)
+    sink.capture = []
+    device.flush(values)
+    assert [
+        canonical_packet("e131", packet) for packet in sink.capture
+    ] == expected_packets

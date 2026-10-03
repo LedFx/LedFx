@@ -42,9 +42,18 @@ class BytesOutput(Output):
         self._changed = True
 
 
-def enable_e131_bytes_prototype(device) -> None:
+def enable_e131_bytes_prototype(device):
     """Opt in one benchmark sender; preserve library send/sync/lifecycle code."""
+    originals = []
     for universe in range(device.config.universe, device.config.universe_end + 1):
         output = device._sacn[universe]
+        originals.append((output, type(output), type(output._packet)))
         output._packet.__class__ = BytesDataPacket
         output.__class__ = BytesOutput
+
+    def restore():
+        for output, output_class, packet_class in originals:
+            output.__class__ = output_class
+            output._packet.__class__ = packet_class
+
+    return restore

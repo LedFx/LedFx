@@ -29,7 +29,10 @@ Production rate limits, audio pacing and transport code are unchanged.
 Use ws_changed_fps, not repeated-frame delivery, to assess useful preview FPS.
 --temporal-render is an additional benchmark-only on-demand computation
 prototype; it ignores temporal speed/interval semantics and requires --unpaced.
-Both flags are recorded and kept separate in baseline comparisons. In unpaced
+--temporal-cadence retains speed/interval pacing for either threaded or on-render
+updates. On-render ticks are quantized to render opportunities, without catch-up.
+--seed fixes Python/NumPy random sources, not thread scheduling or wall time.
+All flags are recorded and kept separate in baseline comparisons. In unpaced
 runs effective_refresh_rate remains the configured rate, not a pacing ceiling.
 An independent DDP receiver process avoids contention with websocket decoding;
 --bind selects an IPv4 loopback address for all local benchmark traffic.
@@ -99,17 +102,14 @@ from unittest.mock import patch
 class UnpacedClock:
     """Worker-local clock proxy: omit pacing delays but yield to other threads."""
 
-    def __init__(self, thread_names=None):
+    def __init__(self, thread_names):
         self.thread_names = thread_names
 
     def __getattr__(self, name):
         return getattr(time, name)
 
     def sleep(self, seconds):
-        selected = (
-            self.thread_names is None
-            or threading.current_thread().name in self.thread_names
-        )
+        selected = threading.current_thread().name in self.thread_names
         time.sleep(0 if selected else seconds)
 
 
@@ -229,6 +229,12 @@ class DDPCollector:
 
 
 def worker(args):
+    import random
+
+    import numpy as np
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
     sys.path.insert(0, args.repo)
     from tools.pixel_bench_fixtures import install_audio, local_config, matrix_rows
 
@@ -261,7 +267,7 @@ def worker(args):
 
         # Replace module references, never the process-wide time.sleep function.
         virtuals_module.time = UnpacedClock({"Virtual: benchmark"})
-        temporal_module.time = UnpacedClock()
+        temporal_module.time = time
 
     metrics = {
         "assemble": [],
@@ -363,9 +369,11 @@ def worker(args):
                     install_temporal_render_prototype,
                 )
 
-                install_temporal_render_prototype(cls)
+                install_temporal_render_prototype(cls, cadence=args.temporal_cadence)
             if args.unpaced:
-                temporal_module.time = UnpacedClock({f"Effect: {cls.NAME}"})
+                temporal_module.time = UnpacedClock(
+                    set() if args.temporal_cadence else {f"Effect: {cls.NAME}"}
+                )
             if issubclass(cls, AudioReactiveEffect) and not args.synthetic_audio:
                 raise ValueError(
                     "Audio-reactive effects require --synthetic-audio; this benchmark does not capture hardware audio"
@@ -573,6 +581,9 @@ async def run_one(args, loop, vis, repeat):
             "--effect-config",
             args.effect_config,
         ]
+        command.extend(["--seed", str(args.seed)])
+        if args.temporal_cadence:
+            command.append("--temporal-cadence")
         if args.temporal_render:
             command.append("--temporal-render")
         if args.unpaced:
@@ -727,6 +738,8 @@ async def run_one(args, loop, vis, repeat):
                 "bind": args.bind,
                 "receiver_mode": "process",
                 "temporal_render": args.temporal_render,
+                "temporal_cadence": args.temporal_cadence,
+                "seed": args.seed,
                 "unpaced": args.unpaced,
                 "unpaced_scope": "target" if args.unpaced else "none",
                 "unpaced_preview": args.unpaced_preview,
@@ -871,6 +884,8 @@ def scenario_key(row: dict) -> str:
             ("bind", "127.0.0.1"),
             ("receiver_mode", "thread"),
             ("temporal_render", False),
+            ("temporal_cadence", False),
+            ("seed", None),
             ("unpaced", False),
             ("unpaced_scope", "none"),
             ("unpaced_preview", False),
@@ -979,6 +994,14 @@ def parse_args(argv=None):
     p.add_argument("--directory", help=argparse.SUPPRESS)
     p.add_argument("--port", type=int, help=argparse.SUPPRESS)
     p.add_argument("--sink-port", type=int, help=argparse.SUPPRESS)
+    p.add_argument(
+        "--seed", type=int, default=2058, help="Python/NumPy worker random seed"
+    )
+    p.add_argument(
+        "--temporal-cadence",
+        action="store_true",
+        help="Keep temporal update pacing, including in the on-render prototype",
+    )
     p.add_argument("--pixels", type=int, default=500000)
     p.add_argument(
         "--temporal-render",
@@ -1101,6 +1124,8 @@ def parse_args(argv=None):
         p.error("--rows must be nonnegative and divide --pixels exactly")
     if not math.isfinite(args.case_timeout) or args.case_timeout <= 0:
         p.error("--case-timeout must be finite and positive")
+    if not 0 <= args.seed < 2**32:
+        p.error("seed must be in [0, 2**32)")
     if args.temporal_render and not args.unpaced:
         p.error("--temporal-render requires --unpaced; not production animation timing")
     if args.sampling and (sys.version_info < (3, 15) or args.profile):
