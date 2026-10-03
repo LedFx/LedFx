@@ -1,0 +1,177 @@
+[
+  {
+    "effect": "fade",
+    "rows": 1,
+    "unpaced": true,
+    "unpaced_preview": true,
+    "stream": "full",
+    "temporal_render": true,
+    "pixels": 50000,
+    "render_fps": 577.57,
+    "effect_ms": 0.139,
+    "audio_fps": 0.0,
+    "audio_update_ms": 0,
+    "server_cpu_pct": 109.4,
+    "rss_mb": 170.5,
+    "ws_changed_fps": 509.17,
+    "ddp_complete_fps": 577.77,
+    "profile": {
+      "all_samples": 5963,
+      "active_samples": 5135,
+      "top_self": [
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 2644,
+          "active_sample_pct": 51.49
+        },
+        {
+          "frame": "encoder.py:JSONEncoder.iterencode",
+          "samples": 402,
+          "active_sample_pct": 7.83
+        },
+        {
+          "frame": "core.py:LedFxCore.setup_visualisation_events.<locals>.handle_visualisation_update",
+          "samples": 383,
+          "active_sample_pct": 7.46
+        },
+        {
+          "frame": "virtuals.py:Virtual.assemble_frame",
+          "samples": 357,
+          "active_sample_pct": 6.95
+        },
+        {
+          "frame": "_shape_base_impl.py:tile",
+          "samples": 188,
+          "active_sample_pct": 3.66
+        },
+        {
+          "frame": "_function_base_impl.py:copy",
+          "samples": 185,
+          "active_sample_pct": 3.6
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 166,
+          "active_sample_pct": 3.23
+        },
+        {
+          "frame": "selector_events.py:_SelectorSocketTransport.write",
+          "samples": 161,
+          "active_sample_pct": 3.14
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 160,
+          "active_sample_pct": 3.12
+        },
+        {
+          "frame": "__init__.py:Effect.get_pixels",
+          "samples": 133,
+          "active_sample_pct": 2.59
+        },
+        {
+          "frame": "pixel_bench.py:UnpacedClock.sleep",
+          "samples": 65,
+          "active_sample_pct": 1.27
+        },
+        {
+          "frame": "selector_events.py:BaseSelectorEventLoop._write_to_self",
+          "samples": 62,
+          "active_sample_pct": 1.21
+        },
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 51,
+          "active_sample_pct": 0.99
+        },
+        {
+          "frame": "gradient.py:GradientEffect._get_gradient_colors",
+          "samples": 20,
+          "active_sample_pct": 0.39
+        },
+        {
+          "frame": "events.py:Events.fire_event",
+          "samples": 18,
+          "active_sample_pct": 0.35
+        }
+      ],
+      "top_inclusive": [
+        {
+          "frame": "pixel_bench.py:worker.<locals>.timed.<locals>.call",
+          "samples": 4234,
+          "active_sample_pct": 82.45
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap",
+          "samples": 4091,
+          "active_sample_pct": 79.67
+        },
+        {
+          "frame": "threading.py:Thread._bootstrap_inner",
+          "samples": 4091,
+          "active_sample_pct": 79.67
+        },
+        {
+          "frame": "threading.py:Thread.run",
+          "samples": 4091,
+          "active_sample_pct": 79.67
+        },
+        {
+          "frame": "virtuals.py:Virtual.thread_function",
+          "samples": 4091,
+          "active_sample_pct": 79.67
+        },
+        {
+          "frame": "virtuals.py:Virtual.flush",
+          "samples": 3033,
+          "active_sample_pct": 59.07
+        },
+        {
+          "frame": "virtuals.py:Virtual._flush_simple_segments",
+          "samples": 3026,
+          "active_sample_pct": 58.93
+        },
+        {
+          "frame": "__init__.py:Device.update_pixels",
+          "samples": 3013,
+          "active_sample_pct": 58.68
+        },
+        {
+          "frame": "ddp.py:DDPDevice.flush",
+          "samples": 2814,
+          "active_sample_pct": 54.8
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_out",
+          "samples": 2810,
+          "active_sample_pct": 54.72
+        },
+        {
+          "frame": "ddp.py:DDPDevice.send_packet",
+          "samples": 2644,
+          "active_sample_pct": 51.49
+        },
+        {
+          "frame": "pixel_bench.py:worker",
+          "samples": 1044,
+          "active_sample_pct": 20.33
+        },
+        {
+          "frame": "base_events.py:BaseEventLoop.run_forever",
+          "samples": 1044,
+          "active_sample_pct": 20.33
+        },
+        {
+          "frame": "<frozen runpy>:_run_module_as_main",
+          "samples": 1044,
+          "active_sample_pct": 20.33
+        },
+        {
+          "frame": "<frozen runpy>:_run_code",
+          "samples": 1044,
+          "active_sample_pct": 20.33
+        }
+      ]
+    }
+  }
+]

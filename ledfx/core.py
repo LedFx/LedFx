@@ -318,28 +318,29 @@ class LedFxCore:
             self.device_listener()
 
         min_time_since = 1 / self.config.visualisation_fps
-        time_since_last = {}
+        next_update: dict[str, float] = {}
         max_len = self.config.visualisation_maxlen
 
         def handle_visualisation_update(event):
             if not self.events.has_listeners(Event.VISUALISATION_UPDATE):
                 return
             is_device = event.event_type == Event.DEVICE_UPDATE
-            time_now = time.time()
+            time_now = time.monotonic()
 
             if is_device:
                 vis_id = event.device_id
             else:
                 vis_id = event.virtual_id
 
-            try:
-                time_since = time_now - time_since_last[vis_id]
-                if time_since < min_time_since:
-                    return
-            except KeyError:
-                pass
-
-            time_since_last[vis_id] = time_now
+            due = next_update.get(vis_id, time_now)
+            if time_now < due:
+                return
+            # Advance the schedule, not the arrival time. Resetting to now
+            # makes e.g. a 62 Hz source lose every other 60 Hz preview. Skip
+            # missed slots after stalls and never replay a burst of old frames.
+            next_update[vis_id] = (
+                time_now + min_time_since - (time_now - due) % min_time_since
+            )
 
             # grab rows from up in virtual land
             virtual = self.virtuals.get(vis_id)

@@ -135,7 +135,9 @@ UNMEASURED = {
 }
 
 
-def make_sender(name: str, pixels: int, sink: Any) -> Any:
+def make_sender(
+    name: str, pixels: int, sink: Any, *, e131_layout: dict | None = None
+) -> Any:
     """Initialize flush state without touching discovery, hardware or remote hosts."""
     import importlib
 
@@ -162,6 +164,17 @@ def make_sender(name: str, pixels: int, sink: Any) -> Any:
             group_name="benchmark",
             entertainment_id="00000000-0000-0000-0000-000000000000",
         )
+    if e131_layout is not None:
+        if name != "e131":
+            raise ValueError("e131_layout only applies to E1.31")
+        if set(e131_layout) - {
+            "universe",
+            "universe_size",
+            "channel_offset",
+            "packet_priority",
+        }:
+            raise ValueError("Unknown E1.31 layout field")
+        config.update(e131_layout)
     typed = cls.config_model().model_validate(config)
     if name == "hue":
         # __init__ pairs with a bridge; only measure the plaintext flush kernel.
@@ -186,9 +199,10 @@ def make_sender(name: str, pixels: int, sink: Any) -> Any:
         device._sacn._sender_handler.socket._socket.close()
         device._sacn._sender_handler.socket._socket = sink
         device._sacn.manual_flush = True
-        for universe in range(1, device.config.universe_end + 1):
+        for universe in range(device.config.universe, device.config.universe_end + 1):
             device._sacn.activate_output(universe)
             device._sacn[universe].destination = "127.0.0.1"
+            device._sacn[universe].priority = device.config.packet_priority
     elif name.startswith("osc-"):
         from pythonosc.udp_client import SimpleUDPClient
 

@@ -76,3 +76,39 @@ def test_preview_preserves_strided_rgb_bytes(
         pixels.astype(np.uint8).flatten()
     )
     np.testing.assert_array_equal(pixels, original)
+
+
+@pytest.mark.parametrize("source_fps", [30, 60, 62, 100, 120])
+def test_preview_keeps_requested_average_rate_without_duplicate_updates(
+    monkeypatch: pytest.MonkeyPatch, source_fps: int
+) -> None:
+    clock = [1000.0]
+    monkeypatch.setattr("ledfx.core.time.time", lambda: clock[0])
+    monkeypatch.setattr("ledfx.core.time.monotonic", lambda: clock[0])
+    core = make_core()
+    received: list[VisualisationUpdateEvent] = []
+    core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
+    event = VirtualUpdateEvent("strip", np.zeros((1, 3)))
+    for frame in range(source_fps * 2):
+        clock[0] = 1000.0 + frame / source_fps
+        core.visualisation_update_listener(event)
+        # A device/virtual pair or duplicate at the same instant must not burst.
+        core.visualisation_update_listener(event)
+    assert abs(len(received) - 2 * min(source_fps, 60)) <= 1
+
+
+def test_preview_does_not_replay_missed_frames_after_idle(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    clock = [1000.0]
+    monkeypatch.setattr("ledfx.core.time.time", lambda: clock[0])
+    monkeypatch.setattr("ledfx.core.time.monotonic", lambda: clock[0])
+    core = make_core()
+    received: list[VisualisationUpdateEvent] = []
+    core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
+    event = VirtualUpdateEvent("strip", np.zeros((1, 3)))
+    core.visualisation_update_listener(event)
+    clock[0] += 100
+    for _ in range(100):
+        core.visualisation_update_listener(event)
+    assert len(received) == 2

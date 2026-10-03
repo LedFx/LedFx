@@ -1,0 +1,202 @@
+{
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.43",
+  "python": "3.15.0rc2 (main, Sep 24 2026, 17:59:02) [Clang 22.1.3 ]",
+  "numpy": "2.5.3",
+  "packages": {
+    "sacn": "1.11.0",
+    "stupidartnet": "1.6.0",
+    "python-osc": "1.10.2"
+  },
+  "senders": {
+    "ddp": {
+      "module": "ddp",
+      "class_name": "DDPDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "480 RGB pixels/datagram; benchmark cap 1M, not protocol limit",
+      "option": ""
+    },
+    "artnet": {
+      "module": "artnet",
+      "class_name": "ArtNetDevice",
+      "transport": "udp",
+      "max_pixels": 5570560,
+      "note": "510 channels/universe; ordered universe sets, no atomic frame ID",
+      "option": ""
+    },
+    "e131": {
+      "module": "e131",
+      "class_name": "E131Device",
+      "transport": "udp",
+      "max_pixels": 10879660,
+      "note": "510 channels/universe plus sync; sync multicast redirected to loopback; periodic discovery excluded",
+      "option": ""
+    },
+    "opc": {
+      "module": "open_pixel_control",
+      "class_name": "OpenPixelControl",
+      "transport": "udp",
+      "max_pixels": 21834,
+      "note": "LedFx currently uses a single UDP datagram, not TCP; IPv4 datagram limit",
+      "option": ""
+    },
+    "openrgb": {
+      "module": "openrgb",
+      "class_name": "OpenRGB",
+      "transport": "tcp",
+      "max_pixels": 65535,
+      "note": "16-bit pixel count; direct update only, discovery excluded",
+      "option": ""
+    },
+    "adalight": {
+      "module": "adalight",
+      "class_name": "AdalightDevice",
+      "transport": "serial",
+      "max_pixels": 65535,
+      "note": "encoding only; real baud rate and hardware excluded",
+      "option": ""
+    },
+    "nanoleaf": {
+      "module": "nanoleaf",
+      "class_name": "NanoleafDevice",
+      "transport": "udp",
+      "max_pixels": 8188,
+      "note": "v2 UDP, synthetic sequential panel IDs; discovery/authentication excluded",
+      "option": ""
+    },
+    "govee": {
+      "module": "govee",
+      "class_name": "Govee",
+      "transport": "udp",
+      "max_pixels": 255,
+      "note": "8-bit segment count; JSON/base64 Razer payload; activation excluded",
+      "option": ""
+    },
+    "hue": {
+      "module": "hue",
+      "class_name": "HueDevice",
+      "transport": "dtls",
+      "max_pixels": 256,
+      "note": "plaintext encoding only; DTLS, pairing and bridge channel limits excluded",
+      "option": ""
+    },
+    "udp-drgb": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 490,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "DRGB"
+    },
+    "udp-warls": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 255,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "WARLS"
+    },
+    "udp-drgbw": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 367,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "DRGBW"
+    },
+    "udp-dnrgb": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 65536,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "DNRGB"
+    },
+    "udp-adaptive": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 255,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "adaptive_smallest"
+    },
+    "udp-raw": {
+      "module": "udp",
+      "class_name": "UDPRealtimeDevice",
+      "transport": "udp",
+      "max_pixels": 500,
+      "note": "traffic minimization enabled; no sequence/frame ID",
+      "option": "RGB (HyperHDR)"
+    },
+    "osc-one": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "One_Argument"
+    },
+    "osc-three": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "Three_Arguments"
+    },
+    "osc-channels": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 1000000,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "Three_Addresses"
+    },
+    "osc-all": {
+      "module": "osc",
+      "class_name": "OSCServerDevice",
+      "transport": "udp",
+      "max_pixels": 3851,
+      "note": "normalized float32 colors; duplicate frames suppressed; 1M benchmark cap for per-address modes",
+      "option": "All_To_One"
+    }
+  },
+  "unmeasured": {
+    "wled": "Delegates flush to measured DDP, E131 or UDP senders; discovery and WLED firmware capacity excluded.",
+    "lifx": "RGB-to-HSBK plus device-specific Animator, or asynchronous single-bulb fallback; scheduling time alone is not delivery time. Needs a separate SDK/device fixture.",
+    "twinkly_squares": "Permutation plus xled v3 realtime chunks; xled creates sockets and needs authenticated session/device layout. Needs an SDK fixture.",
+    "zengee": "Uses only the first RGB triple and calls flux_led setRgb; not a per-pixel strip transport. SDK/device fixture required.",
+    "launchpad": "Model-specific MIDI messages and USB/MIDI transport require hardware coverage.",
+    "rpi_ws281x": "Native GPIO/DMA and output-mode conversion require Raspberry Pi hardware.",
+    "dummy": "No output transport; use pixel_bench --device dummy for rendering-only baseline.",
+    "nanoleaf_tcp": "HTTP request/response path excluded; measured variant is v2 UDP."
+  },
+  "scope": "Characterize real LedFx sender flush paths without contacting devices.\n\n  python tools/sender_bench.py --senders all --pixels 60,300,1000 --output /tmp/senders.jsonl\n  python tools/sender_bench.py --senders ddp,artnet,e131 --pixels 500000 --seconds 3 --repeats 3 --output /tmp/large.jsonl\n  python tools/sender_bench.py --senders udp-adaptive,udp-warls --patterns dense,sparse,static --pixels 60 --output /tmp/deltas.jsonl\n  python3.15 tools/sender_bench.py --senders e131 --pixels 10000 --sampling cpu --output /tmp/profile.jsonl\n  python3.15 tools/sender_profile_report.py /tmp/profile.jsonl\n\nencode measures real flush/serialization with a counting sink. loopback uses real\nUDP or TCP writes and a separate receiver process (excluded from sender CPU).\nEvery case first decodes emitted RGB independently, then validates received\npackets against complete expected packet sets. Protocols without a frame ID only\nsupport ordered-set validation, not a guarantee of atomic display updates.\nOpenRGB is a TCP byte stream: write calls are not network packets. Serial and\nHue are encoding-only; baud-rate, DTLS and hardware capacity are not simulated.\nDiscovery, authentication and periodic SDK discovery/keepalive threads are\nexcluded; synchronous per-frame SDK serialization remains included.\n\nFrames are precomputed float64 RGB, alternating dense or roughly 1%-changed\ninputs (at least one pixel), or\nstatic. Time is spent in flush, not effects, virtual assembly or websocket work.\n--fps 0 measures saturation; use --fps 60 to measure a paced workload. Static\nsuppression is reported as zero sends, never as exceptionally high delivered FPS.\nThe default packet-count budget skips impractical per-pixel OSC cases explicitly.\nLimits and unmeasured backends are written alongside the results. These local\nmeasurements do not predict Wi-Fi, device firmware or physical LED latency.\n--e131-bytes-prototype opts into an isolated experimental sACN setter adapter.\nIts rows and summaries are marked separately; it is not production behavior.\n",
+  "sampling": null,
+  "arguments": {
+    "senders": [
+      "e131"
+    ],
+    "pixels": [
+      50000
+    ],
+    "patterns": [
+      "static"
+    ],
+    "modes": [
+      "encode"
+    ],
+    "seconds": 8.0,
+    "repeats": 1,
+    "fps": 0,
+    "max_packets": 150000,
+    "e131_bytes_prototype": false,
+    "bind": "127.0.0.2",
+    "sampling": null,
+    "sampled_worker": null,
+    "output": "/tmp/ledfx-experiments-v3/046-e131-static-encode-stock.jsonl"
+  },
+  "loopback_probe": null,
+  "git_revision": "ef9d591e0b0e8892989c2dc6dd028d6ad015f3c6",
+  "git_status": ""
+}

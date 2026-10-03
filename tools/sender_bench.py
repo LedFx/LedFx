@@ -24,6 +24,8 @@ suppression is reported as zero sends, never as exceptionally high delivered FPS
 The default packet-count budget skips impractical per-pixel OSC cases explicitly.
 Limits and unmeasured backends are written alongside the results. These local
 measurements do not predict Wi-Fi, device firmware or physical LED latency.
+--e131-bytes-prototype opts into an isolated experimental sACN setter adapter.
+Its rows and summaries are marked separately; it is not production behavior.
 """
 
 import argparse
@@ -89,6 +91,22 @@ class Sink:
         self.bytes += sent
         self.short_writes += sent != len(data)
         return sent
+
+    def sendall(self, data: Any) -> None:
+        """Count a complete TCP write while retaining socket.sendall semantics."""
+        if self.sock is None:
+            self.send(data)
+            return
+        self.calls += 1
+        self.max_bytes = max(self.max_bytes, len(data))
+        if self.capture is not None:
+            self.capture.append(bytes(data))
+        try:
+            self.sock.sendall(data)
+        except OSError:
+            self.errors += 1
+            raise
+        self.bytes += len(data)
 
     def sendto(self, data: Any, address: Any) -> int:
         return self.send(data)
@@ -312,6 +330,10 @@ def run_case(
     inputs = frame_pair(pixels, pattern)
     sink = Sink()
     sender = make_sender(name, pixels, sink)
+    if getattr(args, "e131_bytes_prototype", False) and name == "e131":
+        from tools.e131_bytes_prototype import enable_e131_bytes_prototype
+
+        enable_e131_bytes_prototype(sender)
     templates = []
     previous = None
     for frame in (inputs[0], inputs[1], inputs[0]):
@@ -395,7 +417,10 @@ def run_case(
                 or received.get("invalid_packets")
                 or received.get("trailing_tcp_bytes")
             ):
-                raise ValueError(f"Receiver validation failed: {received}")
+                raise ValueError(
+                    f"Receiver validation failed: {received}; "
+                    f"send errors={sink.errors}, short writes={sink.short_writes}"
+                )
             if sink.calls and not (
                 received["complete_frames"]
                 or (pattern == "static" and received["partial_keepalive_sets"])
@@ -485,6 +510,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--fps", type=float, default=0)
     parser.add_argument("--max-packets", type=int, default=10000)
     parser.add_argument(
+        "--e131-bytes-prototype",
+        action="store_true",
+        help="Experimental benchmark-only sACN byte-buffer setter; production unchanged",
+    )
+    parser.add_argument(
         "--bind",
         default="127.0.0.1",
         help="IPv4 loopback address for the local receiver",
@@ -563,6 +593,7 @@ def summarize(rows: list[dict]) -> list[dict]:
         "requested_fps",
         "profiled",
         "loopback_address",
+        "e131_bytes_prototype",
     )
     for row in rows:
         key = tuple(row.get(k) for k in keys)
@@ -675,6 +706,8 @@ def main() -> None:
                         for mode in args.modes:
                             row = {
                                 "sender": name,
+                                "e131_bytes_prototype": args.e131_bytes_prototype
+                                and name == "e131",
                                 "pixels": pixels,
                                 "pattern": pattern,
                                 "mode": mode,

@@ -22,6 +22,20 @@ preview cap only inside the worker. Both default to a requested preview rate of
 60 Hz. Rainbow requests 60 updates/sec by default; actual effect, render and
 output rates are measured separately. ws_changed_fps distinguishes new images
 from repeated previews of the same effect frame.
+--unpaced replaces only render/temporal pacing sleeps with time.sleep(0) yields;
+only for the target virtual/effect; fixture virtuals retain their pacing.
+Production rate limits, audio pacing and transport code are unchanged.
+--unpaced-preview separately bypasses the preview cap in the worker (1M FPS).
+Use ws_changed_fps, not repeated-frame delivery, to assess useful preview FPS.
+--temporal-render is an additional benchmark-only on-demand computation
+prototype; it ignores temporal speed/interval semantics and requires --unpaced.
+--temporal-cadence retains speed/interval pacing for either threaded or on-render
+updates. On-render ticks are quantized to render opportunities, without catch-up.
+--seed fixes Python/NumPy random sources, not thread scheduling or wall time.
+All flags are recorded and kept separate in baseline comparisons. In unpaced
+runs effective_refresh_rate remains the configured rate, not a pacing ceiling.
+An independent DDP receiver process avoids contention with websocket decoding;
+--bind selects an IPv4 loopback address for all local benchmark traffic.
 
 CPU is server process CPU (100% = one core), excluding the receiver. Callback
 timings include instrumentation overhead. DDP complete frames and packet counts
@@ -65,9 +79,11 @@ import copy
 import cProfile
 import importlib.metadata
 import importlib.util
+import ipaddress
 import json
 import logging
 import math
+import multiprocessing
 import os
 import platform
 import shutil
@@ -81,6 +97,20 @@ import threading
 import time
 from pathlib import Path
 from unittest.mock import patch
+
+
+class UnpacedClock:
+    """Worker-local clock proxy: omit pacing delays but yield to other threads."""
+
+    def __init__(self, thread_names):
+        self.thread_names = thread_names
+
+    def __getattr__(self, name):
+        return getattr(time, name)
+
+    def sleep(self, seconds):
+        selected = threading.current_thread().name in self.thread_names
+        time.sleep(0 if selected else seconds)
 
 
 def validate_frame(event: dict, expected_pixels: int) -> list[int]:
@@ -146,7 +176,65 @@ class DDPReceiver:
             self.intact = False
 
 
+def collect_ddp(connection, pixels, bind):
+    """Independent receiver process so websocket decoding cannot starve UDP."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+        sock.bind((bind, 0))
+        sock.settimeout(0.005)
+        connection.send(sock.getsockname()[1])
+        receiver = DDPReceiver(pixels)
+        batch = 0
+        while True:
+            if batch == 0 and connection.poll():
+                if connection.recv() == "stop":
+                    break
+                connection.send(receiver.counts.copy())
+            try:
+                receiver.feed(sock.recv(65536))
+                batch = (batch + 1) % 32
+            except TimeoutError:
+                batch = 0
+    connection.close()
+
+
+class DDPCollector:
+    def __init__(self, pixels, bind):
+        context = multiprocessing.get_context("spawn")
+        self.connection, child = context.Pipe()
+        self.process = context.Process(target=collect_ddp, args=(child, pixels, bind))
+        self.process.start()
+        child.close()
+        if not self.connection.poll(10):
+            self.close()
+            raise TimeoutError("DDP receiver did not start")
+        self.port = self.connection.recv()
+
+    def snapshot(self):
+        self.connection.send("snapshot")
+        if not self.connection.poll(10):
+            raise TimeoutError("DDP receiver did not report counters")
+        return self.connection.recv()
+
+    def close(self):
+        try:
+            if self.process.is_alive():
+                self.connection.send("stop")
+                self.process.join(2)
+        finally:
+            if self.process.is_alive():
+                self.process.terminate()
+                self.process.join(2)
+            self.connection.close()
+
+
 def worker(args):
+    import random
+
+    import numpy as np
+
+    random.seed(args.seed)
+    np.random.seed(args.seed)
     sys.path.insert(0, args.repo)
     from tools.pixel_bench_fixtures import install_audio, local_config, matrix_rows
 
@@ -172,6 +260,14 @@ def worker(args):
     from ledfx.events import Event, FrontendVisualiserDataEvent
     from ledfx.utils import shape_to_fit_len
     from ledfx.virtuals import Virtual
+
+    if args.unpaced:
+        import ledfx.effects.temporal as temporal_module
+        import ledfx.virtuals as virtuals_module
+
+        # Replace module references, never the process-wide time.sleep function.
+        virtuals_module.time = UnpacedClock({"Virtual: benchmark"})
+        temporal_module.time = time
 
     metrics = {
         "assemble": [],
@@ -210,9 +306,12 @@ def worker(args):
     logging.basicConfig(level=logging.WARNING)
     with patch("ledfx.core.asyncio.new_event_loop", factory):
         core = LedFxCore(
-            args.directory, host="127.0.0.1", port=args.port, offline_mode=True
+            args.directory, host=args.bind, port=args.port, offline_mode=True
         )
     core.config.visualisation_fps = args.preview_fps
+    if args.unpaced_preview:
+        # Benchmark-only near-unlimited preview ceiling; product schema unchanged.
+        object.__setattr__(core.config, "visualisation_fps", 1_000_000)
     # Explicit benchmark-only bypass of the product's 65536-pixel UI cap.
     object.__setattr__(core.config, "visualisation_maxlen", args.vis_pixels)
     core.config.transmission_mode = "compressed"
@@ -260,9 +359,21 @@ def worker(args):
                 "refresh_rate": args.refresh_rate,
             }
             if args.device == "ddp":
-                config.update(ip_address="127.0.0.1", port=args.sink_port)
+                config.update(ip_address=args.bind, port=args.sink_port)
             await core.devices.add_new_device(args.device, config)
             cls = core.effects.get_class(args.effect)
+            if args.temporal_render:
+                if not issubclass(cls, TemporalEffect):
+                    raise ValueError("--temporal-render requires a temporal effect")
+                from tools.temporal_render_prototype import (
+                    install_temporal_render_prototype,
+                )
+
+                install_temporal_render_prototype(cls, cadence=args.temporal_cadence)
+            if args.unpaced:
+                temporal_module.time = UnpacedClock(
+                    set() if args.temporal_cadence else {f"Effect: {cls.NAME}"}
+                )
             if issubclass(cls, AudioReactiveEffect) and not args.synthetic_audio:
                 raise ValueError(
                     "Audio-reactive effects require --synthetic-audio; this benchmark does not capture hardware audio"
@@ -369,9 +480,9 @@ def worker(args):
         core.loop.close()
 
 
-def free_port():
+def free_port(bind="127.0.0.1"):
     with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
+        s.bind((bind, 0))
         return s.getsockname()[1]
 
 
@@ -433,24 +544,8 @@ async def run_one(args, loop, vis, repeat):
     import psutil
 
     with tempfile.TemporaryDirectory(prefix="ledfx-pixels-") as directory:
-        port = free_port()
-        sink = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sink.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
-        sink.bind(("127.0.0.1", 0))
-        sink.settimeout(0.2)
-        ddp = DDPReceiver(args.pixels)
-        stop = threading.Event()
-
-        def drain():
-            while not stop.is_set():
-                try:
-                    data = sink.recv(65536)
-                except TimeoutError:
-                    continue
-                ddp.feed(data)
-
-        receiver = threading.Thread(target=drain)
-        receiver.start()
+        port = free_port(args.bind)
+        collector = DDPCollector(args.pixels, args.bind)
         command = [
             sys.executable,
             __file__,
@@ -464,7 +559,9 @@ async def run_one(args, loop, vis, repeat):
             "--port",
             str(port),
             "--sink-port",
-            str(sink.getsockname()[1]),
+            str(collector.port),
+            "--bind",
+            args.bind,
             "--pixels",
             str(args.pixels),
             "--vis-pixels",
@@ -484,6 +581,15 @@ async def run_one(args, loop, vis, repeat):
             "--effect-config",
             args.effect_config,
         ]
+        command.extend(["--seed", str(args.seed)])
+        if args.temporal_cadence:
+            command.append("--temporal-cadence")
+        if args.temporal_render:
+            command.append("--temporal-render")
+        if args.unpaced:
+            command.append("--unpaced")
+        if args.unpaced_preview:
+            command.append("--unpaced-preview")
         if args.synthetic_audio:
             command.append("--synthetic-audio")
         if args.fixtures:
@@ -523,7 +629,7 @@ async def run_one(args, loop, vis, repeat):
                 ws = None
                 if vis != "none":
                     ws = await session.ws_connect(
-                        f"http://127.0.0.1:{port}/api/websocket",
+                        f"http://{args.bind}:{port}/api/websocket",
                         max_msg_size=max(1024 * 1024, args.pixels * 4 + 4096),
                     )
                     await ws.send_json(
@@ -585,24 +691,26 @@ async def run_one(args, loop, vis, repeat):
 
                 await receive_for(args.warmup, False)
                 async with session.post(
-                    f"http://127.0.0.1:{port}/benchmark/start"
+                    f"http://{args.bind}:{port}/benchmark/start"
                 ) as response:
                     response.raise_for_status()
                 cpu0 = sum(process.cpu_times()[:2])
-                counts0 = ddp.counts.copy()
+                counts0 = collector.snapshot()
                 begin = time.perf_counter()
                 await receive_for(args.seconds, True)
                 end = time.perf_counter()
                 cpu1 = sum(process.cpu_times()[:2])
-                counts1 = ddp.counts.copy()
+                counts1 = collector.snapshot()
                 rss = process.memory_info().rss
                 async with session.post(
-                    f"http://127.0.0.1:{port}/benchmark/stop"
+                    f"http://{args.bind}:{port}/benchmark/stop"
                 ) as response:
                     response.raise_for_status()
                 if ws:
                     await ws.close()
-                async with session.post(f"http://127.0.0.1:{port}/api/power", json={}):
+                async with session.post(
+                    f"http://{args.bind}:{port}/api/power", json={}
+                ):
                     pass
             await asyncio.to_thread(proc.wait, 30)
             if proc.returncode != 0:
@@ -627,6 +735,14 @@ async def run_one(args, loop, vis, repeat):
                 "device": args.device,
                 "pixels": args.pixels,
                 "refresh_rate": args.refresh_rate,
+                "bind": args.bind,
+                "receiver_mode": "process",
+                "temporal_render": args.temporal_render,
+                "temporal_cadence": args.temporal_cadence,
+                "seed": args.seed,
+                "unpaced": args.unpaced,
+                "unpaced_scope": "target" if args.unpaced else "none",
+                "unpaced_preview": args.unpaced_preview,
                 "effective_refresh_rate": json.loads(ready.read_text())["refresh_rate"],
                 "preview_fps": args.preview_fps,
                 "effect_speed": args.effect_speed,
@@ -673,9 +789,7 @@ async def run_one(args, loop, vis, repeat):
             return result
         finally:
             await asyncio.to_thread(stop_worker, proc, process)
-            stop.set()
-            receiver.join()
-            sink.close()
+            collector.close()
             # Preserve diagnostics even when validation/startup fails.
             artifact_dir = (
                 Path(str(args.output) + ".artifacts")
@@ -767,6 +881,14 @@ def scenario_key(row: dict) -> str:
             ("rows", 1),
             ("synthetic_audio", False),
             ("fixtures", False),
+            ("bind", "127.0.0.1"),
+            ("receiver_mode", "thread"),
+            ("temporal_render", False),
+            ("temporal_cadence", False),
+            ("seed", None),
+            ("unpaced", False),
+            ("unpaced_scope", "none"),
+            ("unpaced_preview", False),
         )
     )
     return (
@@ -872,7 +994,35 @@ def parse_args(argv=None):
     p.add_argument("--directory", help=argparse.SUPPRESS)
     p.add_argument("--port", type=int, help=argparse.SUPPRESS)
     p.add_argument("--sink-port", type=int, help=argparse.SUPPRESS)
+    p.add_argument(
+        "--seed", type=int, default=2058, help="Python/NumPy worker random seed"
+    )
+    p.add_argument(
+        "--temporal-cadence",
+        action="store_true",
+        help="Keep temporal update pacing, including in the on-render prototype",
+    )
     p.add_argument("--pixels", type=int, default=500000)
+    p.add_argument(
+        "--temporal-render",
+        action="store_true",
+        help="Benchmark-only prototype: compute temporal effects on render; requires --unpaced and changes animation timing",
+    )
+    p.add_argument(
+        "--bind",
+        default="127.0.0.1",
+        help="IPv4 loopback address for HTTP, websocket and DDP",
+    )
+    p.add_argument(
+        "--unpaced",
+        action="store_true",
+        help="Benchmark-only: replace render/effect pacing sleeps with scheduler yields",
+    )
+    p.add_argument(
+        "--unpaced-preview",
+        action="store_true",
+        help="Benchmark-only: bypass preview FPS cap (1M FPS ceiling)",
+    )
     p.add_argument(
         "--case-timeout",
         type=float,
@@ -960,6 +1110,12 @@ def parse_args(argv=None):
     )
     args = p.parse_args(argv)
     try:
+        address = ipaddress.ip_address(args.bind)
+        if address.version != 4 or not address.is_loopback:
+            p.error("--bind must be an IPv4 loopback address")
+    except ValueError:
+        p.error("--bind must be an IPv4 loopback address")
+    try:
         if not isinstance(json.loads(args.effect_config), dict):
             raise TypeError
     except (TypeError, ValueError):
@@ -968,6 +1124,10 @@ def parse_args(argv=None):
         p.error("--rows must be nonnegative and divide --pixels exactly")
     if not math.isfinite(args.case_timeout) or args.case_timeout <= 0:
         p.error("--case-timeout must be finite and positive")
+    if not 0 <= args.seed < 2**32:
+        p.error("seed must be in [0, 2**32)")
+    if args.temporal_render and not args.unpaced:
+        p.error("--temporal-render requires --unpaced; not production animation timing")
     if args.sampling and (sys.version_info < (3, 15) or args.profile):
         p.error(
             "--sampling requires Python 3.15+ and cannot be combined with --profile"
@@ -1054,7 +1214,7 @@ def write_metadata(args) -> None:
         "revision": git("rev-parse", "HEAD"),
         "working_tree": git("status", "--short"),
         "arguments": vars(args),
-        "notes": "Loopback synthetic Rainbow workload. 100% CPU is one server core. Receiver CPU excluded. Full stream bypasses UI cap. Profiled runs include profiler overhead.",
+        "notes": "Loopback synthetic selected-effect workload. 100% CPU is one server core; independent receiver CPU excluded. Full stream bypasses pixel cap. Unpaced flags bypass timing caps only in benchmark workers. Profiled runs include profiler overhead.",
     }
     Path(str(args.output) + ".metadata.json").write_text(
         json.dumps(metadata, indent=2), encoding="utf-8"

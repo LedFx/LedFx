@@ -1,0 +1,380 @@
+{
+  "bands": {
+    "name": "Bands",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "bands_matrix": {
+    "name": "Bands Matrix",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "bar": {
+    "name": "Bar",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "blade_power_plus": {
+    "name": "Blade Power+",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "bleep": {
+    "name": "Bleep",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "blender": {
+    "name": "Blender",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "block_reflections": {
+    "name": "Block Reflections",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "blocks": {
+    "name": "Blocks",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "clone": {
+    "name": "Clone",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "concentric": {
+    "name": "Concentric",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "crawler": {
+    "name": "Crawler",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "digitalrain2d": {
+    "name": "Digital Rain",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "energy": {
+    "name": "Energy",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "energy2": {
+    "name": "Energy 2",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "equalizer": {
+    "name": "Equalizer",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "equalizer2d": {
+    "name": "Equalizer2d",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "fade": {
+    "name": "Fade",
+    "matrix": false,
+    "audio": false,
+    "temporal": true
+  },
+  "filter": {
+    "name": "Filter",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "fire": {
+    "name": "Fire",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "flame2d": {
+    "name": "Flame",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "frontend": {
+    "name": "Frontend",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "game_of_life": {
+    "name": "Game of Life",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "gifplayer": {
+    "name": "GIF Player",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "glitch": {
+    "name": "Glitch",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "gradient": {
+    "name": "Gradient",
+    "matrix": false,
+    "audio": false,
+    "temporal": true
+  },
+  "hierarchy": {
+    "name": "Hierarchy",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "imagespin": {
+    "name": "Image",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "keybeat2d": {
+    "name": "Keybeat2d",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "lava_lamp": {
+    "name": "Lava lamp",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "magnitude": {
+    "name": "Magnitude",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "marching": {
+    "name": "Marching",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "melt": {
+    "name": "Melt",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "melt_and_sparkle": {
+    "name": "Melt and Sparkle",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "metro": {
+    "name": "Metro",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "multiBar": {
+    "name": "Multicolor Bar",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "noise2d": {
+    "name": "Noise",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "number": {
+    "name": "Number",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "pitchSpectrum": {
+    "name": "Pitch Spectrum",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "pixels": {
+    "name": "Pixels",
+    "matrix": false,
+    "audio": false,
+    "temporal": true
+  },
+  "plasma2d": {
+    "name": "Plasma2d",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "plasmawled": {
+    "name": "PlasmaWled2d",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "power": {
+    "name": "Power",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "radial": {
+    "name": "Radial",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "rain": {
+    "name": "Rain",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "rainbow": {
+    "name": "Rainbow",
+    "matrix": false,
+    "audio": false,
+    "temporal": true
+  },
+  "random_flash": {
+    "name": "Random Flash",
+    "matrix": false,
+    "audio": false,
+    "temporal": true
+  },
+  "real_strobe": {
+    "name": "Strobe",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "scan": {
+    "name": "Scan",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "scan_and_flare": {
+    "name": "Scan and Flare",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "scan_multi": {
+    "name": "Scan Multi",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "scroll": {
+    "name": "Scroll",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "scroll_plus": {
+    "name": "Scroll+",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "singleColor": {
+    "name": "Single Color",
+    "matrix": false,
+    "audio": false,
+    "temporal": true
+  },
+  "smoke2d": {
+    "name": "Smoke",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "soap2d": {
+    "name": "Soap",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "spectrum": {
+    "name": "Spectrum",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "spotlight": {
+    "name": "Spotlight",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "strobe": {
+    "name": "BPM Strobe",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "texter2d": {
+    "name": "Texter",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "vumeter": {
+    "name": "VuMeter",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "water": {
+    "name": "Water",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  },
+  "waterfall2d": {
+    "name": "Waterfall",
+    "matrix": true,
+    "audio": true,
+    "temporal": false
+  },
+  "wavelength": {
+    "name": "Wavelength",
+    "matrix": false,
+    "audio": true,
+    "temporal": false
+  }
+}

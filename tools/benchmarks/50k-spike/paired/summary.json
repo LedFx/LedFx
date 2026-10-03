@@ -1,0 +1,4394 @@
+[
+  {
+    "suite": "e131",
+    "workload": "dense-encode",
+    "treatment": "bytes",
+    "metrics": {
+      "flush_fps": {
+        "median": 297.679,
+        "minimum": 295.916,
+        "maximum": 308.013,
+        "observations": [
+          297.679,
+          308.013,
+          295.916
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "minimum": 99.98,
+        "maximum": 99.99,
+        "observations": [
+          99.99,
+          99.99,
+          99.98
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 3.358971,
+        "minimum": 3.246352,
+        "maximum": 3.378827,
+        "observations": [
+          3.358971,
+          3.246352,
+          3.378827
+        ]
+      },
+      "application_MB_s": {
+        "median": 56.041,
+        "minimum": 55.709,
+        "maximum": 57.986,
+        "observations": [
+          56.041,
+          57.986,
+          55.709
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 3.357957,
+        "minimum": 3.245529,
+        "maximum": 3.377967,
+        "observations": [
+          3.357957,
+          3.245529,
+          3.377967
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 4.344853,
+        "minimum": 3.956262,
+        "maximum": 4.389748,
+        "observations": [
+          4.389748,
+          3.956262,
+          4.344853
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-encode",
+    "treatment": "stock",
+    "metrics": {
+      "flush_fps": {
+        "median": 120.663,
+        "minimum": 119.249,
+        "maximum": 125.217,
+        "observations": [
+          119.249,
+          120.663,
+          125.217
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "minimum": 99.99,
+        "maximum": 99.99,
+        "observations": [
+          99.99,
+          99.99,
+          99.99
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 8.286889,
+        "minimum": 7.985576,
+        "maximum": 8.384623,
+        "observations": [
+          8.384623,
+          8.286889,
+          7.985576
+        ]
+      },
+      "application_MB_s": {
+        "median": 22.716,
+        "minimum": 22.45,
+        "maximum": 23.573,
+        "observations": [
+          22.45,
+          22.716,
+          23.573
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 8.285709,
+        "minimum": 7.984557,
+        "maximum": 8.383907,
+        "observations": [
+          8.383907,
+          8.285709,
+          7.984557
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 10.740269,
+        "minimum": 9.705975,
+        "maximum": 10.764403,
+        "observations": [
+          10.740269,
+          10.764403,
+          9.705975
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-loopback",
+    "treatment": "bytes",
+    "metrics": {
+      "flush_fps": {
+        "median": 135.85,
+        "minimum": 135.492,
+        "maximum": 139.244,
+        "observations": [
+          139.244,
+          135.492,
+          135.85
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.87,
+        "minimum": 99.83,
+        "maximum": 99.93,
+        "observations": [
+          99.93,
+          99.83,
+          99.87
+        ]
+      },
+      "received_complete_fps": {
+        "median": 135.85,
+        "minimum": 135.492,
+        "maximum": 139.244,
+        "observations": [
+          139.244,
+          135.492,
+          135.85
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 7.351263,
+        "minimum": 7.176914,
+        "maximum": 7.368273,
+        "observations": [
+          7.176914,
+          7.368273,
+          7.351263
+        ]
+      },
+      "application_MB_s": {
+        "median": 25.575,
+        "minimum": 25.508,
+        "maximum": 26.214,
+        "observations": [
+          26.214,
+          25.508,
+          25.575
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 7.359493,
+        "minimum": 7.180065,
+        "maximum": 7.379193,
+        "observations": [
+          7.180065,
+          7.379193,
+          7.359493
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 8.79445,
+        "minimum": 8.678984,
+        "maximum": 8.911962,
+        "observations": [
+          8.678984,
+          8.911962,
+          8.79445
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "dense-loopback",
+    "treatment": "stock",
+    "metrics": {
+      "flush_fps": {
+        "median": 86.944,
+        "minimum": 85.899,
+        "maximum": 87.048,
+        "observations": [
+          86.944,
+          85.899,
+          87.048
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.92,
+        "minimum": 99.89,
+        "maximum": 99.95,
+        "observations": [
+          99.89,
+          99.92,
+          99.95
+        ]
+      },
+      "received_complete_fps": {
+        "median": 86.944,
+        "minimum": 85.899,
+        "maximum": 87.048,
+        "observations": [
+          86.944,
+          85.899,
+          87.048
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 11.489506,
+        "minimum": 11.482677,
+        "maximum": 11.632377,
+        "observations": [
+          11.489506,
+          11.632377,
+          11.482677
+        ]
+      },
+      "application_MB_s": {
+        "median": 16.368,
+        "minimum": 16.171,
+        "maximum": 16.387,
+        "observations": [
+          16.368,
+          16.171,
+          16.387
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 11.49989,
+        "minimum": 11.486338,
+        "maximum": 11.639888,
+        "observations": [
+          11.49989,
+          11.639888,
+          11.486338
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 13.737301,
+        "minimum": 13.109576,
+        "maximum": 13.768804,
+        "observations": [
+          13.768804,
+          13.737301,
+          13.109576
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-encode",
+    "treatment": "bytes",
+    "metrics": {
+      "flush_fps": {
+        "median": 298.764,
+        "minimum": 292.675,
+        "maximum": 301.732,
+        "observations": [
+          298.764,
+          292.675,
+          301.732
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.98,
+        "minimum": 99.95,
+        "maximum": 99.99,
+        "observations": [
+          99.95,
+          99.98,
+          99.99
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 3.345318,
+        "minimum": 3.313984,
+        "maximum": 3.416201,
+        "observations": [
+          3.345318,
+          3.416201,
+          3.313984
+        ]
+      },
+      "application_MB_s": {
+        "median": 56.245,
+        "minimum": 55.099,
+        "maximum": 56.804,
+        "observations": [
+          56.245,
+          55.099,
+          56.804
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 3.345853,
+        "minimum": 3.313021,
+        "maximum": 3.415489,
+        "observations": [
+          3.345853,
+          3.415489,
+          3.313021
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 4.348853,
+        "minimum": 4.108797,
+        "maximum": 4.6798,
+        "observations": [
+          4.108797,
+          4.6798,
+          4.348853
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-encode",
+    "treatment": "stock",
+    "metrics": {
+      "flush_fps": {
+        "median": 121.649,
+        "minimum": 120.679,
+        "maximum": 123.882,
+        "observations": [
+          120.679,
+          123.882,
+          121.649
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "minimum": 99.99,
+        "maximum": 99.99,
+        "observations": [
+          99.99,
+          99.99,
+          99.99
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 8.219548,
+        "minimum": 8.071509,
+        "maximum": 8.285375,
+        "observations": [
+          8.285375,
+          8.071509,
+          8.219548
+        ]
+      },
+      "application_MB_s": {
+        "median": 22.902,
+        "minimum": 22.719,
+        "maximum": 23.322,
+        "observations": [
+          22.719,
+          23.322,
+          22.902
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 8.218702,
+        "minimum": 8.070605,
+        "maximum": 8.284697,
+        "observations": [
+          8.284697,
+          8.070605,
+          8.218702
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 10.438445,
+        "minimum": 10.100122,
+        "maximum": 10.463,
+        "observations": [
+          10.463,
+          10.100122,
+          10.438445
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-loopback",
+    "treatment": "bytes",
+    "metrics": {
+      "flush_fps": {
+        "median": 139.98,
+        "minimum": 138.831,
+        "maximum": 141.459,
+        "observations": [
+          139.98,
+          141.459,
+          138.831
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.89,
+        "minimum": 99.85,
+        "maximum": 99.9,
+        "observations": [
+          99.89,
+          99.9,
+          99.85
+        ]
+      },
+      "received_complete_fps": {
+        "median": 139.98,
+        "minimum": 138.831,
+        "maximum": 141.459,
+        "observations": [
+          139.98,
+          141.459,
+          138.831
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 7.136297,
+        "minimum": 7.06225,
+        "maximum": 7.192002,
+        "observations": [
+          7.136297,
+          7.06225,
+          7.192002
+        ]
+      },
+      "application_MB_s": {
+        "median": 26.353,
+        "minimum": 26.136,
+        "maximum": 26.631,
+        "observations": [
+          26.353,
+          26.631,
+          26.136
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 7.142286,
+        "minimum": 7.067764,
+        "maximum": 7.201521,
+        "observations": [
+          7.142286,
+          7.067764,
+          7.201521
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 8.695869,
+        "minimum": 8.581083,
+        "maximum": 8.99614,
+        "observations": [
+          8.99614,
+          8.581083,
+          8.695869
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "sparse-loopback",
+    "treatment": "stock",
+    "metrics": {
+      "flush_fps": {
+        "median": 85.235,
+        "minimum": 85.115,
+        "maximum": 87.22,
+        "observations": [
+          85.115,
+          85.235,
+          87.22
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.89,
+        "minimum": 99.88,
+        "maximum": 99.94,
+        "observations": [
+          99.94,
+          99.89,
+          99.88
+        ]
+      },
+      "received_complete_fps": {
+        "median": 85.235,
+        "minimum": 85.115,
+        "maximum": 87.22,
+        "observations": [
+          85.115,
+          85.235,
+          87.22
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 11.719761,
+        "minimum": 11.451125,
+        "maximum": 11.74183,
+        "observations": [
+          11.74183,
+          11.719761,
+          11.451125
+        ]
+      },
+      "application_MB_s": {
+        "median": 16.046,
+        "minimum": 16.024,
+        "maximum": 16.42,
+        "observations": [
+          16.024,
+          16.046,
+          16.42
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 11.730553,
+        "minimum": 11.463548,
+        "maximum": 11.746884,
+        "observations": [
+          11.746884,
+          11.730553,
+          11.463548
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 13.90605,
+        "minimum": 13.109629,
+        "maximum": 14.263692,
+        "observations": [
+          13.90605,
+          14.263692,
+          13.109629
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "static-encode",
+    "treatment": "bytes",
+    "metrics": {
+      "flush_fps": {
+        "median": 302.191,
+        "minimum": 298.987,
+        "maximum": 302.279,
+        "observations": [
+          298.987,
+          302.191,
+          302.279
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "minimum": 99.98,
+        "maximum": 99.99,
+        "observations": [
+          99.99,
+          99.99,
+          99.98
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 3.308831,
+        "minimum": 3.307666,
+        "maximum": 3.344239,
+        "observations": [
+          3.344239,
+          3.308831,
+          3.307666
+        ]
+      },
+      "application_MB_s": {
+        "median": 56.89,
+        "minimum": 56.287,
+        "maximum": 56.907,
+        "observations": [
+          56.287,
+          56.89,
+          56.907
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 3.307997,
+        "minimum": 3.307035,
+        "maximum": 3.34341,
+        "observations": [
+          3.34341,
+          3.307997,
+          3.307035
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 4.266579,
+        "minimum": 4.224037,
+        "maximum": 4.272009,
+        "observations": [
+          4.272009,
+          4.266579,
+          4.224037
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "static-encode",
+    "treatment": "stock",
+    "metrics": {
+      "flush_fps": {
+        "median": 124.077,
+        "minimum": 122.653,
+        "maximum": 124.561,
+        "observations": [
+          122.653,
+          124.077,
+          124.561
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.99,
+        "minimum": 99.99,
+        "maximum": 99.99,
+        "observations": [
+          99.99,
+          99.99,
+          99.99
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 8.058333,
+        "minimum": 8.027744,
+        "maximum": 8.152343,
+        "observations": [
+          8.152343,
+          8.058333,
+          8.027744
+        ]
+      },
+      "application_MB_s": {
+        "median": 23.359,
+        "minimum": 23.091,
+        "maximum": 23.45,
+        "observations": [
+          23.091,
+          23.359,
+          23.45
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 8.057688,
+        "minimum": 8.026716,
+        "maximum": 8.151294,
+        "observations": [
+          8.151294,
+          8.057688,
+          8.026716
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 9.836056,
+        "minimum": 9.700485,
+        "maximum": 10.076076,
+        "observations": [
+          10.076076,
+          9.836056,
+          9.700485
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "static-loopback",
+    "treatment": "bytes",
+    "metrics": {
+      "flush_fps": {
+        "median": 139.145,
+        "minimum": 134.04,
+        "maximum": 140.26,
+        "observations": [
+          134.04,
+          140.26,
+          139.145
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.81,
+        "minimum": 99.73,
+        "maximum": 99.9,
+        "observations": [
+          99.9,
+          99.81,
+          99.73
+        ]
+      },
+      "received_complete_fps": {
+        "median": 139.145,
+        "minimum": 134.04,
+        "maximum": 140.26,
+        "observations": [
+          134.04,
+          140.26,
+          139.145
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 7.167226,
+        "minimum": 7.116212,
+        "maximum": 7.453047,
+        "observations": [
+          7.453047,
+          7.116212,
+          7.167226
+        ]
+      },
+      "application_MB_s": {
+        "median": 26.195,
+        "minimum": 25.234,
+        "maximum": 26.405,
+        "observations": [
+          25.234,
+          26.405,
+          26.195
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 7.185386,
+        "minimum": 7.128138,
+        "maximum": 7.458886,
+        "observations": [
+          7.458886,
+          7.128138,
+          7.185386
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 8.581143,
+        "minimum": 8.571926,
+        "maximum": 9.130427,
+        "observations": [
+          9.130427,
+          8.581143,
+          8.571926
+        ]
+      }
+    }
+  },
+  {
+    "suite": "e131",
+    "workload": "static-loopback",
+    "treatment": "stock",
+    "metrics": {
+      "flush_fps": {
+        "median": 86.049,
+        "minimum": 83.733,
+        "maximum": 87.339,
+        "observations": [
+          86.049,
+          83.733,
+          87.339
+        ]
+      },
+      "sender_cpu_pct": {
+        "median": 99.88,
+        "minimum": 99.84,
+        "maximum": 99.93,
+        "observations": [
+          99.88,
+          99.93,
+          99.84
+        ]
+      },
+      "received_complete_fps": {
+        "median": 86.049,
+        "minimum": 83.733,
+        "maximum": 87.339,
+        "observations": [
+          86.049,
+          83.733,
+          87.339
+        ]
+      },
+      "cpu_ms_per_flush": {
+        "median": 11.606943,
+        "minimum": 11.43157,
+        "maximum": 11.934519,
+        "observations": [
+          11.606943,
+          11.934519,
+          11.43157
+        ]
+      },
+      "application_MB_s": {
+        "median": 16.2,
+        "minimum": 15.764,
+        "maximum": 16.442,
+        "observations": [
+          16.2,
+          15.764,
+          16.442
+        ]
+      },
+      "flush_mean_ms": {
+        "median": 11.619156,
+        "minimum": 11.447924,
+        "maximum": 11.940645,
+        "observations": [
+          11.619156,
+          11.940645,
+          11.447924
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 13.770143,
+        "minimum": 13.514913,
+        "maximum": 15.836033,
+        "observations": [
+          13.770143,
+          15.836033,
+          13.514913
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 654.37,
+        "minimum": 620.69,
+        "maximum": 660.35,
+        "observations": [
+          654.37,
+          660.35,
+          620.69
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 5.12,
+        "minimum": 5.12,
+        "maximum": 5.12,
+        "observations": [
+          5.12,
+          5.12,
+          5.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.2,
+        "minimum": 109.7,
+        "maximum": 110.4,
+        "observations": [
+          110.4,
+          110.2,
+          109.7
+        ]
+      },
+      "rss_mb": {
+        "median": 173.6,
+        "minimum": 173.3,
+        "maximum": 174.6,
+        "observations": [
+          173.6,
+          174.6,
+          173.3
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 654.37,
+        "minimum": 620.69,
+        "maximum": 660.35,
+        "observations": [
+          654.37,
+          660.35,
+          620.69
+        ]
+      },
+      "effect_fps": {
+        "median": 5.0,
+        "minimum": 5.0,
+        "maximum": 5.0,
+        "observations": [
+          5.0,
+          5.0,
+          5.0
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.248,
+        "minimum": 0.223,
+        "maximum": 0.259,
+        "observations": [
+          0.259,
+          0.248,
+          0.223
+        ]
+      },
+      "assemble_fps": {
+        "median": 654.37,
+        "minimum": 620.69,
+        "maximum": 660.23,
+        "observations": [
+          654.37,
+          660.23,
+          620.69
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.657,
+        "minimum": 0.647,
+        "maximum": 0.672,
+        "observations": [
+          0.672,
+          0.647,
+          0.657
+        ]
+      },
+      "flush_fps": {
+        "median": 654.37,
+        "minimum": 620.69,
+        "maximum": 660.23,
+        "observations": [
+          654.37,
+          660.23,
+          620.69
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.247,
+        "minimum": 1.232,
+        "maximum": 1.401,
+        "observations": [
+          1.232,
+          1.247,
+          1.401
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.62,
+        "minimum": 94.61,
+        "maximum": 94.74,
+        "observations": [
+          94.61,
+          94.62,
+          94.74
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.125,
+        "minimum": 1.106,
+        "maximum": 1.14,
+        "observations": [
+          1.14,
+          1.125,
+          1.106
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "render-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 585.16,
+        "minimum": 563.06,
+        "maximum": 595.43,
+        "observations": [
+          563.06,
+          585.16,
+          595.43
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 515.8,
+        "minimum": 495.32,
+        "maximum": 524.69,
+        "observations": [
+          495.32,
+          515.8,
+          524.69
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 109.7,
+        "minimum": 109.5,
+        "maximum": 110.4,
+        "observations": [
+          110.4,
+          109.5,
+          109.7
+        ]
+      },
+      "rss_mb": {
+        "median": 174.0,
+        "minimum": 173.4,
+        "maximum": 174.0,
+        "observations": [
+          173.4,
+          174.0,
+          174.0
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 585.16,
+        "minimum": 563.06,
+        "maximum": 595.43,
+        "observations": [
+          563.06,
+          585.16,
+          595.43
+        ]
+      },
+      "effect_fps": {
+        "median": 585.16,
+        "minimum": 562.94,
+        "maximum": 595.43,
+        "observations": [
+          562.94,
+          585.16,
+          595.43
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.224,
+        "minimum": 0.215,
+        "maximum": 0.237,
+        "observations": [
+          0.237,
+          0.224,
+          0.215
+        ]
+      },
+      "assemble_fps": {
+        "median": 585.16,
+        "minimum": 562.94,
+        "maximum": 595.43,
+        "observations": [
+          562.94,
+          585.16,
+          595.43
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.852,
+        "minimum": 0.846,
+        "maximum": 0.928,
+        "observations": [
+          0.928,
+          0.852,
+          0.846
+        ]
+      },
+      "flush_fps": {
+        "median": 585.16,
+        "minimum": 562.94,
+        "maximum": 595.43,
+        "observations": [
+          562.94,
+          585.16,
+          595.43
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.321,
+        "minimum": 1.277,
+        "maximum": 1.327,
+        "observations": [
+          1.321,
+          1.327,
+          1.277
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 93.99,
+        "minimum": 93.74,
+        "maximum": 94.11,
+        "observations": [
+          93.74,
+          94.11,
+          93.99
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.266,
+        "minimum": 1.249,
+        "maximum": 1.298,
+        "observations": [
+          1.298,
+          1.249,
+          1.266
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "threaded-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 650.72,
+        "minimum": 643.42,
+        "maximum": 652.72,
+        "observations": [
+          650.72,
+          643.42,
+          652.72
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 5.12,
+        "minimum": 5.12,
+        "maximum": 5.12,
+        "observations": [
+          5.12,
+          5.12,
+          5.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 109.9,
+        "minimum": 109.9,
+        "maximum": 110.2,
+        "observations": [
+          109.9,
+          110.2,
+          109.9
+        ]
+      },
+      "rss_mb": {
+        "median": 174.9,
+        "minimum": 174.8,
+        "maximum": 175.0,
+        "observations": [
+          174.8,
+          175.0,
+          174.9
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 650.72,
+        "minimum": 643.42,
+        "maximum": 652.72,
+        "observations": [
+          650.72,
+          643.42,
+          652.72
+        ]
+      },
+      "effect_fps": {
+        "median": 5.0,
+        "minimum": 5.0,
+        "maximum": 5.0,
+        "observations": [
+          5.0,
+          5.0,
+          5.0
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.217,
+        "minimum": 0.21,
+        "maximum": 0.226,
+        "observations": [
+          0.21,
+          0.226,
+          0.217
+        ]
+      },
+      "assemble_fps": {
+        "median": 650.72,
+        "minimum": 643.3,
+        "maximum": 652.72,
+        "observations": [
+          650.72,
+          643.3,
+          652.72
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.638,
+        "minimum": 0.626,
+        "maximum": 0.67,
+        "observations": [
+          0.626,
+          0.67,
+          0.638
+        ]
+      },
+      "flush_fps": {
+        "median": 650.72,
+        "minimum": 643.3,
+        "maximum": 652.72,
+        "observations": [
+          650.72,
+          643.3,
+          652.72
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.311,
+        "minimum": 1.31,
+        "maximum": 1.357,
+        "observations": [
+          1.31,
+          1.357,
+          1.311
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.74,
+        "minimum": 94.62,
+        "maximum": 94.87,
+        "observations": [
+          94.62,
+          94.74,
+          94.87
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.112,
+        "minimum": 1.091,
+        "maximum": 1.122,
+        "observations": [
+          1.122,
+          1.112,
+          1.091
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "fade",
+    "treatment": "threaded-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 94.4,
+        "minimum": 93.4,
+        "maximum": 96.23,
+        "observations": [
+          94.4,
+          96.23,
+          93.4
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 94.4,
+        "minimum": 93.4,
+        "maximum": 95.85,
+        "observations": [
+          94.4,
+          95.85,
+          93.4
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 114.5,
+        "minimum": 114.5,
+        "maximum": 114.6,
+        "observations": [
+          114.6,
+          114.5,
+          114.5
+        ]
+      },
+      "rss_mb": {
+        "median": 179.2,
+        "minimum": 178.9,
+        "maximum": 179.3,
+        "observations": [
+          178.9,
+          179.2,
+          179.3
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 94.4,
+        "minimum": 93.4,
+        "maximum": 96.23,
+        "observations": [
+          94.4,
+          96.23,
+          93.4
+        ]
+      },
+      "effect_fps": {
+        "median": 4317.76,
+        "minimum": 4270.49,
+        "maximum": 4348.4,
+        "observations": [
+          4317.76,
+          4348.4,
+          4270.49
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.19,
+        "minimum": 0.187,
+        "maximum": 0.19,
+        "observations": [
+          0.187,
+          0.19,
+          0.19
+        ]
+      },
+      "assemble_fps": {
+        "median": 94.4,
+        "minimum": 93.4,
+        "maximum": 96.23,
+        "observations": [
+          94.4,
+          96.23,
+          93.4
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 2.264,
+        "minimum": 2.258,
+        "maximum": 2.503,
+        "observations": [
+          2.503,
+          2.258,
+          2.264
+        ]
+      },
+      "flush_fps": {
+        "median": 94.28,
+        "minimum": 93.4,
+        "maximum": 96.23,
+        "observations": [
+          94.28,
+          96.23,
+          93.4
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 10.844,
+        "minimum": 10.771,
+        "maximum": 11.363,
+        "observations": [
+          10.844,
+          10.771,
+          11.363
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 91.9,
+        "minimum": 91.78,
+        "maximum": 92.1,
+        "observations": [
+          91.78,
+          92.1,
+          91.9
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.687,
+        "minimum": 1.623,
+        "maximum": 1.828,
+        "observations": [
+          1.828,
+          1.623,
+          1.687
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 655.84,
+        "minimum": 652.18,
+        "maximum": 657.05,
+        "observations": [
+          655.84,
+          657.05,
+          652.18
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.0,
+        "minimum": 109.9,
+        "maximum": 110.2,
+        "observations": [
+          110.0,
+          109.9,
+          110.2
+        ]
+      },
+      "rss_mb": {
+        "median": 172.7,
+        "minimum": 172.7,
+        "maximum": 172.9,
+        "observations": [
+          172.7,
+          172.9,
+          172.7
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 655.84,
+        "minimum": 652.18,
+        "maximum": 657.05,
+        "observations": [
+          655.84,
+          657.05,
+          652.18
+        ]
+      },
+      "effect_fps": {
+        "median": 10.0,
+        "minimum": 9.87,
+        "maximum": 10.0,
+        "observations": [
+          9.87,
+          10.0,
+          10.0
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.363,
+        "minimum": 0.331,
+        "maximum": 0.367,
+        "observations": [
+          0.367,
+          0.331,
+          0.363
+        ]
+      },
+      "assemble_fps": {
+        "median": 655.84,
+        "minimum": 652.18,
+        "maximum": 657.05,
+        "observations": [
+          655.84,
+          657.05,
+          652.18
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.649,
+        "minimum": 0.648,
+        "maximum": 0.655,
+        "observations": [
+          0.648,
+          0.649,
+          0.655
+        ]
+      },
+      "flush_fps": {
+        "median": 655.84,
+        "minimum": 652.18,
+        "maximum": 657.05,
+        "observations": [
+          655.84,
+          657.05,
+          652.18
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.276,
+        "minimum": 1.233,
+        "maximum": 1.283,
+        "observations": [
+          1.283,
+          1.276,
+          1.233
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.74,
+        "minimum": 94.62,
+        "maximum": 94.74,
+        "observations": [
+          94.74,
+          94.74,
+          94.62
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.121,
+        "minimum": 1.098,
+        "maximum": 1.123,
+        "observations": [
+          1.121,
+          1.098,
+          1.123
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "render-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 626.14,
+        "minimum": 626.11,
+        "maximum": 662.02,
+        "observations": [
+          626.11,
+          662.02,
+          626.14
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.2,
+        "minimum": 110.1,
+        "maximum": 110.2,
+        "observations": [
+          110.2,
+          110.2,
+          110.1
+        ]
+      },
+      "rss_mb": {
+        "median": 173.7,
+        "minimum": 173.6,
+        "maximum": 174.9,
+        "observations": [
+          173.6,
+          174.9,
+          173.7
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 626.14,
+        "minimum": 626.11,
+        "maximum": 662.02,
+        "observations": [
+          626.11,
+          662.02,
+          626.14
+        ]
+      },
+      "effect_fps": {
+        "median": 626.14,
+        "minimum": 626.11,
+        "maximum": 662.02,
+        "observations": [
+          626.11,
+          662.02,
+          626.14
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.342,
+        "minimum": 0.324,
+        "maximum": 0.345,
+        "observations": [
+          0.345,
+          0.324,
+          0.342
+        ]
+      },
+      "assemble_fps": {
+        "median": 626.14,
+        "minimum": 626.11,
+        "maximum": 662.02,
+        "observations": [
+          626.11,
+          662.02,
+          626.14
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.678,
+        "minimum": 0.649,
+        "maximum": 0.706,
+        "observations": [
+          0.706,
+          0.649,
+          0.678
+        ]
+      },
+      "flush_fps": {
+        "median": 626.14,
+        "minimum": 626.11,
+        "maximum": 662.02,
+        "observations": [
+          626.11,
+          662.02,
+          626.14
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.301,
+        "minimum": 1.224,
+        "maximum": 1.317,
+        "observations": [
+          1.301,
+          1.224,
+          1.317
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.61,
+        "minimum": 94.5,
+        "maximum": 94.73,
+        "observations": [
+          94.5,
+          94.61,
+          94.73
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.135,
+        "minimum": 1.123,
+        "maximum": 1.174,
+        "observations": [
+          1.174,
+          1.123,
+          1.135
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "threaded-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 658.39,
+        "minimum": 649.67,
+        "maximum": 679.13,
+        "observations": [
+          649.67,
+          679.13,
+          658.39
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 111.9,
+        "minimum": 110.1,
+        "maximum": 113.9,
+        "observations": [
+          111.9,
+          110.1,
+          113.9
+        ]
+      },
+      "rss_mb": {
+        "median": 175.1,
+        "minimum": 175.1,
+        "maximum": 175.2,
+        "observations": [
+          175.1,
+          175.1,
+          175.2
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 658.39,
+        "minimum": 649.67,
+        "maximum": 679.13,
+        "observations": [
+          649.67,
+          679.13,
+          658.39
+        ]
+      },
+      "effect_fps": {
+        "median": 10.0,
+        "minimum": 9.87,
+        "maximum": 10.0,
+        "observations": [
+          10.0,
+          10.0,
+          9.87
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.223,
+        "minimum": 0.223,
+        "maximum": 0.26,
+        "observations": [
+          0.223,
+          0.223,
+          0.26
+        ]
+      },
+      "assemble_fps": {
+        "median": 658.39,
+        "minimum": 649.67,
+        "maximum": 679.13,
+        "observations": [
+          649.67,
+          679.13,
+          658.39
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.64,
+        "minimum": 0.617,
+        "maximum": 0.663,
+        "observations": [
+          0.663,
+          0.617,
+          0.64
+        ]
+      },
+      "flush_fps": {
+        "median": 658.39,
+        "minimum": 649.67,
+        "maximum": 679.13,
+        "observations": [
+          649.67,
+          679.13,
+          658.39
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.253,
+        "minimum": 1.186,
+        "maximum": 1.288,
+        "observations": [
+          1.253,
+          1.186,
+          1.288
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.73,
+        "minimum": 94.61,
+        "maximum": 94.98,
+        "observations": [
+          94.61,
+          94.98,
+          94.73
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.119,
+        "minimum": 1.071,
+        "maximum": 1.133,
+        "observations": [
+          1.133,
+          1.071,
+          1.119
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "gradient",
+    "treatment": "threaded-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 342.85,
+        "minimum": 323.55,
+        "maximum": 354.55,
+        "observations": [
+          323.55,
+          342.85,
+          354.55
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 137.6,
+        "minimum": 137.5,
+        "maximum": 139.7,
+        "observations": [
+          139.7,
+          137.6,
+          137.5
+        ]
+      },
+      "rss_mb": {
+        "median": 182.6,
+        "minimum": 181.7,
+        "maximum": 182.7,
+        "observations": [
+          181.7,
+          182.6,
+          182.7
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 342.85,
+        "minimum": 323.55,
+        "maximum": 354.55,
+        "observations": [
+          323.55,
+          342.85,
+          354.55
+        ]
+      },
+      "effect_fps": {
+        "median": 5191.0,
+        "minimum": 4926.84,
+        "maximum": 5223.68,
+        "observations": [
+          4926.84,
+          5223.68,
+          5191.0
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.24,
+        "minimum": 0.22,
+        "maximum": 0.265,
+        "observations": [
+          0.265,
+          0.22,
+          0.24
+        ]
+      },
+      "assemble_fps": {
+        "median": 342.85,
+        "minimum": 323.55,
+        "maximum": 354.55,
+        "observations": [
+          323.55,
+          342.85,
+          354.55
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 1.121,
+        "minimum": 1.088,
+        "maximum": 1.239,
+        "observations": [
+          1.239,
+          1.121,
+          1.088
+        ]
+      },
+      "flush_fps": {
+        "median": 342.85,
+        "minimum": 323.55,
+        "maximum": 354.55,
+        "observations": [
+          323.55,
+          342.85,
+          354.55
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 2.403,
+        "minimum": 2.31,
+        "maximum": 2.669,
+        "observations": [
+          2.669,
+          2.403,
+          2.31
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 93.37,
+        "minimum": 93.23,
+        "maximum": 93.6,
+        "observations": [
+          93.23,
+          93.37,
+          93.6
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.313,
+        "minimum": 1.247,
+        "maximum": 1.334,
+        "observations": [
+          1.313,
+          1.334,
+          1.247
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 657.04,
+        "minimum": 648.6,
+        "maximum": 662.08,
+        "observations": [
+          657.04,
+          662.08,
+          648.6
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 1.12,
+        "minimum": 1.12,
+        "maximum": 1.12,
+        "observations": [
+          1.12,
+          1.12,
+          1.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 109.9,
+        "minimum": 109.7,
+        "maximum": 110.1,
+        "observations": [
+          110.1,
+          109.9,
+          109.7
+        ]
+      },
+      "rss_mb": {
+        "median": 171.8,
+        "minimum": 171.7,
+        "maximum": 172.3,
+        "observations": [
+          172.3,
+          171.7,
+          171.8
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 657.04,
+        "minimum": 648.6,
+        "maximum": 662.08,
+        "observations": [
+          657.04,
+          662.08,
+          648.6
+        ]
+      },
+      "effect_fps": {
+        "median": 174.36,
+        "minimum": 173.37,
+        "maximum": 174.6,
+        "observations": [
+          174.6,
+          174.36,
+          173.37
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.005,
+        "minimum": 0.005,
+        "maximum": 0.005,
+        "observations": [
+          0.005,
+          0.005,
+          0.005
+        ]
+      },
+      "assemble_fps": {
+        "median": 657.04,
+        "minimum": 648.6,
+        "maximum": 662.08,
+        "observations": [
+          657.04,
+          662.08,
+          648.6
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.638,
+        "minimum": 0.628,
+        "maximum": 0.643,
+        "observations": [
+          0.643,
+          0.638,
+          0.628
+        ]
+      },
+      "flush_fps": {
+        "median": 657.04,
+        "minimum": 648.6,
+        "maximum": 662.08,
+        "observations": [
+          657.04,
+          662.08,
+          648.6
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.266,
+        "minimum": 1.232,
+        "maximum": 1.293,
+        "observations": [
+          1.266,
+          1.232,
+          1.293
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.62,
+        "minimum": 94.62,
+        "maximum": 94.74,
+        "observations": [
+          94.74,
+          94.62,
+          94.62
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.129,
+        "minimum": 1.11,
+        "maximum": 1.136,
+        "observations": [
+          1.129,
+          1.11,
+          1.136
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "render-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 654.28,
+        "minimum": 629.92,
+        "maximum": 658.4,
+        "observations": [
+          629.92,
+          654.28,
+          658.4
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 1.12,
+        "minimum": 1.12,
+        "maximum": 1.12,
+        "observations": [
+          1.12,
+          1.12,
+          1.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.1,
+        "minimum": 109.9,
+        "maximum": 110.2,
+        "observations": [
+          110.1,
+          110.2,
+          109.9
+        ]
+      },
+      "rss_mb": {
+        "median": 173.1,
+        "minimum": 172.9,
+        "maximum": 173.2,
+        "observations": [
+          173.1,
+          172.9,
+          173.2
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 654.28,
+        "minimum": 629.92,
+        "maximum": 658.4,
+        "observations": [
+          629.92,
+          654.28,
+          658.4
+        ]
+      },
+      "effect_fps": {
+        "median": 654.28,
+        "minimum": 629.92,
+        "maximum": 658.4,
+        "observations": [
+          629.92,
+          654.28,
+          658.4
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.004,
+        "minimum": 0.004,
+        "maximum": 0.005,
+        "observations": [
+          0.005,
+          0.004,
+          0.004
+        ]
+      },
+      "assemble_fps": {
+        "median": 654.28,
+        "minimum": 629.92,
+        "maximum": 658.4,
+        "observations": [
+          629.92,
+          654.28,
+          658.4
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.643,
+        "minimum": 0.631,
+        "maximum": 0.678,
+        "observations": [
+          0.678,
+          0.643,
+          0.631
+        ]
+      },
+      "flush_fps": {
+        "median": 654.28,
+        "minimum": 629.92,
+        "maximum": 658.4,
+        "observations": [
+          629.92,
+          654.28,
+          658.4
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.275,
+        "minimum": 1.225,
+        "maximum": 1.34,
+        "observations": [
+          1.34,
+          1.275,
+          1.225
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.49,
+        "minimum": 94.36,
+        "maximum": 94.61,
+        "observations": [
+          94.49,
+          94.36,
+          94.61
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.142,
+        "minimum": 1.135,
+        "maximum": 1.15,
+        "observations": [
+          1.142,
+          1.15,
+          1.135
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "threaded-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 656.21,
+        "minimum": 641.66,
+        "maximum": 656.46,
+        "observations": [
+          641.66,
+          656.21,
+          656.46
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 1.25,
+        "minimum": 1.12,
+        "maximum": 1.25,
+        "observations": [
+          1.12,
+          1.25,
+          1.25
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.7,
+        "minimum": 110.6,
+        "maximum": 110.7,
+        "observations": [
+          110.7,
+          110.7,
+          110.6
+        ]
+      },
+      "rss_mb": {
+        "median": 172.4,
+        "minimum": 172.3,
+        "maximum": 173.0,
+        "observations": [
+          172.4,
+          172.3,
+          173.0
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 656.21,
+        "minimum": 641.66,
+        "maximum": 656.46,
+        "observations": [
+          641.66,
+          656.21,
+          656.46
+        ]
+      },
+      "effect_fps": {
+        "median": 194.74,
+        "minimum": 194.6,
+        "maximum": 194.74,
+        "observations": [
+          194.6,
+          194.74,
+          194.74
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.007,
+        "minimum": 0.006,
+        "maximum": 0.008,
+        "observations": [
+          0.008,
+          0.006,
+          0.007
+        ]
+      },
+      "assemble_fps": {
+        "median": 656.21,
+        "minimum": 641.66,
+        "maximum": 656.46,
+        "observations": [
+          641.66,
+          656.21,
+          656.46
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.647,
+        "minimum": 0.643,
+        "maximum": 0.683,
+        "observations": [
+          0.683,
+          0.643,
+          0.647
+        ]
+      },
+      "flush_fps": {
+        "median": 656.21,
+        "minimum": 641.66,
+        "maximum": 656.46,
+        "observations": [
+          641.66,
+          656.21,
+          656.46
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.28,
+        "minimum": 1.243,
+        "maximum": 1.29,
+        "observations": [
+          1.29,
+          1.28,
+          1.243
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.49,
+        "minimum": 94.49,
+        "maximum": 94.74,
+        "observations": [
+          94.49,
+          94.49,
+          94.74
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.124,
+        "minimum": 1.108,
+        "maximum": 1.132,
+        "observations": [
+          1.108,
+          1.132,
+          1.124
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "pixels",
+    "treatment": "threaded-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 363.98,
+        "minimum": 360.84,
+        "maximum": 370.66,
+        "observations": [
+          363.98,
+          370.66,
+          360.84
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 1.12,
+        "minimum": 1.12,
+        "maximum": 1.12,
+        "observations": [
+          1.12,
+          1.12,
+          1.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 123.1,
+        "minimum": 123.0,
+        "maximum": 123.2,
+        "observations": [
+          123.1,
+          123.0,
+          123.2
+        ]
+      },
+      "rss_mb": {
+        "median": 183.7,
+        "minimum": 183.7,
+        "maximum": 184.4,
+        "observations": [
+          184.4,
+          183.7,
+          183.7
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 363.98,
+        "minimum": 360.84,
+        "maximum": 370.66,
+        "observations": [
+          363.98,
+          370.66,
+          360.84
+        ]
+      },
+      "effect_fps": {
+        "median": 9054.74,
+        "minimum": 9034.48,
+        "maximum": 9136.3,
+        "observations": [
+          9034.48,
+          9136.3,
+          9054.74
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.005,
+        "minimum": 0.005,
+        "maximum": 0.005,
+        "observations": [
+          0.005,
+          0.005,
+          0.005
+        ]
+      },
+      "assemble_fps": {
+        "median": 363.98,
+        "minimum": 360.84,
+        "maximum": 370.66,
+        "observations": [
+          363.98,
+          370.66,
+          360.84
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.97,
+        "minimum": 0.956,
+        "maximum": 0.977,
+        "observations": [
+          0.97,
+          0.956,
+          0.977
+        ]
+      },
+      "flush_fps": {
+        "median": 363.98,
+        "minimum": 360.84,
+        "maximum": 370.66,
+        "observations": [
+          363.98,
+          370.66,
+          360.84
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 2.46,
+        "minimum": 2.443,
+        "maximum": 2.491,
+        "observations": [
+          2.46,
+          2.443,
+          2.491
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 93.87,
+        "minimum": 93.87,
+        "maximum": 94.23,
+        "observations": [
+          93.87,
+          94.23,
+          93.87
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.16,
+        "minimum": 1.121,
+        "maximum": 1.164,
+        "observations": [
+          1.164,
+          1.121,
+          1.16
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 627.27,
+        "minimum": 620.17,
+        "maximum": 632.93,
+        "observations": [
+          632.93,
+          620.17,
+          627.27
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 57.37,
+        "minimum": 57.37,
+        "maximum": 57.49,
+        "observations": [
+          57.37,
+          57.49,
+          57.37
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 109.6,
+        "minimum": 109.6,
+        "maximum": 109.7,
+        "observations": [
+          109.6,
+          109.6,
+          109.7
+        ]
+      },
+      "rss_mb": {
+        "median": 176.0,
+        "minimum": 175.9,
+        "maximum": 176.5,
+        "observations": [
+          176.0,
+          175.9,
+          176.5
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 627.27,
+        "minimum": 620.17,
+        "maximum": 632.93,
+        "observations": [
+          632.93,
+          620.17,
+          627.27
+        ]
+      },
+      "effect_fps": {
+        "median": 57.24,
+        "minimum": 57.24,
+        "maximum": 57.37,
+        "observations": [
+          57.24,
+          57.37,
+          57.24
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 1.24,
+        "minimum": 1.233,
+        "maximum": 1.723,
+        "observations": [
+          1.24,
+          1.723,
+          1.233
+        ]
+      },
+      "assemble_fps": {
+        "median": 627.27,
+        "minimum": 620.17,
+        "maximum": 632.93,
+        "observations": [
+          632.93,
+          620.17,
+          627.27
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 1.024,
+        "minimum": 1.002,
+        "maximum": 1.395,
+        "observations": [
+          1.002,
+          1.395,
+          1.024
+        ]
+      },
+      "flush_fps": {
+        "median": 627.27,
+        "minimum": 620.17,
+        "maximum": 632.93,
+        "observations": [
+          632.93,
+          620.17,
+          627.27
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.284,
+        "minimum": 1.247,
+        "maximum": 1.295,
+        "observations": [
+          1.284,
+          1.247,
+          1.295
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.73,
+        "minimum": 94.61,
+        "maximum": 94.86,
+        "observations": [
+          94.61,
+          94.86,
+          94.73
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.118,
+        "minimum": 1.113,
+        "maximum": 1.127,
+        "observations": [
+          1.118,
+          1.127,
+          1.113
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "render-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 475.04,
+        "minimum": 474.46,
+        "maximum": 482.71,
+        "observations": [
+          474.46,
+          482.71,
+          475.04
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 474.79,
+        "minimum": 474.33,
+        "maximum": 482.46,
+        "observations": [
+          474.33,
+          482.46,
+          474.79
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 107.4,
+        "minimum": 107.4,
+        "maximum": 107.4,
+        "observations": [
+          107.4,
+          107.4,
+          107.4
+        ]
+      },
+      "rss_mb": {
+        "median": 175.6,
+        "minimum": 175.4,
+        "maximum": 175.7,
+        "observations": [
+          175.4,
+          175.7,
+          175.6
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 475.04,
+        "minimum": 474.46,
+        "maximum": 482.71,
+        "observations": [
+          474.46,
+          482.71,
+          475.04
+        ]
+      },
+      "effect_fps": {
+        "median": 475.04,
+        "minimum": 474.46,
+        "maximum": 482.71,
+        "observations": [
+          474.46,
+          482.71,
+          475.04
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 1.199,
+        "minimum": 1.16,
+        "maximum": 1.211,
+        "observations": [
+          1.211,
+          1.16,
+          1.199
+        ]
+      },
+      "assemble_fps": {
+        "median": 475.04,
+        "minimum": 474.46,
+        "maximum": 482.71,
+        "observations": [
+          474.46,
+          482.71,
+          475.04
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 1.315,
+        "minimum": 1.272,
+        "maximum": 1.333,
+        "observations": [
+          1.333,
+          1.272,
+          1.315
+        ]
+      },
+      "flush_fps": {
+        "median": 475.04,
+        "minimum": 474.33,
+        "maximum": 482.71,
+        "observations": [
+          474.33,
+          482.71,
+          475.04
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.353,
+        "minimum": 1.307,
+        "maximum": 1.39,
+        "observations": [
+          1.353,
+          1.307,
+          1.39
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.62,
+        "minimum": 94.62,
+        "maximum": 94.73,
+        "observations": [
+          94.62,
+          94.62,
+          94.73
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.069,
+        "minimum": 1.062,
+        "maximum": 1.093,
+        "observations": [
+          1.093,
+          1.062,
+          1.069
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "threaded-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 633.81,
+        "minimum": 615.74,
+        "maximum": 647.12,
+        "observations": [
+          615.74,
+          633.81,
+          647.12
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 59.62,
+        "minimum": 59.61,
+        "maximum": 59.62,
+        "observations": [
+          59.62,
+          59.62,
+          59.61
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 114.5,
+        "minimum": 114.0,
+        "maximum": 114.9,
+        "observations": [
+          114.9,
+          114.5,
+          114.0
+        ]
+      },
+      "rss_mb": {
+        "median": 178.3,
+        "minimum": 178.1,
+        "maximum": 178.4,
+        "observations": [
+          178.4,
+          178.3,
+          178.1
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 633.81,
+        "minimum": 615.74,
+        "maximum": 647.12,
+        "observations": [
+          615.74,
+          633.81,
+          647.12
+        ]
+      },
+      "effect_fps": {
+        "median": 59.62,
+        "minimum": 59.49,
+        "maximum": 59.62,
+        "observations": [
+          59.62,
+          59.62,
+          59.49
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 2.078,
+        "minimum": 1.988,
+        "maximum": 2.173,
+        "observations": [
+          2.173,
+          2.078,
+          1.988
+        ]
+      },
+      "assemble_fps": {
+        "median": 633.81,
+        "minimum": 615.74,
+        "maximum": 647.12,
+        "observations": [
+          615.74,
+          633.81,
+          647.12
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.725,
+        "minimum": 0.678,
+        "maximum": 0.738,
+        "observations": [
+          0.738,
+          0.725,
+          0.678
+        ]
+      },
+      "flush_fps": {
+        "median": 633.81,
+        "minimum": 615.74,
+        "maximum": 647.12,
+        "observations": [
+          615.74,
+          633.81,
+          647.12
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.39,
+        "minimum": 1.337,
+        "maximum": 1.469,
+        "observations": [
+          1.469,
+          1.39,
+          1.337
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.61,
+        "minimum": 94.5,
+        "maximum": 94.74,
+        "observations": [
+          94.5,
+          94.74,
+          94.61
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.132,
+        "minimum": 1.126,
+        "maximum": 1.139,
+        "observations": [
+          1.139,
+          1.126,
+          1.132
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "rainbow",
+    "treatment": "threaded-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 363.61,
+        "minimum": 315.66,
+        "maximum": 367.36,
+        "observations": [
+          367.36,
+          315.66,
+          363.61
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 346.86,
+        "minimum": 315.41,
+        "maximum": 353.73,
+        "observations": [
+          346.86,
+          315.41,
+          353.73
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 164.5,
+        "minimum": 158.3,
+        "maximum": 166.5,
+        "observations": [
+          166.5,
+          158.3,
+          164.5
+        ]
+      },
+      "rss_mb": {
+        "median": 176.9,
+        "minimum": 175.5,
+        "maximum": 177.0,
+        "observations": [
+          177.0,
+          176.9,
+          175.5
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 363.61,
+        "minimum": 315.66,
+        "maximum": 367.36,
+        "observations": [
+          367.36,
+          315.66,
+          363.61
+        ]
+      },
+      "effect_fps": {
+        "median": 574.09,
+        "minimum": 526.61,
+        "maximum": 791.91,
+        "observations": [
+          526.61,
+          791.91,
+          574.09
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 2.685,
+        "minimum": 2.017,
+        "maximum": 2.832,
+        "observations": [
+          2.832,
+          2.017,
+          2.685
+        ]
+      },
+      "assemble_fps": {
+        "median": 363.61,
+        "minimum": 315.66,
+        "maximum": 367.36,
+        "observations": [
+          367.36,
+          315.66,
+          363.61
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 1.15,
+        "minimum": 1.137,
+        "maximum": 1.19,
+        "observations": [
+          1.137,
+          1.19,
+          1.15
+        ]
+      },
+      "flush_fps": {
+        "median": 363.61,
+        "minimum": 315.66,
+        "maximum": 367.36,
+        "observations": [
+          367.36,
+          315.66,
+          363.61
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 2.384,
+        "minimum": 2.356,
+        "maximum": 2.69,
+        "observations": [
+          2.384,
+          2.69,
+          2.356
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 93.75,
+        "minimum": 93.22,
+        "maximum": 93.87,
+        "observations": [
+          93.75,
+          93.22,
+          93.87
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.202,
+        "minimum": 1.198,
+        "maximum": 1.297,
+        "observations": [
+          1.198,
+          1.297,
+          1.202
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 648.9,
+        "minimum": 605.83,
+        "maximum": 660.7,
+        "observations": [
+          605.83,
+          648.9,
+          660.7
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 48.12,
+        "minimum": 48.12,
+        "maximum": 48.12,
+        "observations": [
+          48.12,
+          48.12,
+          48.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.1,
+        "minimum": 110.0,
+        "maximum": 110.1,
+        "observations": [
+          110.1,
+          110.0,
+          110.1
+        ]
+      },
+      "rss_mb": {
+        "median": 173.4,
+        "minimum": 173.2,
+        "maximum": 173.5,
+        "observations": [
+          173.2,
+          173.4,
+          173.5
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 648.9,
+        "minimum": 605.83,
+        "maximum": 660.7,
+        "observations": [
+          605.83,
+          648.9,
+          660.7
+        ]
+      },
+      "effect_fps": {
+        "median": 48.0,
+        "minimum": 47.99,
+        "maximum": 48.0,
+        "observations": [
+          48.0,
+          47.99,
+          48.0
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.335,
+        "minimum": 0.324,
+        "maximum": 0.352,
+        "observations": [
+          0.352,
+          0.324,
+          0.335
+        ]
+      },
+      "assemble_fps": {
+        "median": 648.9,
+        "minimum": 605.83,
+        "maximum": 660.57,
+        "observations": [
+          605.83,
+          648.9,
+          660.57
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.648,
+        "minimum": 0.633,
+        "maximum": 0.676,
+        "observations": [
+          0.676,
+          0.648,
+          0.633
+        ]
+      },
+      "flush_fps": {
+        "median": 648.9,
+        "minimum": 605.83,
+        "maximum": 660.57,
+        "observations": [
+          605.83,
+          648.9,
+          660.57
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.262,
+        "minimum": 1.236,
+        "maximum": 1.432,
+        "observations": [
+          1.432,
+          1.262,
+          1.236
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.74,
+        "minimum": 94.74,
+        "maximum": 94.74,
+        "observations": [
+          94.74,
+          94.74,
+          94.74
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.117,
+        "minimum": 1.112,
+        "maximum": 1.132,
+        "observations": [
+          1.132,
+          1.117,
+          1.112
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "render-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 641.16,
+        "minimum": 625.28,
+        "maximum": 649.68,
+        "observations": [
+          649.68,
+          641.16,
+          625.28
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 503.68,
+        "minimum": 500.3,
+        "maximum": 504.57,
+        "observations": [
+          504.57,
+          503.68,
+          500.3
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.2,
+        "minimum": 109.7,
+        "maximum": 110.4,
+        "observations": [
+          110.4,
+          109.7,
+          110.2
+        ]
+      },
+      "rss_mb": {
+        "median": 174.1,
+        "minimum": 174.0,
+        "maximum": 174.3,
+        "observations": [
+          174.3,
+          174.1,
+          174.0
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 641.16,
+        "minimum": 625.28,
+        "maximum": 649.68,
+        "observations": [
+          649.68,
+          641.16,
+          625.28
+        ]
+      },
+      "effect_fps": {
+        "median": 641.16,
+        "minimum": 625.16,
+        "maximum": 649.68,
+        "observations": [
+          649.68,
+          641.16,
+          625.16
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.321,
+        "minimum": 0.314,
+        "maximum": 0.331,
+        "observations": [
+          0.331,
+          0.314,
+          0.321
+        ]
+      },
+      "assemble_fps": {
+        "median": 641.16,
+        "minimum": 625.16,
+        "maximum": 649.68,
+        "observations": [
+          649.68,
+          641.16,
+          625.16
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.678,
+        "minimum": 0.653,
+        "maximum": 0.691,
+        "observations": [
+          0.678,
+          0.653,
+          0.691
+        ]
+      },
+      "flush_fps": {
+        "median": 641.16,
+        "minimum": 625.28,
+        "maximum": 649.68,
+        "observations": [
+          649.68,
+          641.16,
+          625.28
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.303,
+        "minimum": 1.248,
+        "maximum": 1.377,
+        "observations": [
+          1.248,
+          1.303,
+          1.377
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.49,
+        "minimum": 94.49,
+        "maximum": 94.61,
+        "observations": [
+          94.49,
+          94.61,
+          94.49
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.113,
+        "minimum": 1.102,
+        "maximum": 1.137,
+        "observations": [
+          1.113,
+          1.137,
+          1.102
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "threaded-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 648.21,
+        "minimum": 647.67,
+        "maximum": 649.8,
+        "observations": [
+          647.67,
+          649.8,
+          648.21
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 49.87,
+        "minimum": 49.75,
+        "maximum": 49.87,
+        "observations": [
+          49.87,
+          49.87,
+          49.75
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.6,
+        "minimum": 110.5,
+        "maximum": 111.0,
+        "observations": [
+          110.5,
+          110.6,
+          111.0
+        ]
+      },
+      "rss_mb": {
+        "median": 176.3,
+        "minimum": 175.8,
+        "maximum": 176.3,
+        "observations": [
+          176.3,
+          175.8,
+          176.3
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 648.21,
+        "minimum": 647.67,
+        "maximum": 649.8,
+        "observations": [
+          647.67,
+          649.8,
+          648.21
+        ]
+      },
+      "effect_fps": {
+        "median": 49.62,
+        "minimum": 49.62,
+        "maximum": 49.74,
+        "observations": [
+          49.62,
+          49.74,
+          49.62
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.356,
+        "minimum": 0.312,
+        "maximum": 0.357,
+        "observations": [
+          0.356,
+          0.312,
+          0.357
+        ]
+      },
+      "assemble_fps": {
+        "median": 648.21,
+        "minimum": 647.67,
+        "maximum": 649.8,
+        "observations": [
+          647.67,
+          649.8,
+          648.21
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.677,
+        "minimum": 0.647,
+        "maximum": 0.69,
+        "observations": [
+          0.69,
+          0.647,
+          0.677
+        ]
+      },
+      "flush_fps": {
+        "median": 648.21,
+        "minimum": 647.67,
+        "maximum": 649.8,
+        "observations": [
+          647.67,
+          649.8,
+          648.21
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.288,
+        "minimum": 1.244,
+        "maximum": 1.319,
+        "observations": [
+          1.288,
+          1.319,
+          1.244
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.61,
+        "minimum": 94.49,
+        "maximum": 94.74,
+        "observations": [
+          94.61,
+          94.74,
+          94.49
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.126,
+        "minimum": 1.124,
+        "maximum": 1.127,
+        "observations": [
+          1.124,
+          1.126,
+          1.127
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "random_flash",
+    "treatment": "threaded-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 361.32,
+        "minimum": 357.93,
+        "maximum": 370.78,
+        "observations": [
+          357.93,
+          370.78,
+          361.32
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 361.07,
+        "minimum": 357.93,
+        "maximum": 370.53,
+        "observations": [
+          357.93,
+          370.53,
+          361.07
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 139.0,
+        "minimum": 138.7,
+        "maximum": 139.1,
+        "observations": [
+          139.1,
+          138.7,
+          139.0
+        ]
+      },
+      "rss_mb": {
+        "median": 183.0,
+        "minimum": 182.4,
+        "maximum": 183.5,
+        "observations": [
+          183.5,
+          182.4,
+          183.0
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 361.32,
+        "minimum": 357.93,
+        "maximum": 370.78,
+        "observations": [
+          357.93,
+          370.78,
+          361.32
+        ]
+      },
+      "effect_fps": {
+        "median": 5310.69,
+        "minimum": 5229.14,
+        "maximum": 5442.17,
+        "observations": [
+          5310.69,
+          5442.17,
+          5229.14
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.236,
+        "minimum": 0.222,
+        "maximum": 0.248,
+        "observations": [
+          0.236,
+          0.222,
+          0.248
+        ]
+      },
+      "assemble_fps": {
+        "median": 361.32,
+        "minimum": 357.93,
+        "maximum": 370.78,
+        "observations": [
+          357.93,
+          370.78,
+          361.32
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 1.083,
+        "minimum": 1.059,
+        "maximum": 1.089,
+        "observations": [
+          1.089,
+          1.059,
+          1.083
+        ]
+      },
+      "flush_fps": {
+        "median": 361.32,
+        "minimum": 357.93,
+        "maximum": 370.78,
+        "observations": [
+          357.93,
+          370.78,
+          361.32
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 2.222,
+        "minimum": 2.163,
+        "maximum": 2.259,
+        "observations": [
+          2.259,
+          2.163,
+          2.222
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 93.61,
+        "minimum": 93.48,
+        "maximum": 93.73,
+        "observations": [
+          93.61,
+          93.48,
+          93.73
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.26,
+        "minimum": 1.247,
+        "maximum": 1.275,
+        "observations": [
+          1.275,
+          1.247,
+          1.26
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 645.21,
+        "minimum": 634.85,
+        "maximum": 654.11,
+        "observations": [
+          654.11,
+          645.21,
+          634.85
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.0,
+        "minimum": 109.9,
+        "maximum": 110.2,
+        "observations": [
+          110.0,
+          109.9,
+          110.2
+        ]
+      },
+      "rss_mb": {
+        "median": 172.2,
+        "minimum": 172.0,
+        "maximum": 172.3,
+        "observations": [
+          172.2,
+          172.3,
+          172.0
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 645.21,
+        "minimum": 634.85,
+        "maximum": 654.11,
+        "observations": [
+          654.11,
+          645.21,
+          634.85
+        ]
+      },
+      "effect_fps": {
+        "median": 9.87,
+        "minimum": 9.87,
+        "maximum": 10.0,
+        "observations": [
+          10.0,
+          9.87,
+          9.87
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.166,
+        "minimum": 0.154,
+        "maximum": 0.169,
+        "observations": [
+          0.169,
+          0.154,
+          0.166
+        ]
+      },
+      "assemble_fps": {
+        "median": 645.21,
+        "minimum": 634.73,
+        "maximum": 654.11,
+        "observations": [
+          654.11,
+          645.21,
+          634.73
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.641,
+        "minimum": 0.636,
+        "maximum": 0.666,
+        "observations": [
+          0.641,
+          0.636,
+          0.666
+        ]
+      },
+      "flush_fps": {
+        "median": 645.21,
+        "minimum": 634.85,
+        "maximum": 654.11,
+        "observations": [
+          654.11,
+          645.21,
+          634.85
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.282,
+        "minimum": 1.274,
+        "maximum": 1.299,
+        "observations": [
+          1.282,
+          1.274,
+          1.299
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.49,
+        "minimum": 94.37,
+        "maximum": 94.5,
+        "observations": [
+          94.5,
+          94.49,
+          94.37
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.137,
+        "minimum": 1.112,
+        "maximum": 1.195,
+        "observations": [
+          1.112,
+          1.137,
+          1.195
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "render-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 615.89,
+        "minimum": 588.52,
+        "maximum": 625.1,
+        "observations": [
+          625.1,
+          588.52,
+          615.89
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 109.6,
+        "minimum": 109.3,
+        "maximum": 109.6,
+        "observations": [
+          109.3,
+          109.6,
+          109.6
+        ]
+      },
+      "rss_mb": {
+        "median": 173.0,
+        "minimum": 172.6,
+        "maximum": 173.1,
+        "observations": [
+          173.1,
+          172.6,
+          173.0
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 615.89,
+        "minimum": 588.52,
+        "maximum": 625.1,
+        "observations": [
+          625.1,
+          588.52,
+          615.89
+        ]
+      },
+      "effect_fps": {
+        "median": 615.89,
+        "minimum": 588.52,
+        "maximum": 625.1,
+        "observations": [
+          625.1,
+          588.52,
+          615.89
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.158,
+        "minimum": 0.143,
+        "maximum": 0.168,
+        "observations": [
+          0.143,
+          0.158,
+          0.168
+        ]
+      },
+      "assemble_fps": {
+        "median": 615.89,
+        "minimum": 588.52,
+        "maximum": 625.1,
+        "observations": [
+          625.1,
+          588.52,
+          615.89
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.818,
+        "minimum": 0.771,
+        "maximum": 0.825,
+        "observations": [
+          0.771,
+          0.818,
+          0.825
+        ]
+      },
+      "flush_fps": {
+        "median": 615.89,
+        "minimum": 588.52,
+        "maximum": 625.1,
+        "observations": [
+          625.1,
+          588.52,
+          615.89
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.239,
+        "minimum": 1.224,
+        "maximum": 1.33,
+        "observations": [
+          1.239,
+          1.33,
+          1.224
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.23,
+        "minimum": 94.11,
+        "maximum": 94.35,
+        "observations": [
+          94.35,
+          94.11,
+          94.23
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.241,
+        "minimum": 1.212,
+        "maximum": 1.259,
+        "observations": [
+          1.212,
+          1.241,
+          1.259
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "threaded-cadence",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 640.01,
+        "minimum": 617.0,
+        "maximum": 641.69,
+        "observations": [
+          641.69,
+          640.01,
+          617.0
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 110.5,
+        "minimum": 109.6,
+        "maximum": 110.5,
+        "observations": [
+          110.5,
+          110.5,
+          109.6
+        ]
+      },
+      "rss_mb": {
+        "median": 173.6,
+        "minimum": 173.5,
+        "maximum": 173.7,
+        "observations": [
+          173.5,
+          173.7,
+          173.6
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 640.01,
+        "minimum": 617.0,
+        "maximum": 641.69,
+        "observations": [
+          641.69,
+          640.01,
+          617.0
+        ]
+      },
+      "effect_fps": {
+        "median": 10.0,
+        "minimum": 10.0,
+        "maximum": 10.0,
+        "observations": [
+          10.0,
+          10.0,
+          10.0
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.166,
+        "minimum": 0.159,
+        "maximum": 0.255,
+        "observations": [
+          0.255,
+          0.166,
+          0.159
+        ]
+      },
+      "assemble_fps": {
+        "median": 640.01,
+        "minimum": 616.87,
+        "maximum": 641.57,
+        "observations": [
+          641.57,
+          640.01,
+          616.87
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 0.663,
+        "minimum": 0.639,
+        "maximum": 0.67,
+        "observations": [
+          0.67,
+          0.663,
+          0.639
+        ]
+      },
+      "flush_fps": {
+        "median": 640.01,
+        "minimum": 616.87,
+        "maximum": 641.57,
+        "observations": [
+          641.57,
+          640.01,
+          616.87
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 1.331,
+        "minimum": 1.322,
+        "maximum": 1.437,
+        "observations": [
+          1.322,
+          1.331,
+          1.437
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 94.61,
+        "minimum": 94.49,
+        "maximum": 94.62,
+        "observations": [
+          94.49,
+          94.61,
+          94.62
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.135,
+        "minimum": 1.124,
+        "maximum": 1.141,
+        "observations": [
+          1.141,
+          1.124,
+          1.135
+        ]
+      }
+    }
+  },
+  {
+    "suite": "temporal",
+    "workload": "singleColor",
+    "treatment": "threaded-max",
+    "metrics": {
+      "ddp_complete_fps": {
+        "median": 119.3,
+        "minimum": 118.02,
+        "maximum": 120.87,
+        "observations": [
+          118.02,
+          120.87,
+          119.3
+        ]
+      },
+      "ws_changed_fps": {
+        "median": 0.12,
+        "minimum": 0.12,
+        "maximum": 0.12,
+        "observations": [
+          0.12,
+          0.12,
+          0.12
+        ]
+      },
+      "server_cpu_pct": {
+        "median": 112.6,
+        "minimum": 112.5,
+        "maximum": 112.6,
+        "observations": [
+          112.5,
+          112.6,
+          112.6
+        ]
+      },
+      "rss_mb": {
+        "median": 178.8,
+        "minimum": 178.8,
+        "maximum": 179.2,
+        "observations": [
+          178.8,
+          179.2,
+          178.8
+        ]
+      },
+      "ddp_invalid_packets": {
+        "median": 0,
+        "minimum": 0,
+        "maximum": 0,
+        "observations": [
+          0,
+          0,
+          0
+        ]
+      },
+      "ddp_push_fps": {
+        "median": 119.3,
+        "minimum": 118.02,
+        "maximum": 120.87,
+        "observations": [
+          118.02,
+          120.87,
+          119.3
+        ]
+      },
+      "effect_fps": {
+        "median": 5415.21,
+        "minimum": 5359.75,
+        "maximum": 5477.37,
+        "observations": [
+          5415.21,
+          5477.37,
+          5359.75
+        ]
+      },
+      "effect_p95_ms": {
+        "median": 0.131,
+        "minimum": 0.129,
+        "maximum": 0.134,
+        "observations": [
+          0.129,
+          0.131,
+          0.134
+        ]
+      },
+      "assemble_fps": {
+        "median": 119.3,
+        "minimum": 118.02,
+        "maximum": 120.87,
+        "observations": [
+          118.02,
+          120.87,
+          119.3
+        ]
+      },
+      "assemble_p95_ms": {
+        "median": 2.645,
+        "minimum": 2.545,
+        "maximum": 2.771,
+        "observations": [
+          2.645,
+          2.545,
+          2.771
+        ]
+      },
+      "flush_fps": {
+        "median": 119.3,
+        "minimum": 117.9,
+        "maximum": 120.87,
+        "observations": [
+          117.9,
+          120.87,
+          119.3
+        ]
+      },
+      "flush_p95_ms": {
+        "median": 8.285,
+        "minimum": 7.991,
+        "maximum": 8.298,
+        "observations": [
+          8.285,
+          7.991,
+          8.298
+        ]
+      },
+      "loop_lag_fps": {
+        "median": 92.4,
+        "minimum": 92.31,
+        "maximum": 92.54,
+        "observations": [
+          92.54,
+          92.4,
+          92.31
+        ]
+      },
+      "loop_lag_p95_ms": {
+        "median": 1.541,
+        "minimum": 1.456,
+        "maximum": 1.543,
+        "observations": [
+          1.543,
+          1.541,
+          1.456
+        ]
+      }
+    }
+  }
+]
