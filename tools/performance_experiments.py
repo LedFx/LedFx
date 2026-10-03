@@ -12,6 +12,7 @@ Full raw metrics and environment metadata remain beside each trial.
 
 import argparse
 import json
+import math
 import random
 import statistics
 import subprocess
@@ -26,6 +27,18 @@ TEMPORAL_EFFECTS = (
     "random_flash",
     "gradient",
 )
+DYNAMIC_CASES = {
+    "singleColor-sine": (
+        "singleColor",
+        {"modulate": True, "modulation_effect": "sine"},
+    ),
+    "singleColor-breath": (
+        "singleColor",
+        {"modulate": True, "modulation_effect": "breath"},
+    ),
+    "gradient-roll": ("gradient", {"gradient_roll": 1}),
+    "random_flash-probability": ("random_flash", {"hit_probability_per_sec": 0.5}),
+}
 TREATMENTS = {
     "threaded-max": [],
     "render-max": ["--temporal-render"],
@@ -42,6 +55,11 @@ def design(args):
         if args.suite in ("all", "temporal"):
             for effect in TEMPORAL_EFFECTS:
                 blocks.append(("temporal", effect, list(TREATMENTS)))
+        if args.suite == "dynamic":
+            for workload in DYNAMIC_CASES:
+                blocks.append(
+                    ("temporal", workload, ["threaded-cadence", "render-cadence"])
+                )
         if args.suite in ("all", "e131"):
             for pattern in ("dense", "sparse", "static"):
                 for mode in ("encode", "loopback"):
@@ -59,6 +77,9 @@ def design(args):
                         "seed": args.seed + repeat,
                     }
                 )
+    for trial in trials:
+        if trial["workload"] in DYNAMIC_CASES:
+            trial["effect"], trial["config"] = DYNAMIC_CASES[trial["workload"]]
     return trials
 
 
@@ -81,7 +102,9 @@ def command(args, trial, path):
             "tools/pixel_bench.py",
             *common,
             "--effects",
-            trial["workload"],
+            trial.get("effect", trial["workload"]),
+            "--effect-config",
+            json.dumps(trial.get("config", {})),
             "--streams",
             "full",
             "--loops",
@@ -140,7 +163,7 @@ def summarize(trials):
             "application_MB_s",
             "flush_mean_ms",
         ):
-            if name in row:
+            if row.get(name) is not None:
                 metrics.setdefault(name, []).append(row[name])
         for name in ("effect", "assemble", "flush", "loop_lag"):
             if name in row:
@@ -233,7 +256,7 @@ def validate_observation(trial):
                 "pixels": 200,
                 "random_flash": 50,
                 "gradient": 10,
-            }[trial["workload"]]
+            }[trial.get("effect", trial["workload"])]
             if row["effect"]["fps"] > expected * 1.1 + 2 / row["seconds"]:
                 raise ValueError("Cadence control exceeded its configured tick rate")
     elif row["status"] != "ok":
@@ -248,7 +271,14 @@ def main():
         action="store_true",
         help="Recompute reports from an existing manifest, including relocated artifacts",
     )
-    parser.add_argument("--suite", choices=("all", "temporal", "e131"), default="all")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume unfinished manifest trials; completed trials are retained",
+    )
+    parser.add_argument(
+        "--suite", choices=("all", "temporal", "e131", "dynamic"), default="all"
+    )
     parser.add_argument("--pixels", type=int, default=50000)
     parser.add_argument("--seconds", type=float, default=8)
     parser.add_argument("--warmup", type=float, default=2)
@@ -256,7 +286,14 @@ def main():
     parser.add_argument("--seed", type=int, default=2058)
     parser.add_argument("--bind", default="127.0.0.2")
     args = parser.parse_args()
-    if args.seconds <= 0 or args.warmup < 0 or args.repeats < 1 or args.pixels < 1:
+    if (
+        not math.isfinite(args.seconds)
+        or not math.isfinite(args.warmup)
+        or args.seconds <= 0
+        or args.warmup < 0
+        or args.repeats < 1
+        or args.pixels < 1
+    ):
         parser.error("Require positive seconds/repeats/pixels and nonnegative warmup")
     args.output.mkdir(parents=True, exist_ok=True)
     manifest = args.output / "manifest.json"
@@ -271,18 +308,28 @@ def main():
             json.dumps(paired_comparisons(trials), indent=2)
         )
         return
-    if manifest.exists():
-        parser.error("Output already contains a manifest; choose a new directory")
-    trials = design(args)
+    if args.resume:
+        trials = json.loads(manifest.read_text())
+        for trial in trials:
+            if "returncode" not in trial and Path(trial["output"]).exists():
+                parser.error(
+                    "Unfinished trial has partial output; preserve it and choose a new output directory"
+                )
+    else:
+        if manifest.exists():
+            parser.error("Output already contains a manifest; choose a new directory")
+        trials = design(args)
+        for index, trial in enumerate(trials):
+            path = (
+                args.output
+                / f"{index:03}-{trial['suite']}-{trial['workload']}-{trial['treatment']}.jsonl"
+            )
+            trial["output"] = str(path.resolve())
+            trial["command"] = command(args, trial, path)
+        manifest.write_text(json.dumps(trials, indent=2))
     for index, trial in enumerate(trials):
-        path = (
-            args.output
-            / f"{index:03}-{trial['suite']}-{trial['workload']}-{trial['treatment']}.jsonl"
-        )
-        trial["output"] = str(path.resolve())
-        trial["command"] = command(args, trial, path)
-    manifest.write_text(json.dumps(trials, indent=2))
-    for index, trial in enumerate(trials):
+        if "returncode" in trial:
+            continue
         print(
             f"{index + 1}/{len(trials)} {trial['suite']} {trial['workload']} {trial['treatment']}",
             flush=True,

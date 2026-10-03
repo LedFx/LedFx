@@ -130,3 +130,32 @@ def test_real_effect_activation_render_shutdown_and_reactivation(
         if effect._active:
             effect.deactivate()
         restore()
+
+
+def test_fade_cadence_preserves_phase_and_rainbow_exposes_quantization() -> None:
+    """A 500 Hz renderer must not advance Fade 500 times/s; ticks still quantize."""
+    from ledfx.effects.fade import FadeEffect
+    from ledfx.effects.rainbow import RainbowEffect
+
+    for cls, speed in ((FadeEffect, 0.5), (RainbowEffect, 6)):
+        clock = [0.0]
+        restore = install_temporal_render_prototype(
+            cls, cadence=True, clock=lambda: clock[0]
+        )
+        effect = cls(
+            SimpleNamespace(), cls.config_model().model_validate({"speed": speed})
+        )
+        try:
+            effect.activate(SimpleNamespace(id="benchmark", effective_pixel_count=32))
+            for frame in range(1000):
+                clock[0] = frame / 500
+                effect.render()
+            if isinstance(effect, FadeEffect):
+                assert effect.idx == pytest.approx(10 * 0.0015)
+            else:
+                # 1/60-second ticks round to the next 2ms render opportunity:
+                # about 112 updates in two seconds, not the ideal 120.
+                assert effect._hue == pytest.approx(0.1 + 112 * 0.01)
+        finally:
+            effect.deactivate()
+            restore()
