@@ -4,8 +4,9 @@
 # Merging the release PR bumps pyproject.toml, uv.lock and ledfx/consts.py,
 # writes CHANGELOG.md, and (on the push that follows) creates the v<version>
 # tag and a DRAFT GitHub release holding the changelog. The tag triggers
-# ci.yml's existing publish jobs behind the production approval; its
-# github-release job uploads the frozen builds to that draft and publishes it.
+# ci.yml's publish-release job behind the production approval. It verifies and
+# promotes tested artifacts, then publishes the draft last using the App token.
+# release-notifications.yml responds independently to release:published.
 # Nothing here publishes anything, and the update checker never sees a
 # release without assets.
 name: release-please

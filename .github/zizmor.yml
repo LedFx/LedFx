@@ -4,8 +4,7 @@
 # findings below `high` are advisory, not gate failures.
 #
 # Scope notes:
-# - superfluous-actions: the maintainers' choice of release action; zizmor's
-#   suggestion to replace it with `gh release` is not this repo's bar.
+# - superfluous-actions: advisory action simplifications are not the lint gate.
 # - dangerous-triggers/lint-notify.yml: that workflow is the reviewed, safe
 #   shape of workflow_run — the default-branch version always executes, it
 #   never checks out or executes PR code, and PR-controlled values only ever
@@ -33,8 +32,13 @@ rules:
     #   pr-title.yml mints the same comment-only token.
     # - release-please.yml: contents/PR/label token for the release PR, tag
     #   and draft release only; publishing stays behind production in ci.yml.
+    # - release-notifications.yml: published releases and default-branch manual
+    #   retries only, with code checked out from the default branch. It needs
+    #   no second production approval. App contents-write persists delivery
+    #   checkpoints; the sender cannot republish a release or run tag code.
     ignore:
       - ci.yml
       - lint-notify.yml
       - pr-title.yml
       - release-please.yml
+      - release-notifications.yml
