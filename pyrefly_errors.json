@@ -2682,13 +2682,6 @@
       "severity": "error"
     },
     {
-      "column": 61,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_hue_request` is missing an annotation for parameter `ssl`",
-      "severity": "error"
-    },
-    {
       "column": 48,
       "path": "ledfx/devices/hue.py",
       "name": "implicit-any-parameter",
