@@ -174,7 +174,13 @@ def test_missing_secrets_fail_before_external_requests():
         urlopen.assert_not_called()
 
 
-@pytest.mark.parametrize("changelog", ["* Changes.\n" * 900, "x" * 9000, "✨" * 9000])
+@pytest.mark.parametrize(
+    "changelog",
+    ["* Changes.\n" * 900, "x" * 9000, "✨" * 9000],
+    # Pytest puts the test ID in PYTEST_CURRENT_TEST. Escaping the full Unicode
+    # input exceeds Windows' 32,767-character environment variable limit.
+    ids=["multiline", "long-line", "unicode"],
+)
 def test_full_changelog_is_preserved_in_one_named_thread(changelog: str):
     with patch.object(announce_release, "urlopen") as urlopen:
         # Each request gets a fresh stream, including the newly created thread ID.
