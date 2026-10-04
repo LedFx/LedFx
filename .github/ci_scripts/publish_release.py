@@ -15,14 +15,75 @@ import sys
 import tarfile
 import time
 import zipfile
+from collections.abc import Mapping, Sequence
 from email.parser import Parser
 from pathlib import Path
+from typing import Literal, NotRequired, TypedDict, cast, overload
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 STABLE = re.compile(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\Z")
 VERSION = re.compile(r"v(\d+\.\d+\.\d+(?:[ab]\d+|rc\d+|-(?:alpha|beta|rc)\.\d+)?)\Z")
 DIGEST = re.compile(r"sha256:[0-9a-f]{64}\Z")
+
+
+Hashes = dict[str, str]
+ImageDigests = dict[str, dict[str, str]]
+
+
+class Asset(TypedDict):
+    id: int
+    name: str
+    digest: NotRequired[str | None]
+
+
+class Release(TypedDict):
+    id: int
+    tag_name: str
+    draft: bool
+    prerelease: bool
+    body: str
+    assets: list[Asset]
+
+
+class Distribution(TypedDict):
+    filename: str
+    digests: dict[str, str]
+
+
+class Platform(TypedDict):
+    os: str
+    architecture: str
+
+
+class Descriptor(TypedDict):
+    digest: str
+    platform: Platform
+
+
+class Manifest(TypedDict, total=False):
+    digest: str
+    os: str
+    architecture: str
+    manifests: list[Descriptor]
+
+
+class LocalInputs(TypedDict):
+    assets: Hashes
+    dist: Hashes
+    sources: ImageDigests
+
+
+class Snapshot(LocalInputs):
+    repository: str
+    tag: str
+    sha: str
+    release_id: int
+    body_sha256: str
+    prerelease: bool
+    already_published: bool
+    latest: bool
+    children: ImageDigests
 
 
 class PublicationError(RuntimeError):
@@ -91,7 +152,9 @@ def fetch_pypi(version: str):
         raise PublicationError("PyPI request failed or timed out") from None
 
 
-def should_promote_latest(tag: str, prerelease: bool, releases: list[dict]) -> bool:
+def should_promote_latest(
+    tag: str, prerelease: bool, releases: Sequence[Mapping[str, object]]
+) -> bool:
     match = STABLE.fullmatch(tag)
     if prerelease or not match:
         return False
@@ -99,7 +162,7 @@ def should_promote_latest(tag: str, prerelease: bool, releases: list[dict]) -> b
     for release in releases:
         if release.get("draft") or release.get("prerelease"):
             continue
-        other = STABLE.fullmatch(release.get("tag_name", ""))
+        other = STABLE.fullmatch(cast(str, release.get("tag_name", "")))
         if other and tuple(map(int, other.groups())) > version:
             return False
     return True
@@ -126,7 +189,7 @@ class Publisher:
         dist: Path,
         docker_digests: Path,
         snapshot: Path,
-        environment=None,
+        environment: Mapping[str, str] | None = None,
     ):
         environment = os.environ if environment is None else environment
         required = (
@@ -166,7 +229,7 @@ class Publisher:
             "GitHub",
         )
 
-    def release(self):
+    def release(self) -> Release:
         release = self.api(f"releases/tags/{self.tag}")
         if not isinstance(release, dict) or release.get("tag_name") != self.tag:
             raise PublicationError("GitHub release tag does not match")
@@ -188,7 +251,7 @@ class Publisher:
                     raise PublicationError(
                         "Remote release tag source SHA does not match"
                     )
-                return release
+                return cast(Release, release)
             if obj.get("type") != "tag" or not re.fullmatch(
                 r"[0-9a-f]{40}", obj.get("sha", "")
             ):
@@ -196,7 +259,7 @@ class Publisher:
             ref = self.api(f"git/tags/{obj['sha']}")
         raise PublicationError("Remote release tag does not resolve to a commit")
 
-    def local_inputs(self):
+    def local_inputs(self) -> LocalInputs:
         assets = directory_files(self.assets_dir)
         expected = {
             f"LedFx-{self.version}-{suffix}"
@@ -272,7 +335,7 @@ class Publisher:
         files = directory_files(self.docker_dir)
         if set(files) != {"docker-amd64.txt", "docker-arm64.txt"}:
             raise PublicationError("Docker inputs must contain exactly amd64 and arm64")
-        sources = {image: {} for image in self.images}
+        sources: ImageDigests = {image: {} for image in self.images}
         for arch in ("amd64", "arm64"):
             refs = files[f"docker-{arch}.txt"].read_text().split()
             if len(refs) != 2:
@@ -299,8 +362,10 @@ class Publisher:
             "sources": sources,
         }
 
-    def verify_assets(self, release, hashes, complete=False):
-        remote = {}
+    def verify_assets(
+        self, release: Release, hashes: Hashes, complete: bool = False
+    ) -> list[str]:
+        remote: dict[str, Asset] = {}
         for asset in release["assets"]:
             name = asset.get("name")
             if name in remote or name not in hashes:
@@ -333,10 +398,12 @@ class Publisher:
             raise PublicationError("GitHub release archives are incomplete")
         return sorted(missing)
 
-    def verify_pypi(self, hashes, complete=False):
+    def verify_pypi(self, hashes: Hashes, complete: bool = False) -> bool:
         for attempt in range(3 if complete else 1):
             response = fetch_pypi(self.pypi_version)
-            files = [] if response is None else response.get("urls")
+            files: list[Distribution] | None = (
+                [] if response is None else response.get("urls")
+            )
             if not isinstance(files, list):
                 raise PublicationError("PyPI returned invalid distribution metadata")
             remote = set()
@@ -359,7 +426,19 @@ class Publisher:
                 time.sleep(2)
         raise PublicationError("PyPI distributions are incomplete")
 
-    def inspect(self, ref, *options, allow_missing=False):
+    @overload
+    def inspect(
+        self, ref: str, *options: str, allow_missing: Literal[False] = False
+    ) -> Manifest: ...
+
+    @overload
+    def inspect(
+        self, ref: str, *options: str, allow_missing: bool
+    ) -> Manifest | None: ...
+
+    def inspect(
+        self, ref: str, *options: str, allow_missing: bool = False
+    ) -> Manifest | None:
         try:
             return decode_json(
                 run_command(
@@ -372,12 +451,12 @@ class Publisher:
                 return None
             raise
 
-    def children(self, manifest):
+    def children(self, manifest: Manifest) -> dict[str, str]:
         if not isinstance(manifest, dict) or not isinstance(
             manifest.get("manifests"), list
         ):
             raise PublicationError("Docker tag must be a multi-architecture manifest")
-        children = {}
+        children: dict[str, str] = {}
         for descriptor in manifest["manifests"]:
             platform = descriptor.get("platform", {})
             if (
@@ -397,8 +476,8 @@ class Publisher:
             children[arch] = digest
         return children
 
-    def source_children(self, sources):
-        expected = {}
+    def source_children(self, sources: ImageDigests) -> ImageDigests:
+        expected: ImageDigests = {}
         for image, refs in sources.items():
             expected[image] = {}
             for arch, ref in refs.items():
@@ -423,7 +502,9 @@ class Publisher:
                 expected[image][arch] = digest
         return expected
 
-    def verify_docker(self, expected, complete=False):
+    def verify_docker(
+        self, expected: ImageDigests, complete: bool = False
+    ) -> list[str]:
         missing = []
         for image, children in expected.items():
             for tag in (self.version, self.sha):
@@ -437,7 +518,7 @@ class Publisher:
                     )
         return missing
 
-    def latest(self, release):
+    def latest(self, release: Release) -> bool:
         pages = self.api("releases", "--paginate", "--slurp")
         if not isinstance(pages, list) or any(
             not isinstance(page, list) for page in pages
@@ -449,7 +530,9 @@ class Publisher:
             [release for page in pages for release in page],
         )
 
-    def snapshot(self, release, local, children):
+    def snapshot(
+        self, release: Release, local: LocalInputs, children: ImageDigests
+    ) -> Snapshot:
         return {
             "repository": self.repo,
             "tag": self.tag,
@@ -459,11 +542,13 @@ class Publisher:
             "prerelease": release["prerelease"],
             "already_published": not release["draft"],
             "latest": self.latest(release),
-            **local,
+            "assets": local["assets"],
+            "dist": local["dist"],
+            "sources": local["sources"],
             "children": children,
         }
 
-    def load_snapshot(self):
+    def load_snapshot(self) -> tuple[Snapshot, Release]:
         try:
             snapshot = json.loads(self.snapshot_path.read_text())
         except (OSError, ValueError):
@@ -492,7 +577,7 @@ class Publisher:
             raise PublicationError("Docker sources no longer match snapshot")
         return snapshot, release
 
-    def checked_release(self, snapshot):
+    def checked_release(self, snapshot: Snapshot) -> Release:
         release = self.release()
         identity = {
             "release_id": release["id"],
@@ -507,7 +592,9 @@ class Publisher:
             raise PublicationError("Published release unexpectedly became a draft")
         return release
 
-    def recheck_before_write(self, snapshot, complete_assets=True):
+    def recheck_before_write(
+        self, snapshot: Snapshot, complete_assets: bool = True
+    ) -> Release:
         # Remote inspections/attestations can take minutes. Check the frozen
         # local bytes and release identity again after those reads, immediately
         # before the write batch. GitHub offers no atomic metadata compare/write.
@@ -522,7 +609,7 @@ class Publisher:
             )
         return self.checked_release(snapshot)
 
-    def prepare(self):
+    def prepare(self) -> dict[str, bool]:
         local = self.local_inputs()
         release = self.release()
         missing_assets = self.verify_assets(release, local["assets"])
@@ -574,7 +661,7 @@ class Publisher:
             "already_published": not release["draft"],
         }
 
-    def manifest_digests(self, expected):
+    def manifest_digests(self, expected: ImageDigests) -> dict[str, str]:
         digests = {}
         for image in self.images:
             descriptor = self.inspect(
@@ -596,7 +683,7 @@ class Publisher:
             digests[image] = digest
         return digests
 
-    def promote(self):
+    def promote(self) -> dict[str, str]:
         snapshot, release = self.load_snapshot()
         self.verify_assets(release, snapshot["assets"], complete=True)
         self.verify_pypi(snapshot["dist"], complete=True)
@@ -664,7 +751,7 @@ class Publisher:
             "dockerhub_digest": digests[self.images[1]],
         }
 
-    def verify_attestations(self, snapshot, digests):
+    def verify_attestations(self, snapshot: Snapshot, digests: dict[str, str]) -> None:
         targets = [str(self.assets_dir / name) for name in snapshot["assets"]]
         targets += [str(self.dist_dir / name) for name in snapshot["dist"]]
         targets += [
@@ -690,7 +777,7 @@ class Publisher:
                 ]
             )
 
-    def finalize(self):
+    def finalize(self) -> dict[str, str]:
         snapshot, release = self.load_snapshot()
         self.verify_assets(release, snapshot["assets"], complete=True)
         self.verify_pypi(snapshot["dist"], complete=True)
@@ -727,7 +814,7 @@ class Publisher:
         return {}
 
 
-def main(argv=None):
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=("prepare", "promote", "finalize"))
     for flag in ("assets", "dist", "docker-digests", "snapshot"):
