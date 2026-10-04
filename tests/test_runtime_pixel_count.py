@@ -31,8 +31,8 @@ def test_e131_pixel_count_change_resizes_channels() -> None:
         device.activate()
         device.update_config({"pixel_count": 200})
 
-        assert device.config["channel_count"] == 600  # noqa: B009
-        assert device.config["universe_end"] == 2  # noqa: B009
+        assert device.config["channel_count"] == 600
+        assert device.config["universe_end"] == 2
         # The sender restarts so the second universe is activated.
         assert sender.call_count == 2
         sender.return_value.activate_output.assert_called_with(2)
@@ -117,5 +117,5 @@ def test_e131_layout_ending_on_a_universe_boundary_sends_every_channel() -> None
         device.activate()
         device.flush(np.full((170, 3), 255))
 
-    assert device.config["universe_end"] == 2  # noqa: B009
+    assert device.config["universe_end"] == 2
     assert universes[2].dmx_data[0] == 255

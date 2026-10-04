@@ -321,13 +321,13 @@ def test_e131_sender_does_not_need_the_sacn_port() -> None:
     device.device_lock = threading.Lock()
     device._destination = "127.0.0.1"
     device._sacn = None
-    device._config = dict(
-        name="e131",
-        ip_address="127.0.0.1",
-        universe=1,
-        universe_end=1,
-        packet_priority=100,
-    )
+    device._config = {
+        "name": "e131",
+        "ip_address": "127.0.0.1",
+        "universe": 1,
+        "universe_end": 1,
+        "packet_priority": 100,
+    }
     # Another sACN app (or another sender on macOS) holds the sACN port
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as holder:
         holder.bind(("0.0.0.0", DEFAULT_PORT))

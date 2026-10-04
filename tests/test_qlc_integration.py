@@ -13,7 +13,9 @@ from ledfx.integrations.qlc import QLC, QLCWebsocketClient
 def make_qlc() -> QLC:
     ledfx = MagicMock()
     ledfx.loop = asyncio.get_running_loop()
-    return QLC(ledfx, {"name": "QLC", "ip_address": "127.0.0.1"}, False, None)
+    return QLC(
+        ledfx, {"name": "QLC", "ip_address": "127.0.0.1", "port": 9999}, False, None
+    )
 
 
 async def test_client_disconnect_closes_its_session() -> None:

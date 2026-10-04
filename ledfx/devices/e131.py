@@ -77,7 +77,7 @@ class E131Device(NetworkedDevice):
         # channel_offset is 0-based, so span is the index of the last channel
         # and span // universe_size is the universe it lands in.
         span = self._config["channel_offset"] + channel_count - 1
-        universe_end = self._config["universe"] + span // self._config["universe"]_size
+        universe_end = self._config["universe"] + span // self._config["universe_size"]
         self._config.update(channel_count=channel_count, universe_end=universe_end)
 
     def config_updated(self, config: object) -> None:

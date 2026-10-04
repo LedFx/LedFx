@@ -441,7 +441,9 @@ class Device(BaseRegistry):
             if segment[0] != virtual_id:
                 new_segments.append(segment)
             else:
-                if self._pixels is not None and self._ledfx.config.get("flush_on_deactivate", False):
+                if self._pixels is not None and self._ledfx.config.get(
+                    "flush_on_deactivate", False
+                ):
                     # A scalar fill: the buffer may already be resized to a
                     # pixel count the old segment no longer fits.
                     self._pixels[segment[1] : segment[2] + 1] = 0
