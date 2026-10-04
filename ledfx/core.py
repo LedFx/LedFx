@@ -104,20 +104,8 @@ class LedFxCore:
         self.ci_testing = ci_testing
         self.offline_mode = offline_mode
 
-        try:
-            import uvloop
-
-            self.loop = uvloop.new_event_loop()
-            _LOGGER.info("Using uvloop for asyncio loop")
-        except ImportError:
-            try:
-                import winloop
-
-                self.loop = winloop.new_event_loop()
-                _LOGGER.info("Using winloop for asyncio loop")
-            except ImportError:
-                self.loop = asyncio.new_event_loop()
-                _LOGGER.info("Using standard asyncio loop")
+        self.loop = asyncio.new_event_loop()
+        _LOGGER.info("Using standard asyncio loop")
 
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)
@@ -334,6 +322,8 @@ class LedFxCore:
         max_len = self.config.visualisation_maxlen
 
         def handle_visualisation_update(event):
+            if not self.events.has_listeners(Event.VISUALISATION_UPDATE):
+                return
             is_device = event.event_type == Event.DEVICE_UPDATE
             time_now = time.time()
 
@@ -373,7 +363,7 @@ class LedFxCore:
                 pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
 
             if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
-                b_arr = bytes(pixels.astype(np.uint8).flatten())
+                b_arr = pixels.astype(np.uint8, copy=False).tobytes()
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
                 pixels = pixels.astype(np.uint8).T.tolist()

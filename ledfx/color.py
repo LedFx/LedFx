@@ -136,16 +136,24 @@ def hsv_to_rgb(hue: NDArray, saturation: float, value: float) -> NDArray:
     i = i % 6
 
     # Preparing an array for RGB values.
-    rgb = np.zeros((hue.shape[0], 3))
+    rgb = np.empty((hue.shape[0], 3))
 
-    # Assigning the red, green, and blue components based on the section of the
-    # color wheel. 'np.choose' is used to efficiently select values for each pixel.
-    rgb[:, 0] = np.choose(i, [value, q, p, p, t, value], mode="wrap")
-    rgb[:, 1] = np.choose(i, [t, value, value, q, p, p], mode="wrap")
-    rgb[:, 2] = np.choose(i, [p, p, t, value, value, q], mode="wrap")
+    # Select the same sector values without broadcasting six alternatives per
+    # channel through np.choose. This matters for large Rainbow pixel arrays;
+    # keep the arithmetic above unchanged to preserve RGB rounding.
+    rgb[:, 0] = np.where(
+        (i == 0) | (i == 5), value, np.where(i == 1, q, np.where(i == 4, t, p))
+    )
+    rgb[:, 1] = np.where(
+        (i == 1) | (i == 2), value, np.where(i == 3, q, np.where(i == 0, t, p))
+    )
+    rgb[:, 2] = np.where(
+        (i == 3) | (i == 4), value, np.where(i == 5, q, np.where(i == 2, t, p))
+    )
 
     # Scale the RGB values to the 0-255 range
-    return rgb * 255
+    rgb *= 255
+    return rgb
 
 
 def hsv_to_rgb_vect(h, s, v, out=None):

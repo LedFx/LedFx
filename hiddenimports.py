@@ -42,7 +42,6 @@ hiddenimports = [
     "xled.control",
     "aubio",
     "pybase64",
-    "winloop",
     "packaging",
     "packaging.version",
     "netifaces",

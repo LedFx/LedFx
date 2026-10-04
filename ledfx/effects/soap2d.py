@@ -187,6 +187,11 @@ class Soap2D(Twod, GradientEffect):
         """
         H, W, _ = pixels_prev.shape
 
+        # Slicing amortizes Python's per-line overhead on larger matrices.
+        # Keep the indexed path for small matrices and narrow strips.
+        if pixels_prev.shape[axis] >= 128 and H * W >= 16384:
+            return self._smear_axis_sliced(pixels_prev, palette_rgb, amount, axis)
+
         # Pre-compute shift parameters
         sgn = np.sign(amount).astype(np.int32)
         mag = np.abs(amount)
@@ -258,6 +263,47 @@ class Soap2D(Twod, GradientEffect):
                 out[:, :, c] = A * (1.0 - wB[None, :]) + B * wB[None, :]
 
         return out
+
+    @staticmethod
+    def _smear_axis_sliced(
+        pixels_prev: np.ndarray, palette_rgb: np.ndarray, amount: np.ndarray, axis: int
+    ) -> np.ndarray:
+        """Shift whole line slices; only out-of-bounds taps use palette edges."""
+        pixels = np.moveaxis(pixels_prev, axis, 1)
+        palette = np.moveaxis(palette_rgb, axis, 1)
+        lines, length, channels = pixels.shape
+        sign = np.sign(amount).astype(np.int32)
+        magnitude = np.abs(amount)
+        whole = np.floor(magnitude).astype(np.int32)
+        fraction = (magnitude - whole).astype(np.float32)
+        weight_b = fraction * fraction * (3.0 - 2.0 * fraction)
+        weight_a = 1.0 - weight_b
+        output = np.empty(pixels.shape, dtype=np.float32)
+        tap_a = np.empty((length, channels), dtype=np.result_type(pixels, palette))
+        tap_b = np.empty_like(tap_a)
+
+        def fill_tap(
+            target: np.ndarray, row: np.ndarray, edge_palette: np.ndarray, shift: int
+        ) -> None:
+            if shift >= length:
+                target[:] = edge_palette[-1]
+            elif shift <= -length:
+                target[:] = edge_palette[0]
+            elif shift > 0:
+                target[:-shift] = row[shift:]
+                target[-shift:] = edge_palette[-1]
+            elif shift < 0:
+                target[-shift:] = row[:shift]
+                target[:-shift] = edge_palette[0]
+            else:
+                target[:] = row
+
+        for line in range(lines):
+            shift = int(sign[line] * whole[line])
+            fill_tap(tap_a, pixels[line], palette[line], shift)
+            fill_tap(tap_b, pixels[line], palette[line], shift + int(sign[line]))
+            output[line] = tap_a * weight_a[line] + tap_b * weight_b[line]
+        return np.moveaxis(output, 1, axis)
 
     # ---------- render ----------
 
