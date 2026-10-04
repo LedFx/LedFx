@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/LedFx/LedFx/compare/v2.2.0...v2.2.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* backport maintenance repairs for 2.2.1 ([74012f7](https://github.com/LedFx/LedFx/commit/74012f78f0caa3d8bfca9b85532709a61286f71f))
+
 ## [2.2.0](https://github.com/LedFx/LedFx/compare/v2.1.9...v2.2.0) (2026-10-01)
 
 
