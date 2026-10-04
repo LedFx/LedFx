@@ -713,6 +713,22 @@ jobs:
           files: LedFx-*
           fail_on_unmatched_files: true
           generate_release_notes: true
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/ci_scripts
+          path: announcement
+      - name: Announce the release and post its changelog on Discord
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISCORD_ANNOUNCEMENTS_WEBHOOK: ${{ secrets.DISCORD_ANNOUNCEMENTS_WEBHOOK }}
+          DISCORD_RELEASETHREAD_WEBHOOK: ${{ secrets.DISCORD_RELEASETHREAD_WEBHOOK }}
+          SHAUNS_OPENROUTER_KEY: ${{ secrets.SHAUNS_OPENROUTER_KEY }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL || 'openrouter/auto' }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --json body,isDraft,name,tagName,url > "$RUNNER_TEMP/release.json"
+          python3 announcement/.github/ci_scripts/announce_release.py "$RUNNER_TEMP/release.json"
 
   pypi:
     name: Publish to PyPI
