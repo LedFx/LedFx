@@ -388,17 +388,17 @@ class Effect(BaseRegistry):
     def update_config(self, config):
         with self.lock:
             try:
-                validated_config = type(self).schema()(config)
+                # Validate the merged config so coerced values are what we store.
+                validated_config = type(self).schema()(
+                    {**(self._config or {}), **config}
+                )
             except vol.Invalid as err:
                 _LOGGER.warning("Error updating effect %s config: %s", self.NAME, err)
                 return
 
-            prior_config = self._config
-
-            if self._config != {}:
-                self._config = {**prior_config, **config}
-            else:
-                self._config = validated_config
+            # A failing config_updated hook restores this, derived state included.
+            old_state, old_diag = dict(vars(self)), self.logsec.diag
+            self._config = validated_config
 
             bg_color = parse_color(self._config["background_color"])
             # if bg color is black then flag we don't need to run at render time
@@ -424,9 +424,14 @@ class Effect(BaseRegistry):
             # implementation of config updates. If to notify the base class.
             valid_classes = list(type(self).__bases__)
             valid_classes.append(type(self))
-            for base in valid_classes:
-                if base.config_updated != super(base, base).config_updated:
-                    base.config_updated(self, self._config)
+            try:
+                for base in valid_classes:
+                    if "config_updated" in vars(base):  # base's own override
+                        base.config_updated(self, self._config)
+            except Exception:
+                vars(self).update(old_state)
+                self.logsec.diag = old_diag
+                raise
 
             _LOGGER.debug(
                 "Effect %s config updated to %s.", self.NAME, validated_config

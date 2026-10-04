@@ -19,6 +19,9 @@ class WLEDDevice(NetworkedDevice):
     at launch, and lets the user choose a sync mode to use.
     """
 
+    # The settings setup_subdevice copies into the sender.
+    OUTPUT_KEYS = ("sync_mode", "name", "ip_address", "pixel_count", "refresh_rate")
+
     CONFIG_SCHEMA = vol.Schema(
         {
             vol.Optional(
@@ -85,7 +88,9 @@ class WLEDDevice(NetworkedDevice):
         }
 
     def config_updated(self, config):
-        if not isinstance(self.subdevice, self.SYNC_MODES[self._config["sync_mode"]]):
+        # Rebuild only when a setting the subdevice copies changes: rebuilding
+        # deactivates the sender, and E1.31 blanks the LEDs when it stops.
+        if getattr(self, "subdevice", None) is None or self._output_changed():
             self.setup_subdevice()
 
     def setup_subdevice(self):
@@ -100,7 +105,11 @@ class WLEDDevice(NetworkedDevice):
         config["refresh_rate"] = self._config["refresh_rate"]
 
         self.subdevice = device(self._ledfx, config)
+        self._built_settings = self._output_settings()
         self.subdevice._destination = self._destination
+        # A sync_mode change on a live device must not leave the new sender idle.
+        if self._active:
+            self.subdevice.activate()
 
     def activate(self):
         if self.subdevice is None:

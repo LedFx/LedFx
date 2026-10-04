@@ -4,13 +4,14 @@ import asyncio
 # import importlib
 # import pkgutil
 import logging
+from collections.abc import Callable
 from typing import ClassVar
 
 import aiohttp
 import voluptuous as vol
 
 # from ledfx.events import Event
-from ledfx.integrations import Integration
+from ledfx.integrations import Integration, Status
 from ledfx.utils import async_fire_and_forget, resolve_destination
 
 # import time
@@ -61,6 +62,9 @@ class QLC(Integration):
         self._data = []
         self._listeners = []
         self._connect_task = None
+        # Bumped by every connect and disconnect: a connect that resumes after
+        # a newer one started, or after a disconnect, gives up.
+        self._connect_generation = 0
 
         self.restore_from_data(data)
 
@@ -207,47 +211,83 @@ class QLC(Integration):
     async def get_widgets(self):
         """Returns a list of widgets as tuples: [(ID, Type, Name),...]"""
         # First get list of widgets (ID, Name)
-        widgets = []
-        message = "QLC+API|getWidgetsList"
-        response = await self._client.query(message)
-        widgets_list = response.lstrip(f"{message}|").split("|")
+        widgets: list[tuple[str, str, str]] = []
+        client = self._client
+        if client is None:
+            return widgets
+        # query() already strips the "QLC+API|" prefix from responses.
+        response = await client.query("QLC+API|getWidgetsList")
+        widgets_list = response.removeprefix("getWidgetsList|").split("|")
         # Then get the type for each widget (in individual requests bc QLC api be like that)
         for widget_id, widget_name in zip(widgets_list[::2], widgets_list[1::2]):
-            message = "QLC+API|getWidgetType"
-            response = await self._client.query(f"{message}|{widget_id}")
-            widget_type = response.lstrip(f"{message}|")
+            if self._client is not client:  # disconnected meanwhile
+                widgets.clear()
+                break
+            response = await client.query(f"QLC+API|getWidgetType|{widget_id}")
+            widget_type = response.removeprefix("getWidgetType|")
             if widget_type in self._widget_types:
                 widgets.append((widget_id, widget_type, widget_name))
         return widgets
 
     async def _send_payload(self, qlc_payload):
         """Sends payload of {id:value, ...} pairs to QLC"""
+        client = self._client
         for widget_id, value in qlc_payload.items():
-            await self._client.send(f"{int(widget_id)}|{value}")
+            if client is None or self._client is not client:
+                return
+            await client.send(f"{int(widget_id)}|{value}")
 
     async def connect(self):
-        resolved_ip = await resolve_destination(
-            self._ledfx.loop,
-            self._ledfx.thread_executor,
-            self._config["ip_address"],
-        )
+        self._connect_generation += 1
+        generation = self._connect_generation
+        try:
+            resolved_ip = await resolve_destination(
+                self._ledfx.loop,
+                self._ledfx.thread_executor,
+                self._config["ip_address"],
+            )
+        except ValueError as e:
+            # A host that does not resolve is a config error: report it and
+            # stop, rather than staying on "connecting".
+            # A newer attempt may have connected meanwhile; leave its status.
+            if generation == self._connect_generation:
+                _LOGGER.warning("QLC+ %s: %s", self.name, e)
+                await super().disconnect()
+            return
+        if generation != self._connect_generation:
+            return
         domain = f"{resolved_ip}:{self._config['port']}"
         url = f"http://{domain}/qlcplusWS"
         if self._client is None:
             self._client = QLCWebsocketClient(url, domain)
         self._cancel_connect()
         self._connect_task = asyncio.create_task(self._client.connect())
-        if await self._connect_task:
+        if await self._connect_task and generation == self._connect_generation:
             await super().connect(f"Connected to QLC+ websocket at {domain}")
 
     async def disconnect(self):
+        self._connect_generation += 1
         self._cancel_connect()
-        if self._client is not None:
-            # fire and forget bc for some reason close() never returns... -o-
-            async_fire_and_forget(self._client.disconnect(), loop=self._ledfx.loop)
+        # Swapped out before the await, so in-flight operations see it gone.
+        client, self._client = self._client, None
+        if client is not None:
+            # Bounded by the websocket close timeout; the session is closed
+            # by the time this returns, so delete and update can't leak it.
+            await client.disconnect()
             await super().disconnect("Disconnected from QLC+ websocket")
         else:
             await super().disconnect()
+
+    async def deactivate(self):
+        # The base class fires disconnect() and forgets it, but an update
+        # destroys this integration straight after deactivating it.
+        _LOGGER.info("Deactivating %s integration", self.name)
+        self._active = False
+        self._status = Status.DISCONNECTING
+        await self.disconnect()
+
+    async def on_delete(self):
+        await self.disconnect()
 
     def _cancel_connect(self):
         if self._connect_task is not None:
@@ -270,15 +310,25 @@ class QLCWebsocketClient:
                 self.websocket = await self.session.ws_connect(self.url)
                 # self.websocket = await self.ws_connect(self.url)
                 return True
-            except aiohttp.client_exceptions.ClientConnectorError:
-                _LOGGER.info("Connection to %s failed. Retrying in 5s...", self.domain)
+            except aiohttp.ClientError as e:
+                _LOGGER.info(
+                    "Connection to %s failed (%s). Retrying in 5s...", self.domain, e
+                )
                 await asyncio.sleep(5)
             except asyncio.CancelledError:
                 return False
 
     async def disconnect(self):
-        if self.websocket is not None:
-            await self.websocket.close()
+        try:
+            if self.websocket is not None:
+                # close() can wait on the transport indefinitely; the session
+                # must be closed either way.
+                async with asyncio.timeout(5):
+                    await self.websocket.close()
+        except TimeoutError:
+            _LOGGER.warning("Timed out closing the QLC+ websocket at %s", self.domain)
+        finally:
+            await self.session.close()
 
     async def begin(self, callback):
         """Connect and indefinitely read from websocket, returning messages to callback func"""
@@ -289,7 +339,9 @@ class QLCWebsocketClient:
         """Send a message, and return the response"""
         await self.send(message)
         result = await self.receive()
-        return result.lstrip("QLC+API|")
+        if result is None:
+            return ""
+        return result.removeprefix("QLC+API|")
 
     async def send(self, message):
         """Send a message to the WebSocket."""
@@ -309,18 +361,21 @@ class QLCWebsocketClient:
 
         return (await self.websocket.receive()).data
 
-    async def read(self, callback):
+    async def read(self, callback: Callable[[aiohttp.WSMessage], None]) -> None:
         """Read messages from the WebSocket."""
-        if self.websocket is None:
+        websocket = self.websocket
+        if websocket is None:
             _LOGGER.error("Websocket not yet established")
             return
 
-        while await self.websocket.receive():
-            message = await self.receive()
+        while True:
+            message = await websocket.receive()
             if message.type == aiohttp.WSMsgType.TEXT:
-                self.callback(message)
-            elif (
-                message.type == aiohttp.WSMsgType.CLOSED
-                or message.type == aiohttp.WSMsgType.ERROR
+                callback(message)
+            elif message.type in (
+                aiohttp.WSMsgType.CLOSE,
+                aiohttp.WSMsgType.CLOSING,
+                aiohttp.WSMsgType.CLOSED,
+                aiohttp.WSMsgType.ERROR,
             ):
                 break

@@ -1,9 +1,9 @@
 import os
-import shutil
 import sys
+import tempfile
 import time
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -11,7 +11,13 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from tests.test_utilities.consts import SERVER_PATH
+# Config dir of the live LedFx; its ledfx.log and ledfx-stdout.log land here.
+# CI sets LEDFX_TEST_CONFIG_DIR so it can upload them. Otherwise each pytest
+# process gets its own dir, so a second run can't delete the first one's config.
+# Named, not created, here: pytest imports this module twice (it matches test_*.py).
+TEST_CONFIG_DIR = os.environ.get("LEDFX_TEST_CONFIG_DIR") or os.path.join(
+    tempfile.gettempdir(), f"ledfx-test-{os.getpid()}"
+)
 
 
 @dataclass
@@ -34,9 +40,9 @@ class APITestCase:
     method: Literal["GET", "POST", "PUT", "DELETE"]
     api_endpoint: str
     expected_return_code: int
-    payload_to_send: dict[str, Any] = None
+    payload_to_send: dict[str, object] | None = None
     expected_response_keys: list[str] = None
-    expected_response_values: list[dict[str, Any]] = None
+    expected_response_values: list[dict[str, object]] | None = None
     sleep_after_test: float = 0
 
 
@@ -119,120 +125,6 @@ class HTTPSession:
         except Exception as e:  # noqa: BLE001
             pytest.fail(f"An error occurred while sending the API request: {e!s}")
         return response
-
-
-class EnvironmentCleanup:
-    @staticmethod
-    def shutdown_ledfx():
-        """
-        Shuts down the LedFx server by sending a POST request to the power endpoint
-        and waits for the server to stop responding.
-
-        Returns:
-            None
-        """
-        _ = requests.post(f"http://{SERVER_PATH}/api/power", json={})
-        while True:
-            try:
-                response = requests.get(f"http://{SERVER_PATH}/api/info", timeout=1)
-                if response.status_code != 200:
-                    break
-                time.sleep(0.5)
-            except requests.exceptions.ConnectionError:
-                break
-        time.sleep(1)
-
-    @staticmethod
-    def cleanup_test_config_folder():
-        """
-        Cleans up the test configuration folder by removing it if it exists.
-
-        This function checks if the 'debug_config' folder exists and attempts to remove it.
-        If the folder cannot be removed, it waits for a short period of time and retries.
-        The function will make up to 10 attempts before giving up.
-
-        The delay -> retry is used as LedFx can take a bit of time to shut down and release the
-
-        Critical files like config.json are forcefully removed even if the directory
-        removal fails, to prevent test state pollution.
-
-        Raises:
-            Any exception that occurs during the removal of the folder.
-
-        """
-        current_dir = os.getcwd()
-        ci_test_dir = os.path.join(current_dir, "debug_config")
-
-        # If the directory doesn't exist, return immediately
-        if not os.path.exists(ci_test_dir):
-            return
-
-        # First, forcefully remove config.json which accumulates test state
-        # and causes ID collisions in subsequent test runs
-        config_file = os.path.join(ci_test_dir, "config.json")
-        if os.path.exists(config_file):
-            try:
-                os.remove(config_file)
-            except Exception:  # noqa: BLE001
-                # Try multiple times for Windows file locking
-                for retry in range(5):
-                    time.sleep(0.1)
-                    try:
-                        os.remove(config_file)
-                        break
-                    except Exception:  # noqa: BLE001, S110
-                        pass
-
-        # Then attempt to remove the entire directory
-        for idx in range(10):
-            try:
-                shutil.rmtree(ci_test_dir)
-                break
-            except FileNotFoundError:
-                # Directory or files were already removed - this is fine
-                break
-            except Exception:  # noqa: BLE001
-                # Only retry on other exceptions (e.g., permission errors)
-                time.sleep(idx / 10)
-        else:
-            # If still exists after retries, just warn - don't block tests
-            if os.path.exists(ci_test_dir):
-                import warnings
-
-                warnings.warn(
-                    f"Unable to fully remove test config folder: {ci_test_dir}"
-                )
-            # If directory is gone, we succeeded despite the exception
-            return
-
-    @staticmethod
-    def ledfx_is_alive():
-        """
-        Checks to see if LedFx is running by sending a GET request to the schema endpoint.
-
-        Returns:
-            bool: True if LedFx is running, False otherwise.
-        """
-        try:
-            response = requests.get(f"http://{SERVER_PATH}/api/info", timeout=1)
-            if response.status_code == 200:
-                # LedFx has returned a response, so it is running, but likely still hydrating the schema
-                # We will wait until it is fully hydrated
-                while True:
-                    old_schema = requests.get(
-                        f"http://{SERVER_PATH}/api/schema", timeout=1
-                    )
-                    time.sleep(0.1)
-                    new_schema = requests.get(
-                        f"http://{SERVER_PATH}/api/schema", timeout=1
-                    )
-                    if old_schema.json() == new_schema.json():
-                        break
-                time.sleep(2)
-                return True
-        except requests.exceptions.ConnectionError:
-            pass
-        return False
 
 
 class SystemInfo:

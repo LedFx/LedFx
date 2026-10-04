@@ -12,6 +12,8 @@ from packaging.version import parse as parse_version
 
 from ledfx.consts import CONFIGURATION_VERSION
 
+_LOGGER = logging.getLogger(__name__)
+
 CONFIG_DIRECTORY = ".ledfx"
 CONFIG_FILE_NAME = "config.json"
 PRESETS_FILE_NAME = "presets.json"
@@ -712,22 +714,22 @@ def migrate_config(old_config):
                     effect.get("type", None),
                     effect.get("config", None),
                 )
-                if effect_id:
-                    new_effect_id = get_matching_effect_id(effect_id)
-                    if not new_effect_id:
-                        _LOGGER.warning(
-                            "Could not match effect id %s to any current effects. Discarding this effect from virtual %s.",
-                            effect_id,
-                            virtual["id"],
-                        )
-                        continue
-                    new_effect_config = sanitise_effect_config(
-                        new_effect_id, effect_config
+                new_effect_id = get_matching_effect_id(effect_id) if effect_id else None
+                if not new_effect_id:
+                    _LOGGER.warning(
+                        "Could not match effect id %s to any current effects. Discarding this effect from virtual %s.",
+                        effect_id,
+                        virtual["id"],
                     )
-                virtual["effect"] = {
-                    "config": new_effect_config,
-                    "type": new_effect_id,
-                }
+                    virtual.pop("effect", None)
+                else:
+                    new_effect_config = sanitise_effect_config(
+                        new_effect_id, effect_config or {}
+                    )
+                    virtual["effect"] = {
+                        "config": new_effect_config,
+                        "type": new_effect_id,
+                    }
             virtual["auto_generated"] = virtual.get("auto_generated", False)
         new_config["virtuals"] = virtuals
     else:  # time to make some virtuals
@@ -780,14 +782,16 @@ def migrate_config(old_config):
     # clean up scenes. if you are reading this, sorry for the confusing variable naming. i've tried my best :D
     scenes = new_config.pop("scenes", ())
     new_config["scenes"] = {}
-    if scenes:
-        scenes_mode = next(
-            mode
-            for mode in scenes[next(iter(scenes))]
-            if mode in ("devices", "displays", "virtuals")
-        )
     for scene_id in scenes:
-        virtuals_ish = scenes[scene_id].pop(scenes_mode, ())
+        scenes_mode = next(
+            (
+                mode
+                for mode in scenes[scene_id]
+                if mode in ("devices", "displays", "virtuals")
+            ),
+            None,
+        )
+        virtuals_ish = scenes[scene_id].pop(scenes_mode, ()) if scenes_mode else ()
         new_virtuals = {}
         for virtual_ish in virtuals_ish:
             # if scenes are populated by devices, then we should by now have virtuals made for each device.

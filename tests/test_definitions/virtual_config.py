@@ -387,8 +387,7 @@ virtual_config_tests = {
         payload_to_send={},
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
-        # explicity to test DummyEffect protection as a transition is playing out
-        sleep_after_test=0,
+        # no sleep: tests DummyEffect protection while the transition plays out
     ),
     # need to run this test before delete from effects, or will fail.
     "set_effect_to_last_active": APITestCase(
@@ -439,7 +438,8 @@ virtual_config_tests = {
         payload_to_send={},
         expected_response_keys=["status", "effect"],
         expected_response_values=[{"status": "success"}, {"effect": {}}],
-        # explicity to ensure tranistion has completed to off
+        # Waits out the transition clock, so the next case reactivates a
+        # virtual whose transition to off has completed
         sleep_after_test=1.0,
     ),
     # need to run this test before delete from effects, or will fail.
@@ -734,7 +734,6 @@ virtual_config_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0,
     ),
     "cleanup_dummy_device_2": APITestCase(
         execution_order=(test_count := test_count + 1),
@@ -744,7 +743,6 @@ virtual_config_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0,
     ),
     "cleanup_dummy_device_3": APITestCase(
         execution_order=(test_count := test_count + 1),
@@ -754,6 +752,5 @@ virtual_config_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0,
     ),
 }

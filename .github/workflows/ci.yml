@@ -136,11 +136,13 @@ jobs:
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
+        env:
+          LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ledfx-log-linux-py${{ matrix.python }}
-          path: debug_config/ledfx.log
+          path: ${{ runner.temp }}/ledfx-test/*.log
 
   test-windows:
     name: Test (Windows, py${{ matrix.python }})
@@ -180,11 +182,13 @@ jobs:
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
+        env:
+          LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ledfx-log-windows-py${{ matrix.python }}
-          path: debug_config/ledfx.log
+          path: ${{ runner.temp }}/ledfx-test/*.log
 
   test-macos:
     name: Smoke test (macOS arm64, py${{ matrix.python }})
@@ -337,6 +341,28 @@ jobs:
         run: |
           7z x "LedFx-$VERSION-win-x64.zip"
           "LedFx-$VERSION/LedFx.exe" -vv --ci-smoke-test --offline
+      # //S: Git Bash would rewrite /S as a path. The second install runs over
+      # a running LedFx, which the installer must close rather than half-replace.
+      - name: Install, then upgrade over a running LedFx
+        run: |
+          7z x "LedFx-$VERSION-win-x64-setup.zip"
+          dir="/c/Program Files/LedFx"
+          "./LedFx-$VERSION-setup.exe" //S
+          "$dir/LedFx.exe" -vv --ci-smoke-test --offline
+          "$dir/LedFx.exe" --offline > ledfx-running.log 2>&1 &
+          pid=$!
+          sleep 20
+          kill -0 "$pid" || { echo "::error::LedFx exited before the upgrade"; cat ledfx-running.log; exit 1; }
+          "./LedFx-$VERSION-setup.exe" //S
+          "$dir/LedFx.exe" -vv --ci-smoke-test --offline
+      # _?= makes the uninstaller run in place, so -Wait waits for it. It must be
+      # last and unquoted, which Git Bash can't pass.
+      - name: Uninstall
+        shell: pwsh
+        run: |
+          $dir = "C:\Program Files\LedFx"
+          $p = Start-Process -Wait -PassThru "$dir\uninst.exe" -ArgumentList "/S _?=$dir"
+          if ($p.ExitCode -ne 0 -or (Test-Path "$dir\_internal") -or (Test-Path "$dir\LedFx.exe")) { exit 1 }
 
   smoke-macos:
     name: Smoke test frozen build (macOS ${{ matrix.suffix }})
@@ -442,7 +468,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Log in to GHCR
         if: env.PUBLISH == 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4

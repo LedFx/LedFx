@@ -75,6 +75,10 @@ class Device(BaseRegistry):
         )
 
     _active = False
+    # Config keys the running output is built from. config_updated hooks
+    # rebuild only when one changes: a rebuild blanks or drops the output.
+    OUTPUT_KEYS: ClassVar[tuple[str, ...]] = ()
+    _built_settings: tuple[object, ...] | None = None
 
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
@@ -85,6 +89,7 @@ class Device(BaseRegistry):
         self._device_type = ""
         self._online = True
         self.lock = threading.Lock()
+        self._built_settings = self._output_settings()
 
     def __del__(self):
         if self._active:
@@ -95,8 +100,9 @@ class Device(BaseRegistry):
             # TODO: Sync locks to ensure everything is thread safe
             # self.lock has been added, but is not used presently outside of
             # artnet
-            if self._config is not None:
-                config = {**self._config, **config}
+            old_config = self._config
+            if old_config is not None:
+                config = {**old_config, **config}
 
             validated_config = type(self).schema()(config)
             self._config = validated_config
@@ -105,12 +111,19 @@ class Device(BaseRegistry):
             # implementation of config updates. If to notify the base class.
             valid_classes = list(type(self).__bases__)
             valid_classes.append(type(self))
-            for base in valid_classes:
-                if (
-                    hasattr(base, "config_updated")
-                    and base.config_updated != super(base, base).config_updated
-                ):
-                    base.config_updated(self, validated_config)
+            try:
+                for base in valid_classes:
+                    if "config_updated" in vars(base):  # base's own override
+                        base.config_updated(self, validated_config)
+            except Exception:
+                # The update failed; keep the config the device is running with.
+                self._config = old_config
+                raise
+
+            # The pixel buffer is sized on activate; resize a live one here so
+            # segment writes and clears match the new pixel count.
+            if self._pixels is not None and len(self._pixels) != self.pixel_count:
+                self._pixels = np.zeros((self.pixel_count, 3))
 
             _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
@@ -129,6 +142,12 @@ class Device(BaseRegistry):
         """
         to be reimplemented by child classes
         """
+
+    def _output_settings(self) -> tuple[object, ...]:
+        return tuple((self._config or {}).get(key) for key in self.OUTPUT_KEYS)
+
+    def _output_changed(self) -> bool:
+        return self._output_settings() != self._built_settings
 
     @property
     def pixel_count(self):
@@ -425,9 +444,9 @@ class Device(BaseRegistry):
                 if self._pixels is not None and self._ledfx.config.get(
                     "flush_on_deactivate", False
                 ):
-                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
-                        (segment[2] - segment[1] + 1, 3)
-                    )
+                    # A scalar fill: the buffer may already be resized to a
+                    # pixel count the old segment no longer fits.
+                    self._pixels[segment[1] : segment[2] + 1] = 0
         self._segments = new_segments
 
         if self.priority_virtual and virtual_id == self.priority_virtual.id:
@@ -605,10 +624,25 @@ class NetworkedDevice(Device):
             ): str,
         }
     )
+    _destination: str | None
 
     async def async_initialize(self):
         self._destination = None
         await self.resolve_address()
+
+    def update_config(self, config):
+        old_config = self._config
+        old_destination = getattr(self, "_destination", None)
+        old_ip = (old_config or {}).get("ip_address")
+        if config.get("ip_address", old_ip) != old_ip:
+            # Reactivation during update_config re-resolves the new address.
+            self._destination = None
+        try:
+            super().update_config(config)
+        except Exception:
+            if self._config is old_config:  # rejected; the old address stays live
+                self._destination = old_destination
+            raise
 
     async def resolve_address(self, success_callback=None):
         try:
@@ -716,11 +750,11 @@ class SerialDevice(Device):
 
     def activate(self):
         try:
-            if self.serial and self.serial.isOpen:
+            if self.serial and self.serial.is_open:
                 return
 
             self.serial = serial.Serial(self.com_port, self.baudrate)
-            if self.serial.isOpen:
+            if self.serial.is_open:
                 super().activate()
                 self._online = True
 
@@ -795,6 +829,7 @@ class Devices(RegistryLoader):
         Creates a new device.
         """
         # First, we try to make sure this device doesn't share a destination with any existing device
+        resolved_dest: str | None = None
         if "ip_address" in device_config:
             device_config["ip_address"] = clean_ip(device_config["ip_address"])
             device_ip = device_config["ip_address"]
@@ -821,6 +856,8 @@ class Devices(RegistryLoader):
 
         # If WLED device, get all the necessary config from the device itself
         if device_type == "wled":
+            if resolved_dest is None:
+                raise ValueError("WLED devices require an ip_address")
             wled = WLED(resolved_dest)
             wled_config = await wled.get_config()
 

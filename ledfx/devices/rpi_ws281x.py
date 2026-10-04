@@ -73,12 +73,17 @@ class RPI_WS281X(DeviceWrapper):
         self.config = config
         self.activate()
 
+    OUTPUT_KEYS = ("gpio_pin", "pixel_count", "color_order", "white_mode")
+
     def config_updated(self, config):
+        if not self._output_changed():
+            return
         self.color_order = config.get("color_order")
         self.white_mode = config.get("white_mode") or "None"
         self.output_mode = OutputMode(self.color_order, self.white_mode)
         self.deactivate()
         self.activate()
+        self._built_settings = self._output_settings()
 
     def activate(self):
         if not rpi_supported:

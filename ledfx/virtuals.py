@@ -7,7 +7,7 @@ import numpy as np
 import voluptuous as vol
 
 from ledfx.config import save_config
-from ledfx.effects import DummyEffect
+from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
     MAX_FREQ,
@@ -139,6 +139,7 @@ class Virtual:
     _transition_effect = None
 
     _min_time = time.get_clock_info("perf_counter").resolution
+    _last_render_error = float("-inf")
 
     def _validate_and_set_frequency_range(self, config):
         """Ensure frequency_min < frequency_max, adjusting values if needed, then set frequency_range."""
@@ -699,26 +700,25 @@ class Virtual:
             self.clear_handle = None
 
     def clear_transition_effect(self):
-        if self._transition_effect is not None:
-            # Save effect_id before deactivating (in case deactivate clears it)
-            effect_id = getattr(self._transition_effect, "id", None)
-            self._transition_effect._deactivate()
-            # CRITICAL: Remove effect from registry to allow garbage collection
-            # Only destroy if it has an ID (DummyEffect doesn't have one)
-            if effect_id is not None:
-                self._ledfx.effects.destroy(effect_id)
-        self._transition_effect = None
+        effect, self._transition_effect = self._transition_effect, None
+        self._discard_effect(effect)
 
     def clear_active_effect(self):
-        if self._active_effect is not None:
-            # Save effect_id before deactivating (in case deactivate clears it)
-            effect_id = getattr(self._active_effect, "id", None)
-            self._active_effect._deactivate()
-            # CRITICAL: Remove effect from registry to allow garbage collection
-            # Only destroy if it has an ID (DummyEffect doesn't have one)
-            if effect_id is not None:
-                self._ledfx.effects.destroy(effect_id)
-        self._active_effect = None
+        effect, self._active_effect = self._active_effect, None
+        self._discard_effect(effect)
+
+    def _discard_effect(self, effect: Effect | DummyEffect | None) -> None:
+        # The slot is already empty, so a failure here cannot wedge the virtual.
+        if effect is None:
+            return
+        # Save effect_id before deactivating (in case deactivate clears it)
+        effect_id = getattr(effect, "id", None)
+        effect._deactivate()
+        # CRITICAL: Remove effect from registry to allow garbage collection
+        # Only destroy if it has an ID (DummyEffect doesn't have one), and only
+        # this effect's entry: ids are reused once destroyed.
+        if effect_id is not None and self._ledfx.effects.get(effect_id) is effect:
+            self._ledfx.effects.destroy(effect_id)
 
     def clear_frame(self):
         """
@@ -814,27 +814,34 @@ class Virtual:
                 self.set_fallback()
                 self.fallback_fire = False
 
-            # we need to lock before we test, or we could deactivate
-            # between test and execution
-            with self.lock:
-                if (
-                    self._active_effect
-                    and self._active_effect.is_active
-                    and hasattr(self._active_effect, "pixels")
-                ):
-                    # self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                    #     self._ledfx.thread_executor, self.assemble_frame
-                    # )
-                    self.assembled_frame = self.assemble_frame()
-                    if self.assembled_frame is not None and not self._paused:
-                        if not self._config["preview_only"]:
-                            # self._ledfx.thread_executor.submit(self.flush)
-                            # await self._ledfx.loop.run_in_executor(
-                            #     self._ledfx.thread_executor, self.flush
-                            # )
-                            self.flush()
+            # An exception here would end the thread and freeze the virtual
+            # while it still reports active; log it (rate-limited) and carry on.
+            try:
+                # we need to lock before we test, or we could deactivate
+                # between test and execution
+                with self.lock:
+                    if (
+                        self._active_effect
+                        and self._active_effect.is_active
+                        and hasattr(self._active_effect, "pixels")
+                    ):
+                        # self.assembled_frame = await self._ledfx.loop.run_in_executor(
+                        #     self._ledfx.thread_executor, self.assemble_frame
+                        # )
+                        self.assembled_frame = self.assemble_frame()
+                        if self.assembled_frame is not None and not self._paused:
+                            if not self._config["preview_only"]:
+                                # self._ledfx.thread_executor.submit(self.flush)
+                                # await self._ledfx.loop.run_in_executor(
+                                #     self._ledfx.thread_executor, self.flush
+                                # )
+                                self.flush()
 
-                        self._fire_update_event()
+                            self._fire_update_event()
+            except Exception:
+                if start_time - self._last_render_error >= 5:
+                    self._last_render_error = start_time
+                    _LOGGER.exception("Virtual %s: frame render failed", self.id)
 
             # adjust for the frame assemble time, min allowed sleep 1 ms
             # this will be more frame accurate on high res sleep systems
@@ -897,6 +904,11 @@ class Virtual:
                     # calculates how far in we are in the transition
                     # 0 = previous effect and 1 = next effect
                     weight = self.transition_frame_counter / self.transition_frame_total
+
+                # the effective pixel count can change without _reactivate_effect,
+                # so rebuild the masks when they no longer fit the frame
+                if self.transitions.pixel_count != len(frame):
+                    self.transitions = Transitions(len(frame))
 
                 # we will pre validate the transition, which will generate a sentry report if it fails and return False
                 if self.transitions.pre_validate(frame, transition_frame):
@@ -1422,7 +1434,9 @@ class Virtual:
         self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
 
         if reactivate_effect:
-            self._reactivate_effect()
+            # The render thread clears a finished transition under this lock.
+            with self.lock:
+                self._reactivate_effect()
 
     @cached_property
     def effective_pixel_count(self):

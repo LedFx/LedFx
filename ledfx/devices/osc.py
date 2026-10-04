@@ -58,10 +58,22 @@ class OSCServerDevice(NetworkedDevice):
         self._device_type = "OSC"
         self.last_frame = np.full((config["pixel_count"], 3), -1)
 
+    OUTPUT_KEYS = (
+        "ip_address",
+        "port",
+        "pixel_count",
+        "send_type",
+        "starting_addr",
+        "path",
+    )
+
     def config_updated(self, config):
+        if not self._output_changed():
+            return
         self.last_frame = np.full((config["pixel_count"], 3), -1)
         self.deactivate()
         self.activate()
+        self._built_settings = self._output_settings()
 
     def activate(self):
         self._client = SimpleUDPClient(self.destination, self._config["port"])
@@ -79,7 +91,7 @@ class OSCServerDevice(NetworkedDevice):
             self._device_type,
             self._config["name"],
         )
-        if "_client" in dir(self):
+        if getattr(self, "_client", None) is not None:
             self._client._sock.close()
             self._client = None
 

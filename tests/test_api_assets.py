@@ -15,6 +15,7 @@ from PIL import Image
 
 from tests.test_utilities.consts import BASE_PORT
 from tests.test_utilities.naughty_strings import naughty_paths
+from tests.test_utilities.test_utils import TEST_CONFIG_DIR
 
 # Test URLs - Use 127.0.0.1 instead of localhost to avoid Windows DNS resolution delay (~2s per request)
 ASSETS_API_URL = f"http://127.0.0.1:{BASE_PORT}/api/assets"
@@ -858,7 +859,7 @@ class TestAssetsAPIThumbnail:
             Image.new("RGB", (1, 1), color=(255 * (i % 2), 0, 0))
             for i in range(MAX_IMAGE_FRAMES + 1)
         ]
-        path = os.path.join("debug_config", "assets", "test_too_many_frames.gif")
+        path = os.path.join(TEST_CONFIG_DIR, "assets", "test_too_many_frames.gif")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         frames[0].save(path, "GIF", save_all=True, append_images=frames[1:])
         try:

@@ -194,6 +194,7 @@ class HueDevice(NetworkedDevice):
                 time.sleep(0.2)
                 self._sock.do_handshake()
                 handshake_success = True
+                break
             except Exception as e:  # noqa: BLE001
                 _LOGGER.warning(
                     "Failed to establish TLS handshake when activating the UDP stream. Retrying. %s",

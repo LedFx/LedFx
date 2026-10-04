@@ -1,9 +1,16 @@
 import asyncio
+import atexit
+import faulthandler
+import os
+import shutil
+import signal
 import subprocess
+import sys
 import threading
 import time
 
 import pytest
+import requests
 from lifx_emulator import EmulatedLifxServer
 from lifx_emulator.devices import DeviceManager
 from lifx_emulator.factories import create_device
@@ -11,8 +18,12 @@ from lifx_emulator.repositories import DeviceRepository
 
 from tests.test_definitions.all_effects import get_ledfx_effects
 from tests.test_definitions.audio_configs import get_ledfx_audio_configs
-from tests.test_utilities.consts import BASE_PORT
-from tests.test_utilities.test_utils import EnvironmentCleanup
+from tests.test_utilities.consts import BASE_PORT, SERVER_PATH
+from tests.test_utilities.test_utils import TEST_CONFIG_DIR
+
+# The live LedFx child process, and where its stdout and stderr go
+ledfx: subprocess.Popen[bytes] | None = None
+LEDFX_OUT = os.path.join(TEST_CONFIG_DIR, "ledfx-stdout.log")
 
 # LIFX emulator globals
 lifx_emulator_thread = None
@@ -98,77 +109,176 @@ def _stop_lifx_emulator():
         lifx_emulator_thread.join(timeout=2)
 
 
-def pytest_sessionstart(session):
-    """
-    Function to start LedFx as a subprocess and initialize necessary variables.
-    It is called once at the start of the pytest session, before any tests are run.
-    We use this function to start LedFx as a subprocess and initialize the all_effects variable.
-    These are then exported as global variables so that they can be used by the tests.
-    Args:
-        session: The pytest session object.
+def _ledfx_diagnostics(problem: str) -> str:
+    """Describe a start or teardown problem with the LedFx log tail and our threads."""
+    try:
+        with open(LEDFX_OUT, encoding="utf-8", errors="replace") as f:
+            tail = "".join(f.readlines()[-60:])
+    except OSError as e:
+        tail = f"(no log: {e})"
+    threads = "\n".join(f"  {t!r}" for t in threading.enumerate())
+    return (
+        f"{problem}\nLedFx config dir: {TEST_CONFIG_DIR}\n"
+        f"--- last lines of {LEDFX_OUT} ---\n{tail}\n"
+        f"--- threads in the pytest process ---\n{threads}"
+    )
 
-    Returns:
-        None
+
+def _reap_ledfx(grace: float) -> str | None:
+    """Wait up to `grace` s for LedFx to exit, then terminate, then kill.
+
+    Safe to call on any path, any number of times. Returns a problem
+    description, or None if LedFx exited on its own in time.
     """
-    EnvironmentCleanup.cleanup_test_config_folder()
+    global ledfx
+    proc, ledfx = ledfx, None
+    if proc is None or proc.poll() is not None:
+        return None
+    try:
+        proc.wait(grace)
+        return None
+    except subprocess.TimeoutExpired:
+        pass
+    proc.terminate()
+    try:
+        proc.wait(10)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+    return (
+        f"LedFx (pid {proc.pid}) was still running {grace} s after shutdown; killed it"
+    )
+
+
+def _on_sigterm(signum: int, frame: object) -> None:
+    # A SIGTERM to pytest would skip every finally and atexit: kill LedFx
+    # first, then die the way SIGTERM normally would.
+    _reap_ledfx(0)
+    signal.signal(signum, signal.SIG_DFL)
+    os.kill(os.getpid(), signum)
+
+
+atexit.register(_reap_ledfx, 0)  # last resort; a no-op after a clean finish
+
+
+def _wait_until_ready(proc: subprocess.Popen[bytes], timeout: float = 60) -> None:
+    """Poll /api/info until LedFx answers; fail at once if the child dies."""
+    deadline = time.monotonic() + timeout
+    while True:
+        if proc.poll() is not None:
+            raise RuntimeError(
+                f"LedFx exited with code {proc.returncode} before it was ready"
+            )
+        try:
+            if requests.get(f"http://{SERVER_PATH}/api/info", timeout=2).ok:
+                return
+        except requests.RequestException:
+            pass
+        if time.monotonic() > deadline:
+            raise RuntimeError(f"LedFx did not answer /api/info within {timeout} s")
+        time.sleep(0.1)
+
+
+def _start_ledfx() -> None:
+    global ledfx, all_effects, audio_configs
+    # A fixed dir (CI), or a dead run that had our pid, may hold an old config.json.
+    # Only clear a dir this harness made, so LEDFX_TEST_CONFIG_DIR=~/.ledfx can't wipe a real config.
+    marker = os.path.join(TEST_CONFIG_DIR, ".ledfx-test-dir")
+    if (
+        os.path.isdir(TEST_CONFIG_DIR)
+        and os.listdir(TEST_CONFIG_DIR)
+        and not os.path.isfile(marker)
+    ):
+        raise RuntimeError(
+            f"Refusing to clear {TEST_CONFIG_DIR}: not a LedFx test dir "
+            "(no .ledfx-test-dir marker)"
+        )
+    shutil.rmtree(TEST_CONFIG_DIR, ignore_errors=True)
+    os.makedirs(TEST_CONFIG_DIR)
+    open(marker, "w").close()
 
     # Start LIFX emulator before LedFx
     _start_lifx_emulator()
 
-    # Start LedFx as a subprocess
-    global ledfx
-    try:
+    with open(LEDFX_OUT, "wb") as out:
         ledfx = subprocess.Popen(
             [
-                "uv",
-                "run",
+                sys.executable,
+                "-m",
                 "ledfx",
                 "-p",
                 f"{BASE_PORT}",
                 "--offline",
                 "-c",
-                "debug_config",
+                TEST_CONFIG_DIR,
                 "-vv",
             ],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=out,
+            stderr=subprocess.STDOUT,
         )
-    except Exception as e:  # noqa: BLE001
-        pytest.fail(f"An error occurred while starting LedFx: {e!s}")
-
-    time.sleep(
-        2
-    )  # Wait for 2 seconds for the server to start and schema to be generated
+    _wait_until_ready(ledfx)
 
     # Dynamic import of tests happens here
     # Needs to be done at session start so that the tests are available to pytest
     # This is a hack to get around the fact that pytest doesn't support dynamic imports
-    global all_effects
     all_effects = get_ledfx_effects()
-    global audio_configs
     audio_configs = get_ledfx_audio_configs()
     # To add another test group, add it here, and then in test_apis.py
 
 
-def pytest_sessionfinish(session, exitstatus):
-    """
-    Function to terminate the ledfx subprocess.
-    It is called once at the end of the pytest session, after all tests are run.
-    Args:
-        session: The pytest session object.
-        exitstatus: The exit status of the pytest session.
+def pytest_report_header(config: pytest.Config) -> str:
+    return f"live LedFx config and logs: {TEST_CONFIG_DIR}"
 
-    Returns:
-        None
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Start the LIFX emulator and LedFx, and build the schema-driven test cases.
+
+    If anything here fails, pytest skips pytest_sessionfinish, so this hook
+    kills LedFx itself before it gives up.
     """
-    # send LedFx a shutdown signal
+    signal.signal(signal.SIGTERM, _on_sigterm)
+    # Session hooks run outside pytest-timeout: dump every stack if one hangs.
+    faulthandler.dump_traceback_later(120)
     try:
-        EnvironmentCleanup.shutdown_ledfx()
-    except Exception as e:  # noqa: BLE001
-        pytest.fail(f"An error occurred while shutting down LedFx: {e!s}")
-    # Wait for LedFx to terminate
-    while ledfx.poll() is None:
-        time.sleep(0.5)
+        _start_ledfx()
+    except BaseException as e:  # incl. pytest.fail(), which pytest would swallow here
+        report = _ledfx_diagnostics(f"LedFx test session failed to start: {e!r}")
+        _reap_ledfx(0)
+        _stop_lifx_emulator()
+        if isinstance(e, KeyboardInterrupt):
+            raise
+        pytest.exit(report, returncode=pytest.ExitCode.INTERNAL_ERROR)
+    finally:
+        faulthandler.cancel_dump_traceback_later()
 
-    # Stop LIFX emulator
-    _stop_lifx_emulator()
+
+def _shutdown_ledfx() -> str | None:
+    """Ask LedFx to stop and wait for it to exit. Returns a problem or None."""
+    if ledfx is None:
+        return None
+    if ledfx.poll() is not None:
+        return f"LedFx exited early with code {ledfx.returncode}"
+    try:
+        requests.post(f"http://{SERVER_PATH}/api/power", json={}, timeout=5)
+    except requests.RequestException as e:
+        return f"POST /api/power failed ({e!r}); {_reap_ledfx(30) or 'LedFx exited'}"
+    return _reap_ledfx(30)
+
+
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Stop LedFx and the LIFX emulator.
+
+    A teardown problem is reported, never raised, and never skips the kill.
+    """
+    faulthandler.dump_traceback_later(60)
+    problem = None
+    try:
+        problem = _shutdown_ledfx()
+    finally:
+        _reap_ledfx(0)
+        _stop_lifx_emulator()
+        faulthandler.cancel_dump_traceback_later()
+    if problem:
+        print("\n" + _ledfx_diagnostics(problem), file=sys.stderr)
+    elif exitstatus == 0 and "LEDFX_TEST_CONFIG_DIR" not in os.environ:
+        shutil.rmtree(TEST_CONFIG_DIR, ignore_errors=True)

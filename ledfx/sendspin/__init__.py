@@ -14,6 +14,7 @@ import logging
 import sys
 
 _LOGGER = logging.getLogger(__name__)
+__all__: list[str] = []
 
 # Only expose Sendspin functionality on Python 3.12+
 if sys.version_info >= (3, 12):
@@ -25,7 +26,6 @@ if sys.version_info >= (3, 12):
     except (ImportError, OSError) as _exc:
         # aiosendspin not available, or native library (e.g. libFLAC.dll) failed to load
         SENDSPIN_AVAILABLE = False
-        __all__ = []
         _LOGGER.warning(
             "Sendspin import failed: %s",
             _exc,
@@ -33,4 +33,3 @@ if sys.version_info >= (3, 12):
         )
 else:
     SENDSPIN_AVAILABLE = False
-    __all__ = []

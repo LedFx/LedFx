@@ -35,7 +35,6 @@ from platform import (
 )
 
 # from asyncio import coroutines, ensure_future
-from subprocess import PIPE, Popen
 from typing import ClassVar
 
 import netifaces
@@ -121,45 +120,6 @@ def fps_to_sleep_interval(fps):
     return max(0.001, sleep_res * (sleep_ticks - 1))
 
 
-def install_package(package):
-    _LOGGER.debug("Installing package: %s", package)
-    env = os.environ.copy()
-    args = [
-        sys.executable,
-        "-m",
-        "pip",
-        "install",
-        "--quiet",
-        package,
-    ]
-    process = Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE, env=env)
-    _, stderr = process.communicate()
-    if process.returncode != 0:
-        _LOGGER.error(
-            "Failed to install package %s: %s",
-            package,
-            stderr.decode("utf-8").lstrip().strip(),
-        )
-        return False
-    _LOGGER.debug("Installed package: %s", package)
-    return True
-
-
-def import_or_install(package):
-    try:
-        module = importlib.import_module(package)
-        _LOGGER.debug("Imported package: %s", package)
-        return module
-
-    except ImportError:
-        install_package(package)
-        try:
-            return importlib.import_module(package)
-        except ImportError:
-            return False
-    return False
-
-
 def async_fire_and_forget(coro, loop, exc_handler=None):
     """
     Run some code in the core event loop without a result
@@ -195,19 +155,15 @@ def get_local_ip():
         string: Either the first non-loopback ip address or hostname, or localhost
     """
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-        # Use Google Public DNS server to determine own IP
-        sock.connect(("8.8.8.8", 80))
-
-        return sock.getsockname()[0]
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            # No packets are sent; connect selects the outbound interface.
+            sock.connect(("8.8.8.8", 80))
+            return sock.getsockname()[0]
     except OSError:
         try:
             return socket.gethostbyname(socket.gethostname())
         except socket.gaierror:
             return "127.0.0.1"
-    finally:
-        sock.close()
 
 
 def check_if_ip_is_broadcast(thisip):
@@ -410,7 +366,7 @@ class WLED:
         Returns:
             boolean: True is "On", False is "Off"
         """
-        return await self.get_state()["on"]
+        return (await self.get_state())["on"]
 
     async def get_segments(self):
         """
@@ -929,7 +885,7 @@ class BaseRegistry(ABC):
         """Returns the extended schema of the class"""
 
         if extended is False:
-            return getattr_explicit(type(self), self._schema_attr, vol.Schema({}))
+            return getattr_explicit(self, self._schema_attr, vol.Schema({}))
 
         schema = vol.Schema({}, extra=extra)
         classes = inspect.getmro(self)[::-1]
@@ -1016,34 +972,6 @@ class RegistryLoader:
         self._ledfx = ledfx
         self.import_registry(package)
 
-        # If running in developer mode autoreload the registry when any file
-        # within the package changes.
-        # Check ledfx is not running as a single exe built using pyinstaller
-        # (sys frozen flag).
-        if ledfx.dev_enabled() and not currently_frozen():
-            import_or_install("watchdog")
-            watchdog_events = import_or_install("watchdog.events")
-            watchdog_observers = import_or_install("watchdog.observers")
-
-            class RegistryReloadHandler(watchdog_events.FileSystemEventHandler):
-                def __init__(self, registry):
-                    self.registry = registry
-
-                def on_modified(self, event):
-                    _, extension = os.path.splitext(event.src_path)
-                    if extension == ".py":
-                        self.registry.reload()
-
-            self.auto_reload_handler = RegistryReloadHandler(self)
-
-            self.observer = watchdog_observers.Observer()
-            self.observer.schedule(
-                self.auto_reload_handler,
-                os.path.dirname(sys.modules[package].__file__),
-                recursive=True,
-            )
-            self.observer.start()
-
     def import_registry(self, package):
         """
         Imports all the modules in the package thus hydrating
@@ -1086,27 +1014,6 @@ class RegistryLoader:
     def values(self):
         """Returns all the created objects"""
         return self._objects.values()
-
-    def reload_module(self, name):
-        if name in sys.modules:
-            path = sys.modules[name].__file__
-            if path.endswith((".pyc", ".pyo")):
-                path = path[:-1]
-
-            try:
-                module = importlib.import_module(name, path)
-                sys.modules[name] = module
-            except SyntaxError as e:
-                _LOGGER.error("Failed to reload %s: %s", name, e)
-        else:
-            pass
-
-    def reload(self, force=False):
-        """Reloads the registry"""
-        found = self.discover_modules(self._package)
-        _LOGGER.debug("Reloading %s from %s", found, self._package)
-        for name in found:
-            self.reload_module(name)
 
     def create(self, type, id=None, *args, **kwargs):
         """Loads and creates an object from the registry by type. If type is missing, logs a warning and returns None instead of raising."""
@@ -1339,7 +1246,7 @@ class Graph:
                 if len(x) > 0:
                     jitter = [x[i + 1] - x[i] for i in range(len(x) - 1)]
                     jitter.insert(0, 0.0)
-                    jitter_fig.circle(
+                    jitter_fig.scatter(
                         a_range.list_x(),
                         jitter,
                         legend_label=a_range.key,

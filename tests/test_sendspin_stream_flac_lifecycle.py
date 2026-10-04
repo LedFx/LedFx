@@ -6,10 +6,14 @@ touch the decoder.
 """
 
 import uuid
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
+
+if TYPE_CHECKING:
+    from ledfx.sendspin.stream import SendspinAudioStream
 
 
 @pytest.fixture()
@@ -21,7 +25,7 @@ def _skip_if_no_aiosendspin():
 
 
 @pytest.fixture()
-def stream(_skip_if_no_aiosendspin):
+def stream(_skip_if_no_aiosendspin) -> "SendspinAudioStream":
     """Create a SendspinAudioStream with mocked SendspinClient."""
     from ledfx.sendspin.stream import SendspinAudioStream
 
@@ -40,13 +44,13 @@ def stream(_skip_if_no_aiosendspin):
 class TestFinishFlacDecoderHelper:
     """Tests for _finish_flac_decoder helper method."""
 
-    def test_noop_when_no_decoder(self, stream):
+    def test_noop_when_no_decoder(self, stream: "SendspinAudioStream"):
         """Calling _finish_flac_decoder with no active decoder is a no-op."""
         assert stream._flac_decoder is None
         stream._finish_flac_decoder("test")  # should not raise
         assert stream._flac_decoder is None
 
-    def test_finishes_and_nulls_decoder(self, stream):
+    def test_finishes_and_nulls_decoder(self, stream: "SendspinAudioStream"):
         mock_decoder = MagicMock()
         stream._flac_decoder = mock_decoder
         stream._flac_fmt_logged = True
@@ -63,7 +67,7 @@ class TestFinishFlacDecoderHelper:
         assert stream._flac_pending_sample_rate == 48000
         assert stream._flac_pending_samples_emitted == 0
 
-    def test_exception_in_finish_is_swallowed(self, stream):
+    def test_exception_in_finish_is_swallowed(self, stream: "SendspinAudioStream"):
         mock_decoder = MagicMock()
         mock_decoder.finish.side_effect = RuntimeError("libFLAC error")
         stream._flac_decoder = mock_decoder
@@ -77,22 +81,22 @@ class TestFinishFlacDecoderHelper:
 class TestStreamClearFinishesDecoder:
     """_stream_clear_handler must finish the FLAC decoder."""
 
-    def test_flac_decoder_finished_on_stream_clear(self, stream):
+    def test_flac_decoder_finished_on_stream_clear(self, stream: "SendspinAudioStream"):
         mock_decoder = MagicMock()
         stream._flac_decoder = mock_decoder
 
-        stream._stream_clear_handler(roles="player")
+        stream._stream_clear_handler(roles=["player"])
 
         mock_decoder.finish.assert_called_once()
         assert stream._flac_decoder is None
 
-    def test_buffers_cleared_on_stream_clear(self, stream):
+    def test_buffers_cleared_on_stream_clear(self, stream: "SendspinAudioStream"):
         stream._leftover = np.ones(100, dtype=np.float32)
         stream._leftover_ts = 12345
         with stream._buffer_lock:
-            stream._chunk_buffer.append((0, 0, np.zeros(10)))
+            stream._chunk_buffer.append((0, 0, np.zeros(10, dtype=np.float32)))
 
-        stream._stream_clear_handler(roles="player")
+        stream._stream_clear_handler(roles=["player"])
 
         assert len(stream._leftover) == 0
         assert stream._leftover_ts == 0
@@ -102,7 +106,7 @@ class TestStreamClearFinishesDecoder:
 class TestStreamStartFinishesDecoder:
     """_stream_start_handler must finish the FLAC decoder."""
 
-    def test_flac_decoder_finished_on_stream_start(self, stream):
+    def test_flac_decoder_finished_on_stream_start(self, stream: "SendspinAudioStream"):
         mock_decoder = MagicMock()
         stream._flac_decoder = mock_decoder
 
@@ -117,7 +121,7 @@ class TestStreamStartFinishesDecoder:
 class TestCloseFinishesDecoder:
     """close() must finish the FLAC decoder."""
 
-    def test_flac_decoder_finished_on_close(self, stream):
+    def test_flac_decoder_finished_on_close(self, stream: "SendspinAudioStream"):
         mock_decoder = MagicMock()
         stream._flac_decoder = mock_decoder
 
@@ -130,20 +134,20 @@ class TestCloseFinishesDecoder:
 class TestPcmPathNoDecoderCleanup:
     """PCM path should only clear buffers, never touch FLAC decoder."""
 
-    def test_stream_clear_pcm_only(self, stream):
+    def test_stream_clear_pcm_only(self, stream: "SendspinAudioStream"):
         """When no decoder exists, stream/clear just clears buffers."""
         assert stream._flac_decoder is None
         stream._leftover = np.ones(50, dtype=np.float32)
         with stream._buffer_lock:
-            stream._chunk_buffer.append((0, 0, np.zeros(10)))
+            stream._chunk_buffer.append((0, 0, np.zeros(10, dtype=np.float32)))
 
-        stream._stream_clear_handler(roles="player")
+        stream._stream_clear_handler(roles=["player"])
 
         assert stream._flac_decoder is None
         assert len(stream._leftover) == 0
         assert len(stream._chunk_buffer) == 0
 
-    def test_stream_start_pcm_only(self, stream):
+    def test_stream_start_pcm_only(self, stream: "SendspinAudioStream"):
         """When no decoder exists, stream/start just resets leftover state."""
         assert stream._flac_decoder is None
 
