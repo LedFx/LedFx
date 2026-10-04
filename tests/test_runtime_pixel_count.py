@@ -120,3 +120,69 @@ def test_e131_layout_ending_on_a_universe_boundary_sends_every_channel() -> None
 
     assert getattr(device.config, "universe_end") == 2  # noqa: B009
     assert universes[2].dmx_data[0] == 255
+
+
+def test_networked_device_virtual_callbacks_run_after_publication_unlocks() -> None:
+    from ledfx.devices.ddp import DDPDevice
+
+    core = MagicMock()
+    d = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "127.0.0.1", "pixel_count": 1}
+        ),
+    )
+    d.__dict__["_id"] = "ddp"
+    d._destination = "127.0.0.1"
+    attached, segmented = MagicMock(), MagicMock()
+    attached.is_device = d.id
+    core.virtuals = {"attached": attached}
+    d._virtuals_objs = [segmented]
+    Device.activate(d)
+
+    def assert_published_and_unlocked(*args: object) -> None:
+        assert d.lock.acquire(blocking=False), "base lock leaked into virtual callbacks"
+        try:
+            assert d.pixel_count == 2
+            assert d._destination is None
+            assert d._pixels is not None and d._pixels.shape == (2, 3)
+        finally:
+            d.lock.release()
+
+    attached.update_segments.side_effect = assert_published_and_unlocked
+    segmented.deactivate_segments.side_effect = assert_published_and_unlocked
+    segmented.activate_segments.side_effect = assert_published_and_unlocked
+    d.update_config({"pixel_count": 2, "ip_address": "127.0.0.2"})
+    attached.update_segments.assert_called_once_with([[d.id, 0, 1, False]])
+    segmented.deactivate_segments.assert_called_once()
+    segmented.activate_segments.assert_called_once()
+    Device.deactivate(d)
+
+
+def test_networked_device_failed_publication_restores_destination_and_config() -> None:
+    import pytest
+
+    from ledfx.devices.ddp import DDPDevice
+
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    d = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "127.0.0.1", "pixel_count": 1}
+        ),
+    )
+    d._destination = "127.0.0.1"
+    d._virtuals_objs = []
+    original = d._config
+    with pytest.raises(ValueError):
+        d.update_config({"pixel_count": 0, "ip_address": "127.0.0.2"})
+    assert d._destination == "127.0.0.1" and d._config is original
+    with (
+        patch.object(DDPDevice, "config_updated", side_effect=OSError("setup failed")),
+        pytest.raises(OSError),
+    ):
+        d.update_config({"pixel_count": 2, "ip_address": "127.0.0.2"})
+    assert d._destination == "127.0.0.1" and d._config is original
+    d.update_config({"pixel_count": 2})
+    assert d._destination == "127.0.0.1" and d.pixel_count == 2

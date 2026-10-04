@@ -166,14 +166,12 @@ class ArtNetDevice(NetworkedDevice):
 
     def flush(self, data):
         """Flush the data to all the Art-Net channels"""
-        if self.init:
-            self.do_once()
-
-        # protect against things being modified during flush
-        # just skip a frame if the lock is owned, we have a mutext deadlock between
-        # devices and virtuals protections
+        # Skip a frame while configuration is publishing output settings.
+        # Layout initialization reads those settings and needs the same lock.
         if self.lock.acquire(blocking=False):
             try:
+                if self.init:
+                    self.do_once()
                 data = self.output_mode.apply(data)
                 data = data.flatten()[
                     : self.data_max * self.output_mode.channels_per_pixel

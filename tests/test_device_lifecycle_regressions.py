@@ -81,13 +81,19 @@ async def test_device_put_invalid_config_returns_structured_400() -> None:
 
 
 def test_ip_change_forces_address_re_resolution() -> None:
-    device = object.__new__(DDPDevice)
-    device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    device = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "10.0.0.1"}
+        ),
+    )
+    device._virtuals_objs = []
     device._destination = "10.0.0.1"
-    with patch.object(Device, "update_config"):
-        device.update_config({"pixel_count": 10})
-        assert device._destination == "10.0.0.1"
-        device.update_config({"ip_address": "10.0.0.2"})
+    device.update_config({"pixel_count": 10})
+    assert device._destination == "10.0.0.1"
+    device.update_config({"ip_address": "10.0.0.2"})
     assert device._destination is None
 
 
@@ -219,15 +225,28 @@ def test_failed_effect_hook_keeps_the_running_config() -> None:
 
 
 def test_rejected_update_keeps_the_resolved_address() -> None:
-    device = object.__new__(DDPDevice)
-    device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    device = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "10.0.0.1"}
+        ),
+    )
     device._destination = "10.0.0.1"
+    original = device._config
+
+    def reject(configured_device: DDPDevice, config: object) -> None:
+        assert configured_device is device
+        assert device._destination is None
+        raise ValueError("bad ip")
+
     with (
-        patch.object(Device, "update_config", side_effect=ValueError("bad ip")),
+        patch.object(DDPDevice, "config_updated", side_effect=reject),
         pytest.raises(ValueError),
     ):
         device.update_config({"ip_address": "not an address"})
-    assert device._destination == "10.0.0.1"
+    assert device._destination == "10.0.0.1" and device._config is original
 
 
 async def test_mdns_skips_unresolved_services() -> None:
