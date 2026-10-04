@@ -321,7 +321,7 @@ def test_e131_sender_does_not_need_the_sacn_port() -> None:
     device.device_lock = threading.Lock()
     device._destination = "127.0.0.1"
     device._sacn = None
-    device._config = E131Device.config_model().model_construct(
+    device._config = dict(
         name="e131",
         ip_address="127.0.0.1",
         universe=1,
