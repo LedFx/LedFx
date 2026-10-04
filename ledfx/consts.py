@@ -1,6 +1,6 @@
 import ledfx_assets
 
-PROJECT_VERSION = "2.2.0"  # x-release-please-version
+PROJECT_VERSION = "2.2.1"  # x-release-please-version
 PROJECT_NAME = "LedFx"
 PROJECT_AUTHOR = "LedFx Developers"
 PROJECT_LICENSE = "GPL-3.0"
