@@ -150,7 +150,9 @@ async def test_unpaired_access_applied_before_connect(
     client = MagicMock()
 
     async def check_policy(_url: str) -> None:
-        config = await stream._pairing_store.get_pairing_config()
+        pairing_store = stream._pairing_store
+        assert pairing_store is not None
+        config = await pairing_store.get_pairing_config()
         assert config.unpaired_access_enabled is True
         raise ConnectionError("offline")
 
