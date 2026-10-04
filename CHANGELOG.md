@@ -2,10 +2,17 @@
 
 ## [2.2.1](https://github.com/LedFx/LedFx/compare/v2.2.0...v2.2.1) (2026-10-04)
 
-
 ### Bug Fixes
 
-* backport maintenance repairs for 2.2.1 ([74012f7](https://github.com/LedFx/LedFx/commit/74012f78f0caa3d8bfca9b85532709a61286f71f))
+* **Sendspin:** restore compatibility with the aiosendspin 9.1.1 client API and enable unpaired access before connecting to Music Assistant (#1970, #2063). Retain a stable identity, clean up playback buffers, and fix signed 24-bit PCM decoding.
+* **Windows installer:** close running LedFx processes before upgrading or uninstalling, replace old bundled dependencies safely, preserve startup settings, and correct shortcuts and uninstall registration (#2020).
+* **Devices:** keep output working after config and pixel-count changes; fix WLED sender changes, serial connection state, Hue handshakes, Launchpad handling, and socket cleanup (#1971, #1972, #1973, #2017).
+* **E1.31:** avoid source-port collisions between senders and correct universe-boundary calculations (#2015, #2017).
+* **Effects:** prevent render-thread failures from freezing output, correct config coercion and transitions, discard stale registry entries safely, and reset GIF frames when rebuilding (#1972, #1973, #2018).
+* **Web Audio:** accept the frontend's sample lists and validate malformed input; reject unsupported raw virtual-update subscriptions (#1971, #2012, #2014).
+* **Integrations and discovery:** close QLC websocket sessions, reconnect reliably, publish the color of the effect that triggered a Home Assistant event, and close zeroconf resources on repeated WLED scans (#2010, #2013, #2016).
+
+This maintenance release preserves the 2.2.0 configuration format and v1 API. The configuration migration, API v2, and v1 route removals on main are excluded.
 
 ## [2.2.0](https://github.com/LedFx/LedFx/compare/v2.1.9...v2.2.0) (2026-10-01)
 
