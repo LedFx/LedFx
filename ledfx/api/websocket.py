@@ -159,6 +159,7 @@ class WebsocketConnection:
         """
         for func in self._listeners.values():
             func()
+        self._listeners.clear()
 
     @classmethod
     async def get_all_clients(cls):
@@ -801,6 +802,11 @@ class WebsocketConnection:
             message.get("event_type"),
             message.get("event_filter"),
         )
+        # A subscription ID owns one listener. Remove its previous listener
+        # before replacing the removal callback, including when filters change.
+        previous = self._listeners.pop(message["id"], None)
+        if previous is not None:
+            previous()
         self._listeners[message["id"]] = self._ledfx.events.add_listener(
             notify_websocket,
             message.get("event_type"),
