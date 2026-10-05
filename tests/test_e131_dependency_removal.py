@@ -25,6 +25,7 @@ class BlockHistorical(importlib.abc.MetaPathFinder):
         if fullname.split('.')[0] in ('sacn', 'stupidArtnet', 'pythonosc'):
             raise ModuleNotFoundError('historical dependency intentionally unavailable')
 sys.meta_path.insert(0, BlockHistorical())
+import numpy as np
 from ledfx_senders import E131Sender
 from ledfx.devices.e131 import E131Device
 from tests.e131_helpers import decode_packet
@@ -37,7 +38,7 @@ sender = E131Sender._test_sender(
 )
 try:
     device._sender = sender
-    device.flush(bytes([17, 34, 51]) * 60)
+    device.flush(np.tile(np.array([17, 34, 51], dtype=np.uint8), (60, 1)))
     packet = sender._engine.captures()[0][0]
     fields = decode_packet(packet)
     assert fields['universe'] == 1
