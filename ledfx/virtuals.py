@@ -2499,7 +2499,7 @@ class Virtuals:
                     active_devices.add(device_id)
 
         for device in self._ledfx.devices.values():
-            if device.id not in active_devices and device.is_active():
+            if device.id not in active_devices and device.is_activation_requested():
                 _LOGGER.info(
                     "Deactivating device %s as it is not in use by any active virtuals",
                     device.id,

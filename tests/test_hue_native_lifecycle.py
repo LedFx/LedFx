@@ -469,7 +469,11 @@ async def test_initialization_moves_pairing_and_discovery_off_loop(
     monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
 
     def request(
-        method: str, endpoint: str, data: dict[str, object] | None = None
+        bridge: str,
+        username: str | None,
+        method: str,
+        endpoint: str,
+        data: dict[str, object] | None = None,
     ) -> tuple[object, Mapping[str, str]]:
         assert threading.get_ident() != loop_thread
         calls.append((method, endpoint))
@@ -494,7 +498,7 @@ async def test_initialization_moves_pairing_and_discovery_off_loop(
             "data": [{"id": ZONE, "id_v1": "/groups/1", "metadata": {"name": "Room"}}]
         }, {}
 
-    monkeypatch.setattr(device, "_request_sync", request)
+    monkeypatch.setattr(device, "_https_request", request)
     assert calls == []
     await device.async_initialize()
     assert device.config.as_dict()["username"] == "paired"
@@ -622,7 +626,7 @@ async def test_pairing_failure_destroys_unsaved_registry_entry(
     def reject(*args: object) -> tuple[object, Mapping[str, str]]:
         return [{"error": {"description": "link button"}}], {}
 
-    monkeypatch.setattr(device, "_request_sync", reject)
+    monkeypatch.setattr(device, "_https_request", reject)
     with pytest.raises(ValueError, match="Link Button"):
         await Devices.add_new_device(
             registry,
@@ -896,3 +900,210 @@ async def test_core_drains_owned_hue_work_after_earlier_shutdown_failure(
     assert core.exit_code == 1
     assert order == ["devices", "config", "executor"]
     assert not hue_device.is_active()
+
+
+def owned_virtual(device: HueFixture, monkeypatch: pytest.MonkeyPatch) -> Virtual:
+    from ledfx.virtuals import Virtuals
+    from tests.test_utilities.fake_ledfx import fake_ledfx
+    from tests.test_utilities.virtuals_core import add_virtual
+
+    core = device._ledfx
+    stored = fake_ledfx()
+    core.config = stored.config
+    core.config_store = stored.config_store
+    device.__dict__["_id"] = "hue"
+    core.devices.values.return_value = [device]
+
+    def lookup(key: str) -> HueDevice | None:
+        return device if key == "hue" else None
+
+    core.devices.get.side_effect = lookup
+    monkeypatch.setattr(Virtuals, "_instance", None)
+    core.virtuals = Virtuals(core)
+    virtual = add_virtual(core, "owner", "Owner", [["hue", 0, 1, False]])
+    virtual._active = True
+    virtual.activate_segments(virtual.segments)
+    return virtual
+
+
+@pytest.mark.parametrize("remove", [False, True])
+async def test_last_virtual_cancels_pending_connect(
+    hue_device: HueFixture, monkeypatch: pytest.MonkeyPatch, remove: bool
+) -> None:
+    from ledfx.configuration.fields import VirtualIdStr
+
+    sender = ControlledSender(blocked=True)
+    hue_device.senders.append(sender)
+    virtual = owned_virtual(hue_device, monkeypatch)
+    assert await asyncio.to_thread(sender.entered.wait, 1)
+    assert not hue_device.is_active()
+    if remove:
+        hue_device._ledfx.virtuals.remove(VirtualIdStr("owner"))
+    else:
+        virtual.deactivate()
+    try:
+        assert not hue_device._requested
+    finally:
+        # Do not let an expected RED leave a blocked worker behind.
+        sender.release.set()
+    await idle(hue_device)
+    assert sender.closed
+    assert hue_device.zone_actions == ["start", "stop"]
+    assert hue_device._sender is None
+    assert not hue_device._segments
+
+
+async def test_last_virtual_cancels_delayed_recovery(
+    hue_device: HueFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sender = ControlledSender()
+    hue_device.senders.extend([sender, ControlledSender()])
+    virtual = owned_virtual(hue_device, monkeypatch)
+    await idle(hue_device)
+    delayed = asyncio.Event()
+    release = asyncio.Event()
+    original_sleep = asyncio.sleep
+
+    async def sleep(delay: float) -> None:
+        if delay in (0.25, 0.5, 1.0):
+            delayed.set()
+            await release.wait()
+        else:
+            await original_sleep(delay)
+
+    monkeypatch.setattr("ledfx.devices.hue.asyncio.sleep", sleep)
+    sender.failure = ConnectionError("lost transport")
+    hue_device.flush(np.zeros((2, 3)))
+    await asyncio.wait_for(delayed.wait(), 1)
+    assert not hue_device.is_active()
+    virtual.deactivate()
+    try:
+        assert not hue_device._requested
+    finally:
+        release.set()
+    await idle(hue_device)
+    assert sender.closed
+    assert hue_device.zone_actions == ["start", "stop"]
+    assert len(hue_device.snapshots) == 1
+    assert hue_device._sender is None
+
+
+async def test_activation_keeps_caller_generation_across_delayed_dispatch(
+    hue_device: HueFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    first, unexpected = ControlledSender(), ControlledSender()
+    hue_device.senders.extend([first, unexpected])
+    paused, release = threading.Event(), threading.Event()
+    original = hue_device._schedule_activation
+
+    def dispatch(generation: int) -> None:
+        if threading.current_thread() is not threading.main_thread():
+            paused.set()
+            assert release.wait(2)
+        original(generation)
+
+    monkeypatch.setattr(hue_device, "_schedule_activation", dispatch)
+    caller = asyncio.create_task(asyncio.to_thread(hue_device.activate))
+    assert await asyncio.to_thread(paused.wait, 1)
+    hue_device.activate()
+    await idle(hue_device)
+    assert hue_device._sender is first
+    release.set()
+    await caller
+    await idle(hue_device)
+    assert hue_device._sender is first
+    assert len(hue_device.snapshots) == 1
+    assert hue_device.zone_actions == ["start"]
+    await hue_device.async_shutdown()
+    assert first.closed
+    assert hue_device.zone_actions == ["start", "stop"]
+
+
+async def test_duplicate_generation_dispatch_cannot_replace_published_sender(
+    hue_device: HueFixture,
+) -> None:
+    first, unexpected = ControlledSender(), ControlledSender()
+    hue_device.senders.extend([first, unexpected])
+    hue_device.activate()
+    await idle(hue_device)
+    await hue_device._activate_generation(hue_device._generation)
+    assert hue_device._sender is first
+    assert len(hue_device.snapshots) == 1
+    assert hue_device.zone_actions == ["start"]
+
+
+@pytest.mark.parametrize("stage", ["pairing", "discovery"])
+async def test_initialization_does_not_publish_replaced_bridge_results(
+    monkeypatch: pytest.MonkeyPatch, stage: str
+) -> None:
+    from ledfx.api.device import DeviceEndpoint
+    from tests.test_utilities.fake_ledfx import fake_ledfx
+
+    core = fake_ledfx()
+    core.loop = asyncio.get_running_loop()
+    core.thread_executor = None
+    device = HueDevice(
+        core,
+        config(username=None, clientkey=None, hue_application_id=None),
+    )
+    device.__dict__["_id"] = "hue"
+    core.devices.get.return_value = device
+    monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
+    entered, release = threading.Event(), threading.Event()
+    calls: list[tuple[str, str | None, str]] = []
+
+    def https(
+        bridge: str,
+        username: str | None,
+        method: str,
+        endpoint: str,
+        data: dict[str, object] | None = None,
+    ) -> tuple[object, Mapping[str, str]]:
+        calls.append((bridge, username, endpoint))
+        if (stage == "pairing" and method == "POST") or (
+            stage == "discovery"
+            and endpoint == "/clip/v2/resource/entertainment_configuration"
+        ):
+            entered.set()
+            assert release.wait(2)
+        if method == "POST":
+            return [{"success": {"username": "old-user", "clientkey": "22" * 16}}], {}
+        if endpoint == "api/config":
+            return {"swversion": "1948086000"}, {}
+        if endpoint == "/auth/v1":
+            return dict[str, object](), {"hue-application-id": "old-identity"}
+        if endpoint.endswith(ZONE):
+            return {
+                "data": [
+                    {
+                        "channels": [
+                            {"channel_id": 99, "position": {"x": 0, "y": 0, "z": 0}}
+                        ]
+                    }
+                ]
+            }, {}
+        return {"data": [{"id": ZONE, "metadata": {"name": "Room"}}]}, {}
+
+    monkeypatch.setattr(device, "_https_request", https)
+    initialization = asyncio.create_task(device.async_initialize())
+    assert await asyncio.to_thread(entered.wait, 1)
+    replacement = config(
+        ip_address="127.0.0.2",
+        group_name="Replacement",
+        username="new-user",
+        clientkey="33" * 16,
+        hue_application_id="new-identity",
+        channel_ids=[4, 5],
+        entertainment_id="87654321-4321-4321-4321-cba987654321",
+    ).as_dict()
+    request = MagicMock(json=AsyncMock(return_value={"config": replacement}))
+    response = await DeviceEndpoint(core).put("hue", request)
+    assert response.status == 200
+    release.set()
+    await initialization
+    stored = device.config.as_dict()
+    for key, value in replacement.items():
+        assert stored[key] == value, key
+    assert all(bridge == "127.0.0.1" for bridge, _, _ in calls)
+    assert not device.is_active()
+    await device.async_shutdown()

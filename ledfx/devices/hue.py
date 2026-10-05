@@ -5,7 +5,7 @@ import logging
 import threading
 from collections.abc import Callable, Coroutine, Generator, Mapping
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, ClassVar, Literal, TypeVar, cast
 
 import numpy as np
@@ -39,6 +39,15 @@ class HueSettings:
     connect_timeout: float = 5.0
     send_timeout: float = 0.2
     close_timeout: float = 0.2
+
+
+@dataclass(frozen=True)
+class HueControlSettings:
+    bridge: str
+    group_name: str
+    username: str | None = field(repr=False)
+    clientkey: str | None = field(repr=False)
+    application_id: str | None = field(repr=False)
 
 
 @dataclass
@@ -303,11 +312,10 @@ class HueDevice(NetworkedDevice):
                 return
             self._requested = True
             self._generation += 1
-        self._schedule_activation()
-
-    def _schedule_activation(self) -> None:
-        with self._publication_lock:
             generation = self._generation
+        self._schedule_activation(generation)
+
+    def _schedule_activation(self, generation: int) -> None:
         self._ledfx.loop.call_soon_threadsafe(
             lambda: self._spawn(self._activate_generation(generation))
         )
@@ -330,17 +338,29 @@ class HueDevice(NetworkedDevice):
         async with self._lifecycle_lock:
             await self._drain_retirements()
             with self._publication_lock:
-                if generation != self._generation or not self._requested:
+                if (
+                    generation != self._generation
+                    or not self._requested
+                    or self._sender is not None
+                ):
                     return
             if not await self._retry_failed_cleanup():
                 return
             with self._publication_lock:
-                if generation != self._generation or not self._requested:
+                if (
+                    generation != self._generation
+                    or not self._requested
+                    or self._sender is not None
+                ):
                     return
             if self._destination is None:
                 await self.resolve_address()
             with self._publication_lock:
-                if generation != self._generation or not self._requested:
+                if (
+                    generation != self._generation
+                    or not self._requested
+                    or self._sender is not None
+                ):
                     return
                 settings = self._settings_snapshot()
             lease = HueZoneLease(settings, generation)
@@ -489,6 +509,10 @@ class HueDevice(NetworkedDevice):
     async def _close_candidate(self, candidate: HueSender) -> None:
         await self._executor(candidate.close)
 
+    def is_activation_requested(self) -> bool:
+        with self._publication_lock:
+            return self._requested
+
     def deactivate(self) -> None:
         with self._publication_lock:
             generation = self._generation
@@ -619,15 +643,25 @@ class HueDevice(NetworkedDevice):
             await self._drain_retirements()
             await self._retry_failed_cleanup()
 
-    def _hue_register(self) -> dict[str, object]:
-        if not self.config.as_dict().get("username") or not self.config.as_dict().get(
-            "clientkey"
-        ):
-            response, _ = self._request_sync(
+    def _control_request(
+        self,
+        settings: HueControlSettings,
+        method: str,
+        endpoint: str,
+        data: dict[str, object] | None = None,
+    ) -> tuple[object, Mapping[str, str]]:
+        return self._https_request(
+            settings.bridge, settings.username, method, endpoint, data
+        )
+
+    def _hue_register(self, settings: HueControlSettings) -> dict[str, object]:
+        if not settings.username or not settings.clientkey:
+            response, _ = self._control_request(
+                settings,
                 "POST",
                 "api",
                 {
-                    "devicetype": f"LedFx#{self.config.group_name}",
+                    "devicetype": f"LedFx#{settings.group_name}",
                     "generateclientkey": True,
                 },
             )
@@ -639,23 +673,21 @@ class HueDevice(NetworkedDevice):
                 "username": _text(credentials.get("username")),
                 "clientkey": _text(credentials.get("clientkey")),
             }
-        response, _ = self._request_sync(
-            "GET", f"api/{self.config.as_dict().get('username')}"
-        )
+        response, _ = self._control_request(settings, "GET", f"api/{settings.username}")
         if isinstance(response, list) and any(
             "error" in _object(item) for item in _items(response)
         ):
             raise ValueError("Press the Hue Bridge Link Button and register again")
         return {}
 
-    def _check_hue_bridge(self) -> None:
-        response, _ = self._request_sync("GET", "api/config")
+    def _check_hue_bridge(self, settings: HueControlSettings) -> None:
+        response, _ = self._control_request(settings, "GET", "api/config")
         if int(_text(_object(response).get("swversion"))) < 1948086000:
             raise ValueError("Update the Hue Bridge firmware using the Hue App")
 
-    def _discover(self) -> dict[str, object]:
-        response, _ = self._request_sync(
-            "GET", "/clip/v2/resource/entertainment_configuration"
+    def _discover(self, settings: HueControlSettings) -> dict[str, object]:
+        response, _ = self._control_request(
+            settings, "GET", "/clip/v2/resource/entertainment_configuration"
         )
         groups = [_object(group) for group in _items(_object(response).get("data"))]
         group = next(
@@ -665,7 +697,7 @@ class HueDevice(NetworkedDevice):
                 if str(
                     _object(g.get("metadata", {})).get("name", g.get("name", ""))
                 ).lower()
-                == self.config.group_name.lower()
+                == settings.group_name.lower()
             ),
             None,
         )
@@ -674,8 +706,10 @@ class HueDevice(NetworkedDevice):
                 "Set up the requested Hue Entertainment zone in the Hue App"
             )
         identifier = _text(group.get("id"))
-        response, _ = self._request_sync(
-            "GET", f"/clip/v2/resource/entertainment_configuration/{identifier}"
+        response, _ = self._control_request(
+            settings,
+            "GET",
+            f"/clip/v2/resource/entertainment_configuration/{identifier}",
         )
         channels = _items(
             _object(_items(_object(response).get("data"))[0]).get("channels")
@@ -694,9 +728,9 @@ class HueDevice(NetworkedDevice):
             ]
         if not 1 <= len(ids) <= 256 or len(set(ids)) != len(ids):
             raise ValueError("Invalid Hue channel mapping")
-        identity = self.config.as_dict().get("hue_application_id")
+        identity = settings.application_id
         if not identity:
-            _, headers = self._request_sync("GET", "/auth/v1")
+            _, headers = self._control_request(settings, "GET", "/auth/v1")
             identity = _text(headers.get("hue-application-id"))
         return {
             "entertainment_id": identifier,
@@ -708,10 +742,36 @@ class HueDevice(NetworkedDevice):
             "group_id": str(group.get("id_v1", "")).rsplit("/", 1)[-1],
         }
 
-    async def async_initialize(self) -> None:
-        await super().async_initialize()
-        credentials = await self._executor(self._hue_register)
+    def _initialize_control(self, settings: HueControlSettings) -> dict[str, object]:
+        credentials = self._hue_register(settings)
         if credentials:
-            self.update_config(credentials)
-        await self._executor(self._check_hue_bridge)
-        self.update_config(await self._executor(self._discover))
+            settings = replace(
+                settings,
+                username=_text(credentials.get("username")),
+                clientkey=_text(credentials.get("clientkey")),
+            )
+        self._check_hue_bridge(settings)
+        return credentials | self._discover(settings)
+
+    async def async_initialize(self) -> None:
+        # Capture before DNS/executor awaits: the registry already exposes this
+        # device to API updates. Never read live bridge credentials in a worker.
+        with self._publication_lock:
+            owner = self.config
+            stored = owner.as_dict()
+            settings = HueControlSettings(
+                bridge=owner.ip_address,
+                group_name=owner.group_name,
+                username=_text(stored["username"]) if stored.get("username") else None,
+                clientkey=_text(stored["clientkey"])
+                if stored.get("clientkey")
+                else None,
+                application_id=(
+                    _text(stored["hue_application_id"])
+                    if stored.get("hue_application_id")
+                    else None
+                ),
+            )
+        await super().async_initialize()
+        result = await self._executor(lambda: self._initialize_control(settings))
+        self.update_config(result, _expected_config=owner)

@@ -416,3 +416,28 @@ def test_e131_sender_does_not_need_the_sacn_port() -> None:
         assert device._sender is not None
         # No frame was sent: cleanup emits no data/control traffic.
         device.deactivate()
+
+
+def test_stale_initialization_update_preserves_current_destination() -> None:
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    device = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "10.0.0.1"}
+        ),
+    )
+    device._virtuals_objs = []
+    old_config = device.config
+    device.update_config({"ip_address": "10.0.0.2"})
+    device._destination = "10.0.0.2"
+    assert (
+        device.update_config(
+            {"ip_address": "10.0.0.1", "pixel_count": 99},
+            _expected_config=old_config,
+        )
+        is None
+    )
+    assert device.config.ip_address == "10.0.0.2"
+    assert device._destination == "10.0.0.2"
+    assert device.pixel_count != 99
