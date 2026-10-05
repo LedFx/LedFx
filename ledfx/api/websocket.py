@@ -364,11 +364,13 @@ class WebsocketConnection:
 
             # --- vis frames (latest-value-wins per vis_id) ---
             if self._vis_slots:
-                frames = self._vis_slots.copy()
-                self._vis_slots.clear()
-                for message in frames.values():
+                # Bound this pass while keeping pending deliveries purgeable.
+                for vis_id in tuple(self._vis_slots):
                     if self._closed or self._installation_reply_failed:
                         return
+                    message = self._vis_slots.pop(vis_id, None)
+                    if message is None:
+                        continue
                     try:
                         await socket.send_json(message, dumps=dumps)
                     except TypeError as err:

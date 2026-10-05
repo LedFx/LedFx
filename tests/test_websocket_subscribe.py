@@ -583,3 +583,112 @@ async def test_installation_close_error_is_observed(
     assert connection._closed
     assert connection._listeners == {}
     assert core.events._listeners == {}
+
+
+class HeldFirstWriteSocket:
+    def __init__(self) -> None:
+        self.closed = False
+        self.first_write_started = asyncio.Event()
+        self.release_first_write = asyncio.Event()
+        self.started: list[dict[str, object]] = []
+        self.completed: list[dict[str, object]] = []
+
+    async def send_json(self, message: dict[str, object], *, dumps: object) -> None:
+        self.started.append(message)
+        if len(self.started) == 1:
+            self.first_write_started.set()
+            await self.release_first_write.wait()
+        self.completed.append(message)
+
+
+class PreviewEvent(Event):
+    def __init__(self, vis_id: str) -> None:
+        super().__init__(Event.VISUALISATION_UPDATE)
+        self.vis_id = vis_id
+
+
+@pytest.mark.parametrize("replacement", [False, True], ids=["unsubscribe", "replace"])
+async def test_revoked_second_preview_never_starts_after_held_first_write(
+    replacement: bool,
+) -> None:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    connection = WebsocketConnection(core)
+    socket = HeldFirstWriteSocket()
+    connection._socket = cast(web.WebSocketResponse, socket)
+    for subscription_id, vis_id in ((1, "first"), (2, "second")):
+        connection.subscribe_event_handler(
+            {
+                "id": subscription_id,
+                "event_type": Event.VISUALISATION_UPDATE,
+                "event_filter": {"vis_id": vis_id},
+            }
+        )
+    core.events.fire_event(PreviewEvent("first"))
+    core.events.fire_event(PreviewEvent("second"))
+    await asyncio.sleep(0)
+    sender = asyncio.create_task(connection._sender())
+    try:
+        await asyncio.wait_for(socket.first_write_started.wait(), timeout=5)
+        assert socket.started == [
+            {
+                "id": 1,
+                "type": "event",
+                "event_type": Event.VISUALISATION_UPDATE,
+                "vis_id": "first",
+            }
+        ]
+        assert socket.completed == []
+        connection.get_event_capabilities_handler({"id": 90})
+        if replacement:
+            connection.subscribe_event_handler(
+                {
+                    "id": 2,
+                    "event_type": Event.GRAPH_UPDATE,
+                    "ack": True,
+                }
+            )
+        else:
+            connection.unsubscribe_event_handler({"id": 2})
+        # A replenished first source must not extend this preview pass ahead
+        # of the capability/installation replies and the shutdown sentinel.
+        core.events.fire_event(PreviewEvent("first"))
+        await asyncio.sleep(0)
+        connection.send(None)
+        socket.release_first_write.set()
+        await asyncio.wait_for(sender, timeout=5)
+        expected: list[dict[str, object]] = [
+            {
+                "id": 1,
+                "type": "event",
+                "event_type": Event.VISUALISATION_UPDATE,
+                "vis_id": "first",
+            },
+            {
+                "id": 90,
+                "type": "result",
+                "success": True,
+                "result": {"subscription_ack": 1},
+            },
+        ]
+        if replacement:
+            expected.append(
+                {
+                    "id": 2,
+                    "type": "result",
+                    "success": True,
+                    "result": {
+                        "subscription_id": 2,
+                        "event_type": Event.GRAPH_UPDATE,
+                        "installed": True,
+                    },
+                }
+            )
+        assert socket.started == expected
+        assert socket.completed == expected
+        assert connection._vis_slots == {"first": expected[0]}
+    finally:
+        socket.release_first_write.set()
+        sender.cancel()
+        await asyncio.gather(sender, return_exceptions=True)
+        connection.clear_subscriptions()
