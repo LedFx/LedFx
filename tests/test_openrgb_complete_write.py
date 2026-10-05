@@ -5,9 +5,9 @@ from typing import cast
 
 import numpy as np
 import pytest
+from ledfx_senders.encoders import encode_openrgb
 
 from ledfx.devices.openrgb import OpenRGB
-from ledfx.devices.packets import build_openrgb_packet
 
 
 class ShortWriter:
@@ -31,7 +31,7 @@ def test_openrgb_sends_complete_50k_frame_on_partial_transport() -> None:
     frame = np.random.default_rng(50).uniform(0, 256, (50000, 3))
     OpenRGB.send_out(cast(socket.socket, writer), frame, 3)
     assert writer.calls > 1
-    assert writer.received == build_openrgb_packet(frame, 3)
+    assert writer.received == encode_openrgb(frame, 3)
 
 
 def test_openrgb_preserves_transport_errors() -> None:

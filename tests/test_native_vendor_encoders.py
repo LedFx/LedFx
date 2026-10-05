@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from ledfx_senders import NanoleafSender
 
-from ledfx.devices import packets
+from ledfx.devices.adalight import AdalightDevice
 from ledfx.devices.govee import Govee
 from ledfx.devices.hue import HueDevice
 from ledfx.devices.nanoleaf import NanoleafDevice
@@ -40,10 +40,13 @@ def hue_device(sock: MagicMock) -> HueDevice:
     return device
 
 
-def test_adalight_compatibility_wrapper_corrects_inclusive_count() -> None:
-    packet = packets.build_adalight_packet(np.array([[1, 2, 3]]), "RGB")
-    assert isinstance(packet, bytes)
-    assert packet == b"Ada\0\0\x55\1\2\3"
+def test_adalight_adapter_preserves_inclusive_count() -> None:
+    device = object.__new__(AdalightDevice)
+    device.serial = MagicMock()
+    device.color_order = "RGB"
+    device.flush(np.array([[1, 2, 3]]))
+    device.serial.write.assert_called_once_with(b"Ada\0\0\x55\1\2\3")
+    assert isinstance(device.serial.write.call_args.args[0], bytes)
 
 
 def test_govee_invalid_frame_never_reaches_shared_socket() -> None:
