@@ -2,7 +2,9 @@ import logging
 import time
 from typing import Annotated
 
-from ledfx_senders import Frame, UDPRealtimeSender
+import numpy as np
+from ledfx_senders import UDPRealtimeSender
+from numpy.typing import NDArray
 from pydantic import Field
 from typing_extensions import override
 
@@ -92,7 +94,7 @@ class UDPRealtimeDevice(NativePacketDevice):
         )
 
     @override
-    def flush(self, data: Frame) -> None:
+    def flush(self, data: NDArray[np.generic]) -> None:
         with self.device_lock:
             if isinstance(self._sender, UDPRealtimeSender):
                 self._sender.send(data, now=time.monotonic())

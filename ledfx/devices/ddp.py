@@ -1,6 +1,8 @@
 import logging
 
-from ledfx_senders import DDPSender, Frame
+import numpy as np
+from ledfx_senders import DDPSender
+from numpy.typing import NDArray
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -58,7 +60,7 @@ class DDPDevice(NativePacketDevice):
             destination_id=self.config.destination_id,
         )
 
-    def flush(self, data: Frame) -> None:
+    def flush(self, data: NDArray[np.generic]) -> None:
         event = False
         with self.device_lock:
             if not isinstance(self._sender, DDPSender):

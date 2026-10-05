@@ -232,19 +232,17 @@ def test_flush_config_deactivate_contention_preserves_ownership():
         assert old.closed and d._sender is None and not d.is_active()
 
 
-@pytest.mark.parametrize("kind", [bytes, bytearray, memoryview])
-def test_byte_frames_and_stale_frame_drop(
-    kind: type[bytes] | type[bytearray] | type[memoryview],
-) -> None:
+@pytest.mark.parametrize("dtype", [np.uint8, np.float32, np.float64])
+def test_numpy_frames_and_stale_frame_drop(dtype: type[np.generic]) -> None:
     d = device()
     with patch("ledfx.devices.e131.E131Sender", side_effect=capture):
         d.activate()
         sender = d._sender
         assert sender is not None
-        d.flush(kind(bytes([10, 20, 30])))
+        d.flush(np.array([[10, 20, 30]], dtype=dtype))
         assert sender._engine.captures()[0][0][126:129] == bytes([10, 20, 30])
         count = len(sender._engine.captures())
-        d.flush(kind(bytes(6)))
+        d.flush(np.zeros((2, 3), dtype=dtype))
         assert len(sender._engine.captures()) == count
         d.deactivate()
 
@@ -277,7 +275,7 @@ def test_real_adapter_loopback_captures_all_control_destinations():
         override = destination
         with patch("ledfx.devices.e131.E131Sender", side_effect=socket_sender):
             d.activate()
-            d.flush(bytes([9, 8, 7]))
+            d.flush(np.array([[9, 8, 7]], dtype=float))
             data = receiver.recv(2048)
             sync = receiver.recv(2048)
             assert data[126:129] == bytes([9, 8, 7])
@@ -362,7 +360,7 @@ def test_attached_virtual_render_and_config_callbacks_do_not_invert_locks():
         with lock:
             rendering.set()
             assert callback.wait(2)
-            d.flush(bytes(3))
+            d.flush(np.zeros((1, 3)))
 
     with (
         patch.object(virtual, "lock", lock),
@@ -454,7 +452,7 @@ async def test_dns_failed_candidate_keeps_live_sender_and_metadata(
         assert d._destination == "127.0.0.1" and not d._online
         assert d._sender is old and not old.closed and d.is_active()
         assert d._generation == generation
-        d.flush(bytes([17, 34, 51]))
+        d.flush(np.array([[17, 34, 51]], dtype=float))
         assert old._engine.captures()[0][1] == "127.0.0.1:5568"
     finally:
         d.deactivate()

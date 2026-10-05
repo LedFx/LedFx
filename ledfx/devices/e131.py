@@ -5,8 +5,9 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
 import numpy as np
-from ledfx_senders import E131Sender, Frame
+from ledfx_senders import E131Sender
 from ledfx_senders.e131 import ChannelLayout
+from numpy.typing import NDArray
 from pydantic import Field
 from typing_extensions import override
 
@@ -264,16 +265,11 @@ class E131Device(NetworkedDevice):
             self._replace(None)
             Device.deactivate(self)
 
-    def flush(self, data: Frame) -> None:
+    def flush(self, data: NDArray[np.generic]) -> None:
         with self.device_lock:
             if self._sender is not None:
                 # A render already in flight may have the previous pixel count.
-                count = (
-                    data.size
-                    if isinstance(data, np.ndarray)
-                    else memoryview(data).nbytes
-                )
-                if count != self._sender.layout.channel_count:
+                if data.size != self._sender.layout.channel_count:
                     _LOGGER.warning("Dropping stale E1.31 frame for %s", self.name)
                     return
                 self._sender.send(data)

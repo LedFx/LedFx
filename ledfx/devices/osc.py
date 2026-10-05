@@ -2,7 +2,9 @@ import logging
 import time
 from typing import Literal
 
-from ledfx_senders import Frame, OSCSender
+import numpy as np
+from ledfx_senders import OSCSender
+from numpy.typing import NDArray
 from pydantic import Field
 from typing_extensions import override
 
@@ -87,7 +89,7 @@ class OSCServerDevice(NativePacketDevice):
         )
 
     @override
-    def flush(self, data: Frame) -> None:
+    def flush(self, data: NDArray[np.generic]) -> None:
         with self.device_lock:
             if isinstance(self._sender, OSCSender):
                 self._sender.send(data, now=time.monotonic())

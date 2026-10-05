@@ -5,8 +5,10 @@ from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from typing import Literal
 
+import numpy as np
 import requests
-from ledfx_senders import Frame, NanoleafSender
+from ledfx_senders import NanoleafSender
+from numpy.typing import NDArray
 from pydantic import Field
 from requests import ConnectTimeout, ReadTimeout
 from typing_extensions import override
@@ -170,7 +172,7 @@ class NanoleafDevice(NetworkedDevice):
                 self._sender = None
             super().deactivate()
 
-    def write_udp(self, data: Frame) -> None:
+    def write_udp(self, data: NDArray[np.generic]) -> None:
         if self._sender is not None:
             self._sender.send(data)
 

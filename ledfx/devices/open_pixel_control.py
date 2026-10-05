@@ -1,6 +1,8 @@
 import logging
 
-from ledfx_senders import Frame, OPCSender
+import numpy as np
+from ledfx_senders import OPCSender
+from numpy.typing import NDArray
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -44,7 +46,7 @@ class OpenPixelControl(NativePacketDevice):
             channel=self.config.channel,
         )
 
-    def flush(self, data: Frame) -> None:
+    def flush(self, data: NDArray[np.generic]) -> None:
         with self.device_lock:
             if isinstance(self._sender, OPCSender):
                 self._sender.send(data)

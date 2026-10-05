@@ -1,7 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Annotated
 
-from ledfx_senders import ArtNetSender, Frame
+import numpy as np
+from ledfx_senders import ArtNetSender
+from numpy.typing import NDArray
 from pydantic import Field
 from typing_extensions import override
 
@@ -113,7 +115,7 @@ class ArtNetDevice(NativePacketDevice):
         )
 
     @override
-    def flush(self, data: Frame) -> None:
+    def flush(self, data: NDArray[np.generic]) -> None:
         # Keep PR2066 skip-on-busy semantics. Layout construction is now part of
         # candidate preparation, so no do_once can mutate state before ownership.
         if not self.lock.acquire(blocking=False):
