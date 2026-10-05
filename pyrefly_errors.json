@@ -925,13 +925,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/api/websocket.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_error` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
@@ -939,38 +932,10 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/api/websocket.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_event` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
       "concise_description": "`send_event` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/api/websocket.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `closed`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/api/websocket.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send_json`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/api/websocket.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send_json`",
       "severity": "error"
     },
     {

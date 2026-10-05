@@ -6,8 +6,9 @@ import logging
 import struct
 import time
 import uuid
+from collections.abc import Callable, Mapping
 from concurrent import futures
-from typing import Annotated, ClassVar, Literal, get_args
+from typing import Annotated, ClassVar, Literal, cast, get_args
 
 import numpy as np
 import pybase64
@@ -126,13 +127,20 @@ class WebsocketConnection:
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._socket = None
-        self._listeners = {}
+        self._listeners: dict[object, Callable[[], None]] = {}
         self._receiver_task = None
         self._sender_task = None
         # Dual-path sender: control queue for reliable ordered messages,
         # single-slot mailbox dict for latest-value-wins vis frames.
-        self._control_queue = asyncio.Queue(maxsize=MAX_PENDING_MESSAGES)
-        self._vis_slots = {}  # vis_id -> latest message (overwrites old)
+        self._control_queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue(
+            maxsize=MAX_PENDING_MESSAGES
+        )
+        self._closed = False
+        self._installation_reply_failed = False
+        self._installation_close_task: asyncio.Task[None] | None = None
+        self._vis_slots: dict[
+            object, dict[str, object]
+        ] = {}  # vis_id -> latest message (overwrites old)
         self._has_work = asyncio.Event()
         self.client_ip = None
         self.uid = None
@@ -142,31 +150,91 @@ class WebsocketConnection:
         self.client_type = "unknown"
         self.connected_at = None  # Set in handle() method
 
-    def close(self):
+    def close(self) -> None:
         """
         Closes the websocket connection.
 
         This method cancels the receiver and sender tasks, if they exist, to close the websocket connection.
         """
+        if self._closed:
+            return
+        self._closed = True
+        self.clear_subscriptions()
+        self._has_work.set()
         if self._receiver_task:
             self._receiver_task.cancel()
         if self._sender_task:
             self._sender_task.cancel()
 
-    def clear_subscriptions(self):
+    def clear_subscriptions(self) -> None:
         """
         Clears all the subscriptions by calling the registered listener functions.
         """
-        for func in self._listeners.values():
-            func()
-        self._listeners.clear()
+        for subscription_id in tuple(self._listeners):
+            self._remove_subscription(subscription_id)
 
     @classmethod
     async def get_all_clients(cls):
         async with cls.map_lock:
             return cls.ip_uid_map.copy()
 
-    def send(self, message):
+    def _remove_subscription(self, subscription_id: object) -> None:
+        previous = self._listeners.pop(subscription_id, None)
+        if previous is not None:
+            previous()
+        # Filter only event deliveries: protocol results retain their FIFO order.
+        pending: list[dict[str, object] | None] = []
+        while not self._control_queue.empty():
+            message = self._control_queue.get_nowait()
+            if message is None or not (
+                message.get("type") == "event" and message.get("id") == subscription_id
+            ):
+                pending.append(message)
+        for message in pending:
+            self._control_queue.put_nowait(message)
+        self._vis_slots = {
+            key: message
+            for key, message in self._vis_slots.items()
+            if not (
+                message.get("type") == "event" and message.get("id") == subscription_id
+            )
+        }
+
+    def _send_installation_result(self, message: dict[str, object]) -> None:
+        """Admit readiness results without the legacy queue-wiping fallback."""
+        if self._installation_reply_failed or self._closed:
+            return
+        if self._control_queue.full():
+            self._installation_reply_failed = True
+            self.clear_subscriptions()
+            self._has_work.set()
+            if self._installation_close_task is None:
+                self._installation_close_task = self._ledfx.loop.create_task(
+                    self._close_failed_installation_reply()
+                )
+                self._installation_close_task.add_done_callback(
+                    self._observe_installation_close
+                )
+            return
+        self._control_queue.put_nowait(message)
+        self._has_work.set()
+
+    async def _close_failed_installation_reply(self) -> None:
+        try:
+            if self._socket is not None:
+                await self._socket.close(
+                    code=1013, message=b"control backlog; reconnect and resync"
+                )
+        finally:
+            self.close()
+
+    def _observe_installation_close(self, task: asyncio.Task[None]) -> None:
+        if not task.cancelled() and (error := task.exception()) is not None:
+            _LOGGER.error(
+                "Unable to close websocket after installation reply failure: %s", error
+            )
+
+    def send(self, message: dict[str, object] | None) -> None:
         """Sends a message to the websocket connection.
 
         Vis updates (VISUALISATION_UPDATE / DEVICE_UPDATE) are placed in a
@@ -174,6 +242,10 @@ class WebsocketConnection:
         the previous unsent one.  All other messages go to an ordered control
         queue for reliable delivery.
         """
+        if self._installation_reply_failed or self._closed:
+            self._has_work.set()
+            return
+
         if message is None:
             # Shutdown sentinel — goes through the control queue
             try:
@@ -215,7 +287,7 @@ class WebsocketConnection:
 
         self._has_work.set()
 
-    def send_error(self, id, message):
+    def send_error(self, id: object, message: str) -> None:
         """Sends an error string to the websocket connection.
 
         Args:
@@ -233,7 +305,7 @@ class WebsocketConnection:
             }
         )
 
-    def send_event(self, id, event):
+    def send_event(self, id: object, event: Event) -> None:
         """
         Sends an event notification to the websocket connection.
 
@@ -245,7 +317,7 @@ class WebsocketConnection:
 
         return self.send({"id": id, "type": "event", **event.to_dict()})
 
-    async def _sender(self):
+    async def _sender(self) -> None:
         """Async write loop servicing control queue and vis mailbox.
 
         Control messages are drained first (ordered, reliable).  Then the
@@ -253,13 +325,24 @@ class WebsocketConnection:
         overwritten between wake-ups are silently dropped, keeping latency
         bounded and memory constant per vis_id.
         """
+        socket = self._socket
+        if socket is None:
+            return
         _LOGGER.info("Starting websocket sender")
-        while not self._socket.closed:
+        while (
+            not socket.closed
+            and not self._closed
+            and not self._installation_reply_failed
+        ):
             await self._has_work.wait()
             self._has_work.clear()
+            if self._closed or self._installation_reply_failed:
+                return
 
             # --- control messages (reliable, ordered) ---
             while not self._control_queue.empty():
+                if self._closed or self._installation_reply_failed:
+                    return
                 try:
                     message = self._control_queue.get_nowait()
                 except asyncio.QueueEmpty:
@@ -268,7 +351,7 @@ class WebsocketConnection:
                     _LOGGER.info("Stopped websocket sender.")
                     return
                 try:
-                    await self._socket.send_json(message, dumps=dumps)
+                    await socket.send_json(message, dumps=dumps)
                 except TypeError as err:
                     _LOGGER.error(
                         "Unable to serialize to JSON: %s\n%s",
@@ -284,8 +367,10 @@ class WebsocketConnection:
                 frames = self._vis_slots.copy()
                 self._vis_slots.clear()
                 for message in frames.values():
+                    if self._closed or self._installation_reply_failed:
+                        return
                     try:
-                        await self._socket.send_json(message, dumps=dumps)
+                        await socket.send_json(message, dumps=dumps)
                     except TypeError as err:
                         _LOGGER.error(
                             "Unable to serialize to JSON: %s\n%s",
@@ -422,11 +507,17 @@ class WebsocketConnection:
                 if self.uid in WebsocketConnection.client_metadata:
                     del WebsocketConnection.client_metadata[self.uid]
             remove_listeners()
+            self._closed = True
             self.clear_subscriptions()
+            if self._installation_close_task is not None:
+                self._installation_close_task.cancel()
+                await asyncio.gather(
+                    self._installation_close_task, return_exceptions=True
+                )
 
-            # Gracefully stop the sender
-            self.send(None)
-            await self._sender_task
+            # Stop and await the sender even when the control FIFO is full.
+            self._sender_task.cancel()
+            await asyncio.gather(self._sender_task, return_exceptions=True)
 
             # Close the connection
             await socket.close()
@@ -784,45 +875,95 @@ class WebsocketConnection:
             }
         )
 
-    @websocket_handler("subscribe_event")
-    def subscribe_event_handler(self, message):
-        def notify_websocket(event):
-            self.send_event(message["id"], event)
+    @websocket_handler("get_event_capabilities")
+    def get_event_capabilities_handler(self, message: dict[str, object]) -> None:
+        self._send_installation_result(
+            {
+                "id": message["id"],
+                "type": "result",
+                "success": True,
+                "result": {"subscription_ack": 1},
+            }
+        )
 
-        # Some events are not subscribable - send an error message if the user tries to subscribe to one with a hint on what to use instead
-        if message.get("event_type") in NON_SUBSCRIBABLE_EVENTS:
-            msg = f"Websocket cannot subscribe to {message.get('event_type')} events - use {NON_SUBSCRIBABLE_EVENTS[message.get('event_type')]} instead"
+    @websocket_handler("subscribe_event")
+    def subscribe_event_handler(self, message: dict[str, object]) -> None:
+        if self._installation_reply_failed or self._closed:
+            return
+        ack = message.get("ack", False)
+        if type(ack) is not bool:
+            self.send_error(message["id"], "ack must be a boolean")
+            return
+        event_type = message.get("event_type")
+        if not isinstance(event_type, str) or not event_type:
+            self.send_error(message["id"], "event_type must be a nonempty string")
+            return
+        event_filter = message.get("event_filter", {})
+        if event_filter is not None and not isinstance(event_filter, Mapping):
+            self.send_error(message["id"], "event_filter must be a mapping")
+            return
+        if event_type in NON_SUBSCRIBABLE_EVENTS:
+            msg = (
+                f"Websocket cannot subscribe to {event_type} events - "
+                f"use {NON_SUBSCRIBABLE_EVENTS[event_type]} instead"
+            )
             _LOGGER.warning("%s.", msg)
             self.send_error(message["id"], msg)
             return
 
-        _LOGGER.debug("  sub Q: %s %s", hex(id(self)), str(message)[:80])
+        subscription_id = message["id"]
         _LOGGER.debug(
-            "Websocket subscribing to event %s with filter %s",
-            message.get("event_type"),
-            message.get("event_filter"),
+            "Websocket subscribing to event %s with filter %s", event_type, event_filter
         )
-        # A subscription ID owns one listener. Remove its previous listener
-        # before replacing the removal callback, including when filters change.
-        previous = self._listeners.pop(message["id"], None)
-        if previous is not None:
-            previous()
-        self._listeners[message["id"]] = self._ledfx.events.add_listener(
-            notify_websocket,
-            message.get("event_type"),
-            message.get("event_filter", {}),
-        )
+        self._remove_subscription(subscription_id)
+
+        def notify_websocket(event: Event) -> None:
+            if (
+                not self._closed
+                and not self._installation_reply_failed
+                and self._listeners.get(subscription_id) is remove_listener
+            ):
+                self.send_event(subscription_id, event)
+
+        try:
+            # The existing bus incorrectly annotates its disposer as None.
+            disposer = cast(
+                Callable[[], None],
+                self._ledfx.events.add_listener(
+                    notify_websocket,
+                    event_type,
+                    dict(event_filter) if event_filter is not None else None,
+                ),
+            )
+        except (TypeError, ValueError) as error:
+            self.send_error(subscription_id, str(error))
+            return
+
+        def remove_listener() -> None:
+            disposer()
+
+        self._listeners[subscription_id] = remove_listener
+        if ack:
+            self._send_installation_result(
+                {
+                    "id": subscription_id,
+                    "type": "result",
+                    "success": True,
+                    "result": {
+                        "subscription_id": subscription_id,
+                        "event_type": event_type,
+                        "installed": True,
+                    },
+                }
+            )
 
     @websocket_handler("unsubscribe_event")
-    def unsubscribe_event_handler(self, message):
-        _LOGGER.debug("unsub Q: %s %s", hex(id(self)), str(message)[:80])
+    def unsubscribe_event_handler(self, message: dict[str, object]) -> None:
         subscription_id = message["id"]
-
         _LOGGER.debug("Websocket unsubscribing event id %s", subscription_id)
-        if subscription_id in self._listeners:
-            self._listeners.pop(subscription_id)()
-        else:
-            _LOGGER.warning("Unsubscibe unknown subscription ID %s", subscription_id)
+        if subscription_id not in self._listeners:
+            _LOGGER.warning("Unsubscribe unknown subscription ID %s", subscription_id)
+        self._remove_subscription(subscription_id)
 
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):
