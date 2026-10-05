@@ -32,11 +32,16 @@ def _source_values(
     return source.options(), (source.names() if source.names else None)
 
 
-def _strip(node: object) -> object:
+def strip_backend_keys(node: object) -> object:
+    """node with every BACKEND_ONLY_KEYS key removed, at any depth."""
     if isinstance(node, dict):
-        return {k: _strip(v) for k, v in node.items() if k not in BACKEND_ONLY_KEYS}
+        return {
+            k: strip_backend_keys(v)
+            for k, v in node.items()
+            if k not in BACKEND_ONLY_KEYS
+        }
     if isinstance(node, list):
-        return [_strip(v) for v in node]
+        return [strip_backend_keys(v) for v in node]
     return node
 
 
@@ -47,7 +52,7 @@ def export_schema(model: type[BaseModel]) -> JsonSchemaValue:
     Fields holding a live instance carry x-ledfx-enum-source, and the frontend
     reads their options from that instance's endpoint.
     """
-    return {"$schema": DRAFT, **_obj(_strip(model.model_json_schema()))}
+    return {"$schema": DRAFT, **_obj(strip_backend_keys(model.model_json_schema()))}
 
 
 # ---- legacy (pre-overhaul convertToJsonSchema) shape --------------------------

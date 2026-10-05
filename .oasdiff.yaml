@@ -1,0 +1,2 @@
+# Read by oasdiff-action from the workspace root (see .github/workflows/ci.yml).
+severity-levels: openapi/oasdiff-levels.txt

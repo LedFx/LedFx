@@ -43,8 +43,8 @@ class ZenggeDevice(NetworkedDevice):
 
     def flush(self, data):
         try:
-            byteData = data.astype(np.dtype("B"))
-            rgb = byteData.flatten().tolist()
+            byteData = data[0].astype(np.dtype("B"))
+            rgb = byteData.tolist()
             self.bulb.setRgb(rgb[0], rgb[1], rgb[2])
 
         except Exception as e:  # noqa: BLE001

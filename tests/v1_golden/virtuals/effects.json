@@ -1,0 +1,322 @@
+[
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {}
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute \\\"action\\\" was not provided\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "nope"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid action \\\"nope\\\"\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "type": "singleColor"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/matrix/effects",
+      {
+        "type": "rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {\"dj bird\": {\"effect_type\": \"singleColor\", \"effect_config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}}, \"matrix\": {\"effect_type\": \"rainbow\", \"effect_config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"At least one of the following attributes must be provided: gradient, background_color, background_brightness, brightness, flip, mirror\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "brightness": 0.5,
+        "flip": "toggle"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 2 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "gradient": "Rainbow",
+        "background_color": "blue"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 2 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "gradient": "nope("
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"gradient\\\": Invalid gradient: nope(\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "background_color": "notacolor"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"background_color\\\": Invalid color: notacolor\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "brightness": "x",
+        "gradient": "nope("
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"gradient\\\": Invalid gradient: nope(\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "flip": 3
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"flip\\\": must be true, false, or \\\"toggle\\\"\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "gradient": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"gradient\\\": must be a string\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "rainbow",
+        "config": [
+          1,
+          2
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"'config' must be an object\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "mirror": true,
+        "virtuals": "dj bird"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"virtuals\\\": must be a list of virtual ids\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "mirror": true,
+        "virtuals": [
+          "dj bird",
+          7
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 1 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {\"dj bird\": {\"effect_type\": \"singleColor\", \"effect_config\": {\"blur\": 0.0, \"flip\": true, \"mirror\": true, \"brightness\": 0.5, \"background_color\": \"#0000ff\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}}, \"matrix\": {\"effect_type\": \"rainbow\", \"effect_config\": {\"blur\": 0.0, \"flip\": true, \"mirror\": false, \"brightness\": 0.5, \"background_color\": \"#0000ff\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "virtuals": [
+          "dj bird"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Required attribute \\\"type\\\" was not provided\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "rainbow",
+        "virtuals": []
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Invalid value for \\\"virtuals\\\": must be a non-empty list of virtual ids\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "rainbow",
+        "config": "RANDOMIZE"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"RANDOMIZE is not supported for apply_global_effect\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "rainbow",
+        "config": {
+          "speed": 3
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied effect 'rainbow' to 3 virtuals (skipped 0, blocked 0, failed 1)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "singleColor",
+        "virtuals": [
+          "dj bird",
+          "ghost",
+          "mirror"
+        ],
+        "fallback": true
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied effect 'singleColor' to 2 virtuals (skipped 1, blocked 0, failed 0)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "clear_all_effects"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"info\", \"reason\": \"Cleared all effects on all devices\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global_effect",
+        "type": "nope",
+        "virtuals": [
+          "dj bird"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Unknown effect type: nope\"}}"
+  }
+]

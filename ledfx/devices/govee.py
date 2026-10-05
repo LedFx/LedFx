@@ -1,10 +1,9 @@
-import base64
 import json
 import logging
 import socket
 import time
 
-import numpy as np
+from ledfx_senders.encoders import encode_govee
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED, Fps
@@ -64,22 +63,6 @@ class Govee(NetworkedDevice):
         self.recv_port = 4002  # Responses
         self.udp_server = None
 
-        # fmt: off
-        # this header is reverse engineered and fuzzed to functional
-        self.pre_dreams = [0xBB, 0x00, 0xFA, 0xB0, 0x00]  # original header captured by Schifty but modified stretch to 0
-        self.pre_chroma = [0xBB, 0x00, 0x0E, 0xB0, 0x00]  # captured from razer chroma but modified stetch to 0
-        self.pre__govee = [0xBB, 0x00, 0x20, 0xB0, 0x00]  # captured from Govee Desktoip DreamView which is mapped to screen edge colors
-        # fmt : on
-        self.pre_active = self.pre_dreams
-        # 0 0xbb - unknown - rotating just breaks
-        # 1 0x00 - unknown - No impact rotating from 0 to 255
-        # 2 0xFA - unknown - related to segment count in some manner, use pre_dreams format
-        # 3 0xb0 - unknown
-        # 4 0x01 - 0 = segments, 1 = stretch on some devices only
-        # 5 0x04 - color triples to follow
-        # Header to here  ST  CN | RGB trip |           |           |           | CHK
-        # bb, 00, 0e, b0, 01, 04, fe, 00, 05, 00, 00, 00, 00, 00, 00, 00, 00, 00, fb
-
     def send_udp(self, message, port=4003):
         data = json.dumps(message).encode("utf-8")
         try:
@@ -102,19 +85,6 @@ class Govee(NetworkedDevice):
     def send_deactivate(self):
         # BB 00 01 B1 00 0B
         self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
-
-    def send_encoded_packet(self, packet):
-        command = base64.b64encode(packet.tobytes()).decode("utf-8")
-        self.send_udp({"msg": {"cmd": "razer", "data": {"pt": command}}})
-
-    def create_razer_packet(self, colors):
-        header = np.array(self.pre_active + [len(colors) // 3], dtype=np.uint8)
-
-        full_packet = np.concatenate((header, colors))
-        full_packet = np.append(
-            full_packet, self.calculate_xor_checksum_fast(full_packet)
-        )
-        return full_packet
 
     def deactivate(self):
         _LOGGER.info("Govee %s deactivate", self.name)
@@ -154,10 +124,6 @@ class Govee(NetworkedDevice):
         else:
             _LOGGER.info("Ignoring Govee status check for %s", self.name)
 
-        if self.config.stretch_to_fit:
-            self.pre_active[4] = 0x01
-        else:
-            self.pre_active[4] = 0x00
         # the ordering and delay in this implementation is derived through trial and error only
         # incorrect order can lead to flickering of devices tested if wake from sleep
         # we have not other information as to best practice here
@@ -168,14 +134,12 @@ class Govee(NetworkedDevice):
         self.send_activate()
         super().activate()
 
-    @staticmethod
-    def calculate_xor_checksum_fast(packet):
-        return np.bitwise_xor.reduce(packet)
-
     def flush(self, data):
-        rgb_data = data.flatten().astype(np.uint8)
-        packet = self.create_razer_packet(rgb_data)
-        self.send_encoded_packet(packet)
+        packet = encode_govee(data, self.config.stretch_to_fit)
+        try:
+            self.udp_server.sendto(packet, (self.config.ip_address, self.port))
+        except Exception as e:  # noqa: BLE001 - preserve session send policy
+            _LOGGER.info("govee:send_udp:Error sending UDP message %s", e)
 
     # Get Device Status
     def get_device_status(self):

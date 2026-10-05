@@ -7,7 +7,7 @@ BeforeValidator, or pydantic emits raw ge/le instead of minimum/maximum.
 import ipaddress
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, NewType
 
 from pydantic import (
     AfterValidator,
@@ -20,7 +20,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import PydanticCustomError, core_schema
 
 from ledfx import utils as _utils
-from ledfx.color import validate_color, validate_gradient
+from ledfx.color import coerce_color, validate_gradient
 
 X_ENUM_SOURCE = "x-ledfx-enum-source"
 X_REQUIRED = "x-ledfx-required"  # legacy: key listed as required although defaulted
@@ -76,19 +76,26 @@ class OneOf:
         return handler(core_schema.literal_schema(self.values()))
 
 
+@dataclass(frozen=True)
+class Coercion:
+    """coerce()'s validator. A class, not a closure, so the v2 variants
+    (ledfx.api.v2.models.plugins) can tell a type coercion from a check."""
+
+    target: Callable[[object], object]
+
+    def __call__(self, value: object) -> object:
+        try:
+            return self.target(value)
+        except (TypeError, ValueError, OverflowError) as err:
+            raise ValueError(str(err)) from err
+
+
 def coerce(target: Callable[[object], object]) -> BeforeValidator:
     """vol.Coerce(target): call target; TypeError/ValueError become invalid.
 
     OverflowError too (int(inf), float(10**400)), so it is a validation error.
     """
-
-    def run(value: object) -> object:
-        try:
-            return target(value)
-        except (TypeError, ValueError, OverflowError) as err:
-            raise ValueError(str(err)) from err
-
-    return BeforeValidator(run)
+    return BeforeValidator(Coercion(target))
 
 
 @dataclass(frozen=True)
@@ -183,7 +190,7 @@ register_enum_source("fps", EnumSource(options=lambda: list(_utils.AVAILABLE_FPS
 
 CoercedInt = Annotated[int, coerce(int)]
 CoercedFloat = Annotated[float, coerce(float)]
-Color = Annotated[str, coerce(validate_color), JsonExtra({"format": "color"})]
+Color = Annotated[str, coerce(coerce_color), JsonExtra({"format": "color"})]
 Gradient = Annotated[str, coerce(validate_gradient), JsonExtra({"format": "gradient"})]
 IPv4 = Annotated[str, AfterValidator(validate_ipv4), JsonExtra({"format": "ipv4"})]
 # A platform constant, not an instance: any int is accepted and clamped up, so
@@ -194,8 +201,18 @@ Fps = Annotated[
     Field(examples=list(_utils.AVAILABLE_FPS)),
     JsonExtra({X_LEGACY_SOURCE: "fps"}),
 ]
-VirtualId = Annotated[str, FromSource("virtuals")]
 AudioDeviceIndex = Annotated[int | None, FromSource("audio_devices", legacy=True)]
-SceneId = Annotated[str, FromSource("scenes")]
-PlaylistId = Annotated[str, FromSource("playlists")]
-DeviceId = Annotated[str, FromSource("devices")]
+
+# Typed ids: a NewType per kind, so a type checker keeps a scene id out of a
+# virtual id's place. At runtime each is a plain str: stored configs and v1
+# see no change. No constraints here; the v2 API adds them at its boundary
+# (ledfx.api.v2.models.ids).
+VirtualIdStr = NewType("VirtualIdStr", str)
+SceneIdStr = NewType("SceneIdStr", str)
+PlaylistIdStr = NewType("PlaylistIdStr", str)
+DeviceIdStr = NewType("DeviceIdStr", str)
+VirtualId = Annotated[VirtualIdStr, FromSource("virtuals")]
+SceneId = Annotated[SceneIdStr, FromSource("scenes")]
+PlaylistId = Annotated[PlaylistIdStr, FromSource("playlists")]
+DeviceId = Annotated[DeviceIdStr, FromSource("devices")]
+JobId = NewType("JobId", str)  # a uuid4 string

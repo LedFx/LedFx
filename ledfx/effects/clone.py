@@ -35,9 +35,22 @@ class Clone(Twod):
     config = TypedConfig(Config)
 
     def __init__(self, ledfx, config):
-        super().__init__(ledfx, config)
         self.grab = None
         self.sct = None
+        super().__init__(ledfx, config)
+
+    def _close_capture(self) -> None:
+        capture, self.sct = self.sct, None
+        self.grab = None
+        if capture is not None:
+            try:
+                capture.close()
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.warning("Clone Error closing capture: %s", e)
+
+    def deactivate(self) -> None:
+        self._close_capture()
+        super().deactivate()
 
     def config_updated(self, config):
         super().config_updated(config)
@@ -47,8 +60,7 @@ class Clone(Twod):
         self.y = self.config.across
         self.width = self.config.width
         self.height = self.config.height
-        self.grab = None
-        self.sct = None
+        self._close_capture()
         self.fails = 0
         self.giveup = False
 
@@ -77,7 +89,7 @@ class Clone(Twod):
             except Exception as e:  # noqa: BLE001
                 self.fails += 1
                 _LOGGER.warning("Clone Error setting up grab: %s %s", self.fails, e)
-                self.sct = None
+                self._close_capture()
                 return
 
         try:
@@ -85,7 +97,7 @@ class Clone(Twod):
         except Exception as e:  # noqa: BLE001
             self.fails += 1
             _LOGGER.warning("Clone Error grabbing frame :%s: %s", self.fails, e)
-            self.sct = None
+            self._close_capture()
             return
 
         rgb_image = Image.frombytes("RGB", frame.size, frame.bgra, "raw", "BGRX")

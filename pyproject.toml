@@ -3,11 +3,12 @@ authors = [{ name = "LedFx Developers" }]
 license = { text = "GPL-3.0 License" }
 requires-python = ">=3.11,<3.15"
 dependencies = [
+    "ledfx-senders>=0.3.0,<0.4.0",
     "numpy>=2.0.0,<3.0.0",
     "cffi>=0.16.0",
     "wheel>=0.36.2",
     "aiohttp>=3.9.1,<4.0.0",
-    "aubio-ledfx>=0.4.11",
+    "aubio-ledfx>=0.4.12",
     "cython>=3.0.7",
     "certifi>=2023.11.17",
     "multidict>=6.0.4",
@@ -18,8 +19,7 @@ dependencies = [
     "pystray>=0.19.5",
     "python-rtmidi>=1.5.8",
     "requests>=2.31.0",
-    "sacn>=1.9.0",
-    "sentry-sdk>=1.40.4",
+    "sentry-sdk>=2.0.0",
     "sounddevice>=0.4.6",
     "icmplib>=3.0.4",
     "pydantic>=2.13,<3",
@@ -28,15 +28,11 @@ dependencies = [
     "pillow>=10.1.0",
     "flux-led>=1.0.4",
     "lifx-async>=7.4.0",
-    "python-osc>=1.8.3",
     "pybase64~=1.5.0",
     "mss~=10.2.0",
-    "uvloop>=0.16.0; sys_platform != \"win32\"",
-    "winloop>=0.3.1; sys_platform == \"win32\"",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
-    "stupidartnet>=1.6.0,<2.0.0",
     "python-dotenv>=1.0.0,<2.0.0",
-    "pyfastnoiselite-ledfx>=0.0.8",
+    "pyfastnoiselite-ledfx>=0.0.9",
     "netifaces2>=0.0.22",
     "packaging>=21.0",
     "xled>=0.7.0",
@@ -55,6 +51,7 @@ readme = "README.rst"
 
 [dependency-groups]
 dev = [
+    "python-osc>=1.8.3",  # Independent OSC wire oracle for adapter tests
     "bokeh<4.0.0,>=3.3.3",
     "pytest>=8.0.0,<10.0.0",
     "pytest-asyncio>=1.4.0,<1.5.0",
@@ -64,6 +61,10 @@ dev = [
     "prek>=0.5.3",
     "ruff==0.16.8",
     "pyrefly==1.3.1",
+    "actionlint-py==1.7.12.24",
+    "shellcheck-py==0.11.0.1",
+    "openapi-spec-validator>=0.9.0",
+    "schemathesis>=4,<5",
 ]
 build = ["pyinstaller<7.0.0,>=6.3.0"]
 docs = [
@@ -83,6 +84,7 @@ docs = [
 ]
 
 [tool.pdm.build]
+excludes = ["**/.pdm-build/**", "**/__pycache__/**", "**/.pytest_cache/**"]
 includes = [
     "ledfx",
     "ledfx_frontend",
@@ -124,11 +126,13 @@ required-version = ">=0.12.12"
 # security fix newer than this, exempt the package below until it ages in.
 exclude-newer = "14 days"
 # Our own packages: released and reviewed by us, so no wait.
-exclude-newer-package = { aubio-ledfx = false, pyfastnoiselite-ledfx = false, samplerate-ledfx = false }
+exclude-newer-package = { ledfx-senders = false, aubio-ledfx = false, pyfastnoiselite-ledfx = false, samplerate-ledfx = false }
 # We want to use copy here, since symlink mode means we can't use our own portaudio dll
 # A bit slower, but it works for our use case
 link-mode = "copy"
 default-groups = []
+# The sender is distributed separately; never bootstrap Rust in the application.
+no-build-package = ["ledfx-senders"]
 # cryptography 49 dropped x86_64 macOS. Built from source there it links
 # Homebrew's libssl.3.dylib, which clashes with Python's own libssl in the
 # frozen macOS Intel app (ImportError: SSL_get0_group_name). 48.0.1 is the
@@ -171,3 +175,23 @@ baseline = "pyrefly_errors.json"
 missing-import = "ignore"
 # Keep Any from bypassing the strict checker; use object or a concrete type.
 explicit-any = "error"
+
+
+[tool.release-ci]
+github-distributions = false
+assets = [
+    "LedFx-{tag_version}-win-x64.zip",
+    "LedFx-{tag_version}-win-x64-setup.zip",
+    "LedFx-{tag_version}-osx-arm64.tar.gz",
+    "LedFx-{tag_version}-osx-intel.tar.gz",
+]
+
+[[tool.release-ci.oci]]
+image = "ghcr.io/ledfx/ledfx"
+platforms = ["linux/amd64", "linux/arm64"]
+promote-latest = true
+
+[[tool.release-ci.oci]]
+image = "docker.io/ledfxorg/ledfx"
+platforms = ["linux/amd64", "linux/arm64"]
+promote-latest = true

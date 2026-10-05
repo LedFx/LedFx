@@ -1,0 +1,78 @@
+[
+  {
+    "request": [
+      "PUT",
+      "/api/scenes",
+      {
+        "id": "plain",
+        "action": "activate"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/scenes",
+      {
+        "id": "plain",
+        "action": "deactivate"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/scenes",
+      {
+        "id": "stopper",
+        "action": "activate"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/scenes",
+      {
+        "id": "plain",
+        "action": "activate_in",
+        "ms": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"Config changes are disabled in safe mode: config.json is not valid JSON\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/virtuals/dj%20bird",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"dj bird\": {\"config\": {\"name\": \"dj bird\", \"mapping\": \"span\", \"complex_segments\": false, \"grouping\": 1, \"icon_name\": \"mdi:led-strip-variant\", \"max_brightness\": 1.0, \"center_offset\": 0, \"preview_only\": false, \"transition_time\": 0.4, \"transition_mode\": \"Add\", \"frequency_min\": 20, \"frequency_max\": 15000, \"rows\": 1, \"rotate\": 0}, \"id\": \"dj bird\", \"is_device\": false, \"auto_generated\": false, \"segments\": [[\"strip\", 0, 49, false]], \"pixel_count\": 50, \"active\": false, \"streaming\": false, \"last_effect\": null, \"effect\": {}}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/scenes",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"scenes\": {\"plain\": {\"name\": \"Plain\", \"scene_image\": \"Wallpaper\", \"virtuals\": {\"dj bird\": {\"type\": \"singleColor\", \"config\": {\"color\": \"#ff0000\"}}, \"matrix\": {\"type\": \"rainbow\", \"config\": {}}}, \"active\": false}, \"refused\": {\"name\": \"Refused\", \"scene_image\": \"Wallpaper\", \"virtuals\": {\"empty\": {\"type\": \"singleColor\", \"config\": {\"color\": \"#ff0000\"}}, \"dj bird\": {\"type\": \"singleColor\", \"config\": {\"color\": \"#ff0000\"}}, \"matrix\": {\"type\": \"rainbow\", \"config\": {}}}, \"active\": false}, \"ghost\": {\"name\": \"Ghost\", \"scene_image\": \"Wallpaper\", \"virtuals\": {\"ghost\": {\"type\": \"singleColor\", \"config\": {\"color\": \"#ff0000\"}}, \"dj bird\": {\"type\": \"singleColor\", \"config\": {\"color\": \"#ff0000\"}}}, \"active\": false}, \"presets\": {\"name\": \"Presets\", \"scene_image\": \"Wallpaper\", \"virtuals\": {\"dj bird\": {\"type\": \"singleColor\", \"preset\": \"black\"}, \"matrix\": {\"type\": \"rainbow\", \"preset\": \"no-such-preset\"}}, \"active\": false}, \"actions\": {\"name\": \"Actions\", \"scene_image\": \"Wallpaper\", \"virtuals\": {\"dj bird\": {\"action\": \"forceblack\"}, \"matrix\": {\"action\": \"ignore\"}, \"mirror\": {\"action\": \"stop\"}}, \"active\": false}, \"stopper\": {\"name\": \"Stopper\", \"scene_image\": \"Wallpaper\", \"virtuals\": {\"dj bird\": {\"action\": \"stop\"}, \"matrix\": {}}, \"active\": true}}}"
+  }
+]

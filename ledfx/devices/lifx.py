@@ -597,17 +597,14 @@ class LifxDevice(NetworkedDevice):
         """Update associated virtual's rows to match matrix height."""
         for virtual in self._ledfx.virtuals.values():
             if virtual.is_device == self.id:
-                if virtual.config.get("rows", 1) != self._matrix_height:
+                if virtual.config.rows != self._matrix_height:
                     _LOGGER.info(
                         "Updating virtual %s rows %d -> %d",
                         virtual.id,
-                        virtual.config.get("rows", 1),
+                        virtual.config.rows,
                         self._matrix_height,
                     )
-                    virtual.config["rows"] = self._matrix_height
-                    entry = virtual.entry
-                    if entry is not None:
-                        entry.config.rows = self._matrix_height
+                    virtual.update_config({"rows": self._matrix_height})
                 break
 
     async def _async_disconnect(self):

@@ -1,12 +1,7 @@
-import random
-
 import pytest
 
-from tests.test_utilities.test_utils import (
-    SERVER_PATH,
-    APITestCase,
-    HTTPSession,
-)
+from tests.test_utilities.consts import SERVER_PATH
+from tests.test_utilities.test_utils import APITestCase, HTTPSession
 
 CONFIG_KEYS_TO_TEST = [
     "audio",
@@ -51,8 +46,6 @@ def get_ledfx_audio_configs():
                                 "status": "success",
                             }
                         ],
-                        # Let the config run for a bit before checking its still active
-                        sleep_after_test=0.5,
                     )
                     audio_configs_to_test[
                         config_id + "_" + config_option + "_" + str(enum_value) + "_set"
@@ -62,34 +55,26 @@ def get_ledfx_audio_configs():
                     execution_order += 1
             # Check if the config option has a minimum and maximum
             if "minimum" in option_details and "maximum" in option_details:
-                # Generate 10 random tests between the minimum and maximum
-                for _ in range(10):
-                    random_value = random.uniform(
-                        option_details["minimum"], option_details["maximum"]
-                    )
+                # Test the bounds and the midpoint; fixed values keep the
+                # test IDs the same on every run
+                low, high = option_details["minimum"], option_details["maximum"]
+                for value in (low, (low + high) / 2, high):
                     # Set the config
                     set_config_test_case = APITestCase(
                         execution_order=execution_order,
                         method="PUT",
                         api_endpoint="/api/config",
                         expected_return_code=200,
-                        payload_to_send={config_id: {config_option: random_value}},
+                        payload_to_send={config_id: {config_option: value}},
                         expected_response_keys=["status", "payload"],
                         expected_response_values=[
                             {
                                 "status": "success",
                             }
                         ],
-                        # Let the config run for a bit before checking its still active
-                        sleep_after_test=0.5,
                     )
                     audio_configs_to_test[
-                        config_id
-                        + "_"
-                        + config_option
-                        + "_"
-                        + str(random_value)
-                        + "_set"
+                        config_id + "_" + config_option + "_" + str(value) + "_set"
                     ] = set_config_test_case
 
                     # Increment execution order

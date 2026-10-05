@@ -141,6 +141,33 @@ async def test_reconnect_reuses_identity_and_pairing_store(
     assert first[1] is second[1]
 
 
+async def test_unpaired_access_applied_before_connect(
+    stream: SendspinAudioStream, tmp_path: Path
+) -> None:
+    from aiosendspin.noise import FileClientPairingStore
+
+    stream._ledfx = MagicMock(config_dir=str(tmp_path))
+    client = MagicMock()
+
+    async def check_policy(_url: str) -> None:
+        pairing_store = stream._pairing_store
+        assert pairing_store is not None
+        config = await pairing_store.get_pairing_config()
+        assert config.unpaired_access_enabled is True
+        raise ConnectionError("offline")
+
+    client.connect = AsyncMock(side_effect=check_policy)
+    client.disconnect = AsyncMock()
+    with (
+        patch("ledfx.sendspin.stream.SendspinClient", return_value=client),
+        pytest.raises(ConnectionError, match="offline"),
+    ):
+        await stream._connect_and_receive()
+
+    stored = await FileClientPairingStore.open(tmp_path / "sendspin_pairings.json")
+    assert (await stored.get_pairing_config()).unpaired_access_enabled is True
+
+
 def test_close_without_live_thread_clears_playback_state(
     stream: SendspinAudioStream,
 ) -> None:

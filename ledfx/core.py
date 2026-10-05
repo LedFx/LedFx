@@ -12,14 +12,6 @@ import numpy as np
 import pybase64
 from audio_hotplug import create_monitor
 
-from ledfx.color import (
-    LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    parse_color,
-    parse_gradient,
-    validate_color,
-    validate_gradient,
-)
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.paths import (
     VISUALISATION_CONFIG_KEYS,
@@ -31,6 +23,7 @@ from ledfx.consts import PROJECT_VERSION
 from ledfx.devices import Devices
 from ledfx.effects import Effects
 from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+from ledfx.errors import SafeMode
 from ledfx.events import (
     AudioDeviceListChangedEvent,
     Event,
@@ -50,8 +43,8 @@ from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
-    UserDefaultCollection,
     async_fire_and_forget,
+    build_user_collections,
     currently_frozen,
     get_sorted_physical_ips,
     init_image_cache,
@@ -111,20 +104,8 @@ class LedFxCore:
         self.ci_testing = ci_testing
         self.offline_mode = offline_mode
 
-        try:
-            import uvloop
-
-            self.loop = uvloop.new_event_loop()
-            _LOGGER.info("Using uvloop for asyncio loop")
-        except ImportError:
-            try:
-                import winloop
-
-                self.loop = winloop.new_event_loop()
-                _LOGGER.info("Using winloop for asyncio loop")
-            except ImportError:
-                self.loop = asyncio.new_event_loop()
-                _LOGGER.info("Using standard asyncio loop")
+        self.loop = asyncio.new_event_loop()
+        _LOGGER.info("Using standard asyncio loop")
 
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)
@@ -337,26 +318,29 @@ class LedFxCore:
             self.device_listener()
 
         min_time_since = 1 / self.config.visualisation_fps
-        time_since_last = {}
+        next_update: dict[str, float] = {}
         max_len = self.config.visualisation_maxlen
 
         def handle_visualisation_update(event):
+            if not self.events.has_listeners(Event.VISUALISATION_UPDATE):
+                return
             is_device = event.event_type == Event.DEVICE_UPDATE
-            time_now = time.time()
+            time_now = time.monotonic()
 
             if is_device:
                 vis_id = event.device_id
             else:
                 vis_id = event.virtual_id
 
-            try:
-                time_since = time_now - time_since_last[vis_id]
-                if time_since < min_time_since:
-                    return
-            except KeyError:
-                pass
-
-            time_since_last[vis_id] = time_now
+            due = next_update.get(vis_id, time_now)
+            if time_now < due:
+                return
+            # Advance the schedule, not the arrival time. Resetting to now
+            # makes e.g. a 62 Hz source lose every other 60 Hz preview. Skip
+            # missed slots after stalls and never replay a burst of old frames.
+            next_update[vis_id] = (
+                time_now + min_time_since - (time_now - due) % min_time_since
+            )
 
             # grab rows from up in virtual land
             virtual = self.virtuals.get(vis_id)
@@ -380,7 +364,7 @@ class LedFxCore:
                 pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
 
             if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
-                b_arr = bytes(pixels.astype(np.uint8).flatten())
+                b_arr = pixels.astype(np.uint8, copy=False).tobytes()
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
                 pixels = pixels.astype(np.uint8).T.tolist()
@@ -460,9 +444,21 @@ class LedFxCore:
             if show_check_notification and self.icon and self.icon.HAS_NOTIFICATION:
                 self.icon.notify("Unable to get update information", "LedFx")
 
+    def _startup_done(self, task: asyncio.Task[None]) -> None:
+        if task.cancelled():
+            return
+        error = task.exception()
+        if error is not None:
+            self.loop_exception_handler(
+                self.loop, {"message": "LedFx startup failed", "exception": error}
+            )
+            self.stop(1)
+
     def start(self, open_ui=False, pause_all=False):
         async_fire_and_forget(
-            self.async_start(open_ui=open_ui, pause_all=pause_all), self.loop
+            self.async_start(open_ui=open_ui, pause_all=pause_all),
+            self.loop,
+            exc_handler=self._startup_done,
         )
 
         try:
@@ -500,17 +496,6 @@ class LedFxCore:
             max_items=cache_config.max_items,
         )
 
-        # Initialize Now Playing Service
-        self.now_playing = NowPlayingService(self)
-
-        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
-        self._smtc_now_playing = SMTCNowPlayingProvider(self)
-        self._smtc_now_playing.start()
-
-        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
-        self._mpris_now_playing = MPRISNowPlayingProvider(self)
-        self._mpris_now_playing.start()
-
         self.devices = Devices(self)
         self.effects = Effects(self)
         self.virtuals = Virtuals(self)
@@ -520,22 +505,20 @@ class LedFxCore:
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
         self.playlists = PlaylistManager(self)
-        self.colors = UserDefaultCollection(
-            self,
-            "Colors",
-            LEDFX_COLORS,
-            self.config.user_colors,
-            validate_color,
-            parse_color,
-        )
-        self.gradients = UserDefaultCollection(
-            self,
-            "Gradients",
-            LEDFX_GRADIENTS,
-            self.config.user_gradients,
-            validate_gradient,
-            parse_gradient,
-        )
+        self.colors, self.gradients = build_user_collections(self)
+
+        # Now Playing drives virtuals through the manager, so it starts once
+        # virtuals, effects and gradients exist (Sendspin may push metadata
+        # while virtuals load, below).
+        self.now_playing = NowPlayingService(self)
+
+        # Start SMTC Now Playing provider (Windows-only; no-op elsewhere)
+        self._smtc_now_playing = SMTCNowPlayingProvider(self)
+        self._smtc_now_playing.start()
+
+        # Start MPRIS Now Playing provider (Linux-only; no-op elsewhere)
+        self._mpris_now_playing = MPRISNowPlayingProvider(self)
+        self._mpris_now_playing.start()
 
         # TODO: Deferr
         self.devices.create_from_config(self.config.devices)
@@ -567,29 +550,56 @@ class LedFxCore:
         async_fire_and_forget(self.integrations.activate_integrations(), self.loop)
 
         if self.ci_testing:
+            # Frozen/Docker jobs must load and exercise the shipped extension.
+            # Capture mode never opens a socket or contacts a physical receiver.
+            from ledfx_senders import E131Sender
+            from ledfx_senders.e131 import ChannelLayout
+
+            sender = E131Sender._test_sender(
+                ChannelLayout(3),
+                destination="multicast",
+                source_name="ci-smoke",
+                mode="capture",
+            )
+            try:
+                sender.send(bytes([12, 13, 14]))
+                packets = sender._engine.captures()
+                if len(packets) != 2 or packets[0][0][126:129] != bytes([12, 13, 14]):
+                    raise RuntimeError("Native E1.31 smoke check failed")
+            finally:
+                sender.close(False)
+            _LOGGER.info("Native E1.31 capture smoke passed")
             await asyncio.sleep(5)
             self.stop(5)
         if not self.offline_mode:
             # The check makes a blocking HTTP request.
             await asyncio.to_thread(self.check_and_notify_updates)
 
-        if self.config.startup_scene_id != "":
-            if self.scenes.activate(self.config.startup_scene_id):
-                _LOGGER.info(
-                    "startup_scene_id; %s activated.",
-                    self.config.startup_scene_id,
-                )
-            else:
-                _LOGGER.warning(
-                    "startup_scene_id: %s not found.",
-                    self.config.startup_scene_id,
-                )
+        self._activate_startup_scene()
 
         await self._handle_startup_playlist()
 
         if pause_all:
             # pause at the virtuals level
             self.virtuals.pause_all()
+
+    def _activate_startup_scene(self) -> None:
+        """Activate the configured startup scene, if any (skipped in safe mode)."""
+        if self.config.startup_scene_id == "":
+            return
+        try:
+            activated = self.scenes.activate(self.config.startup_scene_id)
+        except SafeMode:
+            _LOGGER.debug("startup_scene_id not activated: safe mode")
+            return
+        if activated:
+            _LOGGER.info(
+                "startup_scene_id; %s activated.", self.config.startup_scene_id
+            )
+        else:
+            _LOGGER.warning(
+                "startup_scene_id: %s not found.", self.config.startup_scene_id
+            )
 
     async def _handle_startup_playlist(self):
         """Activate the configured startup playlist, if any."""

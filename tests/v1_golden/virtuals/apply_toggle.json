@@ -1,0 +1,158 @@
+[
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird",
+      {
+        "segments": [
+          [
+            "strip",
+            0,
+            49,
+            false
+          ]
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"segments\": [[\"strip\", 0, 49, false]]}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/dj%20bird/effects",
+      {
+        "type": "singleColor",
+        "config": {
+          "flip": false
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}, \"name\": \"Single Color\", \"type\": \"singleColor\"}}"
+  },
+  {
+    "request": [
+      "POST",
+      "/api/virtuals/matrix/effects",
+      {
+        "type": "rainbow",
+        "config": {
+          "flip": true,
+          "mirror": false
+        }
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effect\": {\"config\": {\"blur\": 0.0, \"flip\": true, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}, \"name\": \"Rainbow\", \"type\": \"rainbow\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "flip": "toggle"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 2 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {\"dj bird\": {\"effect_type\": \"singleColor\", \"effect_config\": {\"blur\": 0.0, \"flip\": true, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}}, \"matrix\": {\"effect_type\": \"rainbow\", \"effect_config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "flip": "TOGGLE",
+        "mirror": "toggle",
+        "virtuals": [
+          "matrix"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 1 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {\"dj bird\": {\"effect_type\": \"singleColor\", \"effect_config\": {\"blur\": 0.0, \"flip\": true, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}}, \"matrix\": {\"effect_type\": \"rainbow\", \"effect_config\": {\"blur\": 0.0, \"flip\": true, \"mirror\": true, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}}}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "mirror": "toggle",
+        "virtuals": []
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 0 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "flip": "toggle",
+        "virtuals": [
+          "ghost",
+          "empty"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 0 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "gradient": "Rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 1 effects (skipped 1)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "flip": "toggle",
+        "gradient": "Rainbow"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 2 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "GET",
+      "/api/effects",
+      null
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"effects\": {\"dj bird\": {\"effect_type\": \"singleColor\", \"effect_config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": false, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"modulate\": false, \"modulation_effect\": \"sine\", \"modulation_speed\": 0.5, \"speed\": 1.0, \"color\": \"#ff0000\"}}, \"matrix\": {\"effect_type\": \"rainbow\", \"effect_config\": {\"blur\": 0.0, \"flip\": false, \"mirror\": true, \"brightness\": 1.0, \"background_color\": \"#000000\", \"background_brightness\": 1.0, \"diag\": false, \"speed\": 1.0, \"frequency\": 1.0}}}}"
+  }
+]

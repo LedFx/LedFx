@@ -43,6 +43,27 @@ Python versions outside this range (e.g., 3.15+) are explicitly unsupported and 
 
     uv can be used to launch ledfx at any time against the established venv.
 
+### Sender dependency
+
+LedFx uses the `ledfx-senders` Python package, maintained independently in
+[LedFx/ledfx-senders](https://github.com/LedFx/ledfx-senders). Install the project
+normally with uv to consume compatible prebuilt wheels. Rust development and
+sender package builds belong to that separate repository. LedFx's uv configuration
+requires a sender wheel; an unsupported platform fails installation instead of
+starting a Rust source build.
+
+### Performance measurements
+
+Reusable whole-application benchmarks and profiling tools live in
+[LedFx/ledfx-tools](https://github.com/LedFx/ledfx-tools). They select an explicit
+LedFx checkout and Python environment, run synthetic effects with loopback output,
+and validate DDP traffic and websocket pixels without physical hardware. Use that
+repository's documented before/after commands when measuring a change.
+
+Store measurement output outside this source tree and include a concise comparison
+in the pull request description. Sender implementation benchmarks and native build
+tooling belong in [LedFx/ledfx-senders](https://github.com/LedFx/ledfx-senders).
+
 ### Windows Specific Steps
 
 :::: note
@@ -128,6 +149,54 @@ To run these local and / or develop more tests
     ``` console
     $ uv run pytest -vv
     ```
+
+### The v2 OpenAPI spec
+
+`openapi/ledfx-v2.json` is the committed contract of `/api/v2`, built from the
+route table. Regenerate it whenever you change a v2 route or model, on Linux
+with Python 3.12 and every extra installed. That is the environment the CI
+`openapi` job checks it in (WSL works):
+
+``` console
+$ uv sync --all-extras --dev
+$ uv run ledfx --dump-openapi openapi/ledfx-v2.json
+```
+
+Anywhere else, optional plugins may be missing and the file would lose their
+schemas. To run the drift check locally:
+
+``` console
+$ LEDFX_CANONICAL_SPEC=1 uv run pytest tests/api_v2/test_committed_spec.py
+```
+
+Changes within v2 must be additive: new routes, new optional request fields,
+new response fields. CI runs `oasdiff breaking` against the base branch's copy,
+and only a PR labelled `api-break` skips that check.
+
+Request schemas are closed (unknown fields are a 422). Response schemas are
+open, and the spec says so: clients must ignore unknown response fields, which
+is what makes a new response field additive.
+
+New branches in a response union (for example a new effect or device type) are
+additive: `.oasdiff.yaml` and `openapi/oasdiff-levels.txt` lower those four
+oasdiff checks to INFO. Clients must handle plugin types they do not know; every
+response union has an `UnknownPlugin` branch for them.
+
+`info.version` is the contract version, `API_VERSION` in
+`ledfx/api/v2/core/app.py`, not the LedFx release. Bump it by hand when the
+contract changes (minor for additions, major for a break), then regenerate the
+spec. It does not change on a release.
+
+The API reference at `/api/v2/docs` serves a vendored Scalar bundle from
+`ledfx/api/v2/docs/`. Renovate bumps `SCALAR_VERSION`; the `scalar-vendored`
+hook rebuilds the bundle, its checksum, the licence and the `?v=` in
+`docs.html`, and autofix commits that to the Renovate PR. To update by hand,
+edit `SCALAR_VERSION` and run `uv run python tools/update_scalar.py --sync`,
+or pass a version: `uv run python tools/update_scalar.py 1.73.0`. The tool
+verifies the download against the npm registry's `dist.integrity`. Renovate
+does not automerge Scalar bumps, because the bundle runs on the LedFx origin,
+and each bump adds about 1.25 MB of compressed git history (the bundle is
+4.4 MB), so bump when you need something, not weekly.
 
 ## Frontend Development
 

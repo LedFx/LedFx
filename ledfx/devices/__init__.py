@@ -3,14 +3,16 @@ import logging
 import socket
 import threading
 from abc import abstractmethod
+from collections.abc import Iterator
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from functools import cached_property, partial
 from typing import Annotated, ClassVar
 
 import numpy as np
 import serial
 import serial.tools.list_ports
+from ledfx_senders.e131_packet import DEFAULT_PORT
 from pydantic import Field
-from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
@@ -95,10 +97,9 @@ class Device(BaseRegistry):
         """runtime=True for API writes: also check the live choices (serial ports)
         this update changes. Unchanged ones are not rechecked, as a port may be
         unplugged, and the frontend sends the whole stored config back."""
-        with self.lock:
-            # TODO: Sync locks to ensure everything is thread safe
-            # self.lock has been added, but is not used presently outside of
-            # artnet
+        # Only publication/output replacement belongs under device locks.
+        # Virtual callbacks can join rendering or acquire Virtual.lock.
+        with self.lock, self._config_update_context(config):
             old_config = self._config
             stored = (
                 old_config.as_dict() if old_config is not None else dict[str, object]()
@@ -127,18 +128,29 @@ class Device(BaseRegistry):
                 self._config = old_config
                 raise
 
-            _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
+            # The pixel buffer is sized on activate; resize a live one here so
+            # segment writes and clears match the new pixel count.
+            if self._pixels is not None and len(self._pixels) != self.pixel_count:
+                self._pixels = np.zeros((self.pixel_count, 3))
 
-            for virtual_id in self._ledfx.virtuals:
-                virtual = self._ledfx.virtuals.get(virtual_id)
-                if virtual.is_device == self.id:
-                    segments = [[self.id, 0, self.pixel_count - 1, False]]
-                    virtual.update_segments(segments)
-                    virtual.invalidate_cached_props()
+        _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
-            for virtual in self._virtuals_objs:
-                virtual.deactivate_segments()
-                virtual.activate_segments(virtual._segments)
+        for virtual_id in self._ledfx.virtuals:
+            virtual = self._ledfx.virtuals.get(virtual_id)
+            if virtual.is_device == self.id:
+                segments = [[self.id, 0, self.pixel_count - 1, False]]
+                virtual.update_segments(segments)
+                virtual.invalidate_cached_props()
+
+        for virtual in self._virtuals_objs:
+            virtual.deactivate_segments()
+            virtual.activate_segments(virtual._segments)
+
+    def _config_update_context(
+        self, config: dict[str, object]
+    ) -> AbstractContextManager[None]:
+        """Output ownership/rollback boundary, excluding virtual callbacks."""
+        return nullcontext()
 
     def config_updated(self, config):
         """
@@ -445,9 +457,9 @@ class Device(BaseRegistry):
                 new_segments.append(segment)
             else:
                 if self._pixels is not None and self._ledfx.config.flush_on_deactivate:
-                    self._pixels[segment[1] : segment[2] + 1] = np.zeros(
-                        (segment[2] - segment[1] + 1, 3)
-                    )
+                    # A scalar fill: the buffer may already be resized to a
+                    # pixel count the old segment no longer fits.
+                    self._pixels[segment[1] : segment[2] + 1] = 0
         self._segments = new_segments
 
         if self.priority_virtual and virtual_id == self.priority_virtual.id:
@@ -468,7 +480,7 @@ class Device(BaseRegistry):
         for scene in self._ledfx.config.scenes.values():
             scene.virtuals.pop(virtual_id, None)
 
-    async def remove_from_virtuals(self):
+    def remove_from_virtuals(self) -> None:
         """Remove segments referencing this device from all virtuals.
 
         Any virtual (auto-generated or user-created) that loses all of
@@ -525,7 +537,7 @@ class Device(BaseRegistry):
             # Skip destroying the device we are currently processing;
             # the caller is responsible for that.
             if device is not None and device_id != self.id:
-                await device.remove_from_virtuals()
+                device.remove_from_virtuals()
                 self._ledfx.devices.destroy(device_id)
 
                 # Update the configuration
@@ -621,17 +633,18 @@ class NetworkedDevice(Device):
         self._destination = None
         await self.resolve_address()
 
-    def update_config(self, config, *, runtime=False):
+    @contextmanager
+    def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
         old_config = self._config
         old_destination = getattr(self, "_destination", None)
         old_ip = getattr(old_config, "ip_address", None)
         if config.get("ip_address", old_ip) != old_ip:
-            # Reactivation during update_config re-resolves the new address.
             self._destination = None
         try:
-            super().update_config(config, runtime=runtime)
+            with super()._config_update_context(config):
+                yield
         except Exception:
-            if self._config is old_config:  # rejected; the old address stays live
+            if self._config is old_config:
                 self._destination = old_destination
             raise
 

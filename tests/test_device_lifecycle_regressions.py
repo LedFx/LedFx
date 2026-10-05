@@ -1,5 +1,6 @@
 """Regressions for device lifecycle and render-loop fixes."""
 
+import asyncio
 import json
 import threading
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -63,11 +64,11 @@ async def test_device_put_persists_merged_config() -> None:
 
 async def test_device_put_invalid_config_returns_structured_400() -> None:
     ledfx = fake_ledfx()
-    device = object.__new__(WLEDDevice)
-    device._ledfx = ledfx
-    device.lock = threading.Lock()
-    device._config = WLEDDevice.config_model().model_validate(
-        {"name": "wled", "ip_address": "10.0.0.2", "sync_mode": "DDP"}
+    device = WLEDDevice(
+        ledfx,
+        WLEDDevice.Config.model_validate(
+            {"name": "wled", "ip_address": "10.0.0.2", "sync_mode": "DDP"}
+        ),
     )
     ledfx.devices.get.return_value = device
     request = MagicMock()
@@ -80,25 +81,30 @@ async def test_device_put_invalid_config_returns_structured_400() -> None:
 
 
 def test_ip_change_forces_address_re_resolution() -> None:
-    device = object.__new__(DDPDevice)
-    device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    device = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "10.0.0.1"}
+        ),
+    )
+    device._virtuals_objs = []
     device._destination = "10.0.0.1"
-    with patch.object(Device, "update_config"):
-        device.update_config({"pixel_count": 10})
-        assert device._destination == "10.0.0.1"
-        device.update_config({"ip_address": "10.0.0.2"})
+    device.update_config({"pixel_count": 10})
+    assert device._destination == "10.0.0.1"
+    device.update_config({"ip_address": "10.0.0.2"})
     assert device._destination is None
 
 
 def test_update_config_merges_into_model_and_keeps_stored_extras() -> None:
-    device = object.__new__(WLEDDevice)
-    device._ledfx = MagicMock()
-    device._segments = []
-    device._destination = "10.0.0.2"
-    device.lock = threading.Lock()
-    device._config = WLEDDevice.config_model().model_validate(
-        {"name": "wled", "ip_address": "10.0.0.2", "pixel_count": 20}
+    device = WLEDDevice(
+        MagicMock(),
+        WLEDDevice.Config.model_validate(
+            {"name": "wled", "ip_address": "10.0.0.2", "pixel_count": 20}
+        ),
     )
+    device._destination = "10.0.0.2"
     with patch.object(WLEDDevice, "setup_subdevice"):
         device.update_config({"sync_mode": "UDP"})
     assert device.config.sync_mode == "UDP"
@@ -108,23 +114,25 @@ def test_update_config_merges_into_model_and_keeps_stored_extras() -> None:
 
 
 def test_wled_rebuilds_subdevice_on_pixel_count_change() -> None:
-    device = object.__new__(WLEDDevice)
-    device._ledfx = MagicMock()
-    device._active = False
-    device._destination = "10.0.0.2"
-    device._config = WLEDDevice.config_model().model_construct(
-        sync_mode="UDP",
-        name="wled",
-        ip_address="10.0.0.2",
-        pixel_count=20,
-        refresh_rate=60,
+    device = WLEDDevice(
+        MagicMock(),
+        WLEDDevice.Config.model_validate(
+            {
+                "sync_mode": "UDP",
+                "name": "wled",
+                "ip_address": "10.0.0.2",
+                "pixel_count": 20,
+                "refresh_rate": 60,
+            }
+        ),
     )
+    device._destination = "10.0.0.2"
     device.device_configs = {"UDP": {}}
     device._built_settings = ("UDP", "wled", "10.0.0.2", 10, 60)
     old = MagicMock()
     device.subdevice = old
     sender = MagicMock()
-    sender.config_model.return_value.model_validate.side_effect = dict
+    sender.Config.model_validate.side_effect = dict
     with patch.dict(WLEDDevice.SYNC_MODES, {"UDP": sender}):
         device.config_updated(device._config)
     old.deactivate.assert_called_once()
@@ -132,7 +140,6 @@ def test_wled_rebuilds_subdevice_on_pixel_count_change() -> None:
 
 
 def test_wled_keeps_its_sender_when_only_the_icon_changes() -> None:
-    device = object.__new__(WLEDDevice)
     settings = {
         "sync_mode": "E131",
         "name": "wled",
@@ -140,12 +147,13 @@ def test_wled_keeps_its_sender_when_only_the_icon_changes() -> None:
         "pixel_count": 20,
         "refresh_rate": 60,
     }
-    model = WLEDDevice.config_model()
-    device._config = model.model_construct(**settings, icon_name="wled")
+    device = WLEDDevice(
+        MagicMock(), WLEDDevice.Config.model_validate(settings | {"icon_name": "wled"})
+    )
     device._built_settings = device._output_settings()
     live = MagicMock()
     device.subdevice = live
-    device._config = model.model_construct(**settings, icon_name="mdi:lamp")
+    device._config = device.config.model_copy(update={"icon_name": "mdi:lamp"})
     device.config_updated(device._config)
     live.deactivate.assert_not_called()
     assert device.subdevice is live
@@ -183,25 +191,43 @@ def test_cosmetic_change_keeps_the_output_running(
     activate.assert_not_called()
 
 
-def test_output_change_restarts_the_output() -> None:
-    device, activate, deactivate = _output_device(*OUTPUT_DEVICES[1])
-    device.update_config({"port": 9001})
-    deactivate.assert_called_once()
-    activate.assert_called_once()
-    device.update_config({"icon_name": "mdi:lamp"})  # now built from port 9001
-    deactivate.assert_called_once()
+def test_output_change_replaces_the_artnet_sender() -> None:
+    device, activate, deactivate = _output_device(*OUTPUT_DEVICES[3])
+    assert isinstance(device, ArtNetDevice)
+    live, candidate = MagicMock(), MagicMock()
+    device._sender = live
+    device._requested = True
+    device._destination = "127.0.0.1"
+    with patch.object(device, "_make_sender", return_value=candidate) as make:
+        device.update_config({"packet_size": 512})
+        make.assert_called_once()
+    assert device._sender is candidate
+    live.close.assert_called_once()
+    device.update_config({"icon_name": "mdi:lamp"})
+    candidate.close.assert_not_called()
+    deactivate.assert_not_called()
+    activate.assert_not_called()
 
 
 def test_failed_config_hook_keeps_the_running_config() -> None:
-    device, activate, _ = _output_device(*OUTPUT_DEVICES[1])
+    device, _, _ = _output_device(*OUTPUT_DEVICES[3])
+    assert isinstance(device, ArtNetDevice)
     before = device._config
-    activate.side_effect = OSError("port in use")
-    with pytest.raises(OSError):
-        device.update_config({"port": 9001})
-    assert device._config is before
-    activate.side_effect = None
-    device.update_config({"port": 9001})  # retried: still differs from the build
-    assert activate.call_count == 2
+    live = MagicMock()
+    device._sender = live
+    device._requested = True
+    device._destination = "127.0.0.1"
+    with patch.object(
+        device, "_make_sender", side_effect=OSError("socket unavailable")
+    ) as make:
+        with pytest.raises(OSError):
+            device.update_config({"packet_size": 512})
+        assert device._config is before
+        assert device._sender is live
+        live.close.assert_not_called()
+        make.side_effect = None
+        device.update_config({"packet_size": 512})
+        assert make.call_count == 2
 
 
 def test_failed_effect_hook_keeps_the_running_config() -> None:
@@ -217,15 +243,28 @@ def test_failed_effect_hook_keeps_the_running_config() -> None:
 
 
 def test_rejected_update_keeps_the_resolved_address() -> None:
-    device = object.__new__(DDPDevice)
-    device._config = DDPDevice.config_model().model_construct(ip_address="10.0.0.1")
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    device = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "10.0.0.1"}
+        ),
+    )
     device._destination = "10.0.0.1"
+    original = device._config
+
+    def reject(configured_device: DDPDevice, config: object) -> None:
+        assert configured_device is device
+        assert device._destination is None
+        raise ValueError("bad ip")
+
     with (
-        patch.object(Device, "update_config", side_effect=ValueError("bad ip")),
+        patch.object(DDPDevice, "config_updated", side_effect=reject),
         pytest.raises(ValueError),
     ):
         device.update_config({"ip_address": "not an address"})
-    assert device._destination == "10.0.0.1"
+    assert device._destination == "10.0.0.1" and device._config is original
 
 
 async def test_mdns_skips_unresolved_services() -> None:
@@ -252,6 +291,28 @@ async def test_mdns_keeps_a_service_known_only_by_hostname() -> None:
         await runner.add_wled_device(MagicMock(), "_wled._tcp.local.", "x")
     fire.assert_called_once()
     fire.call_args.args[0].close()  # the add_new_device coroutine was never awaited
+
+
+async def test_mdns_rescan_closes_the_previous_zeroconf() -> None:
+    runner = ZeroConfRunner(MagicMock())
+    with (
+        patch("ledfx.mdns_manager.AsyncZeroconf") as zeroconf,
+        patch("ledfx.mdns_manager.AsyncServiceBrowser") as browser,
+    ):
+        first_zc, second_zc = MagicMock(), MagicMock()
+        first_browser, second_browser = MagicMock(), MagicMock()
+        for mock in (first_zc, second_zc):
+            mock.async_close = AsyncMock()
+        for mock in (first_browser, second_browser):
+            mock.async_cancel = AsyncMock()
+        zeroconf.side_effect = [first_zc, second_zc]
+        browser.side_effect = [first_browser, second_browser]
+        await runner.discover_wled_devices()
+        await runner.discover_wled_devices()
+    first_browser.async_cancel.assert_awaited_once()
+    first_zc.async_close.assert_awaited_once()
+    second_zc.async_close.assert_not_awaited()
+    assert runner.aiozc is second_zc
 
 
 def test_hue_stops_handshaking_after_success() -> None:
@@ -285,3 +346,57 @@ def test_govee_second_deactivate_does_not_release_socket_again() -> None:
         device.deactivate()
         device.deactivate()
     server.close.assert_called_once()
+
+
+async def test_mdns_rescan_close_survives_cancellation() -> None:
+    runner = ZeroConfRunner(MagicMock())
+    old_zc = MagicMock(async_close=AsyncMock())
+    cancelling = asyncio.Event()
+    release = asyncio.Event()
+
+    async def slow_cancel() -> None:
+        cancelling.set()
+        await release.wait()
+
+    runner.aiozc = old_zc
+    runner.aiobrowser = MagicMock(async_cancel=slow_cancel)
+    with (
+        patch("ledfx.mdns_manager.AsyncZeroconf"),
+        patch("ledfx.mdns_manager.AsyncServiceBrowser"),
+    ):
+        scan = asyncio.create_task(runner.discover_wled_devices())
+        await cancelling.wait()
+        scan.cancel()  # e.g. the client went away mid-scan
+        with pytest.raises(asyncio.CancelledError):
+            await scan
+        release.set()
+        await asyncio.gather(*runner._closing)
+    old_zc.async_close.assert_awaited_once()
+
+
+async def test_mdns_close_still_closes_zeroconf_if_cancel_fails() -> None:
+    zc = MagicMock(async_close=AsyncMock())
+    browser = MagicMock(async_cancel=AsyncMock(side_effect=RuntimeError("boom")))
+    with pytest.raises(RuntimeError):
+        await ZeroConfRunner._close(browser, zc)
+    zc.async_close.assert_awaited_once()
+
+
+def test_e131_sender_does_not_need_the_sacn_port() -> None:
+    import socket
+
+    from ledfx.devices.e131 import E131Device
+
+    device = E131Device(
+        MagicMock(),
+        E131Device.config_model().model_validate(
+            {"name": "e131", "ip_address": "127.0.0.1"}
+        ),
+    )
+    device._destination = "127.0.0.1"
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as holder:
+        holder.bind(("127.0.0.1", 5568))
+        device.activate()
+        assert device._sender is not None
+        # No frame was sent: cleanup emits no data/control traffic.
+        device.deactivate()

@@ -43,7 +43,7 @@ class Twod(AudioReactiveEffect):
         self.current_pixel = 0
         self.last_cycle_time = 20
         self.bar = 0
-        self.t_height = max(1, self._virtual.config["rows"])
+        self.t_height = max(1, self._virtual.config.rows)
         self.t_width = max(1, self.pixel_count // self.t_height)
         self.init = True
 
@@ -76,7 +76,7 @@ class Twod(AudioReactiveEffect):
         # we need to accout for swapping vertical and horizotal for 90 / 270
 
         # composite the virtual rotate with the effect level rotate
-        virtual_rotate = self._virtual._config["rotate"] if self._virtual else 0
+        virtual_rotate = self._virtual.config.rotate if self._virtual else 0
         self.rotate = (self.config.rotate + virtual_rotate) % 4
 
         self.rotate_t = 0
@@ -92,7 +92,7 @@ class Twod(AudioReactiveEffect):
             self.rotate_t = Image.Transpose.ROTATE_270
             self.flip2d, self.mirror2d = self.mirror2d, self.flip2d
 
-        self.t_height = max(1, self._virtual._config["rows"])
+        self.t_height = max(1, self._virtual.config.rows)
         self.t_width = max(1, self.pixel_count // self.t_height)
 
         if self.rotate == 1 or self.rotate == 3:

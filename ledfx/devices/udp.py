@@ -3,11 +3,15 @@ import time
 from typing import Annotated
 
 import numpy as np
+from ledfx_senders import UDPRealtimeSender
+from numpy.typing import NDArray
 from pydantic import Field
+from typing_extensions import override
 
 from ledfx.configuration.fields import X_REQUIRED, OneOf
 from ledfx.configuration.plugin import TypedConfig
-from ledfx.devices import UDPDevice, packets
+from ledfx.devices import UDPDevice
+from ledfx.devices.native_packet import NativePacketDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,7 +26,7 @@ SUPPORTED_PACKETS = [
 ]
 
 
-class UDPRealtimeDevice(UDPDevice):
+class UDPRealtimeDevice(NativePacketDevice):
     """Generic UDP Realtime device support"""
 
     class Config(UDPDevice.Config):
@@ -57,102 +61,40 @@ class UDPRealtimeDevice(UDPDevice):
 
     config = TypedConfig(Config)
 
-    def __init__(self, ledfx, config):
-        super().__init__(ledfx, config)
-        self._device_type = "UDP Realtime"
-        self.last_frame = np.full((self.config.pixel_count, 3), -1)
-        self.last_frame_sent_time = 0
+    OUTPUT_KEYS = (
+        "ip_address",
+        "port",
+        "pixel_count",
+        "udp_packet_type",
+        "timeout",
+        "minimise_traffic",
+        "refresh_rate",
+    )
 
-    def flush(self, data):
-        try:
-            self.choose_and_send_packet(
-                data,
-                self.config.timeout,
-            )
-            self.last_frame = np.copy(data)
-        except AttributeError:
-            self.activate()
+    @override
+    def _validate_configuration(self) -> None:
+        if not 1 <= self.config.pixel_count <= 65536:
+            raise ValueError("Realtime pixel count exceeds 16-bit pixel index range")
 
-    def choose_and_send_packet(
-        self,
-        data,
-        timeout,
-    ):
-        frame_size = len(data)
+    def _keepalive_interval(self) -> float:
+        return (
+            (self.config.timeout * self.config.refresh_rate - 1) // 2
+        ) / self.config.refresh_rate
 
-        frame_is_equal_to_last = self.config.minimise_traffic and np.array_equal(
-            data, self.last_frame
+    @override
+    def _make_sender(self, destination: str) -> UDPRealtimeSender:
+        return UDPRealtimeSender(
+            destination=destination,
+            port=self.config.port,
+            pixel_count=self.config.pixel_count,
+            packet_type=self.config.udp_packet_type,
+            timeout=self.config.timeout,
+            minimise_traffic=self.config.minimise_traffic,
+            keepalive_interval=self._keepalive_interval(),
         )
 
-        if self.config.udp_packet_type == "DRGB" and frame_size <= 490:
-            udpData = packets.build_drgb_packet(data, timeout)
-            self.transmit_packet(udpData, frame_is_equal_to_last)
-
-        elif self.config.udp_packet_type == "WARLS" and frame_size <= 255:
-            udpData = packets.build_warls_packet(data, timeout, self.last_frame)
-            self.transmit_packet(udpData, frame_is_equal_to_last)
-
-        elif self.config.udp_packet_type == "DRGBW" and frame_size <= 367:
-            udpData = packets.build_drgbw_packet(data, timeout)
-            self.transmit_packet(udpData, frame_is_equal_to_last)
-
-        elif self.config.udp_packet_type == "DNRGB":
-            number_of_packets = int(np.ceil(frame_size / 489))
-            for i in range(number_of_packets):
-                start_index = i * 489
-                end_index = start_index + 489
-                udpData = packets.build_dnrgb_packet(
-                    data[start_index:end_index], timeout, start_index
-                )
-                self.transmit_packet(udpData, frame_is_equal_to_last)
-
-        elif self.config.udp_packet_type == "adaptive_smallest" and frame_size <= 255:
-            # compare potential size of WARLS packet to DRGB packet
-            if (
-                np.count_nonzero(np.any(data != self.last_frame, axis=1)) * 4
-                < len(data) * 3
-            ):
-                udpData = packets.build_warls_packet(data, timeout, self.last_frame)
-                self.transmit_packet(udpData, frame_is_equal_to_last)
-            else:
-                udpData = packets.build_drgb_packet(data, timeout)
-                self.transmit_packet(udpData, frame_is_equal_to_last)
-
-        elif self.config.udp_packet_type == RGB_HYPERHDR_PACKET and frame_size <= 500:
-            udpData = packets.build_rgb_packet(data)
-            self.transmit_packet(udpData, frame_is_equal_to_last)
-
-        else:  # fallback
-            _LOGGER.warning(
-                "UDP packet is configured incorrectly (please choose a packet that supports %s LEDs): https://kno.wled.ge/interfaces/udp-realtime/#udp-realtime \n Falling back to supported udp packet.",
-                self.config.pixel_count,
-            )
-            if frame_size <= 490:  # DRGB
-                udpData = packets.build_drgb_packet(data, timeout)
-                self.transmit_packet(udpData, frame_is_equal_to_last)
-            else:  # DNRGB
-                number_of_packets = int(np.ceil(frame_size / 489))
-                for i in range(number_of_packets):
-                    start_index = i * 489
-                    end_index = start_index + 489
-                    udpData = packets.build_dnrgb_packet(
-                        data[start_index:end_index], timeout, start_index
-                    )
-                    self.transmit_packet(udpData, frame_is_equal_to_last)
-
-    def transmit_packet(self, packet, frame_is_equal_to_last: bool):
-        timestamp = time.time()
-        if frame_is_equal_to_last:
-            half_of_timeout = (
-                ((self.config.timeout * self.config.refresh_rate) - 1) // 2
-            ) / self.config.refresh_rate
-            if (
-                timestamp > self.last_frame_sent_time + half_of_timeout
-                and self._destination is not None
-            ):
-                self._sock.sendto(bytes(packet), (self.destination, self.config.port))
-                self.last_frame_sent_time = timestamp
-        else:
-            if self._destination is not None:
-                self._sock.sendto(bytes(packet), (self.destination, self.config.port))
-                self.last_frame_sent_time = timestamp
+    @override
+    def flush(self, data: NDArray[np.generic]) -> None:
+        with self.device_lock:
+            if isinstance(self._sender, UDPRealtimeSender):
+                self._sender.send(data, now=time.monotonic())

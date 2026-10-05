@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -154,6 +155,8 @@ async def test_serialise_failure_is_logged_not_raised(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     monkeypatch.setattr(store_module, "SAVE_DELAY_SECONDS", 0.01)
+    # Repeat failures log at debug.
+    caplog.set_level(logging.DEBUG, logger="ledfx.configuration.store")
     store = ConfigStore.load(str(tmp_path))
     store.attach_loop(asyncio.get_running_loop())
     store.data.devices = [DeviceEntry(id="d", type="x", config={"bad": object()})]

@@ -5,6 +5,7 @@ be regenerated: the pydantic models have to reproduce it exactly.
 """
 
 import asyncio
+import importlib
 import json
 import os
 import types
@@ -24,6 +25,10 @@ def fake_ledfx() -> object:
     from ledfx.effects import Effect
     from ledfx.integrations import Integration
     from ledfx.utils import RegistryLoader
+
+    # Production startup imports virtuals before exposing effect schemas.
+    # Register its dynamic enum source even when this fixture runs in isolation.
+    importlib.import_module("ledfx.virtuals")
 
     ledfx = types.SimpleNamespace()
     ledfx.devices = RegistryLoader(ledfx, Device, "ledfx.devices")

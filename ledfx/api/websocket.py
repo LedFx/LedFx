@@ -80,7 +80,8 @@ class BroadcastData(BaseModel):
 # Not all events are able to be subscribed to by the websocket
 # This dict show the events that are not subscribable and what event should be used instead
 NON_SUBSCRIBABLE_EVENTS = {
-    "device_update": "Use visualisation_update instead",
+    "device_update": "visualisation_update",
+    "virtual_update": "visualisation_update",
 }
 
 # TODO: Have a more well defined registration and a more componetized solution.
@@ -158,6 +159,7 @@ class WebsocketConnection:
         """
         for func in self._listeners.values():
             func()
+        self._listeners.clear()
 
     @classmethod
     async def get_all_clients(cls):
@@ -800,6 +802,11 @@ class WebsocketConnection:
             message.get("event_type"),
             message.get("event_filter"),
         )
+        # A subscription ID owns one listener. Remove its previous listener
+        # before replacing the removal callback, including when filters change.
+        previous = self._listeners.pop(message["id"], None)
+        if previous is not None:
+            previous()
         self._listeners[message["id"]] = self._ledfx.events.add_listener(
             notify_websocket,
             message.get("event_type"),
@@ -859,9 +866,22 @@ class WebsocketConnection:
 
         if ACTIVE_AUDIO_STREAM.client != client:
             return
-        ACTIVE_AUDIO_STREAM.data = np.fromiter(
-            message.get("data").values(), dtype=np.float32
-        )
+        data = message.get("data")
+        # The frontend sends a list; older ones sent a {"0": ...} dict
+        if isinstance(data, dict):
+            data = list(data.values())
+        try:
+            # np.fromiter would also take a string, or numeric strings, as
+            # samples; the frontend only ever sends a list of numbers.
+            if not isinstance(data, list) or not all(
+                isinstance(sample, (int, float)) for sample in data
+            ):
+                raise TypeError(type(data).__name__)
+            samples = np.fromiter(data, dtype=np.float32)
+        except (TypeError, ValueError, OverflowError):
+            _LOGGER.warning("Malformed audio_stream_data from client %s", client)
+            return
+        ACTIVE_AUDIO_STREAM.data = samples
 
     @websocket_handler("audio_stream_data_v2")
     def audio_stream_data_base64_handler(self, message):

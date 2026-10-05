@@ -62,7 +62,7 @@ jobs:
           gh auth setup-git
           # An unchanged push would rerun checks and could dismiss approvals.
           if git fetch --quiet origin "$BRANCH" 2>/dev/null &&
-            [ "$(git rev-parse FETCH_HEAD^{tree})" = "$(git rev-parse HEAD^{tree})" ]; then
+            [ "$(git rev-parse "FETCH_HEAD^{tree}")" = "$(git rev-parse "HEAD^{tree}")" ]; then
             echo "The open maintenance branch already has this baseline; leaving it unchanged."
           else
             git push --force origin "$BRANCH"

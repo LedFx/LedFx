@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 import xled
+from ledfx_senders.encoders import RGBGather
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -29,6 +30,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self._device_type = "TwinklySquares"
         self.ctrl = None
+        self._gather: RGBGather | None = None
         self._set_config_values(pixel_count=64 * self.config.panel_count)
 
     def config_updated(self, config):
@@ -36,9 +38,10 @@ class TwinklySquaresDevice(NetworkedDevice):
         return super().config_updated(config)
 
     def flush(self, data):
-        pixel_data = data.astype(np.uint8)
-        # do the magic or reordering the whole frame according to the precalculated perm mapping
-        frame = pixel_data[self.perm].tobytes()
+        gather = self._gather
+        if gather is None:
+            raise RuntimeError("Twinkly layout is not active")
+        frame = gather.encode(data)
         # the xled lib supports large packets with version 3, but not persistent sockets
         self.ctrl.set_rt_frame_socket(io.BytesIO(frame), version=3)
 
@@ -57,6 +60,7 @@ class TwinklySquaresDevice(NetworkedDevice):
                 e,
             )
             self.ctrl = None
+            self._gather = None
             self.set_offline()
             return
         self.leds = info["number_of_led"]
@@ -84,6 +88,8 @@ class TwinklySquaresDevice(NetworkedDevice):
             coords_xy, actual_width, actual_height, flip_y=True
         )
 
+        self._gather = RGBGather(tuple(int(index) for index in self.perm))
+
         config_changed = False
 
         # Update pixel count if different
@@ -94,17 +100,14 @@ class TwinklySquaresDevice(NetworkedDevice):
         # Update associated virtuals with the detected matrix height
         for virtual in self._ledfx.virtuals.values():
             if virtual.is_device == self.id:
-                if virtual.config.get("rows", 1) != self.matrix_height:
+                if virtual.config.rows != self.matrix_height:
                     _LOGGER.info(
                         "Updating virtual %s rows from %s to %s",
                         virtual.id,
-                        virtual.config.get("rows", 1),
+                        virtual.config.rows,
                         self.matrix_height,
                     )
-                    virtual.config = {"rows": self.matrix_height}
-                    entry = virtual.entry
-                    if entry is not None:
-                        entry.config.rows = self.matrix_height
+                    virtual.update_config({"rows": self.matrix_height})
                     config_changed = True
                 break  # Only one virtual can be is_device for this device
 
@@ -118,6 +121,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         if self.ctrl:
             self.ctrl.set_mode("movie")
         self.ctrl = None
+        self._gather = None
         return super().deactivate()
 
     def build_twinkly_perm(self, coords_xy, width, height, flip_y=True):

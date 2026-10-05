@@ -1,6 +1,7 @@
 """pydantic models for LedFx configuration."""
 
-from typing import Annotated, Literal, TypeVar
+from dataclasses import dataclass
+from typing import Annotated, Literal, NamedTuple, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -8,13 +9,13 @@ from pydantic import (
     ConfigDict,
     Field,
     JsonValue,
-    SerializerFunctionWrapHandler,
-    model_serializer,
     model_validator,
 )
 from pydantic.fields import ComputedFieldInfo, FieldInfo
 from pydantic.json_schema import JsonDict, SkipJsonSchema
+from typing_extensions import override
 
+from ledfx.color import validate_color
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
     X_LEGACY,
@@ -29,10 +30,13 @@ from ledfx.configuration.fields import (
     IPv4,
     OneOf,
     PlaylistId,
+    PlaylistIdStr,
     SceneId,
+    SceneIdStr,
     VirtualId,
     coerce,
 )
+from ledfx.errors import Invalid
 from ledfx.utils import generate_title
 
 # JSON Schema readOnly: the UI shows the value but must not edit it. What the API
@@ -42,6 +46,10 @@ _RO: JsonDict = {X_READONLY: True}
 
 def _field_title(name: str, _info: FieldInfo | ComputedFieldInfo) -> str:
     return generate_title(name)
+
+
+def _is_none(value: object) -> bool:
+    return value is None
 
 
 def omits_default(info: FieldInfo) -> bool:
@@ -60,19 +68,31 @@ class LedFxModel(BaseModel):
         field_title_generator=_field_title,
     )
 
-    @model_serializer(mode="wrap")
-    def _drop_unset_optionals(self, handler: SerializerFunctionWrapHandler) -> object:
-        data = handler(self)
-        if isinstance(data, dict):
-            for name, info in type(self).model_fields.items():
-                if omits_default(info) and data.get(name, 0) is None:
-                    del data[name]
-        return data
+    @classmethod
+    @override
+    def __pydantic_init_subclass__(cls, **kwargs: object) -> None:
+        # Fields marked X_OMIT_DEFAULT are left out of every dump while None,
+        # unless the field sets its own exclude_if.
+        # exclude_if, unlike a wrap model_serializer, keeps the
+        # serialization-mode JSON Schema real instead of {}.
+        super().__pydantic_init_subclass__(**kwargs)
+        marked = [
+            info
+            for info in cls.__pydantic_fields__.values()
+            if omits_default(info) and info.exclude_if is None
+        ]
+        for info in marked:
+            info.exclude_if = _is_none
+        # An incomplete class (deferred, or a forward reference still to
+        # resolve) picks the new exclude_if up on its first real build.
+        if marked and cls.__pydantic_complete__:
+            cls.model_rebuild(force=True)
 
 
 # No return annotation on purpose: pydantic's model_dump() type is kept, so the
-# legacy dict site (virtuals) reads values as untyped, as it did voluptuous
-# output. Typing it needs that site to read typed models instead.
+# legacy dict sites (audio_devices.py, config.py, playlists.py) read values as
+# untyped, as they did voluptuous output. Typing it needs those sites to read
+# typed models instead.
 def validate_dict(model: type[BaseModel], data: object, *, runtime: bool = False):
     """Validate data (any mapping; anything else is a ValidationError) and
     return a plain dict shaped like voluptuous output."""
@@ -218,7 +238,11 @@ class WledPreferences(LedFxModel):
     inactivity_timeout: WledIntSetting = WledIntSetting(setting=1, user_enabled=False)
 
 
+# Frozen: Virtual.config and the virtual's config entry share one instance, so
+# a change replaces the model (Virtual.update_config), never writes into it.
 class VirtualConfig(LedFxModel):
+    model_config = ConfigDict(frozen=True)
+
     name: str = Field(description="Friendly name for the device")
     mapping: Literal["span", "copy"] = Field(
         "span",
@@ -305,6 +329,89 @@ class VirtualEntry(LedFxModel):
     )
     effects: dict[str, EffectEntry] = {}
     last_effect: str | None = Field(None, json_schema_extra=_UNSET)
+
+
+# ---- manager arguments (plain data; ledfx.virtuals.Virtuals takes them) ----
+
+
+class Segment(NamedTuple):
+    """One run of a device's pixels in a virtual (end inclusive)."""
+
+    device_id: str
+    start: int
+    end: int
+    invert: bool
+
+
+class SetEffectAllResult(NamedTuple):
+    """How Virtuals.set_effect_all went, per virtual."""
+
+    applied: int
+    blocked: int
+    failed: int
+
+
+class ApplyConfigResult(NamedTuple):
+    """How Virtuals.apply_global_config went, per running effect: updated,
+    skipped (it has none of the settings) or failed (it refused them)."""
+
+    updated: int
+    skipped: int
+    failed: int
+
+
+@dataclass(frozen=True)
+class GlobalEffectUpdate:
+    """Settings Virtuals.apply_global_config writes into running effects
+    (None: leave as is). The fractions are 0..1 and background_color a colour
+    string (Invalid at body.<field> otherwise); a gradient is resolved when
+    it is applied."""
+
+    gradient: str | None = None
+    background_color: str | None = None
+    background_brightness: float | None = None
+    brightness: float | None = None
+    flip: bool | None = None
+    mirror: bool | None = None
+
+    def __post_init__(self) -> None:
+        for field in ("background_brightness", "brightness"):
+            value = getattr(self, field)
+            if value is not None and not 0.0 <= value <= 1.0:
+                raise Invalid(f"{field} must be between 0 and 1", loc=("body", field))
+        if self.background_color is not None:
+            try:
+                validate_color(self.background_color)
+            except ValueError as err:
+                raise Invalid(str(err), loc=("body", "background_color")) from err
+
+
+@dataclass(frozen=True)
+class OneshotParams:
+    """A flash: a colour, an envelope in milliseconds and a brightness
+    (0..1; Invalid otherwise)."""
+
+    color: str = "white"
+    ramp_ms: float = 0
+    hold_ms: float = 0
+    fade_ms: float = 0
+    brightness: float = 1.0
+
+    def __post_init__(self) -> None:
+        if not 0.0 <= self.brightness <= 1.0:
+            raise Invalid(
+                "brightness must be between 0 and 1", loc=("body", "brightness")
+            )
+
+
+@dataclass(frozen=True)
+class Highlight:
+    """A device's pixel range (inclusive) to light on a calibrating virtual."""
+
+    device_id: str
+    start: int
+    end: int
+    flip: bool = False
 
 
 class IntegrationEntry(LedFxModel):
@@ -481,8 +588,8 @@ class LedFxConfig(LedFxModel):
     )
     global_brightness: CoercedFloat = Field(1.0, ge=0, le=1.0)
     ui_brightness_boost: CoercedFloat = Field(0.0, ge=0, le=1.0)
-    startup_scene_id: SceneId = ""
-    startup_playlist_id: PlaylistId = ""
+    startup_scene_id: SceneId = SceneIdStr("")
+    startup_playlist_id: PlaylistId = PlaylistIdStr("")
     lifx_broadcast_address: IPv4 = "255.255.255.255"
     lifx_discovery_timeout: int = Field(30, ge=1, le=120)
     instance_id: str = Field("", json_schema_extra=_RO)

@@ -1,31 +1,32 @@
 # Keeps a release PR open while releasable commits (Conventional Commits; see
-# pr-title.yml) are on main, and releases when a maintainer merges it.
+# pr-title.yml) are on main or the maintenance branch, and releases when merged.
 #
 # Merging the release PR bumps pyproject.toml, uv.lock and ledfx/consts.py,
 # writes CHANGELOG.md, and (on the push that follows) creates the v<version>
 # tag and a DRAFT GitHub release holding the changelog. The tag triggers
-# ci.yml's existing publish jobs behind the production approval; its
-# github-release job uploads the frozen builds to that draft and publishes it.
+# ci.yml's publish-release job behind the production approval. It verifies and
+# promotes tested artifacts, then publishes the draft last using the App token.
+# release-notifications.yml responds independently to release:published.
 # Nothing here publishes anything, and the update checker never sees a
 # release without assets.
 name: release-please
 
 on:
   push:
-    branches: [main]
+    branches: [main, release/2.2]
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: release-please
+  group: release-please-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
   release-please:
     name: Release PR, tag and draft release
     runs-on: ubuntu-latest
-    if: github.repository == 'LedFx/LedFx'
+    if: github.repository == 'LedFx/LedFx' && github.ref_type == 'branch' && (github.ref_name == 'main' || github.ref_name == 'release/2.2')
     timeout-minutes: 10
     steps:
       # The app token, not GITHUB_TOKEN: CI must run on the release PR, and a
@@ -41,5 +42,6 @@ jobs:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ steps.mint.outputs.token }}
+          target-branch: ${{ github.ref_name }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json

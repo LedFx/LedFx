@@ -1,24 +1,22 @@
 import logging
-import math
-import random
-from collections.abc import Collection
 from json import JSONDecodeError
-from types import UnionType
-from typing import Annotated, Literal, Union, get_args, get_origin
 
-import annotated_types
 from aiohttp import web
-from pydantic import BaseModel, BeforeValidator, ValidationError
-from pydantic.fields import FieldInfo
+from pydantic import ValidationError
 
 from ledfx.api import RestEndpoint
-from ledfx.configuration.fields import OneOf
+from ledfx.api.v1_compat import effect_config as validated_effect_config
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.plugin import PluginConfig
+from ledfx.configuration.randomize import randomize_effect_config
 from ledfx.effects import DummyEffect
+from ledfx.errors import Conflict, Invalid, ensure_writable
+from ledfx.virtuals import EffectRejected, restarts_effect
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def process_fallback(fallback):
+def process_fallback(fallback: object) -> float | None:
     """converts the fallback param to a sanitized value
 
     Args:
@@ -31,120 +29,12 @@ def process_fallback(fallback):
         float:None: Sanitized falback time or None
     """
     if isinstance(fallback, bool):
-        if fallback is False:
-            fallback = None
-        elif fallback is True:
-            # set up a long default time for fallback, this is to prevent
-            # getting stuck in a temporary effect if the caller forgets to
-            # set a time and the effect has not self triggered exit
-            fallback = 300.0
-    elif isinstance(fallback, (int, float)) and fallback > 0:
-        pass
-    else:
-        fallback = None
-    return fallback
-
-
-def _field_metadata(info: FieldInfo) -> list[object]:
-    """Constraints on the field plus those inside an ``Annotated[...] | None``."""
-    found = list(info.metadata)
-    for arg in get_args(info.annotation):
-        found.extend(getattr(arg, "__metadata__", ()))
-    return found
-
-
-def _base_type(info: FieldInfo) -> object:
-    """The annotation without ``| None`` and ``Annotated[...]`` wrappers."""
-    annotation = info.annotation
-    args = [a for a in get_args(annotation) if a is not type(None)]
-    if get_origin(annotation) in (Union, UnionType) and len(args) == 1:
-        annotation = args[0]
-    while get_origin(annotation) is Annotated:
-        annotation = get_args(annotation)[0]
-    return annotation
-
-
-def _choices(info: FieldInfo) -> list[object]:
-    for meta in _field_metadata(info):
-        if isinstance(meta, OneOf):
-            return meta.values()
-    base = _base_type(info)
-    if get_origin(base) is Literal:
-        return list(get_args(base))
-    return []
-
-
-def _bounds(info: FieldInfo) -> tuple[float, bool, float, bool] | None:
-    """(lower, lower_exclusive, upper, upper_exclusive), or None if not bounded."""
-    lower: float | None = None
-    upper: float | None = None
-    lower_open = upper_open = False
-    for meta in _field_metadata(info):
-        if isinstance(meta, (annotated_types.Ge, annotated_types.Gt)):
-            value = meta.ge if isinstance(meta, annotated_types.Ge) else meta.gt
-            if isinstance(value, (int, float)):
-                lower, lower_open = value, isinstance(meta, annotated_types.Gt)
-        elif isinstance(meta, (annotated_types.Le, annotated_types.Lt)):
-            value = meta.le if isinstance(meta, annotated_types.Le) else meta.lt
-            if isinstance(value, (int, float)):
-                upper, upper_open = value, isinstance(meta, annotated_types.Lt)
-    if lower is None or upper is None or lower > upper:
-        return None
-    if lower == upper and (lower_open or upper_open):
-        return None
-    return lower, lower_open, upper, upper_open
-
-
-def randomize_effect_config(
-    model: type[BaseModel], ignored: Collection[str]
-) -> dict[str, object]:
-    """Randomize supported settings without guessing values for unknown fields.
-
-    Booleans and choices always; numbers only for coerced fields with both
-    bounds (CoercedInt/CoercedFloat with ge/le or gt/lt).
-    Every value is checked against the field, so exclusive bounds and extra
-    validators are respected.
-    """
-    result: dict[str, object] = {}
-    for name, info in model.model_fields.items():
-        if name in ignored:
-            continue
-        base = _base_type(info)
-        choices = _choices(info)
-        value: object
-        if base is bool:
-            value = random.choice([True, False])
-        elif choices:
-            value = random.choice(choices)
-        elif base in (int, float) and any(
-            isinstance(m, BeforeValidator) for m in _field_metadata(info)
-        ):
-            bounds = _bounds(info)
-            if bounds is None:
-                continue
-            lower, lower_open, upper, upper_open = bounds
-            if base is int:
-                low = math.floor(lower) + 1 if lower_open else math.ceil(lower)
-                high = math.ceil(upper) - 1 if upper_open else math.floor(upper)
-                if low > high:
-                    continue
-                value = random.randint(low, high)
-            else:
-                value = random.uniform(lower, upper)
-                # uniform() can return an endpoint; step inside an exclusive one.
-                if lower_open and value <= lower:
-                    value = math.nextafter(lower, upper)
-                if upper_open and value >= upper:
-                    value = math.nextafter(upper, lower)
-        else:
-            continue
-        try:
-            model.model_validate({name: value})
-        except ValidationError as err:
-            if any(e["loc"][:1] == (name,) for e in err.errors()):
-                continue
-        result[name] = value
-    return result
+        # True: a long default, so a caller that forgets a time and an effect
+        # that never exits by itself can't leave the virtual stuck.
+        return 300.0 if fallback else None
+    if isinstance(fallback, (int, float)) and fallback > 0:
+        return fallback
+    return None
 
 
 class EffectsEndpoint(RestEndpoint):
@@ -155,7 +45,7 @@ class EffectsEndpoint(RestEndpoint):
             isinstance(effect_type, str) and effect_type in self._ledfx.effects.types()
         )
 
-    async def get(self, virtual_id) -> web.Response:
+    async def get(self, virtual_id: str) -> web.Response:
         """
         Get active effect configuration for a virtual.
 
@@ -171,6 +61,7 @@ class EffectsEndpoint(RestEndpoint):
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
         # Protect from DummyEffect
+        response: dict[str, object]
         if virtual.active_effect and not isinstance(virtual.active_effect, DummyEffect):
             response = {
                 "effect": {
@@ -184,7 +75,7 @@ class EffectsEndpoint(RestEndpoint):
 
         return await self.bare_request_success(response)
 
-    async def put(self, virtual_id, request) -> web.Response:
+    async def put(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Update the config of the active effect of a virtual.
 
@@ -215,12 +106,12 @@ class EffectsEndpoint(RestEndpoint):
         if not self._known_effect(effect_type):
             return await self.invalid_request(f"Unknown effect type: {effect_type}")
         if effect_config is None:
-            effect_config = {}
+            effect_config = dict[str, object]()
         if effect_config == "RANDOMIZE":
             effect_type = virtual.active_effect.type
-            effect = self._ledfx.effects.get_class(effect_type)
+            effect_class = self._ledfx.effects.get_class(effect_type)
             effect_config = randomize_effect_config(
-                effect.config_model(), ["brightness"]
+                effect_class.config_model(), ["brightness"]
             )
         if not isinstance(effect_config, dict):
             return await self.invalid_request("'config' must be an object")
@@ -228,68 +119,68 @@ class EffectsEndpoint(RestEndpoint):
         fallback = process_fallback(data.get("fallback", None))
 
         if fallback is not None and virtual.streaming:
+            # v1-compat: patch_effect has no streamed-to check (set_effect has
+            # one), and v1 answers it here, before it knows which one it calls.
             error_message = (
                 f"Unable to set effect: Virtual {virtual_id} being streamed to"
             )
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message, "error", resp_code=409)
 
-        # See if virtual's active effect type matches this effect type,
-        # if so update the effect config
-        # otherwise, create a new effect and add it to the virtual
-
+        # The same type updates the running effect; another type replaces it.
+        virtuals = self._ledfx.virtuals
+        vid = VirtualIdStr(virtual_id)
         try:
-            # handling an effect update. nested if else and repeated code bleh. ain't a looker ;)
-            if virtual.active_effect and virtual.active_effect.type == effect_type:
-                # substring search to match any key of color
-                # this handles special cases where we want to update an effect and also trigger
-                # a transition by creating a new effect.
-                # add color_blend and set to False in your effect to prevent effect recreation on color change
-                # leave as a switch or add to HIDDEN_KEYS
-                if getattr(virtual.active_effect.config, "color_blend", True) and next(
-                    (key for key in effect_config if "color" in key),
-                    None,
-                ):
-                    effect = self._ledfx.effects.create(
-                        ledfx=self._ledfx,
-                        type=effect_type,
-                        config={
-                            **virtual.active_effect.config.as_dict(),
-                            **effect_config,
-                        },
-                    )
-                    virtual.set_effect(effect, fallback=fallback)
-                else:
-                    effect = virtual.active_effect
-                    virtual.active_effect.update_config(effect_config)
-
-            # handling a new effect
-            else:
-                effect = self._ledfx.effects.create(
-                    ledfx=self._ledfx, type=effect_type, config=effect_config
+            # v1-compat: safe mode answers before a bad config does.
+            ensure_writable(self._ledfx)
+            running = virtual.active_effect
+            if running.type == effect_type:
+                # v1-compat: check the merged settings first, for pydantic's
+                # error list; the manager is handed typed values.
+                merged = validated_effect_config(
+                    self._ledfx,
+                    effect_type,
+                    {**running.config.as_dict(), **effect_config},
                 )
-                virtual.set_effect(effect, fallback=fallback)
-
+                # v1-compat: the patch holds the checked values of the keys sent.
+                checked = merged.as_dict()
+                patch = PluginConfig.model_validate(
+                    {k: checked.get(k, v) for k, v in effect_config.items()}
+                )
+                if fallback is not None and restarts_effect(running, patch):
+                    # v1-compat: a colour change with a fallback restarts the
+                    # effect as a fallback; the manager's patch has no fallback.
+                    virtual = virtuals.set_effect(
+                        vid, effect_type, merged, fallback=fallback
+                    )
+                else:
+                    # v1-compat: any fallback is dropped when nothing restarts.
+                    virtual = virtuals.patch_effect(vid, patch)
+            else:
+                virtual = virtuals.set_effect(
+                    vid,
+                    effect_type,
+                    # v1-compat: check the raw settings for pydantic's error list.
+                    validated_effect_config(self._ledfx, effect_type, effect_config),
+                    fallback=fallback,
+                )
         except ValidationError as err:
             return await self.validation_error(err)
-        except (ValueError, RuntimeError) as msg:
-            error_message = f"Unable to set effect: {msg}"
+        except (Invalid, Conflict) as err:
+            error_message = f"Unable to set effect: {err.detail}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message, "warning")
 
-        virtual.update_effect_config(effect)
-
-        self._ledfx.config_store.request_save()
-
-        effect_response = {}
-        effect_response["config"] = effect.config
-        effect_response["name"] = effect.name
-        effect_response["type"] = effect.type
-
+        effect = virtual.active_effect
+        effect_response = {
+            "config": effect.config,
+            "name": effect.name,
+            "type": effect.type,
+        }
         response = {"status": "success", "effect": effect_response}
         return await self.bare_request_success(response)
 
-    async def post(self, virtual_id, request) -> web.Response:
+    async def post(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Set the active effect of a virtual.
 
@@ -317,54 +208,57 @@ class EffectsEndpoint(RestEndpoint):
             return await self.invalid_request(f"Unknown effect type: {effect_type}")
 
         effect_config = data.get("config")
-        if effect_config is None:
-            effect_config = virtual.get_effects_config(effect_type)
-        elif effect_config == "RANDOMIZE":
-            effect = self._ledfx.effects.get_class(effect_type)
+        if effect_config == "RANDOMIZE":
+            effect_class = self._ledfx.effects.get_class(effect_type)
             effect_config = randomize_effect_config(
-                effect.config_model(),
+                effect_class.config_model(),
                 ["brightness", "background_color", "background_brightness"],
             )
-        elif not isinstance(effect_config, dict):
+        elif effect_config is not None and not isinstance(effect_config, dict):
             return await self.invalid_request("'config' must be an object")
 
-        # Create the effect and add it to the virtual
+        fallback = process_fallback(data.get("fallback", None))
         try:
-            effect = self._ledfx.effects.create(
-                ledfx=self._ledfx, type=effect_type, config=effect_config
+            # v1-compat: safe mode answers before a bad config does.
+            ensure_writable(self._ledfx)
+            # v1-compat: without a config the type's stored one applies; check
+            # it here (a stale one answers 400) and hand the manager typed values.
+            vid = VirtualIdStr(virtual_id)
+            virtual = self._ledfx.virtuals.set_effect(
+                vid,
+                effect_type,
+                validated_effect_config(
+                    self._ledfx,
+                    effect_type,
+                    virtual.get_effects_config(effect_type)
+                    if effect_config is None
+                    else effect_config,
+                ),
+                fallback=fallback,
             )
         except ValidationError as err:
             return await self.validation_error(err)
-
-        fallback = process_fallback(data.get("fallback", None))
-
-        if fallback is not None and virtual.streaming:
+        except EffectRejected as err:
             error_message = (
-                f"Unable to set effect: Virtual {virtual_id} is being streamed to"
+                f"Unable to set effect {err.effect} on {virtual_id}: {err.detail}"
             )
+            _LOGGER.warning(error_message)
+            return await self.invalid_request(error_message)
+        except Conflict as err:
+            error_message = f"Unable to set effect: {err.detail}"
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message, "error", resp_code=409)
 
-        try:
-            virtual.set_effect(effect, fallback=fallback)
-        except (ValueError, RuntimeError) as msg:
-            error_message = f"Unable to set effect {effect} on {virtual_id}: {msg}"
-            _LOGGER.warning(error_message)
-            return await self.invalid_request(error_message)
-
-        virtual.update_effect_config(effect)
-
-        self._ledfx.config_store.request_save()
-
-        effect_response = {}
-        effect_response["config"] = effect.config
-        effect_response["name"] = effect.name
-        effect_response["type"] = effect.type
-
+        effect = virtual.active_effect
+        effect_response = {
+            "config": effect.config,
+            "name": effect.name,
+            "type": effect.type,
+        }
         response = {"status": "success", "effect": effect_response}
         return await self.bare_request_success(response)
 
-    async def delete(self, virtual_id) -> web.Response:
+    async def delete(self, virtual_id: str) -> web.Response:
         """
         Deletes a virtual effect with the given ID.
 
@@ -374,17 +268,9 @@ class EffectsEndpoint(RestEndpoint):
         Returns:
             web.Response: The response indicating the success or failure of the deletion.
         """
-        virtual = self._ledfx.virtuals.get(virtual_id)
-        if virtual is None:
+        if self._ledfx.virtuals.get(virtual_id) is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        virtual.clear_effect()
-
-        entry = virtual.entry
-        if entry is not None:
-            entry.effect = None
-
-        self._ledfx.config_store.request_save()
-
-        response = {"status": "success", "effect": {}}
+        self._ledfx.virtuals.clear_effect(VirtualIdStr(virtual_id))
+        response: dict[str, object] = {"status": "success", "effect": {}}
         return await self.bare_request_success(response)

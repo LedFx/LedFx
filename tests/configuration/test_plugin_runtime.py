@@ -318,28 +318,35 @@ async def test_setting_an_invalid_effect_config_is_a_400() -> None:
     from unittest.mock import AsyncMock, MagicMock
 
     from ledfx.api.virtual_effects import EffectsEndpoint
-    from ledfx.effects import Effects
+    from tests.test_utilities.virtuals_core import (
+        add_virtual,
+        install_virtuals,
+        stop_virtuals,
+    )
 
-    ledfx = fake_ledfx()
-    ledfx.effects = Effects(ledfx)
+    ledfx = install_virtuals(fake_ledfx())
+    add_virtual(ledfx, "virtual", "virtual", [])
     request = MagicMock()
     request.json = AsyncMock(
         return_value={"type": "rainbow", "config": {"brightness": 7}}
     )
-    response = await EffectsEndpoint(ledfx).post("virtual", request)
+    try:
+        response = await EffectsEndpoint(ledfx).post("virtual", request)
+    finally:
+        stop_virtuals(ledfx)
     assert response.status == 400
     assert "brightness" in json.dumps(json.loads(response.text or ""))
 
 
-def test_toggle_flips_flags_on_a_real_effect() -> None:
+def test_apply_config_sets_flags_on_a_real_effect() -> None:
     from ledfx.effects import Effects
-    from ledfx.virtuals import apply_config_to_active_effects
+    from ledfx.virtuals import _apply_to_running_effects
 
     ledfx = fake_ledfx()
     ledfx.dev_enabled.return_value = False
     effect = Effects(ledfx).create(ledfx=ledfx, type="rainbow", config={"flip": True})
     assert effect is not None
     virtual = MagicMock(id="v", active_effect=effect)
-    updates: dict[str, object] = {"flip": "toggle", "mirror": "toggle"}
-    assert apply_config_to_active_effects([virtual], updates) == (1, 0)
+    updates: dict[str, object] = {"flip": False, "mirror": True}
+    assert _apply_to_running_effects([virtual], updates) == (1, 0, 0)
     assert effect.config.flip is False and effect.config.mirror is True

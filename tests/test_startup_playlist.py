@@ -1,5 +1,6 @@
 """Tests for startup_playlist_id configuration and activation logic."""
 
+import logging
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -7,6 +8,7 @@ import pytest
 from ledfx.api.utils import PERMITTED_KEYS
 from ledfx.configuration.models import RESTART_FIELDS, LedFxConfig
 from ledfx.core import LedFxCore
+from ledfx.errors import SafeMode
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
@@ -95,3 +97,21 @@ class TestStartupPlaylistActivation:
         await core._handle_startup_playlist()
 
         core.playlists.start.assert_called_once_with("nonexistent")
+
+
+class TestStartupScene:
+    """The startup scene is skipped quietly in safe mode."""
+
+    def test_safe_mode_skips_the_scene_at_debug(
+        self, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        core = MagicMock()
+        core.config.startup_scene_id = "party"
+        core.scenes.activate.side_effect = SafeMode("read-only")
+        with caplog.at_level(logging.DEBUG, logger="ledfx.core"):
+            LedFxCore._activate_startup_scene(core)
+
+        core.scenes.activate.assert_called_once_with("party")
+        assert [r.levelno for r in caplog.records if "startup" in r.getMessage()] == [
+            logging.DEBUG
+        ]

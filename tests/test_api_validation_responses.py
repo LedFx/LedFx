@@ -37,14 +37,15 @@ from ledfx.api.virtual_effects import EffectsEndpoint as VirtualEffectsEndpoint
 from ledfx.api.virtual_effects_delete import EffectsEndpoint as EffectsDeleteEndpoint
 from ledfx.api.virtual_presets import VirtualPresetsEndpoint
 from ledfx.api.virtuals import VirtualsEndpoint
-from ledfx.configuration.models import Preset, VirtualEntry
+from ledfx.configuration.models import Preset, Segment, VirtualEntry
+from ledfx.configuration.plugin import PluginConfig
 from ledfx.devices import Device, Devices, SerialDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.integrations.spotify import Spotify
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.utils import BaseRegistry, UserDefaultCollection
-from ledfx.virtuals import Virtual
+from ledfx.virtuals import Virtual, Virtuals
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
 
@@ -106,6 +107,9 @@ class _Virtual:
         self.update_effect_config = MagicMock()
         self.get_effects_config = MagicMock(return_value=dict[str, object]())
 
+    def validate_segment(self, segment: object) -> object:
+        return segment
+
     @property
     def active(self) -> bool:
         return self._active
@@ -123,10 +127,19 @@ def _entry() -> VirtualEntry:
     )
 
 
+@pytest.fixture(autouse=True)
+def _restore_virtuals_singleton(monkeypatch: pytest.MonkeyPatch) -> None:
+    # _with_virtual replaces the singleton; this restores it at teardown.
+    monkeypatch.setattr(Virtuals, "_instance", Virtuals._instance)
+
+
 def _with_virtual(virtual: _Virtual | None = None) -> tuple[MagicMock, _Virtual]:
+    """A fake core whose real Virtuals manager holds one fake virtual, "v1"."""
     ledfx = fake_ledfx()
     virtual = virtual or _Virtual()
-    ledfx.virtuals.get.return_value = virtual
+    Virtuals._instance = None
+    ledfx.virtuals = Virtuals(ledfx)
+    ledfx.virtuals._virtuals["v1"] = virtual
     ledfx.effects.types.return_value = ["singleColor"]
     return ledfx, virtual
 
@@ -543,12 +556,13 @@ async def test_failed_effect_restore_on_activation_is_not_a_202(failure: str) ->
 async def test_segment_errors_are_not_500s() -> None:
     ledfx, virtual = _with_virtual()
     virtual.update_segments.side_effect = ValueError("bad")
+    segments = [["gap-1", 0, 1, False]]
     status, response = await _call(
-        VirtualEndpoint(ledfx), "POST", {"segments": 5}, virtual_id="v1"
+        VirtualEndpoint(ledfx), "POST", {"segments": segments}, virtual_id="v1"
     )
     assert status == 200 and "bad" in _reason(response)
     # update_segments restores itself; the endpoint doesn't call it again.
-    virtual.update_segments.assert_called_once_with(5)
+    virtual.update_segments.assert_called_once_with([Segment("gap-1", 0, 1, False)])
     ledfx.config_store.request_save.assert_not_called()
 
 
@@ -605,7 +619,8 @@ async def test_bad_effect_posts_are_named(body: object, reason: str) -> None:
 
 async def test_effect_put_without_type_updates_the_active_effect() -> None:
     ledfx, virtual = _with_virtual()
-    virtual.active_effect.config = dict[str, object]()
+    virtual.active_effect.config = PluginConfig.model_validate({})
+    ledfx.effects.get_class.return_value.config_model.return_value = PluginConfig
     virtual.active_effect.name = "Single Color"
     body = {"config": {"brightness": 0.5}}
     _, response = await _call(

@@ -78,6 +78,15 @@ proof_of_life_tests = {
         expected_return_code=200,
         expected_response_keys=["playlists"],
     ),
+    # v2 is mounted by HttpServer.start(); clients detect it by this route.
+    "v2_system": APITestCase(
+        execution_order=11,
+        method="GET",
+        api_endpoint="/api/v2/system",
+        expected_return_code=200,
+        expected_response_keys=["name", "version", "api_versions"],
+        expected_response_values=[{"api_versions": ["v1", "v2"]}],
+    ),
     # If we have a dirty config, clean up the test jig before we start
     "cleanup_test_device": APITestCase(
         execution_order=3,

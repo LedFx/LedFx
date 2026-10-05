@@ -33,16 +33,12 @@ from ledfx.api.virtual_tools import VirtualToolsEndpoint
 from ledfx.api.virtuals_tools import VirtualsToolsEndpoint
 from ledfx.color import (
     LEDFX_COLORS,
-    LEDFX_GRADIENTS,
-    parse_color,
-    parse_gradient,
-    validate_color,
-    validate_gradient,
 )
 from ledfx.integrations.spotify import Spotify
 from ledfx.presets import ledfx_presets
 from ledfx.scenes import Scenes
-from ledfx.utils import UserDefaultCollection
+from ledfx.utils import build_user_collections
+from ledfx.virtuals import Virtuals
 from tests.test_api_validation_responses import _call, _reason, _request
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -133,22 +129,7 @@ async def test_built_in_presets_are_read_only(
 
 def _with_colors() -> MagicMock:
     ledfx = fake_ledfx({"user_colors": {"mine": "#010203"}})
-    ledfx.colors = UserDefaultCollection(
-        ledfx,
-        "Colors",
-        LEDFX_COLORS,
-        ledfx.config.user_colors,
-        validate_color,
-        parse_color,
-    )
-    ledfx.gradients = UserDefaultCollection(
-        ledfx,
-        "Gradients",
-        LEDFX_GRADIENTS,
-        ledfx.config.user_gradients,
-        validate_gradient,
-        parse_gradient,
-    )
+    ledfx.colors, ledfx.gradients = build_user_collections(ledfx)
     return ledfx
 
 
@@ -227,12 +208,20 @@ def test_user_default_collection_refuses_to_touch_built_ins() -> None:
         del colors["ghost"]
 
 
+@pytest.fixture(autouse=True)
+def _restore_virtuals_singleton(monkeypatch: pytest.MonkeyPatch) -> None:
+    # _tool_virtual replaces the singleton; this restores it at teardown.
+    monkeypatch.setattr(Virtuals, "_instance", Virtuals._instance)
+
+
 def _tool_virtual() -> tuple[MagicMock, MagicMock]:
+    """A fake core whose real Virtuals manager holds one MagicMock virtual, "v1"."""
     ledfx = fake_ledfx()
-    virtual = MagicMock()
+    virtual = MagicMock(id="v1")
     virtual.add_oneshot.return_value = True
-    ledfx.virtuals.get.return_value = virtual
-    ledfx.virtuals.__iter__.return_value = iter(["v1"])
+    Virtuals._instance = None
+    ledfx.virtuals = Virtuals(ledfx)
+    ledfx.virtuals._virtuals["v1"] = virtual
     return ledfx, virtual
 
 
@@ -268,6 +257,7 @@ async def test_tools_post_refuses_tools_it_does_not_run(
         ("fade", "inf"),
         ("hold", "nan"),
         ("color", "notacolor"),
+        ("color", "#1000000"),
     ],
 )
 async def test_tools_oneshot_rejects_bad_values(
@@ -290,11 +280,15 @@ async def test_tools_oneshot_still_clamps_brightness(one_virtual: bool) -> None:
 
 
 @pytest.mark.parametrize("one_virtual", [True, False])
+@pytest.mark.parametrize(
+    ("color", "reason"),
+    [("notacolor", "Invalid color: notacolor"), ("#1000000", "Invalid color: 1000000")],
+)
 async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
-    one_virtual: bool,
+    one_virtual: bool, color: str, reason: str
 ) -> None:
     ledfx, virtual = _tool_virtual()
-    body = {"tool": "force_color", "color": "notacolor"}
+    body = {"tool": "force_color", "color": color}
     if one_virtual:
         status, reply = await _call(
             VirtualsToolsEndpoint(ledfx), "PUT", body, virtual_id="v1"
@@ -303,7 +297,7 @@ async def test_tools_force_color_with_a_bad_color_is_an_invalid_request(
         virtual.is_device = virtual.id = "v1"
         status, reply = await _call(VirtualToolsEndpoint(ledfx), "PUT", body)
     assert status == 200
-    assert _reason(reply) == "Invalid color: notacolor"
+    assert _reason(reply) == reason
     virtual.force_frame.assert_not_called()
 
 

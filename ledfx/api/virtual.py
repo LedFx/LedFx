@@ -4,14 +4,18 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.configuration.fields import VirtualIdStr
+from ledfx.configuration.models import Segment
 from ledfx.effects import DummyEffect
+from ledfx.errors import Conflict, Invalid
+from ledfx.virtuals import Virtual
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def make_virtual_response(virtual):
+def make_virtual_response(virtual: Virtual) -> dict[str, object]:
     entry = virtual.entry
-    virtual_response = {
+    virtual_response: dict[str, object] = {
         "config": virtual.config,
         "id": virtual.id,
         "is_device": virtual.is_device,
@@ -35,12 +39,28 @@ def make_virtual_response(virtual):
     return virtual_response
 
 
+def _v1_segments(virtual: Virtual, value: object) -> list[Segment]:
+    """v1-compat: the manager refuses segments outside a device's pixels; v1
+    clamped them and answered success, so clamp here. Raises ValueError with
+    v1's text."""
+    if isinstance(value, (list, tuple)):
+        return [
+            Segment._make(
+                virtual.validate_segment(
+                    list(item) if isinstance(item, (list, tuple)) else item
+                )
+            )
+            for item in value
+        ]
+    raise ValueError(f"Invalid segments: {value}, should be a list of segments")
+
+
 class VirtualEndpoint(RestEndpoint):
     """REST end-point for querying and managing virtuals"""
 
     ENDPOINT_PATH = "/api/virtuals/{virtual_id}"
 
-    async def get(self, virtual_id) -> web.Response:
+    async def get(self, virtual_id: str) -> web.Response:
         """
         Get a virtual's full config
         """
@@ -48,12 +68,12 @@ class VirtualEndpoint(RestEndpoint):
         if virtual is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        response = {"status": "success"}
+        response: dict[str, object] = {"status": "success"}
         response[virtual.id] = make_virtual_response(virtual)
 
         return await self.bare_request_success(response)
 
-    async def put(self, virtual_id, request) -> web.Response:
+    async def put(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Set a virtual to active or inactive
         """
@@ -75,43 +95,21 @@ class VirtualEndpoint(RestEndpoint):
         if not isinstance(active, bool):
             return await self.invalid_request('"active" must be true or false')
 
-        # Update the virtual's configuration
-        effect = None
         try:
-            if active and (
-                not virtual._active_effect
-                or isinstance(virtual.active_effect, DummyEffect)
-            ):
-                # Restore the last effect; a stale stored config fails here too.
-                entry = virtual.entry
-                last_effect = entry.last_effect if entry is not None else None
-                if last_effect:
-                    effect_config = virtual.get_effects_config(last_effect)
-                    if effect_config:
-                        effect = self._ledfx.effects.create(
-                            ledfx=self._ledfx,
-                            type=last_effect,
-                            config=effect_config,
-                        )
-                        virtual.set_effect(effect)
-            virtual.active = active
-        except (ValueError, RuntimeError) as msg:  # includes ValidationError
-            error_message = f"Unable to set virtual {virtual.id} status: {msg}"
+            virtual = self._ledfx.virtuals.set_active(VirtualIdStr(virtual_id), active)
+        except Conflict as err:
+            # v1-compat: v1 words the refusal as a status failure and shows the
+            # underlying error's text (the stale-config case has a cleaner v2 detail).
+            error_message = (
+                f"Unable to set virtual {virtual.id} status: {err.__cause__ or err}"
+            )
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
-        if effect is not None:
-            virtual.update_effect_config(effect)
-
-        entry = virtual.entry
-        if entry is not None:
-            entry.active = virtual.active
-
-        self._ledfx.config_store.request_save()
 
         response = {"status": "success", "active": virtual.active}
         return await self.bare_request_success(response)
 
-    async def post(self, virtual_id, request) -> web.Response:
+    async def post(self, virtual_id: str, request: web.Request) -> web.Response:
         """
         Update a virtual's segments configuration
         """
@@ -129,62 +127,29 @@ class VirtualEndpoint(RestEndpoint):
                 'Required attribute "segments" was not provided'
             )
 
-        # update_segments validates first and restores on an activation failure.
         try:
-            virtual.update_segments(virtual_segments)
-        except ValueError as msg:
-            error_message = f"Unable to set virtual segments {virtual_segments}: {msg}"
+            virtual = self._ledfx.virtuals.set_segments(
+                VirtualIdStr(virtual_id), _v1_segments(virtual, virtual_segments)
+            )
+        except (ValueError, Invalid) as err:
+            detail = err.detail if isinstance(err, Invalid) else str(err)
+            error_message = (
+                f"Unable to set virtual segments {virtual_segments}: {detail}"
+            )
             _LOGGER.warning(error_message)
             return await self.invalid_request(error_message)
-
-        entry = virtual.entry
-        if entry is not None:
-            entry.segments = virtual.segments
-
-        self._ledfx.config_store.request_save()
 
         response = {"status": "success", "segments": virtual.segments}
         return await self.bare_request_success(response)
 
-    async def delete(self, virtual_id) -> web.Response:
+    async def delete(self, virtual_id: str) -> web.Response:
         """
         Remove a virtual with this virtual id
         Handles deleting the device if the virtual is dedicated to a device
         Removes references to this virtual in any scenes
         """
-        virtual = self._ledfx.virtuals.get(virtual_id)
-        if virtual is None:
+        if self._ledfx.virtuals.get(virtual_id) is None:
             return await self.invalid_request(f"Virtual with ID {virtual_id} not found")
 
-        virtual.clear_effect()
-        device_id = virtual.is_device
-        device = self._ledfx.devices.get(device_id)
-        if device is not None:
-            await device.remove_from_virtuals()
-            # remove_from_virtuals may have already destroyed this device
-            if self._ledfx.devices.get(device_id) is not None:
-                self._ledfx.devices.destroy(device_id)
-
-            # Update and save the configuration
-            self._ledfx.config.devices = [
-                _device
-                for _device in self._ledfx.config.devices
-                if _device.id != device_id
-            ]
-
-        # cleanup this virtual from any scenes
-        for scene in self._ledfx.config.scenes.values():
-            scene.virtuals.pop(virtual_id, None)
-
-        # remove_from_virtuals may have already destroyed this virtual
-        if self._ledfx.virtuals.get(virtual_id) is not None:
-            self._ledfx.virtuals.destroy(virtual_id)
-
-        # Update and save the configuration
-        self._ledfx.config.virtuals = [
-            virtual
-            for virtual in self._ledfx.config.virtuals
-            if virtual.id != virtual_id
-        ]
-        self._ledfx.config_store.request_save()
+        self._ledfx.virtuals.remove(VirtualIdStr(virtual_id))
         return await self.request_success()

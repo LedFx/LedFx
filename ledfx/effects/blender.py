@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image, ImageOps
 from pydantic import Field
 
-from ledfx.configuration.fields import CoercedFloat, OneOf, VirtualId
+from ledfx.configuration.fields import CoercedFloat, OneOf, VirtualId, VirtualIdStr
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.effects.audio import AudioReactiveEffect
 
@@ -21,7 +21,7 @@ class BlendVirtual:
         # Try protection against virtual not being found is left to the caller
 
         virtual = _virtuals.get(virtual_id)
-        self.rows = virtual.config["rows"]
+        self.rows = virtual.config.rows
         self.columns = int(virtual.pixel_count / self.rows)
         self.matching = (
             self.rows == fallback_shape[0] and self.columns == fallback_shape[1]
@@ -115,13 +115,16 @@ class Blender(AudioReactiveEffect):
             description="How to stretch the foreground source pixles to the effect pixels",
         )
         mask: VirtualId = Field(
-            "", description="The virtual from which to source the mask"
+            VirtualIdStr(""),
+            description="The virtual from which to source the mask",
         )
         foreground: VirtualId = Field(
-            "", description="The virtual from which to source the foreground"
+            VirtualIdStr(""),
+            description="The virtual from which to source the foreground",
         )
         background: VirtualId = Field(
-            "", description="The virtual from which to source the background"
+            VirtualIdStr(""),
+            description="The virtual from which to source the background",
         )
         invert_mask: bool = Field(False, description="Switch Foreground and Background")
         mask_cutoff: CoercedFloat = Field(
@@ -135,7 +138,7 @@ class Blender(AudioReactiveEffect):
 
     def on_activate(self, pixel_count):
         # TODO: refactor to shape tuples instead of rows and columns
-        self.rows = self._virtual.config["rows"]
+        self.rows = self._virtual.config.rows
         self.columns = int(self.pixel_count / self.rows)
         self.pixels_shape = np.shape(self.pixels)
 

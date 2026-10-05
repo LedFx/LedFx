@@ -4,9 +4,8 @@ from json import JSONDecodeError
 from aiohttp import web
 
 from ledfx.api import RestEndpoint
+from ledfx.api.v1_compat import v1_color
 from ledfx.api.virtuals_tools import OneshotRequest, refuse_post_tool
-from ledfx.color import parse_color, validate_color
-from ledfx.effects.oneshots.oneshot import Flash
 
 _LOGGER = logging.getLogger(__name__)
 TOOLS = ["force_color", "oneshot"]
@@ -41,10 +40,7 @@ class VirtualToolsEndpoint(RestEndpoint):
             return refused
 
         oneshot = OneshotRequest.model_validate(data)
-        for virtual_id in self._ledfx.virtuals:
-            virtual = self._ledfx.virtuals.get(virtual_id)
-            if virtual is not None:
-                virtual.add_oneshot(oneshot.flash())
+        self._ledfx.virtuals.oneshot(None, oneshot.params())
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)
@@ -74,30 +70,15 @@ class VirtualToolsEndpoint(RestEndpoint):
                     "Required attribute for force_color, color was not provided"
                 )
             try:
-                rgb = parse_color(validate_color(color))
+                # Every device's own virtual
+                # v1-compat: a colour may be an [r, g, b] list.
+                self._ledfx.virtuals.force_color(None, v1_color(color))
             except ValueError as e:
                 return await self.invalid_request(str(e))
-            for virtual_id in self._ledfx.virtuals:
-                virtual = self._ledfx.virtuals.get(virtual_id)
-                if virtual.is_device == virtual.id:
-                    virtual.force_frame(rgb)
 
-        if tool == "oneshot":
-            # Disable all oneshot Flash if put request is sent.
-            result = False
-            for virtual_id in self._ledfx.virtuals:
-                virtual = self._ledfx.virtuals.get(virtual_id)
-                if virtual is not None:
-                    for oneshot in virtual.oneshots:
-                        if isinstance(oneshot, Flash):
-                            oneshot.active = False
-                            result = True  # return True if there was at least one oneshot Flash to disable
-
-            if result is False:
-                return await self.invalid_request("oneshot was not found")
-
-        effect_response = {}
-        effect_response["tool"] = tool
+        # Disable every virtual's oneshot Flashes
+        if tool == "oneshot" and not self._ledfx.virtuals.clear_oneshots(None):
+            return await self.invalid_request("oneshot was not found")
 
         response = {"status": "success", "tool": tool}
         return await self.bare_request_success(response)

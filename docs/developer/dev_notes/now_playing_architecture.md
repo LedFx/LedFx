@@ -43,7 +43,7 @@ Related files outside the package:
 | `ledfx/api/now_playing.py` | REST endpoint `GET/PUT /api/now-playing` |
 | `ledfx/events.py` | 5 Now Playing event types |
 | `ledfx/color.py` | `build_gradient_config()` helper |
-| `ledfx/virtuals.py` | `apply_config_to_active_effects()` helper |
+| `ledfx/virtuals.py` | `Virtuals.apply_global_config()` / `Virtuals.set_effect()` (the service goes through the manager) |
 | `ledfx/core.py` | instantiates `NowPlayingService` as `ledfx.now_playing`; creates and starts `SMTCNowPlayingProvider` |
 | `ledfx/sendspin/stream.py` | creates `SendspinNowPlayingProvider` on connect |
 
@@ -246,17 +246,17 @@ AlbumArtResolver.on_track_changed(metadata)  ->  async MusicBrainz lookup
 
 ### Gradient
 
-`apply_gradient_to_virtuals()` uses `build_gradient_config()` (from `ledfx/color.py`) to resolve the gradient string and sample color groups, then calls `apply_config_to_active_effects()` (from `ledfx/virtuals.py`) to update all matching active effects. Changes are persisted to config.
+`apply_gradient_to_virtuals()` calls `Virtuals.apply_global_config()` with the gradient, which resolves it, samples the colour groups, updates all matching active effects and persists the config. Configured ids that no longer exist are dropped; in safe mode nothing is applied.
 
 Target scope: `gradient.virtual_ids` if non-empty, otherwise all virtuals.
 
 ### Track Text
 
-Creates a `texter2d` effect using the optional `track_text.preset` as base config, then sets `text` to the normalised `"Artist - Album - Title"` string (see Metadata Normalisation above). Applied via `virtual.set_effect(effect, fallback=duration)`. If `duration == 0` the effect is permanent. Track text is only applied when the audio stream is active.
+Creates a `texter2d` effect using the optional `track_text.preset` as base config, then sets `text` to the normalised `"Artist - Album - Title"` string (see Metadata Normalisation above). Applied via `Virtuals.set_effect(..., fallback=duration, store=False)`: the effect is never stored or saved, so a restart brings back the virtual's own effect. If `duration == 0` there is no restore timer and the effect stays until something replaces it. Track text is only applied when the audio stream is active.
 
 ### Album Art
 
-Creates an `imagespin` effect seeded from the built-in `artwork` preset, with `image_source` set to `artwork.cache_key`. Applied via `virtual.set_effect(effect, fallback=duration)`. If `duration == 0` the effect is permanent.
+Creates an `imagespin` effect seeded from the built-in `artwork` preset, with `image_source` set to `artwork.cache_key`. Applied via `Virtuals.set_effect(..., fallback=duration, store=False)`: the effect is never stored or saved, so a restart brings back the virtual's own effect. If `duration == 0` there is no restore timer and the effect stays until something replaces it.
 
 ---
 

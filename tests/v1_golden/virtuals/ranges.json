@@ -1,0 +1,122 @@
+[
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "calibration",
+        "mode": "on"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"calibration\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 10,
+        "stop": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": -5,
+        "stop": -2
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 3,
+        "stop": 3
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "start": 2
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "strip",
+        "stop": 2
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"tool\": \"highlight\"}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/virtuals_tools/dj%20bird",
+      {
+        "tool": "highlight",
+        "device": "ghost",
+        "start": 10,
+        "stop": 5
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"failed\", \"payload\": {\"type\": \"error\", \"reason\": \"highlight error: Device ghost not found\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "apply_global",
+        "mirror": true,
+        "virtuals": [
+          "ghost"
+        ]
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"success\", \"reason\": \"Applied global configuration to 0 effects (skipped 0)\"}}"
+  },
+  {
+    "request": [
+      "PUT",
+      "/api/effects",
+      {
+        "action": "clear_all_effects"
+      }
+    ],
+    "status": 200,
+    "body": "{\"status\": \"success\", \"payload\": {\"type\": \"info\", \"reason\": \"Cleared all effects on all devices\"}}"
+  }
+]

@@ -23,9 +23,10 @@ env:
   DOCKERHUB_IMAGE: ledfxorg/ledfx
 
 jobs:
-  # Docs/frontend-only PRs skip the builds here rather than with paths-ignore:
-  # a workflow skipped by paths-ignore never reports, so the required
-  # "CI passed" check would wait forever. Skipped jobs count as passed.
+  # Decides which jobs a PR needs, here rather than with paths-ignore: a
+  # workflow skipped by paths-ignore never reports, so the required "CI passed"
+  # check would wait forever. Skipped jobs count as passed. Pushes (main,
+  # tags) and manual runs always run everything.
   plan:
     name: Plan
     runs-on: ubuntu-latest
@@ -34,7 +35,11 @@ jobs:
       contents: read
       pull-requests: read  # reads PR metadata (changed paths) to decide which jobs run
     outputs:
-      code: ${{ steps.plan.outputs.code }}
+      code: ${{ steps.plan.outputs.code }} # lint
+      tests: ${{ steps.plan.outputs.tests }} # Linux tests
+      platform: ${{ steps.plan.outputs.platform }} # Windows tests, macOS smoke
+      build: ${{ steps.plan.outputs.build }} # package, frozen builds, Docker
+      pythons: ${{ steps.plan.outputs.pythons }} # Linux test matrix
       version: ${{ steps.plan.outputs.version }}
       release: ${{ steps.plan.outputs.release }}
     steps:
@@ -47,6 +52,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_REF: ${{ github.base_ref }}
           REPO: ${{ github.repository }}
           REF: ${{ github.ref }}
           EVENT: ${{ github.event_name }}
@@ -69,7 +77,8 @@ jobs:
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
           fi
-          code=true
+          code=true tests=true platform=true build=true
+          pythons='["3.11", "3.12", "3.13", "3.14"]'
           if [ -n "$PR" ]; then
             # previous_filename: moving code out of ledfx/ into docs/ is still a code change
             files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | .filename, (.previous_filename // empty)')
@@ -77,8 +86,42 @@ jobs:
             # docs/**/*.py is type-checked by the Pyrefly lint hook, so it counts as code.
             grep -qvE '^(frontend|docs|ledfx_frontend)/' <<< "$files" \
               || grep -qE '^docs/.*\.py$' <<< "$files" || code=false
+            # A change to this workflow runs all of it.
+            if ! grep -qx '.github/workflows/ci.yml' <<< "$files"; then
+              # Repo metadata (other workflows, bot and editor config, top-level
+              # prose) is checked by lint (actionlint, zizmor); nothing to test.
+              meta='^(frontend/|docs/|ledfx_frontend/|\.github/|\.vscode/|renovate\.json$|release-please-config\.json$|\.release-please-manifest\.json$|\.readthedocs\.yml$|\.gitignore$|\.git-blame-ignore-revs$|[^/]+\.(md|rst|txt)$)'
+              grep -qvE "$meta" <<< "$files" || tests=false
+              # Tests alone can't break a build.
+              grep -qvE "$meta|^tests/" <<< "$files" || build=false
+              # Mid-stack (another open PR here builds on this branch): lint
+              # and Linux tests on the oldest and newest Python. The top of a
+              # stack (based on another PR's branch, nothing on top) runs
+              # everything: its files are one layer, its tree is the stack's.
+              # A plain assignment, so a failed query fails this step (bash -e)
+              # and with it CI passed, rather than reading as "stacked on".
+              above=0
+              if [ "$HEAD_REPO" = "$REPO" ]; then
+                above=$(gh api -X GET "repos/$REPO/pulls" -f state=open -f base="$HEAD_REF" --jq length)
+              fi
+              if [ "$above" != 0 ]; then
+                platform=false build=false
+                pythons='["3.11", "3.14"]'
+              elif [ "$BASE_REF" != main ]; then
+                code=true tests=true platform=true build=true
+              fi
+            fi
           fi
-          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ "$code" = true ] || tests=false
+          [ "$tests" = true ] || platform=false
+          [ "$code" = true ] || build=false
+          {
+            echo "code=$code"
+            echo "tests=$tests"
+            echo "platform=$platform"
+            echo "build=$build"
+            echo "pythons=$pythons"
+          } >> "$GITHUB_OUTPUT"
 
   # Fast lint gate before any build/test spend. Runs the same prek hook set
   # contributors see locally (`uv run prek run --all-files`), so CI cannot
@@ -107,16 +150,83 @@ jobs:
       # context): fork PRs get a read-only token here and org secrets are not
       # injected into this workflow at all, so it stays credential-free.
 
+  # The committed /api/v2 contract. openapi/ledfx-v2.json is generated in one
+  # canonical environment (Linux, Python 3.12 from UV_PYTHON, every extra), so
+  # only this job runs the drift test. oasdiff then compares it with the base
+  # branch's copy; the api-break label skips that comparison.
+  openapi:
+    name: OpenAPI spec
+    needs: [plan, lint]
+    if: needs.plan.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read  # reads the PR's labels at run time (api-break)
+    env:
+      LEDFX_CANONICAL_SPEC: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc libatlas3-base portaudio19-dev
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
+      - name: Install LedFx
+        env:
+          CFLAGS: -Wno-incompatible-function-pointer-types
+        run: uv sync --all-extras --dev
+      # --noconftest: these tests need no running LedFx or LIFX emulator.
+      - name: Committed spec is current and passes the lint
+        run: |
+          set -o pipefail  # the default `bash -e` would take tee's status
+          uv run pytest -v -rs --noconftest --timeout=120 tests/api_v2/test_committed_spec.py tests/api_v2/test_spec_lint.py | tee pytest.log
+          # A skip means LEDFX_CANONICAL_SPEC drifted from the test: fail, don't go green.
+          if grep -Eq '[0-9]+ skipped' pytest.log; then echo "::error::spec tests were skipped"; exit 1; fi
+      - name: Fetch the base branch's spec
+        id: base
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          # Read live, not from the event: re-running this job after adding
+          # the label then takes effect.
+          labels=$(gh api "repos/$REPO/pulls/$PR" --jq '.labels[].name')
+          if grep -qx api-break <<< "$labels"; then
+            echo "::notice::api-break label: skipping the breaking-change check"
+            exit 0
+          fi
+          git fetch --depth=1 origin "$BASE_REF"
+          if git show FETCH_HEAD:openapi/ledfx-v2.json > base-spec.json 2>/dev/null; then
+            echo "check=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$BASE_REF has no openapi/ledfx-v2.json yet: nothing to compare"
+          fi
+      - name: No breaking API changes
+        if: steps.base.outputs.check == 'true'
+        uses: oasdiff/oasdiff-action/breaking@5e81b5c380accc6b523f9d32a637ca630e33620b # v0.1.17
+        with:
+          base: base-spec.json
+          revision: openapi/ledfx-v2.json
+          fail-on: ERR
+          review: false # never upload the specs to oasdiff.com
+          github-token: "" # no PR comment
+
   test-linux:
     name: Test (Ubuntu, py${{ matrix.python }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.tests == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13", "3.14"]
+        python: ${{ fromJSON(needs.plan.outputs.pythons) }}
     env:
       UV_PYTHON: ${{ matrix.python }}
     steps:
@@ -138,16 +248,18 @@ jobs:
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
+        env:
+          LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ledfx-log-linux-py${{ matrix.python }}
-          path: debug_config/ledfx.log
+          path: ${{ runner.temp }}/ledfx-test/*.log
 
   test-windows:
     name: Test (Windows, py${{ matrix.python }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.platform == 'true'
     runs-on: windows-2022 # pinned until we understand why windows-2025 has audio device issues
     timeout-minutes: 20
     strategy:
@@ -182,16 +294,18 @@ jobs:
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
+        env:
+          LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ledfx-log-windows-py${{ matrix.python }}
-          path: debug_config/ledfx.log
+          path: ${{ runner.temp }}/ledfx-test/*.log
 
   test-macos:
     name: Smoke test (macOS arm64, py${{ matrix.python }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.platform == 'true'
     runs-on: macos-latest
     timeout-minutes: 20
     strategy:
@@ -226,7 +340,7 @@ jobs:
   frozen-windows:
     name: Frozen build (Windows)
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: windows-latest
     timeout-minutes: 30
     env:
@@ -273,7 +387,7 @@ jobs:
   frozen-macos:
     name: Frozen build (macOS ${{ matrix.suffix }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     strategy:
@@ -339,6 +453,28 @@ jobs:
         run: |
           7z x "LedFx-$VERSION-win-x64.zip"
           "LedFx-$VERSION/LedFx.exe" -vv --ci-smoke-test --offline
+      # //S: Git Bash would rewrite /S as a path. The second install runs over
+      # a running LedFx, which the installer must close rather than half-replace.
+      - name: Install, then upgrade over a running LedFx
+        run: |
+          7z x "LedFx-$VERSION-win-x64-setup.zip"
+          dir="/c/Program Files/LedFx"
+          "./LedFx-$VERSION-setup.exe" //S
+          "$dir/LedFx.exe" -vv --ci-smoke-test --offline
+          "$dir/LedFx.exe" --offline > ledfx-running.log 2>&1 &
+          pid=$!
+          sleep 20
+          kill -0 "$pid" || { echo "::error::LedFx exited before the upgrade"; cat ledfx-running.log; exit 1; }
+          "./LedFx-$VERSION-setup.exe" //S
+          "$dir/LedFx.exe" -vv --ci-smoke-test --offline
+      # _?= makes the uninstaller run in place, so -Wait waits for it. It must be
+      # last and unquoted, which Git Bash can't pass.
+      - name: Uninstall
+        shell: pwsh
+        run: |
+          $dir = "C:\Program Files\LedFx"
+          $p = Start-Process -Wait -PassThru "$dir\uninst.exe" -ArgumentList "/S _?=$dir"
+          if ($p.ExitCode -ne 0 -or (Test-Path "$dir\_internal") -or (Test-Path "$dir\LedFx.exe")) { exit 1 }
 
   smoke-macos:
     name: Smoke test frozen build (macOS ${{ matrix.suffix }})
@@ -364,7 +500,7 @@ jobs:
   package:
     name: Build Python package
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -417,10 +553,10 @@ jobs:
   docker:
     name: Docker (${{ matrix.arch }})
     needs: [plan, lint]
-    if: needs.plan.outputs.code == 'true'
+    if: needs.plan.outputs.build == 'true'
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
-    # NOTE: deliberately no environment here. This job runs on every PR;
+    # NOTE: deliberately no environment here. This job runs on PRs;
     # an environment with protection rules (production has required
     # reviewers + a branch policy) would block or reject PR builds. The
     # Docker Hub login step is gated on PUBLISH, so fork PRs never touch
@@ -502,7 +638,7 @@ jobs:
   docker-edge:
     name: Docker edge manifest
     needs: [plan, ci-passed]
-    # Tag runs publish through docker-latest; moving edge there could roll it
+    # Tag runs publish through publish-release; moving edge there could roll it
     # back to an older commit.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'LedFx/LedFx'
     runs-on: ubuntu-latest
@@ -534,6 +670,7 @@ jobs:
     needs:
       - plan
       - lint
+      - openapi
       - test-linux
       - test-windows
       - test-macos
@@ -551,60 +688,101 @@ jobs:
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
 
-  # Release: tag v<version> only. Each job only downloads tested artifacts and
-  # publishes them; one approval of the production environment releases all.
-  # GitHub approves per environment, so that holds only while every production
-  # job has the same needs and reaches the gate together. A job with extra
-  # needs would wait at the gate later and ask for a second approval.
-  github-release:
-    name: Publish GitHub release
+  # Release-please has already created the tag, changelog and draft. Promote
+  # tested artifacts in one production job, then publish GitHub LAST with the
+  # App token: release:published can now start independent notifications after
+  # every distribution is ready. Sentry keeps the same approval dependencies.
+  publish-release:
+    name: Publish verified release
     needs: [plan, ci-passed]
-    if: needs.plan.outputs.release == 'true'
+    if: >-
+      !cancelled() && needs.plan.result == 'success' && needs.ci-passed.result == 'success' &&
+      needs.plan.outputs.release == 'true' && github.repository == 'LedFx/LedFx' &&
+      github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     environment: production
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+    concurrency:
+      group: release-publication
+      cancel-in-progress: false
+      queue: max
     permissions:
-      contents: write  # creates the GitHub release and uploads frozen-build assets
+      contents: read
+      id-token: write  # PyPI Trusted Publishing and Sigstore provenance signing
+      packages: write  # promotes tested GHCR image digests
+      attestations: write
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: release-*
           merge-multiple: true
-      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          name: LedFx ${{ needs.plan.outputs.version }}
-          files: LedFx-*
-          fail_on_unmatched_files: true
-          generate_release_notes: true
-
-  pypi:
-    name: Publish to PyPI
-    needs: [plan, ci-passed]
-    if: needs.plan.outputs.release == 'true'
-    environment: production
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write # Trusted Publishing
-    steps:
+          path: release-assets/
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: python-dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-
-  docker-latest:
-    name: Publish Docker latest
-    needs: [plan, ci-passed]
-    if: needs.plan.outputs.release == 'true'
-    environment: production
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      packages: write  # pushes the release tag image to GHCR
-    env:
-      VERSION: ${{ needs.plan.outputs.version }}
-    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: docker-*
+          merge-multiple: true
+          path: docker-digests/
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            .github
+            pyproject.toml
+          sparse-checkout-cone-mode: false
+          path: release-tools
+      - name: Mint the publication token
+        id: release-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-attestations: write
+      - name: Verify release identity and existing artifacts
+        id: prepare
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        with:
+          phase: prepare
+          project: release-tools
+          assets: release-assets
+          dist: dist
+          docker-digests: docker-digests
+          snapshot: ${{ runner.temp }}/release-snapshot.json
+      - name: Attest release archives and Python distributions
+        id: file-provenance
+        if: steps.prepare.outputs.already_published != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            ${{ github.workspace }}/release-assets/*
+            ${{ github.workspace }}/dist/*
+          create-storage-record: false
+          github-token: ${{ steps.release-token.outputs.token }}
+      - name: Recheck immutable inputs before PyPI upload
+        id: upload
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        with:
+          phase: check-upload
+          project: release-tools
+          assets: release-assets
+          dist: dist
+          docker-digests: docker-digests
+          snapshot: ${{ runner.temp }}/release-snapshot.json
+      - name: Publish verified Python distributions
+        if: steps.upload.outputs.pypi_upload == 'true'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          skip-existing: true  # Fresh shared checks require matching remote SHA-256.
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ghcr.io
@@ -614,17 +792,59 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Verify PyPI and promote tested Docker digests
+        id: promote
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
         with:
-          pattern: docker-*
-          merge-multiple: true
-      - name: Create release manifests
-        run: |
-          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
-            mapfile -t sources < <(grep -h "^$image@" docker-*.txt)
-            test "${#sources[@]}" -eq 2
-            docker buildx imagetools create -t "$image:latest" -t "$image:$VERSION" -t "$image:$GITHUB_SHA" "${sources[@]}"
-          done
+          phase: promote
+          project: release-tools
+          assets: release-assets
+          dist: dist
+          docker-digests: docker-digests
+          snapshot: ${{ runner.temp }}/release-snapshot.json
+      - name: Attest the promoted GHCR image
+        id: ghcr-provenance
+        if: steps.prepare.outputs.already_published != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: ${{ env.GHCR_IMAGE }}
+          subject-digest: ${{ fromJSON(steps.promote.outputs.image_digests)['ghcr.io/ledfx/ledfx'] }}
+          push-to-registry: true
+          create-storage-record: false
+          github-token: ${{ steps.release-token.outputs.token }}
+      - name: Attest the promoted Docker Hub image
+        id: dockerhub-provenance
+        if: steps.prepare.outputs.already_published != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: docker.io/${{ env.DOCKERHUB_IMAGE }}
+          subject-digest: ${{ fromJSON(steps.promote.outputs.image_digests)['docker.io/ledfxorg/ledfx'] }}
+          push-to-registry: true
+          create-storage-record: false
+          github-token: ${{ steps.release-token.outputs.token }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && steps.prepare.outcome == 'success'
+        with:
+          name: provenance-${{ github.ref_name }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/release-snapshot.json
+            ${{ steps.file-provenance.outputs.bundle-path }}
+            ${{ steps.ghcr-provenance.outputs.bundle-path }}
+            ${{ steps.dockerhub-provenance.outputs.bundle-path }}
+          if-no-files-found: error
+      - name: Verify provenance and publish the GitHub draft
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        with:
+          phase: finalize
+          project: release-tools
+          assets: release-assets
+          dist: dist
+          docker-digests: docker-digests
+          snapshot: ${{ runner.temp }}/release-snapshot.json
 
   sentry:
     name: Notify Sentry of release

@@ -8,13 +8,6 @@
       "severity": "error"
     },
     {
-      "column": 11,
-      "path": "docs/conf.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`setup` is missing an annotation for parameter `app`",
-      "severity": "error"
-    },
-    {
       "column": 18,
       "path": "docs/conf.py",
       "name": "implicit-any-empty-container",
@@ -292,62 +285,6 @@
       "path": "ledfx/api/device.py",
       "name": "implicit-any-parameter",
       "concise_description": "`delete` is missing an annotation for parameter `device_id`",
-      "severity": "error"
-    },
-    {
-      "column": 41,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 41,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-lambda",
-      "concise_description": "Type of lambda parameter `x` is unknown",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-lambda",
-      "concise_description": "Type of lambda parameter `x` is unknown",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "ledfx/api/effects.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `str`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/api/effects.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
       "severity": "error"
     },
     {
@@ -827,153 +764,6 @@
       "severity": "error"
     },
     {
-      "column": 27,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`make_virtual_response` is missing an annotation for parameter `virtual`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 32,
-      "path": "ledfx/api/virtual.py",
-      "name": "bad-assignment",
-      "concise_description": "`dict[str, dict[str, Unknown] | Unknown]` is not assignable to dict key with type `str`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/api/virtual.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`delete` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`process_fallback` is missing an annotation for parameter `fallback`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 29,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`delete` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 52,
-      "path": "ledfx/api/virtual_effects.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/virtual_effects_delete.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/api/virtual_effects_delete.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtual_effects_fallback.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
       "column": 33,
       "path": "ledfx/api/virtual_presets.py",
       "name": "implicit-any-parameter",
@@ -1034,48 +824,6 @@
       "path": "ledfx/api/virtual_presets.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/api/virtuals.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`get` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`post` is missing an annotation for parameter `request`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/api/virtuals_tools.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`put` is missing an annotation for parameter `request`",
       "severity": "error"
     },
     {
@@ -1713,13 +1461,6 @@
       "path": "ledfx/color.py",
       "name": "implicit-any-parameter",
       "concise_description": "`rgb_to_hsv_vect` is missing an annotation for parameter `out`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/color.py",
-      "name": "invalid-annotation",
-      "concise_description": "Tuple literal cannot be used in annotations",
       "severity": "error"
     },
     {
@@ -2585,76 +2326,6 @@
     },
     {
       "column": 24,
-      "path": "ledfx/devices/artnet.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/devices/artnet.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/devices/artnet.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/artnet.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `ArtNetDevice.config_updated` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/devices/artnet.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "ledfx/devices/artnet.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`config_use` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/artnet.py",
-      "name": "bad-override",
-      "concise_description": "Class member `ArtNetDevice.activate` overrides parent class `NetworkedDevice` in an inconsistent manner",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/artnet.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `ArtNetDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/artnet.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `ArtNetDevice.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/artnet.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
       "path": "ledfx/devices/ddp.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
@@ -2675,27 +2346,6 @@
       "severity": "error"
     },
     {
-      "column": 30,
-      "path": "ledfx/devices/ddp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/ddp.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `socket | Unknown | None` is not assignable to parameter `sock` with type `socket` in function `DDPDevice.send_out`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/ddp.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Unknown | None` is not assignable to parameter `dest` with type `str` in function `DDPDevice.send_out`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/devices/dummy.py",
       "name": "implicit-any-parameter",
@@ -2721,13 +2371,6 @@
       "path": "ledfx/devices/e131.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/devices/e131.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
       "severity": "error"
     },
     {
@@ -2745,45 +2388,10 @@
       "severity": "error"
     },
     {
-      "column": 17,
-      "path": "ledfx/devices/e131.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `priority`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/e131.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `multicast`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/e131.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `destination`",
-      "severity": "error"
-    },
-    {
-      "column": 56,
-      "path": "ledfx/devices/e131.py",
-      "name": "bad-assignment",
-      "concise_description": "`Unknown | None` is not assignable to attribute `destination` with type `str`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/devices/e131.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `E131Device.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/e131.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `data`",
       "severity": "error"
     },
     {
@@ -2836,20 +2444,6 @@
       "severity": "error"
     },
     {
-      "column": 35,
-      "path": "ledfx/devices/govee.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_encoded_packet` is missing an annotation for parameter `packet`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "ledfx/devices/govee.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`create_razer_packet` is missing an annotation for parameter `colors`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/devices/govee.py",
       "name": "missing-override-decorator",
@@ -2868,13 +2462,6 @@
       "path": "ledfx/devices/govee.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `Govee.activate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 37,
-      "path": "ledfx/devices/govee.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`calculate_xor_checksum_fast` is missing an annotation for parameter `packet`",
       "severity": "error"
     },
     {
@@ -4537,13 +4124,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/devices/nanoleaf.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send`",
-      "severity": "error"
-    },
-    {
       "column": 21,
       "path": "ledfx/devices/nanoleaf.py",
       "name": "implicit-any-parameter",
@@ -4560,13 +4140,6 @@
     {
       "column": 9,
       "path": "ledfx/devices/open_pixel_control.py",
-      "name": "bad-override",
-      "concise_description": "Class member `OpenPixelControl.activate` overrides parent class `NetworkedDevice` in an inconsistent manner",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/open_pixel_control.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `OpenPixelControl.activate` overrides a member in a parent class but is missing an `@override` decorator",
       "severity": "error"
@@ -4576,55 +4149,6 @@
       "path": "ledfx/devices/open_pixel_control.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `OpenPixelControl.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_out` is missing an annotation for parameter `self`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_out` is missing an annotation for parameter `sock`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_out` is missing an annotation for parameter `dest`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_out` is missing an annotation for parameter `port`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/open_pixel_control.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_out` is missing an annotation for parameter `data`",
       "severity": "error"
     },
     {
@@ -4688,111 +4212,6 @@
       "path": "ledfx/devices/openrgb.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `OpenRGBClient` has no attribute `id`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/osc.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `OSCServerDevice.config_updated` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 30,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`config_updated` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/osc.py",
-      "name": "bad-override",
-      "concise_description": "Class member `OSCServerDevice.activate` overrides parent class `NetworkedDevice` in an inconsistent manner",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/osc.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `OSCServerDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "ledfx/devices/osc.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Unknown | None` is not assignable to parameter `address` with type `str` in function `pythonosc.udp_client.UDPClient.__init__`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/osc.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `OSCServerDevice.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/devices/osc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `_sock`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/osc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__generate_path` is missing an annotation for parameter `path`",
-      "severity": "error"
-    },
-    {
-      "column": 42,
-      "path": "ledfx/devices/osc.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__generate_path` is missing an annotation for parameter `address`",
-      "severity": "error"
-    },
-    {
-      "column": 68,
-      "path": "ledfx/devices/packets.py",
-      "name": "not-a-type",
-      "concise_description": "Expected a type form, got instance of `Overload[\n  [ArrayT: ndarray](object: ArrayT, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ArrayT\n  [ArrayT: ndarray](object: numpy._core.multiarray._SupportsArray[ArrayT], dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: Literal[True], ndmin: Literal[0] = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ArrayT\n  [ScalarT: generic](object: _ArrayLike, dtype: None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[ScalarT]]\n  [ScalarT: generic](object: Any, dtype: _DTypeLike, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray[tuple[Any, ...], dtype[ScalarT]]\n  (object: Any, dtype: _HasDType[dtype] | _HasNumPyDType[dtype] | dtype | list[Any] | str | _DTypeDict | tuple[Any, Any] | type[Any] | None = None, *, copy: _CopyMode | bool | None = True, order: _OrderKACF = 'K', subok: bool = False, ndmin: int = 0, ndmax: int = 0, like: _SupportsArrayFunc | None = None) -> ndarray\n]`",
       "severity": "error"
     },
     {
@@ -4972,90 +4391,6 @@
     },
     {
       "column": 24,
-      "path": "ledfx/devices/udp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/devices/udp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/udp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/udp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`choose_and_send_packet` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/udp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`choose_and_send_packet` is missing an annotation for parameter `timeout`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/devices/udp.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `int` is not assignable to parameter `led_start_index` with type `unsignedinteger[_16Bit]` in function `ledfx.devices.packets.build_dnrgb_packet`",
-      "severity": "error"
-    },
-    {
-      "column": 63,
-      "path": "ledfx/devices/udp.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `int` is not assignable to parameter `led_start_index` with type `unsignedinteger[_16Bit]` in function `ledfx.devices.packets.build_dnrgb_packet`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/devices/udp.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`transmit_packet` is missing an annotation for parameter `packet`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/udp.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `sendto`",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/devices/udp.py",
-      "name": "bad-assignment",
-      "concise_description": "`float` is not assignable to attribute `last_frame_sent_time` with type `int`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/devices/udp.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `sendto`",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/devices/udp.py",
-      "name": "bad-assignment",
-      "concise_description": "`float` is not assignable to attribute `last_frame_sent_time` with type `int`",
-      "severity": "error"
-    },
-    {
-      "column": 24,
       "path": "ledfx/devices/utils/rgbw_conversion.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `rgb_order`",
@@ -5146,13 +4481,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/devices/wled.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/devices/wled.py",
       "name": "missing-override-decorator",
@@ -5183,13 +4511,6 @@
     {
       "column": 9,
       "path": "ledfx/devices/wled.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `activate`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/wled.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `WLEDDevice.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
       "severity": "error"
@@ -5202,24 +4523,10 @@
       "severity": "error"
     },
     {
-      "column": 37,
-      "path": "ledfx/devices/wled.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`resolve_address` is missing an annotation for parameter `success_callback`",
-      "severity": "error"
-    },
-    {
       "column": 21,
       "path": "ledfx/devices/wled.py",
       "name": "implicit-any-parameter",
       "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/wled.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `flush`",
       "severity": "error"
     },
     {
@@ -5413,13 +4720,6 @@
     },
     {
       "column": 15,
-      "path": "ledfx/effects/__init__.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 16,
       "path": "ledfx/effects/__init__.py",
       "name": "implicit-any-attribute",
       "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
@@ -8212,13 +7512,6 @@
       "severity": "error"
     },
     {
-      "column": 16,
-      "path": "ledfx/effects/gradient.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
       "column": 34,
       "path": "ledfx/effects/gradient.py",
       "name": "implicit-any-parameter",
@@ -8382,20 +7675,6 @@
     {
       "column": 27,
       "path": "ledfx/effects/hsv_effect.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/effects/hsv_effect.py",
       "name": "implicit-any-parameter",
       "concise_description": "`on_activate` is missing an annotation for parameter `pixel_count`",
       "severity": "error"
@@ -8440,48 +7719,6 @@
       "path": "ledfx/effects/hsv_effect.py",
       "name": "unsupported-operation",
       "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `numpy._core.fromnumeric.amax` called with arguments: (ndarray | Unknown | None, axis=Literal[1], out=Unknown)",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "ledfx/effects/hsv_effect.py",
-      "name": "unsupported-operation",
-      "concise_description": "`-` is not supported between `None` and `None`",
       "severity": "error"
     },
     {
@@ -13819,13 +13056,6 @@
       "severity": "error"
     },
     {
-      "column": 42,
-      "path": "ledfx/integrations/mqtt_hass.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`publish_single_color_updated` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
       "column": 34,
       "path": "ledfx/integrations/mqtt_hass.py",
       "name": "implicit-any-parameter",
@@ -14054,13 +13284,6 @@
       "path": "ledfx/integrations/qlc.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_send_payload` is missing an annotation for parameter `qlc_payload`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/integrations/qlc.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send`",
       "severity": "error"
     },
     {
@@ -14446,13 +13669,6 @@
       "path": "ledfx/mdns_manager.py",
       "name": "implicit-any-parameter",
       "concise_description": "`handle_exception` is missing an annotation for parameter `future`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/mdns_manager.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `async_close`",
       "severity": "error"
     },
     {
@@ -17382,13 +16598,6 @@
       "severity": "error"
     },
     {
-      "column": 49,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_validate_and_set_frequency_range` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -17452,13 +16661,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_valid_id` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 33,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -17477,13 +16679,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`validate_segment` is missing an annotation for parameter `segment`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`>` is not supported between `None` and `Literal[0]`",
       "severity": "error"
     },
     {
@@ -17529,13 +16724,6 @@
       "severity": "error"
     },
     {
-      "column": 43,
-      "path": "ledfx/virtuals.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `numpy._core.multiarray.zeros` called with arguments: (tuple[Literal[0] | Unknown | None, Literal[3]])",
-      "severity": "error"
-    },
-    {
       "column": 27,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -17568,27 +16756,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`set_highlight` is missing an annotation for parameter `device_id`",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `start`",
-      "severity": "error"
-    },
-    {
-      "column": 54,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `end`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`set_highlight` is missing an annotation for parameter `flip`",
       "severity": "error"
     },
     {
@@ -17739,20 +16906,6 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
       "column": 16,
       "path": "ledfx/virtuals.py",
       "name": "bad-return",
@@ -17771,48 +16924,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`config` is missing an annotation for parameter `new_config`",
-      "severity": "error"
-    },
-    {
-      "column": 38,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 50,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 45,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 43,
-      "path": "ledfx/virtuals.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
       "severity": "error"
     },
     {
@@ -17988,41 +17099,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-type-argument",
       "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 17,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_T` for generic class `set[_T]`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "tests/conftest.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`pytest_sessionstart` is missing an annotation for parameter `session`",
-      "severity": "error"
-    },
-    {
-      "column": 26,
-      "path": "tests/conftest.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`pytest_sessionfinish` is missing an annotation for parameter `session`",
-      "severity": "error"
-    },
-    {
-      "column": 35,
-      "path": "tests/conftest.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`pytest_sessionfinish` is missing an annotation for parameter `exitstatus`",
-      "severity": "error"
-    },
-    {
-      "column": 11,
-      "path": "tests/conftest.py",
-      "name": "unknown-name",
-      "concise_description": "Could not find name `ledfx`",
       "severity": "error"
     },
     {
@@ -21806,20 +20882,6 @@
       "severity": "error"
     },
     {
-      "column": 23,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_effect` is missing an annotation for parameter `schema_keys`",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_effect` is missing an annotation for parameter `hidden_keys`",
-      "severity": "error"
-    },
-    {
       "column": 54,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -21838,27 +20900,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`_make_mock_virtual` is missing an annotation for parameter `effect`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 20,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__getitem__` is missing an annotation for parameter `key`",
       "severity": "error"
     },
     {
@@ -21967,13 +21008,6 @@
       "severity": "error"
     },
     {
-      "column": 50,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_skips_dummy_effect` is missing an annotation for parameter `ledfx_with_virtuals`",
-      "severity": "error"
-    },
-    {
       "column": 49,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -22020,13 +21054,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 40,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_hidden_keys_skipped` is missing an annotation for parameter `service_v`",
       "severity": "error"
     },
     {
@@ -22261,20 +21288,6 @@
       "severity": "error"
     },
     {
-      "column": 40,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_make_mock_virtual_with_set_effect` is missing an annotation for parameter `vid`",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`create` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
       "column": 29,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -22300,13 +21313,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`ledfx_album_art` is missing an annotation for parameter `tmp_path`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`service_aa` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {
@@ -22345,13 +21351,6 @@
       "severity": "error"
     },
     {
-      "column": 63,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_empty_virtual_ids_returns_zero` is missing an annotation for parameter `ledfx_album_art`",
-      "severity": "error"
-    },
-    {
       "column": 44,
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
@@ -22377,13 +21376,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_no_cache_key_returns_zero` is missing an annotation for parameter `ledfx_album_art`",
-      "severity": "error"
-    },
-    {
-      "column": 50,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_no_virtuals_attr_returns_zero` is missing an annotation for parameter `service`",
       "severity": "error"
     },
     {
@@ -22510,13 +21502,6 @@
       "path": "tests/test_now_playing_service.py",
       "name": "implicit-any-parameter",
       "concise_description": "`test_set_effect_error_skips_virtual` is missing an annotation for parameter `service_aa`",
-      "severity": "error"
-    },
-    {
-      "column": 63,
-      "path": "tests/test_now_playing_service.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`test_set_effect_error_skips_virtual` is missing an annotation for parameter `ledfx_album_art`",
       "severity": "error"
     },
     {

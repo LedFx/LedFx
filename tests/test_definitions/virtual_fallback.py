@@ -53,7 +53,6 @@ virtual_fallback_tests = {
         expected_response_values=[
             {"status": "success"},
         ],
-        sleep_after_test=0.5,
     ),
     # Set effect with fallback (triggers fallback on top of rainbow)
     "set_effect_to_virtual_with_fallback": APITestCase(
@@ -66,7 +65,6 @@ virtual_fallback_tests = {
         expected_response_values=[
             {"status": "success"},
         ],
-        sleep_after_test=1.0,
     ),
     # Get effect before fallback
     "get_effect_from_virtual_before_fallback": APITestCase(
@@ -101,7 +99,8 @@ virtual_fallback_tests = {
                 }
             }
         ],
-        sleep_after_test=1.4,
+        # The 2.0 s fallback timer must fire before the next case checks for it
+        sleep_after_test=2.4,
     ),
     # Get effect after fallback
     "get_effect_from_virtual_after_fallback": APITestCase(
@@ -140,6 +139,5 @@ virtual_fallback_tests = {
         expected_response_keys=[],
         expected_response_values=[],
         payload_to_send={},
-        sleep_after_test=1.0,
     ),
 }

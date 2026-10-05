@@ -3,11 +3,13 @@ import json
 import logging
 import uuid
 from json import JSONDecodeError
+from typing import ClassVar
 
 from aiohttp import web
 from pydantic import ValidationError
 
 from ledfx.api.jsonutil import dumps
+from ledfx.errors import LedFxError
 from ledfx.utils import BaseRegistry, RegistryLoader
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,6 +21,7 @@ SNACKBAR_OPTIONS = ["success", "info", "warning", "error"]
 class RestEndpoint(BaseRegistry):
     # Methods whose JSON body must be an object. GET bodies may name keys as
     # a string or list; an endpoint that takes another shape overrides this.
+    ENDPOINT_PATH: ClassVar[str]
     OBJECT_BODY_METHODS: tuple[str, ...] = ("PUT", "POST", "DELETE")
 
     def __init__(self, ledfx):
@@ -87,6 +90,14 @@ class RestEndpoint(BaseRegistry):
             )
         except ValidationError as e:
             return await self.validation_error(e)
+        except LedFxError as err:
+            # v1 keeps its default failure shape (HTTP 200) for every domain
+            # error, internal ones included; handlers whose legacy status
+            # differs catch the error themselves. Server-side failures are
+            # logged because the response hides them.
+            if err.status >= 500:
+                _LOGGER.error("%s: %s", type(err).__name__, err)
+            return await self.invalid_request(str(err))
         except web.HTTPException:
             raise
         except Exception as e:  # noqa: BLE001

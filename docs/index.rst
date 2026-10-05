@@ -9,6 +9,7 @@
    /launch
    /security
    /developer/developer
+   /developer/releasing_a_patch
    /developer/architecture
    /developer/guides
    /README
@@ -54,6 +55,7 @@
    :maxdepth: 2
    :caption: LedFx API
 
+   /api_v2
    /apis/api
    /apis/assets
    /apis/cache
