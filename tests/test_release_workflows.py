@@ -2,7 +2,9 @@
 
 import os
 import re
+import shutil
 import subprocess
+import sys
 import textwrap
 import tomllib
 from pathlib import Path
@@ -276,6 +278,21 @@ def test_upload_sidecars_leave_frozen_inputs_unchanged(tmp_path: Path) -> None:
     )[0]
     assert "packages-dir: pypi-dist/" in uploader
     script = textwrap.dedent(match.group(1))
+    bash = "bash"
+    if sys.platform == "win32":
+        # The Windows PATH may resolve bash to the WSL launcher instead.
+        git = shutil.which("git")
+        assert git is not None, "Git for Windows is required for workflow tests"
+        git_bash = next(
+            (
+                parent / "bin" / "bash.exe"
+                for parent in Path(git).resolve().parents
+                if (parent / "bin" / "bash.exe").is_file()
+            ),
+            None,
+        )
+        assert git_bash is not None, "Git for Windows Bash was not found"
+        bash = str(git_bash)
     original = tmp_path / "dist"
     original.mkdir()
     frozen = {
@@ -285,7 +302,7 @@ def test_upload_sidecars_leave_frozen_inputs_unchanged(tmp_path: Path) -> None:
     for name, data in frozen.items():
         (original / name).write_bytes(data)
     result = subprocess.run(
-        ["bash", "-euo", "pipefail", "-c", script],
+        [bash, "-euo", "pipefail", "-c", script],
         cwd=tmp_path,
         env={**os.environ, "GITHUB_WORKSPACE": str(tmp_path)},
         capture_output=True,
@@ -301,7 +318,7 @@ def test_upload_sidecars_leave_frozen_inputs_unchanged(tmp_path: Path) -> None:
     assert {p.name: p.read_bytes() for p in original.iterdir()} == frozen
     before_retry = {p.name: p.read_bytes() for p in staging.iterdir()}
     retry = subprocess.run(
-        ["bash", "-euo", "pipefail", "-c", script],
+        [bash, "-euo", "pipefail", "-c", script],
         cwd=tmp_path,
         env={**os.environ, "GITHUB_WORKSPACE": str(tmp_path)},
         capture_output=True,
