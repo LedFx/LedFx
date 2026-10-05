@@ -480,7 +480,11 @@ def test_attestation_failure_prevents_publication(inputs: Inputs):
         with pytest.raises(publication.PublicationError):
             publisher(inputs).finalize()
     assert service.release["draft"]
-    assert not any("edit" in args for args in service.writes)
+    assert not any("PATCH" in args for args in service.writes)
+    assert not any(
+        args[0] == "docker" and args[args.index("--tag") + 1].endswith(":latest")
+        for args in service.writes
+    )
 
 
 def test_promote_exposes_manifest_digests_and_finalization_checks_provenance(
@@ -654,10 +658,7 @@ def test_complete_rerun_skips_existing_docker_immutable_tags(inputs: Inputs):
     with command, pypi:
         publisher(inputs).prepare()
         publisher(inputs).promote()
-    assert len(service.writes) == 2
-    assert all(
-        args[args.index("--tag") + 1].endswith(":latest") for args in service.writes
-    )
+    assert service.writes == []
 
 
 def test_pypi_propagation_is_bounded(inputs: Inputs):
@@ -769,6 +770,8 @@ def test_each_write_phase_rechecks_metadata_after_slow_reads(
     if phase != "prepare":
         with command, pypi:
             publisher(inputs).prepare()
+            if phase == "latest":
+                publisher(inputs).promote()
     service.writes.clear()
     original = service.command
 
@@ -792,7 +795,10 @@ def test_each_write_phase_rechecks_metadata_after_slow_reads(
         pypi,
         pytest.raises(publication.PublicationError),
     ):
-        getattr(publisher(inputs), "prepare" if phase == "prepare" else "promote")()
+        method = {"prepare": "prepare", "promote": "promote", "latest": "finalize"}[
+            phase
+        ]
+        getattr(publisher(inputs), method)()
     if phase == "latest":
         assert all(
             not args[args.index("--tag") + 1].endswith(":latest")
@@ -1011,3 +1017,161 @@ def test_prepare_rehashes_missing_archive_after_legacy_downloads(inputs: Inputs)
     ):
         publisher(inputs).prepare()
     assert service.writes == []
+
+
+def test_latest_is_promoted_only_after_all_attestations(inputs: Inputs):
+    service = Services(inputs, asset_count=4, uploaded=True)
+    command, pypi = service_patches(service)
+    with command as calls, pypi:
+        publisher(inputs).prepare()
+        publisher(inputs).promote()
+        assert all(
+            not args[args.index("--tag") + 1].endswith(":latest")
+            for args in service.writes
+        )
+        publisher(inputs).finalize()
+    history = [call.args[0] for call in calls.call_args_list]
+    attests = [
+        index
+        for index, args in enumerate(history)
+        if args[1:3] == ["attestation", "verify"]
+    ]
+    latest = [
+        index
+        for index, args in enumerate(history)
+        if args[:4] == ["docker", "buildx", "imagetools", "create"]
+        and args[args.index("--tag") + 1].endswith(":latest")
+    ]
+    publish = next(index for index, args in enumerate(history) if "PATCH" in args)
+    assert len(attests) == 8 and len(latest) == 2
+    assert max(attests) < min(latest) < max(latest) < publish
+
+
+@pytest.mark.parametrize("registry", [0, 1], ids=["first", "last"])
+@pytest.mark.parametrize("case", ["body", "sha", "local"], ids=["body", "sha", "local"])
+def test_late_latest_mutation_blocks_remaining_writes_and_publication(
+    inputs: Inputs, case: str, registry: int
+):
+    service = Services(inputs, asset_count=4, uploaded=True)
+    command, pypi = service_patches(service)
+    with command, pypi:
+        publisher(inputs).prepare()
+        publisher(inputs).promote()
+    service.writes.clear()
+    original = service.command
+
+    def mutate(args: list[str], **kwargs: object):
+        result = original(args, **kwargs)
+        if (
+            args[:4] == ["docker", "buildx", "imagetools", "create"]
+            and args[args.index("--tag") + 1] == f"{REGISTRIES[registry]}:latest"
+        ):
+            if case == "body":
+                service.release["body"] = "Changed during latest promotion"
+            elif case == "sha":
+                service.tag["object"]["sha"] = "f" * 40
+            else:
+                next(inputs[0].iterdir()).write_bytes(
+                    b"changed during latest promotion"
+                )
+        return result
+
+    with (
+        patch.object(publication, "run_command", side_effect=mutate),
+        pypi,
+        pytest.raises(publication.PublicationError),
+    ):
+        publisher(inputs).finalize()
+    assert service.release["draft"]
+    assert len(service.writes) == registry + 1
+    assert (
+        service.writes[-1][service.writes[-1].index("--tag") + 1]
+        == f"{REGISTRIES[registry]}:latest"
+    )
+
+
+@pytest.mark.parametrize("case", ["pre", "older"], ids=["pre", "older"])
+def test_finalize_keeps_latest_for_ineligible_release(inputs: Inputs, case: str):
+    service = Services(inputs, asset_count=4, uploaded=True)
+    if case == "pre":
+        service.release["prerelease"] = True
+    original = service.command
+
+    def command(args: list[str], **kwargs: object):
+        if case == "older" and args[:3] == ["gh", "api", "repos/LedFx/LedFx/releases"]:
+            return json.dumps(
+                [
+                    [
+                        service.release,
+                        {"tag_name": "v3.0.0", "draft": False, "prerelease": False},
+                    ]
+                ]
+            ).encode()
+        return original(args, **kwargs)
+
+    with (
+        patch.object(publication, "run_command", side_effect=command),
+        patch.object(publication, "fetch_pypi", return_value=service.pypi),
+    ):
+        publisher(inputs).prepare()
+        publisher(inputs).promote()
+        publisher(inputs).finalize()
+    assert all(
+        not args[args.index("--tag") + 1].endswith(":latest")
+        for args in service.writes
+        if args[0] == "docker"
+    )
+    assert service.writes[-1][-1] == "make_latest=false"
+
+
+def test_latest_copies_exact_attested_index(inputs: Inputs):
+    service = Services(inputs, asset_count=4, uploaded=True)
+    command, pypi = service_patches(service)
+    with command, pypi:
+        publisher(inputs).prepare()
+        publisher(inputs).promote()
+        publisher(inputs).finalize()
+    latest = [
+        args
+        for args in service.writes
+        if args[0] == "docker" and args[args.index("--tag") + 1].endswith(":latest")
+    ]
+    for image, args in zip(REGISTRIES, latest, strict=True):
+        assert args == [
+            "docker",
+            "buildx",
+            "imagetools",
+            "create",
+            "--tag",
+            f"{image}:latest",
+            f"{image}@sha256:" + "d" * 64,
+        ]
+
+
+def test_latest_descriptor_conflict_blocks_publication_even_with_matching_children(
+    inputs: Inputs,
+):
+    service = Services(inputs, asset_count=4, uploaded=True)
+    command, pypi = service_patches(service)
+    with command, pypi:
+        publisher(inputs).prepare()
+        publisher(inputs).promote()
+    original = service.command
+
+    def command(args: list[str], **kwargs: object):
+        if (
+            args[:4] == ["docker", "buildx", "imagetools", "inspect"]
+            and args[4].endswith(":latest")
+            and "--format" in args
+        ):
+            return json.dumps({"digest": "sha256:" + "e" * 64}).encode()
+        return original(args, **kwargs)
+
+    with (
+        patch.object(publication, "run_command", side_effect=command),
+        pypi,
+        pytest.raises(publication.PublicationError),
+    ):
+        publisher(inputs).finalize()
+    assert service.release["draft"]
+    assert not any("PATCH" in args for args in service.writes)

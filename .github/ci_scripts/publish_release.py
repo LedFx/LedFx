@@ -717,30 +717,6 @@ class Publisher:
                     ["docker", "buildx", "imagetools", "create", "--tag", ref, *refs]
                 )
             self.verify_docker(snapshot["children"], complete=True)
-            latest = snapshot["latest"] and self.latest(release)
-            release = self.recheck_before_write(snapshot)
-            if latest and release["draft"]:
-                for image in self.images:
-                    refs = [
-                        f"{image}@{snapshot['children'][image][arch]}"
-                        for arch in ("amd64", "arm64")
-                    ]
-                    run_command(
-                        [
-                            "docker",
-                            "buildx",
-                            "imagetools",
-                            "create",
-                            "--tag",
-                            f"{image}:latest",
-                            *refs,
-                        ]
-                    )
-                    if (
-                        self.children(self.inspect(f"{image}:latest", "--raw"))
-                        != snapshot["children"][image]
-                    ):
-                        raise PublicationError("Docker latest promotion did not verify")
         else:
             # A human may publish while the initial draft preflight is running.
             # Verification-only mode still requires every immutable tag.
@@ -786,6 +762,38 @@ class Publisher:
         self.verify_attestations(snapshot, digests)
         latest = release["draft"] and snapshot["latest"] and self.latest(release)
         release = self.recheck_before_write(snapshot)
+        if latest and release["draft"]:
+            for image in self.images:
+                # Publish latest only after verifying provenance. A single
+                # immutable index source copies the exact attested descriptor.
+                latest = snapshot["latest"] and self.latest(release)
+                release = self.recheck_before_write(snapshot)
+                if not latest or not release["draft"]:
+                    break
+                run_command(
+                    [
+                        "docker",
+                        "buildx",
+                        "imagetools",
+                        "create",
+                        "--tag",
+                        f"{image}:latest",
+                        f"{image}@{digests[image]}",
+                    ]
+                )
+                if (
+                    self.children(self.inspect(f"{image}:latest", "--raw"))
+                    != snapshot["children"][image]
+                    or self.inspect(
+                        f"{image}:latest", "--format", "{{json .Manifest}}"
+                    ).get("digest")
+                    != digests[image]
+                ):
+                    raise PublicationError("Docker latest promotion did not verify")
+            # Registry promotion/verification can take time. Recheck eligibility
+            # and all frozen inputs again before publishing the GitHub release.
+            latest = release["draft"] and snapshot["latest"] and self.latest(release)
+            release = self.recheck_before_write(snapshot)
         if release["draft"]:
             # Address the verified immutable ID, so replacing the tag's release
             # cannot redirect this write to an unverified replacement release.

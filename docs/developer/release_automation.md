@@ -88,6 +88,9 @@ PEP 740 attestations remain enabled as well. The GitHub draft is published only
 after provenance verification checks the repository, CI signer workflow,
 source tag and commit, and GitHub-hosted runner identity.
 
+Stable Docker latest tags move only after those checks pass. Each latest tag
+copies the exact attested image-index digest; GitHub publication follows last.
+
 For a downloaded file, substitute the tag and commit of the release:
 
 ```bash
