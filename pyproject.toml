@@ -175,3 +175,23 @@ baseline = "pyrefly_errors.json"
 missing-import = "ignore"
 # Keep Any from bypassing the strict checker; use object or a concrete type.
 explicit-any = "error"
+
+
+[tool.release-ci]
+github-distributions = false
+assets = [
+    "LedFx-{tag_version}-win-x64.zip",
+    "LedFx-{tag_version}-win-x64-setup.zip",
+    "LedFx-{tag_version}-osx-arm64.tar.gz",
+    "LedFx-{tag_version}-osx-intel.tar.gz",
+]
+
+[[tool.release-ci.oci]]
+image = "ghcr.io/ledfx/ledfx"
+platforms = ["linux/amd64", "linux/arm64"]
+promote-latest = true
+
+[[tool.release-ci.oci]]
+image = "docker.io/ledfxorg/ledfx"
+platforms = ["linux/amd64", "linux/arm64"]
+promote-latest = true

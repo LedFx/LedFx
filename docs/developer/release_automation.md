@@ -2,9 +2,9 @@
 
 Release-please owns the version update, changelog, tag, and draft release. CI
 builds and smoke-tests the tag, then one production approval promotes the
-tested artifacts. The publication job uploads verified archives to the draft,
-publishes Python distributions and versioned Docker manifests, verifies signed
-provenance, and makes GitHub public last. `release: published` starts a separate
+tested artifacts. The publication job verifies immutable inputs, publishes
+Python distributions and versioned Docker manifests, verifies signed provenance,
+then uploads missing verified archives and makes GitHub public last. `release: published` starts a separate
 Discord workflow; notification failures cannot rerun publication.
 
 ## Credentials and approvals
@@ -41,13 +41,28 @@ threads. Set repository variable `OPENROUTER_MODEL` to override
 Use webhooks from the same Discord server: announcements link to the thread
 using Discord's clickable channel reference (`<#thread-id>`).
 
-PyPI still uses Trusted Publishing. GHCR uses the workflow's packages-write
+PyPI still uses Trusted Publishing with `LedFx/LedFx`, caller workflow `ci.yml`,
+and environment `production`. The shared composite action runs inside that
+caller job; it does not replace the publisher with a reusable workflow. GHCR uses the workflow's packages-write
 token; Docker Hub uses its existing credentials. Official provenance signing
 uses the job's OIDC token. OCI attestations are pushed to the registries with
 optional storage records disabled, so `artifact-metadata: write` is not needed.
 No new production approval is added for notification retries.
 
 ## Publication and retries
+
+The SHA-pinned [LedFx/release-ci](https://github.com/LedFx/release-ci) action owns
+identity, checksum, provenance, and retry verification. It derives the pure Python wheel and sdist from existing project metadata.
+The `[tool.release-ci]` settings in [`pyproject.toml`](../../pyproject.toml)
+name four frozen GitHub archives and AMD64/ARM64 indexes in two registries. The caller retains builds, approvals, artifact downloads, App
+credentials, official PyPI upload, and attestation steps. Update the shared action
+pin deliberately with its configuration and workflow regression tests; no local copy of
+the publisher is maintained.
+
+The four phases are `prepare`, `check-upload`, `promote`, and `finalize`. They
+share a frozen identity and artifact-hash snapshot. `check-upload` refreshes remote
+checksums immediately before PyPI's `skip-existing` upload. The job retains the
+snapshot and signed attestation bundles as workflow artifacts for recovery.
 
 The publisher requires the release-please draft, a remote tag resolving to the
 tested commit, nonempty release notes, the four expected frozen archives, and
@@ -65,22 +80,23 @@ different payload under an existing version, investigate rather than moving
 the tag or clobbering a published file.
 
 Publication jobs queue across tags. A stable `vMAJOR.MINOR.PATCH` version moves
-GitHub latest and Docker latest only when no newer stable GitHub release has
-already been published. An older maintenance version still gets its versioned
+GitHub latest and Docker latest only when no newer stable GitHub release exists,
+including a draft. An older maintenance version still gets its versioned
 downloads and Docker tags. Prereleases never become the stable latest.
 
 Maintenance patches are eligible too: publishing `v2.2.1` after `v2.2.0` updates
 both Docker latest tags and GitHub latest when it is the newest stable release.
-If `v2.3.0` is already public, publishing `v2.2.1` preserves those latest pointers.
-Newer drafts and prereleases do not prevent a stable patch from becoming latest.
+If `v2.3.0` is a draft or already public, publishing `v2.2.1` preserves those
+latest pointers. An abandoned newer stable draft can delay latest promotion
+until a maintainer resolves it; the older version still publishes its immutable
+artifacts. Newer prereleases do not block stable latest promotion.
 
 GitHub, PyPI, and the registries do not provide a shared transaction. A failed
 run can leave verified assets staged or a distribution already published;
-rerunning the same tag resumes by checking what exists. Published GitHub versions
-determine stable ordering: if a newer draft fails after promoting Docker latest,
-a subsequent older draft can move Docker latest until the newer GitHub release
-is public. The publisher rechecks release identity before writes and publishes
-by release ID, but GitHub's release API provides no atomic metadata
+rerunning the same tag resumes by checking what exists. A newer stable draft
+also prevents an older retry from rolling latest pointers back after partial
+publication. The publisher rechecks release identity and validates assets on the
+exact fresh response used before publishing by release ID, but GitHub's release API provides no atomic metadata
 compare-and-swap, and the registries provide no
 portable create-if-absent guard. Avoid editing the draft, moving the tag, or
 running another publisher for these Docker tags while publication is running.
@@ -180,7 +196,8 @@ tests mock the external services; do not use the real webhooks for validation.
 
 ## Maintenance branches
 
-Backport the publication scripts and notification workflow before the next
+Backport the shared action pin, publication workflow wiring, release policy,
+and notification workflow before the next
 maintenance tag. GitHub loads a release-event workflow from the released tag;
 checking out notification code from the default branch does not install the
 workflow into an old tag. Default-branch manual dispatch can announce an older
