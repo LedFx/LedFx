@@ -1,6 +1,7 @@
 """Release credentials, ordering, and retry boundaries in the workflow graph."""
 
 import json
+import re
 from pathlib import Path
 from typing import cast
 
@@ -10,7 +11,7 @@ ROOT = Path(__file__).parents[1]
 ATTEST = "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6"
 
 
-SHARED = "LedFx/release-ci/actions/release@f57f5eced6c74aadb1d432fc349554212d7cf05f"
+SHARED = "LedFx/release-ci/actions/release@"
 
 
 def mapping(value: object) -> dict[str, object]:
@@ -103,7 +104,8 @@ def test_publication_generates_provenance_and_publishes_github_last() -> None:
     finalize = next(
         step
         for step in steps
-        if step.get("uses") == SHARED and path(step, "with", "phase") == "finalize"
+        if text(step.get("uses", "")).startswith(SHARED)
+        and path(step, "with", "phase") == "finalize"
     )
     assert steps.index(prepare) < steps.index(file_attestation) < steps.index(pypi)
     assert steps.index(pypi) < steps.index(promote) < steps.index(finalize)
@@ -165,7 +167,15 @@ def test_shared_policy_and_same_run_inputs_are_explicit() -> None:
     assert "github.event_name == 'push'" in condition
     assert "startsWith(github.ref, 'refs/tags/v')" in condition
     steps = steps_for(job)
-    shared = [step for step in steps if step.get("uses") == SHARED]
+    shared = [step for step in steps if text(step.get("uses", "")).startswith(SHARED)]
+    raw = (ROOT / ".github/workflows/ci.yml").read_text()
+    pins = re.findall(
+        r"uses: LedFx/release-ci/actions/release@([0-9a-f]{40}) # (v[0-9]+\.[0-9]+\.[0-9]+)\s*$",
+        raw,
+        re.MULTILINE,
+    )
+    assert len(pins) == 4 and len(set(pins)) == 1
+    assert raw.count("uses: " + SHARED) == 4
     assert [path(step, "with", "phase") for step in shared] == [
         "prepare",
         "check-upload",
