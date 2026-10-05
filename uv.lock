@@ -1467,7 +1467,7 @@ requires-dist = [
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
     { name = "ledfx-senders", specifier = ">=0.3.0,<0.4.0" },
-    { name = "lifx-async", specifier = ">=6.5.1" },
+    { name = "lifx-async", specifier = ">=7.4.0" },
     { name = "mss", specifier = "~=10.2.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },

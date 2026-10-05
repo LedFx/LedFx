@@ -27,7 +27,7 @@ dependencies = [
     "zeroconf>=0.131.0",
     "pillow>=10.1.0",
     "flux-led>=1.0.4",
-    "lifx-async>=6.5.1",
+    "lifx-async>=7.4.0",
     "pybase64~=1.5.0",
     "mss~=10.2.0",
     "rpi-ws281x>=4.3.0; sys_platform == \"linux\"",
