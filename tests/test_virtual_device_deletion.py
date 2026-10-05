@@ -66,6 +66,8 @@ class _DummyDevice:
         self._pixels = None
         self._ledfx = None
         self.lock = threading.Lock()
+        self.flushed_by: str | None = None
+        self.flushed_data: list[tuple[np.ndarray, int, int]] | None = None
 
     @property
     def id(self):
@@ -104,6 +106,12 @@ class _DummyDevice:
 
     def clear_virtual_segments(self, virtual_id):
         self._segments = [s for s in self._segments if s[0] != virtual_id]
+
+    def update_pixels(
+        self, virtual_id: str, data: list[tuple[np.ndarray, int, int]]
+    ) -> None:
+        self.flushed_by = virtual_id
+        self.flushed_data = data
 
     def invalidate_cached_props(self):
         pass
@@ -592,6 +600,41 @@ class TestSceneCleanupOnVirtualRemoval:
 
         assert "v1" not in ledfx.config.scenes["s1"].virtuals
         assert "v1" not in ledfx.config.scenes["s2"].virtuals
+
+
+class TestRemoveActiveVirtual:
+    @pytest.mark.parametrize("calibrating", [False, True])
+    def test_remove_clears_the_virtual_off_its_devices_at_once(
+        self, calibrating: bool
+    ) -> None:
+        """Removing a virtual with a running effect must not leave a deferred
+        clear_frame: it would run after destroy and flush through a device
+        whose segments still name the gone virtual (a shared device then
+        crashed rebuilding its virtual list, and the virtual never stopped)."""
+        device = _DummyDevice("dev-1", pixel_count=50)
+        ledfx = _make_ledfx(devices=[device])
+        device._ledfx = ledfx
+        front = [["dev-1", 0, 24, False]]
+        back = [["dev-1", 25, 49, False]]
+        gone = _make_virtual(ledfx, "v-front", "Front", front)
+        _make_virtual(ledfx, "v-back", "Back", back)
+        # Registered on the device, without starting the render thread
+        gone._active = True
+        gone.activate_segments(front)
+        gone._active_effect = MagicMock()
+        gone.set_calibration(calibrating)
+
+        ledfx.virtuals.remove("v-front")
+
+        assert ledfx.virtuals.get("v-front") is None
+        assert not gone.active
+        assert gone.clear_handle is None
+        assert all(segment[0] != "v-front" for segment in device._segments)
+        assert device.flushed_by == "v-front"
+        # A black frame, not a calibration pattern
+        assert device.flushed_data is not None
+        assert all(np.all(pixels == 0) for pixels, *_ in device.flushed_data)
+        ledfx.loop.call_later.return_value.cancel.assert_called_once()
 
 
 # ---------------------------------------------------------------------------

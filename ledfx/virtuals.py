@@ -1849,6 +1849,12 @@ class Virtuals:
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
         virtual.clear_effect()
+        # Finish the clear now: a deferred clear_frame would run after destroy
+        # and flush through devices whose segments still name this virtual.
+        # Calibration would flush its pattern instead of the black frame.
+        virtual.flush_pending_clear_frame()
+        virtual.set_calibration(False)
+        virtual.clear_frame()
         config = self._ledfx.config
         device_id = virtual.is_device
         device = self._ledfx.devices.get(device_id)
