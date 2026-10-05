@@ -3,13 +3,29 @@ revision = 3
 requires-python = ">=3.11, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version >= '3.14' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.13.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.12.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version < '3.12' and platform_machine != 'x86_64') or (python_full_version < '3.12' and sys_platform != 'darwin')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version < '3.12' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 
 [options]
@@ -372,7 +388,11 @@ version = "3.9.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version < '3.12' and platform_machine != 'x86_64') or (python_full_version < '3.12' and sys_platform != 'darwin')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version < '3.12' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 dependencies = [
     { name = "contourpy" },
@@ -396,11 +416,23 @@ version = "3.10.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version >= '3.14' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.13.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.12.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 dependencies = [
     { name = "jinja2" },
@@ -1378,7 +1410,26 @@ dependencies = [
     { name = "dbus-fast", marker = "sys_platform == 'linux'" },
     { name = "flux-led" },
     { name = "icmplib" },
-    { name = "ledfx-senders" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
     { name = "lifx-async" },
     { name = "mss" },
     { name = "multidict" },
@@ -1409,11 +1460,6 @@ dependencies = [
     { name = "winrt-windows-media-control", marker = "sys_platform == 'win32'" },
     { name = "xled" },
     { name = "zeroconf" },
-]
-
-[package.optional-dependencies]
-hue = [
-    { name = "python-mbedtls", marker = "(python_full_version < '3.13' and platform_machine != 'aarch64' and platform_machine != 'armv7l' and sys_platform == 'linux') or (python_full_version < '3.13' and sys_platform == 'darwin') or (python_full_version < '3.13' and sys_platform == 'win32')" },
 ]
 
 [package.dev-dependencies]
@@ -1466,7 +1512,26 @@ requires-dist = [
     { name = "dbus-fast", marker = "sys_platform == 'linux'", specifier = ">=5.0.22,<6.0.0" },
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
-    { name = "ledfx-senders", specifier = ">=0.3.0,<0.4.0" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" },
+    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" },
     { name = "lifx-async", specifier = ">=6.5.1" },
     { name = "mss", specifier = "~=10.2.0" },
     { name = "multidict", specifier = ">=6.0.4" },
@@ -1484,7 +1549,6 @@ requires-dist = [
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pystray", specifier = ">=0.19.5" },
     { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
-    { name = "python-mbedtls", marker = "(python_full_version < '3.13' and platform_machine != 'aarch64' and platform_machine != 'armv7l' and sys_platform == 'linux' and extra == 'hue') or (python_full_version < '3.13' and sys_platform == 'darwin' and extra == 'hue') or (python_full_version < '3.13' and sys_platform == 'win32' and extra == 'hue')", specifier = "==2.9.2" },
     { name = "python-rtmidi", specifier = ">=1.5.8" },
     { name = "requests", specifier = ">=2.31.0" },
     { name = "rpi-ws281x", marker = "sys_platform == 'linux'", specifier = ">=4.3.0" },
@@ -1537,39 +1601,342 @@ docs = [
 [[package]]
 name = "ledfx-senders"
 version = "0.3.1"
-source = { registry = "https://pypi.org/simple" }
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl" }
+resolution-markers = [
+    "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
+]
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0a/37/a988d3f931af2e9403625504648f87969f98fe96b254f0c4a96da72f94fb/ledfx_senders-0.3.1.tar.gz", hash = "sha256:75264aa351b4003439b1275bedbaf8a25d06f1c05dde27fde094c83b730dbbd6", size = 152177, upload-time = "2026-10-05T07:48:34.038Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/10/2ba68fba6535f18a00cd8ccbb3403c0cc3bae42199f00b90eb5fd1c65177/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:6ca289805d82315c0c1567ed10d547c24812821d0633d5602d2754915b06298d", size = 422483, upload-time = "2026-10-05T07:47:41.736Z" },
-    { url = "https://files.pythonhosted.org/packages/64/45/09e394331309f1fb1951dd6006c797e1c106997a1d5317e0af8eaddc2b3e/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:b82bd2531b48de2dd0994689b4ea6b5f125ecba0bedd8085ac45cbfe19e82da0", size = 418582, upload-time = "2026-10-05T07:47:43.306Z" },
-    { url = "https://files.pythonhosted.org/packages/4b/82/bd6bc926f9f4c523ca95026773f83c1f7678ace507420e4ff9a232b5d528/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:a396be7c9ac5d4871a40b395fb03c324aa17c5a0a6ee1836009e4636aef3e519", size = 2024427, upload-time = "2026-10-05T07:47:44.657Z" },
-    { url = "https://files.pythonhosted.org/packages/d5/c5/f4ef287586a65b00e222a16643136a31f427a23a8a76790d83277b71360e/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:52fadf7958705659d0bce974637dd4bef7295c8e8d59de00b5d8c20a2d121aa9", size = 2302182, upload-time = "2026-10-05T07:47:46.612Z" },
-    { url = "https://files.pythonhosted.org/packages/6c/44/e7e80f876d171952e3fa6f85f802cf170bbe4c076202b4f326943159741e/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:20ce036998c88e7512c52c44cad17dd4be5d968e824a5fb399509d5e43bb6f9f", size = 286912, upload-time = "2026-10-05T07:47:48.221Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/13/04f16f6e5f9dbae312a3a3973ebc483bca4696a74cf70b9f574b62e5f1e1/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:103017bb8a0adcffc10f3740fba4394ad0eabf550e3e01f13ed24b596978bc20", size = 419592, upload-time = "2026-10-05T07:47:49.452Z" },
-    { url = "https://files.pythonhosted.org/packages/50/51/8a5ed47480247b500d469d342cee8240ace36e6fdf247d1d1d0f8c47b4bc/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:1d94551901a62879755be0bdc939511976f88be6be17113444b71c18d94cef16", size = 407619, upload-time = "2026-10-05T07:47:50.897Z" },
-    { url = "https://files.pythonhosted.org/packages/e3/ea/ad0e06b8dc9aa2a6cdd9219b91cccd9337c39a1d5f78a92ecd162dbb1b5a/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:b43cdf2dcb33d46f899abc5681a362fb6e16b62ddee74e4be3f04e6084dfe08e", size = 2009582, upload-time = "2026-10-05T07:47:52.376Z" },
-    { url = "https://files.pythonhosted.org/packages/e6/d1/0a53458d1652f503eec13a394ddceec4e2235020cf73b1c1baa2a8dc5729/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:430712f9827660ad66f3bc4c8ecfeb099001503f7bff012780b34eea05d8950a", size = 2292251, upload-time = "2026-10-05T07:47:54.139Z" },
-    { url = "https://files.pythonhosted.org/packages/cb/46/16fbf9c999151aa10f0a49220bf69f367adc33a5f39c2b609445576f6718/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:8eb6ac4974ae83865741c55e6d2c4e7c4bf1314b06314914e1c291d6e63a820d", size = 281789, upload-time = "2026-10-05T07:47:55.446Z" },
-    { url = "https://files.pythonhosted.org/packages/60/61/2497562396bb622b52afbde43713eb16d92848a810c15619395405af3c92/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:116be5d1fae68091e7feab71a00238c1d48e9978a1243d2963332f01e7b2d8c5", size = 419312, upload-time = "2026-10-05T07:47:56.777Z" },
-    { url = "https://files.pythonhosted.org/packages/5a/ee/f0401086bafecf022955f7e9f22e5ad6292aea1cc13d2a09d18da2ba0861/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e8e6edc057508623b9297fa7c893ff99910555d5d38d702fcb3098ec11d934d7", size = 407804, upload-time = "2026-10-05T07:47:58.116Z" },
-    { url = "https://files.pythonhosted.org/packages/81/52/13549e975e0a5aab0051746a52163dbc09511f85d55d02a7d1385fef4a2c/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:79bff8df06fdebff581ae34b5bcf1980440ad5f719fe120f32201a20aefc0cd7", size = 2002865, upload-time = "2026-10-05T07:47:59.558Z" },
-    { url = "https://files.pythonhosted.org/packages/35/c9/59fe915cee1bf93ceb075f0ca4aa1558b76adcadee47a06b76b3da75121f/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:f3561a0121e9d24b35825b5012ae086e8640eee6d3b54b87e3f98e60382566ca", size = 2284274, upload-time = "2026-10-05T07:48:01.05Z" },
-    { url = "https://files.pythonhosted.org/packages/77/4f/a519887391f6fe2ef4bfdc7ce075b5afbc73a1364b4ac9e9ea3fcd1b4dcd/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl", hash = "sha256:4b421508bba70ef077318d6730c286bea053547b50b17279faa5719a3da56088", size = 281540, upload-time = "2026-10-05T07:48:02.497Z" },
-    { url = "https://files.pythonhosted.org/packages/5d/ab/db3c3ef2374e57d56feb168366ebc4c226d9bad24cbfa433d547c9a9142e/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:52b0efd44fa339c077b4e15467ca4743ad49b516f95018b5076b0edb1ce1234d", size = 422046, upload-time = "2026-10-05T07:48:03.729Z" },
-    { url = "https://files.pythonhosted.org/packages/05/5a/11d318d3031e62b846df1c798f14e22b7ef2f9c63f41f92f11df3298d51b/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:a3e2f755d554de619fec6c9db4cc6406f32641d482ba316a6ec9620616094a8b", size = 409922, upload-time = "2026-10-05T07:48:05.208Z" },
-    { url = "https://files.pythonhosted.org/packages/78/fe/5d0e3af3c05f3d39130314064b3a5414d6027095a7b8095cd89ab44de6b7/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:2f2501a7a463db98c7c0a71d72f040e1c0e04b6605425f35ece4c88e73f3a2f0", size = 2007889, upload-time = "2026-10-05T07:48:06.497Z" },
-    { url = "https://files.pythonhosted.org/packages/85/ab/0a778c5e5648ae49ed8882473082a42d8393fbf5d9fdff8e759044fdd344/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:8663a635c14e3928285d3d326e41bb949b202e7df48b737eec6a043e3686a1e8", size = 2290964, upload-time = "2026-10-05T07:48:08.023Z" },
-    { url = "https://files.pythonhosted.org/packages/8a/30/e02c2f6c2d79ba79e224628f9939d549e33accd69d321b30f20d224f50bd/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl", hash = "sha256:ca6bda8069f08b838e6609bae967d5f8054c278a1c5d8abe61997a905fe82b11", size = 290191, upload-time = "2026-10-05T07:48:09.511Z" },
-    { url = "https://files.pythonhosted.org/packages/7e/4d/e758e2a9239e9c0b9799cad74f5df937dae32986220292b6ae49efec286f/ledfx_senders-0.3.1-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:23ffb0e598d214d66953f78e64ea59eb5af4ceb09aaadf0bd41f0795f79d801c", size = 419195, upload-time = "2026-10-05T07:48:11.115Z" },
-    { url = "https://files.pythonhosted.org/packages/a1/d2/7292d604f667106caaecfc334e6189ef761f1daa382a90dd72fee9dfba50/ledfx_senders-0.3.1-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:1343e30328ed9357f294c8a89216686bd4aed861ec752f6bfd18158b2b45c7ab", size = 408344, upload-time = "2026-10-05T07:48:12.575Z" },
-    { url = "https://files.pythonhosted.org/packages/99/d2/0b86085c9d208af31882b2e265a99b0b1431c8e8144942f13aa5d72cfba9/ledfx_senders-0.3.1-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:0f4e2592c6da5728c74a76615f3783a2975e961ac4b02a952080bbb95d696d1c", size = 2010112, upload-time = "2026-10-05T07:48:13.835Z" },
-    { url = "https://files.pythonhosted.org/packages/e9/96/8337e3f6722b289575b80fe03f4e83da4245d5011eb46461346e91a6367b/ledfx_senders-0.3.1-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:91a2b8711fb1a0aaf53d738363815e70c09a083788a98c6d5dfa3554453881b6", size = 2294916, upload-time = "2026-10-05T07:48:15.459Z" },
-    { url = "https://files.pythonhosted.org/packages/7d/9a/dd8d90de80ac640f98ed3a1d15cd4903f7f5f8ce01025317474c1a88d103/ledfx_senders-0.3.1-cp314-cp314t-win_amd64.whl", hash = "sha256:96d37a1c027455c8c2ec07dbd6f51ad63c7d270621d42b9700a5e88da74f4e22", size = 293387, upload-time = "2026-10-05T07:48:16.832Z" },
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:17137e32d9f8c1677ab45eae30d6c028a5052675005ac300dcd833ddbea634ba" },
 ]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl" }
+resolution-markers = [
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:93ce9455182c752f1dcc5a308dff031d0519d4f24d5ee0bdcac8eeac25b41509" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl" }
+resolution-markers = [
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:7de67fbf553d701ea1a05f6c53a9c308505ca0218aef46b015e42a7cc1c8223a" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl" }
+resolution-markers = [
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:f0ced4b39c026ba10bc1b9beb915d23266ac5f0d4190f5b829c85e52e160e51a" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl" }
+resolution-markers = [
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
+]
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:8a62bee469232116565feb9d8beb403aa4fcc4421dd3ad0df51491c272a1ee6b" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl" }
+resolution-markers = [
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:79ebd239d0c4ef75dd6bf5c482aefb5a24a19ee7b795c79b8263f16a6b70f9d3" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl" }
+resolution-markers = [
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b138f830aad79dd8cd87556543d53437afbe50ba35c8b8cbe79acd7a569bf354" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl" }
+resolution-markers = [
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:cbd7a12078c70a647e592240ec60785507b5c6367388e858621c4ad8601deed7" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl" }
+resolution-markers = [
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:01c268649b1c64b959d7956a66b9821291f97732a1208dc9cdb053c8aeff6eee" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" }
+resolution-markers = [
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:ecd26f51a65d7a76b2f4bffd005e47b48c688f690b3881b88dbd0facb8306c44" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:463e2ee404bf3afea4d8e39ba0e3e71c49196508ee626d79d2912079a0e06bcf" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ed124c9790da52fe1c7b2dd88239501f17762cbe0f5458f2185679ff96dc4457" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:1815410d889b6b812b58152c8a92df0b3b93c173938d8fce595beb32d8081ee9" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:339c1dc003d67ec08e0f6a6a79d79e624aa8df920cdd42d3121b17b50a698f65" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" }
+resolution-markers = [
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl", hash = "sha256:3afcf23812fdb95d3fa53e56a2e7f21104375e50ee45c54dad77e3d6764c4ee0" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl" }
+resolution-markers = [
+    "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:454461cbeb3fb397a12d6ac8e5e066aa0cbac1f7a3449ee9e0c4322252ff3174" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl" }
+resolution-markers = [
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:0d8747deeac0e07125bab511150c08f7f0b1cade3775334873801dc78d903ef1" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl" }
+resolution-markers = [
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:5c7d9268e7a489af5283a2c2f6a9a2f95946a687c9b1b8636007b1711ebde96a" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl" }
+resolution-markers = [
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:143d89bdca91ca55436ec7cba96a720a44a18b85ff753ebc7418d6d635ee33b4" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
+
+[[package]]
+name = "ledfx-senders"
+version = "0.3.1"
+source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" }
+resolution-markers = [
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
+]
+dependencies = [
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
+]
+wheels = [
+    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl", hash = "sha256:ffbd26a07707c530bb956d0f1fcb1faa235b6439669b14ae1bb5235053318ed3" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
 
 [[package]]
 name = "lifx-async"
@@ -2004,7 +2371,11 @@ version = "2.4.6"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version < '3.12' and platform_machine != 'x86_64') or (python_full_version < '3.12' and sys_platform != 'darwin')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version < '3.12' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d0/ad/fed0499ce6a338d2a03ebae59cd15093910c8875328855781952abf6c2fe/numpy-2.4.6.tar.gz", hash = "sha256:f3a3570c4a2a16746ac2c31a7c7c7b0c186b95ce902e33db6f28094ed7387dda", size = 20735807, upload-time = "2026-05-18T23:37:14.07Z" }
 wheels = [
@@ -2087,11 +2458,23 @@ version = "2.5.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version >= '3.14' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.13.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.12.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz", hash = "sha256:df2d5874ff183595a4ba404edd04f6bd9b5505c1d7708573f6a6c17489a67563", size = 20791231, upload-time = "2026-09-06T16:27:47.073Z" }
 wheels = [
@@ -3048,28 +3431,6 @@ wheels = [
 ]
 
 [[package]]
-name = "python-mbedtls"
-version = "2.9.2"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "certifi" },
-    { name = "typing-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/88/b7/b926727e3433ca2072e61572a36229ac21ebd46b0dca320d1c09f6fcd108/python-mbedtls-2.9.2.tar.gz", hash = "sha256:f541ccd23da2722724fd026c707a652883c497fe67340a8f1adb6ac73c487b31", size = 105334, upload-time = "2024-02-18T10:49:20.438Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/42/2f1ef6c184bee33bae8fb5868902bed64f5b7bbe171c1383fccbc59f801e/python_mbedtls-2.9.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:2845256a02b00074be24b2f2019ad0902665405ed9a6023313047ed14cde9c2f", size = 1730824, upload-time = "2024-02-18T10:48:34.307Z" },
-    { url = "https://files.pythonhosted.org/packages/b9/54/fd7e2305261b7f1bd1d33e6992128f84dbae40c7022b046bbdb7c47c1f88/python_mbedtls-2.9.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:907822e55fd70dd708eea40154dffd06f68ce513a8c56ed9efff6727dc4797f4", size = 8077814, upload-time = "2024-02-18T10:48:36.487Z" },
-    { url = "https://files.pythonhosted.org/packages/ee/63/21beb9d4bc3ddab3127c73b751f089125be20015925552250fae2fd62d78/python_mbedtls-2.9.2-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:d52673ccfdeac5f224c9d85ea8497e516b7af648114e010df6f9dafe3045e150", size = 7629223, upload-time = "2024-02-18T10:48:38.705Z" },
-    { url = "https://files.pythonhosted.org/packages/61/75/fe7d0e5f038d9ede95e775fab15d1057811509ce3c8fe66744786ceab292/python_mbedtls-2.9.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:c9e53053a6761115f37b8f54a573e710e0484312b78049f068b9f75a23cb4e64", size = 8026567, upload-time = "2024-02-18T10:48:41.62Z" },
-    { url = "https://files.pythonhosted.org/packages/8b/00/667d6088f4245ca44cda26c25713741e4cdae59b674958dff4ba09716ff9/python_mbedtls-2.9.2-cp311-cp311-win_amd64.whl", hash = "sha256:bfe946fa90081e5e4c8b45e7949e540ce476d5e00fb5a689f0bab4de09b42dde", size = 1763589, upload-time = "2024-02-18T10:48:43.531Z" },
-    { url = "https://files.pythonhosted.org/packages/60/91/b8c314aab2d169853449830476d74f2f86aa1bdef729b2ed6eb266e98514/python_mbedtls-2.9.2-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:a0d4ebb63b2e8afd9577ad98a04c9447ee05d0d6803901d8ab1c59190acb713a", size = 1714491, upload-time = "2024-02-18T10:48:45.936Z" },
-    { url = "https://files.pythonhosted.org/packages/a3/68/47c8609a93c0a5829af373e55c6190af1b5dbe09a8b6b9186c7bea1ae2ff/python_mbedtls-2.9.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d6fb174f0ba6e2e43590ec821ad2be84268deb940380209a4427e998fdb8fef7", size = 7998642, upload-time = "2024-02-18T10:48:48.399Z" },
-    { url = "https://files.pythonhosted.org/packages/8e/02/25a20e865485f72c09b9748d3c43c37d231726bcd932e0971ce51ee4a1c5/python_mbedtls-2.9.2-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:47bef40919d0b18469c147089d937eb5f4f51658f72245e1b20d744d81435c9f", size = 7502870, upload-time = "2024-02-18T10:48:51.048Z" },
-    { url = "https://files.pythonhosted.org/packages/7b/4c/4f2ad6959a29f742318b1681ef48ea3fca62ebb0c4d089ea27cd5fed3247/python_mbedtls-2.9.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:d8d00a3790fc6784cf63e51ed89c861a05ce2b40020d0e35e30ca68c605e9289", size = 7991047, upload-time = "2024-02-18T10:48:52.995Z" },
-    { url = "https://files.pythonhosted.org/packages/ca/4e/0df8370d9d8f7cd422a64012441c383ff5bbae916c34460fc1eac781acd7/python_mbedtls-2.9.2-cp312-cp312-win_amd64.whl", hash = "sha256:052c1a636654884ecce6764f4d1d738f0e432b30c52984f62b1428e353c2c171", size = 1758270, upload-time = "2024-02-18T10:48:54.731Z" },
-]
-
-[[package]]
 name = "python-osc"
 version = "1.10.2"
 source = { registry = "https://pypi.org/simple" }
@@ -3655,7 +4016,11 @@ version = "9.0.4"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version < '3.12' and platform_machine != 'x86_64') or (python_full_version < '3.12' and sys_platform != 'darwin')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version < '3.12' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version < '3.12' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version < '3.12' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version < '3.12' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 dependencies = [
     { name = "alabaster" },
@@ -3687,11 +4052,23 @@ version = "9.1.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version >= '3.14' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version >= '3.14' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version >= '3.14' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version >= '3.14' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.13.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.13.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.13.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.13.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
     "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
+    "(python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and implementation_name != 'cpython' and sys_platform == 'win32') or (python_full_version == '3.12.*' and platform_machine != 'arm64' and platform_machine != 'x86_64' and sys_platform == 'darwin') or (python_full_version == '3.12.*' and platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (python_full_version == '3.12.*' and platform_machine != 'AMD64' and sys_platform == 'win32') or (python_full_version == '3.12.*' and sys_platform != 'darwin' and sys_platform != 'linux' and sys_platform != 'win32')",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
+    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
 ]
 dependencies = [
     { name = "alabaster" },
