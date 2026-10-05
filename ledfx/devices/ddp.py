@@ -7,7 +7,7 @@ from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
 from ledfx.configuration.plugin import TypedConfig
-from ledfx.devices import UDPDevice
+from ledfx.devices import NetworkedDevice
 from ledfx.devices.native_packet import NativePacketDevice
 from ledfx.events import DevicesUpdatedEvent
 
@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 class DDPDevice(NativePacketDevice):
     """DDP device support"""
 
-    class Config(UDPDevice.Config):
+    class Config(NetworkedDevice.Config):
         pixel_count: int = Field(
             1,
             description="Number of individual pixels",

@@ -52,7 +52,7 @@ class MyEffect(Effect):
 
 ## Device Pattern
 
-All devices inherit from `BaseRegistry`. Implement `flush()` for data transmission. Base classes: `Device`, `NetworkedDevice`, `UDPDevice`, `SerialDevice`.
+All devices inherit from `BaseRegistry`. Implement `flush()` for data transmission. Base classes: `Device`, `NetworkedDevice`, `NativePacketDevice`, `SerialDevice`.
 
 ## REST API Standards
 
