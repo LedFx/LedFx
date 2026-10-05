@@ -35,6 +35,7 @@ exclude-newer-span = "P14D"
 [options.exclude-newer-package]
 aubio-ledfx = false
 ledfx-senders = false
+lifx-emulator-core = false
 pyfastnoiselite-ledfx = false
 samplerate-ledfx = false
 
@@ -1532,7 +1533,7 @@ requires-dist = [
     { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" },
     { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" },
     { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" },
-    { name = "lifx-async", specifier = ">=6.5.1" },
+    { name = "lifx-async", specifier = ">=7.4.0" },
     { name = "mss", specifier = "~=10.2.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },
@@ -1569,7 +1570,7 @@ build = [{ name = "pyinstaller", specifier = ">=6.3.0,<7.0.0" }]
 dev = [
     { name = "actionlint-py", specifier = "==1.7.12.24" },
     { name = "bokeh", specifier = ">=3.3.3,<4.0.0" },
-    { name = "lifx-emulator-core", specifier = ">=3.8.0" },
+    { name = "lifx-emulator-core", specifier = ">=3.12.4" },
     { name = "openapi-spec-validator", specifier = ">=0.9.0" },
     { name = "prek", specifier = ">=0.5.3" },
     { name = "pyrefly", specifier = "==1.3.1" },
@@ -1949,15 +1950,16 @@ wheels = [
 
 [[package]]
 name = "lifx-emulator-core"
-version = "3.10.0"
+version = "3.12.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
+    { name = "zeroconf" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/29/af9f346af46fda60c3aa8af248f5dee28379955e4457b8145a0f14ae4f5e/lifx_emulator_core-3.10.0.tar.gz", hash = "sha256:8619f8a955ae2ffbda018593e0ceb47846148592ce1228314ddf3008c2c74967", size = 213670, upload-time = "2026-09-10T15:45:10.069Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/a5/73d424b4a3c34919b1b92a80c2331985b8ac24f3b13f985117f04f898373/lifx_emulator_core-3.12.4.tar.gz", hash = "sha256:4295da4da2093e3c8d5dff9b7120d503669e66f5d2eb02e1c2d43b5b7d3751dd", size = 240831, upload-time = "2026-10-05T03:53:21.706Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dc/79/7fc6a78cabccadc2a576b7033b5ea41d95561b07889483c51413931c29e4/lifx_emulator_core-3.10.0-py3-none-any.whl", hash = "sha256:cd3ad6202d13e2daa1afb46fa7ec203f8db7fba62d8351ae848dfdd59a9df058", size = 131517, upload-time = "2026-09-10T15:45:08.593Z" },
+    { url = "https://files.pythonhosted.org/packages/8c/11/dac5ea10f2ec407685439f38af24f8e41935fc95718bfe84304882ff87d2/lifx_emulator_core-3.12.4-py3-none-any.whl", hash = "sha256:06d708082623a9ae0e4c81ed2645366f7e01d9b3b1f5b8cf19e6c7ce0e64a297", size = 141050, upload-time = "2026-10-05T03:53:20.206Z" },
 ]
 
 [[package]]
