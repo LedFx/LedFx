@@ -729,7 +729,10 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-          sparse-checkout: .github
+          sparse-checkout: |
+            .github
+            pyproject.toml
+          sparse-checkout-cone-mode: false
           path: release-tools
       - name: Mint the publication token
         id: release-token
@@ -745,10 +748,10 @@ jobs:
         id: prepare
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@5e683ef142d08c81e46164062cff23aa1091d3f1 # v0.2.0
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
         with:
           phase: prepare
-          policy: release-tools/.github/release-policy.json
+          project: release-tools
           assets: release-assets
           dist: dist
           docker-digests: docker-digests
@@ -767,10 +770,10 @@ jobs:
         id: upload
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@5e683ef142d08c81e46164062cff23aa1091d3f1 # v0.2.0
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
         with:
           phase: check-upload
-          policy: release-tools/.github/release-policy.json
+          project: release-tools
           assets: release-assets
           dist: dist
           docker-digests: docker-digests
@@ -793,10 +796,10 @@ jobs:
         id: promote
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@5e683ef142d08c81e46164062cff23aa1091d3f1 # v0.2.0
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
         with:
           phase: promote
-          policy: release-tools/.github/release-policy.json
+          project: release-tools
           assets: release-assets
           dist: dist
           docker-digests: docker-digests
@@ -834,10 +837,10 @@ jobs:
       - name: Verify provenance and publish the GitHub draft
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@5e683ef142d08c81e46164062cff23aa1091d3f1 # v0.2.0
+        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
         with:
           phase: finalize
-          policy: release-tools/.github/release-policy.json
+          project: release-tools
           assets: release-assets
           dist: dist
           docker-digests: docker-digests

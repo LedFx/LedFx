@@ -52,12 +52,11 @@ No new production approval is added for notification retries.
 ## Publication and retries
 
 The SHA-pinned [LedFx/release-ci](https://github.com/LedFx/release-ci) action owns
-identity, checksum, provenance, and retry verification. Its reviewed policy is
-[`.github/release-policy.json`](../../.github/release-policy.json): one pure Python
-wheel and sdist, four named frozen GitHub archives, and AMD64/ARM64 indexes in
-two registries. The caller retains builds, approvals, artifact downloads, App
+identity, checksum, provenance, and retry verification. It derives the pure Python wheel and sdist from existing project metadata.
+The `[tool.release-ci]` settings in [`pyproject.toml`](../../pyproject.toml)
+name four frozen GitHub archives and AMD64/ARM64 indexes in two registries. The caller retains builds, approvals, artifact downloads, App
 credentials, official PyPI upload, and attestation steps. Update the shared action
-pin deliberately with its policy and workflow regression tests; no local copy of
+pin deliberately with its configuration and workflow regression tests; no local copy of
 the publisher is maintained.
 
 The four phases are `prepare`, `check-upload`, `promote`, and `finalize`. They

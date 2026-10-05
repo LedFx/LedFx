@@ -1,7 +1,7 @@
 """Release credentials, ordering, and retry boundaries in the workflow graph."""
 
-import json
 import re
+import tomllib
 from pathlib import Path
 from typing import cast
 
@@ -185,7 +185,7 @@ def test_shared_policy_and_same_run_inputs_are_explicit() -> None:
     for step in shared:
         assert mapping(step["with"]) == {
             "phase": path(step, "with", "phase"),
-            "policy": "release-tools/.github/release-policy.json",
+            "project": "release-tools",
             "assets": "release-assets",
             "dist": "dist",
             "docker-digests": "docker-digests",
@@ -209,35 +209,31 @@ def test_shared_policy_and_same_run_inputs_are_explicit() -> None:
         {"name": "python-dist", "path": "dist/"},
         {"pattern": "docker-*", "merge-multiple": "true", "path": "docker-digests/"},
     ]
-    policy = mapping(json.loads((ROOT / ".github/release-policy.json").read_text()))
-    assert policy["repository"] == "LedFx/LedFx"
-    assert policy["workflow"] == ".github/workflows/ci.yml"
-    assert policy["python"] == {
-        "project": "LedFx",
-        "wheel_stem": "ledfx",
-        "wheel_tags": ["py3-none-any"],
-        "sdist": "ledfx-{version}.tar.gz",
-    }
-    assert policy["github_assets"] == {
-        "distributions": False,
-        "files": [
-            "LedFx-{tag_version}-win-x64.zip",
-            "LedFx-{tag_version}-win-x64-setup.zip",
-            "LedFx-{tag_version}-osx-arm64.tar.gz",
-            "LedFx-{tag_version}-osx-intel.tar.gz",
-        ],
-    }
-    images = policy["oci"]
+    config = mapping(tomllib.loads((ROOT / "pyproject.toml").read_text()))
+    assert path(config, "project", "name") == "LedFx"
+    settings = mapping(path(config, "tool", "release-ci"))
+    assert set(settings) == {"github-distributions", "assets", "oci"}
+    assert settings["github-distributions"] is False
+    assert settings["assets"] == [
+        "LedFx-{tag_version}-win-x64.zip",
+        "LedFx-{tag_version}-win-x64-setup.zip",
+        "LedFx-{tag_version}-osx-arm64.tar.gz",
+        "LedFx-{tag_version}-osx-intel.tar.gz",
+    ]
+    images = settings["oci"]
     assert isinstance(images, list)
     assert images == [
         {
             "image": image,
             "platforms": ["linux/amd64", "linux/arm64"],
-            "version_tag": "{tag_version}",
-            "promote_latest": True,
+            "promote-latest": True,
         }
         for image in ("ghcr.io/ledfx/ledfx", "docker.io/ledfxorg/ledfx")
     ]
+    assert not (ROOT / ".github/release-policy.json").exists()
+    assert "sparse-checkout-cone-mode: false" in raw
+    assert "actions/plan@" not in raw
+    assert "policy:" not in raw
     for step in steps:
         if step.get("uses") == ATTEST and "subject-digest" in mapping(step["with"]):
             subject = text(path(step, "with", "subject-digest"))
