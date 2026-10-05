@@ -638,7 +638,7 @@ jobs:
   docker-edge:
     name: Docker edge manifest
     needs: [plan, ci-passed]
-    # Tag runs publish through docker-latest; moving edge there could roll it
+    # Tag runs publish through publish-release; moving edge there could roll it
     # back to an older commit.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'LedFx/LedFx'
     runs-on: ubuntu-latest
@@ -688,60 +688,79 @@ jobs:
         if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
         run: exit 1
 
-  # Release: tag v<version> only. Each job only downloads tested artifacts and
-  # publishes them; one approval of the production environment releases all.
-  # GitHub approves per environment, so that holds only while every production
-  # job has the same needs and reaches the gate together. A job with extra
-  # needs would wait at the gate later and ask for a second approval.
-  github-release:
-    name: Publish GitHub release
+  # Release-please has already created the tag, changelog and draft. Promote
+  # tested artifacts in one production job, then publish GitHub LAST with the
+  # App token: release:published can now start independent notifications after
+  # every distribution is ready. Sentry keeps the same approval dependencies.
+  publish-release:
+    name: Publish verified release
     needs: [plan, ci-passed]
-    if: needs.plan.outputs.release == 'true'
+    if: needs.plan.outputs.release == 'true' && github.repository == 'LedFx/LedFx'
     environment: production
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
+    concurrency:
+      group: release-publication
+      cancel-in-progress: false
+      queue: max
     permissions:
-      contents: write  # creates the GitHub release and uploads frozen-build assets
+      contents: read
+      id-token: write  # PyPI Trusted Publishing and Sigstore provenance signing
+      packages: write  # promotes tested GHCR image digests
+      attestations: write
     steps:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: release-*
           merge-multiple: true
-      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
-        with:
-          name: LedFx ${{ needs.plan.outputs.version }}
-          files: LedFx-*
-          fail_on_unmatched_files: true
-          generate_release_notes: true
-
-  pypi:
-    name: Publish to PyPI
-    needs: [plan, ci-passed]
-    if: needs.plan.outputs.release == 'true'
-    environment: production
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write # Trusted Publishing
-    steps:
+          path: release-assets/
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: python-dist
           path: dist/
-      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
-
-  docker-latest:
-    name: Publish Docker latest
-    needs: [plan, ci-passed]
-    if: needs.plan.outputs.release == 'true'
-    environment: production
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      packages: write  # pushes the release tag image to GHCR
-    env:
-      VERSION: ${{ needs.plan.outputs.version }}
-    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: docker-*
+          merge-multiple: true
+          path: docker-digests/
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/ci_scripts
+          path: release-tools
+      - name: Mint the publication token
+        id: release-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.AUTOMATION_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMATION_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-attestations: write
+      - name: Verify release identity and existing artifacts
+        id: prepare
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        run: >-
+          python3 release-tools/.github/ci_scripts/publish_release.py prepare
+          --assets release-assets --dist dist --docker-digests docker-digests
+          --snapshot "$RUNNER_TEMP/release-snapshot.json"
+      - name: Attest release archives and Python distributions
+        id: file-provenance
+        if: steps.prepare.outputs.already_published != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            ${{ github.workspace }}/release-assets/*
+            ${{ github.workspace }}/dist/*
+          create-storage-record: false
+          github-token: ${{ steps.release-token.outputs.token }}
+      - name: Publish verified Python distributions
+        if: steps.prepare.outputs.pypi_upload == 'true'
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          skip-existing: true  # prepare checks existing files by SHA-256 first
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ghcr.io
@@ -751,17 +770,50 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - name: Verify PyPI and promote tested Docker digests
+        id: promote
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        run: >-
+          python3 release-tools/.github/ci_scripts/publish_release.py promote
+          --assets release-assets --dist dist --docker-digests docker-digests
+          --snapshot "$RUNNER_TEMP/release-snapshot.json"
+      - name: Attest the promoted GHCR image
+        id: ghcr-provenance
+        if: steps.prepare.outputs.already_published != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          pattern: docker-*
-          merge-multiple: true
-      - name: Create release manifests
-        run: |
-          for image in "$GHCR_IMAGE" "$DOCKERHUB_IMAGE"; do
-            mapfile -t sources < <(grep -h "^$image@" docker-*.txt)
-            test "${#sources[@]}" -eq 2
-            docker buildx imagetools create -t "$image:latest" -t "$image:$VERSION" -t "$image:$GITHUB_SHA" "${sources[@]}"
-          done
+          subject-name: ${{ env.GHCR_IMAGE }}
+          subject-digest: ${{ steps.promote.outputs.ghcr_digest }}
+          push-to-registry: true
+          create-storage-record: false
+          github-token: ${{ steps.release-token.outputs.token }}
+      - name: Attest the promoted Docker Hub image
+        id: dockerhub-provenance
+        if: steps.prepare.outputs.already_published != 'true'
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-name: docker.io/${{ env.DOCKERHUB_IMAGE }}
+          subject-digest: ${{ steps.promote.outputs.dockerhub_digest }}
+          push-to-registry: true
+          create-storage-record: false
+          github-token: ${{ steps.release-token.outputs.token }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always() && steps.file-provenance.outcome == 'success'
+        with:
+          name: provenance-${{ github.ref_name }}-${{ github.run_attempt }}
+          path: |
+            ${{ steps.file-provenance.outputs.bundle-path }}
+            ${{ steps.ghcr-provenance.outputs.bundle-path }}
+            ${{ steps.dockerhub-provenance.outputs.bundle-path }}
+          if-no-files-found: error
+      - name: Verify provenance and publish the GitHub draft
+        env:
+          GH_TOKEN: ${{ steps.release-token.outputs.token }}
+        run: >-
+          python3 release-tools/.github/ci_scripts/publish_release.py finalize
+          --assets release-assets --dist dist --docker-digests docker-digests
+          --snapshot "$RUNNER_TEMP/release-snapshot.json"
 
   sentry:
     name: Notify Sentry of release
