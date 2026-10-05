@@ -1,6 +1,11 @@
 """Release credentials, ordering, and retry boundaries in the workflow graph."""
 
+import os
 import re
+import shutil
+import subprocess
+import sys
+import textwrap
 import tomllib
 from pathlib import Path
 from typing import cast
@@ -170,7 +175,7 @@ def test_shared_policy_and_same_run_inputs_are_explicit() -> None:
     shared = [step for step in steps if text(step.get("uses", "")).startswith(SHARED)]
     raw = (ROOT / ".github/workflows/ci.yml").read_text()
     pins = re.findall(
-        r"uses: LedFx/release-ci/actions/release@([0-9a-f]{40}) # (v[0-9]+\.[0-9]+\.[0-9]+)\s*$",
+        r"uses: LedFx/release-ci/actions/release@([0-9a-f]{40})(?:[ \t]+#.*)?[ \t]*$",
         raw,
         re.MULTILINE,
     )
@@ -249,3 +254,76 @@ def test_shared_policy_and_same_run_inputs_are_explicit() -> None:
         path(retained, "with", "path")
     )
     assert text(path(retained, "with", "path")).count("outputs.bundle-path") == 3
+
+
+def test_upload_sidecars_leave_frozen_inputs_unchanged(tmp_path: Path) -> None:
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+    match = re.search(
+        r"(?m)^      - name: Stage verified distributions for PyPI\n"
+        r"(?:(?:^        .*\n)|(?:^\n))*?^        run: \|\n"
+        r"((?:^          .*\n|^\n)+)",
+        workflow,
+    )
+    assert match is not None, "The uploader needs a separate verified input copy"
+    stage = workflow.split("      - name: Stage verified distributions for PyPI\n", 1)[
+        1
+    ].split("\n      - ", 1)[0]
+    assert "if: steps.upload.outputs.pypi_upload == 'true'" in stage
+    assert "working-directory: ${{ github.workspace }}" in stage
+    assert workflow.index("phase: check-upload") < workflow.index(
+        "Stage verified distributions for PyPI"
+    )
+    uploader = workflow.split("uses: pypa/gh-action-pypi-publish@", 1)[1].split(
+        "\n      - ", 1
+    )[0]
+    assert "packages-dir: pypi-dist/" in uploader
+    script = textwrap.dedent(match.group(1))
+    bash = "bash"
+    if sys.platform == "win32":
+        # The Windows PATH may resolve bash to the WSL launcher instead.
+        git = shutil.which("git")
+        assert git is not None, "Git for Windows is required for workflow tests"
+        git_bash = next(
+            (
+                parent / "bin" / "bash.exe"
+                for parent in Path(git).resolve().parents
+                if (parent / "bin" / "bash.exe").is_file()
+            ),
+            None,
+        )
+        assert git_bash is not None, "Git for Windows Bash was not found"
+        bash = str(git_bash)
+    original = tmp_path / "dist"
+    original.mkdir()
+    frozen = {
+        "example-1.0-py3-none-any.whl": b"tested wheel",
+        "example-1.0.tar.gz": b"tested sdist",
+    }
+    for name, data in frozen.items():
+        (original / name).write_bytes(data)
+    result = subprocess.run(
+        [bash, "-euo", "pipefail", "-c", script],
+        cwd=tmp_path,
+        env={**os.environ, "GITHUB_WORKSPACE": str(tmp_path)},
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    staging = tmp_path / "pypi-dist"
+    assert {p.name: p.read_bytes() for p in staging.iterdir()} == frozen
+    for name in frozen:
+        (staging / (name + ".publish.attestation")).write_bytes(
+            b"generated PyPI sidecar"
+        )
+    assert {p.name: p.read_bytes() for p in original.iterdir()} == frozen
+    before_retry = {p.name: p.read_bytes() for p in staging.iterdir()}
+    retry = subprocess.run(
+        [bash, "-euo", "pipefail", "-c", script],
+        cwd=tmp_path,
+        env={**os.environ, "GITHUB_WORKSPACE": str(tmp_path)},
+        capture_output=True,
+        check=False,
+    )
+    assert retry.returncode != 0
+    assert {p.name: p.read_bytes() for p in staging.iterdir()} == before_retry
+    assert {p.name: p.read_bytes() for p in original.iterdir()} == frozen
