@@ -14,11 +14,12 @@ import asyncio
 import time
 from collections.abc import Coroutine, Iterator
 from typing import TypeVar
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
 import requests
+from lifx.exceptions import LifxError
 from lifx.products import get_mirror_layout
 from lifx_emulator import EmulatedLifxServer
 from lifx_emulator.devices import EmulatedLifxDevice
@@ -219,3 +220,67 @@ def test_mirror_flush_with_a_short_frame_leaves_the_rest_black():
     assert len(sent) == BUFFER_SIZE
     lit = {p for p, (_, _, brightness, _) in enumerate(sent) if brightness > 0}
     assert lit == set(MIRROR_LAYOUT.front_positions)
+
+
+def _mirror_device_to_connect() -> LifxDevice:
+    """A detected, not yet connected LifxDevice in Mirror mode."""
+    device = object.__new__(LifxDevice)
+    device._config = LifxDevice.config_model().model_construct(
+        name=DEVICE_NAME, ip_address="127.0.0.1", serial=MIRROR_SERIAL
+    )
+    device._lifx_type = "mirror"
+    device._zone_count = 1
+    device._device = None
+    device._animator = None
+    device._mirror_positions = None
+    device._connected = False
+    device._online = False
+    return device
+
+
+def _mocked_mirror_light() -> MagicMock:
+    mirror_light = MagicMock()
+    mirror_light.return_value.set_power = AsyncMock()
+    mirror_light.return_value.close = AsyncMock()
+    mirror_light.return_value.layout = MIRROR_LAYOUT
+    return mirror_light
+
+
+async def test_connecting_a_mirror_maps_each_zone_to_its_buffer_position():
+    device = _mirror_device_to_connect()
+    animator = MagicMock(canvas_width=4, canvas_height=13, pixel_count=BUFFER_SIZE)
+
+    with (
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(return_value=animator),
+        ),
+    ):
+        await device._create_animator()
+
+    assert device._animator is animator
+    assert device._zone_count == 50
+    positions = device._mirror_positions
+    assert positions is not None
+    # Zone order: front zones 0-24, then back zones 25-49
+    assert positions.tolist() == list(
+        MIRROR_LAYOUT.front_positions + MIRROR_LAYOUT.back_positions
+    )
+
+
+async def test_a_failed_mirror_connection_drops_the_position_map():
+    device = _mirror_device_to_connect()
+
+    with (
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(side_effect=LifxError("no reply")),
+        ),
+    ):
+        await device._create_animator()
+
+    assert device._animator is None
+    assert device._mirror_positions is None
+    assert not device._connected
