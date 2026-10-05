@@ -13,6 +13,7 @@ import argparse
 import logging
 import os
 import sys
+import threading
 from logging.handlers import RotatingFileHandler
 
 from ledfx.sentry_config import setup_sentry
@@ -71,7 +72,6 @@ def setup_logging(loglevel, config_dir):
     root_logger.addHandler(file_handler)
 
     # Suppress some of the overly verbose logs
-    logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("zeroconf").setLevel(logging.WARNING)
     logging.getLogger("lifx").setLevel(logging.WARNING)
@@ -308,9 +308,22 @@ def main():
         icon = None
 
     if icon:
-        icon.run(setup=entry_point)
+        exit_code = 1
+        setup_thread: threading.Thread | None = None
+
+        def setup_tray(icon: pystray.Icon) -> None:
+            nonlocal exit_code, setup_thread
+            setup_thread = threading.current_thread()
+            exit_code = entry_point(icon)
+
+        icon.run(setup=setup_tray)
+        # pystray discards setup's result, and stop can release the tray loop
+        # before the setup thread has returned its exit code.
+        if setup_thread is not None:
+            setup_thread.join(timeout=icon.SETUP_THREAD_TIMEOUT)
+        return exit_code
     else:
-        entry_point()
+        return entry_point()
 
 
 def entry_point(icon=None):
@@ -340,6 +353,11 @@ def entry_point(icon=None):
 
     if icon:
         icon.stop()
+
+    # Normal user shutdowns remain successful; CI success is only valid in CI mode.
+    if exit_code in (2, 3) or (args.ci_smoke_test and exit_code == 5):
+        return 0
+    return exit_code if exit_code is not None else 1
 
 
 if __name__ == "__main__":

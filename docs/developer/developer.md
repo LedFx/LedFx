@@ -43,6 +43,27 @@ Python versions outside this range (e.g., 3.15+) are explicitly unsupported and 
 
     uv can be used to launch ledfx at any time against the established venv.
 
+### Sender dependency
+
+LedFx uses the `ledfx-senders` Python package, maintained independently in
+[LedFx/ledfx-senders](https://github.com/LedFx/ledfx-senders). Install the project
+normally with uv to consume compatible prebuilt wheels. Rust development and
+sender package builds belong to that separate repository. LedFx's uv configuration
+requires a sender wheel; an unsupported platform fails installation instead of
+starting a Rust source build.
+
+### Performance measurements
+
+Reusable whole-application benchmarks and profiling tools live in
+[LedFx/ledfx-tools](https://github.com/LedFx/ledfx-tools). They select an explicit
+LedFx checkout and Python environment, run synthetic effects with loopback output,
+and validate DDP traffic and websocket pixels without physical hardware. Use that
+repository's documented before/after commands when measuring a change.
+
+Store measurement output outside this source tree and include a concise comparison
+in the pull request description. Sender implementation benchmarks and native build
+tooling belong in [LedFx/ledfx-senders](https://github.com/LedFx/ledfx-senders).
+
 ### Windows Specific Steps
 
 :::: note

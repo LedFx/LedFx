@@ -1,17 +1,19 @@
 import logging
-import socket
-import struct
 
+import numpy as np
+from ledfx_senders import OPCSender
+from numpy.typing import NDArray
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
+from ledfx.devices.native_packet import NativePacketDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class OpenPixelControl(NetworkedDevice):
+class OpenPixelControl(NativePacketDevice):
     """OpenPixelControl device support"""
 
     class Config(NetworkedDevice.Config):
@@ -31,50 +33,20 @@ class OpenPixelControl(NetworkedDevice):
 
     config = TypedConfig(Config)
 
-    def activate(self):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.info("Open Pixel Control sender for %s started.", self.config.name)
-        super().activate()
+    OUTPUT_KEYS = ("ip_address", "pixel_count", "channel")
 
-    def deactivate(self):
-        super().deactivate()
-        _LOGGER.info("Open Pixel Control sender for %s stopped.", self.config.name)
-        self._sock = None
+    def _validate_configuration(self) -> None:
+        if not 1 <= self.config.pixel_count <= 21834:
+            raise ValueError("OPC frame exceeds UDP payload ceiling")
 
-    def flush(self, data):
-        try:
-            OpenPixelControl.send_out(
-                self,
-                self._sock,
-                self.destination,
-                7890,
-                data,
-            )
-        except AttributeError:
-            self.activate()
-
-    @staticmethod
-    def send_out(
-        self,  # noqa: PLW0211
-        sock,
-        dest,
-        port,
-        data,
-    ):
-        header = struct.pack(
-            ">BBH", self.config.channel, 0, self.config.pixel_count * 3
+    def _make_sender(self, destination: str) -> OPCSender:
+        return OPCSender(
+            self.config.pixel_count,
+            destination=destination,
+            channel=self.config.channel,
         )
-        pieces = [
-            struct.pack(
-                "BBB",
-                min(255, max(0, int(r))),
-                min(255, max(0, int(g))),
-                min(255, max(0, int(b))),
-            )
-            for r, g, b in data
-        ]
-        message = header + b"".join(pieces)
-        sock.sendto(
-            bytes(message),
-            (dest, port),
-        )
+
+    def flush(self, data: NDArray[np.generic]) -> None:
+        with self.device_lock:
+            if isinstance(self._sender, OPCSender):
+                self._sender.send(data)

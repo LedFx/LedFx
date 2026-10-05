@@ -3,6 +3,7 @@ import logging
 
 import numpy as np
 import xled
+from ledfx_senders.encoders import RGBGather
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -29,6 +30,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         super().__init__(ledfx, config)
         self._device_type = "TwinklySquares"
         self.ctrl = None
+        self._gather: RGBGather | None = None
         self._set_config_values(pixel_count=64 * self.config.panel_count)
 
     def config_updated(self, config):
@@ -36,9 +38,10 @@ class TwinklySquaresDevice(NetworkedDevice):
         return super().config_updated(config)
 
     def flush(self, data):
-        pixel_data = data.astype(np.uint8)
-        # do the magic or reordering the whole frame according to the precalculated perm mapping
-        frame = pixel_data[self.perm].tobytes()
+        gather = self._gather
+        if gather is None:
+            raise RuntimeError("Twinkly layout is not active")
+        frame = gather.encode(data)
         # the xled lib supports large packets with version 3, but not persistent sockets
         self.ctrl.set_rt_frame_socket(io.BytesIO(frame), version=3)
 
@@ -57,6 +60,7 @@ class TwinklySquaresDevice(NetworkedDevice):
                 e,
             )
             self.ctrl = None
+            self._gather = None
             self.set_offline()
             return
         self.leds = info["number_of_led"]
@@ -83,6 +87,8 @@ class TwinklySquaresDevice(NetworkedDevice):
         self.perm = self.build_twinkly_perm(
             coords_xy, actual_width, actual_height, flip_y=True
         )
+
+        self._gather = RGBGather(tuple(int(index) for index in self.perm))
 
         config_changed = False
 
@@ -115,6 +121,7 @@ class TwinklySquaresDevice(NetworkedDevice):
         if self.ctrl:
             self.ctrl.set_mode("movie")
         self.ctrl = None
+        self._gather = None
         return super().deactivate()
 
     def build_twinkly_perm(self, coords_xy, width, height, flip_y=True):

@@ -11,8 +11,8 @@ from typing import Annotated, ClassVar
 import numpy as np
 import serial
 import serial.tools.list_ports
+from ledfx_senders.e131_packet import DEFAULT_PORT
 from pydantic import Field
-from sacn.sending.sender_socket_base import DEFAULT_PORT
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,

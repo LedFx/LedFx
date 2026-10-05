@@ -1,12 +1,18 @@
 import logging
+import threading
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import ClassVar, Literal
 
 from pydantic import Field
+from typing_extensions import override
 
+import ledfx.devices as device_api
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.e131 import E131Device
+from ledfx.devices.native_packet import NativePacketDevice
 from ledfx.devices.udp import UDPRealtimeDevice
 from ledfx.utils import WLED, wled_support_DDP
 
@@ -41,7 +47,7 @@ class WLEDDevice(NetworkedDevice):
 
     config = TypedConfig(Config)
 
-    SYNC_MODES: ClassVar[dict[str, type[NetworkedDevice]]] = {
+    SYNC_MODES: ClassVar[dict[str, type[NativePacketDevice] | type[E131Device]]] = {
         "UDP": UDPRealtimeDevice,
         "DDP": DDPDevice,
         "E131": E131Device,
@@ -49,7 +55,11 @@ class WLEDDevice(NetworkedDevice):
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
-        self.subdevice = None
+        self.device_lock = threading.RLock()
+        self._destination = None
+        self._generation = 0
+        self._requested = False
+        self.subdevice: NativePacketDevice | E131Device | None = None
 
         # moved DEVICE_CONFIGS class var to device_configs instance var as it is manipulated in seperate instances
         # see https://github.com/LedFx/LedFx/pull/237
@@ -81,51 +91,101 @@ class WLEDDevice(NetworkedDevice):
             },
         }
 
+    @override
+    @contextmanager
+    def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
+        # Device.update_config releases this boundary before virtual callbacks.
+        with self.device_lock, super()._config_update_context(config):
+            yield
+
     def config_updated(self, config):
-        # Rebuild only when a setting the subdevice copies changes: rebuilding
-        # deactivates the sender, and E1.31 blanks the LEDs when it stops.
-        if getattr(self, "subdevice", None) is None or self._output_changed():
-            self.setup_subdevice()
+        with self.device_lock:
+            if self.subdevice is None or self._output_changed():
+                self.setup_subdevice()
 
     def setup_subdevice(self):
-        if self.subdevice is not None:
-            self.subdevice.deactivate()
-
-        device = self.SYNC_MODES[self.config.sync_mode]
-        config = self.device_configs[self.config.sync_mode]
-        config["name"] = self.config.name
-        config["ip_address"] = self.config.ip_address
-        config["pixel_count"] = getattr(self.config, "pixel_count")  # noqa: B009 - stored extra, not a declared field
-        config["refresh_rate"] = self.config.refresh_rate
-
-        # Subdevices are built directly, not through RegistryLoader.create.
-        self.subdevice = device(
-            self._ledfx, device.config_model().model_validate(config)
-        )
-        self._built_settings = self._output_settings()
-        self.subdevice._destination = self._destination
-        # A sync_mode change on a live device must not leave the new sender idle.
-        if self._active:
-            self.subdevice.activate()
+        with self.device_lock:
+            device = self.SYNC_MODES[self.config.sync_mode]
+            config = self.device_configs[self.config.sync_mode].copy()
+            config["name"] = self.config.name
+            config["ip_address"] = self.config.ip_address
+            config["pixel_count"] = self.pixel_count
+            config["refresh_rate"] = self.config.refresh_rate
+            candidate = device(self._ledfx, device.Config.model_validate(config))
+            candidate._destination = self._destination
+            try:
+                if self._requested:
+                    candidate.activate()
+            except Exception:
+                candidate.deactivate()
+                raise
+            old = self.subdevice
+            self.subdevice = candidate
+            self._generation += 1
+            self._built_settings = self._output_settings()
+            if old is not None:
+                old.deactivate()
 
     def activate(self):
-        if self.subdevice is None:
-            self.setup_subdevice()
-        self.subdevice.activate()
-        super().activate()
+        with self.device_lock:
+            self._requested = True
+            if self.subdevice is None:
+                self.setup_subdevice()
+            else:
+                self.subdevice.activate()
+            super().activate()
 
     def deactivate(self):
-        if self.subdevice is not None:
-            self.subdevice.deactivate()
-        super().deactivate()
+        with self.device_lock:
+            self._requested = False
+            self._generation += 1
+            if self.subdevice is not None:
+                self.subdevice.deactivate()
+            super().deactivate()
 
-    async def resolve_address(self, success_callback=None):
-        await super().resolve_address(success_callback)
-        if self.subdevice is not None:
-            self.subdevice._destination = self._destination
+    @override
+    async def resolve_address(
+        self, success_callback: Callable[[], object] | None = None
+    ) -> None:
+        with self.device_lock:
+            address, generation = self.config.ip_address, self._generation
+        try:
+            destination = await device_api.resolve_destination(
+                self._ledfx.loop, self._ledfx.thread_executor, address
+            )
+        except ValueError as error:
+            with self.device_lock:
+                if generation == self._generation and address == self.config.ip_address:
+                    self._online = False
+                    _LOGGER.warning("Device %s: %s", self.name, error)
+            return
+        with self.device_lock:
+            if generation != self._generation or address != self.config.ip_address:
+                return
+            child = self.subdevice
+            if child is not None:
+                # Parent ownership precedes child ownership and its sender lock.
+                with child.device_lock:
+                    previous = child._destination
+                    child._destination = destination
+                    try:
+                        if self._requested and (
+                            previous != destination or child._sender is None
+                        ):
+                            child.activate()
+                    except Exception:
+                        child._destination = previous
+                        raise
+                    child._online = True
+            self._destination = destination
+            self._online = True
+        if success_callback is not None:
+            success_callback()
 
     def flush(self, data):
-        self.subdevice.flush(data)
+        with self.device_lock:
+            if self.subdevice is not None:
+                self.subdevice.flush(data)
 
     async def add_postamble(self):
         _LOGGER.debug("Doing post creation things for WLED...")

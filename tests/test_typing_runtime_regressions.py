@@ -333,30 +333,36 @@ def test_osc_device_deactivates_twice() -> None:
     from ledfx.devices import Device
     from ledfx.devices.osc import OSCServerDevice
 
-    device = object.__new__(OSCServerDevice)
-    device._device_type = "OSC"
-    device._config = OSCServerDevice.config_model().model_construct(name="osc")
-    device._client = None
+    device = OSCServerDevice(
+        MagicMock(),
+        OSCServerDevice.Config.model_validate(
+            {"name": "osc", "ip_address": "127.0.0.1", "pixel_count": 1}
+        ),
+    )
     with patch.object(Device, "deactivate"):
         device.deactivate()
+        device.deactivate()
+    assert device._sender is None
 
 
 def test_wled_sync_mode_change_activates_new_subdevice() -> None:
     from ledfx.devices.wled import WLEDDevice
 
-    device = object.__new__(WLEDDevice)
-    device._ledfx = MagicMock()
-    device._active = True
-    device._destination = "10.0.0.2"
-    device._config = WLEDDevice.config_model().model_construct(
-        sync_mode="E131",
-        name="wled",
-        ip_address="10.0.0.2",
-        pixel_count=10,
-        refresh_rate=60,
+    device = WLEDDevice(
+        MagicMock(),
+        WLEDDevice.Config.model_validate(
+            {
+                "sync_mode": "E131",
+                "name": "wled",
+                "ip_address": "10.0.0.2",
+                "pixel_count": 10,
+                "refresh_rate": 60,
+            }
+        ),
     )
-    device.device_configs = {"E131": {}}
+    device._destination = "10.0.0.2"
     device.subdevice = MagicMock()
+    device.activate()
     new_sender = MagicMock()
     with patch.dict(WLEDDevice.SYNC_MODES, {"E131": new_sender}):
         device.setup_subdevice()
@@ -392,31 +398,20 @@ async def test_qlc_widgets_without_connection_and_prefix_parsing() -> None:
 
 
 def test_e131_waits_for_destination_before_starting_sender() -> None:
-    import threading
-
-    from ledfx.devices import NetworkedDevice
     from ledfx.devices.e131 import E131Device
 
-    device = object.__new__(E131Device)
-    device._ledfx = MagicMock()
-    device.device_lock = threading.Lock()
-    device._destination = None
-    device._sacn = None
-    device._config = E131Device.config_model().model_construct(
-        name="e131",
-        ip_address="10.0.0.3",
-        universe=1,
-        universe_end=1,
-        packet_priority=100,
+    device = E131Device(
+        MagicMock(),
+        E131Device.config_model().model_validate(
+            {"name": "e131", "ip_address": "10.0.0.3"}
+        ),
     )
-    with (
-        patch("ledfx.devices.e131.sacn.sACNsender") as sender,
-        patch("ledfx.devices.async_fire_and_forget"),
-        patch.object(NetworkedDevice, "activate") as base_activate,
-    ):
+    with patch("ledfx.devices.e131.E131Sender") as sender:
         device.activate()
     sender.assert_not_called()
-    base_activate.assert_called_once()
+    assert device._destination is None
+    assert device._ledfx.loop.call_soon_threadsafe.called
+    device.deactivate()
 
 
 def test_update_checker_is_a_class() -> None:

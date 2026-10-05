@@ -4,6 +4,7 @@ import socket
 import time
 
 import requests
+from ledfx_senders.encoders import encode_hue
 
 # Try to import the optional package
 try:
@@ -227,24 +228,12 @@ class HueDevice(NetworkedDevice):
     def flush(self, data):
         # TODO: maybe use the position of the channel to make more sense of the effect
 
-        pixels = [[int(r), int(g), int(b)] for r, g, b in data]
-        send_data = bytearray(b"HueStream")
-        send_data.append(2)  # Major version
-        send_data.append(0)  # Minor version
-        send_data.append(0)  # Sequence ID
-        send_data.append(0)  # Reserved
-        send_data.append(0)  # Reserved
-        send_data.append(0)  # Color Mode (0=RGB, 1=XY)
-        send_data.append(0)  # Reserved
-        send_data.extend(getattr(self.config, "entertainment_id").encode("utf-8"))  # noqa: B009 - stored extra, not a declared field
-        for i in range(len(pixels)):
-            send_data.append(i)  # channel ID
-            send_data.append(pixels[i][0])  # Red
-            send_data.append(pixels[i][0])  # Red
-            send_data.append(pixels[i][1])  # Green
-            send_data.append(pixels[i][1])  # Green
-            send_data.append(pixels[i][2])  # Blue
-            send_data.append(pixels[i][2])  # Blue
+        send_data = encode_hue(
+            data,
+            getattr(self.config, "entertainment_id"),  # noqa: B009 - stored extra
+            tuple(range(len(data))),
+            0,
+        )
 
         try:
             self._sock.send(send_data)

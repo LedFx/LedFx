@@ -1,15 +1,21 @@
 import logging
 import socket
-import struct
+import threading
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from typing import Literal
 
+import numpy as np
 import requests
+from ledfx_senders import NanoleafSender
+from numpy.typing import NDArray
 from pydantic import Field
 from requests import ConnectTimeout, ReadTimeout
+from typing_extensions import override
 
 from ledfx.configuration.fields import X_OMIT_DEFAULT, X_REQUIRED
 from ledfx.configuration.plugin import TypedConfig
-from ledfx.devices import NetworkedDevice
+from ledfx.devices import NetworkedDevice, resolve_destination
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,92 +47,134 @@ class NanoleafDevice(NetworkedDevice):
     config = TypedConfig(Config)
 
     status: dict[int, tuple[int, int, int]]
-    _sock: socket.socket | None = None
+    _sender: NanoleafSender | None = None
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self._device_type = "Nanoleaf"
         self.status = {}
+        self.device_lock = threading.RLock()
+        self._generation = 0
 
-    OUTPUT_KEYS = ("ip_address", "port", "auth_token", "sync_mode", "udp_port", "model")
+    OUTPUT_KEYS = (
+        "ip_address",
+        "port",
+        "auth_token",
+        "sync_mode",
+        "udp_port",
+        "model",
+        "pixel_layout",
+        "pixel_count",
+    )
+
+    @contextmanager
+    def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
+        with self.device_lock, super()._config_update_context(config):
+            yield
 
     def config_updated(self, config):
-        if self._output_changed():
-            self.setup_subdevice()
-            self._built_settings = self._output_settings()
+        with self.device_lock:
+            if self._output_changed():
+                self._replace_output()
+                self._built_settings = self._output_settings()
+                super().activate()
 
-    def url(self, token: str | None) -> str:
-        return f"http://{self.config.ip_address}:{self.config.port}/api/v1/{token}"
+    def url(self, token: str | None, destination: str | None = None) -> str:
+        return f"http://{destination or self.config.ip_address}:{self.config.port}/api/v1/{token}"
+
+    @override
+    async def resolve_address(
+        self, success_callback: Callable[[], object] | None = None
+    ) -> None:
+        with self.device_lock:
+            address, generation = self.config.ip_address, self._generation
+        try:
+            destination = await resolve_destination(
+                self._ledfx.loop, self._ledfx.thread_executor, address
+            )
+        except ValueError as error:
+            with self.device_lock:
+                if generation == self._generation and address == self.config.ip_address:
+                    self._online = False
+                    _LOGGER.warning("Device %s: %s", self.name, error)
+            return
+        with self.device_lock:
+            if generation != self._generation or address != self.config.ip_address:
+                return
+            if self._sender is not None or self._active:
+                # Preparing the UDP/REST session may fail. Publish destination
+                # and online state only after the replacement succeeds.
+                self._replace_output(destination)
+            self._destination = destination
+            self._online = True
+        if success_callback is not None:
+            success_callback()
 
     def setup_subdevice(self):
-        _LOGGER.debug("setup_subdevice")
-        self.status = {}
-        self.deactivate()
         self.activate()
 
-    def activate(self):
+    def _replace_output(self, destination: str | None = None) -> None:
+        destination = destination or socket.gethostbyname(self.config.ip_address)
+        candidate = None
         if self.config.sync_mode == "UDP":
-            _LOGGER.info("Activating UDP stream mode...")
-            payload = {
-                "write": {
-                    "command": "display",
-                    "animType": "extControl",
-                    "extControlVersion": "v2",
-                }
-            }
-            if getattr(self.config, "model") == LightPanelModel:  # noqa: B009 - stored extra, not a declared field
-                payload["write"]["extControlVersion"] = "v1"
-
+            version = 1 if getattr(self.config, "model") == LightPanelModel else 2  # noqa: B009 - stored extra
+            pixel_layout = getattr(self.config, "pixel_layout")  # noqa: B009 - stored extra
+            panel_ids = tuple(panel["panelId"] for panel in pixel_layout)
+            candidate = NanoleafSender(
+                destination=destination,
+                port=self.config.udp_port,
+                version=version,
+                panel_ids=panel_ids,
+            )
             try:
                 response = requests.put(
-                    self.url(self.config.auth_token) + "/effects",
-                    json=payload,
+                    self.url(self.config.auth_token, destination) + "/effects",
+                    json={
+                        "write": {
+                            "command": "display",
+                            "animType": "extControl",
+                            "extControlVersion": f"v{version}",
+                        }
+                    },
                     timeout=2.0,
                 )
-            except (ConnectTimeout, ReadTimeout) as e:
-                _LOGGER.warning(
-                    "%s activate failure, Is Nanoleaf powered? %s",
-                    self.name,
-                    e,
-                )
-                self.set_offline()
+                if not 200 <= response.status_code < 300:
+                    raise OSError(
+                        f"Nanoleaf rejected streaming activation: HTTP {response.status_code}"
+                    )
+            except Exception:
+                candidate.close()
+                raise
+        old = self._sender
+        self._sender = candidate
+        self._destination = destination
+        self._generation += 1
+        self.status = {}
+        if old is not None:
+            old.close()
+
+    def activate(self):
+        with self.device_lock:
+            try:
+                self._replace_output()
+            except (ConnectTimeout, ReadTimeout, OSError) as error:
+                _LOGGER.warning("%s activate failure: %s", self.name, error)
+                if self._sender is None:
+                    self.set_offline()
                 return
-
-            if response.status_code == 400:
-                _LOGGER.warning("%s Bad Request Response", self.name)
-                self.set_offline()
-                return
-
-            self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self._sock.connect((self.config.ip_address, self.config.udp_port))
-
-        super().activate()
+            super().activate()
 
     def deactivate(self):
-        _LOGGER.debug("deactivate")
-        if self._sock is not None:
-            self._sock.close()
-            self._sock = None
+        with self.device_lock:
+            self._generation += 1
+            if self._sender is not None:
+                self._sender.close()
+                self._sender = None
+            super().deactivate()
 
-        super().deactivate()
-
-    def write_udp(self):
-        if getattr(self.config, "model") == LightPanelModel:  # noqa: B009 - stored extra, not a declared field
-            send_data = struct.pack(">B", len(self.status.items()))
-            w = 0
-            transition = 1
-
-            for panel_id, (r, g, b) in self.status.items():
-                send_data += struct.pack(">BBBBBH", panel_id, w, r, g, b, transition)
-        else:
-            send_data = struct.pack(">H", len(self.status))
-            w = 0
-            transition = 0
-
-            for panel_id, (r, g, b) in self.status.items():
-                send_data += struct.pack(">HBBBBH", panel_id, r, g, b, w, transition)
-
-        self._sock.send(send_data)
+    def write_udp(self, data: NDArray[np.generic]) -> None:
+        if self._sender is not None:
+            self._sender.send(data)
 
     def write_tcp(self):
         """Syncs the digital twin's changes to the real Nanoleaf device.
@@ -165,14 +213,15 @@ class NanoleafDevice(NetworkedDevice):
             return
 
     def flush(self, data):
-        pixel_layout = getattr(self.config, "pixel_layout")  # noqa: B009 - stored extra, not a declared field
-        for panel, col in zip(pixel_layout, data.astype(int).clip(0, 255)):
-            self.status[panel["panelId"]] = col.tolist()
-
-        if self.config.sync_mode == "TCP":
-            self.write_tcp()
-        elif self.config.sync_mode == "UDP":
-            self.write_udp()
+        with self.device_lock:
+            if self.config.sync_mode == "UDP":
+                self.write_udp(data)
+                return
+            pixel_layout = getattr(self.config, "pixel_layout")  # noqa: B009 - stored extra
+            for panel, col in zip(pixel_layout, data.astype(int).clip(0, 255)):
+                self.status[panel["panelId"]] = col.tolist()
+            if self.config.sync_mode == "TCP":
+                self.write_tcp()
 
     def get_token(self):
         _LOGGER.info("acquiring nanoleaf auth token...")

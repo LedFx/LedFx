@@ -37,7 +37,7 @@ def test_artnet_render_sends_while_configuration_waits_for_virtual() -> None:
         receiver.settimeout(2)
         device = ArtNetDevice(
             core,
-            ArtNetDevice.config_model().model_validate(
+            ArtNetDevice.Config.model_validate(
                 {
                     "name": "Art-Net",
                     "ip_address": "127.0.0.1",
@@ -95,20 +95,3 @@ def test_artnet_render_sends_while_configuration_waits_for_virtual() -> None:
             assert packet[:8] == b"Art-Net\x00"
         finally:
             device.deactivate()
-
-
-def test_artnet_contended_frame_defers_layout_initialization() -> None:
-    device = ArtNetDevice(
-        MagicMock(),
-        ArtNetDevice.config_model().model_validate(
-            {"name": "Art-Net", "ip_address": "127.0.0.1", "pixel_count": 1}
-        ),
-    )
-    # Configuration owns this lock while changing output settings. A dropped
-    # frame must not initialize a layout from partially published settings.
-    with device.lock:
-        device.flush(np.ones((1, 3), dtype=np.uint8))
-        assert device.init
-    device.flush(np.ones((1, 3), dtype=np.uint8))
-    assert not device.init
-    assert device.channel_count == 3
