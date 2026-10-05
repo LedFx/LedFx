@@ -336,6 +336,45 @@ async def test_native_stateful_resolved_destination_change(
         d.deactivate()
 
 
+@pytest.mark.parametrize(
+    "mode", ["One_Argument", "Three_Arguments", "Three_Addresses", "All_To_One"]
+)
+def test_osc_validation_closes_public_sender_without_publishing(mode: str) -> None:
+    d = device(OSCServerDevice)
+    d._config = d.config.model_copy(update={"send_type": mode})
+    public_factory = d._make_sender
+    probes: list[OSCSender] = []
+
+    def make_probe(destination: str) -> OSCSender:
+        probe = public_factory(destination)
+        probes.append(probe)
+        return probe
+
+    with (
+        patch.object(d, "_make_sender", side_effect=make_probe),
+        patch.object(OSCSender, "_test_sender", side_effect=AssertionError("test API")),
+    ):
+        d._validate_configuration()
+    assert len(probes) == 1 and probes[0].closed
+    assert d._sender is None and not d._requested
+
+
+@pytest.mark.parametrize("path", ["missing-leading-slash", "/invalid\0path"])
+def test_osc_invalid_native_path_preserves_live_sender(path: str) -> None:
+    d = device(OSCServerDevice)
+    d.activate()
+    live = d._sender
+    assert live is not None
+    try:
+        with pytest.raises(ValueError):
+            d.update_config({"path": path})
+        assert d._sender is live and not live.closed
+        assert d.config.path == "/0/dmx/{address}"
+    finally:
+        d.deactivate()
+    assert live.closed
+
+
 def test_osc_output_paths_and_refresh_rate_reconfigure_native() -> None:
     d = device(OSCServerDevice)
     with patch.object(d, "_make_sender", side_effect=partial(make_capture, d)):

@@ -65,16 +65,8 @@ class OSCServerDevice(NativePacketDevice):
 
     @override
     def _validate_configuration(self) -> None:
-        # The native constructor validates formatted path lengths and framing.
-        probe = OSCSender._test_sender(
-            destination="127.0.0.1",
-            port=self.config.port,
-            pixel_count=self.config.pixel_count,
-            path=self.config.path,
-            starting_addr=self.config.starting_addr,
-            send_type=self.config.send_type,
-            mode="discard",
-        )
+        # The public constructor validates native framing without sending a frame.
+        probe = self._make_sender("127.0.0.1")
         probe.close()
 
     @override
