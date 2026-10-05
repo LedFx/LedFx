@@ -13,6 +13,7 @@ import argparse
 import logging
 import os
 import sys
+import threading
 from logging.handlers import RotatingFileHandler
 
 from ledfx.sentry_config import setup_sentry
@@ -307,7 +308,20 @@ def main():
         icon = None
 
     if icon:
-        icon.run(setup=entry_point)
+        exit_code = 1
+        setup_thread: threading.Thread | None = None
+
+        def setup_tray(icon: pystray.Icon) -> None:
+            nonlocal exit_code, setup_thread
+            setup_thread = threading.current_thread()
+            exit_code = entry_point(icon)
+
+        icon.run(setup=setup_tray)
+        # pystray discards setup's result, and stop can release the tray loop
+        # before the setup thread has returned its exit code.
+        if setup_thread is not None:
+            setup_thread.join(timeout=icon.SETUP_THREAD_TIMEOUT)
+        return exit_code
     else:
         return entry_point()
 
