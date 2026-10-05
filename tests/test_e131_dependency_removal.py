@@ -46,4 +46,9 @@ try:
 finally:
     sender.close(False)
 """
-    subprocess.run([sys.executable, "-c", script], check=True, timeout=10)
+    subprocess.run(
+        [sys.executable, "-c", script],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+        timeout=10,
+    )
