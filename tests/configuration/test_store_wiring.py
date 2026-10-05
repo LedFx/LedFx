@@ -89,7 +89,7 @@ async def test_shutdown_flush_survives_stop_failure() -> None:
     await core.async_stop(4)
 
     core.config_store.flush_sync.assert_called_once_with()
-    core.devices.async_shutdown_devices.assert_not_awaited()
+    core.devices.async_shutdown_devices.assert_awaited_once_with()
     core.thread_executor.shutdown.assert_called_once_with()
     core.loop.stop.assert_called_once_with()
     assert core.exit_code == 1

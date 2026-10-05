@@ -5,13 +5,15 @@ import threading
 from collections.abc import AsyncIterator, Mapping
 from types import SimpleNamespace
 from typing import cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
 import pytest
 from ledfx_senders import HueSender
 from ledfx_senders.frames import Frame
 
+from ledfx.core import LedFxCore
+from ledfx.devices import Devices
 from ledfx.devices.hue import HueDevice, HueRetirement, HueSettings
 from ledfx.virtuals import Virtual
 
@@ -831,3 +833,66 @@ async def test_shutdown_drains_retirement_before_delayed_dispatch(
     await asyncio.sleep(0)
     assert not hue_device._lifecycle_tasks
     assert hue_device.zone_actions == ["start", "stop"]
+
+
+@pytest.mark.parametrize("failure", ["http", "event"])
+async def test_core_drains_owned_hue_work_after_earlier_shutdown_failure(
+    hue_device: HueFixture,
+    failure: str,
+) -> None:
+    sender = ControlledSender()
+    hue_device.senders.append(sender)
+    hue_device.activate()
+    await idle(hue_device)
+    order: list[str] = []
+    registry = MagicMock()
+    registry.values.return_value = [hue_device]
+
+    async def drain_devices() -> None:
+        await Devices.async_shutdown_devices(registry)
+        order.append("devices")
+
+    def flush_config() -> None:
+        assert order == ["devices"]
+        order.append("config")
+
+    def stop_executor() -> None:
+        assert hue_device.zone_actions == ["start", "stop"]
+        assert sender.closed
+        assert not hue_device._lifecycle_tasks
+        assert not hue_device._pending_retirements
+        assert all(task.done() for task in hue_device._service_tasks)
+        assert order == ["devices", "config"]
+        order.append("executor")
+
+    core = object.__new__(LedFxCore)
+    core.loop = MagicMock()
+    core.events = MagicMock()
+    core.audio_device_monitor = None
+    core._smtc_now_playing = core._mpris_now_playing = None
+    core.http = MagicMock(stop=AsyncMock())
+    core.devices = MagicMock(
+        async_shutdown_devices=AsyncMock(side_effect=drain_devices)
+    )
+    core.config_store = MagicMock(flush_sync=MagicMock(side_effect=flush_config))
+    core.thread_executor = MagicMock(shutdown=MagicMock(side_effect=stop_executor))
+    core.exit_code = None
+    if failure == "http":
+        # The real registry shutdown listener deactivates outputs synchronously,
+        # queuing Hue work that the awaited hook must drain after HTTP fails.
+        def shutdown_event(event: object) -> None:
+            hue_device.deactivate()
+
+        core.events.fire_event.side_effect = shutdown_event
+        core.http.stop.side_effect = RuntimeError("HTTP shutdown failure")
+    else:
+        core.events.fire_event.side_effect = RuntimeError("shutdown event failure")
+
+    await core.async_stop(4)
+    core.devices.async_shutdown_devices.assert_awaited_once_with()
+    core.config_store.flush_sync.assert_called_once_with()
+    core.thread_executor.shutdown.assert_called_once_with()
+    core.loop.stop.assert_called_once_with()
+    assert core.exit_code == 1
+    assert order == ["devices", "config", "executor"]
+    assert not hue_device.is_active()
