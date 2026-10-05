@@ -651,6 +651,9 @@ class LedFxCore:
             _LOGGER.info("Stopping HTTP Server...")
             await self.http.stop()
 
+            # Drain device cleanup while its executor is still available.
+            await self.devices.async_shutdown_devices()
+
             # Cancel all the remaining task and wait
             tasks = [
                 task

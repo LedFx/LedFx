@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
-from ledfx_senders import NanoleafSender
+from ledfx_senders import HueSender, NanoleafSender
 
 from ledfx.devices import packets
 from ledfx.devices.govee import Govee
@@ -25,18 +25,20 @@ def govee_device(sock: MagicMock) -> Govee:
     return device
 
 
-def hue_device(sock: MagicMock) -> HueDevice:
-    # REST pairing and DTLS setup belong to the existing session owner.
-    device = object.__new__(HueDevice)
-    device._config = HueDevice.Config.model_validate(
-        {
-            "name": "test",
-            "ip_address": "127.0.0.1",
-            "group_name": "test",
-            "entertainment_id": "00000000-0000-0000-0000-000000000000",
-        }
+def hue_device(sender: HueSender) -> HueDevice:
+    device = HueDevice(
+        MagicMock(),
+        HueDevice.Config.model_validate(
+            {
+                "name": "test",
+                "ip_address": "127.0.0.1",
+                "group_name": "test",
+                "entertainment_id": "00000000-0000-0000-0000-000000000000",
+                "channel_ids": [7],
+            }
+        ),
     )
-    device._sock = sock
+    device._sender = sender
     return device
 
 
@@ -55,16 +57,34 @@ def test_govee_invalid_frame_never_reaches_shared_socket() -> None:
     sink.send.assert_not_called()
 
 
-def test_hue_keeps_transport_and_nonfinite_error_precedence() -> None:
-    sink = MagicMock()
-    device = hue_device(sink)
-    with pytest.raises(OverflowError):
-        device.flush(np.array([[256, np.inf, 0]]))
-    sink.sendto.assert_not_called()
-    sink.send.assert_not_called()
-    device.flush(np.array([[17, 34, 51]]))
-    assert sink.send.call_args.args[0][-7:] == bytes.fromhex("00111122223333")
-    assert device._sock is sink
+def test_hue_native_validation_preserves_nonfinite_error_precedence() -> None:
+    sender = HueSender(
+        destination="127.0.0.1",
+        psk_identity=b"opaque",
+        client_key=b"key",
+        entertainment_id="00000000-0000-0000-0000-000000000000",
+        channel_ids=(7,),
+    )
+    device = hue_device(sender)
+    try:
+        with pytest.raises(OverflowError):
+            device.flush(np.array([[256, np.inf, 0]]))
+        assert device._sender is sender
+        assert not sender.connected
+    finally:
+        sender.close()
+
+
+def test_hue_flush_passes_array_to_owned_sender() -> None:
+    sender = MagicMock(spec=HueSender)
+    device = hue_device(sender)
+    frame = np.array([[17, 34, 51]])
+    device.flush(frame)
+    sender.send.assert_called_once()
+    assert sender.send.call_args.args[0] is frame
+    assert device._sender is sender
+    with pytest.raises(TypeError, match="numpy"):
+        device.flush(bytes([1, 2, 3]))  # pyrefly: ignore[bad-argument-type]
 
 
 def test_zengge_converts_only_first_pixel() -> None:

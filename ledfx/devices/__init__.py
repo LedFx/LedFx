@@ -240,6 +240,9 @@ class Device(BaseRegistry):
         self._active = False
         # self.flush(np.zeros((self.pixel_count, 3)))
 
+    async def async_shutdown(self) -> None:
+        """Drain device-owned work before the core stops its executor."""
+
     def set_offline(self):
         self.deactivate()
         self._online = False
@@ -823,6 +826,13 @@ class Devices(RegistryLoader):
             if device_id == device.id:
                 return device
         return None
+
+    async def async_shutdown_devices(self) -> None:
+        for device in self.values():
+            try:
+                await device.async_shutdown()
+            except Exception:  # noqa: BLE001 - drain the other devices too
+                _LOGGER.warning("Device async shutdown failed")
 
     async def async_initialize_devices(self):
         tasks = [
