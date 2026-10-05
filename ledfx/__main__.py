@@ -71,7 +71,6 @@ def setup_logging(loglevel, config_dir):
     root_logger.addHandler(file_handler)
 
     # Suppress some of the overly verbose logs
-    logging.getLogger("sacn").setLevel(logging.WARNING)
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
     logging.getLogger("zeroconf").setLevel(logging.WARNING)
     logging.getLogger("lifx").setLevel(logging.WARNING)
@@ -310,7 +309,7 @@ def main():
     if icon:
         icon.run(setup=entry_point)
     else:
-        entry_point()
+        return entry_point()
 
 
 def entry_point(icon=None):
@@ -340,6 +339,11 @@ def entry_point(icon=None):
 
     if icon:
         icon.stop()
+
+    # Normal user shutdowns remain successful; CI success is only valid in CI mode.
+    if exit_code in (2, 3) or (args.ci_smoke_test and exit_code == 5):
+        return 0
+    return exit_code if exit_code is not None else 1
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+from ledfx_senders.e131 import ChannelLayout
 
 from ledfx.configuration.models import VirtualConfig
 from ledfx.devices import Device
@@ -24,20 +25,37 @@ def _e131(pixel_count: int) -> E131Device:
 
 
 def test_e131_pixel_count_change_resizes_channels() -> None:
-    # LEDFX-V2-REL-1PN / 3MD: channel_count stayed at the old size, so every
-    # flush raised "Invalid buffer size".
-    device = _e131(100)
-    with patch("ledfx.devices.e131.sacn.sACNsender") as sender:
-        sender.return_value.__getitem__.return_value.dmx_data = (0,) * 512
-        device.activate()
-        device.update_config({"pixel_count": 200})
+    from ledfx_senders import E131Sender
 
-        assert getattr(device.config, "channel_count") == 600  # noqa: B009
-        assert getattr(device.config, "universe_end") == 2  # noqa: B009
-        # The sender restarts so the second universe is activated.
-        assert sender.call_count == 2
-        sender.return_value.activate_output.assert_called_with(2)
+    device = _e131(100)
+
+    def capture(
+        layout: ChannelLayout,
+        *,
+        destination: str,
+        source_name: str,
+        priority: int = 100,
+    ) -> E131Sender:
+        return E131Sender._test_sender(
+            layout,
+            mode="capture",
+            destination=destination,
+            source_name=source_name,
+            priority=priority,
+        )
+
+    with patch("ledfx.devices.e131.E131Sender", side_effect=capture) as factory:
+        device.activate()
+        old = device._sender
+        assert old is not None
+        device.update_config({"pixel_count": 200})
+        assert getattr(device.config, "channel_count") == 600  # noqa: B009 - stored extra
+        assert getattr(device.config, "universe_end") == 2  # noqa: B009 - stored extra
+        assert factory.call_count == 2 and old.closed
+        assert device._sender is not None
+        assert device._sender.layout.universes == (1, 2)
         device.flush(np.zeros((200, 3)))
+        device.deactivate()
 
 
 def test_pixel_count_change_resizes_device_buffer() -> None:
@@ -87,39 +105,65 @@ def test_shrinking_an_active_device_clears_its_old_segment() -> None:
 
 
 def test_e131_ip_address_change_rebuilds_the_sender() -> None:
-    # The old sender keeps its destination; a new address must replace it.
-    device = _e131(100)
-    with (
-        patch("ledfx.devices.e131.sacn.sACNsender") as sender,
-        patch("ledfx.devices.NetworkedDevice.activate") as resolve_then_activate,
-    ):
-        device.activate()
-        device.update_config({"ip_address": "10.0.0.2"})
+    from ledfx_senders import E131Sender
 
-    sender.return_value.stop.assert_called_once()
-    assert device._sacn is None
-    # Activation resolves the new address, then builds the new sender.
-    assert device._destination is None
-    assert resolve_then_activate.call_count == 2  # first activate, then this one
+    device = _e131(100)
+
+    def capture(
+        layout: ChannelLayout,
+        *,
+        destination: str,
+        source_name: str,
+        priority: int = 100,
+    ) -> E131Sender:
+        return E131Sender._test_sender(
+            layout,
+            mode="capture",
+            destination=destination,
+            source_name=source_name,
+            priority=priority,
+        )
+
+    with patch("ledfx.devices.e131.E131Sender", side_effect=capture):
+        device.activate()
+        old = device._sender
+        assert old is not None
+        device.update_config({"ip_address": "10.0.0.2"})
+        assert old.closed and device._sender is None
+        assert device._destination is None
+        assert device._ledfx.loop.call_soon_threadsafe.called
+        device.deactivate()
 
 
 def test_e131_layout_ending_on_a_universe_boundary_sends_every_channel() -> None:
-    # 170 pixels from channel offset 1 end on index 510: the first channel of
-    # the second 510-channel universe.
+    from ledfx_senders import E131Sender
+
     device = _e131(170)
     device.update_config({"channel_offset": 1})
-    universes: dict[int, MagicMock] = {}
 
-    def universe(u: int) -> MagicMock:
-        return universes.setdefault(u, MagicMock(dmx_data=(0,) * 512))
+    def capture(
+        layout: ChannelLayout,
+        *,
+        destination: str,
+        source_name: str,
+        priority: int = 100,
+    ) -> E131Sender:
+        return E131Sender._test_sender(
+            layout,
+            mode="capture",
+            destination=destination,
+            source_name=source_name,
+            priority=priority,
+        )
 
-    with patch("ledfx.devices.e131.sacn.sACNsender") as sender:
-        sender.return_value.__getitem__.side_effect = universe
+    with patch("ledfx.devices.e131.E131Sender", side_effect=capture):
         device.activate()
         device.flush(np.full((170, 3), 255))
-
-    assert getattr(device.config, "universe_end") == 2  # noqa: B009
-    assert universes[2].dmx_data[0] == 255
+        assert device._sender is not None
+        packets = device._sender._engine.captures()
+        assert packets[1][0][126] == 255
+        assert getattr(device.config, "universe_end") == 2  # noqa: B009 - stored extra
+        device.deactivate()
 
 
 def test_networked_device_virtual_callbacks_run_after_publication_unlocks() -> None:

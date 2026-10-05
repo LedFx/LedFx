@@ -141,7 +141,18 @@ def sawtooth(t, width=1):
 # Specialization of sawtooth for a triangle wave. Output is often similar enough
 # to a sine wave, but much faster
 def triangle(a):
-    a = sawtooth(a * np.pi * 2, 0.5)
+    phase = np.asarray(a * np.pi * 2)
+    if phase.dtype in (np.dtype("float16"), np.dtype("float32"), np.dtype("float64")):
+        # sawtooth's float64 width promotes the already-scaled phase. Keep
+        # that rounding order, but avoid extracting and scattering both halves.
+        phase = np.remainder(phase.astype(np.float64, copy=False), 2 * np.pi)
+        a = np.where(
+            phase < np.pi,
+            phase / (np.pi * 0.5) - 1,
+            (np.pi * 1.5 - phase) / (np.pi * 0.5),
+        )
+    else:
+        a = sawtooth(phase, 0.5)
     np.multiply(a, 0.5, out=a)
     return np.add(a, 0.5)
 

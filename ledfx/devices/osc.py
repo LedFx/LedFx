@@ -1,19 +1,20 @@
 import logging
+import time
 from typing import Literal
 
-import numpy as np
+from ledfx_senders import Frame, OSCSender
 from pydantic import Field
-from pythonosc.osc_message_builder import OscMessageBuilder
-from pythonosc.udp_client import SimpleUDPClient
+from typing_extensions import override
 
 from ledfx.configuration.fields import X_REQUIRED
 from ledfx.configuration.plugin import TypedConfig
 from ledfx.devices import NetworkedDevice
+from ledfx.devices.native_packet import NativePacketDevice
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class OSCServerDevice(NetworkedDevice):
+class OSCServerDevice(NativePacketDevice):
     """OSC Server 'device' support"""
 
     class Config(NetworkedDevice.Config):
@@ -51,11 +52,6 @@ class OSCServerDevice(NetworkedDevice):
 
     config = TypedConfig(Config)
 
-    def __init__(self, ledfx, config):
-        super().__init__(ledfx, config)
-        self._device_type = "OSC"
-        self.last_frame = np.full((self.config.pixel_count, 3), -1)
-
     OUTPUT_KEYS = (
         "ip_address",
         "port",
@@ -65,110 +61,33 @@ class OSCServerDevice(NetworkedDevice):
         "path",
     )
 
-    def config_updated(self, config):
-        if not self._output_changed():
-            return
-        self.last_frame = np.full((self.config.pixel_count, 3), -1)
-        self.deactivate()
-        self.activate()
-        self._built_settings = self._output_settings()
-
-    def activate(self):
-        self._client = SimpleUDPClient(self.destination, self.config.port)
-        _LOGGER.debug(
-            "%s sender for %s started.",
-            self._device_type,
-            self.config.name,
+    @override
+    def _validate_configuration(self) -> None:
+        # The native constructor validates formatted path lengths and framing.
+        probe = OSCSender._test_sender(
+            destination="127.0.0.1",
+            port=self.config.port,
+            pixel_count=self.config.pixel_count,
+            path=self.config.path,
+            starting_addr=self.config.starting_addr,
+            send_type=self.config.send_type,
+            mode="discard",
         )
-        super().activate()
+        probe.close()
 
-    def deactivate(self):
-        super().deactivate()
-        _LOGGER.debug(
-            "%s sender for %s stopped.",
-            self._device_type,
-            self.config.name,
+    @override
+    def _make_sender(self, destination: str) -> OSCSender:
+        return OSCSender(
+            destination=destination,
+            port=self.config.port,
+            pixel_count=self.config.pixel_count,
+            path=self.config.path,
+            starting_addr=self.config.starting_addr,
+            send_type=self.config.send_type,
         )
-        if getattr(self, "_client", None) is not None:
-            self._client._sock.close()
-            self._client = None
 
-    def flush(self, data):
-        if np.array_equal(data, self.last_frame):
-            return
-
-        if data.size != self.config.pixel_count * 3:
-            raise Exception(  # noqa: TRY002
-                f"Invalid buffer size. {data.size} != {self.config.pixel_count * 3}"
-            )
-
-        # Get the config values to variables
-        starting_addr = self.config.starting_addr
-
-        # Convert data to rgb tuple
-        colors = data.astype(int)
-
-        # Create array for messages
-        messages = []
-
-        # Go though all the pixels
-        for i in range(self.config.pixel_count):
-            # Get the rgb values from the colors array
-            r, g, b = colors[i % len(colors)]
-            if self.config.send_type == "One_Argument":
-                send_data = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + i)
-                )
-                send_data.add_arg([r / 255, g / 255, b / 255])
-                messages.append(send_data)
-            elif self.config.send_type == "Three_Arguments":
-                # this one needs editing + saving the device after EVERY restart (atm) for some reason
-                send_data = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + i)
-                )
-                send_data.add_arg(r / 255)
-                send_data.add_arg(g / 255)
-                send_data.add_arg(b / 255)
-                messages.append(send_data)
-            elif self.config.send_type == "Three_Addresses":
-                send_data_r = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + (i * 3))
-                )
-                send_data_r.add_arg(r / 255)
-                send_data_g = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + (i * 3) + 1)
-                )
-                send_data_g.add_arg(g / 255)
-                send_data_b = OscMessageBuilder(
-                    self.__generate_path(address=starting_addr + (i * 3) + 2)
-                )
-                send_data_b.add_arg(b / 255)
-                messages.append(send_data_r)
-                messages.append(send_data_g)
-                messages.append(send_data_b)
-            elif self.config.send_type == "All_To_One":
-                if len(messages) == 0:
-                    send_data = OscMessageBuilder(
-                        self.__generate_path(address=starting_addr)
-                    )
-                    send_data.add_arg([r / 255, g / 255, b / 255])
-                    messages.append(send_data)
-                else:
-                    send_data = messages[0]
-                    send_data.add_arg([r / 255, g / 255, b / 255])
-                    messages[0] = send_data
-
-        for message in messages:
-            try:
-                self._client.send(message.build())
-            except AttributeError:
-                self.activate()
-                continue
-
-        self.last_frame = np.copy(data)
-
-    def __generate_path(self, path=None, address=None):
-        path = self.config.path if path is None else path
-        address = self.config.starting_addr if address is None else address
-
-        return path.format(address=address)
+    @override
+    def flush(self, data: Frame) -> None:
+        with self.device_lock:
+            if isinstance(self._sender, OSCSender):
+                self._sender.send(data, now=time.monotonic())

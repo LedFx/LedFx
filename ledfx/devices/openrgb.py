@@ -173,4 +173,5 @@ class OpenRGB(NetworkedDevice):
             device_id (int): The ID of the device to send the data to.
         """
         packet = packets.build_openrgb_packet(data, device_id)
-        sock.send(packet)
+        # TCP may accept only part of a large frame in one send().
+        sock.sendall(packet)

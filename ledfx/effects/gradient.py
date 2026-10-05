@@ -159,8 +159,9 @@ class GradientEffect(Effect):
         # Calculate indices for the gradient lookup
         indices = ((self.gradient_pixel_count - 1) * points).astype(int)
 
-        # Use advanced indexing to get colors for each point
-        return self._gradient_curve[:, indices]
+        assert self._gradient_curve is not None
+        # Gather contiguous RGB triples, retaining the channel-first API.
+        return np.moveaxis(np.take(self._gradient_curve.T, indices, axis=0), -1, 0)
 
     def get_gradient_color(self, point):
         return self._get_gradient_colors(point)

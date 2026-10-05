@@ -626,6 +626,10 @@ class Events:
         self._ledfx = ledfx
         self._listeners = {}
 
+    def has_listeners(self, event_type: str) -> bool:
+        """Whether an event has consumers, before preparing an expensive payload."""
+        return bool(self._listeners.get(event_type))
+
     def fire_event(self, event: Event) -> None:
         listeners = self._listeners.get(event.event_type, [])
 

@@ -104,20 +104,8 @@ class LedFxCore:
         self.ci_testing = ci_testing
         self.offline_mode = offline_mode
 
-        try:
-            import uvloop
-
-            self.loop = uvloop.new_event_loop()
-            _LOGGER.info("Using uvloop for asyncio loop")
-        except ImportError:
-            try:
-                import winloop
-
-                self.loop = winloop.new_event_loop()
-                _LOGGER.info("Using winloop for asyncio loop")
-            except ImportError:
-                self.loop = asyncio.new_event_loop()
-                _LOGGER.info("Using standard asyncio loop")
+        self.loop = asyncio.new_event_loop()
+        _LOGGER.info("Using standard asyncio loop")
 
         self.thread_executor = ThreadPoolExecutor()
         self.loop.set_default_executor(self.thread_executor)
@@ -330,26 +318,29 @@ class LedFxCore:
             self.device_listener()
 
         min_time_since = 1 / self.config.visualisation_fps
-        time_since_last = {}
+        next_update: dict[str, float] = {}
         max_len = self.config.visualisation_maxlen
 
         def handle_visualisation_update(event):
+            if not self.events.has_listeners(Event.VISUALISATION_UPDATE):
+                return
             is_device = event.event_type == Event.DEVICE_UPDATE
-            time_now = time.time()
+            time_now = time.monotonic()
 
             if is_device:
                 vis_id = event.device_id
             else:
                 vis_id = event.virtual_id
 
-            try:
-                time_since = time_now - time_since_last[vis_id]
-                if time_since < min_time_since:
-                    return
-            except KeyError:
-                pass
-
-            time_since_last[vis_id] = time_now
+            due = next_update.get(vis_id, time_now)
+            if time_now < due:
+                return
+            # Advance the schedule, not the arrival time. Resetting to now
+            # makes e.g. a 62 Hz source lose every other 60 Hz preview. Skip
+            # missed slots after stalls and never replay a burst of old frames.
+            next_update[vis_id] = (
+                time_now + min_time_since - (time_now - due) % min_time_since
+            )
 
             # grab rows from up in virtual land
             virtual = self.virtuals.get(vis_id)
@@ -373,7 +364,7 @@ class LedFxCore:
                 pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
 
             if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
-                b_arr = bytes(pixels.astype(np.uint8).flatten())
+                b_arr = pixels.astype(np.uint8, copy=False).tobytes()
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:
                 pixels = pixels.astype(np.uint8).T.tolist()
@@ -453,9 +444,21 @@ class LedFxCore:
             if show_check_notification and self.icon and self.icon.HAS_NOTIFICATION:
                 self.icon.notify("Unable to get update information", "LedFx")
 
+    def _startup_done(self, task: asyncio.Task[None]) -> None:
+        if task.cancelled():
+            return
+        error = task.exception()
+        if error is not None:
+            self.loop_exception_handler(
+                self.loop, {"message": "LedFx startup failed", "exception": error}
+            )
+            self.stop(1)
+
     def start(self, open_ui=False, pause_all=False):
         async_fire_and_forget(
-            self.async_start(open_ui=open_ui, pause_all=pause_all), self.loop
+            self.async_start(open_ui=open_ui, pause_all=pause_all),
+            self.loop,
+            exc_handler=self._startup_done,
         )
 
         try:
@@ -547,6 +550,25 @@ class LedFxCore:
         async_fire_and_forget(self.integrations.activate_integrations(), self.loop)
 
         if self.ci_testing:
+            # Frozen/Docker jobs must load and exercise the shipped extension.
+            # Capture mode never opens a socket or contacts a physical receiver.
+            from ledfx_senders import E131Sender
+            from ledfx_senders.e131 import ChannelLayout
+
+            sender = E131Sender._test_sender(
+                ChannelLayout(3),
+                destination="multicast",
+                source_name="ci-smoke",
+                mode="capture",
+            )
+            try:
+                sender.send(bytes([12, 13, 14]))
+                packets = sender._engine.captures()
+                if len(packets) != 2 or packets[0][0][126:129] != bytes([12, 13, 14]):
+                    raise RuntimeError("Native E1.31 smoke check failed")
+            finally:
+                sender.close(False)
+            _LOGGER.info("Native E1.31 capture smoke passed")
             await asyncio.sleep(5)
             self.stop(5)
         if not self.offline_mode:
