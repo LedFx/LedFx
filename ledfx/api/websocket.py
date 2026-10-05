@@ -30,6 +30,7 @@ from ledfx.events import (
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
+FINAL_ERROR_REPLY_TIMEOUT = 1.0
 MAX_VAL = 32767
 
 # Phase 2: Client metadata constants
@@ -129,7 +130,8 @@ class WebsocketConnection:
         self._socket = None
         self._listeners: dict[object, Callable[[], None]] = {}
         self._receiver_task = None
-        self._sender_task = None
+        self._sender_task: asyncio.Task[None] | None = None
+        self._receiver_error_reply: dict[str, object] | None = None
         # Dual-path sender: control queue for reliable ordered messages,
         # single-slot mailbox dict for latest-value-wins vis frames.
         self._control_queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue(
@@ -208,6 +210,9 @@ class WebsocketConnection:
             self._installation_reply_failed = True
             self.clear_subscriptions()
             self._has_work.set()
+            # Interrupt a terminal-error write even if the failure close stalls.
+            if self._receiver_error_reply is not None and self._sender_task is not None:
+                self._sender_task.cancel()
             if self._installation_close_task is None:
                 self._installation_close_task = self._ledfx.loop.create_task(
                     self._close_failed_installation_reply()
@@ -361,6 +366,8 @@ class WebsocketConnection:
                 except ConnectionResetError:
                     _LOGGER.info("Websocket connection closed by the client.")
                     return
+                if message is self._receiver_error_reply:
+                    return
 
             # --- vis frames (latest-value-wins per vis_id) ---
             if self._vis_slots:
@@ -437,7 +444,7 @@ class WebsocketConnection:
         await self._socket.send_json({"event_type": "client_id", "client_id": self.uid})
 
         self._receiver_task = asyncio.current_task(loop=self._ledfx.loop)
-        self._sender_task = self._ledfx.loop.create_task(self._sender())
+        sender_task = self._sender_task = self._ledfx.loop.create_task(self._sender())
 
         self._ledfx.events.fire_event(ClientConnectedEvent(self.uid, self.client_ip))
 
@@ -483,7 +490,12 @@ class WebsocketConnection:
             if message is not None:
                 msg_id = message.get("id")
                 if msg_id is not None:
-                    self.send_error(msg_id, "Invalid message format.")
+                    self._receiver_error_reply = {
+                        "id": msg_id,
+                        "success": False,
+                        "error": {"message": "Invalid message format."},
+                    }
+                    self.send(self._receiver_error_reply)
 
         except TypeError:
             if socket.closed:
@@ -501,6 +513,22 @@ class WebsocketConnection:
             _LOGGER.exception("Unexpected Exception")
 
         finally:
+            self.clear_subscriptions()
+            if (
+                self._receiver_error_reply is not None
+                and not self._closed
+                and not self._installation_reply_failed
+                and not socket.closed
+            ):
+                # The one socket writer preserves FIFO and stops at this reply.
+                # Keep shutdown listening active so forced close aborts the grace.
+                try:
+                    await asyncio.wait_for(
+                        asyncio.gather(sender_task, return_exceptions=True),
+                        timeout=FINAL_ERROR_REPLY_TIMEOUT,
+                    )
+                except (TimeoutError, asyncio.CancelledError):
+                    pass
             async with WebsocketConnection.map_lock:
                 if self.uid in WebsocketConnection.ip_uid_map:
                     del WebsocketConnection.ip_uid_map[self.uid]
@@ -518,8 +546,8 @@ class WebsocketConnection:
                 )
 
             # Stop and await the sender even when the control FIFO is full.
-            self._sender_task.cancel()
-            await asyncio.gather(self._sender_task, return_exceptions=True)
+            sender_task.cancel()
+            await asyncio.gather(sender_task, return_exceptions=True)
 
             # Close the connection
             await socket.close()

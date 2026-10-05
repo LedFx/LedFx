@@ -12,6 +12,7 @@ import pytest
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer
 
+import ledfx.api.websocket as websocket_module
 from ledfx.api.websocket import (
     MAX_PENDING_MESSAGES,
     WebsocketConnection,
@@ -491,6 +492,190 @@ async def test_wire_results_route_by_id_and_disconnect_releases_owner() -> None:
     assert connection._listeners == {}
     assert core.events._listeners == {}
     assert connection.uid not in WebsocketConnection.ip_uid_map
+
+
+@pytest.mark.parametrize(
+    ("malformed", "error_id"),
+    [
+        ({"id": 77}, 77),
+        ({"id": "77"}, "77"),
+        ({"id": "invalid", "type": "get_event_capabilities"}, "invalid"),
+        ({"type": "get_event_capabilities"}, None),
+        ([], None),
+        (42, None),
+    ],
+    ids=[
+        "missing-type",
+        "raw-string-id",
+        "invalid-id",
+        "missing-id",
+        "array",
+        "scalar",
+    ],
+)
+async def test_wire_malformed_request_error_precedes_close(
+    malformed: object, error_id: object
+) -> None:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    connection = WebsocketConnection(core)
+    finished = asyncio.Event()
+
+    async def handle(request: web.Request) -> web.StreamResponse:
+        try:
+            return await connection.handle(request)
+        finally:
+            finished.set()
+
+    app = web.Application()
+    app.router.add_get("/websocket", handle)
+    async with TestClient(TestServer(app)) as client:
+        socket = await client.ws_connect("/websocket")
+        assert (await socket.receive_json())["event_type"] == "client_id"
+        # Valid IDs still coerce, and invalid later envelopes must never reuse one.
+        await socket.send_json({"id": "10", "type": "get_event_capabilities"})
+        assert await socket.receive_json() == {
+            "id": 10,
+            "type": "result",
+            "success": True,
+            "result": {"subscription_ack": 1},
+        }
+        await socket.send_json(malformed)
+        if error_id is not None:
+            assert await socket.receive_json() == {
+                "id": error_id,
+                "success": False,
+                "error": {"message": "Invalid message format."},
+            }
+        assert (await socket.receive()).type == WSMsgType.CLOSE
+        await asyncio.wait_for(finished.wait(), timeout=5)
+    sender = connection._sender_task
+    assert sender is not None and sender.done()
+    if error_id is not None:
+        assert not sender.cancelled()
+    assert connection._listeners == {}
+    assert core.events._listeners == {}
+
+
+@pytest.mark.parametrize(
+    "boundary",
+    ["blocked", "unwritable", "force-close", "shutdown", "readiness-failure"],
+)
+async def test_terminal_error_reply_cleanup_at_write_boundary(
+    boundary: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    connection = WebsocketConnection(core)
+    finished = asyncio.Event()
+    error_started = asyncio.Event()
+    error_cancelled = asyncio.Event()
+    failure_close_cancelled = asyncio.Event()
+    writes: list[dict[str, object]] = []
+    original_send_json = web.WebSocketResponse.send_json
+    original_close = web.WebSocketResponse.close
+    # Interruptions must complete independently of the long normal grace.
+    monkeypatch.setattr(
+        websocket_module,
+        "FINAL_ERROR_REPLY_TIMEOUT",
+        0.05 if boundary == "blocked" else 60.0,
+        raising=False,
+    )
+
+    async def hold_error(
+        socket: web.WebSocketResponse,
+        data: dict[str, object],
+        *,
+        compress: int | None = None,
+        dumps: Callable[[object], str] = websocket_module.dumps,
+    ) -> None:
+        writes.append(data)
+        if "error" in data and data["id"] == 77:
+            error_started.set()
+            if boundary == "unwritable":
+                raise ConnectionResetError("transport no longer writable")
+            try:
+                await asyncio.Event().wait()
+            finally:
+                error_cancelled.set()
+        await original_send_json(socket, data, compress=compress, dumps=dumps)
+
+    async def hold_failure_close(
+        socket: web.WebSocketResponse,
+        *,
+        code: int = 1000,
+        message: bytes = b"",
+        drain: bool = True,
+    ) -> bool:
+        if code == 1013:
+            try:
+                await asyncio.Event().wait()
+            finally:
+                failure_close_cancelled.set()
+        return await original_close(socket, code=code, message=message, drain=drain)
+
+    monkeypatch.setattr(web.WebSocketResponse, "send_json", hold_error)
+    monkeypatch.setattr(web.WebSocketResponse, "close", hold_failure_close)
+
+    async def handle(request: web.Request) -> web.StreamResponse:
+        try:
+            return await connection.handle(request)
+        finally:
+            finished.set()
+
+    app = web.Application()
+    app.router.add_get("/websocket", handle)
+    async with TestClient(TestServer(app)) as client:
+        socket = await client.ws_connect("/websocket")
+        assert (await socket.receive_json())["event_type"] == "client_id"
+        await socket.send_json(
+            {
+                "id": 1,
+                "type": "subscribe_event",
+                "event_type": "never_fires",
+                "ack": True,
+            }
+        )
+        assert (await socket.receive_json())["result"] == {
+            "subscription_id": 1,
+            "event_type": "never_fires",
+            "installed": True,
+        }
+        # The final error must use the same writer after existing FIFO replies.
+        await socket.send_json({"id": 76, "type": "unknown-command"})
+        await socket.send_json({"id": 77})
+        assert await socket.receive_json() == {
+            "id": 76,
+            "success": False,
+            "error": {"message": "Unknown command type."},
+        }
+        await asyncio.wait_for(error_started.wait(), timeout=1)
+        assert connection._listeners == {}
+        assert not core.events.has_listeners("never_fires")
+        if boundary == "force-close":
+            connection.close()
+        elif boundary == "shutdown":
+            core.events.fire_event(Event(Event.LEDFX_SHUTDOWN))
+        elif boundary == "readiness-failure":
+            for request_id in range(MAX_PENDING_MESSAGES):
+                connection._control_queue.put_nowait(
+                    {"id": request_id, "type": "result"}
+                )
+            connection.get_event_capabilities_handler({"id": 1000})
+        assert (
+            await asyncio.wait_for(socket.receive(), timeout=1)
+        ).type == WSMsgType.CLOSE
+        await asyncio.wait_for(finished.wait(), timeout=1)
+    assert [message.get("id") for message in writes] == [None, 1, 76, 77]
+    assert error_cancelled.is_set() == (boundary != "unwritable")
+    sender = connection._sender_task
+    assert sender is not None and sender.done()
+    assert sender.cancelled() == (boundary != "unwritable")
+    assert core.events._listeners == {}
+    if boundary == "readiness-failure":
+        task = connection._installation_close_task
+        assert task is not None and task.done() and task.cancelled()
+        assert failure_close_cancelled.is_set()
 
 
 async def test_disconnect_cancels_and_awaits_pending_installation_close(
