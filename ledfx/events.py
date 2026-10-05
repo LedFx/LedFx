@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
-from collections.abc import Callable
+import math
+import threading
+import time
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from typing import Protocol, cast
 
 import numpy as np
 
@@ -607,69 +614,302 @@ class LedFxShutdownEvent(Event):
         super().__init__(Event.LEDFX_SHUTDOWN)
 
 
-class EventListener:
-    def __init__(self, callback: Callable, event_filter: dict | None = None):
-        self.callback = callback
-        self.filter = event_filter if event_filter is not None else {}
+def copy_filter_value(value: object) -> object:
+    """Copy only JSON equality values, accepting tuples as sequence input."""
+    if value is None or type(value) in (str, bool, int):
+        return value
+    if type(value) is float and math.isfinite(cast(float, value)):
+        return value
+    if isinstance(value, Mapping):
+        mapping = cast(Mapping[object, object], value)
+        if not all(type(key) is str for key in mapping):
+            raise ValueError("filter keys must be strings")
+        return {
+            cast(str, key): copy_filter_value(item) for key, item in mapping.items()
+        }
+    if type(value) in (list, tuple):
+        return tuple(
+            copy_filter_value(item)
+            for item in cast(list[object] | tuple[object, ...], value)
+        )
+    raise ValueError("filter values must be JSON-compatible")
 
-    def filter_event(self, event):
-        event_dict = event.to_dict()
-        for filter_key in self.filter:
-            if event_dict.get(filter_key) != self.filter[filter_key]:
-                return True
 
+def equal_filter_value(left: object, right: object) -> bool:
+    """Compare JSON values structurally without invoking array equality."""
+    if type(left) is bool or type(right) is bool:
+        return type(left) is type(right) and left == right
+    if isinstance(left, np.ndarray) or isinstance(right, np.ndarray):
         return False
+    if isinstance(left, Mapping) and isinstance(right, Mapping):
+        left_mapping = cast(Mapping[object, object], left)
+        right_mapping = cast(Mapping[object, object], right)
+        return left_mapping.keys() == right_mapping.keys() and all(
+            equal_filter_value(left_mapping[key], right_mapping[key])
+            for key in left_mapping
+        )
+    if type(left) in (list, tuple) and type(right) in (list, tuple):
+        left_sequence = cast(list[object] | tuple[object, ...], left)
+        right_sequence = cast(list[object] | tuple[object, ...], right)
+        return len(left_sequence) == len(right_sequence) and all(
+            equal_filter_value(a, b)
+            for a, b in zip(left_sequence, right_sequence, strict=True)
+        )
+    scalar_types = (str, bool, int, float, type(None))
+    return type(left) in scalar_types and type(right) in scalar_types and left == right
+
+
+def _validate_callback(callback: object) -> None:
+    if not callable(callback):
+        raise TypeError("event callbacks must be callable")
+    if inspect.iscoroutinefunction(callback) or inspect.iscoroutinefunction(
+        callback.__call__
+    ):
+        raise TypeError("event callbacks must be synchronous")
+
+
+def _observe_future_result(future: asyncio.Future[object]) -> None:
+    if not future.cancelled():
+        future.exception()
+
+
+def _reject_awaitable(result: object) -> None:
+    if not inspect.isawaitable(result):
+        return
+    if inspect.iscoroutine(result):
+        result.close()
+    elif isinstance(result, asyncio.Future):
+        future = cast(asyncio.Future[object], result)
+        future.cancel()
+        future.add_done_callback(_observe_future_result)
+    raise TypeError("event callbacks must be synchronous")
+
+
+class EventListener:
+    def __init__(
+        self,
+        callback: Callable[[Event], None],
+        event_filter: Mapping[str, object] | None = None,
+        *,
+        generation: int = 0,
+        event_type: str = "",
+    ) -> None:
+        _validate_callback(callback)
+        if event_filter is not None and not isinstance(event_filter, Mapping):
+            raise ValueError("event filter must be a mapping")
+        self.callback = callback
+        self.filter = cast(
+            dict[str, object],
+            copy_filter_value(event_filter if event_filter is not None else {}),
+        )
+        for key in ("vis_id", "device_id", "virtual_id", "graph_id", "scene_id"):
+            if key in self.filter and type(self.filter[key]) is not str:
+                raise ValueError(f"{key} filter must be a string")
+        if "is_device" in self.filter and type(self.filter["is_device"]) is not bool:
+            raise ValueError("is_device filter must be a boolean")
+        self.generation = generation
+        self.active = True
+        self.event_type = event_type
+
+    def filter_event(self, event: Event) -> bool:
+        """Return whether this registration excludes the event."""
+        event_dict = event.to_dict()
+        return any(
+            key not in event_dict or not equal_filter_value(value, event_dict[key])
+            for key, value in self.filter.items()
+        )
+
+
+class _EventLoop(Protocol):
+    def call_soon_threadsafe(
+        self, callback: Callable[..., object], *args: object
+    ) -> object: ...
+
+
+class _EventHost(Protocol):
+    @property
+    def loop(self) -> _EventLoop: ...
+
+
+@dataclass(eq=False)
+class _RegistrationObserver:
+    callback: Callable[[str, int], None]
+    active: bool = True
 
 
 class Events:
-    def __init__(self, ledfx):
+    """Dispatch shared read-only events through revocable registrations."""
+
+    def __init__(self, ledfx: _EventHost) -> None:
         self._ledfx = ledfx
-        self._listeners = {}
+        self._lock = threading.Lock()
+        self._listeners: dict[str, tuple[EventListener, ...]] = {}
+        self._revisions: dict[str, int] = {}
+        self._generation = 0
+        self._registration_observers: tuple[_RegistrationObserver, ...] = ()
+        self._listener_errors: dict[str, tuple[float, int]] = {}
+
+    def registration_snapshot(
+        self, event_type: str
+    ) -> tuple[int, tuple[EventListener, ...]]:
+        with self._lock:
+            return self._revisions.get(event_type, 0), self._listeners.get(
+                event_type, ()
+            )
 
     def has_listeners(self, event_type: str) -> bool:
         """Whether an event has consumers, before preparing an expensive payload."""
-        return bool(self._listeners.get(event_type))
+        return bool(self.registration_snapshot(event_type)[1])
+
+    def may_have_listeners(
+        self, event_type: str, metadata: Mapping[str, object]
+    ) -> bool:
+        """Exclude registrations only when supplied metadata proves a mismatch."""
+        _, listeners = self.registration_snapshot(event_type)
+        for listener in listeners:
+            try:
+                if all(
+                    key not in metadata or equal_filter_value(value, metadata[key])
+                    for key, value in listener.filter.items()
+                ):
+                    return True
+            except Exception as error:  # noqa: BLE001 - isolate consumer code
+                self._report_listener_error(listener, error)
+                # A failed comparison cannot conclusively exclude this listener.
+                return True
+        return False
 
     def fire_event(self, event: Event) -> None:
-        listeners = self._listeners.get(event.event_type, [])
-
-        if not listeners:
-            return
-
+        _, listeners = self.registration_snapshot(event.event_type)
         for listener in listeners:
-            filtered = listener.filter_event(event)
-
+            try:
+                filtered = listener.filter_event(event)
+            except Exception as error:  # noqa: BLE001 - isolate consumer code
+                self._report_listener_error(listener, error)
+                continue
             if not filtered:
-                self._ledfx.loop.call_soon_threadsafe(listener.callback, event)
+                self._ledfx.loop.call_soon_threadsafe(self._invoke, listener, event)
+
+    def _invoke(self, listener: EventListener, event: Event) -> None:
+        with self._lock:
+            if not listener.active:
+                return
+            # This is the invocation claim: a callback claimed here may finish
+            # after disposal. No user code runs while holding the bus mutex.
+        try:
+            result = cast(Callable[[Event], object], listener.callback)(event)
+            _reject_awaitable(result)
+        except Exception as error:  # noqa: BLE001 - isolate consumer code
+            self._report_listener_error(listener, error)
+
+    def _report_listener_error(self, listener: EventListener, exc: Exception) -> None:
+        self._report_error(listener.event_type, exc)
+
+    def _report_error(self, event_type: str, exc: Exception) -> None:
+        category = type(exc).__name__
+        now = time.monotonic()
+        with self._lock:
+            last_report, suppressed = self._listener_errors.get(
+                category, (-math.inf, 0)
+            )
+            count = suppressed + 1
+            if now - last_report < 1.0:
+                self._listener_errors[category] = (last_report, count)
+                return
+            self._listener_errors[category] = (now, 0)
+        # Exception strings and tracebacks can contain whole pixel payloads.
+        _LOGGER.warning(
+            "Event listener failure for %s (%s; %d errors since last report)",
+            event_type,
+            category,
+            count,
+        )
 
     def add_listener(
         self,
-        callback: Callable,
+        callback: Callable[[Event], None],
         event_type: str,
-        event_filter: dict | None = None,
-    ) -> None:
-        listener = EventListener(callback, event_filter)
-        if event_type in self._listeners:
-            self._listeners[event_type].append(listener)
-        else:
-            self._listeners[event_type] = [listener]
+        event_filter: Mapping[str, object] | None = None,
+    ) -> Callable[[], None]:
+        listener = EventListener(callback, event_filter, event_type=event_type)
+        with self._lock:
+            self._generation += 1
+            listener.generation = self._generation
+            self._listeners[event_type] = self._listeners.get(event_type, ()) + (
+                listener,
+            )
+            revision = self._revisions.get(event_type, 0) + 1
+            self._revisions[event_type] = revision
+            observers = self._registration_observers
+        self._notify_registration_observers(observers, event_type, revision)
 
         def remove_listener() -> None:
             self._remove_listener(event_type, listener)
 
         return remove_listener
 
-    def _remove_listener(self, event_type: str, listener: Callable) -> None:
+    def _remove_listener(self, event_type: str, listener: EventListener) -> None:
+        with self._lock:
+            if not listener.active:
+                return
+            listener.active = False
+            remaining = tuple(
+                item
+                for item in self._listeners.get(event_type, ())
+                if item is not listener
+            )
+            if remaining:
+                self._listeners[event_type] = remaining
+            else:
+                self._listeners.pop(event_type, None)
+            revision = self._revisions.get(event_type, 0) + 1
+            self._revisions[event_type] = revision
+            observers = self._registration_observers
+        self._notify_registration_observers(observers, event_type, revision)
+
+    def add_registration_observer(
+        self, callback: Callable[[str, int], None]
+    ) -> Callable[[], None]:
+        _validate_callback(callback)
+        observer = _RegistrationObserver(callback)
+        with self._lock:
+            self._registration_observers += (observer,)
+
+        def remove_observer() -> None:
+            with self._lock:
+                if not observer.active:
+                    return
+                observer.active = False
+                self._registration_observers = tuple(
+                    item
+                    for item in self._registration_observers
+                    if item is not observer
+                )
+
+        return remove_observer
+
+    def _notify_registration_observers(
+        self,
+        observers: tuple[_RegistrationObserver, ...],
+        event_type: str,
+        revision: int,
+    ) -> None:
+        for observer in observers:
+            self._ledfx.loop.call_soon_threadsafe(
+                self._invoke_registration_observer, observer, event_type, revision
+            )
+
+    def _invoke_registration_observer(
+        self, observer: _RegistrationObserver, event_type: str, revision: int
+    ) -> None:
+        with self._lock:
+            if not observer.active:
+                return
+            # Observer disposal has the same invocation claim as event disposal.
         try:
-            self._listeners[event_type].remove(listener)
-            if not self._listeners[event_type]:
-                self._listeners.pop(event_type)
-        except (KeyError, ValueError):
-            _LOGGER.warning("Failed to remove event listener %s", listener)
-
-
-# def get_event_types():
-#     """Get a list of the types of events available"""
-#     return [event for event in vars(Event) if (not event.startswith('__')) and (event.isupper())]
-
-# print(get_event_types())
+            result = cast(Callable[[str, int], object], observer.callback)(
+                event_type, revision
+            )
+            _reject_awaitable(result)
+        except Exception as error:  # noqa: BLE001 - isolate consumer code
+            self._report_error(event_type, error)

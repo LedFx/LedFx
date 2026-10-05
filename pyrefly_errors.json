@@ -1667,20 +1667,6 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
       "column": 41,
       "path": "ledfx/core.py",
       "name": "implicit-any-parameter",
@@ -12531,80 +12517,10 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
-      "severity": "error"
-    },
-    {
-      "column": 58,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 58,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`filter_event` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/events.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/events.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `EventListener` is not assignable to parameter `listener` with type `(...) -> Unknown` in function `Events._remove_listener`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/events.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `() -> None` is not assignable to declared return type `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
       "severity": "error"
     },
     {
