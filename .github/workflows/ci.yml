@@ -744,7 +744,7 @@ jobs:
         id: prepare
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
         with:
           phase: prepare
           project: release-tools
@@ -766,7 +766,7 @@ jobs:
         id: upload
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
         with:
           phase: check-upload
           project: release-tools
@@ -774,10 +774,17 @@ jobs:
           dist: dist
           docker-digests: docker-digests
           snapshot: ${{ runner.temp }}/release-snapshot.json
+      - name: Stage verified distributions for PyPI
+        if: steps.upload.outputs.pypi_upload == 'true'
+        working-directory: ${{ github.workspace }}
+        run: |
+          mkdir pypi-dist
+          cp -- dist/* pypi-dist/
       - name: Publish verified Python distributions
         if: steps.upload.outputs.pypi_upload == 'true'
         uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
+          packages-dir: pypi-dist/
           skip-existing: true  # Fresh shared checks require matching remote SHA-256.
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
@@ -792,7 +799,7 @@ jobs:
         id: promote
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
         with:
           phase: promote
           project: release-tools
@@ -833,7 +840,7 @@ jobs:
       - name: Verify provenance and publish the GitHub draft
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@c4a56af516e431cbdb18519889fd0ffa7166f217 # v0.3.0
+        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
         with:
           phase: finalize
           project: release-tools
