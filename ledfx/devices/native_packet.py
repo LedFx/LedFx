@@ -115,7 +115,9 @@ class NativePacketDevice(NetworkedDevice):
             if generation != self._generation or address != self.config.ip_address:
                 return
             candidate = None
-            if self._requested:
+            if self._requested and (
+                self._sender is None or destination != self._destination
+            ):
                 self._validate_configuration()
                 candidate = self._make_sender(destination)
             # Publish only after construction succeeds, keeping the live sender
@@ -124,7 +126,8 @@ class NativePacketDevice(NetworkedDevice):
             self._online = True
             if candidate is not None:
                 self._replace(candidate)
-                Device.activate(self)
+                if not self.is_active():
+                    Device.activate(self)
         if success_callback is not None:
             success_callback()
 

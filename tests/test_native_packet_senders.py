@@ -51,7 +51,7 @@ def make_capture(
     if isinstance(d, DDPDevice):
         return DDPSender._test_sender(
             d.pixel_count * 3,
-            destination="127.0.0.1",
+            destination=destination,
             mode="capture",
             destination_id=d.config.destination_id,
             port=d.config.port,
@@ -76,7 +76,7 @@ def make_capture(
             mode="capture",
         )
     return OPCSender._test_sender(
-        d.pixel_count, destination="127.0.0.1", mode="capture", channel=d.config.channel
+        d.pixel_count, destination=destination, mode="capture", channel=d.config.channel
     )
 
 
@@ -319,21 +319,63 @@ def test_wled_udp_uses_native_sender_and_full_static_refresh() -> None:
         d.deactivate()
 
 
-@pytest.mark.parametrize("cls", [OSCServerDevice, UDPRealtimeDevice])
-async def test_native_stateful_resolved_destination_change(
-    cls: type[OSCServerDevice] | type[UDPRealtimeDevice],
+@pytest.mark.parametrize(
+    "cls", [DDPDevice, OpenPixelControl, OSCServerDevice, UDPRealtimeDevice]
+)
+async def test_unchanged_dns_preserves_native_sender_and_frame(
+    cls: type[TDevice],
 ) -> None:
     d = device(cls)
     with patch.object(d, "_make_sender", side_effect=partial(make_capture, d)):
         d.activate()
-        old = d._sender
+    old, pixels, generation = d._sender, d._pixels, d._generation
+    assert old is not None and pixels is not None
+    pixels[:] = [[17, 34, 51]]
+    d.flush(pixels)
+    try:
         with patch(
-            "ledfx.devices.native_packet.resolve_destination", return_value="127.0.0.2"
+            "ledfx.devices.native_packet.resolve_destination", return_value="127.0.0.1"
         ):
             await d.resolve_address()
-        assert old is not None and old.closed and d._sender is not old
-        assert d._destination == "127.0.0.2"
+        assert d._sender is old and not old.closed
+        assert d._generation == generation and d._pixels is pixels
+        np.testing.assert_array_equal(pixels, [[17, 34, 51]])
+        pixels[:] = [[18, 35, 52]]
+        d.flush(pixels)
+        if isinstance(old, DDPSender):
+            packets = old._engine.captures()
+            assert [packet[0][1] & 0x0F for packet in packets] == [2, 3]
+    finally:
         d.deactivate()
+
+
+@pytest.mark.parametrize(
+    "cls", [DDPDevice, OpenPixelControl, OSCServerDevice, UDPRealtimeDevice]
+)
+async def test_native_stateful_resolved_destination_change(
+    cls: type[TDevice],
+) -> None:
+    d = device(cls)
+    with patch.object(d, "_make_sender", side_effect=partial(make_capture, d)):
+        d.activate()
+        old, pixels, generation = d._sender, d._pixels, d._generation
+        assert pixels is not None
+        pixels[:] = [[17, 34, 51]]
+        try:
+            with patch(
+                "ledfx.devices.native_packet.resolve_destination",
+                return_value="127.0.0.2",
+            ):
+                await d.resolve_address()
+            assert old is not None and old.closed and d._sender is not old
+            assert d._destination == "127.0.0.2" and d._generation == generation + 1
+            assert d._pixels is pixels and d.is_active()
+            np.testing.assert_array_equal(pixels, [[17, 34, 51]])
+            d.flush(pixels)
+            assert d._sender is not None
+            assert d._sender._engine.captures()[0][1].startswith("127.0.0.2:")
+        finally:
+            d.deactivate()
 
 
 @pytest.mark.parametrize(
