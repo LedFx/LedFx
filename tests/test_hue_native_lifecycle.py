@@ -12,7 +12,7 @@ import pytest
 from ledfx_senders import HueSender
 from ledfx_senders.frames import Frame
 
-from ledfx.devices.hue import HueDevice, HueSettings
+from ledfx.devices.hue import HueDevice, HueRetirement, HueSettings
 from ledfx.virtuals import Virtual
 
 ZONE = "12345678-1234-1234-1234-123456789abc"
@@ -744,3 +744,90 @@ async def test_superseded_recovery_does_not_suppress_successor_recovery(
     hue_device.flush(np.zeros((2, 3)))
     await idle(hue_device)
     assert hue_device._sender is third
+
+
+@pytest.mark.parametrize("invalidation", ["deactivate", "flush_failure"])
+async def test_retirement_is_ordered_with_cross_thread_reactivation(
+    hue_device: HueFixture,
+    monkeypatch: pytest.MonkeyPatch,
+    invalidation: str,
+) -> None:
+    first, second = ControlledSender(), ControlledSender()
+    hue_device.senders.extend([first, second])
+    hue_device.activate()
+    await idle(hue_device)
+    entered, release = threading.Event(), threading.Event()
+    errors: list[BaseException] = []
+    original = hue_device._queue_retirement
+
+    def delayed_queue(retirement: HueRetirement) -> None:
+        entered.set()
+        assert release.wait(2)
+        original(retirement)
+
+    def invalidate() -> None:
+        try:
+            if invalidation == "deactivate":
+                hue_device.deactivate()
+            else:
+                first.failure = ConnectionError("render failure")
+                hue_device.flush(np.zeros((2, 3)))
+        except Exception as error:  # noqa: BLE001 - surface worker failures in the test
+            errors.append(error)
+
+    monkeypatch.setattr(hue_device, "_queue_retirement", delayed_queue)
+    worker = threading.Thread(target=invalidate)
+    worker.start()
+    assert await asyncio.to_thread(entered.wait, 2)
+    try:
+        hue_device.activate()
+        await idle(hue_device)
+        assert hue_device._sender is second
+    finally:
+        release.set()
+        await asyncio.to_thread(worker.join, 2)
+        monkeypatch.setattr(hue_device, "_queue_retirement", original)
+    assert not worker.is_alive()
+    assert errors == []
+    await idle(hue_device)
+    assert hue_device.zone_actions == ["start", "stop", "start"]
+    assert first.closed and not second.closed
+    assert hue_device.is_active()
+    await asyncio.sleep(0.12)
+    assert second.services >= 1, "old retirement must not cancel successor service"
+
+
+async def test_shutdown_drains_retirement_before_delayed_dispatch(
+    hue_device: HueFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    sender = ControlledSender()
+    hue_device.senders.append(sender)
+    hue_device.activate()
+    await idle(hue_device)
+    entered, release = threading.Event(), threading.Event()
+    original = hue_device._queue_retirement
+
+    def delayed_queue(retirement: HueRetirement) -> None:
+        if threading.current_thread() is not threading.main_thread():
+            entered.set()
+            assert release.wait(2)
+        original(retirement)
+
+    monkeypatch.setattr(hue_device, "_queue_retirement", delayed_queue)
+    worker = threading.Thread(target=hue_device.deactivate)
+    worker.start()
+    assert await asyncio.to_thread(entered.wait, 2)
+    try:
+        await asyncio.wait_for(hue_device.async_shutdown(), 1)
+        assert hue_device.zone_actions == ["start", "stop"]
+        assert sender.closed
+        assert not hue_device._pending_retirements
+        assert not hue_device._lifecycle_tasks
+    finally:
+        release.set()
+        await asyncio.to_thread(worker.join, 2)
+        monkeypatch.setattr(hue_device, "_queue_retirement", original)
+    await asyncio.sleep(0)
+    assert not hue_device._lifecycle_tasks
+    assert hue_device.zone_actions == ["start", "stop"]

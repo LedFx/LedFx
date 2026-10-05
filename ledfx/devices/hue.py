@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import threading
-from collections.abc import Callable, Coroutine, Iterator, Mapping
+from collections.abc import Callable, Coroutine, Generator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, ClassVar, Literal, TypeVar, cast
@@ -46,6 +46,16 @@ class HueZoneLease:
     settings: HueSettings
     generation: int
     started: bool = False
+
+
+@dataclass
+class HueRetirement:
+    lease: HueZoneLease | None
+    sender: HueSender | None
+    candidate: HueSender | None
+    service: asyncio.Task[None] | None
+    recovery: asyncio.Task[None] | None
+    claimed: bool = False
 
 
 def _object(value: object) -> dict[str, object]:
@@ -105,8 +115,10 @@ class HueDevice(NetworkedDevice):
         self._candidate: HueSender | None = None
         self._zone_lease: HueZoneLease | None = None
         self._failed_leases: list[HueZoneLease] = []
+        self._pending_retirements: list[HueRetirement] = []
         self._lifecycle_tasks: set[asyncio.Task[None]] = set()
         self._service_task: asyncio.Task[None] | None = None
+        self._service_generation: int | None = None
         self._service_tasks: set[asyncio.Task[None]] = set()
         self._recovery_pending = False
         self._recovery_generation: int | None = None
@@ -114,7 +126,9 @@ class HueDevice(NetworkedDevice):
         self._online = False
 
     @contextmanager
-    def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
+    def _config_update_context(
+        self, config: dict[str, object]
+    ) -> Generator[None, None, None]:
         with self._publication_lock, super()._config_update_context(config):
             yield
 
@@ -314,6 +328,7 @@ class HueDevice(NetworkedDevice):
 
     async def _activate_generation(self, generation: int) -> None:
         async with self._lifecycle_lock:
+            await self._drain_retirements()
             with self._publication_lock:
                 if generation != self._generation or not self._requested:
                     return
@@ -408,28 +423,66 @@ class HueDevice(NetworkedDevice):
 
         await self._await_owned(self._spawn(cleanup()))
 
-    async def _retire(self, lease: HueZoneLease, sender: HueSender | None) -> None:
-        async with self._lifecycle_lock:
-            await self._cleanup_generation(lease, sender)
-
-    def _queue_retirement(
+    def _register_retirement_locked(
         self,
         lease: HueZoneLease | None,
         sender: HueSender | None,
         candidate: HueSender | None,
-    ) -> None:
-        def retire() -> None:
-            self._stop_service()
+        generation: int,
+    ) -> HueRetirement:
+        # Ownership must be visible before publication invalidation releases its
+        # lock. Successor activation drains this record even if loop dispatch is
+        # delayed by the render thread.
+        service = self._service_task if self._service_generation == generation else None
+        if service is not None:
+            self._service_task = None
+            self._service_generation = None
+        recovery = self._recovery_task
+        self._recovery_task = None
+        retirement = HueRetirement(lease, sender, candidate, service, recovery)
+        self._pending_retirements.append(retirement)
+        return retirement
+
+    @staticmethod
+    def _cancel_retired_tasks(retirement: HueRetirement) -> None:
+        for task in (retirement.service, retirement.recovery):
+            if task is not None:
+                task.cancel()
+
+    async def _finish_retirement(self, retirement: HueRetirement) -> None:
+        self._cancel_retired_tasks(retirement)
+        if retirement.candidate is not None:
+            await self._close_candidate(retirement.candidate)
+        if retirement.lease is not None:
+            await self._cleanup_generation(retirement.lease, retirement.sender)
+
+    async def _drain_retirements(self) -> None:
+        # The caller owns _lifecycle_lock throughout every close/stop, preserving
+        # old rollback before successor zone start even under cancellation.
+        while True:
             with self._publication_lock:
-                recovery = self._recovery_task
-                self._recovery_task = None
-            if recovery is not None:
-                recovery.cancel()
-            # Interrupt an in-progress native connect independently of its waiter.
-            if candidate is not None:
-                self._spawn(self._close_candidate(candidate))
-            if lease is not None:
-                self._spawn(self._retire(lease, sender))
+                if not self._pending_retirements:
+                    return
+                retirement = self._pending_retirements.pop(0)
+                retirement.claimed = True
+            await self._await_owned(self._spawn(self._finish_retirement(retirement)))
+
+    async def _retire_pending(self) -> None:
+        async with self._lifecycle_lock:
+            await self._drain_retirements()
+
+    def _queue_retirement(self, retirement: HueRetirement) -> None:
+        def retire() -> None:
+            with self._publication_lock:
+                claimed = retirement.claimed
+            if claimed:
+                return
+            self._cancel_retired_tasks(retirement)
+            # Interrupt a connect that already owns the lifecycle lock. This
+            # close refers only to the captured candidate, never its successor.
+            if retirement.candidate is not None:
+                self._spawn(self._close_candidate(retirement.candidate))
+            self._spawn(self._retire_pending())
 
         self._ledfx.loop.call_soon_threadsafe(retire)
 
@@ -438,6 +491,7 @@ class HueDevice(NetworkedDevice):
 
     def deactivate(self) -> None:
         with self._publication_lock:
+            generation = self._generation
             self._requested = False
             self._recovery_pending = False
             self._recovery_generation = None
@@ -447,7 +501,10 @@ class HueDevice(NetworkedDevice):
             self._zone_lease = None
             self._online = False
             Device.deactivate(self)
-        self._queue_retirement(lease, sender, candidate)
+            retirement = self._register_retirement_locked(
+                lease, sender, candidate, generation
+            )
+        self._queue_retirement(retirement)
 
     def flush(self, data: NDArray[np.generic]) -> None:
         if not isinstance(data, np.ndarray):
@@ -472,11 +529,14 @@ class HueDevice(NetworkedDevice):
             recovery_generation = self._generation
             self._online = False
             Device.deactivate(self)
-            recover = self._requested and not self._recovery_pending
+            retirement = self._register_retirement_locked(
+                lease, sender, None, generation
+            )
+            recover = self._requested
             if recover:
                 self._recovery_pending = True
                 self._recovery_generation = recovery_generation
-        self._queue_retirement(lease, sender, None)
+        self._queue_retirement(retirement)
         if recover:
             self._ledfx.loop.call_soon_threadsafe(
                 self._start_recovery, recovery_generation
@@ -509,16 +569,27 @@ class HueDevice(NetworkedDevice):
                     self._recovery_generation = None
 
     def _start_service(self, sender: HueSender, generation: int) -> None:
-        self._stop_service()
-        self._service_task = self._ledfx.loop.create_task(
-            self._service(sender, generation)
-        )
-        self._service_tasks.add(self._service_task)
-        self._service_task.add_done_callback(self._task_done)
+        task = self._ledfx.loop.create_task(self._service(sender, generation))
+        self._service_tasks.add(task)
+        task.add_done_callback(self._task_done)
+        with self._publication_lock:
+            current = self._sender is sender and self._generation == generation
+            previous = self._service_task if current else None
+            if current:
+                self._service_task = task
+                self._service_generation = generation
+        if previous is not None:
+            previous.cancel()
+        if not current:
+            task.cancel()
 
     def _stop_service(self) -> None:
-        if self._service_task is not None:
-            self._service_task.cancel()
+        with self._publication_lock:
+            task = self._service_task
+            self._service_task = None
+            self._service_generation = None
+        if task is not None:
+            task.cancel()
 
     async def _service(self, sender: HueSender, generation: int) -> None:
         while True:
@@ -545,6 +616,7 @@ class HueDevice(NetworkedDevice):
             await asyncio.gather(*tuple(self._lifecycle_tasks), return_exceptions=True)
             await asyncio.sleep(0)
         async with self._lifecycle_lock:
+            await self._drain_retirements()
             await self._retry_failed_cleanup()
 
     def _hue_register(self) -> dict[str, object]:
