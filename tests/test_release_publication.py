@@ -57,10 +57,23 @@ ENV = {
         (TAG, False, [{"tag_name": "v10.0.0", "draft": False}], False),
         (TAG, False, [{"tag_name": "v3.0.0", "draft": True}], True),
         (TAG, False, [{"tag_name": "v3.0.0", "prerelease": True}], True),
+        ("v2.2.1", False, [{"tag_name": TAG, "draft": False}], True),
+        ("v2.2.1", False, [{"tag_name": "v2.3.0", "draft": False}], False),
         ("v2.3.0-rc.1", True, [], False),
         (TAG, True, [], False),
     ],
-    ids=["first", "new", "old", "numeric", "draft", "pre", "rc", "flag"],
+    ids=[
+        "first",
+        "new",
+        "old",
+        "numeric",
+        "draft",
+        "pre",
+        "latest-patch",
+        "older-patch",
+        "rc",
+        "flag",
+    ],
 )
 def test_latest_eligibility(
     tag: str, prerelease: bool, releases: list[dict[str, object]], expected: bool
@@ -69,26 +82,27 @@ def test_latest_eligibility(
 
 
 @pytest.fixture
-def inputs(tmp_path: Path):
+def inputs(tmp_path: Path, request: pytest.FixtureRequest):
+    version = str(getattr(request, "param", "2.2.0"))
     assets = tmp_path / "assets"
     dist = tmp_path / "dist"
     docker = tmp_path / "docker"
     for directory in (assets, dist, docker):
         directory.mkdir()
     for name in (
-        "LedFx-2.2.0-win-x64.zip",
-        "LedFx-2.2.0-win-x64-setup.zip",
-        "LedFx-2.2.0-osx-arm64.tar.gz",
-        "LedFx-2.2.0-osx-intel.tar.gz",
+        f"LedFx-{version}-win-x64.zip",
+        f"LedFx-{version}-win-x64-setup.zip",
+        f"LedFx-{version}-osx-arm64.tar.gz",
+        f"LedFx-{version}-osx-intel.tar.gz",
     ):
         (assets / name).write_bytes(name.encode())
-    with zipfile.ZipFile(dist / "ledfx-2.2.0-py3-none-any.whl", "w") as wheel:
+    with zipfile.ZipFile(dist / f"ledfx-{version}-py3-none-any.whl", "w") as wheel:
         wheel.writestr(
-            "ledfx-2.2.0.dist-info/METADATA", "Name: ledfx\nVersion: 2.2.0\n"
+            f"ledfx-{version}.dist-info/METADATA", f"Name: ledfx\nVersion: {version}\n"
         )
-    metadata = b"Name: ledfx\nVersion: 2.2.0\n"
-    with tarfile.open(dist / "ledfx-2.2.0.tar.gz", "w:gz") as archive:
-        info = tarfile.TarInfo("ledfx-2.2.0/PKG-INFO")
+    metadata = f"Name: ledfx\nVersion: {version}\n".encode()
+    with tarfile.open(dist / f"ledfx-{version}.tar.gz", "w:gz") as archive:
+        info = tarfile.TarInfo(f"ledfx-{version}/PKG-INFO")
         info.size = len(metadata)
         archive.addfile(info, io.BytesIO(metadata))
     for arch, digest in DIGESTS.items():
@@ -1045,6 +1059,49 @@ def test_latest_is_promoted_only_after_all_attestations(inputs: Inputs):
     publish = next(index for index, args in enumerate(history) if "PATCH" in args)
     assert len(attests) == 8 and len(latest) == 2
     assert max(attests) < min(latest) < max(latest) < publish
+
+
+@pytest.mark.parametrize("inputs", ["2.2.1"], indirect=True, ids=["patch"])
+@pytest.mark.parametrize("newer_stable", [False, True], ids=["latest", "older"])
+def test_patch_publication_moves_latest_only_when_newest_stable(
+    inputs: Inputs, newer_stable: bool
+):
+    service = Services(inputs, asset_count=4, uploaded=True)
+    service.release["tag_name"] = "v2.2.1"
+    published = [
+        {"tag_name": "v2.2.0", "draft": False, "prerelease": False},
+        {"tag_name": "v2.3.0", "draft": True, "prerelease": False},
+        {"tag_name": "v2.4.0-rc.1", "draft": False, "prerelease": True},
+    ]
+    if newer_stable:
+        published[1]["draft"] = False
+    original = service.command
+
+    def command(args: list[str], **kwargs: object):
+        if args[:3] == ["gh", "api", "repos/LedFx/LedFx/releases"]:
+            return json.dumps([[service.release, *published]]).encode()
+        return original(args, **kwargs)
+
+    patch_publisher = publication.Publisher(
+        *inputs, environment={**ENV, "GITHUB_REF_NAME": "v2.2.1"}
+    )
+    with (
+        patch.object(publication, "run_command", side_effect=command),
+        patch.object(publication, "fetch_pypi", return_value=service.pypi),
+    ):
+        patch_publisher.prepare()
+        patch_publisher.promote()
+        patch_publisher.finalize()
+    latest = [
+        args[args.index("--tag") + 1]
+        for args in service.writes
+        if args[0] == "docker" and args[args.index("--tag") + 1].endswith(":latest")
+    ]
+    assert latest == (
+        [] if newer_stable else [f"{image}:latest" for image in REGISTRIES]
+    )
+    assert service.writes[-1][-1] == f"make_latest={str(not newer_stable).lower()}"
+    assert not service.release["draft"]
 
 
 @pytest.mark.parametrize("registry", [0, 1], ids=["first", "last"])

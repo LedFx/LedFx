@@ -69,6 +69,11 @@ GitHub latest and Docker latest only when no newer stable GitHub release has
 already been published. An older maintenance version still gets its versioned
 downloads and Docker tags. Prereleases never become the stable latest.
 
+Maintenance patches are eligible too: publishing `v2.2.1` after `v2.2.0` updates
+both Docker latest tags and GitHub latest when it is the newest stable release.
+If `v2.3.0` is already public, publishing `v2.2.1` preserves those latest pointers.
+Newer drafts and prereleases do not prevent a stable patch from becoming latest.
+
 GitHub, PyPI, and the registries do not provide a shared transaction. A failed
 run can leave verified assets staged or a distribution already published;
 rerunning the same tag resumes by checking what exists. Published GitHub versions
