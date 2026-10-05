@@ -651,8 +651,11 @@ class LedFxCore:
             _LOGGER.info("Stopping HTTP Server...")
             await self.http.stop()
 
-            # Drain device cleanup while its executor is still available.
-            await self.devices.async_shutdown_devices()
+            # async_start creates the registry; earlier startup failures can
+            # reach shutdown before there are any devices to drain.
+            devices = getattr(self, "devices", None)
+            if devices is not None:
+                await devices.async_shutdown_devices()
 
             # Cancel all the remaining task and wait
             tasks = [
