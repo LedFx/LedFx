@@ -5,7 +5,7 @@ import gc
 import weakref
 from collections.abc import Callable
 from types import MappingProxyType, SimpleNamespace
-from typing import cast
+from typing import cast, override
 from unittest.mock import MagicMock
 
 import pytest
@@ -303,7 +303,7 @@ class HeldCloseSocket:
         self.close_started = asyncio.Event()
         self.release_close = asyncio.Event()
         self.close_calls: list[tuple[int, bytes]] = []
-        self.messages: list[object] = []
+        self.messages: list[dict[str, object]] = []
 
     async def close(self, *, code: int, message: bytes) -> bool:
         self.close_calls.append((code, message))
@@ -312,7 +312,7 @@ class HeldCloseSocket:
         self.closed = True
         return True
 
-    async def send_json(self, message: object, *, dumps: object) -> None:
+    async def send_json(self, message: dict[str, object], *, dumps: object) -> None:
         self.messages.append(message)
 
 
@@ -559,7 +559,14 @@ async def test_wire_malformed_request_error_precedes_close(
 
 @pytest.mark.parametrize(
     "boundary",
-    ["blocked", "unwritable", "force-close", "shutdown", "readiness-failure"],
+    [
+        "blocked",
+        "unwritable",
+        "force-close",
+        "shutdown",
+        "readiness-failure",
+        "queued-error-overflow",
+    ],
 )
 async def test_terminal_error_reply_cleanup_at_write_boundary(
     boundary: str, monkeypatch: pytest.MonkeyPatch
@@ -571,6 +578,7 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
     error_started = asyncio.Event()
     error_cancelled = asyncio.Event()
     failure_close_cancelled = asyncio.Event()
+    close_calls: list[tuple[int, bytes]] = []
     writes: list[dict[str, object]] = []
     original_send_json = web.WebSocketResponse.send_json
     original_close = web.WebSocketResponse.close
@@ -590,7 +598,8 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
         dumps: Callable[[object], str] = websocket_module.dumps,
     ) -> None:
         writes.append(data)
-        if "error" in data and data["id"] == 77:
+        held_id = 76 if boundary == "queued-error-overflow" else 77
+        if "error" in data and data["id"] == held_id:
             error_started.set()
             if boundary == "unwritable":
                 raise ConnectionResetError("transport no longer writable")
@@ -608,6 +617,7 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
         drain: bool = True,
     ) -> bool:
         if code == 1013:
+            close_calls.append((code, message))
             try:
                 await asyncio.Event().wait()
             finally:
@@ -644,18 +654,32 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
         # The final error must use the same writer after existing FIFO replies.
         await socket.send_json({"id": 76, "type": "unknown-command"})
         await socket.send_json({"id": 77})
-        assert await socket.receive_json() == {
-            "id": 76,
-            "success": False,
-            "error": {"message": "Unknown command type."},
-        }
+        if boundary != "queued-error-overflow":
+            assert await socket.receive_json() == {
+                "id": 76,
+                "success": False,
+                "error": {"message": "Unknown command type."},
+            }
         await asyncio.wait_for(error_started.wait(), timeout=1)
+        if boundary == "queued-error-overflow":
+
+            async def wait_for_terminal_reply() -> None:
+                while connection._receiver_error_reply is None:
+                    await asyncio.sleep(0)
+
+            await asyncio.wait_for(wait_for_terminal_reply(), timeout=1)
         assert connection._listeners == {}
         assert not core.events.has_listeners("never_fires")
         if boundary == "force-close":
             connection.close()
         elif boundary == "shutdown":
             core.events.fire_event(Event(Event.LEDFX_SHUTDOWN))
+        elif boundary == "queued-error-overflow":
+            assert connection._control_queue.qsize() == 1
+            for _ in range(MAX_PENDING_MESSAGES - 1):
+                connection.send_event(99, Event(Event.GRAPH_UPDATE))
+            assert connection._control_queue.full()
+            connection.send_event(99, Event(Event.GRAPH_UPDATE))
         elif boundary == "readiness-failure":
             for request_id in range(MAX_PENDING_MESSAGES):
                 connection._control_queue.put_nowait(
@@ -666,13 +690,16 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
             await asyncio.wait_for(socket.receive(), timeout=1)
         ).type == WSMsgType.CLOSE
         await asyncio.wait_for(finished.wait(), timeout=1)
-    assert [message.get("id") for message in writes] == [None, 1, 76, 77]
+    assert [message.get("id") for message in writes] == (
+        [None, 1, 76] if boundary == "queued-error-overflow" else [None, 1, 76, 77]
+    )
     assert error_cancelled.is_set() == (boundary != "unwritable")
     sender = connection._sender_task
     assert sender is not None and sender.done()
     assert sender.cancelled() == (boundary != "unwritable")
     assert core.events._listeners == {}
-    if boundary == "readiness-failure":
+    if boundary in ("readiness-failure", "queued-error-overflow"):
+        assert close_calls == [(1013, b"control backlog; reconnect and resync")]
         task = connection._installation_close_task
         assert task is not None and task.done() and task.cancelled()
         assert failure_close_cancelled.is_set()
@@ -770,20 +797,183 @@ async def test_installation_close_error_is_observed(
     assert core.events._listeners == {}
 
 
-class HeldFirstWriteSocket:
+class HeldFirstWriteSocket(HeldCloseSocket):
     def __init__(self) -> None:
-        self.closed = False
+        super().__init__()
         self.first_write_started = asyncio.Event()
         self.release_first_write = asyncio.Event()
         self.started: list[dict[str, object]] = []
         self.completed: list[dict[str, object]] = []
 
+    @override
     async def send_json(self, message: dict[str, object], *, dumps: object) -> None:
         self.started.append(message)
         if len(self.started) == 1:
             self.first_write_started.set()
             await self.release_first_write.wait()
         self.completed.append(message)
+
+
+@pytest.mark.parametrize(
+    "capability", [False, True], ids=["installed-ack", "capability"]
+)
+@pytest.mark.parametrize("held_write", [False, True], ids=["queued", "held-write"])
+async def test_ordinary_overflow_protects_pending_results_and_closes_once(
+    capability: bool,
+    held_write: bool,
+) -> None:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    connection = WebsocketConnection(core)
+    socket = HeldFirstWriteSocket()
+    connection._socket = cast(web.WebSocketResponse, socket)
+    connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
+    first: dict[str, object] = {
+        "id": 99,
+        "type": "event",
+        "event_type": Event.GRAPH_UPDATE,
+    }
+    sender: asyncio.Task[None] | None = None
+    try:
+        if held_write:
+            connection.send(first)
+            sender = connection._sender_task = asyncio.create_task(connection._sender())
+            await asyncio.wait_for(socket.first_write_started.wait(), timeout=1)
+        if capability:
+            connection.get_event_capabilities_handler({"id": 2})
+        else:
+            connection.subscribe_event_handler(
+                {"id": 2, "event_type": "never_fires", "ack": True}
+            )
+        for _ in range(MAX_PENDING_MESSAGES - 1):
+            connection.send_event(99, Event(Event.GRAPH_UPDATE))
+        assert connection._control_queue.full()
+        connection.send_event(99, Event(Event.GRAPH_UPDATE))
+        if sender is None:
+            sender = connection._sender_task = asyncio.create_task(connection._sender())
+        await asyncio.wait_for(socket.close_started.wait(), timeout=1)
+        task = connection._installation_close_task
+        assert task is not None
+        assert connection._listeners == {}
+        assert core.events._listeners == {}
+        assert connection._control_queue.full()
+        for _ in range(3):
+            connection.send_event(99, Event(Event.GRAPH_UPDATE))
+        connection.get_event_capabilities_handler({"id": 3})
+        assert connection._installation_close_task is task
+        assert socket.close_calls == [(1013, b"control backlog; reconnect and resync")]
+        socket.release_first_write.set()
+        await asyncio.wait_for(sender, timeout=1)
+        assert socket.started == ([first] if held_write else [])
+        assert socket.completed == socket.started
+        socket.release_close.set()
+        await asyncio.wait_for(task, timeout=1)
+        assert task.done() and not task.cancelled() and task.exception() is None
+        assert socket.closed and connection._closed
+        assert connection._control_queue.full()
+        result = take_control(connection)
+        assert result["id"] == 2 and result["type"] == "result"
+        assert result["result"] == (
+            {"subscription_ack": 1}
+            if capability
+            else {
+                "subscription_id": 2,
+                "event_type": "never_fires",
+                "installed": True,
+            }
+        )
+        assert socket.close_calls == [(1013, b"control backlog; reconnect and resync")]
+    finally:
+        socket.release_first_write.set()
+        socket.release_close.set()
+        connection.close()
+        tasks = [
+            task
+            for task in (sender, connection._installation_close_task)
+            if task is not None
+        ]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
+
+class NonStringProtocolType:
+    def __eq__(self, other: object) -> bool:
+        raise AssertionError("arbitrary protocol values must not be compared")
+
+
+async def test_ordinary_only_overflow_keeps_legacy_live_queue_replacement() -> None:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    connection = WebsocketConnection(core)
+    socket = HeldCloseSocket()
+    connection._socket = cast(web.WebSocketResponse, socket)
+    # An equal-looking error is not the receiver-owned terminal marker.
+    connection._receiver_error_reply = {"id": 77, "success": False}
+    connection.send(dict(connection._receiver_error_reply))
+    connection.send({"type": NonStringProtocolType()})
+    for _ in range(MAX_PENDING_MESSAGES - 2):
+        connection.send_event(99, Event(Event.GRAPH_UPDATE))
+    latest: dict[str, object] = {
+        "id": 100,
+        "type": "event",
+        "event_type": Event.GRAPH_UPDATE,
+    }
+    connection.send(latest)
+    assert connection._control_queue.qsize() == 1
+    connection.send(None)
+    sender = asyncio.create_task(connection._sender())
+    await asyncio.wait_for(sender, timeout=1)
+    assert socket.messages == [latest]
+    assert not socket.closed and not connection._closed
+    assert socket.close_calls == []
+    assert connection._installation_close_task is None
+
+
+async def test_pending_results_keep_fifo_before_capacity() -> None:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    connection = WebsocketConnection(core)
+    socket = HeldFirstWriteSocket()
+    connection._socket = cast(web.WebSocketResponse, socket)
+    first: dict[str, object] = {
+        "id": 99,
+        "type": "event",
+        "event_type": Event.GRAPH_UPDATE,
+    }
+    connection.send(first)
+    sender = connection._sender_task = asyncio.create_task(connection._sender())
+    try:
+        await asyncio.wait_for(socket.first_write_started.wait(), timeout=1)
+        connection.get_event_capabilities_handler({"id": 10})
+        connection.subscribe_event_handler(
+            {"id": 11, "event_type": "never_fires", "ack": True}
+        )
+        connection.send_event(99, Event(Event.GRAPH_UPDATE))
+        connection.send(None)
+        socket.release_first_write.set()
+        await asyncio.wait_for(sender, timeout=1)
+        assert [message["id"] for message in socket.completed] == [99, 10, 11, 99]
+        assert socket.completed[1] == {
+            "id": 10,
+            "type": "result",
+            "success": True,
+            "result": {"subscription_ack": 1},
+        }
+        assert socket.completed[2] == {
+            "id": 11,
+            "type": "result",
+            "success": True,
+            "result": {
+                "subscription_id": 11,
+                "event_type": "never_fires",
+                "installed": True,
+            },
+        }
+        assert socket.started == socket.completed
+        assert socket.close_calls == []
+    finally:
+        socket.release_first_write.set()
+        connection.close()
+        await asyncio.gather(sender, return_exceptions=True)
 
 
 class PreviewEvent(Event):

@@ -207,22 +207,28 @@ class WebsocketConnection:
         if self._installation_reply_failed or self._closed:
             return
         if self._control_queue.full():
-            self._installation_reply_failed = True
-            self.clear_subscriptions()
-            self._has_work.set()
-            # Interrupt a terminal-error write even if the failure close stalls.
-            if self._receiver_error_reply is not None and self._sender_task is not None:
-                self._sender_task.cancel()
-            if self._installation_close_task is None:
-                self._installation_close_task = self._ledfx.loop.create_task(
-                    self._close_failed_installation_reply()
-                )
-                self._installation_close_task.add_done_callback(
-                    self._observe_installation_close
-                )
+            self._fail_control_backlog()
             return
         self._control_queue.put_nowait(message)
         self._has_work.set()
+
+    def _fail_control_backlog(self) -> None:
+        """Terminate once when control overflow would lose a required reply."""
+        if self._installation_reply_failed or self._closed:
+            return
+        self._installation_reply_failed = True
+        self.clear_subscriptions()
+        self._has_work.set()
+        # Interrupt a terminal-error write even if the failure close stalls.
+        if self._receiver_error_reply is not None and self._sender_task is not None:
+            self._sender_task.cancel()
+        if self._installation_close_task is None:
+            self._installation_close_task = self._ledfx.loop.create_task(
+                self._close_failed_installation_reply()
+            )
+            self._installation_close_task.add_done_callback(
+                self._observe_installation_close
+            )
 
     async def _close_failed_installation_reply(self) -> None:
         try:
@@ -271,15 +277,28 @@ class WebsocketConnection:
         else:
             # Ordered control message
             if self._control_queue.qsize() >= MAX_PENDING_MESSAGES:
+                # Inspect at most the bounded FIFO without yielding. Required
+                # replies may only be abandoned by terminating the connection.
+                pending: list[dict[str, object] | None] = []
+                protected_reply = False
+                while not self._control_queue.empty():
+                    queued = self._control_queue.get_nowait()
+                    pending.append(queued)
+                    if queued is not None:
+                        queued_type = queued.get("type")
+                        if queued is self._receiver_error_reply or (
+                            isinstance(queued_type, str) and queued_type == "result"
+                        ):
+                            protected_reply = True
+                if protected_reply:
+                    for queued in pending:
+                        self._control_queue.put_nowait(queued)
+                    self._fail_control_backlog()
+                    return
                 _LOGGER.warning(
                     "Control queue full (%s), dropping all pending messages",
                     MAX_PENDING_MESSAGES,
                 )
-                while not self._control_queue.empty():
-                    try:
-                        self._control_queue.get_nowait()
-                    except asyncio.QueueEmpty:
-                        break
             try:
                 self._control_queue.put_nowait(message)
             except asyncio.QueueFull:
