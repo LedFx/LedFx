@@ -95,16 +95,20 @@ class WLEDDevice(NetworkedDevice):
     @contextmanager
     def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
         # Device.update_config releases this boundary before virtual callbacks.
-        with self.device_lock, super()._config_update_context(config):
+        with (
+            self._output_lock,
+            self.device_lock,
+            super()._config_update_context(config),
+        ):
             yield
 
     def config_updated(self, config):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if self.subdevice is None or self._output_changed():
                 self.setup_subdevice()
 
     def setup_subdevice(self):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             device = self.SYNC_MODES[self.config.sync_mode]
             config = self.device_configs[self.config.sync_mode].copy()
             config["name"] = self.config.name
@@ -127,7 +131,7 @@ class WLEDDevice(NetworkedDevice):
                 old.deactivate()
 
     def activate(self):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._requested = True
             if self.subdevice is None:
                 self.setup_subdevice()
@@ -136,7 +140,7 @@ class WLEDDevice(NetworkedDevice):
             super().activate()
 
     def deactivate(self):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._requested = False
             self._generation += 1
             if self.subdevice is not None:
@@ -147,25 +151,25 @@ class WLEDDevice(NetworkedDevice):
     async def resolve_address(
         self, success_callback: Callable[[], object] | None = None
     ) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             address, generation = self.config.ip_address, self._generation
         try:
             destination = await device_api.resolve_destination(
                 self._ledfx.loop, self._ledfx.thread_executor, address
             )
         except ValueError as error:
-            with self.device_lock:
+            with self._output_lock, self.device_lock:
                 if generation == self._generation and address == self.config.ip_address:
                     self._online = False
                     _LOGGER.warning("Device %s: %s", self.name, error)
             return
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if generation != self._generation or address != self.config.ip_address:
                 return
             child = self.subdevice
             if child is not None:
                 # Parent ownership precedes child ownership and its sender lock.
-                with child.device_lock:
+                with child._output_lock, child.device_lock:
                     previous = child._destination
                     child._destination = destination
                     try:
@@ -183,7 +187,7 @@ class WLEDDevice(NetworkedDevice):
             success_callback()
 
     def flush(self, data):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if self.subdevice is not None:
                 self.subdevice.flush(data)
 

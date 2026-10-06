@@ -7,6 +7,7 @@ from functools import cached_property
 from typing import Literal
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import ValidationError
 
 from ledfx.color import build_gradient_config, parse_color, validate_color
@@ -46,6 +47,7 @@ from ledfx.events import (
     VirtualPauseEvent,
     VirtualUpdateEvent,
 )
+from ledfx.preview import OwnedFrame, PreviewSampler, SourceKey
 from ledfx.transitions import Transitions
 from ledfx.utils import (
     Teleplot,
@@ -216,6 +218,9 @@ class Virtual:
         self._oneshots = []
         self._os_active = False
         self.lock = threading.Lock()
+        self._source_generation = 0
+        self._frame_sequence = 0
+        self._span_frame: tuple[NDArray[np.generic], NDArray[np.generic]] | None = None
         self.clear_handle = None
         self.fallback_effect_type = None
         self.fallback_active = False
@@ -377,6 +382,7 @@ class Virtual:
                         raise
 
                 old_segments = self._segments
+                self._renew_source_generation()
                 self._segments = _segments
 
                 self.invalidate_cached_props()
@@ -397,6 +403,7 @@ class Virtual:
                         if self._active:
                             self.deactivate_segments()
                             self.activate_segments(old_segments)
+                        self._renew_source_generation()
                         self._segments = old_segments
                         self.invalidate_cached_props()
                         self._compile_device_remap()
@@ -747,13 +754,17 @@ class Virtual:
         # All of this requires thread lock management that's a bit unwieldy
 
         assembled_frame = None
+        captured = None
         with self.lock:
             self.clear_active_effect()
             self.clear_transition_effect()
             if self._active:
-                assembled_frame = np.zeros((self.pixel_count, 3))
-                self.flush(assembled_frame)
-                self._fire_update_event(assembled_frame)
+                assembled_frame = np.zeros((self.effective_pixel_count, 3))
+                if not self._config.preview_only:
+                    self.flush(assembled_frame)
+                captured = self._capture_preview_frame(assembled_frame, owned=True)
+
+        self._publish_preview_frame(captured)
 
         # Deactivate the device - this requires the thread lock
         # Hence why we do it outside of the lock and after the frame is cleared
@@ -767,17 +778,95 @@ class Virtual:
         Force all pixels in device to color
         Use for pre-clearing in calibration scenarios
         """
-        self.assembled_frame = np.full((self.effective_pixel_count, 3), color)
-        self.flush(self.assembled_frame)
-        self._fire_update_event()
+        with self.lock:
+            self.assembled_frame = np.full((self.effective_pixel_count, 3), color)
+            if not self._config.preview_only:
+                self.flush(self.assembled_frame)
+            captured = self._capture_preview_frame(self.assembled_frame, owned=True)
+        self._publish_preview_frame(captured)
+
+    def _renew_source_generation(self) -> None:
+        sampler = self._ledfx.preview_sampler
+        if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
+            self._source_generation = sampler.allocate_source_generation(
+                SourceKey("virtual", self.id)
+            )
+            if self._source_generation > 0:
+                self._frame_sequence = 0
+        self._span_frame = None
+
+    def _refresh_device_rows(self) -> None:
+        if self.is_device:
+            device = self._ledfx.devices.get(self.is_device)
+            # Virtual fixtures may intentionally supply a non-Device sender.
+            from ledfx.devices import Device
+
+            if isinstance(device, Device):
+                device._refresh_physical_rows()
+
+    def _preview_or_raw_demand(self) -> bool:
+        sampler = self._ledfx.preview_sampler
+        return (
+            isinstance(sampler, PreviewSampler)
+            and sampler.interested(
+                SourceKey("virtual", self.id), self._source_generation
+            )
+        ) or self._ledfx.events.may_have_listeners(
+            Event.VIRTUAL_UPDATE, {"virtual_id": self.id}
+        )
+
+    def _capture_preview_frame(
+        self, pixels: NDArray[np.generic], *, owned: bool
+    ) -> OwnedFrame | None:
+        """Called under the producing lock, before storage can be reused."""
+        sampler = self._ledfx.preview_sampler
+        generation = self._source_generation
+        key = SourceKey("virtual", self.id)
+        if not self._preview_or_raw_demand():
+            return None
+        # Span hardware already projects this exact logical view. Calibration
+        # and oneshots only change physical segment copies, never this view.
+        if self._span_frame is not None and self._span_frame[0] is pixels:
+            projected = self._span_frame[1]
+        else:
+            projected = self._effective_to_physical_pixels(pixels)
+        if not owned and np.shares_memory(projected, pixels):
+            projected = projected.copy()
+        self._frame_sequence += 1
+        return OwnedFrame(
+            key,
+            generation,
+            self._frame_sequence,
+            projected,
+            self.rows,
+            self.pixel_count,
+            sampler.settings_generation if isinstance(sampler, PreviewSampler) else 0,
+        )
+
+    def _publish_preview_frame(self, frame: OwnedFrame | None) -> None:
+        if frame is None:
+            return
+        with self.lock:
+            if frame.source_generation != self._source_generation:
+                return
+        sampler = self._ledfx.preview_sampler
+        if isinstance(sampler, PreviewSampler):
+            sampler.submit(frame)
+        if self._ledfx.events.may_have_listeners(
+            Event.VIRTUAL_UPDATE, {"virtual_id": self.id}
+        ):
+            self._ledfx.events.fire_event(VirtualUpdateEvent(self.id, frame.pixels))
+
+    def _submit_preview_frame(self, pixels: NDArray[np.generic], owned: bool) -> None:
+        with self.lock:
+            frame = self._capture_preview_frame(pixels, owned=owned)
+        self._publish_preview_frame(frame)
 
     def _fire_update_event(self, frame=None):
         if frame is None:
             frame = self.assembled_frame
-
-        self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
-        )
+        if frame is not None:
+            self._submit_preview_frame(frame, owned=False)
 
     def set_calibration(self, calibration):
         self._calibration = calibration
@@ -834,6 +923,7 @@ class Virtual:
             try:
                 # we need to lock before we test, or we could deactivate
                 # between test and execution
+                captured = None
                 with self.lock:
                     if (
                         self._active_effect
@@ -852,7 +942,13 @@ class Virtual:
                                 # )
                                 self.flush()
 
-                            self._fire_update_event()
+                            # Effect.get_pixels copies; DummyEffect.render replaces
+                            # its storage each frame. All in-place blends finish
+                            # here, and physical overrides use separate arrays.
+                            captured = self._capture_preview_frame(
+                                self.assembled_frame, owned=True
+                            )
+                self._publish_preview_frame(captured)
             except Exception:
                 if start_time - self._last_render_error >= 5:
                     self._last_render_error = start_time
@@ -1000,12 +1096,14 @@ class Virtual:
     #     z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
     #     return z
 
-    def flush(self, pixels=None):
+    def flush(self, pixels: NDArray[np.generic] | None = None) -> None:
         """
         Flushes the provided data to the devices.
         """
         if pixels is None:
             pixels = self.assembled_frame
+        if pixels is None:
+            return
 
         # Where we update oneshots
         oneshot_index = 0
@@ -1017,9 +1115,13 @@ class Virtual:
             else:
                 oneshot_index += 1
 
+        self._span_frame = None
         if self._config.mapping == "span":
             # In span mode we can calculate the final pixels once for all segments
+            effective_pixels = pixels
             pixels = self._effective_to_physical_pixels(pixels)
+            if self._preview_or_raw_demand():
+                self._span_frame = (effective_pixels, pixels)
 
         debug_track = (
             self._active_effect
@@ -1079,7 +1181,9 @@ class Virtual:
                         device_end,
                     ) in segments:
                         seg = pixels[start:stop:step]
-                        # Where we override segment
+                        # Physical overlays must not mutate the logical source.
+                        if self._oneshots:
+                            seg = seg.copy()
                         for oneshot in self._oneshots:
                             oneshot.apply(seg, start, stop)
                         data.append((seg, device_start, device_end))
@@ -1102,6 +1206,9 @@ class Virtual:
                         seg = self._effective_to_physical_pixels(
                             seg, target_physical_len
                         )
+                        # Equal-length interpolation may return the render array.
+                        if self._oneshots and np.shares_memory(seg, pixels):
+                            seg = seg.copy()
                         for oneshot in self._oneshots:
                             oneshot.apply(seg, start, stop)
                         data.append((seg, device_start, device_end))
@@ -1381,62 +1488,68 @@ class Virtual:
 
     def replace_config(self, new: VirtualConfig) -> None:
         """Make new the config, as it is (no repair), and apply what changed."""
-        old = self._config
-        reactivate_effect = False
-        mapping_changed = new.mapping != old.mapping
-        if mapping_changed:
-            self.invalidate_cached_props()
-            reactivate_effect = True
+        with self.lock:
+            self._renew_source_generation()
+            old = self._config
+            share_transition = False
+            reactivate_effect = False
+            mapping_changed = new.mapping != old.mapping
+            if mapping_changed:
+                self.invalidate_cached_props()
+                reactivate_effect = True
 
-        if (
-            new.transition_mode != old.transition_mode
-            or new.transition_time != old.transition_time
-        ):
-            self.frame_transitions = self.transitions[new.transition_mode]
-            if self._ledfx.config.global_transitions:
-                self._share_transition(new)
-
-        if (new.frequency_min, new.frequency_max) != (
-            old.frequency_min,
-            old.frequency_max,
-        ):
-            self.frequency_range = FrequencyRange(new.frequency_min, new.frequency_max)
-            # Clear cached effect properties so the changes take effect
-            if self._active_effect is not None and hasattr(
-                self._active_effect, "clear_melbank_freq_props"
+            if (
+                new.transition_mode != old.transition_mode
+                or new.transition_time != old.transition_time
             ):
-                self._active_effect.clear_melbank_freq_props()
+                self.frame_transitions = self.transitions[new.transition_mode]
+                if self._ledfx.config.global_transitions:
+                    share_transition = True
 
-        if self._active_effect is not None:
-            # if a virtual level config change impacts a 2d effect layout, then trigger an init
-            if (new.rows != old.rows or new.rotate != old.rotate) and hasattr(
-                self._active_effect, "set_init"
+            if (new.frequency_min, new.frequency_max) != (
+                old.frequency_min,
+                old.frequency_max,
+            ):
+                self.frequency_range = FrequencyRange(
+                    new.frequency_min, new.frequency_max
+                )
+                # Clear cached effect properties so the changes take effect
+                if self._active_effect is not None and hasattr(
+                    self._active_effect, "clear_melbank_freq_props"
+                ):
+                    self._active_effect.clear_melbank_freq_props()
+
+            if new.grouping != old.grouping:
+                reactivate_effect = reactivate_effect or self._active_effect is not None
+                self.invalidate_cached_props()
+
+            # Layout changes can require the running 2D effect to initialize.
+            if (
+                self._active_effect is not None
+                and (new.rows != old.rows or new.rotate != old.rotate)
+                and hasattr(self._active_effect, "set_init")
             ):
                 self._active_effect.set_init()
 
-            if new.grouping != old.grouping:
-                # The effect needs to be reactivated later after the config has been applied
-                reactivate_effect = True
-                self.invalidate_cached_props()
+            self._config = new
+            self._sync_entry()
 
-        self._config = new
-        self._sync_entry()
+            old_complex_segments = self.complex_segments
+            self.complex_segments = new.complex_segments
 
-        old_complex_segments = self.complex_segments
-        self.complex_segments = new.complex_segments
+            # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
+            if old_complex_segments != self.complex_segments or (
+                self.complex_segments and mapping_changed
+            ):
+                self._compile_device_remap()
 
-        # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
-        if old_complex_segments != self.complex_segments or (
-            self.complex_segments and mapping_changed
-        ):
-            self._compile_device_remap()
-
-        self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
-
-        if reactivate_effect:
-            # The render thread clears a finished transition under this lock.
-            with self.lock:
+            if reactivate_effect:
                 self._reactivate_effect()
+
+        if share_transition:
+            self._share_transition(new)
+        self._refresh_device_rows()
+        self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
 
     def _share_transition(self, config: VirtualConfig) -> None:
         """global_transitions: every other virtual takes this transition."""
@@ -1446,16 +1559,18 @@ class Virtual:
             if not hasattr(virtual, "frame_transitions"):
                 _LOGGER.info("virtual of %s has no transitions", virtual.id)
                 continue
-            virtual.frame_transitions = virtual.transitions[config.transition_mode]
-            virtual._config = replace_model(
-                virtual._config,
-                transition_time=config.transition_time,
-                transition_mode=config.transition_mode,
-            )
-            # Persist it too.
-            entry = virtual.entry
-            if entry is not None:
-                entry.config = virtual._config
+            with virtual.lock:
+                virtual._renew_source_generation()
+                virtual.frame_transitions = virtual.transitions[config.transition_mode]
+                virtual._config = replace_model(
+                    virtual._config,
+                    transition_time=config.transition_time,
+                    transition_mode=config.transition_mode,
+                )
+                # Persist it too.
+                entry = virtual.entry
+                if entry is not None:
+                    entry.config = virtual._config
 
     @cached_property
     def effective_pixel_count(self):
@@ -1513,8 +1628,11 @@ class Virtual:
         Args:
             rows (int): The number of rows to set in the configuration.
         """
-        self._config = replace_model(self._config, rows=max(1, rows))
-        self._sync_entry()
+        with self.lock:
+            self._renew_source_generation()
+            self._config = replace_model(self._config, rows=max(1, rows))
+            self._sync_entry()
+        self._refresh_device_rows()
 
 
 class Virtuals:
@@ -1670,12 +1788,22 @@ class Virtuals:
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj
+        with obj.lock:
+            obj._renew_source_generation()
+        obj._refresh_device_rows()
         return obj
 
     def destroy(self, id):
         if id not in self._virtuals:
             raise AttributeError(f"Object with id '{id}' does not exist.")
-        del self._virtuals[id]
+        virtual = self._virtuals[id]
+        with virtual.lock:
+            sampler = self._ledfx.preview_sampler
+            if isinstance(sampler, PreviewSampler):
+                sampler.invalidate_source(SourceKey("virtual", id))
+            virtual._source_generation = -1
+            del self._virtuals[id]
+        virtual._refresh_device_rows()
 
     def __iter__(self):
         return iter(self._virtuals)

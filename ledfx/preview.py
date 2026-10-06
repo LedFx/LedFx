@@ -115,10 +115,15 @@ class PreviewSampler:
             return self._settings_generation
 
     def allocate_source_generation(self, key: SourceKey) -> int:
-        """Publish a new source/layout lifetime, never reusing a historical ID."""
+        """Publish a new source/layout lifetime, never reusing a historical ID.
+
+        Closed samplers return the invalid generation -1: teardown may still
+        remove segments/configure buffers, but cannot resurrect preview work.
+        The check and allocation share the mutex, including a racing close.
+        """
         with self._lock:
             if self._closed:
-                raise RuntimeError("preview sampler is closed")
+                return -1
             self._source_generation += 1
             generation = self._source_generation
             self._live_generations[key] = generation

@@ -1737,13 +1737,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
       "column": 31,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-attribute",
@@ -1776,41 +1769,6 @@
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`update_pixels` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 25,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 74,
-      "path": "ledfx/devices/__init__.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Unknown | None` is not assignable to parameter `pixels` with type `ndarray` in function `ledfx.events.DeviceUpdateEvent.__init__`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/devices/__init__.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `numpy._core.numeric.roll` called with arguments: (Unknown | None, Unknown, axis=Literal[0])",
       "severity": "error"
     },
     {
@@ -16609,13 +16567,6 @@
       "path": "ledfx/virtuals.py",
       "name": "missing-attribute",
       "concise_description": "Object of class `NoneType` has no attribute `get_pixels`",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `pixels`",
       "severity": "error"
     },
     {

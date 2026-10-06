@@ -69,11 +69,15 @@ class NanoleafDevice(NetworkedDevice):
 
     @contextmanager
     def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
-        with self.device_lock, super()._config_update_context(config):
+        with (
+            self._output_lock,
+            self.device_lock,
+            super()._config_update_context(config),
+        ):
             yield
 
     def config_updated(self, config):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if self._output_changed():
                 self._replace_output()
                 self._built_settings = self._output_settings()
@@ -86,19 +90,19 @@ class NanoleafDevice(NetworkedDevice):
     async def resolve_address(
         self, success_callback: Callable[[], object] | None = None
     ) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             address, generation = self.config.ip_address, self._generation
         try:
             destination = await resolve_destination(
                 self._ledfx.loop, self._ledfx.thread_executor, address
             )
         except ValueError as error:
-            with self.device_lock:
+            with self._output_lock, self.device_lock:
                 if generation == self._generation and address == self.config.ip_address:
                     self._online = False
                     _LOGGER.warning("Device %s: %s", self.name, error)
             return
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if generation != self._generation or address != self.config.ip_address:
                 return
             if self._sender is not None or self._active:
@@ -154,7 +158,7 @@ class NanoleafDevice(NetworkedDevice):
             old.close()
 
     def activate(self):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             try:
                 self._replace_output()
             except (ConnectTimeout, ReadTimeout, OSError) as error:
@@ -165,7 +169,7 @@ class NanoleafDevice(NetworkedDevice):
             super().activate()
 
     def deactivate(self):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._generation += 1
             if self._sender is not None:
                 self._sender.close()
@@ -213,7 +217,7 @@ class NanoleafDevice(NetworkedDevice):
             return
 
     def flush(self, data):
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if self.config.sync_mode == "UDP":
                 self.write_udp(data)
                 return

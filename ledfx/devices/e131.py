@@ -80,11 +80,15 @@ class E131Device(NetworkedDevice):
     @override
     @contextmanager
     def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
-        with self.device_lock, super()._config_update_context(config):
+        with (
+            self._output_lock,
+            self.device_lock,
+            super()._config_update_context(config),
+        ):
             yield
 
     def config_updated(self, config: object) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             layout = self._layout()
             candidate = None
             changed = self._output_changed()
@@ -122,7 +126,7 @@ class E131Device(NetworkedDevice):
             old.close()
 
     def _start_maintenance(self, sender: E131Sender | None, generation: int) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if sender is not self._sender or generation != self._generation:
                 return
             if self._maintenance_task is not None:
@@ -136,7 +140,7 @@ class E131Device(NetworkedDevice):
     async def _maintain(self, sender: E131Sender, generation: int) -> None:
         while True:
             await asyncio.sleep(0.25)
-            with self.device_lock:
+            with self._output_lock, self.device_lock:
                 if sender is not self._sender or generation != self._generation:
                     return
             try:
@@ -144,7 +148,7 @@ class E131Device(NetworkedDevice):
                 # call. A replacement awaits that call before submitting work.
                 if self._maintenance_future is not None:
                     await asyncio.shield(self._maintenance_future)
-                with self.device_lock:
+                with self._output_lock, self.device_lock:
                     if sender is not self._sender or generation != self._generation:
                         return
                 self._maintenance_future = self._ledfx.loop.run_in_executor(
@@ -187,7 +191,7 @@ class E131Device(NetworkedDevice):
         except ValueError as error:
             self._resolution_failed(address, generation, error)
             return
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if (
                 generation != self._generation
                 or address != self.config.ip_address
@@ -224,7 +228,7 @@ class E131Device(NetworkedDevice):
     async def resolve_address(
         self, success_callback: Callable[[], object] | None = None
     ) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             address = self.config.ip_address
             generation = self._generation
         if address.lower() != "multicast":
@@ -235,13 +239,13 @@ class E131Device(NetworkedDevice):
     def _resolution_failed(
         self, address: str, generation: int, error: ValueError
     ) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if generation == self._generation and address == self.config.ip_address:
                 self._online = False
                 _LOGGER.warning("Device %s: %s", self.name, error)
 
     def activate(self) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._requested = True
             destination = self._destination
             if self.config.ip_address.lower() == "multicast":
@@ -260,13 +264,13 @@ class E131Device(NetworkedDevice):
             Device.activate(self)
 
     def deactivate(self) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._requested = False
             self._replace(None)
             Device.deactivate(self)
 
     def flush(self, data: NDArray[np.generic]) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if self._sender is not None:
                 # A render already in flight may have the previous pixel count.
                 if data.size != self._sender.layout.channel_count:
