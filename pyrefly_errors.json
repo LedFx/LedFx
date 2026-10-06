@@ -1660,20 +1660,6 @@
       "severity": "error"
     },
     {
-      "column": 50,
-      "path": "ledfx/core.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 41,
-      "path": "ledfx/core.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`handle_visualisation_update` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/core.py",
       "name": "implicit-any-parameter",

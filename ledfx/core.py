@@ -1,21 +1,17 @@
 import asyncio
 import logging
 import os
-import time
 import uuid
 import warnings
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
 from typing import ClassVar
 
-import numpy as np
-import pybase64
 from audio_hotplug import create_monitor
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.paths import (
     VISUALISATION_CONFIG_KEYS,
-    Transmission,
     get_ssl_certs,
 )
 from ledfx.configuration.store import ConfigStore, backup_config_file
@@ -29,7 +25,6 @@ from ledfx.events import (
     Event,
     Events,
     LedFxShutdownEvent,
-    VisualisationUpdateEvent,
 )
 from ledfx.http_manager import HttpServer
 from ledfx.integrations import Integrations
@@ -38,6 +33,7 @@ from ledfx.nowplaying import NowPlayingService
 from ledfx.nowplaying.providers.mpris import MPRISNowPlayingProvider
 from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
+from ledfx.preview import PreviewSampler, PreviewSettings
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
 from ledfx.utils import (
@@ -48,9 +44,6 @@ from ledfx.utils import (
     currently_frozen,
     get_sorted_physical_ips,
     init_image_cache,
-    pixels_boost,
-    resize_pixels,
-    shape_to_fit_len,
 )
 from ledfx.virtuals import Virtuals
 
@@ -61,6 +54,8 @@ if currently_frozen():
 
 
 class LedFxCore:
+    preview_sampler: PreviewSampler | None = None
+
     EXIT_CODES: ClassVar[dict[int, str]] = {
         1: "LedFx encountered an error - Shutting down.",
         2: "Keyboard interrupt - Shutting down.",
@@ -126,6 +121,7 @@ class LedFxCore:
 
         self.setup_logqueue()
         self.events = Events(self)
+        self.preview_sampler = None
         self.setup_visualisation_events()
         self.events.add_listener(
             self.handle_base_configuration_update, Event.BASE_CONFIG_UPDATE
@@ -145,16 +141,23 @@ class LedFxCore:
         """
         Handles the update of the base configuration where there are specific things that need to be done.
 
-        Currently handles visualisation configuration (requires new event listeners)
+        Currently handles visualisation sampler configuration
         and sendspin_always_on runtime updates (via centralized reconcile logic).
 
         Args:
             event (Event): The event that triggered the update - this will always be a BaseConfigUpdateEvent.
         """
         _LOGGER.debug("Handling base configuration update.")
-        if any(key in event.config for key in VISUALISATION_CONFIG_KEYS):
+        if any(
+            key in event.config
+            for key in (
+                *VISUALISATION_CONFIG_KEYS,
+                "ui_brightness_boost",
+                "transmission_mode",
+            )
+        ):
             _LOGGER.debug(
-                "Visualisation configuration updated - resetting visualisation event listeners."
+                "Visualisation configuration updated - reconfiguring preview sampler."
             )
             self.setup_visualisation_events()
 
@@ -303,88 +306,18 @@ class LedFxCore:
             pystray.MenuItem("Quit Ledfx", self.stop),
         )
 
-    def setup_visualisation_events(self):
-        """
-        creates event listeners to fire visualisation events at
-        a given rate
-        """
-        # Remove existing listeners if they exist
-        if hasattr(self, "visualisation_update_listener"):
-            _LOGGER.debug(
-                "Removing existing visualisation event handler and event listeners."
-            )
-            self.visualisation_update_listener = None
-            self.virtual_listener()
-            self.device_listener()
-
-        min_time_since = 1 / self.config.visualisation_fps
-        next_update: dict[str, float] = {}
-        max_len = self.config.visualisation_maxlen
-
-        def handle_visualisation_update(event):
-            if not self.events.has_listeners(Event.VISUALISATION_UPDATE):
-                return
-            is_device = event.event_type == Event.DEVICE_UPDATE
-            time_now = time.monotonic()
-
-            if is_device:
-                vis_id = event.device_id
-            else:
-                vis_id = event.virtual_id
-
-            due = next_update.get(vis_id, time_now)
-            if time_now < due:
-                return
-            # Advance the schedule, not the arrival time. Resetting to now
-            # makes e.g. a 62 Hz source lose every other 60 Hz preview. Skip
-            # missed slots after stalls and never replay a burst of old frames.
-            next_update[vis_id] = (
-                time_now + min_time_since - (time_now - due) % min_time_since
-            )
-
-            # grab rows from up in virtual land
-            virtual = self.virtuals.get(vis_id)
-            # protect against deleted virtuals
-            if virtual:
-                # protect against rows = 0
-                rows = max(1, virtual.rows)
-            else:
-                rows = 1
-
-            pixels = event.pixels
-            pixels_len = len(pixels)
-            shape = (rows, int(pixels_len / rows))
-
-            if pixels_len > max_len:
-                new_shape, pixels_len = shape_to_fit_len(max_len, shape, pixels_len)
-                pixels = resize_pixels(pixels[:pixels_len], shape, new_shape)
-                shape = new_shape
-
-            if self.config.ui_brightness_boost != 0:
-                pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
-
-            if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
-                b_arr = pixels.astype(np.uint8, copy=False).tobytes()
-                pixels = pybase64.b64encode(b_arr).decode("ASCII")
-            else:
-                pixels = pixels.astype(np.uint8).T.tolist()
-
-            self.events.fire_event(
-                VisualisationUpdateEvent(is_device, vis_id, pixels, shape)
-            )
-
-        _LOGGER.debug("Setting up visualisation event handler.")
-        self.visualisation_update_listener = handle_visualisation_update
-        _LOGGER.debug("Adding virtual update event listener.")
-        self.virtual_listener = self.events.add_listener(
-            self.visualisation_update_listener,
-            Event.VIRTUAL_UPDATE,
+    def setup_visualisation_events(self) -> None:
+        """Create or reconfigure the core-owned interested-source sampler."""
+        settings = PreviewSettings(
+            self.config.visualisation_fps,
+            self.config.visualisation_maxlen,
+            self.config.ui_brightness_boost,
+            self.config.transmission_mode,
         )
-        _LOGGER.debug("Adding device update event listener.")
-        self.device_listener = self.events.add_listener(
-            self.visualisation_update_listener,
-            Event.DEVICE_UPDATE,
-        )
+        if self.preview_sampler is None:
+            self.preview_sampler = PreviewSampler(self, settings)
+        else:
+            self.preview_sampler.reconfigure(settings)
 
     def setup_logqueue(self):
         def log_filter(record):
@@ -626,6 +559,9 @@ class LedFxCore:
         _LOGGER.info("Stopping LedFx.")
         try:
             _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
+            if self.preview_sampler is not None:
+                self.preview_sampler.close()
+
             # Fire a shutdown event
             self.events.fire_event(LedFxShutdownEvent())
 

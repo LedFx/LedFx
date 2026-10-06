@@ -1,118 +1,97 @@
-"""Preview optimizations must preserve subscriptions and RGB wire format."""
+"""Preview optimizations preserve demand, cadence and RGB wire format."""
 
-import base64
-from collections.abc import Callable
-from types import SimpleNamespace
-from typing import ParamSpec, cast
+from collections.abc import Iterator
+from typing import Literal
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 
-from ledfx.core import LedFxCore
-from ledfx.events import (
-    DeviceUpdateEvent,
-    Event,
-    Events,
-    VirtualUpdateEvent,
-    VisualisationUpdateEvent,
-)
-
-_P = ParamSpec("_P")
+from ledfx.preview import PreviewSettings, SourceKey
+from tests.test_preview_sampler import Harness, rgb
 
 
-def make_core() -> SimpleNamespace:
-    def dispatch(
-        callback: Callable[_P, object], *args: _P.args, **kwargs: _P.kwargs
-    ) -> None:
-        callback(*args, **kwargs)
-
-    core = SimpleNamespace(
-        config=SimpleNamespace(
-            visualisation_fps=60,
-            visualisation_maxlen=81,
-            ui_brightness_boost=0,
-            transmission_mode="compressed",
-        ),
-        loop=SimpleNamespace(call_soon_threadsafe=dispatch),
-        virtuals={},
-    )
-    core.events = Events(core)
-    LedFxCore.setup_visualisation_events(cast(LedFxCore, core))
-    return core
+@pytest.fixture
+def harness() -> Iterator[Harness]:
+    result = Harness()
+    result.sampler.reconfigure(PreviewSettings(60, 81, 0, "compressed"))
+    yield result
+    result.close()
 
 
 def test_preview_work_tracks_late_subscribe_and_unsubscribe(
-    monkeypatch: pytest.MonkeyPatch,
+    monkeypatch: pytest.MonkeyPatch, harness: Harness
 ) -> None:
-    core = make_core()
     resize = Mock(return_value=np.zeros((81, 3), dtype=np.uint8))
-    monkeypatch.setattr("ledfx.core.resize_pixels", resize)
-    event = VirtualUpdateEvent("strip", np.zeros((500, 3)))
-    core.visualisation_update_listener(event)
+    monkeypatch.setattr("ledfx.preview.resize_pixels", resize)
+    key = SourceKey("virtual", "strip")
+    generation = harness.sampler.allocate_source_generation(key)
+    pixels = np.zeros((500, 3))
+    # Undemanded producers need not capture, and accidental submission is harmless.
+    assert not harness.sampler.interested(key, generation)
+    harness.sampler.submit(harness.frame(key, generation, 0, pixels=pixels))
+    harness.core.loop.drain()
     resize.assert_not_called()
-    received: list[VisualisationUpdateEvent] = []
-    unsubscribe = core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
-    core.visualisation_update_listener(event)
+    unsubscribe = harness.listen()
+    harness.sampler.submit(harness.frame(key, generation, 1, pixels=pixels))
+    harness.core.loop.drain()
     resize.assert_called_once()
-    assert len(received) == 1
-    assert received[0].shape == (1, 81)
+    assert len(harness.delivered) == 1
+    assert harness.delivered[0].shape == (1, 81)
     unsubscribe()
-    assert not core.events.has_listeners(Event.VISUALISATION_UPDATE)
-    core.visualisation_update_listener(event)
+    harness.core.loop.drain()
+    assert not harness.sampler.interested(key, generation)
+    harness.sampler.submit(harness.frame(key, generation, 2, pixels=pixels))
+    harness.core.loop.drain()
     assert resize.call_count == 1
 
 
-@pytest.mark.parametrize("event_type", [DeviceUpdateEvent, VirtualUpdateEvent])
+@pytest.mark.parametrize("kind", ["device", "virtual"])
 @pytest.mark.parametrize("dtype", [np.float64, np.uint8])
 def test_preview_preserves_strided_rgb_bytes(
-    event_type: type[DeviceUpdateEvent] | type[VirtualUpdateEvent],
+    harness: Harness,
+    kind: Literal["device", "virtual"],
     dtype: type[np.float64] | type[np.uint8],
 ) -> None:
-    core = make_core()
     pixels = np.arange(36, dtype=dtype).reshape(12, 3)[::2]
     original = pixels.copy()
-    received: list[VisualisationUpdateEvent] = []
-    core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
-    core.visualisation_update_listener(event_type("strip", pixels))
-    assert received[0].shape == (1, 6)
-    assert base64.b64decode(cast(str, received[0].pixels)) == bytes(
-        pixels.astype(np.uint8).flatten()
-    )
+    harness.listen()
+    key = SourceKey(kind, "strip")
+    generation = harness.sampler.allocate_source_generation(key)
+    harness.sampler.submit(harness.frame(key, generation, 0, pixels=pixels))
+    harness.core.loop.drain()
+    assert harness.delivered[0].shape == (1, 6)
+    assert rgb(harness.delivered[0]) == pixels.astype(np.uint8).tobytes()
     np.testing.assert_array_equal(pixels, original)
 
 
 @pytest.mark.parametrize("source_fps", [30, 60, 62, 100, 120])
 def test_preview_keeps_requested_average_rate_without_duplicate_updates(
-    monkeypatch: pytest.MonkeyPatch, source_fps: int
+    harness: Harness, source_fps: int
 ) -> None:
-    clock = [1000.0]
-    monkeypatch.setattr("ledfx.core.time.time", lambda: clock[0])
-    monkeypatch.setattr("ledfx.core.time.monotonic", lambda: clock[0])
-    core = make_core()
-    received: list[VisualisationUpdateEvent] = []
-    core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
-    event = VirtualUpdateEvent("strip", np.zeros((1, 3)))
-    for frame in range(source_fps * 2):
-        clock[0] = 1000.0 + frame / source_fps
-        core.visualisation_update_listener(event)
-        # A device/virtual pair or duplicate at the same instant must not burst.
-        core.visualisation_update_listener(event)
-    assert abs(len(received) - 2 * min(source_fps, 60)) <= 1
+    harness.listen()
+    key = SourceKey("virtual", "strip")
+    generation = harness.sampler.allocate_source_generation(key)
+    start = harness.core.loop.time()
+    for sequence in range(source_fps * 2):
+        harness.core.loop.advance(start + sequence / source_fps)
+        frame = harness.frame(key, generation, sequence)
+        harness.sampler.submit(frame)
+        # Repeating one producer sequence cannot duplicate a sample.
+        harness.sampler.submit(frame)
+        harness.core.loop.drain()
+    harness.core.loop.advance(start + 2)
+    assert abs(len(harness.delivered) - 2 * min(source_fps, 60)) <= 1
 
 
-def test_preview_does_not_replay_missed_frames_after_idle(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    clock = [1000.0]
-    monkeypatch.setattr("ledfx.core.time.time", lambda: clock[0])
-    monkeypatch.setattr("ledfx.core.time.monotonic", lambda: clock[0])
-    core = make_core()
-    received: list[VisualisationUpdateEvent] = []
-    core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
-    event = VirtualUpdateEvent("strip", np.zeros((1, 3)))
-    core.visualisation_update_listener(event)
-    clock[0] += 100
-    for _ in range(100):
-        core.visualisation_update_listener(event)
-    assert len(received) == 2
+def test_preview_does_not_replay_missed_frames_after_idle(harness: Harness) -> None:
+    harness.listen()
+    key = SourceKey("virtual", "strip")
+    generation = harness.sampler.allocate_source_generation(key)
+    harness.sampler.submit(harness.frame(key, generation, 0))
+    harness.core.loop.drain()
+    harness.core.loop.advance(harness.core.loop.time() + 100)
+    for sequence in range(1, 101):
+        harness.sampler.submit(harness.frame(key, generation, sequence))
+    harness.core.loop.drain()
+    assert len(harness.delivered) == 2
