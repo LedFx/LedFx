@@ -3,7 +3,7 @@
 import base64
 from collections.abc import Callable
 from types import SimpleNamespace
-from typing import cast
+from typing import ParamSpec, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -18,10 +18,14 @@ from ledfx.events import (
     VisualisationUpdateEvent,
 )
 
+_P = ParamSpec("_P")
+
 
 def make_core() -> SimpleNamespace:
-    def dispatch(callback: Callable[[Event], None], event: Event) -> None:
-        callback(event)
+    def dispatch(
+        callback: Callable[_P, object], *args: _P.args, **kwargs: _P.kwargs
+    ) -> None:
+        callback(*args, **kwargs)
 
     core = SimpleNamespace(
         config=SimpleNamespace(

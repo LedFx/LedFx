@@ -330,7 +330,7 @@ class VisualisationUpdateEvent(Event):
         self,
         is_device: bool,  # true if device, false if virtual
         vis_id: str,  # id of device/virtual
-        pixels: np.ndarray,
+        pixels: str | list[list[int]],
         shape: tuple,
     ):
         super().__init__(Event.VISUALISATION_UPDATE)

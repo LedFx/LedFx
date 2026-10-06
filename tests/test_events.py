@@ -114,9 +114,7 @@ def test_original_filter_copy_and_deferred_revocation() -> None:
     )
     source_filter["vis_id"] = "b"
     shape[0] = 9
-    event = VisualisationUpdateEvent(
-        False, "a", np.array([[1, 2], [3, 4], [5, 6]]), (1, 2)
-    )
+    event = VisualisationUpdateEvent(False, "a", [[1, 2], [3, 4], [5, 6]], (1, 2))
     bus.fire_event(event)
     assert len(loop.ready) == 1
     dispose()
