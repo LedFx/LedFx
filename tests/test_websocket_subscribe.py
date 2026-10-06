@@ -5,12 +5,13 @@ import gc
 import weakref
 from collections.abc import Callable
 from types import MappingProxyType, SimpleNamespace
-from typing import cast, override
+from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
 from aiohttp import WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer
+from typing_extensions import override
 
 import ledfx.api.websocket as websocket_module
 from ledfx.api.websocket import (
