@@ -1,4 +1,5 @@
 import logging
+import threading
 
 # import time
 from collections import namedtuple
@@ -16,7 +17,7 @@ from ledfx.configuration.models import (
 )
 from ledfx.effects import fast_blur_array, mel
 from ledfx.effects.math import ExpFilter
-from ledfx.events import GraphUpdateEvent
+from ledfx.events import Event
 from ledfx.utils import generate_id
 
 # Since fft size and mic rate are tightly linked to melbank resolution,
@@ -366,10 +367,19 @@ class Melbanks:
     def __init__(self, ledfx, audio, config):
         self._ledfx = ledfx
         self._audio = audio
+        self._graph_lock = threading.Lock()
+        self._graph_enabled = True
+        self._graph_ready = False
+        self._graph_epoch = 0
         self.update_config(config)
         self.dev_enabled = self._ledfx.dev_enabled()
 
     def update_config(self, config):
+        with self._graph_lock:
+            # Suspend publication while buffers change, preserving the owner's
+            # enabled state. A concurrent stop can still revoke that state.
+            self._graph_ready = False
+            self._purge_graphs()
         self.melbanks_config = MelbanksConfig.model_validate(config)
         # Global settings every melbank is built with; not editable per melbank,
         # so they are stripped from the melbank_collection config below.
@@ -437,6 +447,40 @@ class Melbanks:
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
         self.minimum_volume = self._audio._config.min_volume
+        with self._graph_lock:
+            self._graph_ready = True
+
+    def _purge_graphs(self) -> None:
+        for i in range(len(getattr(self, "melbank_processors", ()))):
+            self._ledfx.events.purge_pending(Event.GRAPH_UPDATE, f"melbank_{i}")
+
+    def purge_pending(self) -> None:
+        """Disable graph admission and release this producer's current samples."""
+        with self._graph_lock:
+            self._graph_epoch += 1
+            self._graph_enabled = False
+            self._purge_graphs()
+
+    def begin_graph_activation(self) -> int:
+        with self._graph_lock:
+            self._graph_epoch += 1
+            self._graph_enabled = True
+            return self._graph_epoch
+
+    def finish_graph_activation(self, claim: int, active: bool) -> None:
+        with self._graph_lock:
+            if claim != self._graph_epoch:
+                return
+            self._graph_enabled = active
+            if not active:
+                self._purge_graphs()
+
+    def suspend_graph_activation(self, claim: int | None) -> None:
+        """Suspend the current SDK retry without revoking its activation claim."""
+        with self._graph_lock:
+            if claim is not None and claim == self._graph_epoch:
+                self._graph_enabled = False
+                self._purge_graphs()
 
     def __call__(self):
         # fastest way i could think of.
@@ -466,11 +510,11 @@ class Melbanks:
         else:
             self.send_melbank_event(len(self.melbank_processors) - 1)
 
-    def send_melbank_event(self, i):
-        self._ledfx.events.fire_event(
-            GraphUpdateEvent(
-                f"melbank_{i}",
-                self.melbanks_filtered[i],
-                self.melbank_processors[i].melbank_frequencies,
-            )
-        )
+    def send_melbank_event(self, i: int) -> None:
+        with self._graph_lock:
+            if self._graph_enabled and self._graph_ready:
+                self._ledfx.events.publish_graph(
+                    f"melbank_{i}",
+                    self.melbanks_filtered[i],
+                    self.melbank_processors[i].melbank_frequencies,
+                )

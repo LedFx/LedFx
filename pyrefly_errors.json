@@ -1660,34 +1660,6 @@
       "severity": "error"
     },
     {
-      "column": 50,
-      "path": "ledfx/core.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 41,
-      "path": "ledfx/core.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`handle_visualisation_update` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/core.py",
       "name": "implicit-any-parameter",
@@ -1765,13 +1737,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
       "column": 31,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-attribute",
@@ -1807,66 +1772,10 @@
       "severity": "error"
     },
     {
-      "column": 25,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 33,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "`None` is not subscriptable",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/__init__.py",
-      "name": "unsupported-operation",
-      "concise_description": "Cannot set item in `None`",
-      "severity": "error"
-    },
-    {
-      "column": 74,
-      "path": "ledfx/devices/__init__.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `Unknown | None` is not assignable to parameter `pixels` with type `ndarray` in function `ledfx.events.DeviceUpdateEvent.__init__`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/devices/__init__.py",
-      "name": "no-matching-overload",
-      "concise_description": "No matching overload found for function `numpy._core.numeric.roll` called with arguments: (Unknown | None, Unknown, axis=Literal[0])",
-      "severity": "error"
-    },
-    {
       "column": 21,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`add_segments_batch` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`add_segments_batch` is missing an annotation for parameter `segments`",
-      "severity": "error"
-    },
-    {
-      "column": 56,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`add_segments_batch` is missing an annotation for parameter `force`",
       "severity": "error"
     },
     {
@@ -1993,13 +1902,6 @@
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`on_shutdown` is missing an annotation for parameter `e`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`create_from_config` is missing an annotation for parameter `config`",
       "severity": "error"
     },
     {
@@ -8625,13 +8527,6 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/effects/melbank.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_melbank_event` is missing an annotation for parameter `i`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/melt.py",
       "name": "missing-override-decorator",
@@ -12419,20 +12314,6 @@
       "severity": "error"
     },
     {
-      "column": 14,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 14,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
       "column": 18,
       "path": "ledfx/events.py",
       "name": "implicit-any-type-argument",
@@ -12531,80 +12412,10 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
-      "severity": "error"
-    },
-    {
-      "column": 58,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 58,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`filter_event` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/events.py",
       "name": "implicit-any-parameter",
       "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 23,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 47,
-      "path": "ledfx/events.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `EventListener` is not assignable to parameter `listener` with type `(...) -> Unknown` in function `Events._remove_listener`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/events.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `() -> None` is not assignable to declared return type `None`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
       "severity": "error"
     },
     {
@@ -16605,13 +16416,6 @@
       "severity": "error"
     },
     {
-      "column": 49,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
       "column": 32,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -16710,13 +16514,6 @@
       "severity": "error"
     },
     {
-      "column": 21,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `pixels`",
-      "severity": "error"
-    },
-    {
       "column": 48,
       "path": "ledfx/virtuals.py",
       "name": "unbound-name",
@@ -16724,24 +16521,10 @@
       "severity": "error"
     },
     {
-      "column": 38,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_flush_simple_segments` is missing an annotation for parameter `pixels`",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_flush_complex_segments` is missing an annotation for parameter `pixels`",
       "severity": "error"
     },
     {
@@ -16756,20 +16539,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`render_calibration` is missing an annotation for parameter `device`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`render_calibration` is missing an annotation for parameter `segments`",
-      "severity": "error"
-    },
-    {
-      "column": 58,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`render_calibration` is missing an annotation for parameter `device_id`",
       "severity": "error"
     },
     {

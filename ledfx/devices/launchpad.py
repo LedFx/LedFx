@@ -131,16 +131,17 @@ class LaunchpadDevice(MidiDevice):
             self.set_offline()
 
     def activate(self):
-        self.set_class()
-        if self.lp is not None:
-            if self.lp.supported:
-                self._online = True
-                super().activate()
+        with self._output_lock:
+            self.set_class()
+            if self.lp is not None:
+                if self.lp.supported:
+                    self._online = True
+                    super().activate()
+                else:
+                    _LOGGER.warning("Launchpad variant not supported or not connected")
+                    self.set_offline()
             else:
-                _LOGGER.warning("Launchpad variant not supported or not connected")
                 self.set_offline()
-        else:
-            self.set_offline()
 
     def set_class(self):
         self.lp = launchpad.Launchpad()
@@ -160,17 +161,18 @@ class LaunchpadDevice(MidiDevice):
             )
 
     def deactivate(self):
-        _LOGGER.info("Deactivating Launchpad")
-        if self.lp is not None:
-            self.lp.flush(
-                zeros((self.pixel_count, 3)),
-                self.config.alpha_options,
-                self.config.diag,
-            )
-            _LOGGER.info("Closing Launchpad")
-            self.lp.Close()
-            self.lp = None
-        super().deactivate()
+        with self._output_lock:
+            _LOGGER.info("Deactivating Launchpad")
+            if self.lp is not None:
+                self.lp.flush(
+                    zeros((self.pixel_count, 3)),
+                    self.config.alpha_options,
+                    self.config.diag,
+                )
+                _LOGGER.info("Closing Launchpad")
+                self.lp.Close()
+                self.lp = None
+            super().deactivate()
 
     async def add_postamble(self):
         _LOGGER.info("Doing post creation things")

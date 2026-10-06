@@ -86,36 +86,40 @@ class RPI_WS281X(DeviceWrapper):
         self._built_settings = self._output_settings()
 
     def activate(self):
-        if not rpi_supported:
-            _LOGGER.warning("Unable to load ws281x module - are you on a Raspberry Pi?")
-            self.set_offline()
-            return
+        with self._output_lock:
+            if not rpi_supported:
+                _LOGGER.warning(
+                    "Unable to load ws281x module - are you on a Raspberry Pi?"
+                )
+                self.set_offline()
+                return
 
-        # following configuration is based on the example from the rpi-ws281x library
-        # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/50cc48bbb5d6ab2d205e58606892514a29571f5e/examples/strandtest.py#L20
-        self.LED_CHANNEL = 1 if self.config.gpio_pin == 13 else 0
+            # following configuration is based on the example from the rpi-ws281x library
+            # https://github.com/rpi-ws281x/rpi-ws281x-python/blob/50cc48bbb5d6ab2d205e58606892514a29571f5e/examples/strandtest.py#L20
+            self.LED_CHANNEL = 1 if self.config.gpio_pin == 13 else 0
 
-        if self.white_mode == "None":  # RGB strip
-            strip_type = WS2811_STRIP_RGB
-        else:  # RGBW strip
-            strip_type = SK6812_STRIP_RGBW
+            if self.white_mode == "None":  # RGB strip
+                strip_type = WS2811_STRIP_RGB
+            else:  # RGBW strip
+                strip_type = SK6812_STRIP_RGBW
 
-        self.strip = PixelStrip(
-            self.pixel_count,
-            self.config.gpio_pin,
-            self.LED_FREQ_HZ,
-            self.LED_DMA,
-            self.LED_INVERT,
-            self.LED_BRIGHTNESS,
-            self.LED_CHANNEL,
-            strip_type,
-        )
+            self.strip = PixelStrip(
+                self.pixel_count,
+                self.config.gpio_pin,
+                self.LED_FREQ_HZ,
+                self.LED_DMA,
+                self.LED_INVERT,
+                self.LED_BRIGHTNESS,
+                self.LED_CHANNEL,
+                strip_type,
+            )
 
-        self.strip.begin()
-        super().activate()
+            self.strip.begin()
+            super().activate()
 
     def deactivate(self):
-        super().deactivate()
+        with self._output_lock:
+            super().deactivate()
 
     def flush(self, data):
         """Flush LED data to the strip"""

@@ -78,46 +78,49 @@ class OpenRGB(NetworkedDevice):
             TimeoutError: If the connection to the OpenRGB server times out.
             IndexError: If the OpenRGB device ID is not found.
         """
-        try:
-            self.openrgb_device = OpenRGBClient(
-                self.ip_address,
-                self.port,
-                self.name,
-                3,  # protocol_version
-            )
-            self.openrgb_device = self.openrgb_device.devices[self.openrgb_device_id]
+        with self._output_lock:
+            try:
+                self.openrgb_device = OpenRGBClient(
+                    self.ip_address,
+                    self.port,
+                    self.name,
+                    3,  # protocol_version
+                )
+                self.openrgb_device = self.openrgb_device.devices[
+                    self.openrgb_device_id
+                ]
 
-        except (ConnectionRefusedError, TimeoutError):
-            _LOGGER.warning(
-                "OpenRGB server %s:%s not reachable for device %s. Is OpenRGB server running?",
-                self.ip_address,
-                self.port,
-                self.openrgb_device_id,
-            )
-            self.set_offline()
-            return
+            except (ConnectionRefusedError, TimeoutError):
+                _LOGGER.warning(
+                    "OpenRGB server %s:%s not reachable for device %s. Is OpenRGB server running?",
+                    self.ip_address,
+                    self.port,
+                    self.openrgb_device_id,
+                )
+                self.set_offline()
+                return
 
-        except IndexError:
-            _LOGGER.warning(
-                "Couldn't find OpenRGB device ID: %s", self.openrgb_device_id
-            )
-            self.set_offline()
-            return
+            except IndexError:
+                _LOGGER.warning(
+                    "Couldn't find OpenRGB device ID: %s", self.openrgb_device_id
+                )
+                self.set_offline()
+                return
 
-        device_supports_direct = False
-        for mode in self.openrgb_device.modes:
-            if mode.name.lower() == "direct":
-                device_supports_direct = True
-        if not device_supports_direct:
-            _LOGGER.warning(
-                "%s doesn't support direct mode - not supported by LedFx.",
-                self.openrgb_device_id,
-            )
-            self.set_offline()
-            return
-        else:
-            self._online = True
-            super().activate()
+            device_supports_direct = False
+            for mode in self.openrgb_device.modes:
+                if mode.name.lower() == "direct":
+                    device_supports_direct = True
+            if not device_supports_direct:
+                _LOGGER.warning(
+                    "%s doesn't support direct mode - not supported by LedFx.",
+                    self.openrgb_device_id,
+                )
+                self.set_offline()
+                return
+            else:
+                self._online = True
+                super().activate()
 
     def deactivate(self):
         """
@@ -125,7 +128,8 @@ class OpenRGB(NetworkedDevice):
 
         This method overrides the deactivate method of the base class.
         """
-        super().deactivate()
+        with self._output_lock:
+            super().deactivate()
 
     def flush(self, data: np.ndarray):
         """

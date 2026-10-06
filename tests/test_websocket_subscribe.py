@@ -22,10 +22,37 @@ from ledfx.api.websocket import (
 from ledfx.events import Event, Events
 
 
+class EntityEvent(Event):
+    def __init__(self, event_type: str) -> None:
+        super().__init__(event_type)
+        self.virtual_id = "virtual"
+        self.graph_id = "graph"
+
+
 def take_control(connection: WebsocketConnection) -> dict[str, object]:
-    message = connection._control_queue.get_nowait()
-    assert message is not None
-    return message
+    return connection._control_queue.popleft().message
+
+
+def take_delivery(connection: WebsocketConnection) -> dict[str, object]:
+    item = connection._select_delivery()
+    assert item is not None
+    return item.message
+
+
+async def wait_latest_slot(connection: WebsocketConnection) -> None:
+    async def wait() -> None:
+        while not connection._latest_slots:
+            await asyncio.sleep(0)
+
+    await asyncio.wait_for(wait(), timeout=1)
+
+
+async def wait_messages(socket: "HeldFirstWriteSocket", count: int) -> None:
+    async def wait() -> None:
+        while len(socket.completed) < count:
+            await asyncio.sleep(0)
+
+    await asyncio.wait_for(wait(), timeout=1)
 
 
 @pytest.mark.parametrize("event_type", ["device_update", "virtual_update"])
@@ -56,9 +83,9 @@ async def test_duplicate_subscription_id_delivers_once_and_is_removable() -> Non
     for _ in range(100):
         conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
 
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
-    await asyncio.sleep(0)
-    assert conn._control_queue.qsize() == 1
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
+    await wait_latest_slot(conn)
+    assert len(conn._latest_slots) == 1
     conn.unsubscribe_event_handler({"id": 1})
     assert core.events._listeners == {}
 
@@ -76,15 +103,15 @@ async def test_reused_subscription_id_replaces_event_and_filter() -> None:
             "event_filter": {"event_type": "will-not-match"},
         }
     )
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
-    core.events.fire_event(Event(Event.GRAPH_UPDATE))
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
+    core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
     await asyncio.sleep(0)
-    assert conn._control_queue.empty()
+    assert not conn._control_queue and not conn._latest_slots
 
     conn.subscribe_event_handler({"id": 1, "event_type": Event.GRAPH_UPDATE})
-    core.events.fire_event(Event(Event.GRAPH_UPDATE))
-    await asyncio.sleep(0)
-    assert conn._control_queue.qsize() == 1
+    core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
+    await wait_latest_slot(conn)
+    assert len(conn._latest_slots) == 1
     conn.clear_subscriptions()
     assert core.events._listeners == {}
 
@@ -115,9 +142,9 @@ async def test_rejected_replacement_preserves_existing_subscription() -> None:
     conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
     conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_UPDATE})
     assert take_control(conn)["success"] is False
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
-    await asyncio.sleep(0)
-    assert conn._control_queue.qsize() == 1
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
+    await wait_latest_slot(conn)
+    assert len(conn._latest_slots) == 1
     conn.clear_subscriptions()
     assert core.events._listeners == {}
 
@@ -128,17 +155,17 @@ async def test_idle_installation_ack_and_legacy_opt_out() -> None:
     connection = WebsocketConnection(core)
     assert "get_event_capabilities" in websocket_handlers
     connection.get_event_capabilities_handler({"id": 120001})
-    assert connection._control_queue.get_nowait() == {
+    assert take_control(connection) == {
         "id": 120001,
         "type": "result",
         "success": True,
-        "result": {"subscription_ack": 1},
+        "result": {"subscription_ack": 1, "control_overflow": "close_1013_resync"},
     }
     connection.subscribe_event_handler(
         {"id": 120002, "event_type": "never_fires", "ack": True}
     )
     assert core.events.has_listeners("never_fires")
-    assert connection._control_queue.get_nowait() == {
+    assert take_control(connection) == {
         "id": 120002,
         "type": "result",
         "success": True,
@@ -156,7 +183,7 @@ async def test_idle_installation_ack_and_legacy_opt_out() -> None:
         connection.subscribe_event_handler(
             {"id": subscription_id, "event_type": "never_fires", **ack}
         )
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     connection.clear_subscriptions()
 
 
@@ -168,14 +195,14 @@ async def test_invalid_ack_does_not_install(ack: object) -> None:
     connection.subscribe_event_handler(
         {"id": 1, "event_type": "never_fires", "ack": ack}
     )
-    assert connection._control_queue.get_nowait() == {
+    assert take_control(connection) == {
         "id": 1,
         "success": False,
         "error": {"message": "ack must be a boolean"},
     }
     assert not core.events.has_listeners("never_fires")
     assert connection._listeners == {}
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
 
 
 @pytest.mark.parametrize("event_type", ["device_update", "virtual_update"])
@@ -184,14 +211,14 @@ async def test_prohibited_event_with_ack_only_returns_error(event_type: str) -> 
     core.events = Events(core)
     connection = WebsocketConnection(core)
     connection.subscribe_event_handler({"id": 1, "event_type": event_type, "ack": True})
-    assert connection._control_queue.get_nowait() == {
+    assert take_control(connection) == {
         "id": 1,
         "success": False,
         "error": {
             "message": f"Websocket cannot subscribe to {event_type} events - use visualisation_update instead"
         },
     }
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     assert connection._listeners == {}
     assert not core.events.has_listeners(event_type)
 
@@ -220,14 +247,16 @@ async def test_invalid_replacement_preserves_registration(
     )
     assert take_control(connection)["success"] is False
     assert not core.events.has_listeners(Event.GRAPH_UPDATE)
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
-    await asyncio.sleep(0)
-    assert connection._control_queue.get_nowait() == {
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
+    await wait_latest_slot(connection)
+    assert take_delivery(connection) == {
         "id": 1,
         "type": "event",
         "event_type": Event.VIRTUAL_DIAG,
+        "virtual_id": "virtual",
+        "graph_id": "graph",
     }
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     connection.clear_subscriptions()
 
 
@@ -244,10 +273,10 @@ async def test_validated_replacement_ack_and_immediate_event() -> None:
             "event_filter": MappingProxyType({"event_type": Event.GRAPH_UPDATE}),
         }
     )
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
-    core.events.fire_event(Event(Event.GRAPH_UPDATE))
-    await asyncio.sleep(0)
-    assert connection._control_queue.get_nowait() == {
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
+    core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
+    await wait_latest_slot(connection)
+    assert take_control(connection) == {
         "id": 1,
         "type": "result",
         "success": True,
@@ -257,12 +286,14 @@ async def test_validated_replacement_ack_and_immediate_event() -> None:
             "installed": True,
         },
     }
-    assert connection._control_queue.get_nowait() == {
+    assert take_delivery(connection) == {
         "id": 1,
         "type": "event",
         "event_type": Event.GRAPH_UPDATE,
+        "virtual_id": "virtual",
+        "graph_id": "graph",
     }
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     assert len(core.events._listeners[Event.GRAPH_UPDATE]) == 1
     assert not core.events.has_listeners(Event.VIRTUAL_DIAG)
     connection.clear_subscriptions()
@@ -288,12 +319,12 @@ async def test_registration_failure_has_no_installed_reply(
     connection.subscribe_event_handler(
         {"id": 1, "event_type": Event.GRAPH_UPDATE, "ack": True}
     )
-    assert connection._control_queue.get_nowait() == {
+    assert take_control(connection) == {
         "id": 1,
         "success": False,
         "error": {"message": "registration rejected"},
     }
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     assert connection._listeners == {}
     assert core.events._listeners == {}
 
@@ -331,7 +362,7 @@ async def test_full_installation_reply_queue_revokes_and_closes_once(
     await asyncio.sleep(0)
     assert not sender.done()
     for request_id in range(MAX_PENDING_MESSAGES):
-        connection._control_queue.put_nowait(
+        connection.send(
             {"id": request_id, "type": "result", "success": True, "result": {}}
         )
     connection._has_work.clear()
@@ -344,19 +375,19 @@ async def test_full_installation_reply_queue_revokes_and_closes_once(
     assert connection._listeners == {}
     assert core.events._listeners == {}
     assert connection._has_work.is_set()
-    assert connection._control_queue.qsize() == MAX_PENDING_MESSAGES
-    task = connection._installation_close_task
+    assert not connection._control_queue
+    task = connection._close_task
     assert task is not None
     await socket.close_started.wait()
     connection.subscribe_event_handler(
         {"id": 3, "event_type": "new_event", "ack": True}
     )
     connection.get_event_capabilities_handler({"id": 4})
-    core.events.fire_event(Event(Event.GRAPH_UPDATE))
+    core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
     await asyncio.sleep(0)
     assert sender.done()
     assert socket.messages == []
-    assert connection._installation_close_task is task
+    assert connection._close_task is task
     assert connection._listeners == {}
     assert core.events._listeners == {}
     assert socket.close_calls == [(1013, b"control backlog; reconnect and resync")]
@@ -364,7 +395,7 @@ async def test_full_installation_reply_queue_revokes_and_closes_once(
     await task
     await sender
     assert socket.closed
-    assert connection._control_queue.qsize() == MAX_PENDING_MESSAGES
+    assert not connection._control_queue
 
 
 async def test_installation_results_survive_unsubscribe() -> None:
@@ -378,7 +409,7 @@ async def test_installation_results_survive_unsubscribe() -> None:
     connection.unsubscribe_event_handler({"id": 1})
     assert take_control(connection)["id"] == 10
     assert take_control(connection)["id"] == 1
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     assert core.events._listeners == {}
 
 
@@ -389,14 +420,14 @@ async def test_replacement_revokes_deferred_callbacks_and_pending_events() -> No
     connection.subscribe_event_handler(
         {"id": 1, "event_type": Event.VIRTUAL_DIAG, "ack": True}
     )
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
     await asyncio.sleep(0)
     connection.subscribe_event_handler({"id": 2, "event_type": Event.VIRTUAL_DIAG})
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
     connection.subscribe_event_handler(
         {"id": 1, "event_type": Event.GRAPH_UPDATE, "ack": True}
     )
-    await asyncio.sleep(0)
+    await wait_latest_slot(connection)
     assert take_control(connection)["result"] == {
         "subscription_id": 1,
         "event_type": Event.VIRTUAL_DIAG,
@@ -407,16 +438,18 @@ async def test_replacement_revokes_deferred_callbacks_and_pending_events() -> No
         "event_type": Event.GRAPH_UPDATE,
         "installed": True,
     }
-    assert connection._control_queue.get_nowait() == {
+    assert take_delivery(connection) == {
         "id": 2,
         "type": "event",
         "event_type": Event.VIRTUAL_DIAG,
+        "virtual_id": "virtual",
+        "graph_id": "graph",
     }
-    assert connection._control_queue.empty()
-    core.events.fire_event(Event(Event.GRAPH_UPDATE))
+    assert not connection._control_queue
+    core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
     await asyncio.sleep(0)
     connection.unsubscribe_event_handler({"id": 1})
-    assert connection._control_queue.empty()
+    assert not connection._control_queue
     connection.clear_subscriptions()
 
 
@@ -425,16 +458,16 @@ async def test_reply_failure_rejects_already_deferred_events() -> None:
     core.events = Events(core)
     connection = WebsocketConnection(core)
     connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
-    core.events.fire_event(Event(Event.VIRTUAL_DIAG))
+    core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
     for request_id in range(MAX_PENDING_MESSAGES):
-        connection._control_queue.put_nowait(
+        connection.send(
             {"id": request_id, "type": "result", "success": True, "result": {}}
         )
     connection.get_event_capabilities_handler({"id": 1000})
-    task = connection._installation_close_task
+    task = connection._close_task
     assert task is not None
     await task
-    assert connection._control_queue.qsize() == MAX_PENDING_MESSAGES
+    assert not connection._control_queue
     assert connection._listeners == {}
     assert core.events._listeners == {}
 
@@ -462,7 +495,7 @@ async def test_wire_results_route_by_id_and_disconnect_releases_owner() -> None:
             "id": 10,
             "type": "result",
             "success": True,
-            "result": {"subscription_ack": 1},
+            "result": {"subscription_ack": 1, "control_overflow": "close_1013_resync"},
         }
         await socket.send_json(
             {
@@ -539,7 +572,7 @@ async def test_wire_malformed_request_error_precedes_close(
             "id": 10,
             "type": "result",
             "success": True,
-            "result": {"subscription_ack": 1},
+            "result": {"subscription_ack": 1, "control_overflow": "close_1013_resync"},
         }
         await socket.send_json(malformed)
         if error_id is not None:
@@ -676,16 +709,18 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
         elif boundary == "shutdown":
             core.events.fire_event(Event(Event.LEDFX_SHUTDOWN))
         elif boundary == "queued-error-overflow":
-            assert connection._control_queue.qsize() == 1
+            assert len(connection._control_queue) == 1
             for _ in range(MAX_PENDING_MESSAGES - 1):
-                connection.send_event(99, Event(Event.GRAPH_UPDATE))
-            assert connection._control_queue.full()
-            connection.send_event(99, Event(Event.GRAPH_UPDATE))
+                connection.send(
+                    {"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE}
+                )
+            assert len(connection._control_queue) == MAX_PENDING_MESSAGES
+            connection.send(
+                {"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE}
+            )
         elif boundary == "readiness-failure":
             for request_id in range(MAX_PENDING_MESSAGES):
-                connection._control_queue.put_nowait(
-                    {"id": request_id, "type": "result"}
-                )
+                connection.send({"id": request_id, "type": "result"})
             connection.get_event_capabilities_handler({"id": 1000})
         assert (
             await asyncio.wait_for(socket.receive(), timeout=1)
@@ -701,7 +736,7 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
     assert core.events._listeners == {}
     if boundary in ("readiness-failure", "queued-error-overflow"):
         assert close_calls == [(1013, b"control backlog; reconnect and resync")]
-        task = connection._installation_close_task
+        task = connection._close_task
         assert task is not None and task.done() and task.cancelled()
         assert failure_close_cancelled.is_set()
 
@@ -747,12 +782,12 @@ async def test_disconnect_cancels_and_awaits_pending_installation_close(
         assert (await socket.receive()).type == WSMsgType.TEXT
         connection.subscribe_event_handler({"id": 1, "event_type": "never_fires"})
         for request_id in range(MAX_PENDING_MESSAGES):
-            connection._control_queue.put_nowait(
+            connection.send(
                 {"id": request_id, "type": "result", "success": True, "result": {}}
             )
         connection.get_event_capabilities_handler({"id": 2})
         await asyncio.wait_for(close_started.wait(), timeout=5)
-        task = connection._installation_close_task
+        task = connection._close_task
         assert task is not None
         await socket.close()
         await asyncio.wait_for(finished.wait(), timeout=5)
@@ -782,16 +817,15 @@ async def test_installation_close_error_is_observed(
     connection._socket = cast(web.WebSocketResponse, socket)
     connection.subscribe_event_handler({"id": 1, "event_type": "never_fires"})
     for request_id in range(MAX_PENDING_MESSAGES):
-        connection._control_queue.put_nowait(
+        connection.send(
             {"id": request_id, "type": "result", "success": True, "result": {}}
         )
     connection.get_event_capabilities_handler({"id": 2})
-    task = connection._installation_close_task
+    task = connection._close_task
     assert task is not None
     await asyncio.gather(task, return_exceptions=True)
     assert (
-        "Unable to close websocket after installation reply failure: close failed"
-        in caplog.text
+        "Unable to close websocket after backlog failure: close failed" in caplog.text
     )
     assert connection._closed
     assert connection._listeners == {}
@@ -847,21 +881,25 @@ async def test_ordinary_overflow_protects_pending_results_and_closes_once(
                 {"id": 2, "event_type": "never_fires", "ack": True}
             )
         for _ in range(MAX_PENDING_MESSAGES - 1):
-            connection.send_event(99, Event(Event.GRAPH_UPDATE))
-        assert connection._control_queue.full()
-        connection.send_event(99, Event(Event.GRAPH_UPDATE))
+            connection.send(
+                {"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE}
+            )
+        assert len(connection._control_queue) == MAX_PENDING_MESSAGES
+        connection.send({"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE})
         if sender is None:
             sender = connection._sender_task = asyncio.create_task(connection._sender())
         await asyncio.wait_for(socket.close_started.wait(), timeout=1)
-        task = connection._installation_close_task
+        task = connection._close_task
         assert task is not None
         assert connection._listeners == {}
         assert core.events._listeners == {}
-        assert connection._control_queue.full()
+        assert not connection._control_queue
         for _ in range(3):
-            connection.send_event(99, Event(Event.GRAPH_UPDATE))
+            connection.send(
+                {"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE}
+            )
         connection.get_event_capabilities_handler({"id": 3})
-        assert connection._installation_close_task is task
+        assert connection._close_task is task
         assert socket.close_calls == [(1013, b"control backlog; reconnect and resync")]
         socket.release_first_write.set()
         await asyncio.wait_for(sender, timeout=1)
@@ -871,28 +909,13 @@ async def test_ordinary_overflow_protects_pending_results_and_closes_once(
         await asyncio.wait_for(task, timeout=1)
         assert task.done() and not task.cancelled() and task.exception() is None
         assert socket.closed and connection._closed
-        assert connection._control_queue.full()
-        result = take_control(connection)
-        assert result["id"] == 2 and result["type"] == "result"
-        assert result["result"] == (
-            {"subscription_ack": 1}
-            if capability
-            else {
-                "subscription_id": 2,
-                "event_type": "never_fires",
-                "installed": True,
-            }
-        )
+        assert not connection._control_queue
         assert socket.close_calls == [(1013, b"control backlog; reconnect and resync")]
     finally:
         socket.release_first_write.set()
         socket.release_close.set()
         connection.close()
-        tasks = [
-            task
-            for task in (sender, connection._installation_close_task)
-            if task is not None
-        ]
+        tasks = [task for task in (sender, connection._close_task) if task is not None]
         await asyncio.gather(*tasks, return_exceptions=True)
 
 
@@ -901,32 +924,28 @@ class NonStringProtocolType:
         raise AssertionError("arbitrary protocol values must not be compared")
 
 
-async def test_ordinary_only_overflow_keeps_legacy_live_queue_replacement() -> None:
+async def test_ordinary_only_overflow_also_closes_without_comparing_payloads() -> None:
     core = SimpleNamespace(loop=asyncio.get_running_loop())
     core.events = Events(core)
     connection = WebsocketConnection(core)
     socket = HeldCloseSocket()
     connection._socket = cast(web.WebSocketResponse, socket)
-    # An equal-looking error is not the receiver-owned terminal marker.
     connection._receiver_error_reply = {"id": 77, "success": False}
     connection.send(dict(connection._receiver_error_reply))
     connection.send({"type": NonStringProtocolType()})
     for _ in range(MAX_PENDING_MESSAGES - 2):
-        connection.send_event(99, Event(Event.GRAPH_UPDATE))
-    latest: dict[str, object] = {
-        "id": 100,
-        "type": "event",
-        "event_type": Event.GRAPH_UPDATE,
-    }
-    connection.send(latest)
-    assert connection._control_queue.qsize() == 1
-    connection.send(None)
+        connection.send({"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE})
+    connection.send({"id": 100})
+    await asyncio.wait_for(socket.close_started.wait(), timeout=1)
     sender = asyncio.create_task(connection._sender())
     await asyncio.wait_for(sender, timeout=1)
-    assert socket.messages == [latest]
-    assert not socket.closed and not connection._closed
-    assert socket.close_calls == []
-    assert connection._installation_close_task is None
+    assert socket.messages == []
+    assert not connection._control_queue
+    assert socket.close_calls == [(1013, b"control backlog; reconnect and resync")]
+    socket.release_close.set()
+    task = connection._close_task
+    assert task is not None
+    await task
 
 
 async def test_pending_results_keep_fifo_before_capacity() -> None:
@@ -948,16 +967,17 @@ async def test_pending_results_keep_fifo_before_capacity() -> None:
         connection.subscribe_event_handler(
             {"id": 11, "event_type": "never_fires", "ack": True}
         )
-        connection.send_event(99, Event(Event.GRAPH_UPDATE))
-        connection.send(None)
+        connection.send({"id": 99, "type": "event", "event_type": Event.GRAPH_UPDATE})
         socket.release_first_write.set()
-        await asyncio.wait_for(sender, timeout=1)
+        await wait_messages(socket, 4)
+        connection.close()
+        await asyncio.gather(sender, return_exceptions=True)
         assert [message["id"] for message in socket.completed] == [99, 10, 11, 99]
         assert socket.completed[1] == {
             "id": 10,
             "type": "result",
             "success": True,
-            "result": {"subscription_ack": 1},
+            "result": {"subscription_ack": 1, "control_overflow": "close_1013_resync"},
         }
         assert socket.completed[2] == {
             "id": 11,
@@ -981,6 +1001,7 @@ class PreviewEvent(Event):
     def __init__(self, vis_id: str) -> None:
         super().__init__(Event.VISUALISATION_UPDATE)
         self.vis_id = vis_id
+        self.is_device = False
 
 
 @pytest.mark.parametrize("replacement", [False, True], ids=["unsubscribe", "replace"])
@@ -1012,6 +1033,7 @@ async def test_revoked_second_preview_never_starts_after_held_first_write(
                 "type": "event",
                 "event_type": Event.VISUALISATION_UPDATE,
                 "vis_id": "first",
+                "is_device": False,
             }
         ]
         assert socket.completed == []
@@ -1026,25 +1048,30 @@ async def test_revoked_second_preview_never_starts_after_held_first_write(
             )
         else:
             connection.unsubscribe_event_handler({"id": 2})
-        # A replenished first source must not extend this preview pass ahead
-        # of the capability/installation replies and the shutdown sentinel.
+        # A replenished first source follows capability/installation controls.
+        # The revoked second source must never start another socket write.
         core.events.fire_event(PreviewEvent("first"))
         await asyncio.sleep(0)
-        connection.send(None)
         socket.release_first_write.set()
-        await asyncio.wait_for(sender, timeout=5)
+        await wait_messages(socket, 4 if replacement else 3)
+        connection.close()
+        await asyncio.gather(sender, return_exceptions=True)
         expected: list[dict[str, object]] = [
             {
                 "id": 1,
                 "type": "event",
                 "event_type": Event.VISUALISATION_UPDATE,
                 "vis_id": "first",
+                "is_device": False,
             },
             {
                 "id": 90,
                 "type": "result",
                 "success": True,
-                "result": {"subscription_ack": 1},
+                "result": {
+                    "subscription_ack": 1,
+                    "control_overflow": "close_1013_resync",
+                },
             },
         ]
         if replacement:
@@ -1060,9 +1087,10 @@ async def test_revoked_second_preview_never_starts_after_held_first_write(
                     },
                 }
             )
+        expected.append(expected[0])
         assert socket.started == expected
         assert socket.completed == expected
-        assert connection._vis_slots == {"first": expected[0]}
+        assert not connection._latest_slots
     finally:
         socket.release_first_write.set()
         sender.cancel()

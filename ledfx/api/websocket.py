@@ -6,8 +6,10 @@ import logging
 import struct
 import time
 import uuid
+from collections import OrderedDict, deque
 from collections.abc import Callable, Mapping
 from concurrent import futures
+from dataclasses import dataclass
 from typing import Annotated, ClassVar, Literal, cast, get_args
 
 import numpy as np
@@ -24,12 +26,17 @@ from ledfx.events import (
     ClientDisconnectedEvent,
     ClientsUpdatedEvent,
     Event,
+    EventListener,
     FrontendVisualiserDataEvent,
     SongDetectedEvent,
+    _DiagnosticDropSummary,
 )
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
+MAX_LATEST_KEYS = 256
+MAX_PENDING_TEXT = 100
+MAX_CONTROL_BATCH = 32
 FINAL_ERROR_REPLY_TIMEOUT = 1.0
 MAX_VAL = 32767
 
@@ -116,6 +123,24 @@ class WebsocketEndpoint(RestEndpoint):
             return await self.internal_error("Connection Reset Error.")
 
 
+@dataclass(frozen=True)
+class Delivery:
+    message: dict[str, object]
+    connection_generation: int
+    subscription_id: int | None = None
+    subscription_generation: int | None = None
+
+
+@dataclass(frozen=True)
+class Subscription:
+    dispose: Callable[[], None]
+    generation: int
+    event_type: str
+
+
+LatestKey = tuple[int, int, str, str, bool | None]
+
+
 class WebsocketConnection:
     ip_uid_map: ClassVar[dict[str, str]] = {}
     map_lock = asyncio.Lock()
@@ -128,21 +153,23 @@ class WebsocketConnection:
     def __init__(self, ledfx):
         self._ledfx = ledfx
         self._socket = None
-        self._listeners: dict[object, Callable[[], None]] = {}
+        self._listeners: dict[int, Subscription] = {}
         self._receiver_task = None
         self._sender_task: asyncio.Task[None] | None = None
         self._receiver_error_reply: dict[str, object] | None = None
-        # Dual-path sender: control queue for reliable ordered messages,
-        # single-slot mailbox dict for latest-value-wins vis frames.
-        self._control_queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue(
-            maxsize=MAX_PENDING_MESSAGES
-        )
+        self._control_queue: deque[Delivery] = deque()
+        self._latest_slots: OrderedDict[LatestKey, Delivery] = OrderedDict()
+        self._text_queue: deque[Delivery] = deque()
+        self._text_dropped = 0
+        self._text_summary_ready = True
+        self._text_summary: tuple[Delivery, int] | None = None
+        self._controls_selected = 0
+        self._prefer_text = False
+        self._connection_generation = 0
+        self._subscription_generation = 0
         self._closed = False
-        self._installation_reply_failed = False
-        self._installation_close_task: asyncio.Task[None] | None = None
-        self._vis_slots: dict[
-            object, dict[str, object]
-        ] = {}  # vis_id -> latest message (overwrites old)
+        self._closing = False
+        self._close_task: asyncio.Task[None] | None = None
         self._has_work = asyncio.Event()
         self.client_ip = None
         self.uid = None
@@ -152,164 +179,113 @@ class WebsocketConnection:
         self.client_type = "unknown"
         self.connected_at = None  # Set in handle() method
 
-    def close(self) -> None:
-        """
-        Closes the websocket connection.
+    def _clear_delivery(self) -> None:
+        self._control_queue.clear()
+        self._latest_slots.clear()
+        self._text_queue.clear()
+        self._text_summary = None
+        self._text_dropped = 0
+        self._text_summary_ready = True
 
-        This method cancels the receiver and sender tasks, if they exist, to close the websocket connection.
-        """
+    def _invalidate_connection(self) -> None:
+        if not self._closing:
+            self._closing = True
+            self._connection_generation += 1
+            self.clear_subscriptions()
+            self._clear_delivery()
+        self._has_work.set()
+
+    def close(self) -> None:
+        """Idempotent forced teardown, independent of queue capacity."""
         if self._closed:
             return
         self._closed = True
-        self.clear_subscriptions()
-        self._has_work.set()
-        if self._receiver_task:
-            self._receiver_task.cancel()
-        if self._sender_task:
-            self._sender_task.cancel()
+        self._invalidate_connection()
+        current = asyncio.current_task(loop=self._ledfx.loop)
+        for task in (self._receiver_task, self._sender_task):
+            if task is not None and task is not current:
+                task.cancel()
 
     def clear_subscriptions(self) -> None:
-        """
-        Clears all the subscriptions by calling the registered listener functions.
-        """
         for subscription_id in tuple(self._listeners):
-            self._remove_subscription(subscription_id)
+            self._revoke_subscription(subscription_id)
 
     @classmethod
     async def get_all_clients(cls):
         async with cls.map_lock:
             return cls.ip_uid_map.copy()
 
-    def _remove_subscription(self, subscription_id: object) -> None:
+    def _revoke_subscription(self, subscription_id: int) -> None:
         previous = self._listeners.pop(subscription_id, None)
         if previous is not None:
-            previous()
-        # Filter only event deliveries: protocol results retain their FIFO order.
-        pending: list[dict[str, object] | None] = []
-        while not self._control_queue.empty():
-            message = self._control_queue.get_nowait()
-            if message is None or not (
-                message.get("type") == "event" and message.get("id") == subscription_id
-            ):
-                pending.append(message)
-        for message in pending:
-            self._control_queue.put_nowait(message)
-        self._vis_slots = {
-            key: message
-            for key, message in self._vis_slots.items()
-            if not (
-                message.get("type") == "event" and message.get("id") == subscription_id
-            )
-        }
+            previous.dispose()
+        self._control_queue = deque(
+            item
+            for item in self._control_queue
+            if item.subscription_id != subscription_id
+        )
+        for key in tuple(self._latest_slots):
+            if key[0] == subscription_id:
+                del self._latest_slots[key]
+        self._text_queue = deque(
+            item for item in self._text_queue if item.subscription_id != subscription_id
+        )
+        # Loss is connection-wide. A revoked summary must be rebuilt with a
+        # current owner; only a successfully written summary resets its count.
+        if (
+            self._text_summary is not None
+            and self._text_summary[0].subscription_id == subscription_id
+        ):
+            self._text_summary = None
+
+    def _delivery_current(self, item: Delivery) -> bool:
+        if self._closing or item.connection_generation != self._connection_generation:
+            return False
+        if item.subscription_id is None:
+            return True
+        owner = self._listeners.get(item.subscription_id)
+        return owner is not None and owner.generation == item.subscription_generation
 
     def _send_installation_result(self, message: dict[str, object]) -> None:
-        """Admit readiness results without the legacy queue-wiping fallback."""
-        if self._installation_reply_failed or self._closed:
-            return
-        if self._control_queue.full():
-            self._fail_control_backlog()
-            return
-        self._control_queue.put_nowait(message)
-        self._has_work.set()
+        self.send(message)
 
-    def _fail_control_backlog(self) -> None:
-        """Terminate once when control overflow would lose a required reply."""
-        if self._installation_reply_failed or self._closed:
+    def _initiate_close(self, code: int, reason: str) -> None:
+        """Reject admission and revoke ownership before scheduling one close."""
+        if self._closing:
             return
-        self._installation_reply_failed = True
-        self.clear_subscriptions()
-        self._has_work.set()
-        # Interrupt a terminal-error write even if the failure close stalls.
+        self._invalidate_connection()
+        # A terminal-error grace must be interruptible even if socket.close
+        # stalls. Ordinary already-started writes may finish while closing.
         if self._receiver_error_reply is not None and self._sender_task is not None:
             self._sender_task.cancel()
-        if self._installation_close_task is None:
-            self._installation_close_task = self._ledfx.loop.create_task(
-                self._close_failed_installation_reply()
-            )
-            self._installation_close_task.add_done_callback(
-                self._observe_installation_close
-            )
+        self._close_task = self._ledfx.loop.create_task(
+            self._close_socket(code, reason)
+        )
+        self._close_task.add_done_callback(self._observe_close)
 
-    async def _close_failed_installation_reply(self) -> None:
+    async def _close_socket(self, code: int, reason: str) -> None:
         try:
             if self._socket is not None:
-                await self._socket.close(
-                    code=1013, message=b"control backlog; reconnect and resync"
-                )
+                await self._socket.close(code=code, message=reason.encode())
         finally:
             self.close()
 
-    def _observe_installation_close(self, task: asyncio.Task[None]) -> None:
+    def _observe_close(self, task: asyncio.Task[None]) -> None:
         if not task.cancelled() and (error := task.exception()) is not None:
-            _LOGGER.error(
-                "Unable to close websocket after installation reply failure: %s", error
-            )
+            _LOGGER.error("Unable to close websocket after backlog failure: %s", error)
 
-    def send(self, message: dict[str, object] | None) -> None:
-        """Sends a message to the websocket connection.
-
-        Vis updates (VISUALISATION_UPDATE / DEVICE_UPDATE) are placed in a
-        per-vis_id single-slot mailbox so the newest frame always overwrites
-        the previous unsent one.  All other messages go to an ordered control
-        queue for reliable delivery.
-        """
-        if self._installation_reply_failed or self._closed:
-            self._has_work.set()
+    def _admit_control(self, item: Delivery) -> None:
+        if not self._delivery_current(item):
             return
-
-        if message is None:
-            # Shutdown sentinel — goes through the control queue
-            try:
-                self._control_queue.put_nowait(None)
-            except asyncio.QueueFull:
-                pass
-            self._has_work.set()
+        if len(self._control_queue) >= MAX_PENDING_MESSAGES:
+            self._initiate_close(1013, "control backlog; reconnect and resync")
             return
-
-        event_type = message.get("event_type")
-        if event_type in (
-            Event.VISUALISATION_UPDATE,
-            Event.DEVICE_UPDATE,
-        ):
-            # Single-slot mailbox: overwrite any pending frame for this vis_id
-            vis_id = message.get("vis_id")
-            self._vis_slots[vis_id] = message
-        else:
-            # Ordered control message
-            if self._control_queue.qsize() >= MAX_PENDING_MESSAGES:
-                # Inspect at most the bounded FIFO without yielding. Required
-                # replies may only be abandoned by terminating the connection.
-                pending: list[dict[str, object] | None] = []
-                protected_reply = False
-                while not self._control_queue.empty():
-                    queued = self._control_queue.get_nowait()
-                    pending.append(queued)
-                    if queued is not None:
-                        queued_type = queued.get("type")
-                        if queued is self._receiver_error_reply or (
-                            isinstance(queued_type, str) and queued_type == "result"
-                        ):
-                            protected_reply = True
-                if protected_reply:
-                    for queued in pending:
-                        self._control_queue.put_nowait(queued)
-                    self._fail_control_backlog()
-                    return
-                _LOGGER.warning(
-                    "Control queue full (%s), dropping all pending messages",
-                    MAX_PENDING_MESSAGES,
-                )
-            try:
-                self._control_queue.put_nowait(message)
-            except asyncio.QueueFull:
-                _LOGGER.error(
-                    "Client sender queue size exceeded %s",
-                    MAX_PENDING_MESSAGES,
-                )
-                self.close()
-                return
-
+        self._control_queue.append(item)
         self._has_work.set()
+
+    def send(self, message: dict[str, object]) -> None:
+        """Admit connection-owned protocol controls in FIFO order."""
+        self._admit_control(Delivery(message, self._connection_generation))
 
     def send_error(self, id: object, message: str) -> None:
         """Sends an error string to the websocket connection.
@@ -329,87 +305,172 @@ class WebsocketConnection:
             }
         )
 
-    def send_event(self, id: object, event: Event) -> None:
-        """
-        Sends an event notification to the websocket connection.
+    def send_event(
+        self, id: int, event: Event, subscription_generation: int | None = None
+    ) -> None:
+        owner = self._listeners.get(id)
+        if owner is None:
+            return
+        generation = (
+            owner.generation
+            if subscription_generation is None
+            else subscription_generation
+        )
+        item = Delivery(
+            {"id": id, "type": "event", **event.to_dict()},
+            self._connection_generation,
+            id,
+            generation,
+        )
+        if not self._delivery_current(item):
+            return
+        category = event.event_type
+        if category in (
+            Event.VISUALISATION_UPDATE,
+            Event.GRAPH_UPDATE,
+            Event.VIRTUAL_DIAG,
+        ):
+            field = {
+                Event.VISUALISATION_UPDATE: "vis_id",
+                Event.GRAPH_UPDATE: "graph_id",
+                Event.VIRTUAL_DIAG: "virtual_id",
+            }[category]
+            entity = item.message.get(field)
+            kind = (
+                item.message.get("is_device")
+                if category == Event.VISUALISATION_UPDATE
+                else None
+            )
+            # Only known scalar metadata participates in hashing/equality.
+            if type(entity) is not str or (
+                category == Event.VISUALISATION_UPDATE and type(kind) is not bool
+            ):
+                return
+            key: LatestKey = (
+                id,
+                generation,
+                category,
+                entity,
+                cast(bool | None, kind),
+            )
+            if (
+                key not in self._latest_slots
+                and len(self._latest_slots) >= MAX_LATEST_KEYS
+            ):
+                self._initiate_close(1013, "stream backlog; reconnect and resync")
+                return
+            # Replacing in place preserves the pending key's turn. Popping a
+            # selected key means a hot source re-enters at the rotation tail.
+            self._latest_slots[key] = item
+        elif category == Event.GENERAL_DIAG:
+            if isinstance(event, _DiagnosticDropSummary):
+                # Producer loss is already counted, not another text record.
+                # Fold only after the same current-owner admission check.
+                self._text_dropped += event.dropped
+            else:
+                if len(self._text_queue) >= MAX_PENDING_TEXT:
+                    self._text_queue.popleft()
+                    self._text_dropped += 1
+                self._text_queue.append(item)
+        else:
+            self._admit_control(item)
+            return
+        self._has_work.set()
 
-        Args:
-            id (str): The ID of the event.
-            event (Event): The event object to be sent.
+    def _select_lower_priority(self) -> Delivery | None:
+        while self._text_queue and not self._delivery_current(self._text_queue[0]):
+            self._text_queue.popleft()
+        if self._text_queue and (self._prefer_text or not self._latest_slots):
+            self._prefer_text = False
+            if self._text_dropped and self._text_summary_ready:
+                owner = self._text_queue[0]
+                summary = Delivery(
+                    {
+                        "id": owner.subscription_id,
+                        "type": "event",
+                        "event_type": Event.GENERAL_DIAG,
+                        "debug": f"Dropped {self._text_dropped} diagnostic messages",
+                        "scroll": True,
+                    },
+                    owner.connection_generation,
+                    owner.subscription_id,
+                    owner.subscription_generation,
+                )
+                self._text_summary = (summary, self._text_dropped)
+                return summary
+            self._text_summary_ready = True
+            return self._text_queue.popleft()
+        if self._latest_slots:
+            self._prefer_text = True
+            return self._latest_slots.popitem(last=False)[1]
+        return None
 
-        """
+    def _select_delivery(self) -> Delivery | None:
+        """Select only one item; control FIFO yields lower-priority progress."""
+        if self._closing:
+            return None
+        while self._control_queue or self._latest_slots or self._text_queue:
+            item = None
+            if self._controls_selected >= MAX_CONTROL_BATCH or not self._control_queue:
+                self._controls_selected = 0
+                item = self._select_lower_priority()
+            if item is None and self._control_queue:
+                item = self._control_queue.popleft()
+                self._controls_selected += 1
+            if item is not None and self._delivery_current(item):
+                return item
+        return None
 
-        return self.send({"id": id, "type": "event", **event.to_dict()})
+    async def _write_delivery(self, item: Delivery) -> None:
+        socket = self._socket
+        if socket is None or not self._delivery_current(item):
+            return
+        # The claim and writer invocation have no intervening await. A write
+        # already invoked is allowed to finish after its subscription revokes.
+        summary = self._text_summary
+        await socket.send_json(item.message, dumps=dumps)
+        if summary is not None and summary[0] is item:
+            self._text_dropped = max(0, self._text_dropped - summary[1])
+            self._text_summary_ready = False
+            if self._text_summary is summary:
+                self._text_summary = None
 
     async def _sender(self) -> None:
-        """Async write loop servicing control queue and vis mailbox.
-
-        Control messages are drained first (ordered, reliable).  Then the
-        latest vis frame for each vis_id is sent — any frames that were
-        overwritten between wake-ups are silently dropped, keeping latency
-        bounded and memory constant per vis_id.
-        """
         socket = self._socket
         if socket is None:
             return
         _LOGGER.info("Starting websocket sender")
-        while (
-            not socket.closed
-            and not self._closed
-            and not self._installation_reply_failed
-        ):
-            await self._has_work.wait()
-            self._has_work.clear()
-            if self._closed or self._installation_reply_failed:
-                return
-
-            # --- control messages (reliable, ordered) ---
-            while not self._control_queue.empty():
-                if self._closed or self._installation_reply_failed:
-                    return
+        writes = 0
+        try:
+            while not socket.closed and not self._closing:
+                item = self._select_delivery()
+                if item is None:
+                    self._has_work.clear()
+                    await self._has_work.wait()
+                    continue
                 try:
-                    message = self._control_queue.get_nowait()
-                except asyncio.QueueEmpty:
-                    break
-                if message is None:
-                    _LOGGER.info("Stopped websocket sender.")
-                    return
-                try:
-                    await socket.send_json(message, dumps=dumps)
+                    await self._write_delivery(item)
                 except TypeError as err:
                     _LOGGER.error(
-                        "Unable to serialize to JSON: %s\n%s",
-                        err,
-                        message,
+                        "Unable to serialize to JSON: %s\n%s", err, item.message
                     )
                 except ConnectionResetError:
                     _LOGGER.info("Websocket connection closed by the client.")
                     return
-                if message is self._receiver_error_reply:
+                if item.message is self._receiver_error_reply:
                     return
-
-            # --- vis frames (latest-value-wins per vis_id) ---
-            if self._vis_slots:
-                # Bound this pass while keeping pending deliveries purgeable.
-                for vis_id in tuple(self._vis_slots):
-                    if self._closed or self._installation_reply_failed:
-                        return
-                    message = self._vis_slots.pop(vis_id, None)
-                    if message is None:
-                        continue
-                    try:
-                        await socket.send_json(message, dumps=dumps)
-                    except TypeError as err:
-                        _LOGGER.error(
-                            "Unable to serialize to JSON: %s\n%s",
-                            err,
-                            message,
-                        )
-                    except ConnectionResetError:
-                        _LOGGER.info("Websocket connection closed by the client.")
-                        return
-
-        _LOGGER.info("Stopped websocket sender.")
+                writes += 1
+                if writes >= MAX_CONTROL_BATCH:
+                    writes = 0
+                    await asyncio.sleep(0)
+        finally:
+            # Preserve the overload close task and terminal-error grace.
+            # Otherwise stop a receiver still waiting after writer failure.
+            if self._closing or self._receiver_error_reply is not None:
+                self._invalidate_connection()
+            else:
+                self.close()
+            _LOGGER.info("Stopped websocket sender.")
 
     async def handle(self, request):
         """Handle the websocket connection"""
@@ -536,7 +597,7 @@ class WebsocketConnection:
             if (
                 self._receiver_error_reply is not None
                 and not self._closed
-                and not self._installation_reply_failed
+                and not self._closing
                 and not socket.closed
             ):
                 # The one socket writer preserves FIFO and stops at this reply.
@@ -557,12 +618,10 @@ class WebsocketConnection:
                     del WebsocketConnection.client_metadata[self.uid]
             remove_listeners()
             self._closed = True
-            self.clear_subscriptions()
-            if self._installation_close_task is not None:
-                self._installation_close_task.cancel()
-                await asyncio.gather(
-                    self._installation_close_task, return_exceptions=True
-                )
+            self._invalidate_connection()
+            if self._close_task is not None:
+                self._close_task.cancel()
+                await asyncio.gather(self._close_task, return_exceptions=True)
 
             # Stop and await the sender even when the control FIFO is full.
             sender_task.cancel()
@@ -931,13 +990,16 @@ class WebsocketConnection:
                 "id": message["id"],
                 "type": "result",
                 "success": True,
-                "result": {"subscription_ack": 1},
+                "result": {
+                    "subscription_ack": 1,
+                    "control_overflow": "close_1013_resync",
+                },
             }
         )
 
     @websocket_handler("subscribe_event")
     def subscribe_event_handler(self, message: dict[str, object]) -> None:
-        if self._installation_reply_failed or self._closed:
+        if self._closing:
             return
         ack = message.get("ack", False)
         if type(ack) is not bool:
@@ -961,37 +1023,36 @@ class WebsocketConnection:
             return
 
         subscription_id = message["id"]
-        _LOGGER.debug(
-            "Websocket subscribing to event %s with filter %s", event_type, event_filter
-        )
-        self._remove_subscription(subscription_id)
+        if type(subscription_id) is not int:
+            self.send_error(subscription_id, "subscription id must be an integer")
+            return
+        self._subscription_generation += 1
+        generation = self._subscription_generation
 
         def notify_websocket(event: Event) -> None:
-            if (
-                not self._closed
-                and not self._installation_reply_failed
-                and self._listeners.get(subscription_id) is remove_listener
-            ):
-                self.send_event(subscription_id, event)
+            self.send_event(subscription_id, event, generation)
 
         try:
-            # The existing bus incorrectly annotates its disposer as None.
-            disposer = cast(
-                Callable[[], None],
-                self._ledfx.events.add_listener(
-                    notify_websocket,
-                    event_type,
-                    dict(event_filter) if event_filter is not None else None,
-                ),
+            # Validate all filter equality values/known metadata before revoke.
+            # This temporary registration never enters the bus snapshot.
+            validated = EventListener(
+                notify_websocket,
+                cast(Mapping[str, object] | None, event_filter),
             )
         except (TypeError, ValueError) as error:
             self.send_error(subscription_id, str(error))
             return
-
-        def remove_listener() -> None:
-            disposer()
-
-        self._listeners[subscription_id] = remove_listener
+        self._revoke_subscription(subscription_id)
+        try:
+            disposer = self._ledfx.events.add_listener(
+                notify_websocket, event_type, validated.filter
+            )
+        except (TypeError, ValueError) as error:
+            self.send_error(subscription_id, str(error))
+            return
+        self._listeners[subscription_id] = Subscription(
+            disposer, generation, event_type
+        )
         if ack:
             self._send_installation_result(
                 {
@@ -1012,7 +1073,8 @@ class WebsocketConnection:
         _LOGGER.debug("Websocket unsubscribing event id %s", subscription_id)
         if subscription_id not in self._listeners:
             _LOGGER.warning("Unsubscribe unknown subscription ID %s", subscription_id)
-        self._remove_subscription(subscription_id)
+        if type(subscription_id) is int:
+            self._revoke_subscription(subscription_id)
 
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):

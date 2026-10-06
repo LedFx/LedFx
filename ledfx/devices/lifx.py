@@ -624,41 +624,43 @@ class LifxDevice(NetworkedDevice):
             self._connected = False
 
     def activate(self):
-        if self._destination is None:
+        with self._output_lock:
+            if self._destination is None:
+                super().activate()
+                return
+
             super().activate()
-            return
-
-        super().activate()
-        _LOGGER.debug(
-            "LIFX %s: Activating with config refresh_rate=%s, max_refresh_rate=%s",
-            self.name,
-            self.config.refresh_rate,
-            self.max_refresh_rate,
-        )
-
-        # Use Animator for matrix/strip (high performance)
-        # Keep connection-based for single bulbs
-        if self._lifx_type in ("matrix", "strip", "mirror"):
-            async_fire_and_forget(
-                self._create_animator(),
-                loop=self._ledfx.loop,
+            _LOGGER.debug(
+                "LIFX %s: Activating with config refresh_rate=%s, max_refresh_rate=%s",
+                self.name,
+                self.config.refresh_rate,
+                self.max_refresh_rate,
             )
-        else:
-            async_fire_and_forget(
-                self._async_connect(),
-                loop=self._ledfx.loop,
-            )
+
+            # Use Animator for matrix/strip (high performance)
+            # Keep connection-based for single bulbs
+            if self._lifx_type in ("matrix", "strip", "mirror"):
+                async_fire_and_forget(
+                    self._create_animator(),
+                    loop=self._ledfx.loop,
+                )
+            else:
+                async_fire_and_forget(
+                    self._async_connect(),
+                    loop=self._ledfx.loop,
+                )
 
     def deactivate(self):
-        if self._animator:
-            self._animator.close()
-            self._animator = None
-        if self._device:
-            async_fire_and_forget(
-                self._async_disconnect(),
-                loop=self._ledfx.loop,
-            )
-        super().deactivate()
+        with self._output_lock:
+            if self._animator:
+                self._animator.close()
+                self._animator = None
+            if self._device:
+                async_fire_and_forget(
+                    self._async_disconnect(),
+                    loop=self._ledfx.loop,
+                )
+            super().deactivate()
 
     async def _async_flush(self, data):
         """Send pixel data to single bulb device."""

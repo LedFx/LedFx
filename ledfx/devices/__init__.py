@@ -1,17 +1,21 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import threading
 from abc import abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from functools import cached_property, partial
-from typing import Annotated, ClassVar
+from typing import TYPE_CHECKING, Annotated, ClassVar
 
 import numpy as np
 import serial
 import serial.tools.list_ports
 from ledfx_senders.e131_packet import DEFAULT_PORT
+from numpy.typing import NDArray
 from pydantic import Field
+from typing_extensions import override
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
@@ -29,6 +33,7 @@ from ledfx.events import (
     DeviceUpdateEvent,
     Event,
 )
+from ledfx.preview import OwnedFrame, PreviewSampler, SourceKey
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
@@ -43,12 +48,21 @@ from ledfx.utils import (
     wled_support_DDP,
 )
 
+if TYPE_CHECKING:
+    from ledfx.virtuals import Virtual
+
 _LOGGER = logging.getLogger(__name__)
 _MISSING = object()  # a key absent from the stored config
+PixelUpdate = (
+    tuple[NDArray[np.generic], NDArray[np.generic]]
+    | tuple[NDArray[np.generic], int, int]
+)
 
 
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
+    _id: str  # assigned by the device registry before source activation
+
     class Config(PluginConfig):
         name: str = Field(
             description="Friendly name for the device",
@@ -81,11 +95,19 @@ class Device(BaseRegistry):
         self._ledfx = ledfx
         self._config = config
         self._segments = []
-        self._pixels = None
+        self._pixels: NDArray[np.generic] | None = None
         self._silence_start = None
         self._device_type = ""
         self._online = True
         self.lock = threading.Lock()
+        # Order: output -> sender/device -> frame. Sender failures may reenter
+        # activate/deactivate, so the output boundary must be reentrant.
+        self._output_lock = threading.RLock()
+        self._frame_lock = threading.RLock()
+        self._output_epoch = 0
+        self._source_generation = 0
+        self._frame_sequence = 0
+        self._physical_rows = 1
         self._built_settings = self._output_settings()
 
     def __del__(self):
@@ -98,7 +120,7 @@ class Device(BaseRegistry):
         unplugged, and the frontend sends the whole stored config back."""
         # Only publication/output replacement belongs under device locks.
         # Virtual callbacks can join rendering or acquire Virtual.lock.
-        with self.lock, self._config_update_context(config):
+        with self._output_lock, self.lock, self._config_update_context(config):
             old_config = self._config
             stored = (
                 old_config.as_dict() if old_config is not None else dict[str, object]()
@@ -112,7 +134,9 @@ class Device(BaseRegistry):
             validated_config = (
                 type(self).config_model().model_validate(config, context=context)
             )
-            self._config = validated_config
+            with self._frame_lock:
+                self._renew_source_generation()
+                self._config = validated_config
 
             # Iterate all the base classes and check to see if there is a custom
             # implementation of config updates. If to notify the base class.
@@ -124,13 +148,16 @@ class Device(BaseRegistry):
                         base.config_updated(self, validated_config)
             except Exception:
                 # The update failed; keep the config the device is running with.
-                self._config = old_config
+                with self._frame_lock:
+                    self._config = old_config
+                    self._renew_source_generation()
                 raise
 
             # The pixel buffer is sized on activate; resize a live one here so
             # segment writes and clears match the new pixel count.
-            if self._pixels is not None and len(self._pixels) != self.pixel_count:
-                self._pixels = np.zeros((self.pixel_count, 3))
+            with self._frame_lock:
+                if self._pixels is not None and len(self._pixels) != self.pixel_count:
+                    self._pixels = np.zeros((self.pixel_count, 3))
 
         _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
@@ -173,71 +200,162 @@ class Device(BaseRegistry):
     def is_online(self):
         return self._online
 
-    def update_pixels(self, virtual_id, data):
-        # update each segment from this virtual
-        if not self._active:
-            _LOGGER.warning("Cannot update pixels of inactive device %s", self.name)
-            return
+    def _renew_source_generation(self) -> None:
+        # Hardware ownership survives absent/closed preview observation.
+        self._output_epoch += 1
+        sampler = self._ledfx.preview_sampler
+        if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
+            self._source_generation = sampler.allocate_source_generation(
+                SourceKey("device", self.id)
+            )
+            if self._source_generation > 0:
+                self._frame_sequence = 0
 
+    def _refresh_physical_rows(self) -> None:
+        # Read immutable virtual configs outside the frame lock; never acquire
+        # a virtual lock while holding a device lock. Publication is serialized.
+        with self._output_lock:
+            rows = next(
+                (
+                    v.rows
+                    for v in self._ledfx.virtuals.values()
+                    if v.is_device == self.id
+                ),
+                1,
+            )
+            with self._frame_lock:
+                if rows != self._physical_rows:
+                    self._renew_source_generation()
+                    self._physical_rows = rows
+
+    def _captured_physical_rows(self) -> int:
+        return self._physical_rows
+
+    def _publish_captured_frame(
+        self, pixels: NDArray[np.generic], rows: int, generation: int, sequence: int
+    ) -> None:
+        # Delayed publishers must not resurrect a superseded layout/teardown.
+        with self._frame_lock:
+            if generation != self._source_generation:
+                return
+        sampler = self._ledfx.preview_sampler
+        key = SourceKey("device", self.id)
+        if isinstance(sampler, PreviewSampler) and sampler.interested(key, generation):
+            sampler.submit(
+                OwnedFrame(
+                    key,
+                    generation,
+                    sequence,
+                    pixels,
+                    rows,
+                    len(pixels),
+                    sampler.settings_generation,
+                )
+            )
+        if self._ledfx.events.may_have_listeners(
+            Event.DEVICE_UPDATE, {"device_id": self.id}
+        ):
+            self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, pixels))
+
+    def _write_pixels(self, data: Sequence[PixelUpdate]) -> None:
+        buffer = self._pixels
+        if buffer is None:
+            return
         for item in data:
             if len(item) == 2:
-                # New scatter mode: (pixels, dst_indices)
                 pixels, dst_indices = item
                 if pixels.shape[0] != 0:
                     try:
-                        self._pixels[dst_indices] = pixels
-                    except (IndexError, ValueError, TypeError) as e:
+                        buffer[dst_indices] = pixels
+                    except (IndexError, ValueError, TypeError) as error:
                         _LOGGER.warning(
-                            "Device %s: scatter assignment failed - "
-                            "dst_indices shape: %s, "
-                            "pixels shape: %s, error: %s",
-                            self.name,
-                            np.shape(dst_indices),
-                            pixels.shape,
-                            e,
+                            "Device %s: scatter assignment failed: %s", self.name, error
                         )
             else:
-                # Legacy range mode: (pixels, start, end)
                 pixels, start, end = item
-                # protect against an empty race condition
                 if pixels.shape[0] != 0 and (
                     np.shape(pixels) == (3,)
-                    or np.shape(self._pixels[start : end + 1]) == np.shape(pixels)
+                    or np.shape(buffer[start : end + 1]) == np.shape(pixels)
                 ):
-                    self._pixels[start : end + 1] = pixels
+                    buffer[start : end + 1] = pixels
 
-        # Only the priority virtual should flush to prevent multiple virtuals
-        # from fighting over the device buffer
-        if self.priority_virtual:
-            if virtual_id == self.priority_virtual.id:
-                # Priority virtual flushes after all virtuals have updated their pixels
-                frame = self.assemble_frame()
+    def update_pixels(
+        self,
+        virtual_id: str,
+        data: Sequence[PixelUpdate],
+        *,
+        output_epoch: int | None = None,
+    ) -> None:
+        # Non-priority contributions do not wait for a slow sender. Only a
+        # priority capture holds output admission, always before the frame lock.
+        with self._frame_lock:
+            if not self._active or (
+                output_epoch is not None and output_epoch != self._output_epoch
+            ):
+                return
+            admission_epoch = self._output_epoch
+            priority = self.priority_virtual
+            if priority is None or virtual_id != priority.id:
+                self._write_pixels(data)
+                return
+        frame = None
+        rows = generation = sequence = 0
+        with self._output_lock:
+            with self._frame_lock:
+                if not self._active or admission_epoch != self._output_epoch:
+                    return
+                self._write_pixels(data)
+                priority = self.priority_virtual
+                if priority is not None and virtual_id == priority.id:
+                    frame = self.assemble_frame()
+                    generation = self._source_generation
+                    self._frame_sequence += 1
+                    sequence = self._frame_sequence
+                    rows = self._captured_physical_rows()
+            if frame is not None:
                 self.flush(frame)
+        if frame is not None:
+            self._publish_captured_frame(frame, rows, generation, sequence)
 
-                self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
-        else:
-            _LOGGER.warning("Flush skipped as %s has no priority_virtual", self.id)
+    def assemble_frame(self) -> NDArray[np.generic]:
+        """Capture owned composed RGB, including the physical center offset."""
+        with self._frame_lock:
+            if self._pixels is None:
+                raise RuntimeError("Cannot assemble an inactive device")
+            if self.config.center_offset:
+                return np.roll(self._pixels, self.config.center_offset, axis=0)
+            return self._pixels.copy()
 
-    def assemble_frame(self):
-        """
-        Assembles the frame to be flushed. Currently this will just return
-        the active channels pixels, but will eventually handle things like
-        merging multiple segments segments and alpha blending channels
-        """
-        frame = self._pixels
-
-        if self.config.center_offset:
-            frame = np.roll(frame, self.config.center_offset, axis=0)
-        return frame
+    def submit_final_black(self) -> None:
+        """Send a complete physical blackout while the sender is still active."""
+        with self._output_lock:
+            with self._frame_lock:
+                if not self._active or self._pixels is None:
+                    return
+                self._pixels[:] = 0
+                frame = self.assemble_frame()
+                generation = self._source_generation
+                self._frame_sequence += 1
+                sequence = self._frame_sequence
+                rows = self._captured_physical_rows()
+            self.flush(frame)
+        self._publish_captured_frame(frame, rows, generation, sequence)
 
     def activate(self):
-        self._pixels = np.zeros((self.pixel_count, 3))
-        self._active = True
+        with self._output_lock, self._frame_lock:
+            self._renew_source_generation()
+            self._pixels = np.zeros((self.pixel_count, 3))
+            self._active = True
 
     def deactivate(self):
-        self._pixels = None
-        self._active = False
-        # self.flush(np.zeros((self.pixel_count, 3)))
+        with self._output_lock, self._frame_lock:
+            self._output_epoch += 1
+            sampler = self._ledfx.preview_sampler
+            if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
+                sampler.invalidate_source(SourceKey("device", self.id))
+            self._source_generation = -1
+            self._pixels = None
+            self._active = False
 
     def set_offline(self):
         self.deactivate()
@@ -311,7 +429,17 @@ class Device(BaseRegistry):
     def virtuals(self):
         return [segment[0] for segment in self._segments]
 
-    def add_segments_batch(self, virtual_id, segments, force=False):
+    def add_segments_batch(
+        self,
+        virtual_id: str,
+        segments: Sequence[tuple[int, int]],
+        force: bool = False,
+        *,
+        source: Virtual | None = None,
+        source_generation: int | None = None,
+        source_epoch: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
         """Add multiple segments efficiently with single overlap check.
 
         Args:
@@ -319,6 +447,9 @@ class Device(BaseRegistry):
             segments: List of (start_pixel, end_pixel) tuples
             force: If True, deactivate overlapping virtuals
         """
+        with self._frame_lock:
+            registered_segments = tuple(self._segments)
+
         # Streaming mode only applies to device's own virtual vs external virtuals
         # Multiple external virtuals can coexist if they don't overlap (checked later)
 
@@ -326,7 +457,7 @@ class Device(BaseRegistry):
         # streaming to this device (exit streaming mode)
         if virtual_id == self.id:
             external_virtuals = set()
-            for _virtual_id, _, _ in self._segments:
+            for _virtual_id, _, _ in registered_segments:
                 if _virtual_id != self.id:
                     external_virtuals.add(_virtual_id)
 
@@ -340,7 +471,7 @@ class Device(BaseRegistry):
                 for _virtual_id in external_virtuals:
                     external_virtual = self._ledfx.virtuals.get(_virtual_id)
                     if external_virtual and external_virtual.active:
-                        external_virtual.deactivate()
+                        self._ledfx.virtuals.deactivate_for_device(external_virtual)
 
         # If a non-device virtual is adding segments to this device,
         # deactivate the device's own virtual to enter streaming mode
@@ -354,7 +485,7 @@ class Device(BaseRegistry):
                     self.id,
                     virtual_id,
                 )
-                device_virtual.deactivate()
+                self._ledfx.virtuals.deactivate_for_device(device_virtual)
 
         # Efficient overlap detection using sorted intervals
         overlapping_virtuals = set()
@@ -365,7 +496,7 @@ class Device(BaseRegistry):
         else:
             # Group existing segments by virtual_id and sort by start position
             existing_by_virtual = {}
-            for _virtual_id, segment_start, segment_end in self._segments:
+            for _virtual_id, segment_start, segment_end in registered_segments:
                 if _virtual_id == virtual_id:
                     continue
                 if _virtual_id not in existing_by_virtual:
@@ -428,7 +559,7 @@ class Device(BaseRegistry):
                 for _virtual_id in overlapping_virtuals:
                     blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
                     if blocking_virtual:
-                        blocking_virtual.deactivate()
+                        self._ledfx.virtuals.deactivate_for_device(blocking_virtual)
             else:
                 blocking_names = [
                     self._ledfx.virtuals.get(v).name
@@ -439,34 +570,68 @@ class Device(BaseRegistry):
                 _LOGGER.warning(msg)
                 raise ValueError(msg)
 
-        # Add all segments
-        needs_cache_invalidation = virtual_id not in (
-            segment[0] for segment in self._segments
-        )
-        for start_pixel, end_pixel in segments:
-            self._segments.append((virtual_id, start_pixel, end_pixel))
+        # Callback phase is complete. The source identity/epoch start claim
+        # does not acquire a virtual lock while holding the device mutexes.
+        with self._output_lock, self._frame_lock:
+            if source is not None and (
+                self._ledfx.virtuals.get(virtual_id) is not source
+                or (
+                    source_generation is not None
+                    and source._source_generation != source_generation
+                )
+                or (source_epoch is not None and source._source_epoch != source_epoch)
+                or (source_token is not None and source._render_token != source_token)
+            ):
+                return
+            needs_cache_invalidation = virtual_id not in (
+                segment[0] for segment in self._segments
+            )
+            self._renew_source_generation()
+            for start_pixel, end_pixel in segments:
+                self._segments.append((virtual_id, start_pixel, end_pixel))
 
-        if needs_cache_invalidation:
-            self.invalidate_cached_props()
+            if needs_cache_invalidation:
+                self.invalidate_cached_props()
 
-    def clear_virtual_segments(self, virtual_id):
-        new_segments = []
-        for segment in self._segments:
-            if segment[0] != virtual_id:
-                new_segments.append(segment)
-            else:
-                if self._pixels is not None and self._ledfx.config.flush_on_deactivate:
-                    # A scalar fill: the buffer may already be resized to a
-                    # pixel count the old segment no longer fits.
-                    self._pixels[segment[1] : segment[2] + 1] = 0
-        self._segments = new_segments
-
-        if self.priority_virtual and virtual_id == self.priority_virtual.id:
-            self.invalidate_cached_props()
+    def clear_virtual_segments(
+        self,
+        virtual_id: str,
+        *,
+        source: Virtual | None = None,
+        source_epoch: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
+        with self._output_lock, self._frame_lock:
+            # Destructive work has the same source start claim as registration;
+            # old callback phases cannot erase a completed successor layout.
+            if source is not None and (
+                self._ledfx.virtuals.get(virtual_id) is not source
+                or (source_epoch is not None and source._source_epoch != source_epoch)
+                or (source_token is not None and source._render_token != source_token)
+            ):
+                return
+            new_segments = []
+            for segment in self._segments:
+                if segment[0] != virtual_id:
+                    new_segments.append(segment)
+                else:
+                    if (
+                        self._pixels is not None
+                        and self._ledfx.config.flush_on_deactivate
+                    ):
+                        # A scalar fill: the buffer may already be resized to a
+                        # pixel count the old segment no longer fits.
+                        self._pixels[segment[1] : segment[2] + 1] = 0
+            if self._segments != new_segments:
+                self._renew_source_generation()
+                self._segments = new_segments
+                self.invalidate_cached_props()
 
     def clear_segments(self):
-        self._segments = []
-        self.invalidate_cached_props()
+        with self._output_lock, self._frame_lock:
+            self._renew_source_generation()
+            self._segments = []
+            self.invalidate_cached_props()
 
     def invalidate_cached_props(self):
         # invalidate cached properties
@@ -489,20 +654,19 @@ class Device(BaseRegistry):
         their effect is restored.
         """
 
+        if self._ledfx.devices.get(self.id) is not self:
+            return
+
         # Collect ids of virtuals to destroy after the iteration
         virtuals_to_destroy = []
         for virtual in self._ledfx.virtuals.values():
             if not any(segment[0] == self.id for segment in virtual._segments):
                 continue
 
-            active = virtual.active
-            if active:
-                virtual.deactivate()
-            virtual._segments = [
-                segment for segment in virtual._segments if segment[0] != self.id
-            ]
-            # Invalidate cached properties that depend on _segments
-            virtual.invalidate_cached_props()
+            if not self._ledfx.virtuals.remove_device_segments(virtual, self.id, self):
+                # A newer layout/device owner won admission. It owns any
+                # follow-on activation, destruction and persisted state.
+                continue
 
             # If the virtual has no segments left, it cannot host an
             # effect.  Destroy it regardless of auto_generated status to
@@ -522,9 +686,6 @@ class Device(BaseRegistry):
             entry = virtual.entry
             if entry is not None:
                 entry.segments = virtual.segments
-
-            if active:
-                virtual.activate()
 
         for id in virtuals_to_destroy:
             virtual = self._ledfx.virtuals.get(id)
@@ -732,25 +893,27 @@ class SerialDevice(Device):
         self.com_port = self.config.com_port
 
     def activate(self):
-        try:
-            if self.serial and self.serial.is_open:
-                return
+        with self._output_lock:
+            try:
+                if self.serial and self.serial.is_open:
+                    return
 
-            self.serial = serial.Serial(self.com_port, self.baudrate)
-            if self.serial.is_open:
-                super().activate()
-                self._online = True
+                self.serial = serial.Serial(self.com_port, self.baudrate)
+                if self.serial.is_open:
+                    super().activate()
+                    self._online = True
 
-        except serial.SerialException:
-            _LOGGER.warning(
-                "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
-            )
-            self.set_offline()
+            except serial.SerialException:
+                _LOGGER.warning(
+                    "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
+                )
+                self.set_offline()
 
     def deactivate(self):
-        super().deactivate()
-        if self.serial:
-            self.serial.close()
+        with self._output_lock:
+            super().deactivate()
+            if self.serial:
+                self.serial.close()
 
 
 class Devices(RegistryLoader):
@@ -765,6 +928,31 @@ class Devices(RegistryLoader):
             self.deactivate_devices()
 
         self._ledfx.events.add_listener(on_shutdown, Event.LEDFX_SHUTDOWN)
+
+    @override
+    def create(
+        self, type: str, id: str | None = None, *args: object, **kwargs: object
+    ) -> Device | None:
+        device = super().create(type, id, *args, **kwargs)
+        if isinstance(device, Device):
+            with device._output_lock, device._frame_lock:
+                device._renew_source_generation()
+            device._refresh_physical_rows()
+            return device
+        return None
+
+    @override
+    def destroy(self, id: str) -> None:
+        device = self.get(id)
+        if isinstance(device, Device):
+            with device._output_lock, device._frame_lock:
+                sampler = self._ledfx.preview_sampler
+                if isinstance(sampler, PreviewSampler):
+                    sampler.invalidate_source(SourceKey("device", id))
+                device._output_epoch += 1
+                device._source_generation = -1
+                device._active = False
+        super().destroy(id)
 
     def create_from_config(self, config: list[DeviceEntry]) -> None:
         for device in config:

@@ -1,9 +1,19 @@
 from __future__ import annotations
 
+import asyncio
+import inspect
 import logging
-from collections.abc import Callable
+import math
+import threading
+import time
+from collections import deque
+from collections.abc import Callable, Mapping
+from copy import copy, deepcopy
+from dataclasses import dataclass
+from typing import Protocol, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -122,6 +132,16 @@ class GeneralDiagEvent(Event):
         self.scroll = scroll
 
 
+class _DiagnosticDropSummary(GeneralDiagEvent):
+    """Carry trusted loss accounting without adding fields to the wire event."""
+
+    __slots__ = ("dropped",)
+
+    def __init__(self, dropped: int) -> None:
+        super().__init__(f"Dropped {dropped} diagnostic messages", scroll=True)
+        self.dropped = dropped
+
+
 class VirtualDiagEvent(Event):
     """Event emitted when a virtual's diagnostics are updated"""
 
@@ -134,7 +154,7 @@ class VirtualDiagEvent(Event):
         r_max: float,
         cycle: float,
         sleep: float,
-        phy: dict,
+        phy: dict[str, object],
     ):
         """
         Initializes a VirtualDiagEvent with diagnostic metrics for a virtual entity.
@@ -323,7 +343,7 @@ class VisualisationUpdateEvent(Event):
         self,
         is_device: bool,  # true if device, false if virtual
         vis_id: str,  # id of device/virtual
-        pixels: np.ndarray,
+        pixels: str | list[list[int]],
         shape: tuple,
     ):
         super().__init__(Event.VISUALISATION_UPDATE)
@@ -607,69 +627,492 @@ class LedFxShutdownEvent(Event):
         super().__init__(Event.LEDFX_SHUTDOWN)
 
 
-class EventListener:
-    def __init__(self, callback: Callable, event_filter: dict | None = None):
-        self.callback = callback
-        self.filter = event_filter if event_filter is not None else {}
+def copy_filter_value(value: object) -> object:
+    """Copy only JSON equality values, accepting tuples as sequence input."""
+    if value is None or type(value) in (str, bool, int):
+        return value
+    if type(value) is float and math.isfinite(cast(float, value)):
+        return value
+    if isinstance(value, Mapping):
+        mapping = cast(Mapping[object, object], value)
+        if not all(type(key) is str for key in mapping):
+            raise ValueError("filter keys must be strings")
+        return {
+            cast(str, key): copy_filter_value(item) for key, item in mapping.items()
+        }
+    if type(value) in (list, tuple):
+        return tuple(
+            copy_filter_value(item)
+            for item in cast(list[object] | tuple[object, ...], value)
+        )
+    raise ValueError("filter values must be JSON-compatible")
 
-    def filter_event(self, event):
-        event_dict = event.to_dict()
-        for filter_key in self.filter:
-            if event_dict.get(filter_key) != self.filter[filter_key]:
-                return True
 
+def equal_filter_value(left: object, right: object) -> bool:
+    """Compare JSON values structurally without invoking array equality."""
+    if type(left) is bool or type(right) is bool:
+        return type(left) is type(right) and left == right
+    if isinstance(left, np.ndarray) or isinstance(right, np.ndarray):
         return False
+    if isinstance(left, Mapping) and isinstance(right, Mapping):
+        left_mapping = cast(Mapping[object, object], left)
+        right_mapping = cast(Mapping[object, object], right)
+        return left_mapping.keys() == right_mapping.keys() and all(
+            equal_filter_value(left_mapping[key], right_mapping[key])
+            for key in left_mapping
+        )
+    if type(left) in (list, tuple) and type(right) in (list, tuple):
+        left_sequence = cast(list[object] | tuple[object, ...], left)
+        right_sequence = cast(list[object] | tuple[object, ...], right)
+        return len(left_sequence) == len(right_sequence) and all(
+            equal_filter_value(a, b)
+            for a, b in zip(left_sequence, right_sequence, strict=True)
+        )
+    scalar_types = (str, bool, int, float, type(None))
+    return type(left) in scalar_types and type(right) in scalar_types and left == right
+
+
+def _validate_callback(callback: object) -> None:
+    if not callable(callback):
+        raise TypeError("event callbacks must be callable")
+    if inspect.iscoroutinefunction(callback) or inspect.iscoroutinefunction(
+        callback.__call__
+    ):
+        raise TypeError("event callbacks must be synchronous")
+
+
+def _observe_future_result(future: asyncio.Future[object]) -> None:
+    if not future.cancelled():
+        future.exception()
+
+
+def _reject_awaitable(result: object) -> None:
+    if not inspect.isawaitable(result):
+        return
+    if inspect.iscoroutine(result):
+        result.close()
+    elif isinstance(result, asyncio.Future):
+        future = cast(asyncio.Future[object], result)
+        future.cancel()
+        future.add_done_callback(_observe_future_result)
+    raise TypeError("event callbacks must be synchronous")
+
+
+class EventListener:
+    def __init__(
+        self,
+        callback: Callable[[Event], None],
+        event_filter: Mapping[str, object] | None = None,
+        *,
+        generation: int = 0,
+        event_type: str = "",
+    ) -> None:
+        _validate_callback(callback)
+        if event_filter is not None and not isinstance(event_filter, Mapping):
+            raise ValueError("event filter must be a mapping")
+        self.callback = callback
+        self.filter = cast(
+            dict[str, object],
+            copy_filter_value(event_filter if event_filter is not None else {}),
+        )
+        for key in ("vis_id", "device_id", "virtual_id", "graph_id", "scene_id"):
+            if key in self.filter and type(self.filter[key]) is not str:
+                raise ValueError(f"{key} filter must be a string")
+        if "is_device" in self.filter and type(self.filter["is_device"]) is not bool:
+            raise ValueError("is_device filter must be a boolean")
+        self.generation = generation
+        self.active = True
+        self.event_type = event_type
+
+    def revoke(self) -> bool:
+        """Revoke once; the caller holds the owning bus lock."""
+        if not self.active:
+            return False
+        self.active = False
+        return True
+
+    def filter_event(self, event: Event) -> bool:
+        """Return whether this registration excludes the event."""
+        event_dict = event.to_dict()
+        return any(
+            key not in event_dict or not equal_filter_value(value, event_dict[key])
+            for key, value in self.filter.items()
+        )
+
+
+class _EventLoop(Protocol):
+    def call_soon_threadsafe(
+        self, callback: Callable[..., object], *args: object
+    ) -> object: ...
+
+
+class _EventHost(Protocol):
+    @property
+    def loop(self) -> _EventLoop: ...
+
+
+@dataclass(eq=False)
+class _RegistrationObserver:
+    callback: Callable[[str, int], None]
+    active: bool = True
+
+    def revoke(self) -> bool:
+        """Revoke once; the caller holds the owning bus lock."""
+        if not self.active:
+            return False
+        self.active = False
+        return True
+
+
+@dataclass
+class _PendingGraph:
+    graph_id: str
+    melbank: NDArray[np.generic]
+    frequencies: NDArray[np.generic]
 
 
 class Events:
-    def __init__(self, ledfx):
+    """Dispatch shared read-only events through revocable registrations."""
+
+    def __init__(self, ledfx: _EventHost) -> None:
         self._ledfx = ledfx
-        self._listeners = {}
+        self._lock = threading.Lock()
+        self._listeners: dict[str, tuple[EventListener, ...]] = {}
+        self._revisions: dict[str, int] = {}
+        self._generation = 0
+        self._registration_observers: tuple[_RegistrationObserver, ...] = ()
+        self._listener_errors: dict[str, tuple[float, int]] = {}
+        self._telemetry_lock = threading.Lock()
+        self._latest: dict[tuple[str, str], Event | _PendingGraph] = {}
+        self._draining_latest: dict[tuple[str, str], Event | _PendingGraph] = {}
+        self._text_queue: deque[Event] = deque()
+        self._draining_text: deque[Event] = deque()
+        self._text_dropped = 0
+        self._telemetry_scheduled = False
+
+    def registration_snapshot(
+        self, event_type: str
+    ) -> tuple[int, tuple[EventListener, ...]]:
+        with self._lock:
+            return self._revisions.get(event_type, 0), self._listeners.get(
+                event_type, ()
+            )
 
     def has_listeners(self, event_type: str) -> bool:
         """Whether an event has consumers, before preparing an expensive payload."""
-        return bool(self._listeners.get(event_type))
+        return bool(self.registration_snapshot(event_type)[1])
+
+    def may_have_listeners(
+        self, event_type: str, metadata: Mapping[str, object]
+    ) -> bool:
+        """Exclude registrations only when supplied metadata proves a mismatch."""
+        _, listeners = self.registration_snapshot(event_type)
+        for listener in listeners:
+            try:
+                if all(
+                    key not in metadata or equal_filter_value(value, metadata[key])
+                    for key, value in listener.filter.items()
+                ):
+                    return True
+            except Exception as error:  # noqa: BLE001 - isolate consumer code
+                self._report_listener_error(listener, error)
+                # A failed comparison cannot conclusively exclude this listener.
+                return True
+        return False
 
     def fire_event(self, event: Event) -> None:
-        listeners = self._listeners.get(event.event_type, [])
+        if event.event_type in (Event.GRAPH_UPDATE, Event.VIRTUAL_DIAG):
+            field = (
+                "graph_id" if event.event_type == Event.GRAPH_UPDATE else "virtual_id"
+            )
+            entity_id = getattr(event, field, None)
+            if type(entity_id) is not str:
+                return
+            metadata: dict[str, object] = {
+                "event_type": event.event_type,
+                field: entity_id,
+            }
+            if not self.may_have_listeners(event.event_type, metadata):
+                return
+            # Only these fixed producer channels own mutable admission payloads.
+            snapshot = copy(event)
+            snapshot.__dict__ = deepcopy(event.__dict__)
+            self._admit_latest(event.event_type, entity_id, snapshot, metadata)
+        elif event.event_type == Event.GENERAL_DIAG:
+            if not self.has_listeners(Event.GENERAL_DIAG):
+                return
+            snapshot = copy(event)
+            snapshot.__dict__ = deepcopy(event.__dict__)
+            with self._telemetry_lock:
+                if not self.has_listeners(Event.GENERAL_DIAG):
+                    return
+                if len(self._text_queue) == 100:
+                    self._text_queue.popleft()
+                    self._text_dropped += 1
+                self._text_queue.append(snapshot)
+                wake = not self._telemetry_scheduled
+                self._telemetry_scheduled = True
+            if wake:
+                self._ledfx.loop.call_soon_threadsafe(self._drain_telemetry)
+        else:
+            self._dispatch(event)
 
-        if not listeners:
+    def publish_graph(
+        self,
+        graph_id: str,
+        melbank: NDArray[np.generic],
+        frequencies: NDArray[np.generic],
+    ) -> None:
+        """Own an interested graph sample; convert only the selected latest.
+
+        Publishers use stable live-source IDs and purge pending samples when
+        disposing/rebuilding those sources. This map is not a historical cache.
+        """
+        metadata: dict[str, object] = {
+            "event_type": Event.GRAPH_UPDATE,
+            "graph_id": graph_id,
+        }
+        if not self.may_have_listeners(Event.GRAPH_UPDATE, metadata):
             return
+        pending = _PendingGraph(graph_id, melbank.copy(), frequencies.copy())
+        self._admit_latest(Event.GRAPH_UPDATE, graph_id, pending, metadata)
 
+    def _admit_latest(
+        self,
+        event_type: str,
+        entity_id: str,
+        pending: Event | _PendingGraph,
+        metadata: Mapping[str, object],
+    ) -> None:
+        with self._telemetry_lock:
+            # Recheck after copying: a revoked last registration must not leave
+            # a retained sample behind its synchronous prune.
+            if not self.may_have_listeners(event_type, metadata):
+                return
+            self._latest[event_type, entity_id] = pending
+            wake = not self._telemetry_scheduled
+            self._telemetry_scheduled = True
+        if wake:
+            self._ledfx.loop.call_soon_threadsafe(self._drain_telemetry)
+
+    def _materialize_graph(self, pending: _PendingGraph) -> GraphUpdateEvent:
+        return GraphUpdateEvent(pending.graph_id, pending.melbank, pending.frequencies)
+
+    def purge_pending(self, event_type: str, entity_id: str) -> None:
+        """Release the current source sample without retaining a tombstone."""
+        with self._telemetry_lock:
+            self._latest.pop((event_type, entity_id), None)
+            self._draining_latest.pop((event_type, entity_id), None)
+
+    def _drain_telemetry(self) -> None:
+        with self._telemetry_lock:
+            self._draining_latest = self._latest
+            self._latest = {}
+            self._draining_text = self._text_queue
+            self._text_queue = deque()
+            dropped = self._text_dropped
+            keys = tuple(self._draining_latest)
+        try:
+            for event_type, entity_id in keys:
+                key = (event_type, entity_id)
+                with self._telemetry_lock:
+                    pending = self._draining_latest.get(key)
+                if pending is None:
+                    continue
+                field = "graph_id" if event_type == Event.GRAPH_UPDATE else "virtual_id"
+                if not self.may_have_listeners(
+                    event_type, {"event_type": event_type, field: entity_id}
+                ):
+                    continue
+                event = (
+                    self._materialize_graph(pending)
+                    if isinstance(pending, _PendingGraph)
+                    else pending
+                )
+                with self._telemetry_lock:
+                    # A deletion/revocation during materialization invalidates
+                    # this sample. Claim dispatch before releasing the lock.
+                    if self._draining_latest.pop(key, None) is not pending:
+                        continue
+                self._dispatch(event)
+            with self._telemetry_lock:
+                has_text = bool(self._draining_text)
+            if has_text and dropped and self._dispatch(_DiagnosticDropSummary(dropped)):
+                with self._telemetry_lock:
+                    self._text_dropped -= dropped
+            while True:
+                with self._telemetry_lock:
+                    if not self._draining_text:
+                        break
+                    event = self._draining_text.popleft()
+                self._dispatch(event)
+        finally:
+            with self._telemetry_lock:
+                self._draining_latest.clear()
+                self._draining_text.clear()
+                wake = bool(self._latest or self._text_queue)
+                self._telemetry_scheduled = wake
+            if wake:
+                self._ledfx.loop.call_soon_threadsafe(self._drain_telemetry)
+
+    def _dispatch(self, event: Event) -> bool:
+        """Queue guarded ordinary observer invocations; report admission."""
+        _, listeners = self.registration_snapshot(event.event_type)
+        admitted = False
         for listener in listeners:
-            filtered = listener.filter_event(event)
-
+            try:
+                filtered = listener.filter_event(event)
+            except Exception as error:  # noqa: BLE001 - isolate consumer code
+                self._report_listener_error(listener, error)
+                continue
             if not filtered:
-                self._ledfx.loop.call_soon_threadsafe(listener.callback, event)
+                with self._lock:
+                    active = listener.active
+                try:
+                    self._ledfx.loop.call_soon_threadsafe(self._invoke, listener, event)
+                    admitted = admitted or active
+                except Exception as error:  # noqa: BLE001 - isolate scheduling failures
+                    self._report_listener_error(listener, error)
+        return admitted
+
+    def _invoke(self, listener: EventListener, event: Event) -> None:
+        with self._lock:
+            if not listener.active:
+                return
+            # This is the invocation claim: a callback claimed here may finish
+            # after disposal. No user code runs while holding the bus mutex.
+        try:
+            result = cast(Callable[[Event], object], listener.callback)(event)
+            _reject_awaitable(result)
+        except Exception as error:  # noqa: BLE001 - isolate consumer code
+            self._report_listener_error(listener, error)
+
+    def _report_listener_error(self, listener: EventListener, exc: Exception) -> None:
+        self._report_error(listener.event_type, exc)
+
+    def _report_error(self, event_type: str, exc: Exception) -> None:
+        category = type(exc).__name__
+        now = time.monotonic()
+        with self._lock:
+            last_report, suppressed = self._listener_errors.get(
+                category, (-math.inf, 0)
+            )
+            count = suppressed + 1
+            if now - last_report < 1.0:
+                self._listener_errors[category] = (last_report, count)
+                return
+            self._listener_errors[category] = (now, 0)
+        # Exception strings and tracebacks can contain whole pixel payloads.
+        _LOGGER.warning(
+            "Event listener failure for %s (%s; %d errors since last report)",
+            event_type,
+            category,
+            count,
+        )
 
     def add_listener(
         self,
-        callback: Callable,
+        callback: Callable[[Event], None],
         event_type: str,
-        event_filter: dict | None = None,
-    ) -> None:
-        listener = EventListener(callback, event_filter)
-        if event_type in self._listeners:
-            self._listeners[event_type].append(listener)
-        else:
-            self._listeners[event_type] = [listener]
+        event_filter: Mapping[str, object] | None = None,
+    ) -> Callable[[], None]:
+        listener = EventListener(callback, event_filter, event_type=event_type)
+        with self._lock:
+            self._generation += 1
+            listener.generation = self._generation
+            self._listeners[event_type] = self._listeners.get(event_type, ()) + (
+                listener,
+            )
+            revision = self._revisions.get(event_type, 0) + 1
+            self._revisions[event_type] = revision
+            observers = self._registration_observers
+        self._notify_registration_observers(observers, event_type, revision)
 
         def remove_listener() -> None:
             self._remove_listener(event_type, listener)
 
         return remove_listener
 
-    def _remove_listener(self, event_type: str, listener: Callable) -> None:
+    def _prune_telemetry(self, event_type: str) -> None:
+        if event_type not in (
+            Event.GRAPH_UPDATE,
+            Event.VIRTUAL_DIAG,
+            Event.GENERAL_DIAG,
+        ):
+            return
+        with self._telemetry_lock:
+            field = "graph_id" if event_type == Event.GRAPH_UPDATE else "virtual_id"
+            for pending in (self._latest, self._draining_latest):
+                for key in tuple(pending):
+                    if key[0] == event_type and not self.may_have_listeners(
+                        event_type, {"event_type": event_type, field: key[1]}
+                    ):
+                        del pending[key]
+            if event_type == Event.GENERAL_DIAG and not self.has_listeners(event_type):
+                self._text_queue.clear()
+                self._draining_text.clear()
+
+    def _remove_listener(self, event_type: str, listener: EventListener) -> None:
+        with self._lock:
+            if not listener.revoke():
+                return
+            remaining = tuple(
+                item
+                for item in self._listeners.get(event_type, ())
+                if item is not listener
+            )
+            if remaining:
+                self._listeners[event_type] = remaining
+            else:
+                self._listeners.pop(event_type, None)
+            revision = self._revisions.get(event_type, 0) + 1
+            self._revisions[event_type] = revision
+            observers = self._registration_observers
+        self._prune_telemetry(event_type)
+        self._notify_registration_observers(observers, event_type, revision)
+
+    def add_registration_observer(
+        self, callback: Callable[[str, int], None]
+    ) -> Callable[[], None]:
+        _validate_callback(callback)
+        observer = _RegistrationObserver(callback)
+        with self._lock:
+            self._registration_observers += (observer,)
+
+        def remove_observer() -> None:
+            with self._lock:
+                if not observer.revoke():
+                    return
+                self._registration_observers = tuple(
+                    item
+                    for item in self._registration_observers
+                    if item is not observer
+                )
+
+        return remove_observer
+
+    def _notify_registration_observers(
+        self,
+        observers: tuple[_RegistrationObserver, ...],
+        event_type: str,
+        revision: int,
+    ) -> None:
+        for observer in observers:
+            self._ledfx.loop.call_soon_threadsafe(
+                self._invoke_registration_observer, observer, event_type, revision
+            )
+
+    def _invoke_registration_observer(
+        self, observer: _RegistrationObserver, event_type: str, revision: int
+    ) -> None:
+        with self._lock:
+            if not observer.active:
+                return
+            # Observer disposal has the same invocation claim as event disposal.
         try:
-            self._listeners[event_type].remove(listener)
-            if not self._listeners[event_type]:
-                self._listeners.pop(event_type)
-        except (KeyError, ValueError):
-            _LOGGER.warning("Failed to remove event listener %s", listener)
-
-
-# def get_event_types():
-#     """Get a list of the types of events available"""
-#     return [event for event in vars(Event) if (not event.startswith('__')) and (event.isupper())]
-
-# print(get_event_types())
+            result = cast(Callable[[str, int], object], observer.callback)(
+                event_type, revision
+            )
+            _reject_awaitable(result)
+        except Exception as error:  # noqa: BLE001 - isolate consumer code
+            self._report_error(event_type, error)

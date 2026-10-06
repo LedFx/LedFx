@@ -29,6 +29,7 @@ import pytest
 from ledfx.configuration.models import VirtualEntry
 from ledfx.configuration.store import ConfigStore
 from ledfx.devices import Device
+from ledfx.events import Events
 from ledfx.virtuals import Virtuals
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
@@ -196,7 +197,7 @@ def _make_ledfx(devices=None, scenes=None):
         }
     )
     ledfx.config_dir = ""
-    ledfx.events = _DummyEvents()
+    ledfx.events = Events(ledfx)
     ledfx.devices = _DummyDevices(devices or [])
     ledfx.effects = _DummyEffects()
 

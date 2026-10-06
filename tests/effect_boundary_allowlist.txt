@@ -1,7 +1,5 @@
 ledfx/api/integrations.py:active-write:1
 ledfx/devices/__init__.py:effect-call:2
 ledfx/devices/__init__.py:entry-write:1
-ledfx/devices/__init__.py:private-write:1
-ledfx/devices/__init__.py:virtual-call:10
+ledfx/devices/__init__.py:virtual-call:5
 ledfx/devices/lifx.py:virtual-call:1
-ledfx/devices/twinkly_squares.py:virtual-call:1

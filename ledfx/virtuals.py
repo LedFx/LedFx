@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import logging
 import threading
 import time
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Generator, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from functools import cached_property
-from typing import Literal
+from typing import Literal, Protocol
 
 import numpy as np
+from numpy.typing import NDArray
 from pydantic import ValidationError
 
 from ledfx.color import build_gradient_config, parse_color, validate_color
@@ -29,6 +33,7 @@ from ledfx.configuration.models import (
 )
 from ledfx.configuration.plugin import PluginConfig
 from ledfx.configuration.randomize import randomize_effect_config
+from ledfx.devices import Device, PixelUpdate
 from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.math import CalibratorPatternCache, interpolate_pixels
 from ledfx.effects.melbank import (
@@ -46,6 +51,7 @@ from ledfx.events import (
     VirtualPauseEvent,
     VirtualUpdateEvent,
 )
+from ledfx.preview import OwnedFrame, PreviewSampler, SourceKey
 from ledfx.transitions import Transitions
 from ledfx.utils import (
     Teleplot,
@@ -70,6 +76,14 @@ class EffectRejected(Conflict):
     def __init__(self, effect: Effect, detail: str) -> None:
         super().__init__(detail)
         self.effect = effect
+
+
+class _RemovedDeviceSuperseded(Exception):
+    """A removal lost device ownership after changing this virtual's layout."""
+
+    def __init__(self) -> None:
+        super().__init__("removed device owner was superseded")
+        self.restored_epoch: int | None = None
 
 
 def _flash(params: OneshotParams) -> Flash:
@@ -177,6 +191,37 @@ def repaired_config(config: VirtualConfig) -> VirtualConfig:
     return config
 
 
+class _OutputDevice(Protocol):
+    @property
+    def pixel_count(self) -> int: ...
+
+    def is_active(self) -> bool: ...
+
+    def activate(self) -> None: ...
+
+    def add_segments_batch(
+        self, virtual_id: str, segments: Sequence[tuple[int, int]], force: bool = False
+    ) -> None: ...
+
+    def clear_virtual_segments(self, virtual_id: str) -> None: ...
+
+    def update_pixels(self, virtual_id: str, data: Sequence[PixelUpdate]) -> None: ...
+
+
+@dataclass(frozen=True)
+class _DeviceOutput:
+    device: _OutputDevice
+    pixels: tuple[PixelUpdate, ...]
+    epoch: int | None
+
+
+@dataclass(frozen=True)
+class _VirtualOutput:
+    epoch: int
+    effect: Effect | DummyEffect | None
+    writes: tuple[_DeviceOutput, ...]
+
+
 class Virtual:
     # Set by Virtuals.create.
     is_device: str | Literal[False] = False
@@ -216,7 +261,17 @@ class Virtual:
         self._oneshots = []
         self._os_active = False
         self.lock = threading.Lock()
+        # Output admission precedes the short producing lock. IO and worker
+        # disposal hold only output ownership, never the producing lock.
+        self._output_lock = threading.RLock()
+        self._retired_effects: list[Effect | DummyEffect] = []
+        self._render_token = 0
+        self._source_epoch = 0
+        self._source_generation = 0
+        self._frame_sequence = 0
+        self._span_frame: tuple[NDArray[np.generic], NDArray[np.generic]] | None = None
         self.clear_handle = None
+        self._clear_owner: object | None = None
         self.fallback_effect_type = None
         self.fallback_active = False
         self.fallback_fire = False
@@ -246,32 +301,84 @@ class Virtual:
     def __del__(self):
         self.active = False
 
-    def activate_segments(self, segments):
-        # Always use optimized batch mode for segment activation
-        # Group segments by device for batch adding
-        segments_by_device = {}
-        for device_id, start_pixel, end_pixel, _invert in segments:
-            # Skip gap devices - they are configuration placeholders, never
-            # registered in the device registry (so device will be None)
-            if device_id.startswith("gap-"):
-                continue
-            device = self._ledfx.devices.get(device_id)
-            if device is None or is_gap_device(device):
-                continue
-            if device_id not in segments_by_device:
-                segments_by_device[device_id] = []
-            segments_by_device[device_id].append((start_pixel, end_pixel))
-
-        # Activate devices and add all segments in batch
-        for device_id, device_segments in segments_by_device.items():
-            device = self._ledfx.devices.get(device_id)
+    def activate_segments(
+        self,
+        segments: Sequence[Sequence[object]],
+        *,
+        source_generation: int | None = None,
+        source_epoch: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
+        with self.lock:
+            generation = (
+                self._source_generation
+                if source_generation is None
+                else source_generation
+            )
+            epoch = self._source_epoch if source_epoch is None else source_epoch
+            token = self._render_token if source_token is None else source_token
+            if (
+                generation != self._source_generation
+                or epoch != self._source_epoch
+                or token != self._render_token
+            ):
+                return
+            by_device: dict[str, tuple[_OutputDevice, list[tuple[int, int]]]] = {}
+            for device_id, start, end, _ in segments:
+                assert isinstance(device_id, str)
+                assert isinstance(start, int) and isinstance(end, int)
+                if device_id.startswith("gap-"):
+                    continue
+                device = self._ledfx.devices.get(device_id)
+                if device is None or is_gap_device(device):
+                    continue
+                by_device.setdefault(device_id, (device, []))[1].append((start, end))
+            targets = tuple(
+                (device, tuple(ranges)) for device, ranges in by_device.values()
+            )
+        for device, ranges in targets:
+            # Activation may stop another source: no initiating source mutex.
+            if (
+                generation != self._source_generation
+                or epoch != self._source_epoch
+                or token != self._render_token
+            ):
+                return
             if not device.is_active():
                 device.activate()
-            device.add_segments_batch(self.id, device_segments, force=True)
+            if isinstance(device, Device):
+                device.add_segments_batch(
+                    self.id,
+                    ranges,
+                    force=True,
+                    source=self,
+                    source_generation=generation,
+                    source_epoch=epoch,
+                    source_token=token,
+                )
+            else:
+                device.add_segments_batch(self.id, ranges, force=True)
 
-    def deactivate_segments(self):
-        for device in self._devices:
+    def _clear_captured_segments(
+        self, device: _OutputDevice, epoch: int, token: int
+    ) -> None:
+        if isinstance(device, Device):
+            device.clear_virtual_segments(
+                self.id,
+                source=self,
+                source_epoch=epoch,
+                source_token=token,
+            )
+        else:
             device.clear_virtual_segments(self.id)
+
+    def deactivate_segments(self) -> None:
+        with self.lock:
+            devices = tuple(self._devices)
+            epoch = self._source_epoch
+            token = self._render_token
+        for device in devices:
+            self._clear_captured_segments(device, epoch, token)
 
     def validate_segment(self, segment):
         if not (
@@ -330,28 +437,92 @@ class Virtual:
             if hasattr(self, prop):
                 delattr(self, prop)
 
-    def _reactivate_effect(self):
-        self.clear_transition_effect()
-        self.transitions = Transitions(self.effective_pixel_count)
-        if self._active_effect is not None:
-            self._active_effect._deactivate()
-            if self.pixel_count > 0:
-                self._active_effect.activate(self)
+    def _detach_transition_effect(self) -> None:
+        effect, self._transition_effect = self._transition_effect, None
+        if effect is not None:
+            self._retired_effects.append(effect)
 
-    def update_segments(self, segments_config):
-        """
-        Update the segments of the virtual with the given configuration.
+    def _detach_active_effect(self) -> None:
+        effect, self._active_effect = self._active_effect, None
+        if effect is not None:
+            self._retired_effects.append(effect)
 
-        Args:
-            segments_config (list): A list of segment configurations.
-
-        Raises:
-            ValueError: If the new set of segments cannot be activated.
-
-        Returns:
-            None
-        """
+    def _drain_retired_effects(self) -> None:
         with self.lock:
+            retired = self._retired_effects
+            self._retired_effects = []
+        failure: Exception | None = None
+        for effect in retired:
+            try:
+                self._discard_effect(effect)
+            except Exception as error:
+                if failure is None:
+                    failure = error
+                else:
+                    _LOGGER.exception(
+                        "Virtual %s: another retired effect failed disposal", self.id
+                    )
+        if failure is not None:
+            raise failure
+
+    @contextmanager
+    def _drain_retired_on_exit(self) -> Generator[None, None, None]:
+        """Dispose detached effects after the producing lock has been released."""
+        try:
+            yield
+        except BaseException:
+            try:
+                self._drain_retired_effects()
+            except Exception:
+                _LOGGER.exception(
+                    "Virtual %s: retired effect disposal also failed", self.id
+                )
+            raise
+        else:
+            self._drain_retired_effects()
+
+    def _reactivate_effect(self) -> None:
+        with self._output_lock:
+            with self._drain_retired_on_exit(), self.lock:
+                self._detach_transition_effect()
+                self.transitions = Transitions(self.effective_pixel_count)
+                epoch = self._source_epoch
+            with self.lock:
+                if epoch != self._source_epoch:
+                    return
+                effect, self._active_effect = self._active_effect, None
+            if effect is not None:
+                effect._deactivate()  # a temporal worker can join here
+                with self.lock:
+                    if epoch == self._source_epoch and self._active_effect is None:
+                        if isinstance(effect, DummyEffect):
+                            self._active_effect = DummyEffect(
+                                self.effective_pixel_count
+                            )
+                        else:
+                            self._active_effect = effect
+                        if self.pixel_count > 0 and not isinstance(effect, DummyEffect):
+                            effect.activate(self)
+
+    def update_segments(
+        self,
+        segments_config: object,
+        *,
+        source_epoch: int | None = None,
+        removed_device: tuple[str, object] | None = None,
+    ) -> bool:
+        """Apply a layout; False means captured ownership was superseded."""
+        with self.lock:
+            if source_epoch is not None and (
+                source_epoch != self._source_epoch
+                or self._ledfx.virtuals.get(self.id) is not self
+            ):
+                return False
+            if (
+                removed_device is not None
+                and self._ledfx.devices.get(removed_device[0]) is not removed_device[1]
+            ):
+                return False
             if not isinstance(segments_config, (list, tuple)):
                 raise ValueError(  # noqa: TRY004 - callers catch ValueError
                     f"Invalid segments: {segments_config}, should be a list of segments"
@@ -360,73 +531,112 @@ class Virtual:
                 list(item) if isinstance(item, (list, tuple)) else item
                 for item in segments_config
             ]
-            _segments = [self.validate_segment(s) for s in segments_config]
-
-            _pixel_count = self.pixel_count
-
-            if _segments != self._segments:
-                if self._active:
-                    self.deactivate_segments()
-                    # try to register this new set of segments
-                    # if it fails, restore previous segments and raise the error
-                    try:
-                        self.activate_segments(_segments)
-                    except ValueError:
-                        self.deactivate_segments()
-                        self.activate_segments(self._segments)
-                        raise
-
-                old_segments = self._segments
-                self._segments = _segments
-
+            segments: list[list[object]] = [
+                list(self.validate_segment(item)) for item in segments_config
+            ]
+            old_segments = self._segments
+            old_count = self.pixel_count
+            old_devices = tuple(self._devices)
+            active = self._active
+            admission = self._source_epoch
+            token = self._render_token
+            if segments == old_segments:
+                entry = self.entry
+                if entry is not None:
+                    entry.segments = self._segments
+                return True
+        with self._output_lock, self.lock:
+            if admission != self._source_epoch or (
+                source_epoch is not None
+                and self._ledfx.virtuals.get(self.id) is not self
+            ):
+                return False
+            if (
+                removed_device is not None
+                and self._ledfx.devices.get(removed_device[0]) is not removed_device[1]
+            ):
+                return False
+            self._renew_source_generation()
+            epoch = self._source_epoch
+            self._segments = segments
+            self.invalidate_cached_props()
+            self._compile_device_remap()
+            resized = self.pixel_count != old_count
+            new_devices = tuple(self._devices)
+        # Device registration may stop another virtual and join its render
+        # worker. Neither source owner lock is held across those callbacks.
+        try:
+            if active:
+                for device in old_devices:
+                    self._clear_captured_segments(device, epoch, token)
+                self.activate_segments(segments, source_epoch=epoch, source_token=token)
+            with self._output_lock:
+                with self.lock:
+                    if epoch != self._source_epoch or token != self._render_token:
+                        return False
+                    if (
+                        removed_device is not None
+                        and self._ledfx.devices.get(removed_device[0])
+                        is not removed_device[1]
+                    ):
+                        raise _RemovedDeviceSuperseded
+                if resized:
+                    self._reactivate_effect()
+                with self.lock:
+                    if epoch != self._source_epoch or token != self._render_token:
+                        return False
+                    if (
+                        removed_device is not None
+                        and self._ledfx.devices.get(removed_device[0])
+                        is not removed_device[1]
+                    ):
+                        raise _RemovedDeviceSuperseded
+                    self.frame_transitions = self.transitions[
+                        self._config.transition_mode
+                    ]
+                    entry = self.entry
+                    if entry is not None:
+                        entry.segments = self._segments
+        except Exception as error:
+            with self._output_lock, self.lock:
+                if epoch != self._source_epoch or token != self._render_token:
+                    raise
+                self._renew_source_generation()
+                rollback_epoch = self._source_epoch
+                self._segments = old_segments
                 self.invalidate_cached_props()
-
-                # Compile device remap structure for fast pixel mapping
                 self._compile_device_remap()
-
-                # Restart active effect if total pixel count has changed
-                # eg. devices might be reordered, but total pixel count is same
-                # so no need to restart the effect
-                if self.pixel_count != _pixel_count:
-                    # chenging segments is a deep edit, just flush any transition
-                    try:
-                        self._reactivate_effect()
-                    except Exception:
-                        # Roll back fully: device segments, our segments, and
-                        # the effect restarted at the old size.
-                        if self._active:
-                            self.deactivate_segments()
-                            self.activate_segments(old_segments)
-                        self._segments = old_segments
-                        self.invalidate_cached_props()
-                        self._compile_device_remap()
-                        try:
-                            self._reactivate_effect()
-                        except Exception:
-                            # Same effect, same fault: report the original.
-                            _LOGGER.exception(
-                                "Virtual %s: effect did not restart after the "
-                                "segment rollback",
-                                self.id,
-                            )
-                        # Turn off devices only the new segments activated.
-                        self._ledfx.virtuals.check_and_deactivate_devices()
+                entry = self.entry
+                if entry is not None:
+                    entry.segments = self._segments
+                if isinstance(error, _RemovedDeviceSuperseded):
+                    error.restored_epoch = rollback_epoch
+            if active:
+                for device in new_devices:
+                    self._clear_captured_segments(device, rollback_epoch, token)
+                self.activate_segments(
+                    old_segments, source_epoch=rollback_epoch, source_token=token
+                )
+            with self._output_lock:
+                with self.lock:
+                    if (
+                        rollback_epoch != self._source_epoch
+                        or token != self._render_token
+                    ):
                         raise
-
-                mode = self._config.transition_mode
-                self.frame_transitions = self.transitions[mode]
-            # Update internal config with new segment if it exists, device creation only substantiates this later, so we need the test
-            entry = self.entry
-            if entry is not None:
-                entry.segments = self._segments
-
-            _LOGGER.debug(
-                "Virtual %s: updated with %s segments, totalling %s pixels",
-                self.id,
-                len(self._segments),
-                self.pixel_count,
-            )
+                try:
+                    self._reactivate_effect()
+                except Exception:
+                    if isinstance(error, _RemovedDeviceSuperseded):
+                        raise
+                    _LOGGER.exception(
+                        "Virtual %s: effect did not restart after segment rollback",
+                        self.id,
+                    )
             self._ledfx.virtuals.check_and_deactivate_devices()
+            raise
+        self._ledfx.virtuals.check_and_deactivate_devices()
+        return True
 
     def _compile_device_remap(self):
         """
@@ -594,7 +804,17 @@ class Virtual:
             RuntimeError: If an error occurs while setting the active effect.
 
         """
-        with self.lock:
+        with self._output_lock:
+            self._set_effect(effect, fallback)
+        try:
+            self.active = True
+        except RuntimeError:
+            self.active = False
+            raise
+
+    def _set_effect(self, effect: Effect, fallback: float | None) -> None:
+        with self._drain_retired_on_exit(), self.lock:
+            self._renew_source_generation()
             if not self._devices:
                 error = (
                     f"Virtual {self.id}: Cannot activate, no configured device segments"
@@ -623,7 +843,7 @@ class Virtual:
                     self.refresh_rate * self._config.transition_time
                 )
                 self.transition_frame_counter = 0
-                self.clear_transition_effect()
+                self._detach_transition_effect()
 
                 if self._active_effect is None:
                     self._transition_effect = DummyEffect(self.effective_pixel_count)
@@ -631,8 +851,8 @@ class Virtual:
                     self._transition_effect = self._active_effect
             else:
                 # no transition effect to clean up, so clear the active effect now!
-                self.clear_active_effect()
-                self.clear_transition_effect()
+                self._detach_active_effect()
+                self._detach_transition_effect()
 
             if fallback is None:
                 # any effect being set without fallback will clear the fallback
@@ -659,24 +879,30 @@ class Virtual:
                     self._streaming,
                 )
             )
-        try:
-            self.active = True
-        except RuntimeError:
-            self.active = False
-            raise
 
-    def transition_to_active(self):
-        self._active_effect = self._transition_effect
-        self._transition_effect = None
+    def transition_to_active(self) -> None:
+        with self._output_lock, self.lock:
+            self.flush_pending_clear_frame()
+            self._renew_source_generation()
+            self._active_effect = self._transition_effect
+            self._transition_effect = None
 
-    def active_to_transition(self):
-        self._transition_effect = self._active_effect
-        self._active_effect = None
+    def active_to_transition(self) -> None:
+        with self._output_lock, self.lock:
+            self.flush_pending_clear_frame()
+            self._renew_source_generation()
+            self._transition_effect = self._active_effect
+            self._active_effect = None
 
     def clear_effect(self):
-        with self.lock:
+        with self._output_lock:
+            self._clear_effect()
+
+    def _clear_effect(self) -> None:
+        with self._drain_retired_on_exit(), self.lock:
+            self._renew_source_generation()
             self._ledfx.events.fire_event(EffectClearedEvent(self.id))
-            self.clear_transition_effect()
+            self._detach_transition_effect()
 
             if (
                 self._config.transition_mode != "None"
@@ -692,27 +918,44 @@ class Virtual:
                 self.transition_frame_counter = 0
             else:
                 # no transition effect to clean up, so clear the active effect now!
-                self.clear_active_effect()
+                self._detach_active_effect()
 
             self.flush_pending_clear_frame()
 
             delay = (
                 0 if self.fallback_suppress_transition else self._config.transition_time
             )
-            self.clear_handle = self._ledfx.loop.call_later(delay, self.clear_frame)
+            owner = object()
+            self._clear_owner = owner
+
+            def clear_captured_source() -> None:
+                self.clear_frame(clear_owner=owner)
+
+            self.clear_handle = self._ledfx.loop.call_later(
+                delay, clear_captured_source
+            )
 
     def flush_pending_clear_frame(self):
+        self._clear_owner = None
         if self.clear_handle is not None:
             self.clear_handle.cancel()
             self.clear_handle = None
 
-    def clear_transition_effect(self):
-        effect, self._transition_effect = self._transition_effect, None
-        self._discard_effect(effect)
+    def clear_transition_effect(self) -> None:
+        with self._output_lock:
+            with self.lock:
+                if self._transition_effect is not None:
+                    self._renew_source_generation()
+                self._detach_transition_effect()
+            self._drain_retired_effects()
 
-    def clear_active_effect(self):
-        effect, self._active_effect = self._active_effect, None
-        self._discard_effect(effect)
+    def clear_active_effect(self) -> None:
+        with self._output_lock:
+            with self.lock:
+                if self._active_effect is not None:
+                    self._renew_source_generation()
+                self._detach_active_effect()
+            self._drain_retired_effects()
 
     def _discard_effect(self, effect: Effect | DummyEffect | None) -> None:
         # The slot is already empty, so a failure here cannot wedge the virtual.
@@ -720,108 +963,208 @@ class Virtual:
             return
         # Save effect_id before deactivating (in case deactivate clears it)
         effect_id = getattr(effect, "id", None)
-        effect._deactivate()
-        # CRITICAL: Remove effect from registry to allow garbage collection
-        # Only destroy if it has an ID (DummyEffect doesn't have one), and only
-        # this effect's entry: ids are reused once destroyed.
-        if effect_id is not None and self._ledfx.effects.get(effect_id) is effect:
-            self._ledfx.effects.destroy(effect_id)
+        try:
+            effect._deactivate()
+        finally:
+            # Remove only this effect's entry: ids are reused once destroyed.
+            if effect_id is not None and self._ledfx.effects.get(effect_id) is effect:
+                self._ledfx.effects.destroy(effect_id)
 
-    def clear_frame(self):
-        """
-        Clears the frame by performing the following steps:
-        1. Clears the active effect.
-        2. Clears the transition effect.
-        3. If the virtual device is active:
-           - Clears all the pixel data by setting it to zeros.
-           - Flushes the assembled frame to the device.
-           - Fires a VirtualUpdateEvent to notify listeners of the updated frame.
-           - Releases the lock.
-           - Deactivates the virtual device.
-        """
-        # Little tricky logic here - we need to clear the active effect and
-        # transition effect before we flush the frame, but we need to flush
-        # the frame before we deactivate the virtual device. We also need to
-        # make sure that we don't clear the frame if the virtual device is
-        # not active.
-        # All of this requires thread lock management that's a bit unwieldy
-
-        assembled_frame = None
+    def clear_frame(
+        self, *, source_epoch: int | None = None, clear_owner: object | None = None
+    ) -> None:
         with self.lock:
-            self.clear_active_effect()
-            self.clear_transition_effect()
-            if self._active:
-                assembled_frame = np.zeros((self.pixel_count, 3))
-                self.flush(assembled_frame)
-                self._fire_update_event(assembled_frame)
-
-        # Deactivate the device - this requires the thread lock
-        # Hence why we do it outside of the lock and after the frame is cleared
-        # This is because the deactivate method will join the thread
-        # and we don't want to call join while holding the lock
-        if assembled_frame is not None:
-            self.deactivate()
+            admission = self._source_epoch if source_epoch is None else source_epoch
+        with self._output_lock:
+            with self._drain_retired_on_exit(), self.lock:
+                if clear_owner is not None:
+                    if clear_owner is not self._clear_owner:
+                        return
+                    # Config/layout epochs can change while this intent remains
+                    # current. Black output captures the current layout below.
+                    admission = self._source_epoch
+                if admission != self._source_epoch:
+                    return
+                self.flush_pending_clear_frame()
+                # Clearing owns the black output immediately. Keep the preview
+                # generation so ordinary deactivation can deliver its final sample.
+                self._source_epoch += 1
+                admission = self._source_epoch
+                self._detach_active_effect()
+                self._detach_transition_effect()
+                active = self._active
+                pixels = np.zeros((self.effective_pixel_count, 3))
+                output = (
+                    self._prepare_output(pixels)
+                    if active and not self._config.preview_only
+                    else None
+                )
+                captured = (
+                    self._capture_preview_frame(pixels, owned=True)
+                    if active or clear_owner is not None
+                    else None
+                )
+            self._emit_output(output)
+        self._publish_preview_frame(captured)
+        if active:
+            self.deactivate(source_epoch=admission)
 
     def force_frame(self, color):
         """
         Force all pixels in device to color
         Use for pre-clearing in calibration scenarios
         """
-        self.assembled_frame = np.full((self.effective_pixel_count, 3), color)
-        self.flush(self.assembled_frame)
-        self._fire_update_event()
+        with self.lock:
+            admission = self._source_epoch
+        with self._output_lock:
+            with self.lock:
+                if admission != self._source_epoch:
+                    return
+                self.assembled_frame = np.full((self.effective_pixel_count, 3), color)
+                output = (
+                    None
+                    if self._config.preview_only
+                    else self._prepare_output(self.assembled_frame)
+                )
+                captured = self._capture_preview_frame(self.assembled_frame, owned=True)
+            self._drain_retired_effects()
+            self._emit_output(output)
+        self._publish_preview_frame(captured)
+
+    def _renew_source_generation(self) -> None:
+        self._source_epoch += 1
+        sampler = self._ledfx.preview_sampler
+        if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
+            self._source_generation = sampler.allocate_source_generation(
+                SourceKey("virtual", self.id)
+            )
+            if self._source_generation > 0:
+                self._frame_sequence = 0
+        self._span_frame = None
+
+    def _refresh_device_rows(self) -> None:
+        if self.is_device:
+            device = self._ledfx.devices.get(self.is_device)
+            # Virtual fixtures may intentionally supply a non-Device sender.
+            from ledfx.devices import Device
+
+            if isinstance(device, Device):
+                device._refresh_physical_rows()
+
+    def _preview_or_raw_demand(self) -> bool:
+        sampler = self._ledfx.preview_sampler
+        return (
+            isinstance(sampler, PreviewSampler)
+            and sampler.interested(
+                SourceKey("virtual", self.id), self._source_generation
+            )
+        ) or self._ledfx.events.may_have_listeners(
+            Event.VIRTUAL_UPDATE, {"virtual_id": self.id}
+        )
+
+    def _capture_preview_frame(
+        self, pixels: NDArray[np.generic], *, owned: bool
+    ) -> OwnedFrame | None:
+        """Called under the producing lock, before storage can be reused."""
+        sampler = self._ledfx.preview_sampler
+        generation = self._source_generation
+        key = SourceKey("virtual", self.id)
+        if not self._preview_or_raw_demand():
+            return None
+        # Span hardware already projects this exact logical view. Calibration
+        # and oneshots only change physical segment copies, never this view.
+        if self._span_frame is not None and self._span_frame[0] is pixels:
+            projected = self._span_frame[1]
+        else:
+            projected = self._effective_to_physical_pixels(pixels)
+        if not owned and np.shares_memory(projected, pixels):
+            projected = projected.copy()
+        self._frame_sequence += 1
+        return OwnedFrame(
+            key,
+            generation,
+            self._frame_sequence,
+            projected,
+            self.rows,
+            self.pixel_count,
+            sampler.settings_generation if isinstance(sampler, PreviewSampler) else 0,
+        )
+
+    def _publish_preview_frame(self, frame: OwnedFrame | None) -> None:
+        if frame is None:
+            return
+        with self.lock:
+            if (
+                self._ledfx.virtuals.get(self.id) is not self
+                or frame.source_generation != self._source_generation
+            ):
+                return
+        sampler = self._ledfx.preview_sampler
+        if isinstance(sampler, PreviewSampler):
+            sampler.submit(frame)
+        if self._ledfx.events.may_have_listeners(
+            Event.VIRTUAL_UPDATE, {"virtual_id": self.id}
+        ):
+            self._ledfx.events.fire_event(VirtualUpdateEvent(self.id, frame.pixels))
+
+    def _submit_preview_frame(self, pixels: NDArray[np.generic], owned: bool) -> None:
+        with self.lock:
+            frame = self._capture_preview_frame(pixels, owned=owned)
+        self._publish_preview_frame(frame)
 
     def _fire_update_event(self, frame=None):
         if frame is None:
             frame = self.assembled_frame
-
-        self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
-        )
+        if frame is not None:
+            self._submit_preview_frame(frame, owned=False)
 
     def set_calibration(self, calibration):
-        self._calibration = calibration
-        if not calibration:
-            self._hl_state = False
+        with self._output_lock, self.lock:
+            self._calibration = calibration
+            if not calibration:
+                self._hl_state = False
 
     @property
     def calibrating(self) -> bool:
         return self._calibration is not False
 
     def clear_highlight(self) -> None:
-        self._hl_state = False
+        with self._output_lock, self.lock:
+            self._hl_state = False
 
     def set_highlight(self, h: Highlight) -> None:
         """Light a device's pixel range. Raises Invalid (at body.device_id,
         body.start or body.end, see segment_problem) for an unknown device or
         a range the device lacks, then Conflict when not calibrating; a
         refused highlight changes nothing."""
-        device_id = h.device_id.lower()
-        problem = segment_problem(
-            self._ledfx.devices, device_id, h.start, h.end, exempt_gaps=False
-        )
-        if problem is not None:
-            field, reason = problem
-            raise Invalid(reason, loc=("body", field))
-        if not self.calibrating:
-            raise Conflict(
-                f"Cannot set highlight when {self.name} is not in calibration mode"
+        with self._output_lock, self.lock:
+            device_id = h.device_id.lower()
+            problem = segment_problem(
+                self._ledfx.devices, device_id, h.start, h.end, exempt_gaps=False
             )
+            if problem is not None:
+                field, reason = problem
+                raise Invalid(reason, loc=("body", field))
+            if not self.calibrating:
+                raise Conflict(
+                    f"Cannot set highlight when {self.name} is not in calibration mode"
+                )
 
-        # The render thread reads the range once _hl_state is on: set it last.
-        self._hl_device = device_id
-        self._hl_start = h.start
-        self._hl_end = h.end
-        self._hl_step = -1 if h.flip else 1
-        self._hl_state = True
+            # The render thread reads the range once _hl_state is on: set it last.
+            self._hl_device = device_id
+            self._hl_start = h.start
+            self._hl_end = h.end
+            self._hl_step = -1 if h.flip else 1
+            self._hl_state = True
 
     @property
     def active_effect(self):
         return self._active_effect
 
     def thread_function(self):
+        token = self._render_token
         while True:
-            if not self._active:
+            if not self._active or token != self._render_token:
                 break
             start_time = time.perf_counter()
 
@@ -834,25 +1177,7 @@ class Virtual:
             try:
                 # we need to lock before we test, or we could deactivate
                 # between test and execution
-                with self.lock:
-                    if (
-                        self._active_effect
-                        and self._active_effect.is_active
-                        and hasattr(self._active_effect, "pixels")
-                    ):
-                        # self.assembled_frame = await self._ledfx.loop.run_in_executor(
-                        #     self._ledfx.thread_executor, self.assemble_frame
-                        # )
-                        self.assembled_frame = self.assemble_frame()
-                        if self.assembled_frame is not None and not self._paused:
-                            if not self._config.preview_only:
-                                # self._ledfx.thread_executor.submit(self.flush)
-                                # await self._ledfx.loop.run_in_executor(
-                                #     self._ledfx.thread_executor, self.flush
-                                # )
-                                self.flush()
-
-                            self._fire_update_event()
+                self._render_frame(render_token=token)
             except Exception:
                 if start_time - self._last_render_error >= 5:
                     self._last_render_error = start_time
@@ -870,6 +1195,29 @@ class Virtual:
             pass_time = time.perf_counter() - start_time
             if pass_time < (self._min_time / 2):
                 time.sleep(max(0.001, self._min_time - pass_time))
+
+    def _render_frame(self, *, render_token: int | None = None) -> None:
+        with self._output_lock:
+            with self._drain_retired_on_exit(), self.lock:
+                if (
+                    not self._active
+                    or self._active_effect is None
+                    or (render_token is not None and render_token != self._render_token)
+                ):
+                    return
+                effect = self._active_effect
+                if not effect.is_active or not hasattr(effect, "pixels"):
+                    return
+                self.assembled_frame = self.assemble_frame()
+                pixels = self.assembled_frame
+                output = None
+                captured = None
+                if pixels is not None and not self._paused:
+                    if not self._config.preview_only:
+                        output = self._prepare_output(pixels)
+                    captured = self._capture_preview_frame(pixels, owned=True)
+            self._emit_output(output)
+        self._publish_preview_frame(captured)
 
     def assemble_frame(self):
         """
@@ -932,52 +1280,98 @@ class Virtual:
                         self.transitions, frame, transition_frame, weight
                     )
                 if self.transition_frame_counter == self.transition_frame_total:
-                    self.clear_transition_effect()
+                    self._detach_transition_effect()
 
             np.multiply(frame, self._config.max_brightness, frame)
             np.multiply(frame, self._ledfx.config.global_brightness, frame)
         return frame
 
-    def activate(self):
-        if not self._devices:
-            error = f"Virtual {self.id}: Cannot activate, no configured device segments"
-            _LOGGER.warning(error)
-            raise RuntimeError(error)
-        if not self._active_effect:
-            error = f"Virtual {self.id}: Cannot activate, no configured effect"
-            _LOGGER.warning(error)
-            raise RuntimeError(error)
-
-        if hasattr(self, "_thread"):
-            self._thread.join()
-
-        if not self._active:
+    def activate(self, *, source_epoch: int | None = None) -> None:
+        with self._output_lock, self.lock:
+            if source_epoch is not None and (
+                source_epoch != self._source_epoch
+                or self._ledfx.virtuals.get(self.id) is not self
+            ):
+                return
+            if not self._devices:
+                raise RuntimeError(
+                    f"Virtual {self.id}: Cannot activate, no configured device segments"
+                )
+            if self._active_effect is None:
+                raise RuntimeError(
+                    f"Virtual {self.id}: Cannot activate, no configured effect"
+                )
+            epoch = self._source_epoch
+            effect = self._active_effect
+            segments = tuple(tuple(segment) for segment in self._segments)
+            token = self._render_token
+            previous = getattr(self, "_thread", None)
+        if previous is not None and previous is not threading.current_thread():
+            previous.join()
+        self.activate_segments(segments, source_epoch=epoch, source_token=token)
+        with self._output_lock, self.lock:
+            if (
+                epoch != self._source_epoch
+                or token != self._render_token
+                or effect is not self._active_effect
+            ):
+                return
+            self._source_epoch += 1
             self._active = True
-            try:
-                self.activate_segments(self._segments)
-            except ValueError as e:
-                _LOGGER.error("%s", e)
             self._os_active = False
-
-        # self.thread_function()
-
-        self._thread = threading.Thread(
-            name=f"Virtual: {self.id}", target=self.thread_function
-        )
-        self._thread.start()
-        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, not self._active))
-        # self._task = self._ledfx.loop.create_task(self.thread_function())
-        # self._task.add_done_callback(lambda task: task.result())
+            self._render_token += 1
+            self._thread = threading.Thread(
+                name=f"Virtual: {self.id}", target=self.thread_function
+            )
+            self._thread.start()
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, False))
         self._ledfx.virtuals.check_and_deactivate_devices()
 
-    def deactivate(self):
-        self._active = False
-        self._os_active = False
-        if hasattr(self, "_thread"):
-            self._thread.join()
-        self.deactivate_segments()
-        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, not self._active))
+    def deactivate(
+        self, *, source_epoch: int | None = None, preserve_clear: bool = False
+    ) -> None:
+        self._deactivate(source_epoch=source_epoch, preserve_clear=preserve_clear)
+
+    def _deactivate(
+        self, *, source_epoch: int | None = None, preserve_clear: bool = False
+    ) -> int | None:
+        """Return this pause's captured epoch, or None if it lost ownership."""
+        with self._output_lock, self.lock:
+            if source_epoch is not None and source_epoch != self._source_epoch:
+                return None
+            if not preserve_clear:
+                self.flush_pending_clear_frame()
+            self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, self.id)
+            self._source_epoch += 1
+            epoch = self._source_epoch
+            self._active = False
+            self._os_active = False
+            self._render_token += 1
+            token = self._render_token
+            thread = getattr(self, "_thread", None)
+            devices = tuple(self._devices)
+        if thread is not None and thread is not threading.current_thread():
+            thread.join()
+        with self._output_lock:
+            with self.lock:
+                if (
+                    epoch != self._source_epoch
+                    or token != self._render_token
+                    or self._active
+                ):
+                    return None
+            for device in devices:
+                self._clear_captured_segments(device, epoch, token)
+        self._ledfx.events.fire_event(VirtualPauseEvent(self.id, True))
         self._ledfx.virtuals.check_and_deactivate_devices()
+        with self.lock:
+            if (
+                epoch != self._source_epoch
+                or token != self._render_token
+                or self._active
+            ):
+                return None
+        return epoch
 
     # @lru_cache(maxsize=32)
     # def _normalized_linspace(self, size):
@@ -1000,12 +1394,26 @@ class Virtual:
     #     z = np.apply_along_axis(self.interp_channel, 0, pixels, x_new, x_old)
     #     return z
 
-    def flush(self, pixels=None):
+    def flush(self, pixels: NDArray[np.generic] | None = None) -> None:
+        with self.lock:
+            admission = self._source_epoch
+        with self._output_lock:
+            with self.lock:
+                if admission != self._source_epoch:
+                    return
+                output = self._prepare_output(pixels)
+            self._emit_output(output)
+
+    def _prepare_output(
+        self, pixels: NDArray[np.generic] | None
+    ) -> _VirtualOutput | None:
         """
         Flushes the provided data to the devices.
         """
         if pixels is None:
             pixels = self.assembled_frame
+        if pixels is None:
+            return
 
         # Where we update oneshots
         oneshot_index = 0
@@ -1017,9 +1425,13 @@ class Virtual:
             else:
                 oneshot_index += 1
 
+        self._span_frame = None
         if self._config.mapping == "span":
             # In span mode we can calculate the final pixels once for all segments
+            effective_pixels = pixels
             pixels = self._effective_to_physical_pixels(pixels)
+            if self._preview_or_raw_demand():
+                self._span_frame = (effective_pixels, pixels)
 
         debug_track = (
             self._active_effect
@@ -1030,6 +1442,7 @@ class Virtual:
         if debug_track:
             flush_start = time.perf_counter()
 
+        writes: list[_DeviceOutput] = []
         # Choose flush path based on complex_segments configuration
 
         if (
@@ -1038,9 +1451,9 @@ class Virtual:
             and self._device_remap
             and not self._calibration
         ):
-            self._flush_complex_segments(pixels)
+            self._flush_complex_segments(pixels, writes)
         else:
-            self._flush_simple_segments(pixels)
+            self._flush_simple_segments(pixels, writes)
 
         if debug_track:
             flush_time = time.perf_counter() - flush_start
@@ -1056,8 +1469,46 @@ class Virtual:
                 self._debug_last_report = current_time
                 self._debug_flush_total = 0.0
                 self._debug_flush_frames = 0
+        return _VirtualOutput(self._source_epoch, self._active_effect, tuple(writes))
 
-    def _flush_simple_segments(self, pixels):
+    def _emit_output(self, output: _VirtualOutput | None) -> None:
+        if output is None:
+            return
+        # Caller owns output admission. All arrays, target identities, mapping,
+        # overlays and physical generations were captured under producing lock.
+        with self.lock:
+            if (
+                self._ledfx.virtuals.get(self.id) is not self
+                or output.epoch != self._source_epoch
+                or output.effect is not self._active_effect
+            ):
+                return
+        for write in output.writes:
+            if isinstance(write.device, Device):
+                write.device.update_pixels(
+                    self.id, write.pixels, output_epoch=write.epoch
+                )
+            else:
+                write.device.update_pixels(self.id, write.pixels)
+
+    @staticmethod
+    def _device_state(device: _OutputDevice) -> tuple[int | None, int, bool]:
+        if isinstance(device, Device):
+            with device._frame_lock:
+                return device._output_epoch, device.pixel_count, device.is_active()
+        return None, device.pixel_count, device.is_active()
+
+    @staticmethod
+    def _device_output(
+        device: _OutputDevice,
+        data: Sequence[PixelUpdate],
+        generation: int | None,
+    ) -> _DeviceOutput:
+        return _DeviceOutput(device, tuple(data), generation)
+
+    def _flush_simple_segments(
+        self, pixels: NDArray[np.generic], writes: list[_DeviceOutput]
+    ) -> None:
         """
         Simple flush using segment-by-segment processing.
         Handles calibration, span mode, and copy mode.
@@ -1065,11 +1516,16 @@ class Virtual:
         for device_id, segments in self._segments_by_device.items():
             data = []
             device = self._ledfx.devices.get(device_id)
-            if device is not None and device.is_active():
+            if device is None:
+                continue
+            generation, pixel_count, active = self._device_state(device)
+            if active:
                 if self._calibration:
                     # Reset color sequence for each device to maintain consistency
                     self._calibration_cache.reset_color_sequence()
-                    self.render_calibration(data, device, segments, device_id)
+                    self.render_calibration(
+                        data, device, segments, device_id, pixel_count=pixel_count
+                    )
                 elif self._config.mapping == "span":
                     for (
                         start,
@@ -1079,7 +1535,9 @@ class Virtual:
                         device_end,
                     ) in segments:
                         seg = pixels[start:stop:step]
-                        # Where we override segment
+                        # Physical overlays must not mutate the logical source.
+                        if self._oneshots:
+                            seg = seg.copy()
                         for oneshot in self._oneshots:
                             oneshot.apply(seg, start, stop)
                         data.append((seg, device_start, device_end))
@@ -1102,19 +1560,27 @@ class Virtual:
                         seg = self._effective_to_physical_pixels(
                             seg, target_physical_len
                         )
+                        # Equal-length interpolation may return the render array.
+                        if self._oneshots and np.shares_memory(seg, pixels):
+                            seg = seg.copy()
                         for oneshot in self._oneshots:
                             oneshot.apply(seg, start, stop)
                         data.append((seg, device_start, device_end))
-                device.update_pixels(self.id, data)
+                writes.append(self._device_output(device, data, generation))
 
-    def _flush_complex_segments(self, pixels):
+    def _flush_complex_segments(
+        self, pixels: NDArray[np.generic], writes: list[_DeviceOutput]
+    ) -> None:
         """
         Optimized flush using precompiled device remap for complex virtuals.
         Uses scatter-mode with numpy fancy indexing for 13x performance gain.
         """
         for device_id, remap in self._device_remap.items():
             device = self._ledfx.devices.get(device_id)
-            if device is not None and device.is_active():
+            if device is None:
+                continue
+            generation, _pixel_count, active = self._device_state(device)
+            if active:
                 # Use precompiled indices for fast pixel mapping
                 src_indices = remap["src"]
                 dst_indices = remap["dst"]
@@ -1133,19 +1599,33 @@ class Virtual:
                     # Use new scatter mode: send pixels with dst indices
                     data = [(seg, dst_indices)]
 
-                    device.update_pixels(self.id, data)
+                    writes.append(self._device_output(device, data, generation))
 
-    def render_calibration(self, data, device, segments, device_id):
+    def render_calibration(
+        self,
+        data: list[PixelUpdate],
+        device: _OutputDevice,
+        segments: Sequence[tuple[int, int, int, int, int]],
+        device_id: str,
+        *,
+        pixel_count: int | None = None,
+    ):
         """
         Renders the calibration data to the virtual output
         """
 
+        if pixel_count is None:
+            pixel_count = device.pixel_count
+
+        black_color = self._calibration_cache.black_color
+        assert black_color is not None
+
         # set data to black for full length of led strip allow other segments to overwrite
         data.append(
             (
-                self._calibration_cache.black_color,
+                black_color,
                 0,
-                device.pixel_count - 1,
+                pixel_count - 1,
             )
         )
 
@@ -1198,7 +1678,7 @@ class Virtual:
 
         oneshot.pixel_count = self.pixel_count
         oneshot.init()
-        with self.lock:
+        with self._output_lock, self.lock:
             self._oneshots.append(oneshot)
         return True
 
@@ -1225,7 +1705,6 @@ class Virtual:
             self.activate()
         if not active and self._active:
             self.deactivate()
-        self._active = active
 
     @property
     def id(self) -> str:
@@ -1381,62 +1860,73 @@ class Virtual:
 
     def replace_config(self, new: VirtualConfig) -> None:
         """Make new the config, as it is (no repair), and apply what changed."""
-        old = self._config
-        reactivate_effect = False
-        mapping_changed = new.mapping != old.mapping
-        if mapping_changed:
-            self.invalidate_cached_props()
-            reactivate_effect = True
+        with self._output_lock:
+            shared = self._replace_config(new)
+        if shared:
+            self._share_transition(new)
 
-        if (
-            new.transition_mode != old.transition_mode
-            or new.transition_time != old.transition_time
-        ):
-            self.frame_transitions = self.transitions[new.transition_mode]
-            if self._ledfx.config.global_transitions:
-                self._share_transition(new)
+    def _replace_config(self, new: VirtualConfig) -> bool:
+        with self.lock:
+            self._renew_source_generation()
+            old = self._config
+            share_transition = False
+            reactivate_effect = False
+            mapping_changed = new.mapping != old.mapping
+            if mapping_changed:
+                self.invalidate_cached_props()
+                reactivate_effect = True
 
-        if (new.frequency_min, new.frequency_max) != (
-            old.frequency_min,
-            old.frequency_max,
-        ):
-            self.frequency_range = FrequencyRange(new.frequency_min, new.frequency_max)
-            # Clear cached effect properties so the changes take effect
-            if self._active_effect is not None and hasattr(
-                self._active_effect, "clear_melbank_freq_props"
+            if (
+                new.transition_mode != old.transition_mode
+                or new.transition_time != old.transition_time
             ):
-                self._active_effect.clear_melbank_freq_props()
+                self.frame_transitions = self.transitions[new.transition_mode]
+                if self._ledfx.config.global_transitions:
+                    share_transition = True
 
-        if self._active_effect is not None:
-            # if a virtual level config change impacts a 2d effect layout, then trigger an init
-            if (new.rows != old.rows or new.rotate != old.rotate) and hasattr(
-                self._active_effect, "set_init"
+            if (new.frequency_min, new.frequency_max) != (
+                old.frequency_min,
+                old.frequency_max,
+            ):
+                self.frequency_range = FrequencyRange(
+                    new.frequency_min, new.frequency_max
+                )
+                # Clear cached effect properties so the changes take effect
+                if self._active_effect is not None and hasattr(
+                    self._active_effect, "clear_melbank_freq_props"
+                ):
+                    self._active_effect.clear_melbank_freq_props()
+
+            if new.grouping != old.grouping:
+                reactivate_effect = reactivate_effect or self._active_effect is not None
+                self.invalidate_cached_props()
+
+            # Layout changes can require the running 2D effect to initialize.
+            if (
+                self._active_effect is not None
+                and (new.rows != old.rows or new.rotate != old.rotate)
+                and hasattr(self._active_effect, "set_init")
             ):
                 self._active_effect.set_init()
 
-            if new.grouping != old.grouping:
-                # The effect needs to be reactivated later after the config has been applied
-                reactivate_effect = True
-                self.invalidate_cached_props()
+            self._config = new
+            self._sync_entry()
 
-        self._config = new
-        self._sync_entry()
+            old_complex_segments = self.complex_segments
+            self.complex_segments = new.complex_segments
 
-        old_complex_segments = self.complex_segments
-        self.complex_segments = new.complex_segments
-
-        # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
-        if old_complex_segments != self.complex_segments or (
-            self.complex_segments and mapping_changed
-        ):
-            self._compile_device_remap()
-
-        self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
+            # Recompile remap if complex_segments changed OR if mapping changed while complex_segments is True
+            if old_complex_segments != self.complex_segments or (
+                self.complex_segments and mapping_changed
+            ):
+                self._compile_device_remap()
 
         if reactivate_effect:
-            # The render thread clears a finished transition under this lock.
-            with self.lock:
-                self._reactivate_effect()
+            self._reactivate_effect()
+
+        self._refresh_device_rows()
+        self._ledfx.events.fire_event(VirtualConfigUpdateEvent(self.id, self._config))
+        return share_transition
 
     def _share_transition(self, config: VirtualConfig) -> None:
         """global_transitions: every other virtual takes this transition."""
@@ -1446,16 +1936,20 @@ class Virtual:
             if not hasattr(virtual, "frame_transitions"):
                 _LOGGER.info("virtual of %s has no transitions", virtual.id)
                 continue
-            virtual.frame_transitions = virtual.transitions[config.transition_mode]
-            virtual._config = replace_model(
-                virtual._config,
-                transition_time=config.transition_time,
-                transition_mode=config.transition_mode,
-            )
-            # Persist it too.
-            entry = virtual.entry
-            if entry is not None:
-                entry.config = virtual._config
+            with virtual._output_lock, virtual.lock:
+                if self._config is not config:
+                    return
+                virtual._renew_source_generation()
+                virtual.frame_transitions = virtual.transitions[config.transition_mode]
+                virtual._config = replace_model(
+                    virtual._config,
+                    transition_time=config.transition_time,
+                    transition_mode=config.transition_mode,
+                )
+                # Persist it too.
+                entry = virtual.entry
+                if entry is not None:
+                    entry.config = virtual._config
 
     @cached_property
     def effective_pixel_count(self):
@@ -1513,8 +2007,11 @@ class Virtual:
         Args:
             rows (int): The number of rows to set in the configuration.
         """
-        self._config = replace_model(self._config, rows=max(1, rows))
-        self._sync_entry()
+        with self._output_lock, self.lock:
+            self._renew_source_generation()
+            self._config = replace_model(self._config, rows=max(1, rows))
+            self._sync_entry()
+        self._refresh_device_rows()
 
 
 class Virtuals:
@@ -1670,12 +2167,36 @@ class Virtuals:
 
         # Store the object into the internal list and return it
         self._virtuals[id] = obj
+        with obj.lock:
+            obj._renew_source_generation()
+        obj._refresh_device_rows()
         return obj
 
     def destroy(self, id):
         if id not in self._virtuals:
             raise AttributeError(f"Object with id '{id}' does not exist.")
-        del self._virtuals[id]
+        virtual = self._virtuals[id]
+        with virtual._output_lock:
+            with virtual.lock:
+                self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, id)
+                sampler = self._ledfx.preview_sampler
+                if isinstance(sampler, PreviewSampler):
+                    sampler.invalidate_source(SourceKey("virtual", id))
+                virtual._source_epoch += 1
+                virtual.flush_pending_clear_frame()
+                virtual._source_generation = -1
+                virtual._active = False
+                virtual._render_token += 1
+                virtual._detach_active_effect()
+                virtual._detach_transition_effect()
+                thread = getattr(virtual, "_thread", None)
+                del self._virtuals[id]
+            virtual._drain_retired_effects()
+        # A render worker can be waiting for output; release its owner lock
+        # before joining. Its token/active checks prevent successor rendering.
+        if thread is not None and thread is not threading.current_thread():
+            thread.join()
+        virtual._refresh_device_rows()
 
     def __iter__(self):
         return iter(self._virtuals)
@@ -1693,6 +2214,66 @@ class Virtuals:
 
     def get(self, *args):
         return self._virtuals.get(*args)
+
+    def deactivate_for_device(self, virtual: Virtual) -> None:
+        """Stop this registered owner for runtime device overlap/streaming."""
+        with virtual.lock:
+            if self._virtuals.get(virtual.id) is not virtual:
+                return
+            epoch = virtual._source_epoch
+        # Deactivation owns its actual epoch claim and releases output before
+        # joining the renderer. No manager/source guard spans that join.
+        virtual.deactivate(source_epoch=epoch)
+
+    def remove_device_segments(
+        self, virtual: Virtual, device_id: str, device: object
+    ) -> bool:
+        """Remove this device's layout only while both captured owners remain."""
+        with virtual.lock:
+            if self._virtuals.get(virtual.id) is not virtual:
+                return False
+            epoch = virtual._source_epoch
+            active = virtual.active
+            old_segments = virtual.segments
+            segments = [segment for segment in old_segments if segment[0] != device_id]
+        if active:
+            paused_epoch = virtual._deactivate(source_epoch=epoch, preserve_clear=True)
+            if paused_epoch is None:
+                return False
+            epoch = paused_epoch
+        claim: int | None = epoch
+        try:
+            applied = virtual.update_segments(
+                segments, source_epoch=epoch, removed_device=(device_id, device)
+            )
+            if applied and segments != old_segments:
+                claim = epoch + 1
+        except _RemovedDeviceSuperseded as error:
+            applied = False
+            claim = error.restored_epoch
+        resume_epoch: int | None = None
+        with virtual.lock:
+            if (
+                self._virtuals.get(virtual.id) is virtual
+                and claim == virtual._source_epoch
+            ):
+                if not applied:
+                    # The old layout remains current, but its device objects
+                    # may have changed again during restoration callbacks.
+                    virtual._renew_source_generation()
+                    virtual.invalidate_cached_props()
+                    virtual._compile_device_remap()
+                else:
+                    virtual.flush_pending_clear_frame()
+                if (
+                    active
+                    and virtual.active_effect is not None
+                    and virtual.pixel_count > 0
+                ):
+                    resume_epoch = virtual._source_epoch
+        if resume_epoch is not None:
+            virtual.activate(source_epoch=resume_epoch)
+        return applied
 
     # ---- manager API (v1 and v2 call these) -------------------------------
     # Mutators check safe mode first and never await, so no other request can

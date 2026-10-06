@@ -41,7 +41,11 @@ class NativePacketDevice(NetworkedDevice):
     @override
     @contextmanager
     def _config_update_context(self, config: dict[str, object]) -> Iterator[None]:
-        with self.device_lock, super()._config_update_context(config):
+        with (
+            self._output_lock,
+            self.device_lock,
+            super()._config_update_context(config),
+        ):
             yield
 
     def _validate_configuration(self) -> None:
@@ -69,7 +73,7 @@ class NativePacketDevice(NetworkedDevice):
 
     @override
     def config_updated(self, config: object) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if not self._output_changed():
                 return
             self._validate_configuration()
@@ -91,7 +95,7 @@ class NativePacketDevice(NetworkedDevice):
     async def resolve_address(
         self, success_callback: Callable[[], object] | None = None
     ) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             address, generation = self.config.ip_address, self._generation
         await self._resolve(address, generation, success_callback)
 
@@ -106,12 +110,12 @@ class NativePacketDevice(NetworkedDevice):
                 self._ledfx.loop, self._ledfx.thread_executor, address
             )
         except ValueError as error:
-            with self.device_lock:
+            with self._output_lock, self.device_lock:
                 if generation == self._generation and address == self.config.ip_address:
                     self._online = False
                     _LOGGER.warning("Device %s: %s", self.name, error)
             return
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             if generation != self._generation or address != self.config.ip_address:
                 return
             candidate = None
@@ -137,7 +141,7 @@ class NativePacketDevice(NetworkedDevice):
 
     @override
     def activate(self, *args: object, **kwargs: object) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._validate_configuration()
             self._requested = True
             if self._destination is None:
@@ -150,7 +154,7 @@ class NativePacketDevice(NetworkedDevice):
 
     @override
     def deactivate(self) -> None:
-        with self.device_lock:
+        with self._output_lock, self.device_lock:
             self._requested = False
             self._replace(None)
             Device.deactivate(self)
