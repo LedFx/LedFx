@@ -7,6 +7,7 @@ import base64
 import threading
 from _thread import LockType
 from collections.abc import Callable, Iterator
+from types import TracebackType
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -22,6 +23,7 @@ from ledfx.devices.e131 import E131Device
 from ledfx.devices.launchpad import LaunchpadDevice
 from ledfx.devices.lifx import LifxDevice
 from ledfx.devices.nanoleaf import NanoleafDevice
+from ledfx.devices.twinkly_squares import TwinklySquaresDevice
 from ledfx.devices.utils.rgbw_conversion import OutputMode
 from ledfx.devices.wled import WLEDDevice
 from ledfx.effects import DummyEffect
@@ -852,14 +854,23 @@ def test_actual_render_loop_transfers_owned_rgb_and_respects_preview_only(
 
 
 @pytest.mark.parametrize("change", ["reactivate", "config"])
+@pytest.mark.parametrize("sampling", ["open", "closed", "absent"])
 def test_priority_admission_rejects_generation_changed_before_output_wait(
     ledfx: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
     change: str,
+    sampling: str,
 ) -> None:
     install_sampler(ledfx)
     device = add_physical(ledfx)
     virtual = attach(ledfx, "logical", 0, 49)
+    sampler = ledfx.preview_sampler
+    assert isinstance(sampler, PreviewSampler)
+    if sampling != "open":
+        sampler.close()
+        if sampling == "absent":
+            ledfx.preview_sampler = None
+        device.update_config({"center_offset": 2})
     checked = threading.Event()
     original = device._write_pixels
 
@@ -1174,3 +1185,269 @@ def test_deleted_virtual_cannot_send_into_same_id_successor(ledfx: MagicMock) ->
     loop.drain()
     assert len(device.sent) == count
     np.testing.assert_array_equal(decoded(previews[-1]), np.tile((7, 8, 9), (50, 1)))
+
+
+@pytest.mark.parametrize("phase", ["update", "rollback"])
+@pytest.mark.parametrize("sampling", ["open", "closed"])
+def test_old_segment_cleanup_cannot_erase_completed_successor_layout(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    phase: str,
+    sampling: str,
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 24)
+    if sampling == "closed":
+        ledfx.preview_sampler.close()
+    entered, release = threading.Event(), threading.Event()
+    original_clear = device.clear_virtual_segments
+    original_restart = virtual._reactivate_effect
+    clears = 0
+    caught: list[str] = []
+
+    def clear(
+        virtual_id: str,
+        *,
+        source: Virtual | None = None,
+        source_epoch: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
+        nonlocal clears
+        if threading.current_thread().name == "old-layout":
+            clears += 1
+            if (phase == "update" and clears == 1) or (
+                phase == "rollback" and clears == 2
+            ):
+                entered.set()
+                assert release.wait(5)
+        original_clear(
+            virtual_id,
+            source=source,
+            source_epoch=source_epoch,
+            source_token=source_token,
+        )
+
+    def restart() -> None:
+        if phase == "rollback" and threading.current_thread().name == "old-layout":
+            raise ValueError("original resize failure")
+        original_restart()
+
+    monkeypatch.setattr(device, "clear_virtual_segments", clear)
+    monkeypatch.setattr(virtual, "_reactivate_effect", restart)
+
+    def old_update() -> None:
+        try:
+            virtual.update_segments([["physical", 0, 29, False]])
+        except ValueError as error:
+            caught.append(str(error))
+
+    worker = threading.Thread(name="old-layout", target=old_update)
+    worker.start()
+    assert entered.wait(5)
+    virtual.update_segments([["physical", 0, 39, False]])
+    assert device._segments == [(virtual.id, 0, 39)]
+    release.set()
+    worker.join(5)
+    assert not worker.is_alive()
+    assert device._segments == [(virtual.id, 0, 39)]
+    assert virtual.segments == [["physical", 0, 39, False]]
+    assert caught == (["original resize failure"] if phase == "rollback" else [])
+    virtual.force_frame((7, 8, 9))
+    loop.drain()
+    np.testing.assert_array_equal(device.sent[-1][:40], np.tile((7, 8, 9), (40, 1)))
+
+
+def test_twinkly_discovery_callback_does_not_invert_primary_output_locks(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_sampler(ledfx)
+    device = TwinklySquaresDevice(
+        ledfx, TwinklySquaresDevice.Config(name="twinkly", ip_address="127.0.0.1")
+    )
+    device._id = "physical"
+    device._destination = "127.0.0.1"
+    ledfx.devices._objects[device.id] = device
+    primary = add_virtual(
+        ledfx,
+        "primary-other",
+        "primary",
+        [["physical", 0, 63, False]],
+        is_device="physical",
+    )
+    primary._active = True
+    controller = MagicMock()
+    info = MagicMock()
+    info.__getitem__.return_value = 64
+    controller.get_device_info.return_value = info
+    controller.get_led_layout.return_value = {
+        "coordinates": [
+            {"x": col / 7 * 2 - 1, "y": row / 7 * 2 - 1}
+            for row in range(8)
+            for col in range(8)
+        ]
+    }
+
+    def controller_factory(address: str) -> MagicMock:
+        return controller
+
+    monkeypatch.setattr(
+        "ledfx.devices.twinkly_squares.xled.HighControlInterface",
+        controller_factory,
+    )
+    entered, owner_ready = threading.Event(), threading.Event()
+    actual_lock = primary._output_lock
+    observations: list[bool] = []
+    failures: list[str] = []
+    original_refresh = primary._refresh_device_rows
+
+    class ObservedLock:
+        def __enter__(self) -> None:
+            if threading.current_thread().name == "twinkly-activation":
+                entered.set()
+            actual_lock.acquire()
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            actual_lock.release()
+
+    monkeypatch.setattr(primary, "_output_lock", ObservedLock())
+
+    def refresh() -> None:
+        if threading.current_thread().name == "primary-config":
+            available = acquire_from_worker(device._output_lock)
+            observations.append(available)
+            if not available:
+                raise RuntimeError("device-output -> virtual-output inversion")
+        original_refresh()
+
+    monkeypatch.setattr(primary, "_refresh_device_rows", refresh)
+
+    def configure() -> None:
+        with primary._output_lock:
+            owner_ready.set()
+            assert entered.wait(5)
+            try:
+                primary.update_config({"rows": 2})
+            except RuntimeError as error:
+                failures.append(str(error))
+
+    setter = threading.Thread(name="primary-config", target=configure)
+    setter.start()
+    assert owner_ready.wait(5)
+    activator = threading.Thread(name="twinkly-activation", target=device.activate)
+    activator.start()
+    setter.join(5)
+    activator.join(5)
+    assert not setter.is_alive() and not activator.is_alive()
+    assert observations == [True]
+    assert failures == []
+    assert device.ctrl is controller and device.is_active()
+
+
+@pytest.mark.parametrize("sampling", ["open", "closed"])
+def test_old_cleanup_cannot_remove_same_id_recreated_owner(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    sampling: str,
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    old = attach(ledfx, "logical", 0, 24)
+    old.force_frame((71, 71, 71))
+    if sampling == "closed":
+        ledfx.preview_sampler.close()
+    entered, release = threading.Event(), threading.Event()
+    original_clear = device.clear_virtual_segments
+
+    def clear(
+        virtual_id: str,
+        *,
+        source: Virtual | None = None,
+        source_epoch: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
+        if threading.current_thread().name == "deleted-old-layout":
+            entered.set()
+            assert release.wait(5)
+        original_clear(
+            virtual_id,
+            source=source,
+            source_epoch=source_epoch,
+            source_token=source_token,
+        )
+
+    monkeypatch.setattr(device, "clear_virtual_segments", clear)
+    worker = threading.Thread(
+        name="deleted-old-layout",
+        target=old.update_segments,
+        args=([["physical", 0, 29, False]],),
+    )
+    worker.start()
+    assert entered.wait(5)
+    ledfx.virtuals.destroy(old.id)
+    successor = attach(ledfx, "logical", 0, 39)
+    assert device._segments == [(successor.id, 0, 24), (successor.id, 0, 39)]
+    successor.deactivate_segments()
+    successor.activate_segments(successor.segments)
+    assert device._segments == [(successor.id, 0, 39)]
+    release.set()
+    worker.join(5)
+    assert not worker.is_alive()
+    assert device._segments == [(successor.id, 0, 39)]
+    successor.force_frame((7, 8, 9))
+    loop.drain()
+    np.testing.assert_array_equal(device.sent[-1][:40], np.tile((7, 8, 9), (40, 1)))
+
+
+@pytest.mark.parametrize("sampling", ["open", "closed"])
+def test_clear_rejects_force_admitted_before_effect_detachment(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch, sampling: str
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 24)
+    if sampling == "closed":
+        ledfx.preview_sampler.close()
+    entered, release = threading.Event(), threading.Event()
+    actual_lock = virtual._output_lock
+    original_publish = virtual._publish_preview_frame
+
+    class ObservedLock:
+        def __enter__(self) -> None:
+            if threading.current_thread().name == "old-force":
+                entered.set()
+                assert release.wait(5)
+            actual_lock.acquire()
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            actual_lock.release()
+
+    monkeypatch.setattr(virtual, "_output_lock", ObservedLock())
+    worker = threading.Thread(
+        name="old-force", target=virtual.force_frame, args=((73, 73, 73),)
+    )
+
+    def publish(frame: OwnedFrame | None) -> None:
+        if threading.current_thread().name != "old-force":
+            release.set()
+            worker.join(5)
+            assert not worker.is_alive()
+        original_publish(frame)
+
+    monkeypatch.setattr(virtual, "_publish_preview_frame", publish)
+    worker.start()
+    assert entered.wait(5)
+    virtual.clear_frame()
+    assert not virtual.active
+    np.testing.assert_array_equal(device.sent[-1][:25], np.zeros((25, 3)))

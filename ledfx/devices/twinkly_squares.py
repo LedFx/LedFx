@@ -100,25 +100,35 @@ class TwinklySquaresDevice(NetworkedDevice):
                 self._set_config_values(pixel_count=self.leds)
                 config_changed = True
 
-            # Update associated virtuals with the detected matrix height
-            for virtual in self._ledfx.virtuals.values():
-                if virtual.is_device == self.id:
-                    if virtual.config.rows != self.matrix_height:
-                        _LOGGER.info(
-                            "Updating virtual %s rows from %s to %s",
-                            virtual.id,
-                            virtual.config.rows,
-                            self.matrix_height,
-                        )
-                        virtual.update_config({"rows": self.matrix_height})
-                        config_changed = True
-                    break  # Only one virtual can be is_device for this device
-
-            # Save config only once if anything changed
-            if config_changed:
-                self._ledfx.config_store.request_save()
-
+            # Capture discovery metadata before releasing resource ownership.
+            primary = next(
+                (
+                    virtual
+                    for virtual in self._ledfx.virtuals.values()
+                    if virtual.is_device == self.id
+                ),
+                None,
+            )
+            rows = self.matrix_height
+            controller = self.ctrl
             super().activate()
+            epoch = self._output_epoch
+
+        # Virtual configuration can refresh physical rows (virtual -> device
+        # output). Never acquire its owner lock while holding device output.
+        if primary is not None:
+            with primary._output_lock:
+                if (
+                    self._output_epoch == epoch
+                    and self.ctrl is controller
+                    and self._active
+                    and self._ledfx.virtuals.get(primary.id) is primary
+                    and primary.config.rows != rows
+                ):
+                    primary.update_config({"rows": rows})
+                    config_changed = True
+        if config_changed:
+            self._ledfx.config_store.request_save()
 
     def deactivate(self):
         with self._output_lock:

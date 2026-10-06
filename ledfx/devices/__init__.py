@@ -104,6 +104,7 @@ class Device(BaseRegistry):
         # activate/deactivate, so the output boundary must be reentrant.
         self._output_lock = threading.RLock()
         self._frame_lock = threading.RLock()
+        self._output_epoch = 0
         self._source_generation = 0
         self._frame_sequence = 0
         self._physical_rows = 1
@@ -200,6 +201,8 @@ class Device(BaseRegistry):
         return self._online
 
     def _renew_source_generation(self) -> None:
+        # Hardware ownership survives absent/closed preview observation.
+        self._output_epoch += 1
         sampler = self._ledfx.preview_sampler
         if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
             self._source_generation = sampler.allocate_source_generation(
@@ -281,17 +284,16 @@ class Device(BaseRegistry):
         virtual_id: str,
         data: Sequence[PixelUpdate],
         *,
-        source_generation: int | None = None,
+        output_epoch: int | None = None,
     ) -> None:
         # Non-priority contributions do not wait for a slow sender. Only a
         # priority capture holds output admission, always before the frame lock.
         with self._frame_lock:
             if not self._active or (
-                source_generation is not None
-                and source_generation != self._source_generation
+                output_epoch is not None and output_epoch != self._output_epoch
             ):
                 return
-            admission_generation = self._source_generation
+            admission_epoch = self._output_epoch
             priority = self.priority_virtual
             if priority is None or virtual_id != priority.id:
                 self._write_pixels(data)
@@ -300,7 +302,7 @@ class Device(BaseRegistry):
         rows = generation = sequence = 0
         with self._output_lock:
             with self._frame_lock:
-                if not self._active or admission_generation != self._source_generation:
+                if not self._active or admission_epoch != self._output_epoch:
                     return
                 self._write_pixels(data)
                 priority = self.priority_virtual
@@ -347,6 +349,7 @@ class Device(BaseRegistry):
 
     def deactivate(self):
         with self._output_lock, self._frame_lock:
+            self._output_epoch += 1
             sampler = self._ledfx.preview_sampler
             if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
                 sampler.invalidate_source(SourceKey("device", self.id))
@@ -434,6 +437,7 @@ class Device(BaseRegistry):
         *,
         source: Virtual | None = None,
         source_generation: int | None = None,
+        source_epoch: int | None = None,
         source_token: int | None = None,
     ) -> None:
         """Add multiple segments efficiently with single overlap check.
@@ -575,6 +579,7 @@ class Device(BaseRegistry):
                     source_generation is not None
                     and source._source_generation != source_generation
                 )
+                or (source_epoch is not None and source._source_epoch != source_epoch)
                 or (source_token is not None and source._render_token != source_token)
             ):
                 return
@@ -588,8 +593,23 @@ class Device(BaseRegistry):
             if needs_cache_invalidation:
                 self.invalidate_cached_props()
 
-    def clear_virtual_segments(self, virtual_id):
+    def clear_virtual_segments(
+        self,
+        virtual_id: str,
+        *,
+        source: Virtual | None = None,
+        source_epoch: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
         with self._output_lock, self._frame_lock:
+            # Destructive work has the same source start claim as registration;
+            # old callback phases cannot erase a completed successor layout.
+            if source is not None and (
+                self._ledfx.virtuals.get(virtual_id) is not source
+                or (source_epoch is not None and source._source_epoch != source_epoch)
+                or (source_token is not None and source._render_token != source_token)
+            ):
+                return
             new_segments = []
             for segment in self._segments:
                 if segment[0] != virtual_id:
@@ -931,6 +951,7 @@ class Devices(RegistryLoader):
                 sampler = self._ledfx.preview_sampler
                 if isinstance(sampler, PreviewSampler):
                     sampler.invalidate_source(SourceKey("device", id))
+                device._output_epoch += 1
                 device._source_generation = -1
                 device._active = False
         super().destroy(id)

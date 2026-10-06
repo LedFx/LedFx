@@ -15,6 +15,7 @@ def _virtual(registered: dict[str, object]) -> Virtual:
     virtual.lock = threading.Lock()
     virtual._output_lock = threading.RLock()
     virtual._retired_effects = []
+    virtual._source_epoch = 0
     virtual._source_generation = 0
     virtual._render_token = 0
     virtual._ledfx = MagicMock()
