@@ -7,8 +7,8 @@ import weakref
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from functools import partial
-from types import SimpleNamespace
-from typing import ParamSpec
+from types import SimpleNamespace, TracebackType
+from typing import ParamSpec, Self
 from unittest.mock import MagicMock, Mock
 
 import numpy as np
@@ -17,7 +17,11 @@ from numpy.typing import NDArray
 
 from ledfx.api.websocket import WebsocketConnection
 from ledfx.configuration.models import AudioConfig
-from ledfx.effects.audio import AudioAnalysisSource, AudioInputSource
+from ledfx.effects.audio import (
+    AudioAnalysisSource,
+    AudioInputSource,
+    _GraphActivationContext,
+)
 from ledfx.effects.melbank import Melbanks
 from ledfx.effects.utils.logsec_helper import LogSecHelper
 from ledfx.events import (
@@ -569,6 +573,7 @@ def analysis_source(bus: Events) -> tuple[AudioAnalysisSource, Melbanks]:
     source = AudioAnalysisSource.__new__(AudioAnalysisSource)
     source._ledfx = core
     source.melbanks = melbanks
+    source._graph_activation = _GraphActivationContext()
     return source, melbanks
 
 
@@ -633,11 +638,12 @@ def test_audio_activation_reenables_only_successful_graph_publication(
         if result == "error":
             raise OSError("SDK startup failed")
         if result == "recovery":
-            source.deactivate()
+            source._deactivate_for_recovery()
         if result in ("success", "recovery"):
             AudioInputSource._audio_stream_active = True
 
-    monkeypatch.setattr(AudioInputSource, "activate", start)
+    monkeypatch.setattr(AudioInputSource, "_activate_inner", start)
+    monkeypatch.setattr(AudioInputSource, "_activating", False)
     monkeypatch.setattr(AudioInputSource, "_stream", None)
     if result == "error":
         with pytest.raises(OSError, match="SDK startup failed"):
@@ -647,6 +653,271 @@ def test_audio_activation_reenables_only_successful_graph_publication(
     melbanks.send_melbank_event(0)
     loop.drain()
     assert len(got) == (1 if result in ("success", "recovery") else 0)
+
+
+def test_activation_completion_cannot_undo_concurrent_failed_stop(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bus, loop = make_bus()
+    got: list[Event] = []
+    bus.add_listener(got.append, Event.GRAPH_UPDATE)
+    source, melbanks = analysis_source(bus)
+    before_final_enable = threading.Event()
+    stop_finished = threading.Event()
+    activation_thread = threading.get_ident()
+    failures: list[str] = []
+    stream = Mock()
+    stream.stop.side_effect = OSError("SDK stop failed")
+
+    class SnapshotLock:
+        """Pause only after the active-state snapshot releases its real lock."""
+
+        def __init__(self) -> None:
+            self.lock = threading.Lock()
+
+        def __enter__(self) -> Self:
+            self.lock.acquire()
+            return self
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_value: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            self.lock.release()
+            if (
+                threading.get_ident() == activation_thread
+                and AudioInputSource._audio_stream_active
+            ):
+                before_final_enable.set()
+                assert stop_finished.wait(2)
+
+    def start(owner: AudioInputSource) -> None:
+        assert owner is source
+        AudioInputSource._audio_stream_active = True
+
+    def stop() -> None:
+        try:
+            assert before_final_enable.wait(2)
+            source.deactivate()
+        except OSError as error:
+            failures.append(str(error))
+        finally:
+            stop_finished.set()
+
+    monkeypatch.setattr(AudioInputSource, "_activate_inner", start)
+    monkeypatch.setattr(AudioInputSource, "_activating", False)
+    monkeypatch.setattr(AudioInputSource, "_stream", stream)
+    monkeypatch.setattr(AudioInputSource, "_audio_stream_active", False)
+    monkeypatch.setattr(AudioInputSource, "_class_lock", SnapshotLock())
+    worker = threading.Thread(target=stop)
+    worker.start()
+    try:
+        source.activate()
+    finally:
+        worker.join(2)
+    assert not worker.is_alive() and failures == ["SDK stop failed"]
+    assert not AudioInputSource._audio_stream_active
+    melbanks.send_melbank_event(0)
+    assert not bus._latest
+    loop.drain()
+    assert got == []
+
+
+@pytest.mark.parametrize("stop_fails", [False, True])
+def test_public_deactivate_on_activation_thread_always_revokes_graph_claim(
+    monkeypatch: pytest.MonkeyPatch, stop_fails: bool
+) -> None:
+    bus, loop = make_bus()
+    got: list[Event] = []
+    bus.add_listener(got.append, Event.GRAPH_UPDATE)
+    source, melbanks = analysis_source(bus)
+    stream = Mock()
+    if stop_fails:
+        stream.stop.side_effect = OSError("SDK stop failed")
+
+    def start(owner: AudioInputSource) -> None:
+        assert owner is source
+        AudioInputSource._audio_stream_active = True
+        melbanks.send_melbank_event(0)
+        if stop_fails:
+            with pytest.raises(OSError, match="SDK stop failed"):
+                source.deactivate()
+        else:
+            source.deactivate()
+        # The older startup can still report success after the public stop.
+        # That report must not reclaim graph publication on this same thread.
+        AudioInputSource._audio_stream_active = True
+
+    monkeypatch.setattr(AudioInputSource, "_activate_inner", start)
+    monkeypatch.setattr(AudioInputSource, "_activating", False)
+    monkeypatch.setattr(AudioInputSource, "_stream", stream)
+    monkeypatch.setattr(AudioInputSource, "_audio_stream_active", False)
+    source.activate()
+    melbanks.send_melbank_event(0)
+    assert not bus._latest
+    loop.drain()
+    assert got == []
+
+
+@pytest.mark.parametrize("outer_result", ["success", "inactive", "error"])
+def test_old_outer_activation_cannot_change_newer_successful_inner_owner(
+    monkeypatch: pytest.MonkeyPatch, outer_result: str
+) -> None:
+    bus, loop = make_bus()
+    got: list[Event] = []
+    bus.add_listener(got.append, Event.GRAPH_UPDATE)
+    source, melbanks = analysis_source(bus)
+    calls = 0
+
+    def start(owner: AudioInputSource) -> None:
+        nonlocal calls
+        assert owner is source
+        calls += 1
+        assert melbanks._graph_lock.acquire(blocking=False)
+        melbanks._graph_lock.release()
+        if calls == 1:
+            source._deactivate_for_recovery()
+            source._activate_inner()
+            assert len(bus._latest) == 1
+            # Context must restore the older outer claim after the inner start.
+            # Its later retry must not suspend/purge the newer owner's graph.
+            source._deactivate_for_recovery()
+            assert len(bus._latest) == 1
+            if outer_result == "error":
+                raise OSError("outer startup failed")
+            AudioInputSource._audio_stream_active = outer_result == "success"
+        else:
+            AudioInputSource._audio_stream_active = True
+            melbanks.melbanks_filtered[0][:] = 22
+            melbanks.send_melbank_event(0)
+
+    monkeypatch.setattr(AudioInputSource, "_activate_inner", start)
+    monkeypatch.setattr(AudioInputSource, "_activating", False)
+    monkeypatch.setattr(AudioInputSource, "_stream", None)
+    monkeypatch.setattr(AudioInputSource, "_audio_stream_active", False)
+    if outer_result == "error":
+        with pytest.raises(OSError, match="outer startup failed"):
+            source.activate()
+    else:
+        source.activate()
+    assert source._graph_activation.claim is None
+    melbanks.melbanks_filtered[0][:] = 33
+    melbanks.send_melbank_event(0)
+    loop.drain()
+    assert len(got) == 1 and isinstance(got[0], GraphUpdateEvent)
+    assert got[0].melbank == [33] * melbanks.mel_len
+
+
+def test_actual_sdk_retry_preserves_current_graph_activation_claim(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bus, loop = make_bus()
+    got: list[Event] = []
+    bus.add_listener(got.append, Event.GRAPH_UPDATE)
+    source, melbanks = analysis_source(bus)
+    source._config = AudioConfig(audio_device=0, audio_device_name="Test: Microphone")
+    sdk = Mock()
+    stream = Mock()
+    attempts = 0
+
+    def check_unlocked() -> None:
+        for lock in (melbanks._graph_lock, AudioInputSource._class_lock):
+            assert lock.acquire(blocking=False)
+            lock.release()
+
+    def open_stream(**kwargs: object) -> Mock:
+        nonlocal attempts
+        check_unlocked()
+        attempts += 1
+        if attempts == 1:
+            raise OSError("SDK needs reinitialization")
+        assert not melbanks._graph_enabled  # explicit retry suspends publication
+        return stream
+
+    sdk.InputStream.side_effect = open_stream
+    stream.start.side_effect = check_unlocked
+    source._audio = sdk
+    monkeypatch.setattr(
+        source,
+        "query_devices",
+        Mock(
+            return_value=[
+                {
+                    "name": "Microphone",
+                    "hostapi": 0,
+                    "max_input_channels": 1,
+                    "default_samplerate": 48000,
+                }
+            ]
+        ),
+    )
+    monkeypatch.setattr(source, "query_hostapis", Mock(return_value=[{"name": "Test"}]))
+    monkeypatch.setattr(source, "valid_device_indexes", Mock(return_value=[0]))
+    monkeypatch.setattr("ledfx.effects.audio.sd._terminate", check_unlocked)
+    monkeypatch.setattr("ledfx.effects.audio.sd._initialize", check_unlocked)
+    monkeypatch.setattr(AudioInputSource, "_audio_stream_active", False)
+    monkeypatch.setattr(AudioInputSource, "_activating", False)
+    monkeypatch.setattr(AudioInputSource, "_stream", None)
+    monkeypatch.setattr(AudioInputSource, "_last_active", None)
+    monkeypatch.setattr(AudioInputSource, "_last_device_name", None)
+    try:
+        source.activate()  # real base activate/_activate_inner/try_open_device
+        assert attempts == 2 and AudioInputSource._audio_stream_active
+        melbanks.melbanks_filtered[0][:] = 44
+        melbanks.send_melbank_event(0)
+        loop.drain()
+        assert len(got) == 1 and isinstance(got[0], GraphUpdateEvent)
+        assert got[0].melbank == [44] * melbanks.mel_len
+    finally:
+        source.deactivate()
+
+
+def test_rejected_activation_does_not_supersede_in_progress_graph_owner(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    bus, loop = make_bus()
+    got: list[Event] = []
+    bus.add_listener(got.append, Event.GRAPH_UPDATE)
+    source, melbanks = analysis_source(bus)
+    entered = threading.Event()
+    release = threading.Event()
+    failures: list[Exception] = []
+    starts = 0
+
+    def start(owner: AudioInputSource) -> None:
+        nonlocal starts
+        assert owner is source
+        starts += 1
+        entered.set()
+        assert release.wait(2)
+        AudioInputSource._audio_stream_active = True
+
+    def activate() -> None:
+        try:
+            source.activate()
+        except Exception as error:  # noqa: BLE001 - propagate worker failure
+            failures.append(error)
+
+    monkeypatch.setattr(AudioInputSource, "_activate_inner", start)
+    monkeypatch.setattr(AudioInputSource, "_activating", False)
+    monkeypatch.setattr(AudioInputSource, "_audio_stream_active", False)
+    worker = threading.Thread(target=activate)
+    worker.start()
+    try:
+        assert entered.wait(2)
+        source.activate()  # actual unchanged base reentry guard rejects this
+        assert starts == 1
+    finally:
+        release.set()
+        worker.join(2)
+    assert not worker.is_alive() and not failures
+    melbanks.melbanks_filtered[0][:] = 55
+    melbanks.send_melbank_event(0)
+    loop.drain()
+    assert len(got) == 1 and isinstance(got[0], GraphUpdateEvent)
+    assert got[0].melbank == [55] * melbanks.mel_len
 
 
 def test_graph_owner_revocation_waits_for_admission_then_purges_atomically(

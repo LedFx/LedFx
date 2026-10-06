@@ -860,7 +860,7 @@ class AudioInputSource:
             Returns True on success, False on failure.
             """
             if reinit:
-                self.deactivate()
+                self._deactivate_for_recovery()
                 try:
                     sd._terminate()
                     sd._initialize()
@@ -949,6 +949,10 @@ class AudioInputSource:
             stream_to_close.stop()
             stream_to_close.close()
             _LOGGER.info("Audio source closed.")
+
+    def _deactivate_for_recovery(self) -> None:
+        """Stop before the existing SDK reinitialization/retry boundary."""
+        self.deactivate()
 
     def _should_always_keep_active(self):
         """Check if the current audio source should stay active regardless of subscribers."""
@@ -1147,6 +1151,11 @@ class AudioInputSource:
         return self._volume
 
 
+class _GraphActivationContext(threading.local):
+    def __init__(self) -> None:
+        self.claim: int | None = None
+
+
 class AudioAnalysisSource(AudioInputSource):
     # some frequency constants
     # beat, bass, mids, high
@@ -1158,6 +1167,7 @@ class AudioAnalysisSource(AudioInputSource):
     ]
 
     def __init__(self, ledfx, config):
+        self._graph_activation = _GraphActivationContext()
         super().__init__(ledfx, config)
         self.initialise_analysis()
 
@@ -1173,23 +1183,32 @@ class AudioAnalysisSource(AudioInputSource):
         self._subscriber_threshold = len(self._callbacks)
 
     @override
-    def activate(self) -> None:
-        if hasattr(self, "melbanks"):
-            self.melbanks.enable_graph_publication()
+    def _activate_inner(self) -> None:
+        # The base activate() guard has accepted this startup. Rejected reentry
+        # must not supersede an in-progress owner's publication claim.
+        melbanks = self.melbanks if hasattr(self, "melbanks") else None
+        claim = melbanks.begin_graph_activation() if melbanks is not None else None
+        previous_claim = self._graph_activation.claim
+        self._graph_activation.claim = claim
         try:
-            super().activate()
+            super()._activate_inner()
         except Exception:
-            if hasattr(self, "melbanks"):
-                self.melbanks.purge_pending()
+            if melbanks is not None and claim is not None:
+                melbanks.finish_graph_activation(claim, False)
             raise
-        if hasattr(self, "melbanks"):
+        else:
             with AudioInputSource._class_lock:
                 active = AudioInputSource._audio_stream_active
-            # SDK recovery may call deactivate internally before retrying.
-            if active:
-                self.melbanks.enable_graph_publication()
-            else:
-                self.melbanks.purge_pending()
+            if melbanks is not None and claim is not None:
+                melbanks.finish_graph_activation(claim, active)
+        finally:
+            self._graph_activation.claim = previous_claim
+
+    @override
+    def _deactivate_for_recovery(self) -> None:
+        if hasattr(self, "melbanks"):
+            self.melbanks.suspend_graph_activation(self._graph_activation.claim)
+        super().deactivate()
 
     @override
     def deactivate(self) -> None:

@@ -370,6 +370,7 @@ class Melbanks:
         self._graph_lock = threading.Lock()
         self._graph_enabled = True
         self._graph_ready = False
+        self._graph_epoch = 0
         self.update_config(config)
         self.dev_enabled = self._ledfx.dev_enabled()
 
@@ -456,12 +457,30 @@ class Melbanks:
     def purge_pending(self) -> None:
         """Disable graph admission and release this producer's current samples."""
         with self._graph_lock:
+            self._graph_epoch += 1
             self._graph_enabled = False
             self._purge_graphs()
 
-    def enable_graph_publication(self) -> None:
+    def begin_graph_activation(self) -> int:
         with self._graph_lock:
+            self._graph_epoch += 1
             self._graph_enabled = True
+            return self._graph_epoch
+
+    def finish_graph_activation(self, claim: int, active: bool) -> None:
+        with self._graph_lock:
+            if claim != self._graph_epoch:
+                return
+            self._graph_enabled = active
+            if not active:
+                self._purge_graphs()
+
+    def suspend_graph_activation(self, claim: int | None) -> None:
+        """Suspend the current SDK retry without revoking its activation claim."""
+        with self._graph_lock:
+            if claim is not None and claim == self._graph_epoch:
+                self._graph_enabled = False
+                self._purge_graphs()
 
     def __call__(self):
         # fastest way i could think of.
