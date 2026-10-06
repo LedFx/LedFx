@@ -8527,13 +8527,6 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/effects/melbank.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_melbank_event` is missing an annotation for parameter `i`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/effects/melt.py",
       "name": "missing-override-decorator",
@@ -12318,20 +12311,6 @@
       "path": "ledfx/effects/wavelength.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `WavelengthAudioEffect.render` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 14,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_KT` for generic class `dict[_KT, _VT]`",
-      "severity": "error"
-    },
-    {
-      "column": 14,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter `_VT` for generic class `dict[_KT, _VT]`",
       "severity": "error"
     },
     {

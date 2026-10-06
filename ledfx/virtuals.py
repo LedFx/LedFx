@@ -1224,6 +1224,7 @@ class Virtual:
         with self._output_lock, self.lock:
             if source_epoch is not None and source_epoch != self._source_epoch:
                 return
+            self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, self.id)
             self._source_epoch += 1
             epoch = self._source_epoch
             self._active = False
@@ -2052,6 +2053,7 @@ class Virtuals:
         virtual = self._virtuals[id]
         with virtual._output_lock:
             with virtual.lock:
+                self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, id)
                 sampler = self._ledfx.preview_sampler
                 if isinstance(sampler, PreviewSampler):
                     sampler.invalidate_source(SourceKey("virtual", id))

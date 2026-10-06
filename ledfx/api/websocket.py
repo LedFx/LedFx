@@ -29,6 +29,7 @@ from ledfx.events import (
     EventListener,
     FrontendVisualiserDataEvent,
     SongDetectedEvent,
+    _DiagnosticDropSummary,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -349,7 +350,7 @@ class WebsocketConnection:
                 id,
                 generation,
                 category,
-                cast(str, entity),
+                entity,
                 cast(bool | None, kind),
             )
             if (
@@ -362,10 +363,15 @@ class WebsocketConnection:
             # selected key means a hot source re-enters at the rotation tail.
             self._latest_slots[key] = item
         elif category == Event.GENERAL_DIAG:
-            if len(self._text_queue) >= MAX_PENDING_TEXT:
-                self._text_queue.popleft()
-                self._text_dropped += 1
-            self._text_queue.append(item)
+            if isinstance(event, _DiagnosticDropSummary):
+                # Producer loss is already counted, not another text record.
+                # Fold only after the same current-owner admission check.
+                self._text_dropped += event.dropped
+            else:
+                if len(self._text_queue) >= MAX_PENDING_TEXT:
+                    self._text_queue.popleft()
+                    self._text_dropped += 1
+                self._text_queue.append(item)
         else:
             self._admit_control(item)
             return
@@ -1020,7 +1026,6 @@ class WebsocketConnection:
         if type(subscription_id) is not int:
             self.send_error(subscription_id, "subscription id must be an integer")
             return
-        subscription_id = cast(int, subscription_id)
         self._subscription_generation += 1
         generation = self._subscription_generation
 
@@ -1069,7 +1074,7 @@ class WebsocketConnection:
         if subscription_id not in self._listeners:
             _LOGGER.warning("Unsubscribe unknown subscription ID %s", subscription_id)
         if type(subscription_id) is int:
-            self._revoke_subscription(cast(int, subscription_id))
+            self._revoke_subscription(subscription_id)
 
     @websocket_handler("audio_stream_start")
     def audio_stream_start_handler(self, message):

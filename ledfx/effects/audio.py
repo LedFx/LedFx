@@ -11,6 +11,7 @@ import aubio
 import numpy as np
 import samplerate
 import sounddevice as sd
+from typing_extensions import override
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
@@ -1170,6 +1171,33 @@ class AudioAnalysisSource(AudioInputSource):
 
         # ensure any new analysis callbacks are above this line
         self._subscriber_threshold = len(self._callbacks)
+
+    @override
+    def activate(self) -> None:
+        if hasattr(self, "melbanks"):
+            self.melbanks.enable_graph_publication()
+        try:
+            super().activate()
+        except Exception:
+            if hasattr(self, "melbanks"):
+                self.melbanks.purge_pending()
+            raise
+        if hasattr(self, "melbanks"):
+            with AudioInputSource._class_lock:
+                active = AudioInputSource._audio_stream_active
+            # SDK recovery may call deactivate internally before retrying.
+            if active:
+                self.melbanks.enable_graph_publication()
+            else:
+                self.melbanks.purge_pending()
+
+    @override
+    def deactivate(self) -> None:
+        # Revoke first: even a failed SDK stop must not admit late graphs.
+        # The producer mutex is released before any SDK operation or join.
+        if hasattr(self, "melbanks"):
+            self.melbanks.purge_pending()
+        super().deactivate()
 
     def initialise_analysis(self):
         # melbanks

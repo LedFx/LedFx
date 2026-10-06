@@ -6,11 +6,14 @@ import logging
 import math
 import threading
 import time
+from collections import deque
 from collections.abc import Callable, Mapping
+from copy import copy, deepcopy
 from dataclasses import dataclass
 from typing import Protocol, cast
 
 import numpy as np
+from numpy.typing import NDArray
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -129,6 +132,16 @@ class GeneralDiagEvent(Event):
         self.scroll = scroll
 
 
+class _DiagnosticDropSummary(GeneralDiagEvent):
+    """Carry trusted loss accounting without adding fields to the wire event."""
+
+    __slots__ = ("dropped",)
+
+    def __init__(self, dropped: int) -> None:
+        super().__init__(f"Dropped {dropped} diagnostic messages", scroll=True)
+        self.dropped = dropped
+
+
 class VirtualDiagEvent(Event):
     """Event emitted when a virtual's diagnostics are updated"""
 
@@ -141,7 +154,7 @@ class VirtualDiagEvent(Event):
         r_max: float,
         cycle: float,
         sleep: float,
-        phy: dict,
+        phy: dict[str, object],
     ):
         """
         Initializes a VirtualDiagEvent with diagnostic metrics for a virtual entity.
@@ -737,6 +750,13 @@ class _RegistrationObserver:
     active: bool = True
 
 
+@dataclass
+class _PendingGraph:
+    graph_id: str
+    melbank: NDArray[np.generic]
+    frequencies: NDArray[np.generic]
+
+
 class Events:
     """Dispatch shared read-only events through revocable registrations."""
 
@@ -748,6 +768,13 @@ class Events:
         self._generation = 0
         self._registration_observers: tuple[_RegistrationObserver, ...] = ()
         self._listener_errors: dict[str, tuple[float, int]] = {}
+        self._telemetry_lock = threading.Lock()
+        self._latest: dict[tuple[str, str], Event | _PendingGraph] = {}
+        self._draining_latest: dict[tuple[str, str], Event | _PendingGraph] = {}
+        self._text_queue: deque[Event] = deque()
+        self._draining_text: deque[Event] = deque()
+        self._text_dropped = 0
+        self._telemetry_scheduled = False
 
     def registration_snapshot(
         self, event_type: str
@@ -780,7 +807,144 @@ class Events:
         return False
 
     def fire_event(self, event: Event) -> None:
+        if event.event_type in (Event.GRAPH_UPDATE, Event.VIRTUAL_DIAG):
+            field = (
+                "graph_id" if event.event_type == Event.GRAPH_UPDATE else "virtual_id"
+            )
+            entity_id = getattr(event, field, None)
+            if type(entity_id) is not str:
+                return
+            metadata: dict[str, object] = {
+                "event_type": event.event_type,
+                field: entity_id,
+            }
+            if not self.may_have_listeners(event.event_type, metadata):
+                return
+            # Only these fixed producer channels own mutable admission payloads.
+            snapshot = copy(event)
+            snapshot.__dict__ = deepcopy(event.__dict__)
+            self._admit_latest(event.event_type, entity_id, snapshot, metadata)
+        elif event.event_type == Event.GENERAL_DIAG:
+            if not self.has_listeners(Event.GENERAL_DIAG):
+                return
+            snapshot = copy(event)
+            snapshot.__dict__ = deepcopy(event.__dict__)
+            with self._telemetry_lock:
+                if not self.has_listeners(Event.GENERAL_DIAG):
+                    return
+                if len(self._text_queue) == 100:
+                    self._text_queue.popleft()
+                    self._text_dropped += 1
+                self._text_queue.append(snapshot)
+                wake = not self._telemetry_scheduled
+                self._telemetry_scheduled = True
+            if wake:
+                self._ledfx.loop.call_soon_threadsafe(self._drain_telemetry)
+        else:
+            self._dispatch(event)
+
+    def publish_graph(
+        self,
+        graph_id: str,
+        melbank: NDArray[np.generic],
+        frequencies: NDArray[np.generic],
+    ) -> None:
+        """Own an interested graph sample; convert only the selected latest.
+
+        Publishers use stable live-source IDs and purge pending samples when
+        disposing/rebuilding those sources. This map is not a historical cache.
+        """
+        metadata: dict[str, object] = {
+            "event_type": Event.GRAPH_UPDATE,
+            "graph_id": graph_id,
+        }
+        if not self.may_have_listeners(Event.GRAPH_UPDATE, metadata):
+            return
+        pending = _PendingGraph(graph_id, melbank.copy(), frequencies.copy())
+        self._admit_latest(Event.GRAPH_UPDATE, graph_id, pending, metadata)
+
+    def _admit_latest(
+        self,
+        event_type: str,
+        entity_id: str,
+        pending: Event | _PendingGraph,
+        metadata: Mapping[str, object],
+    ) -> None:
+        with self._telemetry_lock:
+            # Recheck after copying: a revoked last registration must not leave
+            # a retained sample behind its synchronous prune.
+            if not self.may_have_listeners(event_type, metadata):
+                return
+            self._latest[event_type, entity_id] = pending
+            wake = not self._telemetry_scheduled
+            self._telemetry_scheduled = True
+        if wake:
+            self._ledfx.loop.call_soon_threadsafe(self._drain_telemetry)
+
+    def _materialize_graph(self, pending: _PendingGraph) -> GraphUpdateEvent:
+        return GraphUpdateEvent(pending.graph_id, pending.melbank, pending.frequencies)
+
+    def purge_pending(self, event_type: str, entity_id: str) -> None:
+        """Release the current source sample without retaining a tombstone."""
+        with self._telemetry_lock:
+            self._latest.pop((event_type, entity_id), None)
+            self._draining_latest.pop((event_type, entity_id), None)
+
+    def _drain_telemetry(self) -> None:
+        with self._telemetry_lock:
+            self._draining_latest = self._latest
+            self._latest = {}
+            self._draining_text = self._text_queue
+            self._text_queue = deque()
+            dropped = self._text_dropped
+            keys = tuple(self._draining_latest)
+        try:
+            for event_type, entity_id in keys:
+                key = (event_type, entity_id)
+                with self._telemetry_lock:
+                    pending = self._draining_latest.get(key)
+                if pending is None:
+                    continue
+                field = "graph_id" if event_type == Event.GRAPH_UPDATE else "virtual_id"
+                if not self.may_have_listeners(
+                    event_type, {"event_type": event_type, field: entity_id}
+                ):
+                    continue
+                event = (
+                    self._materialize_graph(pending)
+                    if isinstance(pending, _PendingGraph)
+                    else pending
+                )
+                with self._telemetry_lock:
+                    # A deletion/revocation during materialization invalidates
+                    # this sample. Claim dispatch before releasing the lock.
+                    if self._draining_latest.pop(key, None) is not pending:
+                        continue
+                self._dispatch(event)
+            with self._telemetry_lock:
+                has_text = bool(self._draining_text)
+            if has_text and dropped and self._dispatch(_DiagnosticDropSummary(dropped)):
+                with self._telemetry_lock:
+                    self._text_dropped -= dropped
+            while True:
+                with self._telemetry_lock:
+                    if not self._draining_text:
+                        break
+                    event = self._draining_text.popleft()
+                self._dispatch(event)
+        finally:
+            with self._telemetry_lock:
+                self._draining_latest.clear()
+                self._draining_text.clear()
+                wake = bool(self._latest or self._text_queue)
+                self._telemetry_scheduled = wake
+            if wake:
+                self._ledfx.loop.call_soon_threadsafe(self._drain_telemetry)
+
+    def _dispatch(self, event: Event) -> bool:
+        """Queue guarded ordinary observer invocations; report admission."""
         _, listeners = self.registration_snapshot(event.event_type)
+        admitted = False
         for listener in listeners:
             try:
                 filtered = listener.filter_event(event)
@@ -788,7 +952,14 @@ class Events:
                 self._report_listener_error(listener, error)
                 continue
             if not filtered:
-                self._ledfx.loop.call_soon_threadsafe(self._invoke, listener, event)
+                with self._lock:
+                    active = listener.active
+                try:
+                    self._ledfx.loop.call_soon_threadsafe(self._invoke, listener, event)
+                    admitted = admitted or active
+                except Exception as error:  # noqa: BLE001 - isolate scheduling failures
+                    self._report_listener_error(listener, error)
+        return admitted
 
     def _invoke(self, listener: EventListener, event: Event) -> None:
         with self._lock:
@@ -848,6 +1019,25 @@ class Events:
 
         return remove_listener
 
+    def _prune_telemetry(self, event_type: str) -> None:
+        if event_type not in (
+            Event.GRAPH_UPDATE,
+            Event.VIRTUAL_DIAG,
+            Event.GENERAL_DIAG,
+        ):
+            return
+        with self._telemetry_lock:
+            field = "graph_id" if event_type == Event.GRAPH_UPDATE else "virtual_id"
+            for pending in (self._latest, self._draining_latest):
+                for key in tuple(pending):
+                    if key[0] == event_type and not self.may_have_listeners(
+                        event_type, {"event_type": event_type, field: key[1]}
+                    ):
+                        del pending[key]
+            if event_type == Event.GENERAL_DIAG and not self.has_listeners(event_type):
+                self._text_queue.clear()
+                self._draining_text.clear()
+
     def _remove_listener(self, event_type: str, listener: EventListener) -> None:
         with self._lock:
             if not listener.active:
@@ -865,6 +1055,7 @@ class Events:
             revision = self._revisions.get(event_type, 0) + 1
             self._revisions[event_type] = revision
             observers = self._registration_observers
+        self._prune_telemetry(event_type)
         self._notify_registration_observers(observers, event_type, revision)
 
     def add_registration_observer(

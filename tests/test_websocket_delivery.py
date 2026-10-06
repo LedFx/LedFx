@@ -116,7 +116,7 @@ async def test_selected_owned_delivery_rechecked_before_write(
         else EntityEvent(event_type, "x")
     )
     core.events.fire_event(event)
-    await asyncio.sleep(0)
+    await asyncio.wait_for(connection._has_work.wait(), timeout=1)
     selected = connection._select_delivery()
     assert selected is not None
     if replace:

@@ -39,6 +39,14 @@ def take_delivery(connection: WebsocketConnection) -> dict[str, object]:
     return item.message
 
 
+async def wait_latest_slot(connection: WebsocketConnection) -> None:
+    async def wait() -> None:
+        while not connection._latest_slots:
+            await asyncio.sleep(0)
+
+    await asyncio.wait_for(wait(), timeout=1)
+
+
 async def wait_messages(socket: "HeldFirstWriteSocket", count: int) -> None:
     async def wait() -> None:
         while len(socket.completed) < count:
@@ -76,7 +84,7 @@ async def test_duplicate_subscription_id_delivers_once_and_is_removable() -> Non
         conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
 
     core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
-    await asyncio.sleep(0)
+    await wait_latest_slot(conn)
     assert len(conn._latest_slots) == 1
     conn.unsubscribe_event_handler({"id": 1})
     assert core.events._listeners == {}
@@ -102,7 +110,7 @@ async def test_reused_subscription_id_replaces_event_and_filter() -> None:
 
     conn.subscribe_event_handler({"id": 1, "event_type": Event.GRAPH_UPDATE})
     core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
-    await asyncio.sleep(0)
+    await wait_latest_slot(conn)
     assert len(conn._latest_slots) == 1
     conn.clear_subscriptions()
     assert core.events._listeners == {}
@@ -135,7 +143,7 @@ async def test_rejected_replacement_preserves_existing_subscription() -> None:
     conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_UPDATE})
     assert take_control(conn)["success"] is False
     core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
-    await asyncio.sleep(0)
+    await wait_latest_slot(conn)
     assert len(conn._latest_slots) == 1
     conn.clear_subscriptions()
     assert core.events._listeners == {}
@@ -240,7 +248,7 @@ async def test_invalid_replacement_preserves_registration(
     assert take_control(connection)["success"] is False
     assert not core.events.has_listeners(Event.GRAPH_UPDATE)
     core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
-    await asyncio.sleep(0)
+    await wait_latest_slot(connection)
     assert take_delivery(connection) == {
         "id": 1,
         "type": "event",
@@ -267,7 +275,7 @@ async def test_validated_replacement_ack_and_immediate_event() -> None:
     )
     core.events.fire_event(EntityEvent(Event.VIRTUAL_DIAG))
     core.events.fire_event(EntityEvent(Event.GRAPH_UPDATE))
-    await asyncio.sleep(0)
+    await wait_latest_slot(connection)
     assert take_control(connection) == {
         "id": 1,
         "type": "result",
@@ -419,7 +427,7 @@ async def test_replacement_revokes_deferred_callbacks_and_pending_events() -> No
     connection.subscribe_event_handler(
         {"id": 1, "event_type": Event.GRAPH_UPDATE, "ack": True}
     )
-    await asyncio.sleep(0)
+    await wait_latest_slot(connection)
     assert take_control(connection)["result"] == {
         "subscription_id": 1,
         "event_type": Event.VIRTUAL_DIAG,
