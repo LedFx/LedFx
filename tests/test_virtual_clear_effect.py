@@ -12,6 +12,11 @@ def _virtual(registered: dict[str, object]) -> Virtual:
     effects = object.__new__(RegistryLoader)
     effects._objects = registered
     virtual = object.__new__(Virtual)
+    virtual.lock = threading.Lock()
+    virtual._output_lock = threading.RLock()
+    virtual._retired_effects = []
+    virtual._source_generation = 0
+    virtual._render_token = 0
     virtual._ledfx = MagicMock()
     virtual._ledfx.effects = effects
     return virtual
@@ -60,7 +65,7 @@ def test_clear_effect_destroys_registered_effect() -> None:
     assert registered == {}
 
 
-def test_config_change_restarts_effect_under_lock() -> None:
+def test_config_change_restarts_effect_outside_producing_lock() -> None:
     # The render thread clears a finished transition under the lock; an
     # unlocked restart could clear and destroy the same effect concurrently.
     virtual = _virtual({})
@@ -75,4 +80,4 @@ def test_config_change_restarts_effect_under_lock() -> None:
 
     with patch.object(Virtual, "_reactivate_effect", reactivate):
         virtual.update_config({"grouping": 2})
-    assert held == [True]
+    assert held == [False]

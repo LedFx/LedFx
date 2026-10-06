@@ -34,12 +34,14 @@ class ZenggeDevice(NetworkedDevice):
         self.bulb = flux_led.WifiLedBulb(self.config.ip_address)
 
     def activate(self):
-        super().activate()
-        self.bulb.turnOn()
+        with self._output_lock:
+            super().activate()
+            self.bulb.turnOn()
 
     def deactivate(self):
-        super().deactivate()
-        self.bulb.turnOff()
+        with self._output_lock:
+            super().deactivate()
+            self.bulb.turnOff()
 
     def flush(self, data):
         try:

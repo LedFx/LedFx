@@ -87,52 +87,54 @@ class Govee(NetworkedDevice):
         self.send_udp({"msg": {"cmd": "razer", "data": {"pt": "uwABsQAL"}}})
 
     def deactivate(self):
-        _LOGGER.info("Govee %s deactivate", self.name)
-        if self.udp_server is not None:
-            self.send_deactivate()
-            self.udp_server.close()
-            # A second deactivate must not release the shared socket again.
-            self.udp_server = None
-        super().deactivate()
+        with self._output_lock:
+            _LOGGER.info("Govee %s deactivate", self.name)
+            if self.udp_server is not None:
+                self.send_deactivate()
+                self.udp_server.close()
+                # A second deactivate must not release the shared socket again.
+                self.udp_server = None
+            super().deactivate()
 
     def activate(self):
-        _LOGGER.info("Govee %s Activating UDP stream mode...", self.name)
+        with self._output_lock:
+            _LOGGER.info("Govee %s Activating UDP stream mode...", self.name)
 
-        try:
-            if self.config.ignore_status:
-                self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            else:
-                self.udp_server = SocketSingleton(recv_port=self.recv_port)
-        except Exception as e:  # noqa: BLE001
-            _LOGGER.error(
-                "Error creating UDP socket, try ignore status device setting %s",
-                e,
-            )
-            self.set_offline()
-            return
-
-        if not self.config.ignore_status:
-            # enquiry to status is current used only to check if the device is responding adn set offline if not
-            # the response information is of little use
-            # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
-            _LOGGER.info("Fetching govee %s device info...", self.name)
-            status, active = self.get_device_status()
-            _LOGGER.info("%s active: %s %s", self.name, active, status)
-            if not active:
+            try:
+                if self.config.ignore_status:
+                    self.udp_server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                else:
+                    self.udp_server = SocketSingleton(recv_port=self.recv_port)
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.error(
+                    "Error creating UDP socket, try ignore status device setting %s",
+                    e,
+                )
                 self.set_offline()
                 return
-        else:
-            _LOGGER.info("Ignoring Govee status check for %s", self.name)
 
-        # the ordering and delay in this implementation is derived through trial and error only
-        # incorrect order can lead to flickering of devices tested if wake from sleep
-        # we have not other information as to best practice here
-        delay = 0.1
-        time.sleep(delay)
-        self.set_brightness(100)
-        time.sleep(delay)
-        self.send_activate()
-        super().activate()
+            if not self.config.ignore_status:
+                # enquiry to status is current used only to check if the device is responding adn set offline if not
+                # the response information is of little use
+                # example: {"msg":{"cmd":"devStatus","data":{"onOff":1,"brightness":100,"color":{"r":255,"g":255,"b":255},"colorTemInKelvin":0}}}
+                _LOGGER.info("Fetching govee %s device info...", self.name)
+                status, active = self.get_device_status()
+                _LOGGER.info("%s active: %s %s", self.name, active, status)
+                if not active:
+                    self.set_offline()
+                    return
+            else:
+                _LOGGER.info("Ignoring Govee status check for %s", self.name)
+
+            # the ordering and delay in this implementation is derived through trial and error only
+            # incorrect order can lead to flickering of devices tested if wake from sleep
+            # we have not other information as to best practice here
+            delay = 0.1
+            time.sleep(delay)
+            self.set_brightness(100)
+            time.sleep(delay)
+            self.send_activate()
+            super().activate()
 
     def flush(self, data):
         packet = encode_govee(data, self.config.stretch_to_fit)

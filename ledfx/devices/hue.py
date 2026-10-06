@@ -175,55 +175,59 @@ class HueDevice(NetworkedDevice):
 
     def activate(self):
         # activate streaming for entertainment zone
-        request_data = {"action": "start"}
-        self._hue_request(
-            "PUT",
-            f"/clip/v2/resource/entertainment_configuration/{getattr(self.config, 'entertainment_id')}",  # noqa: B009 - stored extra, not a declared field
-            request_data,
-            ssl=True,
-        )
-
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.settimeout(5)
-        sock.setblocking(False)
-        self._sock = self._dtls_client_context.wrap_socket(sock, self.config.ip_address)
-        self._sock.connect((self.config.ip_address, self.config.udp_port))
-
-        # Since UDP packets can get lost - we need to try handshaking a couple of times
-        handshake_success = False
-        for _ in range(10):
-            try:
-                time.sleep(0.2)
-                self._sock.do_handshake()
-                handshake_success = True
-                break
-            except Exception as e:  # noqa: BLE001
-                _LOGGER.warning(
-                    "Failed to establish TLS handshake when activating the UDP stream. Retrying. %s",
-                    e,
-                )
-
-        if not handshake_success:
-            _LOGGER.warning(
-                "Could not connect to the Bridge. Disconnect and reconnect it from power."
+        with self._output_lock:
+            request_data = {"action": "start"}
+            self._hue_request(
+                "PUT",
+                f"/clip/v2/resource/entertainment_configuration/{getattr(self.config, 'entertainment_id')}",  # noqa: B009 - stored extra, not a declared field
+                request_data,
+                ssl=True,
             )
 
-        super().activate()
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.settimeout(5)
+            sock.setblocking(False)
+            self._sock = self._dtls_client_context.wrap_socket(
+                sock, self.config.ip_address
+            )
+            self._sock.connect((self.config.ip_address, self.config.udp_port))
+
+            # Since UDP packets can get lost - we need to try handshaking a couple of times
+            handshake_success = False
+            for _ in range(10):
+                try:
+                    time.sleep(0.2)
+                    self._sock.do_handshake()
+                    handshake_success = True
+                    break
+                except Exception as e:  # noqa: BLE001
+                    _LOGGER.warning(
+                        "Failed to establish TLS handshake when activating the UDP stream. Retrying. %s",
+                        e,
+                    )
+
+            if not handshake_success:
+                _LOGGER.warning(
+                    "Could not connect to the Bridge. Disconnect and reconnect it from power."
+                )
+
+            super().activate()
 
     def deactivate(self):
-        if self._sock is not None:
-            self._sock.close()
-            self._sock = None
+        with self._output_lock:
+            if self._sock is not None:
+                self._sock.close()
+                self._sock = None
 
-        request_data = {"action": "stop"}
-        response, _ = self._hue_request(  # noqa: RUF059
-            "PUT",
-            f"/clip/v2/resource/entertainment_configuration/{getattr(self.config, 'entertainment_id')}",  # noqa: B009 - stored extra, not a declared field
-            request_data,
-            ssl=True,
-        )
+            request_data = {"action": "stop"}
+            response, _ = self._hue_request(  # noqa: RUF059
+                "PUT",
+                f"/clip/v2/resource/entertainment_configuration/{getattr(self.config, 'entertainment_id')}",  # noqa: B009 - stored extra, not a declared field
+                request_data,
+                ssl=True,
+            )
 
-        super().deactivate()
+            super().deactivate()
 
     def flush(self, data):
         # TODO: maybe use the position of the channel to make more sense of the effect

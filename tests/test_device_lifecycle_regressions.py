@@ -29,6 +29,9 @@ def test_render_thread_survives_frame_exception() -> None:
     virtual._active = True
     virtual.fallback_fire = False
     virtual.lock = threading.Lock()
+    virtual._output_lock = threading.RLock()
+    virtual._retired_effects = []
+    virtual._render_token = 0
     virtual._active_effect = MagicMock(is_active=True, pixels=None)
     frames: list[int] = []
 
@@ -317,6 +320,7 @@ async def test_mdns_rescan_closes_the_previous_zeroconf() -> None:
 
 def test_hue_stops_handshaking_after_success() -> None:
     device = object.__new__(HueDevice)
+    device._output_lock = threading.RLock()
     device._config = HueDevice.config_model().model_construct(
         entertainment_id="e",
         ip_address="10.0.0.4",
@@ -336,6 +340,7 @@ def test_hue_stops_handshaking_after_success() -> None:
 
 def test_govee_second_deactivate_does_not_release_socket_again() -> None:
     device = object.__new__(Govee)
+    device._output_lock = threading.RLock()
     device._config = Govee.config_model().model_construct(name="govee")
     server = MagicMock()
     device.udp_server = server

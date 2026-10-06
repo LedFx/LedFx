@@ -46,83 +46,87 @@ class TwinklySquaresDevice(NetworkedDevice):
         self.ctrl.set_rt_frame_socket(io.BytesIO(frame), version=3)
 
     def activate(self):
-        self.ctrl = xled.HighControlInterface(self.config.ip_address)
-        try:
-            self.ctrl.turn_on()
-            self.ctrl.set_brightness(100)
-            self.ctrl.set_mode("rt")
-            info = self.ctrl.get_device_info()
-            _LOGGER.debug("Twinkly Squares device %s info: %s", self.name, info.data)
-        except Exception as e:  # noqa: BLE001
-            _LOGGER.warning(
-                "Failed to activate Twinkly Squares device %s: %s",
-                self.name,
-                e,
+        with self._output_lock:
+            self.ctrl = xled.HighControlInterface(self.config.ip_address)
+            try:
+                self.ctrl.turn_on()
+                self.ctrl.set_brightness(100)
+                self.ctrl.set_mode("rt")
+                info = self.ctrl.get_device_info()
+                _LOGGER.debug(
+                    "Twinkly Squares device %s info: %s", self.name, info.data
+                )
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.warning(
+                    "Failed to activate Twinkly Squares device %s: %s",
+                    self.name,
+                    e,
+                )
+                self.ctrl = None
+                self._gather = None
+                self.set_offline()
+                return
+            self.leds = info["number_of_led"]
+            layout = self.ctrl.get_led_layout()
+            cords = layout["coordinates"]
+            coords_xy = np.array([[c["x"], c["y"]] for c in cords], dtype=np.float32)
+
+            # Calculate actual grid dimensions from coordinate distribution
+            x01_temp = (coords_xy[:, 0] + 1.0) * 0.5
+            y01_temp = (coords_xy[:, 1] + 1.0) * 0.5
+            actual_width = len(np.unique(np.round(x01_temp * 1000)))
+            actual_height = len(np.unique(np.round(y01_temp * 1000)))
+            _LOGGER.info(
+                "Twinkly grid: %sx%s = %s LEDs",
+                actual_width,
+                actual_height,
+                actual_width * actual_height,
             )
-            self.ctrl = None
-            self._gather = None
-            self.set_offline()
-            return
-        self.leds = info["number_of_led"]
-        layout = self.ctrl.get_led_layout()
-        cords = layout["coordinates"]
-        coords_xy = np.array([[c["x"], c["y"]] for c in cords], dtype=np.float32)
 
-        # Calculate actual grid dimensions from coordinate distribution
-        x01_temp = (coords_xy[:, 0] + 1.0) * 0.5
-        y01_temp = (coords_xy[:, 1] + 1.0) * 0.5
-        actual_width = len(np.unique(np.round(x01_temp * 1000)))
-        actual_height = len(np.unique(np.round(y01_temp * 1000)))
-        _LOGGER.info(
-            "Twinkly grid: %sx%s = %s LEDs",
-            actual_width,
-            actual_height,
-            actual_width * actual_height,
-        )
+            # Cache the matrix dimensions for virtual configuration
+            self.matrix_width = actual_width
+            self.matrix_height = actual_height
 
-        # Cache the matrix dimensions for virtual configuration
-        self.matrix_width = actual_width
-        self.matrix_height = actual_height
+            self.perm = self.build_twinkly_perm(
+                coords_xy, actual_width, actual_height, flip_y=True
+            )
 
-        self.perm = self.build_twinkly_perm(
-            coords_xy, actual_width, actual_height, flip_y=True
-        )
+            self._gather = RGBGather(tuple(int(index) for index in self.perm))
 
-        self._gather = RGBGather(tuple(int(index) for index in self.perm))
+            config_changed = False
 
-        config_changed = False
+            # Update pixel count if different
+            if getattr(self.config, "pixel_count") != self.leds:  # noqa: B009 - stored extra, not a declared field
+                self._set_config_values(pixel_count=self.leds)
+                config_changed = True
 
-        # Update pixel count if different
-        if getattr(self.config, "pixel_count") != self.leds:  # noqa: B009 - stored extra, not a declared field
-            self._set_config_values(pixel_count=self.leds)
-            config_changed = True
+            # Update associated virtuals with the detected matrix height
+            for virtual in self._ledfx.virtuals.values():
+                if virtual.is_device == self.id:
+                    if virtual.config.rows != self.matrix_height:
+                        _LOGGER.info(
+                            "Updating virtual %s rows from %s to %s",
+                            virtual.id,
+                            virtual.config.rows,
+                            self.matrix_height,
+                        )
+                        virtual.update_config({"rows": self.matrix_height})
+                        config_changed = True
+                    break  # Only one virtual can be is_device for this device
 
-        # Update associated virtuals with the detected matrix height
-        for virtual in self._ledfx.virtuals.values():
-            if virtual.is_device == self.id:
-                if virtual.config.rows != self.matrix_height:
-                    _LOGGER.info(
-                        "Updating virtual %s rows from %s to %s",
-                        virtual.id,
-                        virtual.config.rows,
-                        self.matrix_height,
-                    )
-                    virtual.update_config({"rows": self.matrix_height})
-                    config_changed = True
-                break  # Only one virtual can be is_device for this device
+            # Save config only once if anything changed
+            if config_changed:
+                self._ledfx.config_store.request_save()
 
-        # Save config only once if anything changed
-        if config_changed:
-            self._ledfx.config_store.request_save()
-
-        super().activate()
+            super().activate()
 
     def deactivate(self):
-        if self.ctrl:
-            self.ctrl.set_mode("movie")
-        self.ctrl = None
-        self._gather = None
-        return super().deactivate()
+        with self._output_lock:
+            if self.ctrl:
+                self.ctrl.set_mode("movie")
+            self.ctrl = None
+            self._gather = None
+            return super().deactivate()
 
     def build_twinkly_perm(self, coords_xy, width, height, flip_y=True):
         N = coords_xy.shape[0]

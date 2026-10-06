@@ -1779,27 +1779,6 @@
       "severity": "error"
     },
     {
-      "column": 34,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`add_segments_batch` is missing an annotation for parameter `virtual_id`",
-      "severity": "error"
-    },
-    {
-      "column": 46,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`add_segments_batch` is missing an annotation for parameter `segments`",
-      "severity": "error"
-    },
-    {
-      "column": 56,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`add_segments_batch` is missing an annotation for parameter `force`",
-      "severity": "error"
-    },
-    {
       "column": 56,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-empty-container",
@@ -1923,13 +1902,6 @@
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
       "concise_description": "`on_shutdown` is missing an annotation for parameter `e`",
-      "severity": "error"
-    },
-    {
-      "column": 34,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`create_from_config` is missing an annotation for parameter `config`",
       "severity": "error"
     },
     {
@@ -16465,13 +16437,6 @@
       "severity": "error"
     },
     {
-      "column": 49,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-empty-container",
-      "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
       "column": 32,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
@@ -16577,24 +16542,10 @@
       "severity": "error"
     },
     {
-      "column": 38,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_flush_simple_segments` is missing an annotation for parameter `pixels`",
-      "severity": "error"
-    },
-    {
       "column": 20,
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-empty-container",
       "concise_description": "Cannot infer type of empty container; it will be treated as containing `Any`",
-      "severity": "error"
-    },
-    {
-      "column": 39,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_flush_complex_segments` is missing an annotation for parameter `pixels`",
       "severity": "error"
     },
     {
@@ -16609,20 +16560,6 @@
       "path": "ledfx/virtuals.py",
       "name": "implicit-any-parameter",
       "concise_description": "`render_calibration` is missing an annotation for parameter `device`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`render_calibration` is missing an annotation for parameter `segments`",
-      "severity": "error"
-    },
-    {
-      "column": 58,
-      "path": "ledfx/virtuals.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`render_calibration` is missing an annotation for parameter `device_id`",
       "severity": "error"
     },
     {

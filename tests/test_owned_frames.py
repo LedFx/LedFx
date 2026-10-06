@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import threading
+from _thread import LockType
 from collections.abc import Callable, Iterator
 from unittest.mock import MagicMock
 
@@ -13,11 +14,13 @@ import pytest
 from numpy.typing import NDArray
 from typing_extensions import override
 
+from ledfx.configuration.models import VirtualConfig, replace_model
 from ledfx.devices import Device, Devices
 from ledfx.devices.ddp import DDPDevice
 from ledfx.devices.dummy import DummyDevice
 from ledfx.devices.e131 import E131Device
 from ledfx.devices.launchpad import LaunchpadDevice
+from ledfx.devices.lifx import LifxDevice
 from ledfx.devices.nanoleaf import NanoleafDevice
 from ledfx.devices.utils.rgbw_conversion import OutputMode
 from ledfx.devices.wled import WLEDDevice
@@ -36,6 +39,7 @@ from ledfx.virtuals import Virtual
 from tests.test_preview_sampler import Scheduler
 from tests.test_utilities.virtuals_core import add_virtual, cfg, running_core
 
+_TEMPORAL_THREAD = TemporalEffect.thread_function
 _RENDER_THREAD = Virtual.thread_function
 
 
@@ -236,14 +240,7 @@ def test_physical_primary_rows_offset_raw_and_full_black(
 
 
 def render_once(virtual: Virtual) -> None:
-    with virtual.lock:
-        pixels = virtual.assemble_frame()
-        assert pixels is not None
-        virtual.assembled_frame = pixels
-        if not virtual.config.preview_only:
-            virtual.flush(pixels)
-        captured = virtual._capture_preview_frame(pixels, owned=True)
-    virtual._publish_preview_frame(captured)
+    virtual._render_frame()
 
 
 @pytest.mark.parametrize("mapping", ["span", "copy"])
@@ -581,7 +578,7 @@ def test_delayed_physical_publication_rejects_invalidated_capture(
         np.testing.assert_array_equal(decoded(previews[0]), np.full((50, 3), 7))
 
 
-def acquire_from_worker(lock: threading.RLock) -> bool:
+def acquire_from_worker(lock: threading.RLock | LockType) -> bool:
     acquired: list[bool] = []
 
     def attempt() -> None:
@@ -618,11 +615,13 @@ def test_actual_launchpad_flush_failure_reenters_teardown(ledfx: MagicMock) -> N
     install_sampler(ledfx)
     device = LaunchpadDevice(ledfx, LaunchpadDevice.Config(name="pad", pixel_count=50))
     device._id = "physical"
+    ledfx.devices._objects[device.id] = device
+    virtual = add_virtual(ledfx, "logical", "logical", [["physical", 0, 49, False]])
+    virtual._active = True
     device.lp = MagicMock()
     device.lp.flush.return_value = False
-    ledfx.devices._objects[device.id] = device
     Device.activate(device)
-    virtual = attach(ledfx, "logical", 0, 49)
+    device.add_segments_batch(virtual.id, [(0, 49)])
     worker = threading.Thread(
         target=device.update_pixels, args=(virtual.id, [(np.ones((50, 3)), 0, 49)])
     )
@@ -850,3 +849,328 @@ def test_actual_render_loop_transfers_owned_rgb_and_respects_preview_only(
     assert len(device.sent) == (0 if preview_only else 1)
     if device.sent:
         np.testing.assert_array_equal(device.sent[0], np.tile((16, 32, 48), (50, 1)))
+
+
+@pytest.mark.parametrize("change", ["reactivate", "config"])
+def test_priority_admission_rejects_generation_changed_before_output_wait(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    change: str,
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    checked = threading.Event()
+    original = device._write_pixels
+
+    class ObservedPriority:
+        @property
+        def id(self) -> str:
+            checked.set()
+            return virtual.id
+
+    monkeypatch.setattr(device, "priority_virtual", ObservedPriority())
+    with device._output_lock:
+        worker = threading.Thread(
+            target=device.update_pixels,
+            args=(virtual.id, [(np.full((50, 3), 73), 0, 49)]),
+        )
+        worker.start()
+        assert checked.wait(5)
+        if change == "reactivate":
+            device.deactivate()
+            device.activate()
+        else:
+            device.update_config({"center_offset": 1})
+        monkeypatch.setattr(device, "_write_pixels", original)
+    worker.join(5)
+    assert not worker.is_alive()
+    assert device.sent == []
+    assert device._pixels is not None
+    np.testing.assert_array_equal(device._pixels, np.zeros((50, 3)))
+
+
+def test_launchpad_teardown_waits_for_actual_held_flush(ledfx: MagicMock) -> None:
+    install_sampler(ledfx)
+    device = LaunchpadDevice(ledfx, LaunchpadDevice.Config(name="pad", pixel_count=50))
+    device._id = "physical"
+    entered, release, closed = threading.Event(), threading.Event(), threading.Event()
+    calls: list[NDArray[np.generic]] = []
+
+    class Pad:
+        def flush(self, data: NDArray[np.generic], alpha: bool, diag: bool) -> bool:
+            calls.append(data)
+            if len(calls) == 1:
+                entered.set()
+                assert release.wait(5)
+            return True
+
+        def Close(self) -> None:
+            closed.set()
+
+    ledfx.devices._objects[device.id] = device
+    virtual = add_virtual(ledfx, "logical", "logical", [["physical", 0, 49, False]])
+    virtual._active = True
+    device.lp = Pad()
+    Device.activate(device)
+    device.add_segments_batch(virtual.id, [(0, 49)])
+    sender = threading.Thread(
+        target=device.update_pixels, args=(virtual.id, [(np.full((50, 3), 73), 0, 49)])
+    )
+    sender.start()
+    assert entered.wait(5)
+    stopper = threading.Thread(target=device.deactivate)
+    stopper.start()
+    closed_during_send = closed.wait(0.1)
+    calls_during_send = len(calls)
+    release.set()
+    sender.join(5)
+    stopper.join(5)
+    assert not sender.is_alive() and not stopper.is_alive()
+    assert not closed_during_send, "pad closed while first flush still owned output"
+    assert calls_during_send == 1
+    assert closed.is_set() and device.lp is None
+
+
+@pytest.mark.parametrize("operation", ["clear", "grouping", "transition"])
+def test_actual_temporal_worker_join_and_sender_io_release_producing_lock(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config({"transition_mode": "None", "transition_time": 0})
+    monkeypatch.setattr(TemporalEffect, "thread_function", _TEMPORAL_THREAD)
+    effect = ledfx.effects.create(
+        "singleColor", ledfx=ledfx, config=cfg({"color": "#102030"})
+    )
+    virtual.set_effect(effect)
+    real_worker = effect._thread
+    assert isinstance(real_worker, threading.Thread) and real_worker.is_alive()
+    join_observations: list[bool] = []
+    io_observations: list[bool] = []
+    original_join = threading.Thread.join
+    original_flush = device.flush
+
+    def join(thread: threading.Thread, timeout: float | None = None) -> None:
+        if thread is real_worker:
+            join_observations.append(acquire_from_worker(virtual.lock))
+        original_join(thread, timeout)
+
+    def flush(data: NDArray[np.generic]) -> None:
+        io_observations.append(acquire_from_worker(virtual.lock))
+        original_flush(data)
+
+    monkeypatch.setattr(threading.Thread, "join", join)
+    monkeypatch.setattr(device, "flush", flush)
+    virtual.force_frame((1, 2, 3))
+    if operation == "clear":
+        virtual.clear_frame()
+    elif operation == "grouping":
+        virtual.update_config({"grouping": 2})
+    else:
+        virtual._transition_effect = effect
+        virtual._active_effect = DummyEffect(50)
+        virtual.transition_frame_total = 1
+        virtual.transition_frame_counter = 0
+        virtual.frame_transitions = virtual.transitions["Add"]
+        render_once(virtual)
+    assert io_observations and all(io_observations)
+    assert join_observations and all(join_observations)
+
+
+def test_lifx_teardown_waits_for_actual_held_animator_send(ledfx: MagicMock) -> None:
+    install_sampler(ledfx)
+    device = LifxDevice(
+        ledfx, LifxDevice.Config(name="lifx", ip_address="127.0.0.1", pixel_count=50)
+    )
+    device._id = "physical"
+    ledfx.devices._objects[device.id] = device
+    virtual = add_virtual(ledfx, "logical", "logical", [["physical", 0, 49, False]])
+    virtual._active = True
+    entered, release, closed = threading.Event(), threading.Event(), threading.Event()
+
+    class Animator:
+        pixel_count = 50
+
+        def send_frame(self, data: list[tuple[int, int, int, int]]) -> None:
+            entered.set()
+            assert release.wait(5)
+
+        def close(self) -> None:
+            closed.set()
+
+    device._animator = Animator()
+    Device.activate(device)
+    device.add_segments_batch(virtual.id, [(0, 49)])
+    sender = threading.Thread(
+        target=device.update_pixels, args=(virtual.id, [(np.full((50, 3), 73), 0, 49)])
+    )
+    sender.start()
+    assert entered.wait(5)
+    stopper = threading.Thread(target=device.deactivate)
+    stopper.start()
+    closed_during_send = closed.wait(0.1)
+    release.set()
+    sender.join(5)
+    stopper.join(5)
+    assert not sender.is_alive() and not stopper.is_alive()
+    assert not closed_during_send and closed.is_set()
+    assert device._animator is None
+
+
+@pytest.mark.parametrize("change", ["config", "deactivate"])
+def test_registration_rejects_source_superseded_during_forced_callback(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    change: str,
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    owner = attach(ledfx, "owner", 0, 24)
+    blocker = attach(ledfx, "blocker", 25, 49)
+    callback_locks: list[bool] = []
+    stop = blocker.deactivate
+
+    def supersede() -> None:
+        callback_locks.append(acquire_from_worker(owner._output_lock))
+        callback_locks.append(acquire_from_worker(owner.lock))
+        if change == "config":
+            owner.update_config({"rows": 2})
+        else:
+            owner.deactivate()
+        stop()
+
+    monkeypatch.setattr(blocker, "deactivate", supersede)
+    owner.activate_segments(
+        [["physical", 0, 49, False]], source_generation=owner._source_generation
+    )
+    assert callback_locks == [True, True]
+    assert (owner.id, 0, 49) not in device._segments
+
+
+def test_simultaneous_forced_cross_owner_activation_completes(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    front = attach(ledfx, "front", 0, 24)
+    back = attach(ledfx, "back", 25, 49)
+    barrier = threading.Barrier(2)
+    observations: list[bool] = []
+    originals = {front.id: front.deactivate, back.id: back.deactivate}
+
+    def stop_front() -> None:
+        observations.append(acquire_from_worker(back._output_lock))
+        barrier.wait(5)
+        originals[front.id]()
+
+    def stop_back() -> None:
+        observations.append(acquire_from_worker(front._output_lock))
+        barrier.wait(5)
+        originals[back.id]()
+
+    monkeypatch.setattr(front, "deactivate", stop_front)
+    monkeypatch.setattr(back, "deactivate", stop_back)
+    workers = [
+        threading.Thread(
+            target=v.activate_segments,
+            args=([["physical", 0, 49, False]],),
+            kwargs={"source_generation": v._source_generation},
+        )
+        for v in (front, back)
+    ]
+    for worker in workers:
+        worker.start()
+    for worker in workers:
+        worker.join(5)
+    assert all(not worker.is_alive() for worker in workers)
+    assert observations == [True, True]
+    assert not front.active and not back.active
+    assert device._segments == []
+
+
+@pytest.mark.parametrize("action", ["config", "delete"])
+def test_held_virtual_output_leaves_producing_lock_free_and_orders_successor(
+    ledfx: MagicMock,
+    action: str,
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx, hold=True)
+    assert isinstance(device, HoldingDevice)
+    virtual = attach(ledfx, "logical", 0, 49)
+    previews = collect_previews(ledfx, is_device=False)
+    sender = threading.Thread(target=virtual.force_frame, args=((73, 73, 73),))
+    sender.start()
+    assert device.entered.wait(5)
+    assert acquire_from_worker(virtual.lock)
+    completed = threading.Event()
+
+    def change() -> None:
+        if action == "config":
+            virtual.update_config({"rows": 2, "grouping": 2})
+        else:
+            ledfx.virtuals.destroy(virtual.id)
+        completed.set()
+
+    successor = threading.Thread(target=change)
+    successor.start()
+    assert not completed.wait(0.1), "successor crossed already-claimed output"
+    device.release.set()
+    sender.join(5)
+    successor.join(5)
+    assert not sender.is_alive() and not successor.is_alive()
+    loop.drain()
+    assert previews == []  # source invalidation beats delayed preview consumption
+    np.testing.assert_array_equal(device.sent[0], np.full((50, 3), 73))
+    if action == "config":
+        virtual.force_frame((7, 8, 9))
+        loop.drain()
+        assert previews[-1].shape == (2, 25)
+        np.testing.assert_array_equal(
+            decoded(previews[-1]), np.tile((7, 8, 9), (50, 1))
+        )
+
+
+def test_shared_transition_propagation_releases_source_owner_and_rejects_stale_config(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    install_sampler(ledfx)
+    add_physical(ledfx)
+    source = attach(ledfx, "source", 0, 24)
+    target = attach(ledfx, "target", 25, 49)
+    source.frame_transitions = source.transitions["Add"]
+    target.frame_transitions = target.transitions["Add"]
+    ledfx.config.global_transitions = True
+    propagate = source._share_transition
+    observations: list[bool] = []
+    before = target.config.transition_mode
+
+    def delayed(config: VirtualConfig) -> None:
+        observations.append(acquire_from_worker(source._output_lock))
+        source.replace_config(replace_model(source.config, rows=2))
+        propagate(config)
+
+    monkeypatch.setattr(source, "_share_transition", delayed)
+    source.update_config({"transition_mode": "Push"})
+    assert observations == [True]
+    assert target.config.transition_mode == before
+
+
+def test_deleted_virtual_cannot_send_into_same_id_successor(ledfx: MagicMock) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    old = attach(ledfx, "logical", 0, 49)
+    previews = collect_previews(ledfx, is_device=False)
+    ledfx.virtuals.destroy(old.id)
+    successor = attach(ledfx, "logical", 0, 49)
+    successor.force_frame((7, 8, 9))
+    count = len(device.sent)
+    old.force_frame((73, 73, 73))
+    loop.drain()
+    assert len(device.sent) == count
+    np.testing.assert_array_equal(decoded(previews[-1]), np.tile((7, 8, 9), (50, 1)))

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import threading
@@ -5,7 +7,7 @@ from abc import abstractmethod
 from collections.abc import Iterator, Sequence
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from functools import cached_property, partial
-from typing import Annotated, ClassVar
+from typing import TYPE_CHECKING, Annotated, ClassVar
 
 import numpy as np
 import serial
@@ -45,6 +47,9 @@ from ledfx.utils import (
     resolve_destination,
     wled_support_DDP,
 )
+
+if TYPE_CHECKING:
+    from ledfx.virtuals import Virtual
 
 _LOGGER = logging.getLogger(__name__)
 _MISSING = object()  # a key absent from the stored config
@@ -271,12 +276,22 @@ class Device(BaseRegistry):
                 ):
                     buffer[start : end + 1] = pixels
 
-    def update_pixels(self, virtual_id: str, data: Sequence[PixelUpdate]) -> None:
+    def update_pixels(
+        self,
+        virtual_id: str,
+        data: Sequence[PixelUpdate],
+        *,
+        source_generation: int | None = None,
+    ) -> None:
         # Non-priority contributions do not wait for a slow sender. Only a
         # priority capture holds output admission, always before the frame lock.
         with self._frame_lock:
-            if not self._active:
+            if not self._active or (
+                source_generation is not None
+                and source_generation != self._source_generation
+            ):
                 return
+            admission_generation = self._source_generation
             priority = self.priority_virtual
             if priority is None or virtual_id != priority.id:
                 self._write_pixels(data)
@@ -285,7 +300,7 @@ class Device(BaseRegistry):
         rows = generation = sequence = 0
         with self._output_lock:
             with self._frame_lock:
-                if not self._active:
+                if not self._active or admission_generation != self._source_generation:
                     return
                 self._write_pixels(data)
                 priority = self.priority_virtual
@@ -411,7 +426,16 @@ class Device(BaseRegistry):
     def virtuals(self):
         return [segment[0] for segment in self._segments]
 
-    def add_segments_batch(self, virtual_id, segments, force=False):
+    def add_segments_batch(
+        self,
+        virtual_id: str,
+        segments: Sequence[tuple[int, int]],
+        force: bool = False,
+        *,
+        source: Virtual | None = None,
+        source_generation: int | None = None,
+        source_token: int | None = None,
+    ) -> None:
         """Add multiple segments efficiently with single overlap check.
 
         Args:
@@ -542,8 +566,18 @@ class Device(BaseRegistry):
                 _LOGGER.warning(msg)
                 raise ValueError(msg)
 
-        # Add all segments
+        # Callback phase is complete. The source identity/epoch start claim
+        # does not acquire a virtual lock while holding the device mutexes.
         with self._output_lock, self._frame_lock:
+            if source is not None and (
+                self._ledfx.virtuals.get(virtual_id) is not source
+                or (
+                    source_generation is not None
+                    and source._source_generation != source_generation
+                )
+                or (source_token is not None and source._render_token != source_token)
+            ):
+                return
             needs_cache_invalidation = virtual_id not in (
                 segment[0] for segment in self._segments
             )
@@ -841,25 +875,27 @@ class SerialDevice(Device):
         self.com_port = self.config.com_port
 
     def activate(self):
-        try:
-            if self.serial and self.serial.is_open:
-                return
+        with self._output_lock:
+            try:
+                if self.serial and self.serial.is_open:
+                    return
 
-            self.serial = serial.Serial(self.com_port, self.baudrate)
-            if self.serial.is_open:
-                super().activate()
-                self._online = True
+                self.serial = serial.Serial(self.com_port, self.baudrate)
+                if self.serial.is_open:
+                    super().activate()
+                    self._online = True
 
-        except serial.SerialException:
-            _LOGGER.warning(
-                "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
-            )
-            self.set_offline()
+            except serial.SerialException:
+                _LOGGER.warning(
+                    "Serial Error: Please ensure your device is connected, functioning and the correct COM port is selected."
+                )
+                self.set_offline()
 
     def deactivate(self):
-        super().deactivate()
-        if self.serial:
-            self.serial.close()
+        with self._output_lock:
+            super().deactivate()
+            if self.serial:
+                self.serial.close()
 
 
 class Devices(RegistryLoader):
