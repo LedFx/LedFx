@@ -496,8 +496,25 @@ class Virtual:
                         if self.pixel_count > 0 and not isinstance(effect, DummyEffect):
                             effect.activate(self)
 
-    def update_segments(self, segments_config):
+    def update_segments(
+        self,
+        segments_config: object,
+        *,
+        source_epoch: int | None = None,
+        removed_device: tuple[str, object] | None = None,
+    ) -> bool:
+        """Apply a layout; False means captured ownership was superseded."""
         with self.lock:
+            if source_epoch is not None and (
+                source_epoch != self._source_epoch
+                or self._ledfx.virtuals.get(self.id) is not self
+            ):
+                return False
+            if (
+                removed_device is not None
+                and self._ledfx.devices.get(removed_device[0]) is not removed_device[1]
+            ):
+                return False
             if not isinstance(segments_config, (list, tuple)):
                 raise ValueError(  # noqa: TRY004 - callers catch ValueError
                     f"Invalid segments: {segments_config}, should be a list of segments"
@@ -519,10 +536,18 @@ class Virtual:
                 entry = self.entry
                 if entry is not None:
                     entry.segments = self._segments
-                return
+                return True
         with self._output_lock, self.lock:
-            if admission != self._source_epoch:
-                return
+            if admission != self._source_epoch or (
+                source_epoch is not None
+                and self._ledfx.virtuals.get(self.id) is not self
+            ):
+                return False
+            if (
+                removed_device is not None
+                and self._ledfx.devices.get(removed_device[0]) is not removed_device[1]
+            ):
+                return False
             self._renew_source_generation()
             epoch = self._source_epoch
             self._segments = segments
@@ -540,10 +565,24 @@ class Virtual:
             with self._output_lock:
                 with self.lock:
                     if epoch != self._source_epoch or token != self._render_token:
-                        return
+                        return False
+                    if (
+                        removed_device is not None
+                        and self._ledfx.devices.get(removed_device[0])
+                        is not removed_device[1]
+                    ):
+                        return False
                 if resized:
                     self._reactivate_effect()
                 with self.lock:
+                    if epoch != self._source_epoch or token != self._render_token:
+                        return False
+                    if (
+                        removed_device is not None
+                        and self._ledfx.devices.get(removed_device[0])
+                        is not removed_device[1]
+                    ):
+                        return False
                     self.frame_transitions = self.transitions[
                         self._config.transition_mode
                     ]
@@ -582,6 +621,7 @@ class Virtual:
             self._ledfx.virtuals.check_and_deactivate_devices()
             raise
         self._ledfx.virtuals.check_and_deactivate_devices()
+        return True
 
     def _compile_device_remap(self):
         """
@@ -2135,6 +2175,31 @@ class Virtuals:
 
     def get(self, *args):
         return self._virtuals.get(*args)
+
+    def deactivate_for_device(self, virtual: Virtual) -> None:
+        """Stop this registered owner for runtime device overlap/streaming."""
+        with virtual.lock:
+            if self._virtuals.get(virtual.id) is not virtual:
+                return
+            epoch = virtual._source_epoch
+        # Deactivation owns its actual epoch claim and releases output before
+        # joining the renderer. No manager/source guard spans that join.
+        virtual.deactivate(source_epoch=epoch)
+
+    def remove_device_segments(
+        self, virtual: Virtual, device_id: str, device: object
+    ) -> bool:
+        """Remove this device's layout only while both captured owners remain."""
+        with virtual.lock:
+            if self._virtuals.get(virtual.id) is not virtual:
+                return False
+            epoch = virtual._source_epoch
+            segments = [
+                segment for segment in virtual.segments if segment[0] != device_id
+            ]
+        return virtual.update_segments(
+            segments, source_epoch=epoch, removed_device=(device_id, device)
+        )
 
     # ---- manager API (v1 and v2 call these) -------------------------------
     # Mutators check safe mode first and never await, so no other request can

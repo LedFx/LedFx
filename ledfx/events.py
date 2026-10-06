@@ -724,6 +724,13 @@ class EventListener:
         self.active = True
         self.event_type = event_type
 
+    def revoke(self) -> bool:
+        """Revoke once; the caller holds the owning bus lock."""
+        if not self.active:
+            return False
+        self.active = False
+        return True
+
     def filter_event(self, event: Event) -> bool:
         """Return whether this registration excludes the event."""
         event_dict = event.to_dict()
@@ -748,6 +755,13 @@ class _EventHost(Protocol):
 class _RegistrationObserver:
     callback: Callable[[str, int], None]
     active: bool = True
+
+    def revoke(self) -> bool:
+        """Revoke once; the caller holds the owning bus lock."""
+        if not self.active:
+            return False
+        self.active = False
+        return True
 
 
 @dataclass
@@ -1040,9 +1054,8 @@ class Events:
 
     def _remove_listener(self, event_type: str, listener: EventListener) -> None:
         with self._lock:
-            if not listener.active:
+            if not listener.revoke():
                 return
-            listener.active = False
             remaining = tuple(
                 item
                 for item in self._listeners.get(event_type, ())
@@ -1068,9 +1081,8 @@ class Events:
 
         def remove_observer() -> None:
             with self._lock:
-                if not observer.active:
+                if not observer.revoke():
                     return
-                observer.active = False
                 self._registration_observers = tuple(
                     item
                     for item in self._registration_observers

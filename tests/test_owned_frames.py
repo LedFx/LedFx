@@ -45,6 +45,7 @@ _TEMPORAL_THREAD = TemporalEffect.thread_function
 _RENDER_THREAD = Virtual.thread_function
 
 
+@Device.no_registration
 class CapturingDevice(DummyDevice):
     @override
     def __init__(self, ledfx: MagicMock, config: int = 50) -> None:
@@ -106,6 +107,7 @@ def test_assemble_zero_offset_never_borrows_device_buffer(ledfx: MagicMock) -> N
     assert not np.shares_memory(frame, device._pixels)
 
 
+@Device.no_registration
 class HoldingDevice(CapturingDevice):
     @override
     def __init__(self, ledfx: MagicMock, config: int = 50) -> None:
@@ -126,6 +128,140 @@ def add_physical(ledfx: MagicMock, *, hold: bool = False) -> CapturingDevice:
     ledfx.devices._objects[device.id] = device
     device.activate()
     return device
+
+
+def test_owned_fixture_classes_do_not_register_plugins() -> None:
+    # Every subclass registers on definition, including the second fixture
+    # subclass. Each must remove its own test-module plugin registration.
+    assert "test_owned_frames" not in Device.registry()
+    assert "test_owned_frames" not in Effect.registry()
+
+
+@pytest.mark.parametrize("successor", ["layout", "virtual", "device"])
+def test_manager_device_removal_rejects_superseded_snapshot(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch, successor: str
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    original_update = virtual.update_segments
+    current = virtual
+
+    def overtake(
+        segments: object,
+        *,
+        source_epoch: int | None = None,
+        removed_device: tuple[str, object] | None = None,
+    ) -> bool:
+        nonlocal current
+        if successor == "layout":
+            assert original_update([["physical", 0, 39, False]])
+        elif successor == "virtual":
+            ledfx.virtuals.destroy(virtual.id)
+            current = attach(ledfx, "logical", 0, 39)
+        else:
+            add_physical(ledfx)
+        expected = [segment.copy() for segment in current.segments]
+        applied = original_update(
+            segments, source_epoch=source_epoch, removed_device=removed_device
+        )
+        assert current.segments == expected
+        return applied
+
+    monkeypatch.setattr(virtual, "update_segments", overtake)
+    assert not ledfx.virtuals.remove_device_segments(virtual, device.id, device)
+    assert ledfx.virtuals.get(current.id) is current
+    assert current.segments
+
+
+def test_manager_device_removal_rechecks_device_at_actual_layout_claim(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    entered, release = threading.Event(), threading.Event()
+    actual_lock = virtual._output_lock
+    results: list[bool] = []
+
+    class HeldClaim:
+        def __enter__(self) -> None:
+            if threading.current_thread().name == "removed-old-device":
+                entered.set()
+                assert release.wait(5)
+            actual_lock.acquire()
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            actual_lock.release()
+
+    def remove() -> None:
+        results.append(
+            ledfx.virtuals.remove_device_segments(virtual, device.id, device)
+        )
+
+    monkeypatch.setattr(virtual, "_output_lock", HeldClaim())
+    worker = threading.Thread(name="removed-old-device", target=remove)
+    worker.start()
+    try:
+        assert entered.wait(5)
+        successor = add_physical(ledfx)
+        expected = [segment.copy() for segment in virtual.segments]
+        release.set()
+        worker.join(5)
+        assert not worker.is_alive()
+        assert results == [False]
+        assert virtual.segments == expected
+        assert ledfx.devices.get(device.id) is successor
+        assert virtual.active
+    finally:
+        release.set()
+        worker.join(5)
+        assert not worker.is_alive()
+
+
+def test_stale_device_removal_skips_follow_on_virtual_destruction(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    original_remove = ledfx.virtuals.remove_device_segments
+
+    def overtake(owner: Virtual, device_id: str, captured_device: object) -> bool:
+        successor = add_physical(ledfx)
+        applied = original_remove(owner, device_id, captured_device)
+        assert ledfx.devices.get(device_id) is successor
+        return applied
+
+    monkeypatch.setattr(ledfx.virtuals, "remove_device_segments", overtake)
+    device.remove_from_virtuals()
+    assert ledfx.virtuals.get(virtual.id) is virtual
+    assert virtual.segments == [["physical", 0, 49, False]]
+    assert virtual.entry is not None and virtual.entry.segments == virtual.segments
+
+
+def test_device_removal_rechecks_layout_after_reactivation_callback(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    original_reactivate = virtual._reactivate_effect
+
+    def replace_layout() -> None:
+        original_reactivate()
+        monkeypatch.setattr(virtual, "_reactivate_effect", original_reactivate)
+        assert virtual.update_segments([["physical", 0, 39, False]])
+
+    monkeypatch.setattr(virtual, "_reactivate_effect", replace_layout)
+    assert not ledfx.virtuals.remove_device_segments(virtual, device.id, device)
+    assert virtual.segments == [["physical", 0, 39, False]]
+    assert virtual.entry is not None and virtual.entry.segments == virtual.segments
 
 
 def attach(
@@ -1051,14 +1187,14 @@ def test_registration_rejects_source_superseded_during_forced_callback(
     callback_locks: list[bool] = []
     stop = blocker.deactivate
 
-    def supersede() -> None:
+    def supersede(*, source_epoch: int | None = None) -> None:
         callback_locks.append(acquire_from_worker(owner._output_lock))
         callback_locks.append(acquire_from_worker(owner.lock))
         if change == "config":
             owner.update_config({"rows": 2})
         else:
             owner.deactivate()
-        stop()
+        stop(source_epoch=source_epoch)
 
     monkeypatch.setattr(blocker, "deactivate", supersede)
     owner.activate_segments(
@@ -1080,15 +1216,15 @@ def test_simultaneous_forced_cross_owner_activation_completes(
     observations: list[bool] = []
     originals = {front.id: front.deactivate, back.id: back.deactivate}
 
-    def stop_front() -> None:
+    def stop_front(*, source_epoch: int | None = None) -> None:
         observations.append(acquire_from_worker(back._output_lock))
         barrier.wait(5)
-        originals[front.id]()
+        originals[front.id](source_epoch=source_epoch)
 
-    def stop_back() -> None:
+    def stop_back(*, source_epoch: int | None = None) -> None:
         observations.append(acquire_from_worker(front._output_lock))
         barrier.wait(5)
-        originals[back.id]()
+        originals[back.id](source_epoch=source_epoch)
 
     monkeypatch.setattr(front, "deactivate", stop_front)
     monkeypatch.setattr(back, "deactivate", stop_back)

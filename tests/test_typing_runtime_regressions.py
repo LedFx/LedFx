@@ -5,6 +5,7 @@ import json
 import socket
 import subprocess
 import sys
+import threading
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -314,6 +315,8 @@ def test_serial_device_reopens_after_deactivate() -> None:
     from ledfx.devices.adalight import AdalightDevice
 
     device = object.__new__(AdalightDevice)
+    # SerialDevice owns output across open/close, just as Device.__init__ sets up.
+    device._output_lock = threading.RLock()
     device.serial = None
     device.com_port, device.baudrate = "loop://", 115200
     with (

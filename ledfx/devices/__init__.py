@@ -471,7 +471,7 @@ class Device(BaseRegistry):
                 for _virtual_id in external_virtuals:
                     external_virtual = self._ledfx.virtuals.get(_virtual_id)
                     if external_virtual and external_virtual.active:
-                        external_virtual.deactivate()
+                        self._ledfx.virtuals.deactivate_for_device(external_virtual)
 
         # If a non-device virtual is adding segments to this device,
         # deactivate the device's own virtual to enter streaming mode
@@ -485,7 +485,7 @@ class Device(BaseRegistry):
                     self.id,
                     virtual_id,
                 )
-                device_virtual.deactivate()
+                self._ledfx.virtuals.deactivate_for_device(device_virtual)
 
         # Efficient overlap detection using sorted intervals
         overlapping_virtuals = set()
@@ -559,7 +559,7 @@ class Device(BaseRegistry):
                 for _virtual_id in overlapping_virtuals:
                     blocking_virtual = self._ledfx.virtuals.get(_virtual_id)
                     if blocking_virtual:
-                        blocking_virtual.deactivate()
+                        self._ledfx.virtuals.deactivate_for_device(blocking_virtual)
             else:
                 blocking_names = [
                     self._ledfx.virtuals.get(v).name
@@ -654,6 +654,9 @@ class Device(BaseRegistry):
         their effect is restored.
         """
 
+        if self._ledfx.devices.get(self.id) is not self:
+            return
+
         # Collect ids of virtuals to destroy after the iteration
         virtuals_to_destroy = []
         for virtual in self._ledfx.virtuals.values():
@@ -663,9 +666,10 @@ class Device(BaseRegistry):
             active = virtual.active
             if active:
                 virtual.deactivate()
-            virtual.update_segments(
-                [segment for segment in virtual._segments if segment[0] != self.id]
-            )
+            if not self._ledfx.virtuals.remove_device_segments(virtual, self.id, self):
+                # A newer layout/device owner won admission. It owns any
+                # follow-on activation, destruction and persisted state.
+                continue
 
             # If the virtual has no segments left, it cannot host an
             # effect.  Destroy it regardless of auto_generated status to
