@@ -1330,9 +1330,15 @@ class Virtual:
     def deactivate(
         self, *, source_epoch: int | None = None, preserve_clear: bool = False
     ) -> None:
+        self._deactivate(source_epoch=source_epoch, preserve_clear=preserve_clear)
+
+    def _deactivate(
+        self, *, source_epoch: int | None = None, preserve_clear: bool = False
+    ) -> int | None:
+        """Return this pause's captured epoch, or None if it lost ownership."""
         with self._output_lock, self.lock:
             if source_epoch is not None and source_epoch != self._source_epoch:
-                return
+                return None
             if not preserve_clear:
                 self.flush_pending_clear_frame()
             self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, self.id)
@@ -1353,11 +1359,19 @@ class Virtual:
                     or token != self._render_token
                     or self._active
                 ):
-                    return
+                    return None
             for device in devices:
                 self._clear_captured_segments(device, epoch, token)
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id, True))
         self._ledfx.virtuals.check_and_deactivate_devices()
+        with self.lock:
+            if (
+                epoch != self._source_epoch
+                or token != self._render_token
+                or self._active
+            ):
+                return None
+        return epoch
 
     # @lru_cache(maxsize=32)
     # def _normalized_linspace(self, size):
@@ -2223,8 +2237,10 @@ class Virtuals:
             old_segments = virtual.segments
             segments = [segment for segment in old_segments if segment[0] != device_id]
         if active:
-            virtual.deactivate(source_epoch=epoch, preserve_clear=True)
-            epoch += 1
+            paused_epoch = virtual._deactivate(source_epoch=epoch, preserve_clear=True)
+            if paused_epoch is None:
+                return False
+            epoch = paused_epoch
         claim: int | None = epoch
         try:
             applied = virtual.update_segments(

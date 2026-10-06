@@ -174,6 +174,143 @@ def test_manager_device_removal_rejects_superseded_snapshot(
     assert current.segments
 
 
+def test_removal_cannot_use_newer_epoch_when_actual_pause_is_rejected(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    actual_lock = virtual._output_lock
+    initial_epoch = virtual._source_epoch
+    overtaken = False
+    newer_layout = [["physical", 0, 39, False]]
+
+    class OvertakenPause:
+        def __enter__(self) -> None:
+            nonlocal overtaken
+            if not overtaken:
+                overtaken = True
+                assert virtual.update_segments(newer_layout)
+                assert virtual._source_epoch == initial_epoch + 1
+            actual_lock.acquire()
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc: BaseException | None,
+            traceback: TracebackType | None,
+        ) -> None:
+            actual_lock.release()
+
+    # Interleave at actual pause admission, before acquiring its output lock;
+    # this gap remains the same for public and internal lifecycle entry points.
+    monkeypatch.setattr(virtual, "_output_lock", OvertakenPause())
+    assert not ledfx.virtuals.remove_device_segments(virtual, device.id, device)
+    assert virtual.entry is not None
+    assert virtual.segments == virtual.entry.segments == newer_layout
+    assert virtual.active
+    assert virtual._source_epoch == initial_epoch + 1
+
+
+def test_internal_pause_reports_owned_epoch_and_public_return_is_unchanged(
+    ledfx: MagicMock,
+) -> None:
+    install_sampler(ledfx)
+    add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    epoch = virtual._source_epoch
+    paused_epoch = virtual._deactivate(source_epoch=epoch)
+    assert paused_epoch == epoch + 1 == virtual._source_epoch
+    assert not virtual.active
+    virtual.activate()
+    epoch = virtual._source_epoch
+    assert virtual.deactivate() is None
+    assert virtual._source_epoch == epoch + 1
+    assert virtual._deactivate(source_epoch=epoch) is None
+    assert virtual._source_epoch == epoch + 1
+
+
+@pytest.mark.parametrize("successor", ["layout", "virtual"])
+def test_removal_rejects_pause_overtaken_during_actual_renderer_join(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch, successor: str
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    release_renderer = threading.Event()
+    joined = threading.Event()
+    finish_pause = threading.Event()
+    results: list[bool] = []
+    observations: list[bool] = []
+
+    def render() -> None:
+        assert release_renderer.wait(5), "renderer was not released"
+
+    renderer = threading.Thread(target=render)
+    virtual._thread = renderer
+    renderer.start()
+    actual_join = threading.Thread.join
+
+    def remove() -> None:
+        results.append(
+            ledfx.virtuals.remove_device_segments(virtual, device.id, device)
+        )
+
+    worker = threading.Thread(target=remove)
+
+    def join(thread: threading.Thread, timeout: float | None = None) -> None:
+        if thread is renderer and threading.current_thread() is worker:
+            observations.extend(
+                [
+                    acquire_from_worker(virtual.lock),
+                    acquire_from_worker(virtual._output_lock),
+                ]
+            )
+            joined.set()
+            actual_join(thread, timeout)
+            assert finish_pause.wait(5), "pause join was not released"
+        else:
+            actual_join(thread, timeout)
+
+    monkeypatch.setattr(threading.Thread, "join", join)
+    worker.start()
+    current = virtual
+    try:
+        assert joined.wait(5)
+        assert observations == [True, True]
+        assert not virtual.active
+        assert virtual.update_segments([["physical", 0, 39, False]])
+        release_renderer.set()
+        if successor == "virtual":
+            ledfx.virtuals.destroy(virtual.id)
+            current = attach(ledfx, "logical", 0, 39)
+            current._active_effect = DummyEffect(40)
+        expected_segments = device._segments.copy()
+        expected_epoch = current._source_epoch
+        expected_active = current.active
+        finish_pause.set()
+        worker.join(5)
+        assert not worker.is_alive()
+        assert results == [False]
+        assert ledfx.virtuals.get(current.id) is current
+        assert current.entry is not None
+        assert (
+            current.segments == current.entry.segments == [["physical", 0, 39, False]]
+        )
+        assert current._source_epoch == expected_epoch
+        assert current.active is expected_active
+        assert device._segments == expected_segments
+    finally:
+        release_renderer.set()
+        finish_pause.set()
+        worker.join(5)
+        renderer.join(5)
+        assert not worker.is_alive() and not renderer.is_alive()
+
+
 def test_manager_device_removal_rechecks_device_at_actual_layout_claim(
     ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
 ) -> None:
