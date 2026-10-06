@@ -78,6 +78,14 @@ class EffectRejected(Conflict):
         self.effect = effect
 
 
+class _RemovedDeviceSuperseded(Exception):
+    """A removal lost device ownership after changing this virtual's layout."""
+
+    def __init__(self) -> None:
+        super().__init__("removed device owner was superseded")
+        self.restored_epoch: int | None = None
+
+
 def _flash(params: OneshotParams) -> Flash:
     """The Flash oneshot for params."""
     return Flash(
@@ -571,7 +579,7 @@ class Virtual:
                         and self._ledfx.devices.get(removed_device[0])
                         is not removed_device[1]
                     ):
-                        return False
+                        raise _RemovedDeviceSuperseded
                 if resized:
                     self._reactivate_effect()
                 with self.lock:
@@ -582,14 +590,14 @@ class Virtual:
                         and self._ledfx.devices.get(removed_device[0])
                         is not removed_device[1]
                     ):
-                        return False
+                        raise _RemovedDeviceSuperseded
                     self.frame_transitions = self.transitions[
                         self._config.transition_mode
                     ]
                     entry = self.entry
                     if entry is not None:
                         entry.segments = self._segments
-        except Exception:
+        except Exception as error:
             with self._output_lock, self.lock:
                 if epoch != self._source_epoch or token != self._render_token:
                     raise
@@ -598,6 +606,11 @@ class Virtual:
                 self._segments = old_segments
                 self.invalidate_cached_props()
                 self._compile_device_remap()
+                entry = self.entry
+                if entry is not None:
+                    entry.segments = self._segments
+                if isinstance(error, _RemovedDeviceSuperseded):
+                    error.restored_epoch = rollback_epoch
             if active:
                 for device in new_devices:
                     self._clear_captured_segments(device, rollback_epoch, token)
@@ -614,6 +627,8 @@ class Virtual:
                 try:
                     self._reactivate_effect()
                 except Exception:
+                    if isinstance(error, _RemovedDeviceSuperseded):
+                        raise
                     _LOGGER.exception(
                         "Virtual %s: effect did not restart after segment rollback",
                         self.id,
@@ -985,7 +1000,9 @@ class Virtual:
                     else None
                 )
                 captured = (
-                    self._capture_preview_frame(pixels, owned=True) if active else None
+                    self._capture_preview_frame(pixels, owned=True)
+                    if active or clear_owner is not None
+                    else None
                 )
             self._emit_output(output)
         self._publish_preview_frame(captured)
@@ -1269,8 +1286,13 @@ class Virtual:
             np.multiply(frame, self._ledfx.config.global_brightness, frame)
         return frame
 
-    def activate(self) -> None:
+    def activate(self, *, source_epoch: int | None = None) -> None:
         with self._output_lock, self.lock:
+            if source_epoch is not None and (
+                source_epoch != self._source_epoch
+                or self._ledfx.virtuals.get(self.id) is not self
+            ):
+                return
             if not self._devices:
                 raise RuntimeError(
                     f"Virtual {self.id}: Cannot activate, no configured device segments"
@@ -1305,11 +1327,14 @@ class Virtual:
         self._ledfx.events.fire_event(VirtualPauseEvent(self.id, False))
         self._ledfx.virtuals.check_and_deactivate_devices()
 
-    def deactivate(self, *, source_epoch: int | None = None) -> None:
+    def deactivate(
+        self, *, source_epoch: int | None = None, preserve_clear: bool = False
+    ) -> None:
         with self._output_lock, self.lock:
             if source_epoch is not None and source_epoch != self._source_epoch:
                 return
-            self.flush_pending_clear_frame()
+            if not preserve_clear:
+                self.flush_pending_clear_frame()
             self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, self.id)
             self._source_epoch += 1
             epoch = self._source_epoch
@@ -2194,12 +2219,45 @@ class Virtuals:
             if self._virtuals.get(virtual.id) is not virtual:
                 return False
             epoch = virtual._source_epoch
-            segments = [
-                segment for segment in virtual.segments if segment[0] != device_id
-            ]
-        return virtual.update_segments(
-            segments, source_epoch=epoch, removed_device=(device_id, device)
-        )
+            active = virtual.active
+            old_segments = virtual.segments
+            segments = [segment for segment in old_segments if segment[0] != device_id]
+        if active:
+            virtual.deactivate(source_epoch=epoch, preserve_clear=True)
+            epoch += 1
+        claim: int | None = epoch
+        try:
+            applied = virtual.update_segments(
+                segments, source_epoch=epoch, removed_device=(device_id, device)
+            )
+            if applied and segments != old_segments:
+                claim = epoch + 1
+        except _RemovedDeviceSuperseded as error:
+            applied = False
+            claim = error.restored_epoch
+        resume_epoch: int | None = None
+        with virtual.lock:
+            if (
+                self._virtuals.get(virtual.id) is virtual
+                and claim == virtual._source_epoch
+            ):
+                if not applied:
+                    # The old layout remains current, but its device objects
+                    # may have changed again during restoration callbacks.
+                    virtual._renew_source_generation()
+                    virtual.invalidate_cached_props()
+                    virtual._compile_device_remap()
+                else:
+                    virtual.flush_pending_clear_frame()
+                if (
+                    active
+                    and virtual.active_effect is not None
+                    and virtual.pixel_count > 0
+                ):
+                    resume_epoch = virtual._source_epoch
+        if resume_epoch is not None:
+            virtual.activate(source_epoch=resume_epoch)
+        return applied
 
     # ---- manager API (v1 and v2 call these) -------------------------------
     # Mutators check safe mode first and never await, so no other request can

@@ -663,9 +663,6 @@ class Device(BaseRegistry):
             if not any(segment[0] == self.id for segment in virtual._segments):
                 continue
 
-            active = virtual.active
-            if active:
-                virtual.deactivate()
             if not self._ledfx.virtuals.remove_device_segments(virtual, self.id, self):
                 # A newer layout/device owner won admission. It owns any
                 # follow-on activation, destruction and persisted state.
@@ -689,9 +686,6 @@ class Device(BaseRegistry):
             entry = virtual.entry
             if entry is not None:
                 entry.segments = virtual.segments
-
-            if active:
-                virtual.activate()
 
         for id in virtuals_to_destroy:
             virtual = self._ledfx.virtuals.get(id)

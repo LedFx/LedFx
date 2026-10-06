@@ -180,13 +180,17 @@ def test_manager_device_removal_rechecks_device_at_actual_layout_claim(
     install_sampler(ledfx)
     device = add_physical(ledfx)
     virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
     entered, release = threading.Event(), threading.Event()
     actual_lock = virtual._output_lock
     results: list[bool] = []
 
     class HeldClaim:
         def __enter__(self) -> None:
-            if threading.current_thread().name == "removed-old-device":
+            if (
+                threading.current_thread().name == "removed-old-device"
+                and not virtual.active
+            ):
                 entered.set()
                 assert release.wait(5)
             actual_lock.acquire()
@@ -262,6 +266,216 @@ def test_device_removal_rechecks_layout_after_reactivation_callback(
     assert not ledfx.virtuals.remove_device_segments(virtual, device.id, device)
     assert virtual.segments == [["physical", 0, 39, False]]
     assert virtual.entry is not None and virtual.entry.segments == virtual.segments
+
+
+@pytest.mark.parametrize("running_effect", [False, True])
+@pytest.mark.parametrize("original_active", [False, True])
+def test_device_only_replacement_during_removal_restores_coherent_owner(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    running_effect: bool,
+    original_active: bool,
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    effect: Effect | None = None
+    worker: threading.Thread | None = None
+    if running_effect:
+        monkeypatch.setattr(TemporalEffect, "thread_function", _TEMPORAL_THREAD)
+        effect = ledfx.effects.create("singleColor", ledfx=ledfx, config=cfg({}))
+        virtual.update_config({"transition_mode": "None", "transition_time": 0})
+        virtual.set_effect(effect)
+        assert isinstance(effect, TemporalEffect)
+        worker = effect._thread
+        assert isinstance(worker, threading.Thread)
+    if not original_active:
+        virtual.deactivate()
+    original_reactivate = virtual._reactivate_effect
+    successors: list[CapturingDevice] = []
+
+    def replace_device() -> None:
+        original_reactivate()
+        # Replace only the device: leave Virtual epoch/layout/instance alone.
+        successors.append(add_physical(ledfx))
+
+    monkeypatch.setattr(virtual, "_reactivate_effect", replace_device)
+    try:
+        device.remove_from_virtuals()
+        assert successors and ledfx.devices.get(device.id) is successors[-1]
+        assert virtual.entry is not None
+        assert (
+            virtual.segments == virtual.entry.segments == [["physical", 0, 49, False]]
+        )
+        assert ledfx.virtuals.get(virtual.id) is virtual
+        if effect is not None:
+            assert virtual.active is original_active
+            assert virtual.active_effect is effect and effect.is_active
+            assert isinstance(effect.pixels, np.ndarray) and len(effect.pixels) == 50
+            assert ledfx.effects.get(effect.id) is effect
+            assert isinstance(effect, TemporalEffect)
+            assert (
+                isinstance(effect._thread, threading.Thread)
+                and effect._thread.is_alive()
+            )
+            assert worker is not None and not worker.is_alive()
+            assert successors[-1]._segments == (
+                [(virtual.id, 0, 49)] if original_active else []
+            )
+            render_once(virtual)
+            assert len(successors[-1].sent) == int(original_active)
+    finally:
+        if effect is not None:
+            effect._deactivate()
+        if worker is not None:
+            worker.join(5)
+            assert not worker.is_alive()
+
+
+@pytest.mark.parametrize("successor", ["layout", "virtual"])
+def test_removal_rollback_cannot_overwrite_newer_virtual_owner(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch, successor: str
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    original_reactivate = virtual._reactivate_effect
+    calls = 0
+    current = virtual
+
+    def replace_owner() -> None:
+        nonlocal calls, current
+        original_reactivate()
+        calls += 1
+        if calls == 1:
+            add_physical(ledfx)
+        else:
+            monkeypatch.setattr(virtual, "_reactivate_effect", original_reactivate)
+            if successor == "layout":
+                assert virtual.update_segments([["physical", 0, 39, False]])
+            else:
+                ledfx.virtuals.destroy(virtual.id)
+                current = attach(ledfx, "logical", 0, 39)
+                current._active_effect = DummyEffect(40)
+            current.activate()
+
+    monkeypatch.setattr(virtual, "_reactivate_effect", replace_owner)
+    device.remove_from_virtuals()
+    assert calls == 2
+    assert ledfx.virtuals.get(current.id) is current
+    assert current.entry is not None
+    assert current.segments == current.entry.segments == [["physical", 0, 39, False]]
+    assert current.active
+    assert current.active_effect is not None and current.active_effect.is_active
+
+
+def test_rejected_device_removal_preserves_pending_clear_and_final_black(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    virtual.update_config({"transition_mode": "Add", "transition_time": 1})
+    previews = collect_previews(ledfx, is_device=False, vis_id=virtual.id)
+    virtual.force_frame((11, 22, 33))
+    loop.drain()
+    virtual.clear_effect()
+    owner = virtual._clear_owner
+    original_reactivate = virtual._reactivate_effect
+    successors: list[CapturingDevice] = []
+
+    def replace_device() -> None:
+        original_reactivate()
+        successors.append(add_physical(ledfx))
+
+    monkeypatch.setattr(virtual, "_reactivate_effect", replace_device)
+    device.remove_from_virtuals()
+    assert virtual._clear_owner is owner
+    assert virtual.active
+    loop.advance(loop.now + 1)
+    assert not virtual.active and virtual.active_effect is None
+    assert virtual.entry is not None and virtual.segments == virtual.entry.segments
+    np.testing.assert_array_equal(successors[-1].sent[-1], np.zeros((50, 3)))
+    assert previews[-1].shape == (1, 50)
+    np.testing.assert_array_equal(decoded(previews[-1]), np.zeros((50, 3)))
+
+
+def test_clear_completing_during_temporary_removal_pause_wins(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    virtual.update_config({"transition_mode": "Add", "transition_time": 1})
+    previews = collect_previews(ledfx, is_device=False, vis_id=virtual.id)
+    virtual.force_frame((11, 22, 33))
+    loop.drain()
+    virtual.clear_effect()
+    due_clear = captured_clear(loop)
+    original_update = virtual.update_segments
+
+    def finish_clear(
+        segments: object,
+        *,
+        source_epoch: int | None = None,
+        removed_device: tuple[str, object] | None = None,
+    ) -> bool:
+        assert not virtual.active
+        sends = len(device.sent)
+        due_clear()
+        assert len(device.sent) == sends
+        return original_update(
+            segments, source_epoch=source_epoch, removed_device=removed_device
+        )
+
+    monkeypatch.setattr(virtual, "update_segments", finish_clear)
+    device.remove_from_virtuals()
+    assert not virtual.active and virtual.active_effect is None
+    assert virtual._clear_owner is None and virtual.clear_handle is None
+    assert virtual.entry is not None
+    assert virtual.segments == virtual.entry.segments == [["physical", 0, 49, False]]
+    assert ledfx.virtuals.get(virtual.id) is virtual
+    loop.advance(loop.now + 1)
+    assert previews[-1].shape == (1, 50)
+    np.testing.assert_array_equal(decoded(previews[-1]), np.zeros((50, 3)))
+
+
+@pytest.mark.parametrize("failure_phase", ["rollback", "resume"])
+def test_device_removal_recovery_failure_propagates(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch, failure_phase: str
+) -> None:
+    install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    original_reactivate = virtual._reactivate_effect
+    failure = RuntimeError("intentional removal recovery failure")
+    calls = 0
+
+    def replace_then_restore() -> None:
+        nonlocal calls
+        calls += 1
+        if calls == 2 and failure_phase == "rollback":
+            raise failure
+        original_reactivate()
+        if calls == 1:
+            add_physical(ledfx)
+
+    def refuse_resume(*, source_epoch: int | None = None) -> None:
+        raise failure
+
+    monkeypatch.setattr(virtual, "_reactivate_effect", replace_then_restore)
+    if failure_phase == "resume":
+        monkeypatch.setattr(virtual, "activate", refuse_resume)
+    with pytest.raises(RuntimeError) as raised:
+        device.remove_from_virtuals()
+    assert raised.value is failure
+    assert virtual.entry is not None
+    assert virtual.segments == virtual.entry.segments == [["physical", 0, 49, False]]
+    assert ledfx.devices.get(device.id) is not device
 
 
 def attach(
