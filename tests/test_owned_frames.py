@@ -6,7 +6,7 @@ import asyncio
 import base64
 import threading
 from _thread import LockType
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from types import TracebackType
 from unittest.mock import MagicMock
 
@@ -26,7 +26,7 @@ from ledfx.devices.nanoleaf import NanoleafDevice
 from ledfx.devices.twinkly_squares import TwinklySquaresDevice
 from ledfx.devices.utils.rgbw_conversion import OutputMode
 from ledfx.devices.wled import WLEDDevice
-from ledfx.effects import DummyEffect
+from ledfx.effects import DummyEffect, Effect
 from ledfx.effects.oneshots.oneshot import Flash
 from ledfx.effects.temporal import TemporalEffect
 from ledfx.events import (
@@ -74,9 +74,15 @@ def ledfx(monkeypatch: pytest.MonkeyPatch) -> Iterator[MagicMock]:
 
 
 class OwnedScheduler(Scheduler):
+    @override
+    def __init__(self) -> None:
+        super().__init__()
+        self.later_callbacks: list[Callable[[], object]] = []
+
     def call_later(
         self, delay: float, callback: Callable[..., object], *args: object
     ) -> asyncio.TimerHandle:
+        self.later_callbacks.append(lambda: callback(*args))
         return self.call_at(self.now + delay, callback, *args)
 
 
@@ -1451,3 +1457,391 @@ def test_clear_rejects_force_admitted_before_effect_detachment(
     virtual.clear_frame()
     assert not virtual.active
     np.testing.assert_array_equal(device.sent[-1][:25], np.zeros((25, 3)))
+
+
+@Effect.no_registration
+class RetiringTemporalEffect(TemporalEffect):
+    """Real temporal activation/join with a controlled worker and subscription."""
+
+    NAME = "retiring temporal"
+
+    @override
+    def __init__(
+        self,
+        ledfx: MagicMock,
+        config: Mapping[str, object],
+        *,
+        effect_id: str = "retired",
+    ) -> None:
+        self.entered = threading.Event()
+        self.release = threading.Event()
+        self.dispose_subscription: Callable[[], None] | None = None
+        self.received: list[Event] = []
+        self.join_locks: list[tuple[bool, bool]] = []
+        super().__init__(ledfx, config)
+        self._id = effect_id
+        self._type = "singleColor"
+
+    @override
+    def on_activate(self, pixel_count: int) -> None:
+        self.dispose_subscription = self._ledfx.events.add_listener(
+            self.received.append, Event.EFFECT_CLEARED
+        )
+
+    @override
+    def thread_function(self) -> None:
+        self.entered.set()
+        assert self.release.wait(5), "temporal worker was not released"
+
+    @override
+    def deactivate(self) -> None:
+        virtual = self._virtual
+        if virtual is not None:
+            self.join_locks.append(
+                (
+                    acquire_from_worker(virtual.lock),
+                    acquire_from_worker(virtual._output_lock),
+                )
+            )
+        self.release.set()
+        try:
+            super().deactivate()
+        finally:
+            if self.dispose_subscription is not None:
+                self.dispose_subscription()
+                self.dispose_subscription = None
+
+
+def test_failed_replacement_retires_actual_temporal_worker_and_subscription(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    loop = install_sampler(ledfx)
+    add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config({"transition_mode": "None", "transition_time": 0})
+    old = RetiringTemporalEffect(ledfx, {}, effect_id="retired")
+    ledfx.effects._objects[old.id] = old
+    virtual.set_effect(old)
+    worker = old._thread
+    assert isinstance(worker, threading.Thread)
+    refused = ledfx.effects.create("singleColor", ledfx=ledfx, config=cfg({}))
+    failure = RuntimeError("intentional replacement activation failure")
+
+    def refuse(owner: Virtual) -> None:
+        raise failure
+
+    monkeypatch.setattr(refused, "activate", refuse)
+    try:
+        assert old.entered.wait(5)
+        with pytest.raises(RuntimeError) as raised:
+            virtual.set_effect(refused)
+        assert raised.value is failure
+        # An inactive replacement cannot rescue disposal on a later render.
+        virtual._render_frame()
+        assert not worker.is_alive()
+        assert not old.is_active
+        assert ledfx.effects.get(old.id) is None
+        assert old.dispose_subscription is None
+        assert old.join_locks == [(True, False)]
+        assert virtual._retired_effects == []
+        virtual.clear_effect()
+        loop.drain()
+        assert old.received == []
+    finally:
+        old.release.set()
+        old._deactivate()
+        worker.join(5)
+        assert not worker.is_alive()
+
+
+@pytest.mark.parametrize("transition_time", [0, 1])
+@pytest.mark.parametrize("change", ["name", "rows", "grouping", "segments", "global"])
+def test_pending_clear_finishes_current_layout_after_compatible_edit(
+    ledfx: MagicMock, transition_time: int, change: str
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config(
+        {"transition_mode": "Add", "transition_time": transition_time}
+    )
+    virtual._active_effect = DummyEffect(50)
+    previews = collect_previews(ledfx, is_device=False, vis_id=virtual.id)
+    virtual.force_frame((11, 22, 33))
+    loop.drain()
+    virtual.clear_effect()
+    epoch = virtual._source_epoch
+    if change == "name":
+        virtual.update_config({"name": "renamed"})
+    elif change == "rows":
+        virtual.update_config({"rows": 2})
+    elif change == "grouping":
+        virtual.update_config({"grouping": 2})
+    elif change == "segments":
+        virtual.update_segments([["physical", 0, 29, False]])
+    else:
+        ledfx.config.global_transitions = True
+        peer = add_virtual(ledfx, "peer", "peer", [["physical", 0, 49, False]])
+        peer.update_config({"transition_mode": "Add", "transition_time": 2})
+    assert virtual._source_epoch > epoch
+    loop.advance(loop.now + transition_time)
+    assert not virtual.active
+    assert virtual.active_effect is None
+    count = 30 if change == "segments" else 50
+    np.testing.assert_array_equal(device.sent[-1][:count], np.zeros((count, 3)))
+    loop.advance(loop.now + 1 / 60)
+    assert previews[-1].shape == ((2, 25) if change == "rows" else (1, count))
+    np.testing.assert_array_equal(decoded(previews[-1]), np.zeros((count, 3)))
+
+
+def captured_clear(loop: Scheduler) -> Callable[[], object]:
+    assert isinstance(loop, OwnedScheduler)
+    return loop.later_callbacks[-1]
+
+
+@pytest.mark.parametrize(
+    "successor",
+    [
+        "effect",
+        "clear",
+        "cancel",
+        "deactivate",
+        "destroy",
+        "direct_clear",
+        "active_slot",
+        "transition_slot",
+    ],
+)
+@pytest.mark.parametrize("sampling", ["open", "closed", "absent"])
+def test_pending_clear_rejects_superseded_owner(
+    ledfx: MagicMock, successor: str, sampling: str
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config({"transition_mode": "Add", "transition_time": 1})
+    virtual._active_effect = DummyEffect(50)
+    if sampling == "closed":
+        ledfx.preview_sampler.close()
+    elif sampling == "absent":
+        ledfx.preview_sampler = None
+    virtual.clear_effect()
+    stale = captured_clear(loop)
+    if successor == "effect":
+        replacement = ledfx.effects.create("singleColor", ledfx=ledfx, config=cfg({}))
+        virtual.set_effect(replacement)
+    elif successor == "clear":
+        virtual.clear_effect()
+    elif successor == "cancel":
+        virtual.flush_pending_clear_frame()
+    elif successor == "deactivate":
+        virtual.deactivate()
+    elif successor == "direct_clear":
+        virtual.clear_frame()
+    elif successor == "active_slot":
+        virtual.active_to_transition()
+    elif successor == "transition_slot":
+        virtual.transition_to_active()
+    else:
+        ledfx.virtuals.destroy(virtual.id)
+        virtual = attach(ledfx, "logical", 0, 49)
+        virtual._active_effect = DummyEffect(50)
+    virtual.update_config({"name": "successor config"})
+    virtual.force_frame((71, 72, 73))
+    count = len(device.sent)
+    active_effect = virtual.active_effect
+    active = virtual.active
+    stale()  # cancellation alone cannot protect an already selected callback
+    assert len(device.sent) == count
+    assert virtual.active is active
+    assert virtual.active_effect is active_effect
+    if successor == "clear":
+        captured_clear(loop)()
+        assert not virtual.active
+        np.testing.assert_array_equal(device.sent[-1], np.zeros((50, 3)))
+
+
+@pytest.mark.parametrize("sampling", ["closed", "absent"])
+def test_pending_clear_config_edit_finishes_without_preview_sampler(
+    ledfx: MagicMock, sampling: str
+) -> None:
+    loop = install_sampler(ledfx)
+    device = add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual._active_effect = DummyEffect(50)
+    virtual.update_config({"transition_mode": "Add", "transition_time": 1})
+    if sampling == "closed":
+        ledfx.preview_sampler.close()
+    else:
+        ledfx.preview_sampler = None
+    virtual.force_frame((71, 72, 73))
+    virtual.clear_effect()
+    virtual.update_config({"name": "renamed", "grouping": 2, "rows": 2})
+    loop.advance(loop.now + 1)
+    assert not virtual.active
+    np.testing.assert_array_equal(device.sent[-1], np.zeros((50, 3)))
+
+
+@pytest.mark.parametrize("activation_fails", [False, True])
+def test_retirement_attempts_all_workers_and_preserves_primary_failure(
+    ledfx: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    activation_fails: bool,
+) -> None:
+    install_sampler(ledfx)
+    add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config({"transition_mode": "None", "transition_time": 0})
+    old = RetiringTemporalEffect(ledfx, {}, effect_id="retired-active")
+    transition = RetiringTemporalEffect(ledfx, {}, effect_id="retired-transition")
+    ledfx.effects._objects[old.id] = old
+    ledfx.effects._objects[transition.id] = transition
+    virtual.set_effect(old)
+    transition.activate(virtual)
+    virtual._transition_effect = transition
+    workers = (old._thread, transition._thread)
+    assert all(isinstance(worker, threading.Thread) for worker in workers)
+    cleanup_failure = RuntimeError("intentional disposal failure")
+    activation_failure = RuntimeError("intentional activation failure")
+    original_deactivate = old.deactivate
+
+    def broken_disposal() -> None:
+        original_deactivate()
+        raise cleanup_failure
+
+    replacement = ledfx.effects.create("singleColor", ledfx=ledfx, config=cfg({}))
+
+    def refuse(owner: Virtual) -> None:
+        raise activation_failure
+
+    monkeypatch.setattr(old, "deactivate", broken_disposal)
+    if activation_fails:
+        monkeypatch.setattr(replacement, "activate", refuse)
+    try:
+        assert old.entered.wait(5) and transition.entered.wait(5)
+        with pytest.raises(RuntimeError) as raised:
+            virtual.set_effect(replacement)
+        assert raised.value is (
+            activation_failure if activation_fails else cleanup_failure
+        )
+        assert virtual._retired_effects == []
+        for effect, worker in zip((old, transition), workers, strict=True):
+            assert isinstance(worker, threading.Thread) and not worker.is_alive()
+            assert ledfx.effects.get(effect.id) is None
+            assert effect.dispose_subscription is None
+            assert effect.join_locks == [(True, False)]
+        if activation_fails:
+            assert "retired effect disposal also failed" in caplog.text
+    finally:
+        monkeypatch.setattr(old, "deactivate", original_deactivate)
+        for effect, worker in zip((old, transition), workers, strict=True):
+            effect.release.set()
+            effect._deactivate()
+            assert isinstance(worker, threading.Thread)
+            worker.join(5)
+            assert not worker.is_alive()
+
+
+@pytest.mark.parametrize("operation", ["schedule", "capture", "render", "resize"])
+def test_detachment_cleanup_survives_adjacent_operation_failure(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch, operation: str
+) -> None:
+    loop = install_sampler(ledfx)
+    add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config({"transition_mode": "None", "transition_time": 0})
+    old = RetiringTemporalEffect(ledfx, {}, effect_id="retired")
+    ledfx.effects._objects[old.id] = old
+    virtual.set_effect(old)
+    worker = old._thread
+    assert isinstance(worker, threading.Thread)
+    failure = RuntimeError("intentional failure after detachment")
+    placeholder = DummyEffect(50)
+
+    def refuse_schedule(
+        delay: float, callback: Callable[..., object], *args: object
+    ) -> asyncio.TimerHandle:
+        raise failure
+
+    def refuse_capture(
+        pixels: NDArray[np.generic], *, owned: bool
+    ) -> OwnedFrame | None:
+        raise failure
+
+    def refuse_resize(pixel_count: int) -> None:
+        raise failure
+
+    try:
+        assert old.entered.wait(5)
+        if operation == "schedule":
+            monkeypatch.setattr(loop, "call_later", refuse_schedule)
+            action = virtual.clear_effect
+        elif operation == "capture":
+            monkeypatch.setattr(virtual, "_capture_preview_frame", refuse_capture)
+            action = virtual.clear_frame
+        else:
+            virtual._transition_effect = old
+            virtual._active_effect = placeholder
+            if operation == "render":
+                virtual.transition_frame_total = 1
+                virtual.transition_frame_counter = 0
+                virtual.frame_transitions = virtual.transitions["Add"]
+                monkeypatch.setattr(virtual, "_capture_preview_frame", refuse_capture)
+                action = virtual._render_frame
+            else:
+                monkeypatch.setattr("ledfx.virtuals.Transitions", refuse_resize)
+                action = virtual._reactivate_effect
+        with pytest.raises(RuntimeError) as raised:
+            action()
+        assert raised.value is failure
+        assert virtual._retired_effects == []
+        assert not worker.is_alive()
+        assert old.dispose_subscription is None
+        assert ledfx.effects.get(old.id) is None
+        assert old.join_locks == [(True, False)]
+        if operation == "resize":
+            assert virtual.active_effect is placeholder
+    finally:
+        old.release.set()
+        old._deactivate()
+        worker.join(5)
+        assert not worker.is_alive()
+
+
+def test_reactivation_retirement_callback_cannot_detach_successor_effect(
+    ledfx: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    install_sampler(ledfx)
+    add_physical(ledfx)
+    virtual = attach(ledfx, "logical", 0, 49)
+    virtual.update_config({"transition_mode": "None", "transition_time": 0})
+    old = RetiringTemporalEffect(ledfx, {}, effect_id="retired")
+    ledfx.effects._objects[old.id] = old
+    virtual.set_effect(old)
+    worker = old._thread
+    assert isinstance(worker, threading.Thread)
+    transition = DummyEffect(50)
+    virtual._transition_effect = transition
+    replacement = ledfx.effects.create("singleColor", ledfx=ledfx, config=cfg({}))
+    original_deactivate = transition.deactivate
+
+    def replace_during_disposal() -> None:
+        original_deactivate()
+        virtual.set_effect(replacement)
+
+    monkeypatch.setattr(transition, "deactivate", replace_during_disposal)
+    try:
+        assert old.entered.wait(5)
+        virtual._reactivate_effect()
+        assert virtual.active_effect is replacement
+        assert replacement.is_active
+        assert ledfx.effects.get(replacement.id) is replacement
+        assert not worker.is_alive()
+        assert old.dispose_subscription is None
+        assert virtual._retired_effects == []
+    finally:
+        old.release.set()
+        old._deactivate()
+        worker.join(5)
+        assert not worker.is_alive()

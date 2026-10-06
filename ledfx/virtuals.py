@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Collection, Generator, Mapping, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, fields
 from functools import cached_property
 from typing import Literal, Protocol
@@ -262,6 +263,7 @@ class Virtual:
         self._frame_sequence = 0
         self._span_frame: tuple[NDArray[np.generic], NDArray[np.generic]] | None = None
         self.clear_handle = None
+        self._clear_owner: object | None = None
         self.fallback_effect_type = None
         self.fallback_active = False
         self.fallback_fire = False
@@ -441,23 +443,57 @@ class Virtual:
         with self.lock:
             retired = self._retired_effects
             self._retired_effects = []
+        failure: Exception | None = None
         for effect in retired:
-            self._discard_effect(effect)
+            try:
+                self._discard_effect(effect)
+            except Exception as error:
+                if failure is None:
+                    failure = error
+                else:
+                    _LOGGER.exception(
+                        "Virtual %s: another retired effect failed disposal", self.id
+                    )
+        if failure is not None:
+            raise failure
+
+    @contextmanager
+    def _drain_retired_on_exit(self) -> Generator[None, None, None]:
+        """Dispose detached effects after the producing lock has been released."""
+        try:
+            yield
+        except BaseException:
+            try:
+                self._drain_retired_effects()
+            except Exception:
+                _LOGGER.exception(
+                    "Virtual %s: retired effect disposal also failed", self.id
+                )
+            raise
+        else:
+            self._drain_retired_effects()
 
     def _reactivate_effect(self) -> None:
         with self._output_lock:
-            with self.lock:
+            with self._drain_retired_on_exit(), self.lock:
                 self._detach_transition_effect()
                 self.transitions = Transitions(self.effective_pixel_count)
-                effect, self._active_effect = self._active_effect, None
                 epoch = self._source_epoch
-            self._drain_retired_effects()
+            with self.lock:
+                if epoch != self._source_epoch:
+                    return
+                effect, self._active_effect = self._active_effect, None
             if effect is not None:
                 effect._deactivate()  # a temporal worker can join here
                 with self.lock:
                     if epoch == self._source_epoch and self._active_effect is None:
-                        self._active_effect = effect
-                        if self.pixel_count > 0:
+                        if isinstance(effect, DummyEffect):
+                            self._active_effect = DummyEffect(
+                                self.effective_pixel_count
+                            )
+                        else:
+                            self._active_effect = effect
+                        if self.pixel_count > 0 and not isinstance(effect, DummyEffect):
                             effect.activate(self)
 
     def update_segments(self, segments_config):
@@ -722,7 +758,7 @@ class Virtual:
             raise
 
     def _set_effect(self, effect: Effect, fallback: float | None) -> None:
-        with self.lock:
+        with self._drain_retired_on_exit(), self.lock:
             self._renew_source_generation()
             if not self._devices:
                 error = (
@@ -788,16 +824,17 @@ class Virtual:
                     self._streaming,
                 )
             )
-        self._drain_retired_effects()
 
     def transition_to_active(self) -> None:
         with self._output_lock, self.lock:
+            self.flush_pending_clear_frame()
             self._renew_source_generation()
             self._active_effect = self._transition_effect
             self._transition_effect = None
 
     def active_to_transition(self) -> None:
         with self._output_lock, self.lock:
+            self.flush_pending_clear_frame()
             self._renew_source_generation()
             self._transition_effect = self._active_effect
             self._active_effect = None
@@ -807,7 +844,7 @@ class Virtual:
             self._clear_effect()
 
     def _clear_effect(self) -> None:
-        with self.lock:
+        with self._drain_retired_on_exit(), self.lock:
             self._renew_source_generation()
             self._ledfx.events.fire_event(EffectClearedEvent(self.id))
             self._detach_transition_effect()
@@ -833,17 +870,18 @@ class Virtual:
             delay = (
                 0 if self.fallback_suppress_transition else self._config.transition_time
             )
-            epoch = self._source_epoch
+            owner = object()
+            self._clear_owner = owner
 
             def clear_captured_source() -> None:
-                self.clear_frame(source_epoch=epoch)
+                self.clear_frame(clear_owner=owner)
 
             self.clear_handle = self._ledfx.loop.call_later(
                 delay, clear_captured_source
             )
-        self._drain_retired_effects()
 
     def flush_pending_clear_frame(self):
+        self._clear_owner = None
         if self.clear_handle is not None:
             self.clear_handle.cancel()
             self.clear_handle = None
@@ -870,20 +908,29 @@ class Virtual:
             return
         # Save effect_id before deactivating (in case deactivate clears it)
         effect_id = getattr(effect, "id", None)
-        effect._deactivate()
-        # CRITICAL: Remove effect from registry to allow garbage collection
-        # Only destroy if it has an ID (DummyEffect doesn't have one), and only
-        # this effect's entry: ids are reused once destroyed.
-        if effect_id is not None and self._ledfx.effects.get(effect_id) is effect:
-            self._ledfx.effects.destroy(effect_id)
+        try:
+            effect._deactivate()
+        finally:
+            # Remove only this effect's entry: ids are reused once destroyed.
+            if effect_id is not None and self._ledfx.effects.get(effect_id) is effect:
+                self._ledfx.effects.destroy(effect_id)
 
-    def clear_frame(self, *, source_epoch: int | None = None) -> None:
+    def clear_frame(
+        self, *, source_epoch: int | None = None, clear_owner: object | None = None
+    ) -> None:
         with self.lock:
             admission = self._source_epoch if source_epoch is None else source_epoch
         with self._output_lock:
-            with self.lock:
+            with self._drain_retired_on_exit(), self.lock:
+                if clear_owner is not None:
+                    if clear_owner is not self._clear_owner:
+                        return
+                    # Config/layout epochs can change while this intent remains
+                    # current. Black output captures the current layout below.
+                    admission = self._source_epoch
                 if admission != self._source_epoch:
                     return
+                self.flush_pending_clear_frame()
                 # Clearing owns the black output immediately. Keep the preview
                 # generation so ordinary deactivation can deliver its final sample.
                 self._source_epoch += 1
@@ -900,7 +947,6 @@ class Virtual:
                 captured = (
                     self._capture_preview_frame(pixels, owned=True) if active else None
                 )
-            self._drain_retired_effects()
             self._emit_output(output)
         self._publish_preview_frame(captured)
         if active:
@@ -1095,7 +1141,7 @@ class Virtual:
 
     def _render_frame(self, *, render_token: int | None = None) -> None:
         with self._output_lock:
-            with self.lock:
+            with self._drain_retired_on_exit(), self.lock:
                 if (
                     not self._active
                     or self._active_effect is None
@@ -1113,7 +1159,6 @@ class Virtual:
                     if not self._config.preview_only:
                         output = self._prepare_output(pixels)
                     captured = self._capture_preview_frame(pixels, owned=True)
-            self._drain_retired_effects()
             self._emit_output(output)
         self._publish_preview_frame(captured)
 
@@ -1224,6 +1269,7 @@ class Virtual:
         with self._output_lock, self.lock:
             if source_epoch is not None and source_epoch != self._source_epoch:
                 return
+            self.flush_pending_clear_frame()
             self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, self.id)
             self._source_epoch += 1
             epoch = self._source_epoch
@@ -2058,6 +2104,7 @@ class Virtuals:
                 if isinstance(sampler, PreviewSampler):
                     sampler.invalidate_source(SourceKey("virtual", id))
                 virtual._source_epoch += 1
+                virtual.flush_pending_clear_frame()
                 virtual._source_generation = -1
                 virtual._active = False
                 virtual._render_token += 1
