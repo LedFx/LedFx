@@ -129,7 +129,6 @@ class HueDevice(NetworkedDevice):
         self._service_task: asyncio.Task[None] | None = None
         self._service_generation: int | None = None
         self._service_tasks: set[asyncio.Task[None]] = set()
-        self._recovery_pending = False
         self._recovery_generation: int | None = None
         self._recovery_task: asyncio.Task[None] | None = None
         self._online = False
@@ -517,7 +516,6 @@ class HueDevice(NetworkedDevice):
         with self._publication_lock:
             generation = self._generation
             self._requested = False
-            self._recovery_pending = False
             self._recovery_generation = None
             self._generation += 1
             sender, candidate, lease = self._sender, self._candidate, self._zone_lease
@@ -558,7 +556,6 @@ class HueDevice(NetworkedDevice):
             )
             recover = self._requested
             if recover:
-                self._recovery_pending = True
                 self._recovery_generation = recovery_generation
         self._queue_retirement(retirement)
         if recover:
@@ -589,7 +586,6 @@ class HueDevice(NetworkedDevice):
         finally:
             with self._publication_lock:
                 if self._recovery_generation == generation:
-                    self._recovery_pending = False
                     self._recovery_generation = None
 
     def _start_service(self, sender: HueSender, generation: int) -> None:

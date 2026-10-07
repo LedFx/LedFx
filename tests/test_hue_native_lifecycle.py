@@ -522,7 +522,7 @@ async def test_idle_service_and_recovery_are_bounded(hue_device: HueFixture) -> 
     await idle(hue_device)
     assert len(hue_device.snapshots) == 4
     assert hue_device._sender is None
-    assert not hue_device._recovery_pending
+    assert hue_device._recovery_generation is None
     await asyncio.sleep(0.3)
     assert len(hue_device.snapshots) == 4
 
