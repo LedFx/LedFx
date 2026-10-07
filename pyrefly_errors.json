@@ -1667,20 +1667,6 @@
       "severity": "error"
     },
     {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
       "column": 41,
       "path": "ledfx/core.py",
       "name": "implicit-any-parameter",
