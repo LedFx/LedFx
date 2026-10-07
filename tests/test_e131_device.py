@@ -6,10 +6,12 @@ from ledfx_senders import E131Sender, Frame
 from ledfx_senders.e131 import ChannelLayout
 
 from ledfx.devices.e131 import E131Device
+from tests.test_utilities.fake_ledfx import closed_sampler
 
 
 def device() -> E131Device:
     core = MagicMock()
+    closed_sampler(core)
     core.virtuals = dict[str, object]()
     result = E131Device(
         core,

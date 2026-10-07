@@ -11,10 +11,12 @@ import numpy as np
 from ledfx.configuration.models import VirtualConfig
 from ledfx.devices.artnet import ArtNetDevice
 from ledfx.virtuals import Virtual
+from tests.test_utilities.fake_ledfx import closed_sampler
 
 
 def test_artnet_render_sends_while_configuration_waits_for_virtual() -> None:
     core = MagicMock()
+    closed_sampler(core)
     rendering, callback = threading.Event(), threading.Event()
 
     class BoundedLock:

@@ -206,12 +206,6 @@ class PreviewSampler:
         if not install:
             handle.cancel()
 
-    def _wake(self, key: SourceKey) -> None:
-        with self._lock:
-            state = self._sources.get(key)
-        if state is not None:
-            self._wake_source(key, state)
-
     def _wake_source(self, key: SourceKey, state: _SampleState) -> None:
         now = self._clock()
         with self._lock:
@@ -237,12 +231,6 @@ class PreviewSampler:
         if later:
             self._arm(key, state, deadline)
         else:
-            self._drain_source(key, state)
-
-    def _drain(self, key: SourceKey) -> None:
-        with self._lock:
-            state = self._sources.get(key)
-        if state is not None:
             self._drain_source(key, state)
 
     def _drain_source(self, key: SourceKey, state: _SampleState) -> None:

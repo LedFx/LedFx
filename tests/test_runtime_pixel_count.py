@@ -10,10 +10,12 @@ from ledfx.devices import Device
 from ledfx.devices.e131 import E131Device
 from ledfx.transitions import Transitions
 from ledfx.virtuals import Virtual
+from tests.test_utilities.fake_ledfx import closed_sampler
 
 
 def _e131(pixel_count: int) -> E131Device:
     ledfx = MagicMock()
+    closed_sampler(ledfx)
     ledfx.virtuals = dict[str, object]()
     config = E131Device.config_model().model_validate(
         {"name": "e131", "ip_address": "10.0.0.1", "pixel_count": pixel_count}
@@ -170,6 +172,7 @@ def test_networked_device_virtual_callbacks_run_after_publication_unlocks() -> N
     from ledfx.devices.ddp import DDPDevice
 
     core = MagicMock()
+    closed_sampler(core)
     d = DDPDevice(
         core,
         DDPDevice.config_model().model_validate(

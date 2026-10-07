@@ -1347,7 +1347,7 @@ def test_actual_render_loop_transfers_owned_rgb_and_respects_preview_only(
 
 
 @pytest.mark.parametrize("change", ["reactivate", "config"])
-@pytest.mark.parametrize("sampling", ["open", "closed", "absent"])
+@pytest.mark.parametrize("sampling", ["open", "closed"])
 def test_priority_admission_rejects_generation_changed_before_output_wait(
     ledfx: MagicMock,
     monkeypatch: pytest.MonkeyPatch,
@@ -1361,8 +1361,6 @@ def test_priority_admission_rejects_generation_changed_before_output_wait(
     assert isinstance(sampler, PreviewSampler)
     if sampling != "open":
         sampler.close()
-        if sampling == "absent":
-            ledfx.preview_sampler = None
         device.update_config({"center_offset": 2})
     checked = threading.Event()
     original = device._write_pixels
@@ -2099,7 +2097,7 @@ def captured_clear(loop: Scheduler) -> Callable[[], object]:
         "transition_slot",
     ],
 )
-@pytest.mark.parametrize("sampling", ["open", "closed", "absent"])
+@pytest.mark.parametrize("sampling", ["open", "closed"])
 def test_pending_clear_rejects_superseded_owner(
     ledfx: MagicMock, successor: str, sampling: str
 ) -> None:
@@ -2110,8 +2108,6 @@ def test_pending_clear_rejects_superseded_owner(
     virtual._active_effect = DummyEffect(50)
     if sampling == "closed":
         ledfx.preview_sampler.close()
-    elif sampling == "absent":
-        ledfx.preview_sampler = None
     virtual.clear_effect()
     stale = captured_clear(loop)
     if successor == "effect":
@@ -2148,19 +2144,15 @@ def test_pending_clear_rejects_superseded_owner(
         np.testing.assert_array_equal(device.sent[-1], np.zeros((50, 3)))
 
 
-@pytest.mark.parametrize("sampling", ["closed", "absent"])
 def test_pending_clear_config_edit_finishes_without_preview_sampler(
-    ledfx: MagicMock, sampling: str
+    ledfx: MagicMock,
 ) -> None:
     loop = install_sampler(ledfx)
     device = add_physical(ledfx)
     virtual = attach(ledfx, "logical", 0, 49)
     virtual._active_effect = DummyEffect(50)
     virtual.update_config({"transition_mode": "Add", "transition_time": 1})
-    if sampling == "closed":
-        ledfx.preview_sampler.close()
-    else:
-        ledfx.preview_sampler = None
+    ledfx.preview_sampler.close()
     virtual.force_frame((71, 72, 73))
     virtual.clear_effect()
     virtual.update_config({"name": "renamed", "grouping": 2, "rows": 2})

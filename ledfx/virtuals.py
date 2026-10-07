@@ -51,7 +51,7 @@ from ledfx.events import (
     VirtualPauseEvent,
     VirtualUpdateEvent,
 )
-from ledfx.preview import OwnedFrame, PreviewSampler, SourceKey
+from ledfx.preview import OwnedFrame, SourceKey
 from ledfx.transitions import Transitions
 from ledfx.utils import (
     Teleplot,
@@ -1033,10 +1033,11 @@ class Virtual:
 
     def _renew_source_generation(self) -> None:
         self._source_epoch += 1
-        sampler = self._ledfx.preview_sampler
-        if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
-            self._source_generation = sampler.allocate_source_generation(
-                SourceKey("virtual", self.id)
+        if hasattr(self, "_id"):
+            self._source_generation = (
+                self._ledfx.preview_sampler.allocate_source_generation(
+                    SourceKey("virtual", self.id)
+                )
             )
             if self._source_generation > 0:
                 self._frame_sequence = 0
@@ -1052,12 +1053,8 @@ class Virtual:
                 device._refresh_physical_rows()
 
     def _preview_or_raw_demand(self) -> bool:
-        sampler = self._ledfx.preview_sampler
-        return (
-            isinstance(sampler, PreviewSampler)
-            and sampler.interested(
-                SourceKey("virtual", self.id), self._source_generation
-            )
+        return self._ledfx.preview_sampler.interested(
+            SourceKey("virtual", self.id), self._source_generation
         ) or self._ledfx.events.may_have_listeners(
             Event.VIRTUAL_UPDATE, {"virtual_id": self.id}
         )
@@ -1066,7 +1063,6 @@ class Virtual:
         self, pixels: NDArray[np.generic], *, owned: bool
     ) -> OwnedFrame | None:
         """Called under the producing lock, before storage can be reused."""
-        sampler = self._ledfx.preview_sampler
         generation = self._source_generation
         key = SourceKey("virtual", self.id)
         if not self._preview_or_raw_demand():
@@ -1087,7 +1083,7 @@ class Virtual:
             projected,
             self.rows,
             self.pixel_count,
-            sampler.settings_generation if isinstance(sampler, PreviewSampler) else 0,
+            self._ledfx.preview_sampler.settings_generation,
         )
 
     def _publish_preview_frame(self, frame: OwnedFrame | None) -> None:
@@ -1099,9 +1095,7 @@ class Virtual:
                 or frame.source_generation != self._source_generation
             ):
                 return
-        sampler = self._ledfx.preview_sampler
-        if isinstance(sampler, PreviewSampler):
-            sampler.submit(frame)
+        self._ledfx.preview_sampler.submit(frame)
         if self._ledfx.events.may_have_listeners(
             Event.VIRTUAL_UPDATE, {"virtual_id": self.id}
         ):
@@ -2179,9 +2173,7 @@ class Virtuals:
         with virtual._output_lock:
             with virtual.lock:
                 self._ledfx.events.purge_pending(Event.VIRTUAL_DIAG, id)
-                sampler = self._ledfx.preview_sampler
-                if isinstance(sampler, PreviewSampler):
-                    sampler.invalidate_source(SourceKey("virtual", id))
+                self._ledfx.preview_sampler.invalidate_source(SourceKey("virtual", id))
                 virtual._source_epoch += 1
                 virtual.flush_pending_clear_frame()
                 virtual._source_generation = -1

@@ -701,7 +701,7 @@ def _reject_awaitable(result: object) -> None:
 class EventListener:
     def __init__(
         self,
-        callback: Callable[[Event], None],
+        callback: Callable[[Event], object],
         event_filter: Mapping[str, object] | None = None,
         *,
         generation: int = 0,
@@ -753,7 +753,7 @@ class _EventHost(Protocol):
 
 @dataclass(eq=False)
 class _RegistrationObserver:
-    callback: Callable[[str, int], None]
+    callback: Callable[[str, int], object]
     active: bool = True
 
     def revoke(self) -> bool:
@@ -982,7 +982,7 @@ class Events:
             # This is the invocation claim: a callback claimed here may finish
             # after disposal. No user code runs while holding the bus mutex.
         try:
-            result = cast(Callable[[Event], object], listener.callback)(event)
+            result = listener.callback(event)
             _reject_awaitable(result)
         except Exception as error:  # noqa: BLE001 - isolate consumer code
             self._report_listener_error(listener, error)
@@ -1110,9 +1110,7 @@ class Events:
                 return
             # Observer disposal has the same invocation claim as event disposal.
         try:
-            result = cast(Callable[[str, int], object], observer.callback)(
-                event_type, revision
-            )
+            result = observer.callback(event_type, revision)
             _reject_awaitable(result)
         except Exception as error:  # noqa: BLE001 - isolate consumer code
             self._report_error(event_type, error)

@@ -54,7 +54,7 @@ if currently_frozen():
 
 
 class LedFxCore:
-    preview_sampler: PreviewSampler | None = None
+    preview_sampler: PreviewSampler
 
     EXIT_CODES: ClassVar[dict[int, str]] = {
         1: "LedFx encountered an error - Shutting down.",
@@ -121,8 +121,15 @@ class LedFxCore:
 
         self.setup_logqueue()
         self.events = Events(self)
-        self.preview_sampler = None
-        self.setup_visualisation_events()
+        self.preview_sampler = PreviewSampler(
+            self,
+            PreviewSettings(
+                self.config.visualisation_fps,
+                self.config.visualisation_maxlen,
+                self.config.ui_brightness_boost,
+                self.config.transmission_mode,
+            ),
+        )
         self.events.add_listener(
             self.handle_base_configuration_update, Event.BASE_CONFIG_UPDATE
         )
@@ -307,17 +314,14 @@ class LedFxCore:
         )
 
     def setup_visualisation_events(self) -> None:
-        """Create or reconfigure the core-owned interested-source sampler."""
+        """Reconfigure the core-owned interested-source sampler."""
         settings = PreviewSettings(
             self.config.visualisation_fps,
             self.config.visualisation_maxlen,
             self.config.ui_brightness_boost,
             self.config.transmission_mode,
         )
-        if self.preview_sampler is None:
-            self.preview_sampler = PreviewSampler(self, settings)
-        else:
-            self.preview_sampler.reconfigure(settings)
+        self.preview_sampler.reconfigure(settings)
 
     def setup_logqueue(self):
         def log_filter(record):
@@ -559,8 +563,7 @@ class LedFxCore:
         _LOGGER.info("Stopping LedFx.")
         try:
             _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
-            if self.preview_sampler is not None:
-                self.preview_sampler.close()
+            self.preview_sampler.close()
 
             # Fire a shutdown event
             self.events.fire_event(LedFxShutdownEvent())

@@ -581,9 +581,16 @@ async def test_core_setup_and_config_updates_own_sampler_without_raw_listeners(
     core.loop = asyncio.get_running_loop()
     core.config_store = ConfigStore(str(tmp_path), LedFxConfig())
     core.events = Events(core)
-    core.setup_visualisation_events()
+    core.preview_sampler = PreviewSampler(
+        core,
+        PreviewSettings(
+            core.config.visualisation_fps,
+            core.config.visualisation_maxlen,
+            core.config.ui_brightness_boost,
+            core.config.transmission_mode,
+        ),
+    )
     sampler = core.preview_sampler
-    assert sampler is not None
     assert not core.events.has_listeners(Event.DEVICE_UPDATE)
     assert not core.events.has_listeners(Event.VIRTUAL_UPDATE)
     delivered: list[VisualisationUpdateEvent] = []
@@ -636,11 +643,10 @@ async def test_core_setup_and_config_updates_own_sampler_without_raw_listeners(
         else:
             assert rgb(delivered[0]) == expected.tobytes()
         before = sampler.settings_generation
+        before = sampler.settings_generation
         core.setup_visualisation_events()  # Remains callable for external tools.
-        assert (
-            core.preview_sampler is sampler
-            and sampler.settings_generation == before + 1
-        )
+        assert core.preview_sampler is sampler
+        assert sampler.settings_generation == before + 1
         assert not core.events.has_listeners(Event.DEVICE_UPDATE)
         assert not core.events.has_listeners(Event.VIRTUAL_UPDATE)
     finally:

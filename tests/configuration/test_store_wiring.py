@@ -5,6 +5,7 @@ import pytest
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.store import ConfigStore, backup_config_file
+from tests.test_utilities.fake_ledfx import closed_sampler
 
 
 def test_create_backup_keeps_move_semantics_for_clear_config(tmp_path: Path) -> None:
@@ -82,6 +83,7 @@ async def test_shutdown_flush_survives_stop_failure() -> None:
     core._mpris_now_playing = None
     core.http = MagicMock(stop=AsyncMock(side_effect=RuntimeError("boom")))
     core.thread_executor = MagicMock()
+    closed_sampler(core)
     core.exit_code = None
     core.config_store = MagicMock()
 
@@ -103,6 +105,7 @@ async def test_shutdown_completes_when_flush_raises() -> None:
     core._mpris_now_playing = None
     core.http = MagicMock(stop=AsyncMock())
     core.thread_executor = MagicMock()
+    closed_sampler(core)
     core.exit_code = None
     core.config_store = MagicMock()
     core.config_store.flush_sync.side_effect = KeyError("boom")

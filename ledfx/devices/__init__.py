@@ -33,7 +33,7 @@ from ledfx.events import (
     DeviceUpdateEvent,
     Event,
 )
-from ledfx.preview import OwnedFrame, PreviewSampler, SourceKey
+from ledfx.preview import OwnedFrame, SourceKey
 from ledfx.utils import (
     AVAILABLE_FPS,
     WLED,
@@ -203,10 +203,11 @@ class Device(BaseRegistry):
     def _renew_source_generation(self) -> None:
         # Hardware ownership survives absent/closed preview observation.
         self._output_epoch += 1
-        sampler = self._ledfx.preview_sampler
-        if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
-            self._source_generation = sampler.allocate_source_generation(
-                SourceKey("device", self.id)
+        if hasattr(self, "_id"):
+            self._source_generation = (
+                self._ledfx.preview_sampler.allocate_source_generation(
+                    SourceKey("device", self.id)
+                )
             )
             if self._source_generation > 0:
                 self._frame_sequence = 0
@@ -238,9 +239,9 @@ class Device(BaseRegistry):
         with self._frame_lock:
             if generation != self._source_generation:
                 return
-        sampler = self._ledfx.preview_sampler
         key = SourceKey("device", self.id)
-        if isinstance(sampler, PreviewSampler) and sampler.interested(key, generation):
+        sampler = self._ledfx.preview_sampler
+        if sampler.interested(key, generation):
             sampler.submit(
                 OwnedFrame(
                     key,
@@ -350,9 +351,10 @@ class Device(BaseRegistry):
     def deactivate(self):
         with self._output_lock, self._frame_lock:
             self._output_epoch += 1
-            sampler = self._ledfx.preview_sampler
-            if isinstance(sampler, PreviewSampler) and hasattr(self, "_id"):
-                sampler.invalidate_source(SourceKey("device", self.id))
+            if hasattr(self, "_id"):
+                self._ledfx.preview_sampler.invalidate_source(
+                    SourceKey("device", self.id)
+                )
             self._source_generation = -1
             self._pixels = None
             self._active = False
@@ -946,9 +948,7 @@ class Devices(RegistryLoader):
         device = self.get(id)
         if isinstance(device, Device):
             with device._output_lock, device._frame_lock:
-                sampler = self._ledfx.preview_sampler
-                if isinstance(sampler, PreviewSampler):
-                    sampler.invalidate_source(SourceKey("device", id))
+                self._ledfx.preview_sampler.invalidate_source(SourceKey("device", id))
                 device._output_epoch += 1
                 device._source_generation = -1
                 device._active = False
