@@ -647,7 +647,7 @@ class Events:
         callback: Callable,
         event_type: str,
         event_filter: dict | None = None,
-    ) -> None:
+    ) -> Callable[[], None]:
         listener = EventListener(callback, event_filter)
         if event_type in self._listeners:
             self._listeners[event_type].append(listener)

@@ -3,13 +3,14 @@
 import asyncio
 import gc
 import weakref
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable
+from contextlib import asynccontextmanager
 from types import MappingProxyType, SimpleNamespace
 from typing import cast
 from unittest.mock import MagicMock
 
 import pytest
-from aiohttp import WSMsgType, web
+from aiohttp import ClientWebSocketResponse, WSMsgType, web
 from aiohttp.test_utils import TestClient, TestServer
 from typing_extensions import override
 
@@ -26,6 +27,31 @@ def take_control(connection: WebsocketConnection) -> dict[str, object]:
     message = connection._control_queue.get_nowait()
     assert message is not None
     return message
+
+
+def make_connection() -> tuple[SimpleNamespace, WebsocketConnection]:
+    core = SimpleNamespace(loop=asyncio.get_running_loop())
+    core.events = Events(core)
+    return core, WebsocketConnection(core)
+
+
+@asynccontextmanager
+async def wire_client(
+    connection: WebsocketConnection,
+) -> AsyncIterator[tuple[ClientWebSocketResponse, asyncio.Event]]:
+    finished = asyncio.Event()
+
+    async def handle(request: web.Request) -> web.StreamResponse:
+        try:
+            return await connection.handle(request)
+        finally:
+            finished.set()
+
+    app = web.Application()
+    app.router.add_get("/websocket", handle)
+    async with TestClient(TestServer(app)) as client:
+        socket = await client.ws_connect("/websocket")
+        yield socket, finished
 
 
 @pytest.mark.parametrize("event_type", ["device_update", "virtual_update"])
@@ -50,9 +76,7 @@ def test_raw_pixel_events_are_not_subscribable(event_type: str) -> None:
 
 async def test_duplicate_subscription_id_delivers_once_and_is_removable() -> None:
 
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    conn = WebsocketConnection(core)
+    core, conn = make_connection()
     for _ in range(100):
         conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
 
@@ -65,9 +89,7 @@ async def test_duplicate_subscription_id_delivers_once_and_is_removable() -> Non
 
 async def test_reused_subscription_id_replaces_event_and_filter() -> None:
 
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    conn = WebsocketConnection(core)
+    core, conn = make_connection()
     conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
     conn.subscribe_event_handler(
         {
@@ -91,9 +113,7 @@ async def test_reused_subscription_id_replaces_event_and_filter() -> None:
 
 async def test_disconnect_cleanup_releases_resubscribed_connection() -> None:
 
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    conn = WebsocketConnection(core)
+    core, conn = make_connection()
     reference = weakref.ref(conn)
     for _ in range(100):
         conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
@@ -109,9 +129,7 @@ async def test_disconnect_cleanup_releases_resubscribed_connection() -> None:
 
 async def test_rejected_replacement_preserves_existing_subscription() -> None:
 
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    conn = WebsocketConnection(core)
+    core, conn = make_connection()
     conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
     conn.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_UPDATE})
     assert take_control(conn)["success"] is False
@@ -123,9 +141,7 @@ async def test_rejected_replacement_preserves_existing_subscription() -> None:
 
 
 async def test_idle_installation_ack_and_legacy_opt_out() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     assert "get_event_capabilities" in websocket_handlers
     connection.get_event_capabilities_handler({"id": 120001})
     assert connection._control_queue.get_nowait() == {
@@ -162,9 +178,7 @@ async def test_idle_installation_ack_and_legacy_opt_out() -> None:
 
 @pytest.mark.parametrize("ack", [1, "true", None, [], {}])
 async def test_invalid_ack_does_not_install(ack: object) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.subscribe_event_handler(
         {"id": 1, "event_type": "never_fires", "ack": ack}
     )
@@ -180,9 +194,7 @@ async def test_invalid_ack_does_not_install(ack: object) -> None:
 
 @pytest.mark.parametrize("event_type", ["device_update", "virtual_update"])
 async def test_prohibited_event_with_ack_only_returns_error(event_type: str) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.subscribe_event_handler({"id": 1, "event_type": event_type, "ack": True})
     assert connection._control_queue.get_nowait() == {
         "id": 1,
@@ -211,9 +223,7 @@ async def test_prohibited_event_with_ack_only_returns_error(event_type: str) -> 
 async def test_invalid_replacement_preserves_registration(
     invalid: dict[str, object],
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
     connection.subscribe_event_handler(
         {"id": 1, "event_type": Event.GRAPH_UPDATE, "ack": True, **invalid}
@@ -232,9 +242,7 @@ async def test_invalid_replacement_preserves_registration(
 
 
 async def test_validated_replacement_ack_and_immediate_event() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
     connection.subscribe_event_handler(
         {
@@ -275,9 +283,7 @@ async def test_registration_failure_has_no_installed_reply(
     error_type: type[Exception],
     replacement: bool,
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     if replacement:
         connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
 
@@ -321,9 +327,7 @@ class HeldCloseSocket:
 async def test_full_installation_reply_queue_revokes_and_closes_once(
     capability: bool,
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     socket = HeldCloseSocket()
     connection._socket = cast(web.WebSocketResponse, socket)
     connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
@@ -368,9 +372,7 @@ async def test_full_installation_reply_queue_revokes_and_closes_once(
 
 
 async def test_installation_results_survive_unsubscribe() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.get_event_capabilities_handler({"id": 10})
     connection.subscribe_event_handler(
         {"id": 1, "event_type": "never_fires", "ack": True}
@@ -383,9 +385,7 @@ async def test_installation_results_survive_unsubscribe() -> None:
 
 
 async def test_replacement_revokes_deferred_callbacks_and_pending_events() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.subscribe_event_handler(
         {"id": 1, "event_type": Event.VIRTUAL_DIAG, "ack": True}
     )
@@ -421,9 +421,7 @@ async def test_replacement_revokes_deferred_callbacks_and_pending_events() -> No
 
 
 async def test_reply_failure_rejects_already_deferred_events() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
     core.events.fire_event(Event(Event.VIRTUAL_DIAG))
     for request_id in range(MAX_PENDING_MESSAGES):
@@ -440,21 +438,9 @@ async def test_reply_failure_rejects_already_deferred_events() -> None:
 
 
 async def test_wire_results_route_by_id_and_disconnect_releases_owner() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
-    finished = asyncio.Event()
+    core, connection = make_connection()
 
-    async def handle(request: web.Request) -> web.StreamResponse:
-        try:
-            return await connection.handle(request)
-        finally:
-            finished.set()
-
-    app = web.Application()
-    app.router.add_get("/websocket", handle)
-    async with TestClient(TestServer(app)) as client:
-        socket = await client.ws_connect("/websocket")
+    async with wire_client(connection) as (socket, finished):
         initial = await socket.receive_json()
         assert initial["event_type"] == "client_id"
         await socket.send_json({"id": 10, "type": "get_event_capabilities"})
@@ -517,21 +503,9 @@ async def test_wire_results_route_by_id_and_disconnect_releases_owner() -> None:
 async def test_wire_malformed_request_error_precedes_close(
     malformed: object, error_id: object
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
-    finished = asyncio.Event()
+    core, connection = make_connection()
 
-    async def handle(request: web.Request) -> web.StreamResponse:
-        try:
-            return await connection.handle(request)
-        finally:
-            finished.set()
-
-    app = web.Application()
-    app.router.add_get("/websocket", handle)
-    async with TestClient(TestServer(app)) as client:
-        socket = await client.ws_connect("/websocket")
+    async with wire_client(connection) as (socket, finished):
         assert (await socket.receive_json())["event_type"] == "client_id"
         # Valid IDs still coerce, and invalid later envelopes must never reuse one.
         await socket.send_json({"id": "10", "type": "get_event_capabilities"})
@@ -572,10 +546,7 @@ async def test_wire_malformed_request_error_precedes_close(
 async def test_terminal_error_reply_cleanup_at_write_boundary(
     boundary: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
-    finished = asyncio.Event()
+    core, connection = make_connection()
     error_started = asyncio.Event()
     error_cancelled = asyncio.Event()
     failure_close_cancelled = asyncio.Event()
@@ -628,16 +599,7 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
     monkeypatch.setattr(web.WebSocketResponse, "send_json", hold_error)
     monkeypatch.setattr(web.WebSocketResponse, "close", hold_failure_close)
 
-    async def handle(request: web.Request) -> web.StreamResponse:
-        try:
-            return await connection.handle(request)
-        finally:
-            finished.set()
-
-    app = web.Application()
-    app.router.add_get("/websocket", handle)
-    async with TestClient(TestServer(app)) as client:
-        socket = await client.ws_connect("/websocket")
+    async with wire_client(connection) as (socket, finished):
         assert (await socket.receive_json())["event_type"] == "client_id"
         await socket.send_json(
             {
@@ -709,10 +671,7 @@ async def test_terminal_error_reply_cleanup_at_write_boundary(
 async def test_disconnect_cancels_and_awaits_pending_installation_close(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
-    finished = asyncio.Event()
+    core, connection = make_connection()
     close_started = asyncio.Event()
     close_cancelled = asyncio.Event()
     original_close = web.WebSocketResponse.close
@@ -734,16 +693,7 @@ async def test_disconnect_cancels_and_awaits_pending_installation_close(
 
     monkeypatch.setattr(web.WebSocketResponse, "close", hold_failure_close)
 
-    async def handle(request: web.Request) -> web.StreamResponse:
-        try:
-            return await connection.handle(request)
-        finally:
-            finished.set()
-
-    app = web.Application()
-    app.router.add_get("/websocket", handle)
-    async with TestClient(TestServer(app)) as client:
-        socket = await client.ws_connect("/websocket")
+    async with wire_client(connection) as (socket, finished):
         assert (await socket.receive()).type == WSMsgType.TEXT
         connection.subscribe_event_handler({"id": 1, "event_type": "never_fires"})
         for request_id in range(MAX_PENDING_MESSAGES):
@@ -770,9 +720,7 @@ async def test_installation_close_error_is_observed(
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     socket = HeldCloseSocket()
 
     async def fail_close(*, code: int, message: bytes) -> bool:
@@ -823,9 +771,7 @@ async def test_ordinary_overflow_protects_pending_results_and_closes_once(
     capability: bool,
     held_write: bool,
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     socket = HeldFirstWriteSocket()
     connection._socket = cast(web.WebSocketResponse, socket)
     connection.subscribe_event_handler({"id": 1, "event_type": Event.VIRTUAL_DIAG})
@@ -902,9 +848,7 @@ class NonStringProtocolType:
 
 
 async def test_ordinary_only_overflow_keeps_legacy_live_queue_replacement() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    _core, connection = make_connection()
     socket = HeldCloseSocket()
     connection._socket = cast(web.WebSocketResponse, socket)
     # An equal-looking error is not the receiver-owned terminal marker.
@@ -920,19 +864,18 @@ async def test_ordinary_only_overflow_keeps_legacy_live_queue_replacement() -> N
     }
     connection.send(latest)
     assert connection._control_queue.qsize() == 1
-    connection.send(None)
     sender = asyncio.create_task(connection._sender())
-    await asyncio.wait_for(sender, timeout=1)
+    await asyncio.sleep(0)
     assert socket.messages == [latest]
     assert not socket.closed and not connection._closed
     assert socket.close_calls == []
     assert connection._installation_close_task is None
+    sender.cancel()
+    await asyncio.gather(sender, return_exceptions=True)
 
 
 async def test_pending_results_keep_fifo_before_capacity() -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    _core, connection = make_connection()
     socket = HeldFirstWriteSocket()
     connection._socket = cast(web.WebSocketResponse, socket)
     first: dict[str, object] = {
@@ -949,9 +892,8 @@ async def test_pending_results_keep_fifo_before_capacity() -> None:
             {"id": 11, "event_type": "never_fires", "ack": True}
         )
         connection.send_event(99, Event(Event.GRAPH_UPDATE))
-        connection.send(None)
         socket.release_first_write.set()
-        await asyncio.wait_for(sender, timeout=1)
+        await asyncio.sleep(0)
         assert [message["id"] for message in socket.completed] == [99, 10, 11, 99]
         assert socket.completed[1] == {
             "id": 10,
@@ -987,9 +929,7 @@ class PreviewEvent(Event):
 async def test_revoked_second_preview_never_starts_after_held_first_write(
     replacement: bool,
 ) -> None:
-    core = SimpleNamespace(loop=asyncio.get_running_loop())
-    core.events = Events(core)
-    connection = WebsocketConnection(core)
+    core, connection = make_connection()
     socket = HeldFirstWriteSocket()
     connection._socket = cast(web.WebSocketResponse, socket)
     for subscription_id, vis_id in ((1, "first"), (2, "second")):
@@ -1027,12 +967,11 @@ async def test_revoked_second_preview_never_starts_after_held_first_write(
         else:
             connection.unsubscribe_event_handler({"id": 2})
         # A replenished first source must not extend this preview pass ahead
-        # of the capability/installation replies and the shutdown sentinel.
+        # of the capability/installation replies queued behind the held write.
         core.events.fire_event(PreviewEvent("first"))
         await asyncio.sleep(0)
-        connection.send(None)
         socket.release_first_write.set()
-        await asyncio.wait_for(sender, timeout=5)
+        await asyncio.sleep(0)
         expected: list[dict[str, object]] = [
             {
                 "id": 1,
@@ -1060,9 +999,11 @@ async def test_revoked_second_preview_never_starts_after_held_first_write(
                     },
                 }
             )
+        # The replenished frame delivers in the next pass, after the replies.
+        expected.append(expected[0])
         assert socket.started == expected
         assert socket.completed == expected
-        assert connection._vis_slots == {"first": expected[0]}
+        assert connection._vis_slots == {}
     finally:
         socket.release_first_write.set()
         sender.cancel()

@@ -8,7 +8,7 @@ import time
 import uuid
 from collections.abc import Callable, Mapping
 from concurrent import futures
-from typing import Annotated, ClassVar, Literal, cast, get_args
+from typing import Annotated, ClassVar, Literal, get_args
 
 import numpy as np
 import pybase64
@@ -134,7 +134,7 @@ class WebsocketConnection:
         self._receiver_error_reply: dict[str, object] | None = None
         # Dual-path sender: control queue for reliable ordered messages,
         # single-slot mailbox dict for latest-value-wins vis frames.
-        self._control_queue: asyncio.Queue[dict[str, object] | None] = asyncio.Queue(
+        self._control_queue: asyncio.Queue[dict[str, object]] = asyncio.Queue(
             maxsize=MAX_PENDING_MESSAGES
         )
         self._closed = False
@@ -185,10 +185,10 @@ class WebsocketConnection:
         if previous is not None:
             previous()
         # Filter only event deliveries: protocol results retain their FIFO order.
-        pending: list[dict[str, object] | None] = []
+        pending: list[dict[str, object]] = []
         while not self._control_queue.empty():
             message = self._control_queue.get_nowait()
-            if message is None or not (
+            if not (
                 message.get("type") == "event" and message.get("id") == subscription_id
             ):
                 pending.append(message)
@@ -245,7 +245,7 @@ class WebsocketConnection:
                 "Unable to close websocket after installation reply failure: %s", error
             )
 
-    def send(self, message: dict[str, object] | None) -> None:
+    def send(self, message: dict[str, object]) -> None:
         """Sends a message to the websocket connection.
 
         Vis updates (VISUALISATION_UPDATE / DEVICE_UPDATE) are placed in a
@@ -254,15 +254,6 @@ class WebsocketConnection:
         queue for reliable delivery.
         """
         if self._installation_reply_failed or self._closed:
-            self._has_work.set()
-            return
-
-        if message is None:
-            # Shutdown sentinel — goes through the control queue
-            try:
-                self._control_queue.put_nowait(None)
-            except asyncio.QueueFull:
-                pass
             self._has_work.set()
             return
 
@@ -279,17 +270,16 @@ class WebsocketConnection:
             if self._control_queue.qsize() >= MAX_PENDING_MESSAGES:
                 # Inspect at most the bounded FIFO without yielding. Required
                 # replies may only be abandoned by terminating the connection.
-                pending: list[dict[str, object] | None] = []
+                pending: list[dict[str, object]] = []
                 protected_reply = False
                 while not self._control_queue.empty():
                     queued = self._control_queue.get_nowait()
                     pending.append(queued)
-                    if queued is not None:
-                        queued_type = queued.get("type")
-                        if queued is self._receiver_error_reply or (
-                            isinstance(queued_type, str) and queued_type == "result"
-                        ):
-                            protected_reply = True
+                    queued_type = queued.get("type")
+                    if queued is self._receiver_error_reply or (
+                        isinstance(queued_type, str) and queued_type == "result"
+                    ):
+                        protected_reply = True
                 if protected_reply:
                     for queued in pending:
                         self._control_queue.put_nowait(queued)
@@ -371,9 +361,6 @@ class WebsocketConnection:
                     message = self._control_queue.get_nowait()
                 except asyncio.QueueEmpty:
                     break
-                if message is None:
-                    _LOGGER.info("Stopped websocket sender.")
-                    return
                 try:
                     await socket.send_json(message, dumps=dumps)
                 except TypeError as err:
@@ -557,7 +544,6 @@ class WebsocketConnection:
                     del WebsocketConnection.client_metadata[self.uid]
             remove_listeners()
             self._closed = True
-            self.clear_subscriptions()
             if self._installation_close_task is not None:
                 self._installation_close_task.cancel()
                 await asyncio.gather(
@@ -967,31 +953,20 @@ class WebsocketConnection:
         self._remove_subscription(subscription_id)
 
         def notify_websocket(event: Event) -> None:
-            if (
-                not self._closed
-                and not self._installation_reply_failed
-                and self._listeners.get(subscription_id) is remove_listener
-            ):
+            if self._listeners.get(subscription_id) is disposer:
                 self.send_event(subscription_id, event)
 
         try:
-            # The existing bus incorrectly annotates its disposer as None.
-            disposer = cast(
-                Callable[[], None],
-                self._ledfx.events.add_listener(
-                    notify_websocket,
-                    event_type,
-                    dict(event_filter) if event_filter is not None else None,
-                ),
+            disposer = self._ledfx.events.add_listener(
+                notify_websocket,
+                event_type,
+                dict(event_filter) if event_filter is not None else None,
             )
         except (TypeError, ValueError) as error:
             self.send_error(subscription_id, str(error))
             return
 
-        def remove_listener() -> None:
-            disposer()
-
-        self._listeners[subscription_id] = remove_listener
+        self._listeners[subscription_id] = disposer
         if ack:
             self._send_installation_result(
                 {

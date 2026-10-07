@@ -12594,13 +12594,6 @@
       "severity": "error"
     },
     {
-      "column": 16,
-      "path": "ledfx/events.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `() -> None` is not assignable to declared return type `None`",
-      "severity": "error"
-    },
-    {
       "column": 59,
       "path": "ledfx/events.py",
       "name": "implicit-any-type-argument",
