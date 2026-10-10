@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -5,6 +6,7 @@ import pytest
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.store import ConfigStore, backup_config_file
+from ledfx.core import LedFxCore
 
 
 def test_create_backup_keeps_move_semantics_for_clear_config(tmp_path: Path) -> None:
@@ -72,8 +74,6 @@ def test_mqtt_callback_after_loop_closed_is_dropped(
 async def test_shutdown_flush_survives_stop_failure() -> None:
     # Review Focus 4: a failure earlier in async_stop must not lose the
     # debounced save.
-    from ledfx.core import LedFxCore
-
     core = object.__new__(LedFxCore)
     core.loop = MagicMock()
     core.events = MagicMock()
@@ -81,6 +81,7 @@ async def test_shutdown_flush_survives_stop_failure() -> None:
     core._smtc_now_playing = None
     core._mpris_now_playing = None
     core.http = MagicMock(stop=AsyncMock(side_effect=RuntimeError("boom")))
+    core.devices = MagicMock(async_shutdown_devices=AsyncMock())
     core.thread_executor = MagicMock()
     core.exit_code = None
     core.config_store = MagicMock()
@@ -88,13 +89,14 @@ async def test_shutdown_flush_survives_stop_failure() -> None:
     await core.async_stop(4)
 
     core.config_store.flush_sync.assert_called_once_with()
+    core.devices.async_shutdown_devices.assert_awaited_once_with()
+    core.thread_executor.shutdown.assert_called_once_with()
+    core.loop.stop.assert_called_once_with()
     assert core.exit_code == 1
 
 
 async def test_shutdown_completes_when_flush_raises() -> None:
     # An unexpected flush error must not skip executor shutdown or loop.stop().
-    from ledfx.core import LedFxCore
-
     core = object.__new__(LedFxCore)
     core.loop = MagicMock()
     core.events = MagicMock()
@@ -102,6 +104,7 @@ async def test_shutdown_completes_when_flush_raises() -> None:
     core._smtc_now_playing = None
     core._mpris_now_playing = None
     core.http = MagicMock(stop=AsyncMock())
+    core.devices = MagicMock(async_shutdown_devices=AsyncMock())
     core.thread_executor = MagicMock()
     core.exit_code = None
     core.config_store = MagicMock()
@@ -109,6 +112,34 @@ async def test_shutdown_completes_when_flush_raises() -> None:
 
     assert await core.async_stop(4) == 4
 
+    core.devices.async_shutdown_devices.assert_awaited_once_with()
+    core.config_store.flush_sync.assert_called_once_with()
     core.thread_executor.shutdown.assert_called_once_with()
     core.loop.stop.assert_called_once_with()
     assert core.exit_code == 4
+
+
+def test_shutdown_before_device_registry_is_created(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Device registries are created in async_start, after the core constructor.
+    # Startup failure or cancellation can therefore stop a core before this step.
+    monkeypatch.setattr(LedFxCore, "setup_logqueue", MagicMock())
+    http = MagicMock(stop=AsyncMock())
+    monkeypatch.setattr("ledfx.core.HttpServer", MagicMock(return_value=http))
+    core = LedFxCore(str(tmp_path), offline_mode=True)
+    shutdown = core.thread_executor.shutdown
+    shutdown_spy = MagicMock(wraps=shutdown)
+    monkeypatch.setattr(core.thread_executor, "shutdown", shutdown_spy)
+    try:
+        assert not hasattr(core, "devices")
+        assert core.loop.run_until_complete(core.async_stop(4)) == 4
+        assert core.exit_code == 4
+        http.stop.assert_awaited_once_with()
+        shutdown_spy.assert_called_once_with()
+        assert not core.loop.is_running()
+    finally:
+        shutdown()
+        core.loop.close()
+        asyncio.set_event_loop(None)

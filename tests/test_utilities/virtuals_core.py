@@ -42,6 +42,9 @@ class FakeDevice:
     def is_active(self) -> bool:
         return self._active
 
+    def is_activation_requested(self) -> bool:
+        return self.is_active()
+
     def activate(self) -> None:
         self._active = True
 

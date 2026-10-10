@@ -1977,8 +1977,8 @@ def is_package_installed(package_name: str, import_name: str | None = None) -> b
     Check if a package is available in the environment.
 
     Args:
-        package_name (str): The name used for pip installation (e.g., 'python-mbedtls').
-        import_name (str): The actual importable module name (e.g., 'mbedtls').
+        package_name (str): The name used for pip installation (e.g., 'psutil').
+        import_name (str): The actual importable module name (e.g., 'psutil').
 
     Returns:
         bool: True if the package is importable, False otherwise.
@@ -2017,7 +2017,6 @@ def check_optional_dependencies():
     """
     OPTIONAL_DEPENDENCIES = {
         "psutil": "psutil",
-        "python-mbedtls": "mbedtls",
         # Add more if needed
     }
     for package_name, import_name in OPTIONAL_DEPENDENCIES.items():
