@@ -748,7 +748,7 @@ jobs:
         id: prepare
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: prepare
           project: release-tools
@@ -770,7 +770,7 @@ jobs:
         id: upload
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: check-upload
           project: release-tools
@@ -803,7 +803,7 @@ jobs:
         id: promote
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: promote
           project: release-tools
@@ -844,7 +844,7 @@ jobs:
       - name: Verify provenance and publish the GitHub draft
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: finalize
           project: release-tools
