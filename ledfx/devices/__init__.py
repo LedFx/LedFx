@@ -952,6 +952,12 @@ class Devices(RegistryLoader):
         if device_type == "wled" and "matrix" in led_info and "h" in led_info["matrix"]:
             virtual_config["rows"] = led_info["matrix"]["h"]
 
+        # Devices that detect a matrix in async_initialize (e.g. LIFX) do so
+        # before this virtual exists, so they cannot set its rows themselves.
+        matrix_height = getattr(device, "matrix_height", 0)
+        if matrix_height > 1:
+            virtual_config["rows"] = matrix_height
+
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 
         # Create the virtual
