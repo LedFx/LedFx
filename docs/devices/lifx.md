@@ -22,7 +22,7 @@ The LIFX Candle, Path, and Spot are matrix devices, but with very few actual pix
 
 ### LIFX Mirror
 
-The LIFX Mirror has two rings of 25 zones each: a front ring facing the room and a back ring facing the wall. LedFx adds the Mirror as a single 50-pixel device (front zones first, then back zones) and also creates two 25-pixel strip virtuals, **`<name>-Front`** and **`<name>-Back`**, so each ring can run its own effect. Each ring is a closed loop around the mirror's capsule-shaped edge, so its first and last pixels sit next to each other.
+The LIFX Mirror has two rings of 25 zones each: a front ring facing the room and a back ring facing the wall. LedFx adds the Mirror as a single 50-pixel device (front zones first, then back zones) and also creates two 25-pixel strip virtuals, **`<name>-Front`** and **`<name>-Back`**, so each ring can run its own effect. Each ring is a closed loop around the mirror's capsule-shaped edge, so its first and last pixels sit next to each other. LedFx reverses the back ring so that both rings run in the same direction: the same effect on `<name>-Front` and `<name>-Back`, or on a virtual that spans both, moves the same way around each ring. To have the back ring run the other way, turn on **Reverse** for its segment.
 
 ## Key Features
 
