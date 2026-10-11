@@ -559,7 +559,14 @@ class MQTT_HASS(Integration):
                         index = key
 
                 cfg = self._ledfx.config
-                cfg.audio = cfg.audio.model_copy(update={"audio_device": int(index)})
+                cfg.audio = cfg.audio.model_copy(
+                    update={
+                        "audio_device": int(index),
+                        "audio_device_name": AudioInputSource.input_devices().get(
+                            int(index), ""
+                        ),
+                    }
+                )
                 self._ledfx.config_store.request_save()
                 self._ledfx.audio.update_config(cfg.audio.model_dump())
             return
