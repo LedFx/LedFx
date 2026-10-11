@@ -107,8 +107,10 @@ class LifxDevice(NetworkedDevice):
 
     The LIFX Mirror reports a 4x13 matrix, but its buffer interleaves two
     closed rings (front and back) rather than forming a spatial grid. LedFx
-    drives it as a 50-pixel strip in zone order (front zones 0-24, then back
-    zones 25-49) and scatters each frame into the device buffer on flush.
+    drives it as a 50-pixel strip (front zones 0-24, then back zones 49-25)
+    and scatters each frame into the device buffer on flush. The back ring is
+    reversed because it runs the opposite way to the front, so both rings
+    animate in the same direction.
     When a Mirror is added, a "Front" and a "Back" 25-pixel strip virtual are
     created so each ring can run its own effect.
     """
@@ -145,7 +147,7 @@ class LifxDevice(NetworkedDevice):
         self._matrix_height = 0
         self._perm = None
 
-        # Mirror-specific: buffer position of each zone, in zone order
+        # Mirror-specific: buffer position of each strip pixel
         self._mirror_positions: np.ndarray | None = None
         self._front_zone_count = 0
 
@@ -397,8 +399,10 @@ class LifxDevice(NetworkedDevice):
 
                 layout = self._device.layout
                 self._zone_count = layout.zone_count
+                # The back ring runs the opposite way to the front, so
+                # reverse it: pixel k of each ring then sits in the same spot
                 self._mirror_positions = np.array(
-                    layout.front_positions + layout.back_positions,
+                    layout.front_positions + layout.back_positions[::-1],
                     dtype=np.intp,
                 )
                 self._animator = await Animator.for_matrix(self._device)
