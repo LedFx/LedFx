@@ -40,7 +40,7 @@ from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
-from ledfx.silence_scene import SilenceSceneController
+from ledfx.silence_scene import SilenceSceneController, StartupRecoveryOutcome
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
@@ -578,11 +578,11 @@ class LedFxCore:
             # The check makes a blocking HTTP request.
             await asyncio.to_thread(self.check_and_notify_updates)
 
-        recovered_silence_state = await self.silence_scene.recover_startup()
-        if not recovered_silence_state:
+        recovery_outcome = await self.silence_scene.recover_startup()
+        if recovery_outcome == StartupRecoveryOutcome.NO_RECOVERY:
             self._activate_startup_scene()
             await self._handle_startup_playlist()
-        if self.silence_scene.state == "normal":
+        if self.silence_scene.state in ("normal", "recovery_failed"):
             self.silence_scene.start_monitoring()
 
         if pause_all:

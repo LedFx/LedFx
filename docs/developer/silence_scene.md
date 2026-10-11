@@ -64,11 +64,18 @@ and directory `fsync` where supported. A missing/unwritable journal prevents
 the silence override. The journal remains through shutdown and is removed only after
 all available virtual and playlist state has been restored. Deleted virtuals
 require no further restoration; a failed playlist restoration keeps recovery
-incomplete. Unsupported, corrupt, or incomplete journals are preserved and
-logged rather than silently discarded. A retained journal blocks a new silence
-override and is retried on the next activity change. Recovery runs before the
-configured startup scene or playlist; after a successful recovery, normal
-silence monitoring starts even if the source is still silent.
+incomplete. Startup distinguishes no journal, successful recovery, incomplete
+recovery, and failed journal reads/validation. A valid but incomplete journal is
+retained and retried on a later activity change; it blocks a new silence
+override. Corrupt, unreadable, and unsupported-version journals are preserved
+with an actionable error, and automatic silence overrides remain disabled for
+that run. LedFx continues starting, but skips configured startup scene and
+playlist activation so neither can overwrite the unresolved operational state.
+The normal configured runtime remains available for manual operation and
+diagnosis. A missing journal keeps normal startup behavior unchanged. After
+successful recovery, normal silence monitoring starts even if the source is
+still silent, while the restored journal-free state is eligible for a new
+silence timeout.
 
 A deliberate scene/effect/playlist operation supersedes the temporary override
 and invalidates its journal. Disabling the feature or changing/deleting the

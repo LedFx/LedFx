@@ -13,7 +13,12 @@ import pytest_asyncio
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.core import LedFxCore
-from ledfx.silence_scene import SilenceRecoverySnapshot, SilenceSceneController
+from ledfx.events import Event
+from ledfx.silence_scene import (
+    SilenceRecoverySnapshot,
+    SilenceSceneController,
+    StartupRecoveryOutcome,
+)
 
 
 class _Events:
@@ -236,7 +241,7 @@ async def test_startup_recovery_clears_snapshot_after_restore(
     )
     controller = SilenceSceneController(cast(LedFxCore, core))
 
-    assert await controller.recover_startup() is True
+    assert await controller.recover_startup() is StartupRecoveryOutcome.RECOVERED
     assert controller.state == "normal"
     assert not journal_path.exists()
 
@@ -266,7 +271,7 @@ async def test_startup_recovery_ignores_deleted_virtuals(
     )
     controller = SilenceSceneController(cast(LedFxCore, core))
 
-    assert await controller.recover_startup() is True
+    assert await controller.recover_startup() is StartupRecoveryOutcome.RECOVERED
     assert controller.state == "normal"
     assert not journal_path.exists()
 
@@ -298,7 +303,7 @@ async def test_incomplete_playlist_recovery_retries_on_activity_only(
     controller = SilenceSceneController(cast(LedFxCore, core))
     controller.start_monitoring()
 
-    assert await controller.recover_startup() is True
+    assert await controller.recover_startup() is StartupRecoveryOutcome.RECOVERY_PENDING
     assert core.playlists.restore_calls == 1
     assert controller.status()["recovery_pending"] is True
 
@@ -316,6 +321,305 @@ async def test_incomplete_playlist_recovery_retries_on_activity_only(
     assert core.playlists.restore_calls == 3
     assert controller.status()["recovery_pending"] is False
     assert not journal_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_missing_startup_journal_is_distinct_from_recovery_failure(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+
+    assert await controller.recover_startup() is StartupRecoveryOutcome.NO_RECOVERY
+    assert not journal_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_cancelled_journal_allows_normal_startup(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, journal_path = controller_core
+    journal_path.write_text(
+        json.dumps({"version": 1, "phase": "cancelled"}), encoding="utf-8"
+    )
+    controller = SilenceSceneController(cast(LedFxCore, core))
+
+    assert await controller.recover_startup() is StartupRecoveryOutcome.NO_RECOVERY
+    assert not journal_path.exists()
+
+
+@pytest.mark.parametrize(
+    "journal_contents",
+    [
+        "{not-json",
+        json.dumps({"version": 999, "phase": "active"}),
+    ],
+)
+@pytest.mark.asyncio
+async def test_corrupt_or_unsupported_journal_is_preserved_and_blocks_override(
+    controller_core: tuple[SimpleNamespace, Path], journal_contents: str
+):
+    core, journal_path = controller_core
+    journal_path.write_text(journal_contents, encoding="utf-8")
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+
+    assert await controller.recover_startup() is StartupRecoveryOutcome.RECOVERY_FAILED
+    controller._handle_activity(False, "audio")
+
+    assert journal_path.read_text(encoding="utf-8") == journal_contents
+    assert controller.state == "recovery_failed"
+    assert controller.status()["recovery_pending"] is True
+    assert controller._timer is None
+
+    restarted = SilenceSceneController(cast(LedFxCore, core))
+    assert await restarted.recover_startup() is StartupRecoveryOutcome.RECOVERY_FAILED
+    assert journal_path.read_text(encoding="utf-8") == journal_contents
+
+
+@pytest.mark.asyncio
+async def test_unreadable_startup_journal_is_preserved(
+    controller_core: tuple[SimpleNamespace, Path],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    core, journal_path = controller_core
+    journal_path.write_text("diagnostic contents", encoding="utf-8")
+    controller = SilenceSceneController(cast(LedFxCore, core))
+
+    def fail_read() -> object:
+        raise PermissionError("read denied")
+
+    monkeypatch.setattr(controller, "_read_journal", fail_read)
+    assert await controller.recover_startup() is StartupRecoveryOutcome.RECOVERY_FAILED
+    assert journal_path.read_text(encoding="utf-8") == "diagnostic contents"
+    assert controller.state == "recovery_failed"
+
+
+@pytest.mark.asyncio
+async def test_unknown_source_does_not_restore_active_silence_override(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+    controller.report_source_silence("sendspin_paused")
+    await asyncio.sleep(0)
+    await _elapse_timeout(controller)
+    assert controller.state == "silence_active"
+
+    controller.report_source_unknown("sendspin_stream_started")
+    await asyncio.sleep(0)
+
+    assert controller.state == "silence_active"
+    assert journal_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_unknown_resets_volume_deduplication_after_forced_silence(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, _journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+    controller.report_source_silence("sendspin_paused")
+    await asyncio.sleep(0)
+    controller.report_source_unknown("sendspin_resumed")
+    await asyncio.sleep(0)
+
+    controller.report_volume(core.config.audio.min_volume + 0.01)
+    await asyncio.sleep(0)
+
+    assert controller.status()["audio_silent"] is False
+    assert controller.status()["timeout_pending"] is False
+
+
+@pytest.mark.asyncio
+async def test_resumed_silent_volume_does_not_restore_until_audio_exceeds_threshold(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+    controller.report_source_silence("sendspin_paused")
+    await asyncio.sleep(0)
+    await _elapse_timeout(controller)
+    assert controller.state == "silence_active"
+
+    controller.report_source_unknown("sendspin_playback_resumed")
+    await asyncio.sleep(0)
+    controller.report_volume(core.config.audio.min_volume)
+    await asyncio.sleep(0)
+    assert controller.state == "silence_active"
+    assert journal_path.exists()
+
+    controller.report_volume(core.config.audio.min_volume + 0.01)
+    await asyncio.sleep(0)
+    if controller._operation is not None:
+        await controller._operation
+
+    assert controller.state == "normal"
+    assert not journal_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_playlist_checkpoint_precedes_pause_and_scene_activation(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, _journal_path = controller_core
+    operations: list[str] = []
+
+    def checkpoint() -> dict[str, object]:
+        operations.append("checkpoint")
+        return {"active": True, "playlist_id": "p1"}
+
+    async def pause() -> bool:
+        operations.append("pause")
+        return True
+
+    core.playlists.recovery_checkpoint = checkpoint
+    core.playlists.pause = pause
+    core.scenes.activate = lambda *_args, **_kwargs: operations.append("scene") or True
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+    controller.report_source_silence("test_silence")
+    await asyncio.sleep(0)
+
+    await _elapse_timeout(controller)
+
+    assert operations == ["checkpoint", "pause", "scene"]
+
+
+@pytest.mark.asyncio
+async def test_manual_action_cancels_activation_and_invalidates_journal(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, journal_path = controller_core
+    pause_started = asyncio.Event()
+    never_release = asyncio.Event()
+
+    async def pause() -> bool:
+        pause_started.set()
+        await never_release.wait()
+        return True
+
+    core.playlists.recovery_checkpoint = lambda: {
+        "active": True,
+        "playlist_id": "p1",
+    }
+    core.playlists.pause = pause
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+    controller.report_source_silence("test_silence")
+    await asyncio.sleep(0)
+    controller._cancel_timer()
+    controller._timeout_elapsed()
+    activation = controller._operation
+    assert activation is not None
+    await pause_started.wait()
+
+    controller._on_user_operation(
+        SimpleNamespace(event_type=Event.EFFECT_SET, _automated=False)
+    )
+    cancellation = controller._operation
+    assert cancellation is not None and cancellation is not activation
+    await cancellation
+
+    assert not journal_path.exists()
+    assert controller.state == "normal"
+    assert controller._operation is None
+
+
+@pytest.mark.asyncio
+async def test_manual_effect_during_playlist_restoration_is_not_overwritten(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, journal_path = controller_core
+    restoring_playlist = asyncio.Event()
+    never_release = asyncio.Event()
+    manual_effect = SimpleNamespace(type="manual")
+    virtual = SimpleNamespace(
+        id="v1",
+        active=True,
+        active_effect=SimpleNamespace(type="before", config=None),
+    )
+    core.virtuals = _Virtuals([virtual])
+
+    class _ConfigModel:
+        @staticmethod
+        def model_validate(config: dict[str, object]) -> dict[str, object]:
+            return config
+
+    core.effects = SimpleNamespace(
+        get_class=lambda _effect_type: SimpleNamespace(
+            config_model=lambda: _ConfigModel
+        )
+    )
+
+    async def block_playlist_restore(_checkpoint: dict[str, object]) -> bool:
+        restoring_playlist.set()
+        await never_release.wait()
+        return True
+
+    core.playlists.restore_checkpoint = block_playlist_restore
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    snapshot: SilenceRecoverySnapshot = {
+        "version": 1,
+        "phase": "active",
+        "silence_scene_id": "quiet",
+        "virtuals": {
+            "v1": {
+                "active": True,
+                "effect_type": "bars",
+                "effect_config": {},
+            }
+        },
+        "playlist": {
+            "active": True,
+            "playlist_id": "p1",
+            "runtime_items": [{"scene_id": "quiet"}],
+            "index": 0,
+            "order": [0],
+        },
+    }
+    assert controller._write_journal(snapshot)
+    controller._journal = snapshot
+    controller._state = "silence_active"
+    controller.start_monitoring()
+
+    controller._handle_activity(True, "audio")
+    restoration = controller._operation
+    assert restoration is not None
+    await restoring_playlist.wait()
+    virtual.active_effect = manual_effect
+
+    controller._on_user_operation(
+        SimpleNamespace(event_type=Event.EFFECT_SET, _automated=False)
+    )
+    cancellation = controller._operation
+    assert cancellation is not None and cancellation is not restoration
+    await cancellation
+
+    assert virtual.active_effect is manual_effect
+    assert controller._journal is None
+    assert not journal_path.exists()
+
+
+@pytest.mark.asyncio
+async def test_controller_generated_scene_activation_is_ignored_as_manual_action(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, _journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller._state = "silence_active"
+    controller._on_user_operation(
+        SimpleNamespace(
+            event_type=Event.SCENE_ACTIVATED,
+            scene_id="quiet",
+            _automated=True,
+        )
+    )
+    assert controller.state == "silence_active"
+    assert controller._operation is None
 
 
 @pytest.mark.asyncio

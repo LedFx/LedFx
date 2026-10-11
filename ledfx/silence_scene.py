@@ -9,6 +9,7 @@ import logging
 import os
 import tempfile
 import time
+from enum import Enum
 from typing import TYPE_CHECKING, TypedDict, TypeGuard
 
 from ledfx.configuration.fields import VirtualIdStr
@@ -25,6 +26,13 @@ if TYPE_CHECKING:
     from ledfx.core import LedFxCore
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class StartupRecoveryOutcome(Enum):
+    NO_RECOVERY = "no_recovery"
+    RECOVERED = "recovered"
+    RECOVERY_PENDING = "recovery_pending"
+    RECOVERY_FAILED = "recovery_failed"
 
 
 class VirtualRecoverySnapshot(TypedDict):
@@ -58,6 +66,7 @@ class SilenceSceneController:
         self._monitoring = False
         self._resume_after_activation = False
         self._journal: SilenceRecoverySnapshot | None = None
+        self._recovery_failed = False
         self._last_reason: str | None = None
         self._last_reported_active: bool | None = None
         self._source_forced_silence = False
@@ -97,7 +106,7 @@ class SilenceSceneController:
             "restoring": self._state in ("restoring", "startup_recovery"),
             "state": self._state,
             "reason": self._last_reason,
-            "recovery_pending": self._journal is not None,
+            "recovery_pending": self._journal is not None or self._recovery_failed,
         }
 
     def start_monitoring(self) -> None:
@@ -160,25 +169,26 @@ class SilenceSceneController:
         if not self._monitoring:
             return
         self._last_reason = reason
+        if self._recovery_failed:
+            self._silent = None if active is None else not active
+            return
         if active is None:
             self._silent = None
             self._cancel_timer()
-        else:
-            self._silent = not active
+            if self._state == "silence_pending":
+                self._set_state("normal")
+            return
+        self._silent = not active
 
         if self._journal is not None:
             self._cancel_timer()
             if self._state == "activating":
                 if active is True:
                     self._resume_after_activation = True
-            elif self._state != "restoring":
-                self._begin_restore()
-            return
-
-        if active is None:
-            if self._state == "silence_pending":
-                self._set_state("normal")
             elif self._state == "silence_active":
+                if active is True:
+                    self._begin_restore()
+            elif self._state != "restoring":
                 self._begin_restore()
             return
 
@@ -219,8 +229,13 @@ class SilenceSceneController:
         self._operation = asyncio.create_task(self._activate_serialized())
 
     async def _activate_serialized(self) -> None:
-        async with self._operation_lock:
-            await self._activate()
+        operation = asyncio.current_task()
+        try:
+            async with self._operation_lock:
+                await self._activate()
+        finally:
+            if self._operation is operation:
+                self._operation = None
 
     def _begin_restore(self) -> None:
         if self._state == "activating":
@@ -233,10 +248,14 @@ class SilenceSceneController:
 
     async def _restore_serialized(self) -> None:
         restored = False
-        async with self._operation_lock:
-            if self._journal is not None:
-                restored = await self._restore_snapshot(self._journal)
-        self._operation = None
+        operation = asyncio.current_task()
+        try:
+            async with self._operation_lock:
+                if self._journal is not None:
+                    restored = await self._restore_snapshot(self._journal)
+        finally:
+            if self._operation is operation:
+                self._operation = None
         if restored and self._state == "normal" and self._silent is True:
             self._handle_activity(False, self._last_reason or "audio")
 
@@ -254,6 +273,8 @@ class SilenceSceneController:
             return
 
         try:
+            # Checkpoint capture and pause begin in one event-loop turn; pause
+            # sets the runner's paused flag before yielding to its cancellation.
             snapshot = {
                 "version": self.JOURNAL_VERSION,
                 "phase": "pending",
@@ -307,8 +328,6 @@ class SilenceSceneController:
                 "Silence scene activation failed; restoring previous state"
             )
             await self._restore_snapshot(snapshot)
-        finally:
-            self._operation = None
 
     def _capture_virtuals(self) -> dict[str, VirtualRecoverySnapshot]:
         captured: dict[str, VirtualRecoverySnapshot] = {}
@@ -393,27 +412,41 @@ class SilenceSceneController:
         )
         return False
 
-    async def recover_startup(self) -> bool:
+    async def recover_startup(self) -> StartupRecoveryOutcome:
         """Restore any durable snapshot before configured startup scene/playlist."""
         try:
             snapshot = await asyncio.to_thread(self._read_journal)
         except FileNotFoundError:
-            return False
+            return StartupRecoveryOutcome.NO_RECOVERY
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as err:
-            _LOGGER.error("Could not read silence recovery journal: %s", err)
-            return False
+            self._recovery_failed = True
+            self._set_state("recovery_failed")
+            _LOGGER.error(
+                "Could not read silence recovery journal at %s; preserving it and "
+                "skipping configured startup scene/playlist: %s",
+                self._journal_path,
+                err,
+            )
+            return StartupRecoveryOutcome.RECOVERY_FAILED
 
         if not self._valid_snapshot(snapshot):
-            _LOGGER.error("Invalid silence recovery journal; preserving file")
-            return False
+            self._recovery_failed = True
+            self._set_state("recovery_failed")
+            _LOGGER.error(
+                "Invalid or unsupported silence recovery journal at %s; preserving "
+                "it and skipping configured startup scene/playlist",
+                self._journal_path,
+            )
+            return StartupRecoveryOutcome.RECOVERY_FAILED
         if snapshot.get("phase") == "cancelled":
             self._clear_journal()
-            return False
+            return StartupRecoveryOutcome.NO_RECOVERY
 
         self._journal = snapshot
         self._set_state("startup_recovery")
-        await self._restore_snapshot(snapshot)
-        return True
+        if await self._restore_snapshot(snapshot):
+            return StartupRecoveryOutcome.RECOVERED
+        return StartupRecoveryOutcome.RECOVERY_PENDING
 
     def _read_journal(self) -> object:
         with open(self._journal_path, encoding="utf-8") as file:
@@ -537,7 +570,9 @@ class SilenceSceneController:
         async with self._operation_lock:
             if self._journal is not None:
                 cancelled = {"version": self.JOURNAL_VERSION, "phase": "cancelled"}
-                if self._write_journal(cancelled) or self._clear_journal():
+                cancelled_written = self._write_journal(cancelled)
+                journal_cleared = self._clear_journal()
+                if cancelled_written or journal_cleared:
                     self._journal = None
                 else:
                     _LOGGER.critical(
@@ -572,13 +607,17 @@ class SilenceSceneController:
             self._handle_activity(False, "configuration")
 
     async def _restore_for_config_change(self) -> None:
-        async with self._operation_lock:
-            if self._journal is not None:
-                restored = await self._restore_snapshot(self._journal)
-            else:
-                restored = True
-                self._set_state("normal")
-            self._operation = None
+        operation = asyncio.current_task()
+        try:
+            async with self._operation_lock:
+                if self._journal is not None:
+                    restored = await self._restore_snapshot(self._journal)
+                else:
+                    restored = True
+                    self._set_state("normal")
+        finally:
+            if self._operation is operation:
+                self._operation = None
         if restored and self._state == "normal" and self._silent is True:
             self._handle_activity(False, "configuration")
 

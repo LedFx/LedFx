@@ -629,8 +629,6 @@ class SendspinAudioStream:
             or self._sendspin_volume == 0
         ):
             controller.report_source_silence(reason)
-        elif self._expecting_audio:
-            controller.report_source_active(reason)
         else:
             controller.report_source_unknown(reason)
 

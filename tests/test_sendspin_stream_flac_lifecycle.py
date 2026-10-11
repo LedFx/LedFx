@@ -6,6 +6,7 @@ touch the decoder.
 """
 
 import uuid
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -116,6 +117,99 @@ class TestStreamStartFinishesDecoder:
 
         mock_decoder.finish.assert_called_once()
         assert stream._flac_decoder is None
+
+
+class TestSendspinSilenceClassification:
+    def test_stream_start_reports_unknown_until_volume_is_measured(
+        self, stream: "SendspinAudioStream"
+    ):
+        calls: list[tuple[str, str]] = []
+        controller = SimpleNamespace(
+            report_source_silence=lambda reason: calls.append(("silence", reason)),
+            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
+            report_source_active=lambda reason: calls.append(("active", reason)),
+        )
+        stream._ledfx = SimpleNamespace(silence_scene=controller)
+        stream._expecting_audio = True
+
+        msg = MagicMock()
+        msg.payload.player = None
+        stream._stream_start_handler(msg)
+
+        assert calls == [("unknown", "sendspin_stream_started")]
+
+    def test_pause_then_stream_resume_reports_silence_then_unknown(
+        self, stream: "SendspinAudioStream"
+    ):
+        calls: list[tuple[str, str]] = []
+        controller = SimpleNamespace(
+            report_source_silence=lambda reason: calls.append(("silence", reason)),
+            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
+            report_source_active=lambda reason: calls.append(("active", reason)),
+        )
+        stream._ledfx = SimpleNamespace(silence_scene=controller)
+        stream._expecting_audio = True
+
+        stream._stream_end_handler(roles=None)
+        msg = MagicMock()
+        msg.payload.player = None
+        stream._stream_start_handler(msg)
+
+        assert calls == [
+            ("silence", "sendspin_stream_ended"),
+            ("unknown", "sendspin_stream_started"),
+        ]
+
+    def test_reconnection_and_unmute_do_not_claim_audio_activity(
+        self, stream: "SendspinAudioStream"
+    ):
+        calls: list[tuple[str, str]] = []
+        controller = SimpleNamespace(
+            report_source_silence=lambda reason: calls.append(("silence", reason)),
+            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
+            report_source_active=lambda reason: calls.append(("active", reason)),
+        )
+        stream._ledfx = SimpleNamespace(silence_scene=controller)
+        stream._sendspin_disconnected = False
+        stream._expecting_audio = False
+        stream._report_sendspin_state("sendspin_connected")
+        stream._sendspin_muted = False
+        stream._report_sendspin_state("sendspin_unmuted")
+
+        assert calls == [
+            ("unknown", "sendspin_connected"),
+            ("unknown", "sendspin_unmuted"),
+        ]
+
+    def test_explicit_pause_mute_zero_volume_and_disconnect_report_silence(
+        self, stream: "SendspinAudioStream"
+    ):
+        calls: list[tuple[str, str]] = []
+        controller = SimpleNamespace(
+            report_source_silence=lambda reason: calls.append(("silence", reason)),
+            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
+            report_source_active=lambda reason: calls.append(("active", reason)),
+        )
+        stream._ledfx = SimpleNamespace(silence_scene=controller)
+        for attribute, value, reason in (
+            ("_sendspin_paused", True, "paused"),
+            ("_sendspin_paused", False, "unpaused"),
+            ("_sendspin_muted", True, "muted"),
+            ("_sendspin_muted", False, "unmuted"),
+            ("_sendspin_volume", 0, "zero_volume"),
+            ("_sendspin_disconnected", True, "disconnected"),
+        ):
+            setattr(stream, attribute, value)
+            stream._report_sendspin_state(reason)
+
+        assert calls == [
+            ("silence", "paused"),
+            ("unknown", "unpaused"),
+            ("silence", "muted"),
+            ("unknown", "unmuted"),
+            ("silence", "zero_volume"),
+            ("silence", "disconnected"),
+        ]
 
 
 class TestCloseFinishesDecoder:
