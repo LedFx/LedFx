@@ -612,11 +612,11 @@ class TestHandleDeviceListChangeIntegration:
         assert ais._config.audio_device_name == LOOPBACK_NAME
         assert ledfx.config.audio.audio_device_name == LOOPBACK_NAME
 
-    @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED)
+    @patch.object(
+        AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED
+    )
     def test_preferred_device_returning_at_new_index_is_resolved(self, mock_devices):
-        ais = make_ais(
-            config={"audio_device": 0, "audio_device_name": LOOPBACK_NAME}
-        )
+        ais = make_ais(config={"audio_device": 0, "audio_device_name": LOOPBACK_NAME})
 
         ais._resolve_device_from_name()
 
@@ -751,13 +751,13 @@ class TestHandleDeviceListChangeIntegration:
 
     @patch.object(AudioInputSource, "activate")
     @patch.object(AudioInputSource, "refresh_device_list", return_value=True)
-    @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED)
+    @patch.object(
+        AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED
+    )
     def test_hotplug_resolves_preference_instead_of_active_fallback(
         self, mock_devices, mock_refresh, mock_activate
     ):
-        ais = make_ais(
-            config={"audio_device": 0, "audio_device_name": LOOPBACK_NAME}
-        )
+        ais = make_ais(config={"audio_device": 0, "audio_device_name": LOOPBACK_NAME})
         AudioInputSource._last_device_name = DEVICES_AFTER_REMOVAL[0]
         AudioInputSource._last_active = 0
         try:
@@ -788,9 +788,7 @@ class TestHandleDeviceListChangeIntegration:
     def test_preference_survives_multiple_disconnect_cycles(
         self, mock_default, mock_devices
     ):
-        ais = make_ais(
-            config={"audio_device": 17, "audio_device_name": LOOPBACK_NAME}
-        )
+        ais = make_ais(config={"audio_device": 17, "audio_device_name": LOOPBACK_NAME})
 
         for expected_index in (0, 17, 0, 18):
             ais._resolve_device_from_name()
@@ -798,7 +796,9 @@ class TestHandleDeviceListChangeIntegration:
             assert ais._config.audio_device_name == LOOPBACK_NAME
 
     @patch.object(AudioInputSource, "_should_always_keep_active", return_value=False)
-    @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED)
+    @patch.object(
+        AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED
+    )
     @patch.object(
         AudioInputSource,
         "valid_device_indexes",
