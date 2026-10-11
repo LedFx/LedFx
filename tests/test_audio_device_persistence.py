@@ -595,7 +595,7 @@ class TestHandleDeviceListChangeIntegration:
 
     def test_active_fallback_persistence_keeps_preference(self):
         """An opened fallback updates its index but cannot become the preference."""
-        ledfx = make_mock_ledfx()
+        ledfx = make_mock_ledfx({"audio_device": 0, "audio_device_name": LOOPBACK_NAME})
         ais = make_ais(
             config={"audio_device": 0, "audio_device_name": LOOPBACK_NAME},
             ledfx=ledfx,
@@ -648,7 +648,10 @@ class TestHandleDeviceListChangeIntegration:
     @patch.object(AudioInputSource, "default_device_index", return_value=0)
     @patch.object(AudioInputSource, "_should_always_keep_active", return_value=False)
     def test_unrelated_config_update_during_fallback_keeps_preference(
-        self, mock_keep_active, mock_default, mock_devices
+        self,
+        mock_keep_active: MagicMock,
+        mock_default: MagicMock,
+        mock_devices: MagicMock,
     ):
         ais = make_ais(
             config={
@@ -671,7 +674,11 @@ class TestHandleDeviceListChangeIntegration:
     @patch.object(AudioInputSource, "refresh_device_list", return_value=True)
     @patch.object(AudioInputSource, "input_devices", return_value=DEVICES_BEFORE)
     def test_sendspin_hotplug_does_not_fall_back(
-        self, mock_devices, mock_refresh, mock_default, mock_activate
+        self,
+        mock_devices: MagicMock,
+        mock_refresh: MagicMock,
+        mock_default: MagicMock,
+        mock_activate: MagicMock,
     ):
         ledfx = make_mock_ledfx()
         ledfx.events = MagicMock()
@@ -755,7 +762,10 @@ class TestHandleDeviceListChangeIntegration:
         AudioInputSource, "input_devices", return_value=DEVICES_AFTER_USB_ADDED
     )
     def test_hotplug_resolves_preference_instead_of_active_fallback(
-        self, mock_devices, mock_refresh, mock_activate
+        self,
+        mock_devices: MagicMock,
+        mock_refresh: MagicMock,
+        mock_activate: MagicMock,
     ):
         ais = make_ais(config={"audio_device": 0, "audio_device_name": LOOPBACK_NAME})
         AudioInputSource._last_device_name = DEVICES_AFTER_REMOVAL[0]
