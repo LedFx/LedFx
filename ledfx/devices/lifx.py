@@ -14,6 +14,7 @@ from lifx import (
     MultiZoneLight,
     find_by_ip,
 )
+from lifx.const import LIFX_UDP_PORT
 from lifx.exceptions import LifxTimeoutError
 from lifx.protocol import packets
 from pydantic import Field
@@ -152,6 +153,16 @@ class LifxDevice(NetworkedDevice):
         # Animation module for matrix/strip (high performance)
         self._animator = None
 
+    @property
+    def _port(self) -> int:
+        """The device's UDP port.
+
+        Deliberately not a schema field: real LIFX devices always listen
+        on 56700. The test suite sets it to reach an emulator bound to an
+        OS-assigned port.
+        """
+        return getattr(self.config, "port", LIFX_UDP_PORT)
+
     async def async_initialize(self):
         """Initialize device and auto-detect type during creation."""
         await super().async_initialize()
@@ -165,7 +176,7 @@ class LifxDevice(NetworkedDevice):
         """Detect LIFX device type and update config accordingly."""
         try:
             ip = self.config.ip_address
-            device = await find_by_ip(ip=ip)
+            device = await find_by_ip(ip=ip, port=self._port)
 
             if device is None:
                 _LOGGER.warning(
@@ -371,9 +382,9 @@ class LifxDevice(NetworkedDevice):
                 device_cls = LIFX_CLASS_MAP.get(lifx_class, MatrixLight)
 
                 if serial:
-                    self._device = device_cls(serial=serial, ip=ip)
+                    self._device = device_cls(serial=serial, ip=ip, port=self._port)
                 else:
-                    self._device = await device_cls.from_ip(ip)
+                    self._device = await device_cls.from_ip(ip, port=self._port)
 
                 # This is usually handled by instantiating CeilingLight via an async context manager
                 # but for performance reasons, we instantiate directly, so we have to manually update
@@ -387,9 +398,9 @@ class LifxDevice(NetworkedDevice):
 
             elif self._lifx_type == "mirror":
                 if serial:
-                    self._device = MirrorLight(serial=serial, ip=ip)
+                    self._device = MirrorLight(serial=serial, ip=ip, port=self._port)
                 else:
-                    self._device = await MirrorLight.from_ip(ip)
+                    self._device = await MirrorLight.from_ip(ip, port=self._port)
 
                 # set_power() initialises state, which populates the version
                 # needed to look up the component layout
@@ -405,9 +416,9 @@ class LifxDevice(NetworkedDevice):
 
             elif self._lifx_type == "strip":
                 if serial:
-                    self._device = MultiZoneLight(serial=serial, ip=ip)
+                    self._device = MultiZoneLight(serial=serial, ip=ip, port=self._port)
                 else:
-                    self._device = await MultiZoneLight.from_ip(ip)
+                    self._device = await MultiZoneLight.from_ip(ip, port=self._port)
 
                 await self._device.set_power(True)
                 self._animator = await Animator.for_multizone(self._device)
@@ -459,7 +470,7 @@ class LifxDevice(NetworkedDevice):
             lifx_class = getattr(self.config, "lifx_class", None)
             if serial and lifx_type and lifx_class:
                 device_cls = LIFX_CLASS_MAP.get(lifx_class, Light)
-                self._device = device_cls(serial=serial, ip=ip)
+                self._device = device_cls(serial=serial, ip=ip, port=self._port)
                 self._lifx_type = lifx_type
                 _LOGGER.info(
                     "LIFX %s: Direct connect as %s (%s)",
@@ -469,7 +480,7 @@ class LifxDevice(NetworkedDevice):
                 )
             else:
                 # Fallback to discovery (slower, 2+ round trips)
-                self._device = await find_by_ip(ip=ip)
+                self._device = await find_by_ip(ip=ip, port=self._port)
                 if self._device is None:
                     _LOGGER.warning(
                         "LIFX %s: No device found at %s",
