@@ -18,8 +18,6 @@ LedFx now uses [aubio-ledfx](https://pypi.org/project/aubio-ledfx/) which is hos
 Note
 :::
 
-Python 3.13 and 3.14 are supported, but Hue lights integration will currently not be functional due to mbedtls dependency.
-
 Python versions outside this range (e.g., 3.15+) are explicitly unsupported and may cause non-deterministic failures.
 ::::
 2. Install [git](https://git-scm.com/).

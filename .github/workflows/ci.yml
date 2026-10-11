@@ -320,14 +320,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Install system dependencies
-        run: brew install portaudio mbedtls@2
+        run: brew install portaudio
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
         run: |
-          mbedtls=$(brew --prefix mbedtls@2)
-          export PATH="$mbedtls/bin:$PATH" LDFLAGS="-L$mbedtls/lib" CPPFLAGS="-I$mbedtls/include"
           uv sync --all-extras --dev
       - name: Check LedFx launches
         run: uv run ledfx --ci-smoke-test -vv -c debug_config --offline
@@ -407,14 +405,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Install system dependencies
-        run: brew install portaudio mbedtls@2
+        run: brew install portaudio
       - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
         run: |
-          mbedtls=$(brew --prefix mbedtls@2)
-          export PATH="$mbedtls/bin:$PATH" LDFLAGS="-L$mbedtls/lib" CPPFLAGS="-I$mbedtls/include"
           uv sync --extra hue --group build
       - name: Build binary
         run: uv run pyinstaller osx-binary.spec

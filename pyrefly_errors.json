@@ -2465,55 +2465,6 @@
       "severity": "error"
     },
     {
-      "column": 24,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `ledfx`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`__init__` is missing an annotation for parameter `config`",
-      "severity": "error"
-    },
-    {
-      "column": 28,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_hue_request` is missing an annotation for parameter `method`",
-      "severity": "error"
-    },
-    {
-      "column": 36,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_hue_request` is missing an annotation for parameter `api_endpoint`",
-      "severity": "error"
-    },
-    {
-      "column": 50,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_hue_request` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 61,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_hue_request` is missing an annotation for parameter `ssl`",
-      "severity": "error"
-    },
-    {
-      "column": 48,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`_lights_from_entertainment_group` is missing an annotation for parameter `entertainment_id`",
-      "severity": "error"
-    },
-    {
       "column": 9,
       "path": "ledfx/devices/hue.py",
       "name": "bad-override",
@@ -2532,20 +2483,6 @@
       "path": "ledfx/devices/hue.py",
       "name": "missing-override-decorator",
       "concise_description": "Class member `HueDevice.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 21,
-      "path": "ledfx/devices/hue.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`flush` is missing an annotation for parameter `data`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/devices/hue.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send`",
       "severity": "error"
     },
     {

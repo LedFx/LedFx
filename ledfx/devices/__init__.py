@@ -2,7 +2,7 @@ import asyncio
 import logging
 import threading
 from abc import abstractmethod
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from functools import cached_property, partial
 from typing import Annotated, ClassVar
@@ -92,45 +92,58 @@ class Device(BaseRegistry):
         if self._active:
             self.deactivate()
 
-    def update_config(self, config, *, runtime=False):
+    def update_config(
+        self,
+        config: Mapping[str, object],
+        *,
+        runtime: bool = False,
+        _expected_config: PluginConfig | None = None,
+    ) -> None:
         """runtime=True for API writes: also check the live choices (serial ports)
         this update changes. Unchanged ones are not rechecked, as a port may be
         unplugged, and the frontend sends the whole stored config back."""
         # Only publication/output replacement belongs under device locks.
         # Virtual callbacks can join rendering or acquire Virtual.lock.
-        with self.lock, self._config_update_context(config):
+        with self.lock:
             old_config = self._config
-            stored = (
-                old_config.as_dict() if old_config is not None else dict[str, object]()
-            )
-            changed = frozenset(
-                k for k, v in config.items() if stored.get(k, _MISSING) != v
-            )
-            context = {**RUNTIME_CONTEXT, "fields": changed} if runtime else None
-            config = stored | config
+            # Reject stale executor results before any update context can alter
+            # the running output. Virtual callbacks remain outside both locks.
+            if _expected_config is not None and old_config is not _expected_config:
+                return
+            with self._config_update_context(dict(config)):
+                stored = (
+                    old_config.as_dict()
+                    if old_config is not None
+                    else dict[str, object]()
+                )
+                changed = frozenset(
+                    k for k, v in config.items() if stored.get(k, _MISSING) != v
+                )
+                context = {**RUNTIME_CONTEXT, "fields": changed} if runtime else None
+                config = stored | dict(config)
 
-            validated_config = (
-                type(self).config_model().model_validate(config, context=context)
-            )
-            self._config = validated_config
+                validated_config = (
+                    type(self).config_model().model_validate(config, context=context)
+                )
+                self._config = validated_config
 
-            # Iterate all the base classes and check to see if there is a custom
-            # implementation of config updates. If to notify the base class.
-            valid_classes = list(type(self).__bases__)
-            valid_classes.append(type(self))
-            try:
-                for base in valid_classes:
-                    if "config_updated" in vars(base):  # base's own override
-                        base.config_updated(self, validated_config)
-            except Exception:
-                # The update failed; keep the config the device is running with.
-                self._config = old_config
-                raise
+                # Iterate all the base classes and check to see if there is a custom
+                # implementation of config updates. If to notify the base class.
+                valid_classes = list(type(self).__bases__)
+                valid_classes.append(type(self))
+                try:
+                    for base in valid_classes:
+                        if "config_updated" in vars(base):  # base's own override
+                            base.config_updated(self, validated_config)
+                except Exception:
+                    # The update failed; keep the config the device is running with.
+                    self._config = old_config
+                    raise
 
-            # The pixel buffer is sized on activate; resize a live one here so
-            # segment writes and clears match the new pixel count.
-            if self._pixels is not None and len(self._pixels) != self.pixel_count:
-                self._pixels = np.zeros((self.pixel_count, 3))
+                # The pixel buffer is sized on activate; resize a live one here so
+                # segment writes and clears match the new pixel count.
+                if self._pixels is not None and len(self._pixels) != self.pixel_count:
+                    self._pixels = np.zeros((self.pixel_count, 3))
 
         _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
 
@@ -169,6 +182,10 @@ class Device(BaseRegistry):
 
     def is_active(self):
         return self._active
+
+    def is_activation_requested(self) -> bool:
+        """Whether unused virtual output must deactivate this device."""
+        return self.is_active()
 
     def is_online(self):
         return self._online
@@ -238,6 +255,9 @@ class Device(BaseRegistry):
         self._pixels = None
         self._active = False
         # self.flush(np.zeros((self.pixel_count, 3)))
+
+    async def async_shutdown(self) -> None:
+        """Drain device-owned work before the core stops its executor."""
 
     def set_offline(self):
         self.deactivate()
@@ -791,6 +811,13 @@ class Devices(RegistryLoader):
             if device_id == device.id:
                 return device
         return None
+
+    async def async_shutdown_devices(self) -> None:
+        for device in self.values():
+            try:
+                await device.async_shutdown()
+            except Exception:  # noqa: BLE001 - drain the other devices too
+                _LOGGER.warning("Device async shutdown failed")
 
     async def async_initialize_devices(self):
         tasks = [

@@ -625,31 +625,41 @@ class LedFxCore:
 
         _LOGGER.info("Stopping LedFx.")
         try:
-            _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
-            # Fire a shutdown event
-            self.events.fire_event(LedFxShutdownEvent())
+            try:
+                _LOGGER.info(self.EXIT_CODES.get(exit_code, "Unknown exit code."))
+                # Fire a shutdown event
+                self.events.fire_event(LedFxShutdownEvent())
 
-            # Stop audio device monitor
-            if self.audio_device_monitor:
-                try:
-                    self.audio_device_monitor.stop()
-                except Exception as e:  # noqa: BLE001
-                    _LOGGER.warning("Error stopping audio device monitor: %s", e)
+                # Stop audio device monitor
+                if self.audio_device_monitor:
+                    try:
+                        self.audio_device_monitor.stop()
+                    except Exception as e:  # noqa: BLE001
+                        _LOGGER.warning("Error stopping audio device monitor: %s", e)
 
-            if self._smtc_now_playing is not None:
-                try:
-                    self._smtc_now_playing.stop()
-                except Exception as e:  # noqa: BLE001
-                    _LOGGER.warning("Error stopping SMTC provider: %s", e)
+                if self._smtc_now_playing is not None:
+                    try:
+                        self._smtc_now_playing.stop()
+                    except Exception as e:  # noqa: BLE001
+                        _LOGGER.warning("Error stopping SMTC provider: %s", e)
 
-            if self._mpris_now_playing is not None:
-                try:
-                    self._mpris_now_playing.stop()
-                except Exception as e:  # noqa: BLE001
-                    _LOGGER.warning("Error stopping MPRIS provider: %s", e)
+                if self._mpris_now_playing is not None:
+                    try:
+                        self._mpris_now_playing.stop()
+                    except Exception as e:  # noqa: BLE001
+                        _LOGGER.warning("Error stopping MPRIS provider: %s", e)
 
-            _LOGGER.info("Stopping HTTP Server...")
-            await self.http.stop()
+                _LOGGER.info("Stopping HTTP Server...")
+                await self.http.stop()
+
+            finally:
+                # Device-owned work must drain even if an earlier shutdown
+                # operation failed, while its executor is still available.
+                # async_start creates the registry; earlier startup failures can
+                # reach shutdown before there are any devices to drain.
+                devices = getattr(self, "devices", None)
+                if devices is not None:
+                    await devices.async_shutdown_devices()
 
             # Cancel all the remaining task and wait
             tasks = [
