@@ -364,11 +364,10 @@ class SilenceSceneController:
                 complete = False
         await asyncio.sleep(0)
 
-        if complete:
-            if self._clear_journal():
-                self._journal = None
-                self._set_state("normal")
-                return True
+        if complete and self._clear_journal():
+            self._journal = None
+            self._set_state("normal")
+            return True
         self._journal = snapshot
         self._set_state("normal")
         _LOGGER.error(
@@ -379,8 +378,7 @@ class SilenceSceneController:
     async def recover_startup(self) -> bool:
         """Restore any durable snapshot before configured startup scene/playlist."""
         try:
-            with open(self._journal_path, encoding="utf-8") as file:
-                snapshot = json.load(file)
+            snapshot = await asyncio.to_thread(self._read_journal)
         except FileNotFoundError:
             return False
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as err:
@@ -398,6 +396,10 @@ class SilenceSceneController:
         self._set_state("startup_recovery")
         await self._restore_snapshot(snapshot)
         return True
+
+    def _read_journal(self) -> object:
+        with open(self._journal_path, encoding="utf-8") as file:
+            return json.load(file)
 
     def _valid_snapshot(self, snapshot: object) -> TypeGuard[SilenceRecoverySnapshot]:
         if not isinstance(snapshot, dict):

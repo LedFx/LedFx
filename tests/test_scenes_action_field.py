@@ -37,7 +37,7 @@ class _DummyVirtual:
         self._cleared = False
         self._set_effect_calls = []
 
-    def clear_effect(self, *, store=True):
+    def clear_effect(self, *, store: bool = True):
         self._cleared = True
         self.active_effect = None
 
