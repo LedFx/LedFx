@@ -36,7 +36,7 @@ class VirtualRecoverySnapshot(TypedDict):
 class SilenceRecoverySnapshot(TypedDict, total=False):
     version: int
     phase: str
-    silence_scene_id: str
+    silence_scene_id: str | None
     created_monotonic: float
     virtuals: dict[str, VirtualRecoverySnapshot]
     playlist: PlaylistRecoveryCheckpoint
@@ -163,13 +163,25 @@ class SilenceSceneController:
         if active is None:
             self._silent = None
             self._cancel_timer()
+        else:
+            self._silent = not active
+
+        if self._journal is not None:
+            self._cancel_timer()
+            if self._state == "activating":
+                if active is True:
+                    self._resume_after_activation = True
+            elif self._state != "restoring":
+                self._begin_restore()
+            return
+
+        if active is None:
             if self._state == "silence_pending":
                 self._set_state("normal")
             elif self._state == "silence_active":
                 self._begin_restore()
             return
 
-        self._silent = not active
         if active:
             self._cancel_timer()
             if self._state == "silence_pending":
@@ -220,21 +232,21 @@ class SilenceSceneController:
         self._operation = asyncio.create_task(self._restore_serialized())
 
     async def _restore_serialized(self) -> None:
+        restored = False
         async with self._operation_lock:
             if self._journal is not None:
-                await self._restore_snapshot(self._journal)
+                restored = await self._restore_snapshot(self._journal)
         self._operation = None
-        if self._state == "normal" and self._silent is True:
+        if restored and self._state == "normal" and self._silent is True:
             self._handle_activity(False, self._last_reason or "audio")
 
     async def _activate(self) -> None:
         settings = self._ledfx.config.silence_scene
         scene_id = settings.scene_id
-        if (
-            not settings.enabled
-            or not scene_id
-            or self._ledfx.scenes.get(scene_id) is None
-        ):
+        if not settings.enabled:
+            self._set_state("normal")
+            return
+        if scene_id and self._ledfx.scenes.get(scene_id) is None:
             _LOGGER.warning(
                 "Silence scene is enabled but its selected scene is unavailable"
             )
@@ -267,21 +279,28 @@ class SilenceSceneController:
             if playlist.get("active"):
                 with self._ledfx.events.automated():
                     await self._ledfx.playlists.pause()
-            with self._ledfx.events.automated():
-                activated = self._ledfx.scenes.activate(
-                    scene_id, save_config_after=False, persist=False, strict=True
-                )
+            if scene_id:
+                with self._ledfx.events.automated():
+                    activated = self._ledfx.scenes.activate(
+                        scene_id, save_config_after=False, persist=False, strict=True
+                    )
+                if not activated:
+                    await self._restore_snapshot(snapshot)
+                    return
+            else:
+                with self._ledfx.events.automated():
+                    for virtual in self._ledfx.virtuals.values():
+                        virtual_id = VirtualIdStr(virtual.id)
+                        self._ledfx.virtuals.clear_effect(virtual_id, store=False)
+                        self._ledfx.virtuals.set_runtime_active(virtual_id, False)
             await asyncio.sleep(0)
-            if not activated:
-                await self._restore_snapshot(snapshot)
-                return
             snapshot["phase"] = "active"
             self._write_journal(snapshot)
             self._set_state("silence_active")
             if self._resume_after_activation or self._silent is False:
                 self._resume_after_activation = False
-                await self._restore_snapshot(snapshot)
-                if self._state == "normal" and self._silent is True:
+                restored = await self._restore_snapshot(snapshot)
+                if restored and self._state == "normal" and self._silent is True:
                     self._handle_activity(False, self._last_reason or "audio")
         except Exception:
             _LOGGER.exception(
@@ -324,7 +343,6 @@ class SilenceSceneController:
                     _LOGGER.warning(
                         "Recovery snapshot references missing virtual %s", virtual_id
                     )
-                    complete = False
                     continue
                 try:
                     effect_type = saved.get("effect_type")
@@ -556,11 +574,12 @@ class SilenceSceneController:
     async def _restore_for_config_change(self) -> None:
         async with self._operation_lock:
             if self._journal is not None:
-                await self._restore_snapshot(self._journal)
+                restored = await self._restore_snapshot(self._journal)
             else:
+                restored = True
                 self._set_state("normal")
             self._operation = None
-        if self._state == "normal" and self._silent is True:
+        if restored and self._state == "normal" and self._silent is True:
             self._handle_activity(False, "configuration")
 
     def _on_scene_deleted(self, event: SceneDeletedEvent) -> None:

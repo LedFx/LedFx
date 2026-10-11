@@ -14,7 +14,9 @@ Silence-scene handling is backend-only and disabled by default. Configure it in
 ```
 
 `scene_id` is a scene key from `scenes`; it may be `null` while the feature is
-disabled or unconfigured. `timeout_seconds` must be finite and non-negative.
+disabled or when no silence scene is selected. With the feature enabled and no
+scene selected, the timeout still applies: all virtual effects are cleared and
+the virtuals are deactivated. `timeout_seconds` must be finite and non-negative.
 The existing filtered audio volume and `audio.min_volume` are the only acoustic
 threshold: values strictly greater than the threshold are active, and values at
 or below it are silent. Missing measurements remain unknown until a sample or
@@ -33,11 +35,14 @@ is active. Sendspin stream end, pause metadata, mute, established-connection
 loss, and audio watchdog timeout feed the same controller. Source initialization
 and device changes do not count as silence by themselves.
 
-Before scene activation, the controller captures every virtual's actual active
-effect type/configuration and active state, plus playlist runtime state. It uses
-the normal scene manager/action implementation with persistence disabled, so
-`activate`, `forceblack`, `stop`, and `ignore` retain their usual meaning without
-writing temporary effects to virtual configuration.
+Before changing runtime state, the controller captures every virtual's actual
+active effect type/configuration and active state, plus playlist runtime state.
+When a scene is selected, it uses the normal scene manager/action implementation
+with persistence disabled, so `activate`, `forceblack`, `stop`, and `ignore`
+retain their usual meaning without writing temporary effects to virtual
+configuration. With no scene selected, it clears effects and deactivates all
+virtuals instead. Activity restores the captured virtual and playlist state in
+either mode.
 
 Playlist recovery captures the playlist ID, current position, shuffle order,
 runtime-resolved items, runtime mode/timing overrides, sampled duration, and
@@ -56,12 +61,14 @@ directory before changing runtime effects. Version 1 contains:
 
 Writes use a same-directory temporary file, file `fsync`, atomic replacement,
 and directory `fsync` where supported. A missing/unwritable journal prevents
-scene activation. The journal remains through shutdown and is removed only after
-all available virtual and playlist state has been restored. Unsupported,
-corrupt, or incomplete journals are preserved and logged rather than silently
-discarded. Recovery runs before the configured startup scene or playlist; after
-a successful recovery, normal silence monitoring starts even if the source is
-still silent.
+the silence override. The journal remains through shutdown and is removed only after
+all available virtual and playlist state has been restored. Deleted virtuals
+require no further restoration; a failed playlist restoration keeps recovery
+incomplete. Unsupported, corrupt, or incomplete journals are preserved and
+logged rather than silently discarded. A retained journal blocks a new silence
+override and is retried on the next activity change. Recovery runs before the
+configured startup scene or playlist; after a successful recovery, normal
+silence monitoring starts even if the source is still silent.
 
 A deliberate scene/effect/playlist operation supersedes the temporary override
 and invalidates its journal. Disabling the feature or changing/deleting the
