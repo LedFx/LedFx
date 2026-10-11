@@ -9,10 +9,15 @@ import logging
 import os
 import tempfile
 import time
-from typing import TYPE_CHECKING, TypeGuard, TypedDict
+from typing import TYPE_CHECKING, TypedDict, TypeGuard
 
 from ledfx.configuration.fields import VirtualIdStr
-from ledfx.events import AudioSourceErrorEvent, BaseConfigUpdateEvent, Event, SceneDeletedEvent
+from ledfx.events import (
+    AudioSourceErrorEvent,
+    BaseConfigUpdateEvent,
+    Event,
+    SceneDeletedEvent,
+)
 from ledfx.fsutil import fsync_directory
 from ledfx.playlists import PlaylistRecoveryCheckpoint
 
@@ -70,7 +75,9 @@ class SilenceSceneController:
             ledfx.events.add_listener(self._on_user_operation, event_type)
         ledfx.events.add_listener(self._on_config_update, Event.BASE_CONFIG_UPDATE)
         ledfx.events.add_listener(self._on_scene_deleted, Event.SCENE_DELETED)
-        ledfx.events.add_listener(self._on_audio_device_change, Event.AUDIO_INPUT_DEVICE_CHANGED)
+        ledfx.events.add_listener(
+            self._on_audio_device_change, Event.AUDIO_INPUT_DEVICE_CHANGED
+        )
         ledfx.events.add_listener(self._on_audio_source_error, Event.AUDIO_SOURCE_ERROR)
         ledfx.events.add_listener(self._on_shutdown, Event.LEDFX_SHUTDOWN)
 
@@ -96,14 +103,18 @@ class SilenceSceneController:
     def start_monitoring(self) -> None:
         self._monitoring = True
         if self._source_forced_silence:
-            self._handle_activity(False, self._last_reason or "audio_source_unavailable")
+            self._handle_activity(
+                False, self._last_reason or "audio_source_unavailable"
+            )
             return
         if self._ledfx.audio is not None and getattr(
             self._ledfx.audio, "_has_volume_measurement", False
         ):
             volume = self._ledfx.audio.volume()
             if volume is not None:
-                self._handle_activity(volume > self._ledfx.config.audio.min_volume, "audio")
+                self._handle_activity(
+                    volume > self._ledfx.config.audio.min_volume, "audio"
+                )
 
     def stop_monitoring(self) -> None:
         self._monitoring = False
@@ -219,8 +230,14 @@ class SilenceSceneController:
     async def _activate(self) -> None:
         settings = self._ledfx.config.silence_scene
         scene_id = settings.scene_id
-        if not settings.enabled or not scene_id or self._ledfx.scenes.get(scene_id) is None:
-            _LOGGER.warning("Silence scene is enabled but its selected scene is unavailable")
+        if (
+            not settings.enabled
+            or not scene_id
+            or self._ledfx.scenes.get(scene_id) is None
+        ):
+            _LOGGER.warning(
+                "Silence scene is enabled but its selected scene is unavailable"
+            )
             self._set_state("normal")
             return
 
@@ -238,7 +255,9 @@ class SilenceSceneController:
             self._set_state("normal")
             return
         if not self._write_journal(snapshot):
-            _LOGGER.error("Silence scene not activated: recovery snapshot could not be persisted")
+            _LOGGER.error(
+                "Silence scene not activated: recovery snapshot could not be persisted"
+            )
             self._set_state("normal")
             return
         self._journal = snapshot
@@ -265,7 +284,9 @@ class SilenceSceneController:
                 if self._state == "normal" and self._silent is True:
                     self._handle_activity(False, self._last_reason or "audio")
         except Exception:
-            _LOGGER.exception("Silence scene activation failed; restoring previous state")
+            _LOGGER.exception(
+                "Silence scene activation failed; restoring previous state"
+            )
             await self._restore_snapshot(snapshot)
         finally:
             self._operation = None
@@ -309,7 +330,9 @@ class SilenceSceneController:
                     effect_type = saved.get("effect_type")
                     if effect_type:
                         effect_config = saved.get("effect_config") or {}
-                        model = self._ledfx.effects.get_class(effect_type).config_model()
+                        model = self._ledfx.effects.get_class(
+                            effect_type
+                        ).config_model()
                         config = model.model_validate(effect_config)
                         self._ledfx.virtuals.set_effect(
                             VirtualIdStr(virtual_id), effect_type, config, store=False
@@ -348,7 +371,9 @@ class SilenceSceneController:
                 return True
         self._journal = snapshot
         self._set_state("normal")
-        _LOGGER.error("Silence recovery is incomplete; durable snapshot retained for retry")
+        _LOGGER.error(
+            "Silence recovery is incomplete; durable snapshot retained for retry"
+        )
         return False
 
     async def recover_startup(self) -> bool:
@@ -402,8 +427,10 @@ class SilenceSceneController:
             if not isinstance(playlist.get("playlist_id"), str):
                 return False
             items = playlist.get("runtime_items")
-            if not isinstance(items, list) or not items or any(
-                not isinstance(item, dict) for item in items
+            if (
+                not isinstance(items, list)
+                or not items
+                or any(not isinstance(item, dict) for item in items)
             ):
                 return False
             index = playlist.get("index")
@@ -472,9 +499,11 @@ class SilenceSceneController:
             return
         # Playlist-driven scene changes are automatic; an explicit playlist
         # start/stop or direct scene/effect operation is a deliberate override.
-        if event.event_type == Event.SCENE_ACTIVATED and getattr(
-            event, "scene_id", None
-        ) == self._ledfx.config.silence_scene.scene_id:
+        if (
+            event.event_type == Event.SCENE_ACTIVATED
+            and getattr(event, "scene_id", None)
+            == self._ledfx.config.silence_scene.scene_id
+        ):
             return
         _LOGGER.info("Silence override superseded by user operation")
         if self._operation and not self._operation.done():
@@ -488,9 +517,7 @@ class SilenceSceneController:
         async with self._operation_lock:
             if self._journal is not None:
                 cancelled = {"version": self.JOURNAL_VERSION, "phase": "cancelled"}
-                if self._write_journal(cancelled):
-                    self._journal = None
-                elif self._clear_journal():
+                if self._write_journal(cancelled) or self._clear_journal():
                     self._journal = None
                 else:
                     _LOGGER.critical(
@@ -570,4 +597,3 @@ class SilenceSceneController:
         old_state = self._state
         self._state = state
         _LOGGER.info("Silence scene state: %s -> %s", old_state, state)
-

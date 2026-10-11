@@ -307,9 +307,7 @@ class PlaylistManager:
                             self._skip_scene_on_resume = False
                         elif hasattr(self._core, "scenes"):
                             events = getattr(self._core, "events", None)
-                            automated = getattr(
-                                events, "automated", nullcontext
-                            )
+                            automated = getattr(events, "automated", nullcontext)
                             with automated():
                                 self._core.scenes.activate(
                                     scene_id, save_config_after=False

@@ -12,8 +12,7 @@ import pytest_asyncio
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.core import LedFxCore
-from ledfx.silence_scene import SilenceSceneController
-from ledfx.silence_scene import SilenceRecoverySnapshot
+from ledfx.silence_scene import SilenceRecoverySnapshot, SilenceSceneController
 
 
 class _Events:

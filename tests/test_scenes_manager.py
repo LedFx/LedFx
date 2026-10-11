@@ -165,8 +165,7 @@ def test_scenes_only_use_the_manager(
     ]
     assert [c.args for c in clear_effect.call_args_list] == [(BIRD,)] * 2
     assert all(
-        c.kwargs == {"fallback": None, "store": True}
-        for c in set_effect.call_args_list
+        c.kwargs == {"fallback": None, "store": True} for c in set_effect.call_args_list
     )
 
 
