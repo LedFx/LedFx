@@ -20,7 +20,6 @@ class InfoEndpoint(RestEndpoint):
         Returns:
             web.Response: The response containing the controller information.
         """
-        silence_scene = getattr(self._ledfx, "silence_scene", None)
         response = {
             "url": self._ledfx.http.base_url,
             "name": "LedFx Controller",
@@ -32,8 +31,5 @@ class InfoEndpoint(RestEndpoint):
             "features": {
                 "sendspin": SENDSPIN_AVAILABLE,
             },
-            "silence_scene": silence_scene.status()
-            if silence_scene is not None
-            else None,
         }
         return await self.bare_request_success(response)

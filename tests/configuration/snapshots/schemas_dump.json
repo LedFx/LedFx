@@ -1230,40 +1230,6 @@
      "title": "SendspinServerConfig",
      "type": "object"
     },
-    "SilenceSceneConfig": {
-     "additionalProperties": false,
-     "description": "Settings for temporarily activating a scene while audio is silent.",
-     "properties": {
-      "enabled": {
-       "default": false,
-       "description": "Enable automatic silence scene handling",
-       "title": "Enabled",
-       "type": "boolean"
-      },
-      "scene_id": {
-       "anyOf": [
-        {
-         "type": "string"
-        },
-        {
-         "type": "null"
-        }
-       ],
-       "default": null,
-       "description": "Scene to activate after the configured silence timeout",
-       "title": "Scene Id"
-      },
-      "timeout_seconds": {
-       "default": 5.0,
-       "description": "Continuous silence duration before activating the scene",
-       "minimum": 0.0,
-       "title": "Timeout Seconds",
-       "type": "number"
-      }
-     },
-     "title": "SilenceSceneConfig",
-     "type": "object"
-    },
     "VirtualConfig": {
      "additionalProperties": false,
      "properties": {
@@ -1686,15 +1652,6 @@
       "delay_ms": 0
      },
      "title": "Audio"
-    },
-    "silence_scene": {
-     "$ref": "#/$defs/SilenceSceneConfig",
-     "default": {
-      "enabled": false,
-      "scene_id": null,
-      "timeout_seconds": 5.0
-     },
-     "title": "Silence Scene"
     },
     "melbank_collection": {
      "default": [],

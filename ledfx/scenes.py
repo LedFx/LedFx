@@ -98,13 +98,7 @@ class Scenes:
         if handle := self._pending.pop(scene_id, None):
             handle.cancel()
 
-    def activate(
-        self,
-        scene_id: str,
-        save_config_after: bool = True,
-        persist: bool = True,
-        strict: bool = False,
-    ) -> bool:
+    def activate(self, scene_id, save_config_after=True):
         """Activate a scene with support for action field
 
         Args:
@@ -113,9 +107,6 @@ class Scenes:
                               last virtual. Only that final save is optional: the
                               manager saves each effect change it makes either way.
                               Playlists pass False to skip the extra request.
-            persist: If False, apply actions at runtime without changing stored
-                     virtual effects or requesting configuration saves.
-            strict: Return False if any scene entry cannot be applied.
         """
         ensure_writable(self._ledfx)
         self.cancel_pending(scene_id)
@@ -124,21 +115,13 @@ class Scenes:
             _LOGGER.error("No scene found with id: %s", scene_id)
             return False
 
-        activation_succeeded = True
         for virtual_id, virtual_config in scene.virtuals.items():
             if self._ledfx.virtuals.get(virtual_id) is None:
                 # virtual has been deleted since scene was created
-                activation_succeeded = False
                 continue
             try:
-                self._apply(
-                    VirtualIdStr(virtual_id),
-                    virtual_config,
-                    persist=persist,
-                    strict=strict,
-                )
+                self._apply(VirtualIdStr(virtual_id), virtual_config)
             except (Invalid, NotFound, Conflict) as exc:
-                activation_succeeded = False
                 _LOGGER.warning(
                     "Scene %s: virtual %r refused its entry: %s",
                     scene_id,
@@ -146,46 +129,32 @@ class Scenes:
                     exc,
                 )
             except Exception:
-                activation_succeeded = False
                 _LOGGER.exception(
                     "Scene %s: failed to apply virtual %r", scene_id, virtual_id
                 )
 
         self._ledfx.events.fire_event(SceneActivatedEvent(scene_id))
 
-        if save_config_after and persist:
+        if save_config_after:
             self._ledfx.config_store.request_save()
 
-        return activation_succeeded if strict else True
+        return True
 
-    def _apply(
-        self,
-        virtual_id: VirtualIdStr,
-        virtual_config: SceneVirtual,
-        *,
-        persist: bool = True,
-        strict: bool = False,
-    ) -> None:
+    def _apply(self, virtual_id: VirtualIdStr, virtual_config: SceneVirtual) -> None:
         """Apply one scene entry to a virtual, through the manager."""
         virtuals = self._ledfx.virtuals
         action = scene_action(virtual_config)
 
         if action == "stop":
-            virtuals.clear_effect(virtual_id, store=persist)
+            virtuals.clear_effect(virtual_id)
 
         elif action == "forceblack":
-            self._start(
-                virtual_id, "singleColor", {"color": "#000000"}, persist=persist
-            )
+            self._start(virtual_id, "singleColor", {"color": "#000000"})
 
         elif action == "activate":
             # The type is required for both preset and explicit config
             effect_type = virtual_config.type
             if not effect_type:
-                if strict:
-                    raise Invalid(
-                        f"Scene activate config for virtual {virtual_id} is missing type"
-                    )
                 _LOGGER.warning(
                     "Invalid activate config for virtual %s, missing required 'type' field",
                     virtual_id,
@@ -201,16 +170,12 @@ class Scenes:
             else:
                 effect_config = virtual_config.config
                 if effect_config is None:
-                    if strict:
-                        raise Invalid(
-                            f"Scene activate config for virtual {virtual_id} is missing config"
-                        )
                     _LOGGER.warning(
                         "Invalid activate config for virtual %s, missing 'config' field",
                         virtual_id,
                     )
                     return
-            self._start(virtual_id, effect_type, effect_config, persist=persist)
+            self._start(virtual_id, effect_type, effect_config)
 
         # "ignore" and unknown actions leave the virtual unchanged
 
@@ -219,8 +184,6 @@ class Scenes:
         virtual_id: VirtualIdStr,
         effect_type: str,
         effect_config: Mapping[str, object],
-        *,
-        persist: bool = True,
     ) -> None:
         effects = self._ledfx.effects
         try:
@@ -231,9 +194,7 @@ class Scenes:
             )
         except ValidationError as err:
             raise Invalid(str(err)) from err
-        self._ledfx.virtuals.set_effect(
-            virtual_id, effect_type, config, fallback=None, store=persist
-        )
+        self._ledfx.virtuals.set_effect(virtual_id, effect_type, config, fallback=None)
 
     def _resolve_preset(self, effect_type, preset_name):
         """Resolve a preset name to effect config for a specific effect type.

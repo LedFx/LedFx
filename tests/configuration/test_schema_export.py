@@ -467,7 +467,6 @@ NOT_READ_ONLY = {
         "sendspin_servers",
         "now_playing",
         "image_cache",
-        "silence_scene",
     )
 }
 

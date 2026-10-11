@@ -12,8 +12,6 @@ import copy
 import logging
 import random
 import time
-from contextlib import nullcontext
-from typing import TypedDict
 
 from ledfx.configuration.models import Playlist
 from ledfx.errors import SafeMode
@@ -27,20 +25,6 @@ from ledfx.events import (
 from ledfx.utils import generate_id
 
 _LOGGER = logging.getLogger(__name__)
-
-
-class PlaylistRecoveryCheckpoint(TypedDict, total=False):
-    active: bool
-    paused: bool
-    playlist_id: str
-    index: int
-    order: list[int]
-    runtime_items: list[dict[str, object]]
-    mode_override: str | None
-    timing_override: dict[str, object] | None
-    effective_duration_ms: int | None
-    remaining_ms: int | None
-    remaining_for_order_pos: int
 
 
 class PlaylistManager:
@@ -75,7 +59,6 @@ class PlaylistManager:
         self._timing_override: dict | None = None
         # runtime-resolved items list (for dynamic "all scenes" playlists with empty items)
         self._runtime_items: list | None = None
-        self._skip_scene_on_resume = False
 
         # load playlists from config (validate)
         # (already validated: the store quarantines invalid playlists on load)
@@ -303,17 +286,10 @@ class PlaylistManager:
                     # Skip the scene's own final save during playback (the manager
                     # still saves each effect change)
                     try:
-                        if self._skip_scene_on_resume:
-                            self._skip_scene_on_resume = False
-                        elif hasattr(self._core, "scenes"):
-                            events = getattr(self._core, "events", None)
-                            automated = getattr(
-                                events, "automated", nullcontext
+                        if hasattr(self._core, "scenes"):
+                            self._core.scenes.activate(
+                                scene_id, save_config_after=False
                             )
-                            with automated():
-                                self._core.scenes.activate(
-                                    scene_id, save_config_after=False
-                                )
                     except SafeMode:
                         _LOGGER.debug("Playlist scene %s skipped: safe mode", scene_id)
                     except Exception:
@@ -518,7 +494,6 @@ class PlaylistManager:
         self._mode_override = None
         self._timing_override = None
         self._runtime_items = None
-        self._skip_scene_on_resume = False
 
         try:
             if pid:
@@ -607,73 +582,6 @@ class PlaylistManager:
             )
         except Exception:  # noqa: BLE001, S110
             pass
-        return True
-
-    def recovery_checkpoint(self) -> PlaylistRecoveryCheckpoint:
-        """Return a JSON-safe snapshot of playlist execution, if running."""
-        if not self._active_playlist_id:
-            return {"active": False}
-        remaining_ms = self._remaining_ms
-        order_pos = self._active_index % len(self._order) if self._order else 0
-        if (
-            remaining_ms is None
-            and self._item_start_ts is not None
-            and self._item_effective_duration_ms is not None
-        ):
-            elapsed = int((time.monotonic() - self._item_start_ts) * 1000)
-            remaining_ms = max(0, self._item_effective_duration_ms - elapsed)
-        return {
-            "active": True,
-            "paused": self._paused,
-            "playlist_id": self._active_playlist_id,
-            "index": self._active_index,
-            "order": list(self._order),
-            "runtime_items": copy.deepcopy(self._runtime_items or []),
-            "mode_override": self._mode_override,
-            "timing_override": copy.deepcopy(self._timing_override),
-            "effective_duration_ms": self._item_effective_duration_ms,
-            "remaining_ms": remaining_ms,
-            "remaining_for_order_pos": order_pos,
-        }
-
-    async def restore_checkpoint(self, checkpoint: PlaylistRecoveryCheckpoint) -> bool:
-        """Restore a previously running playlist without reactivating its scene."""
-        pid = checkpoint.get("playlist_id")
-        if not pid or pid not in self._playlists:
-            _LOGGER.warning("Cannot restore missing playlist %s", pid)
-            return False
-        items = checkpoint.get("runtime_items")
-        if not isinstance(items, list) or not items:
-            _LOGGER.warning("Cannot restore playlist %s without runtime items", pid)
-            return False
-        await self.stop()
-        self._runtime_items = items
-        self._mode_override = checkpoint.get("mode_override")
-        self._timing_override = checkpoint.get("timing_override")
-        self._active_playlist_id = pid
-        self._active_index = max(0, int(checkpoint.get("index", 0)))
-        order = checkpoint.get("order")
-        if (
-            isinstance(order, list)
-            and len(order) == len(items)
-            and all(
-                isinstance(index, int) and 0 <= index < len(items) for index in order
-            )
-        ):
-            self._order = order
-        else:
-            self._order = []
-            self._ensure_order(self._playlists[pid], items)
-        self._item_effective_duration_ms = checkpoint.get("effective_duration_ms")
-        self._remaining_ms = checkpoint.get("remaining_ms")
-        self._remaining_for_order_pos = checkpoint.get("remaining_for_order_pos")
-        self._paused = bool(checkpoint.get("paused", False))
-        if self._paused:
-            self._pause_event.clear()
-        else:
-            self._pause_event.set()
-        self._skip_scene_on_resume = True
-        self._task = asyncio.create_task(self._runner(pid))
         return True
 
     async def _advance_index(self, direction: int) -> bool:

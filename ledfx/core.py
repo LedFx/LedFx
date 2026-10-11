@@ -40,7 +40,6 @@ from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
-from ledfx.silence_scene import SilenceSceneController
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
@@ -84,7 +83,6 @@ class LedFxCore:
     ):
 
         self.audio: AudioAnalysisSource | None = None
-        self.silence_scene: SilenceSceneController | None = None
         self.icon = icon
         self.config_dir = config_dir
 
@@ -507,7 +505,6 @@ class LedFxCore:
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
         self.playlists = PlaylistManager(self)
-        self.silence_scene = SilenceSceneController(self)
         self.colors, self.gradients = build_user_collections(self)
 
         # Now Playing drives virtuals through the manager, so it starts once
@@ -578,12 +575,9 @@ class LedFxCore:
             # The check makes a blocking HTTP request.
             await asyncio.to_thread(self.check_and_notify_updates)
 
-        recovered_silence_state = await self.silence_scene.recover_startup()
-        if not recovered_silence_state:
-            self._activate_startup_scene()
-            await self._handle_startup_playlist()
-        if self.silence_scene.state == "normal":
-            self.silence_scene.start_monitoring()
+        self._activate_startup_scene()
+
+        await self._handle_startup_playlist()
 
         if pause_all:
             # pause at the virtuals level

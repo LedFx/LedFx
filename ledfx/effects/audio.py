@@ -444,7 +444,6 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.lock = threading.Lock()
-        self._has_volume_measurement = False
         # We must not inherit legacy _callbacks from prior instances
         self._callbacks = []
         self.update_config(config)
@@ -1092,14 +1091,10 @@ class AudioInputSource:
         self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
         self._volume = max(0, min(1, self._volume))
         self._volume_filter.update(self._volume)
-        self._has_volume_measurement = True
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
         volume = self._volume_filter.value
-        silence_controller = getattr(self._ledfx, "silence_scene", None)
-        if silence_controller is not None:
-            silence_controller.report_volume(volume)
         if volume is not None and volume > self._config.min_volume:
             self._processed_audio_sample = self._raw_audio_sample
 

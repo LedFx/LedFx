@@ -2,19 +2,14 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from contextlib import contextmanager
-from contextvars import ContextVar
 
 import numpy as np
 
 _LOGGER = logging.getLogger(__name__)
-_EVENT_AUTOMATED: ContextVar[bool] = ContextVar("ledfx_event_automated", default=False)
 
 
 class Event:
     """Base for events"""
-
-    _automated: bool
 
     BASE_CONFIG_UPDATE = "base_config_update"
     LEDFX_SHUTDOWN = "shutdown"
@@ -65,15 +60,12 @@ class Event:
             type: The string identifier representing the event type.
         """
         self.event_type = type
-        self._automated = False
 
     def to_dict(self):
         """
         Returns a dictionary representation of the event's attributes.
         """
-        return {
-            key: value for key, value in self.__dict__.items() if key != "_automated"
-        }
+        return self.__dict__
 
 
 class SongDetectedEvent(Event):
@@ -639,7 +631,6 @@ class Events:
         return bool(self._listeners.get(event_type))
 
     def fire_event(self, event: Event) -> None:
-        event._automated = _EVENT_AUTOMATED.get()
         listeners = self._listeners.get(event.event_type, [])
 
         if not listeners:
@@ -650,15 +641,6 @@ class Events:
 
             if not filtered:
                 self._ledfx.loop.call_soon_threadsafe(listener.callback, event)
-
-    @contextmanager
-    def automated(self):
-        """Mark events emitted by a backend-managed operation as automatic."""
-        token = _EVENT_AUTOMATED.set(True)
-        try:
-            yield
-        finally:
-            _EVENT_AUTOMATED.reset(token)
 
     def add_listener(
         self,

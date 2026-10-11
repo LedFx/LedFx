@@ -18,22 +18,6 @@ def test_defaults_match_the_old_core_schema() -> None:
     assert (cfg.host, cfg.port, cfg.port_s) == ("0.0.0.0", 8888, 8443)
     assert cfg.visualisation_fps == 30 and cfg.global_brightness == 1.0
     assert cfg.devices == [] and cfg.scenes == {} and cfg.audio.min_volume == 0.2
-    assert not cfg.silence_scene.enabled
-    assert cfg.silence_scene.scene_id is None
-    assert cfg.silence_scene.timeout_seconds == 5.0
-
-
-def test_silence_scene_config_validation_and_round_trip() -> None:
-    cfg = LedFxConfig.model_validate(
-        {"silence_scene": {"enabled": True, "scene_id": "quiet", "timeout_seconds": 0}}
-    )
-    assert cfg.silence_scene.enabled
-    assert cfg.silence_scene.scene_id == "quiet"
-    assert cfg.model_dump()["silence_scene"]["timeout_seconds"] == 0.0
-
-    for timeout in (-1, float("inf"), float("nan")):
-        with pytest.raises(ValidationError):
-            LedFxConfig.model_validate({"silence_scene": {"timeout_seconds": timeout}})
 
 
 def test_unknown_top_level_key_is_rejected() -> None:

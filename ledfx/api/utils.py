@@ -11,7 +11,6 @@ PERMITTED_KEYS = {
         "onset_method",
         "pitch_tolerance",
     ),
-    "silence_scene": ("enabled", "scene_id", "timeout_seconds"),
     "melbanks": (
         "max_frequencies",
         "min_frequency",
