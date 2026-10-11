@@ -488,7 +488,7 @@ class LifxDevice(NetworkedDevice):
                     self._lifx_type,
                 )
 
-            # Ensure capabilities are populated (needed for Ceiling uplight_zone etc.)
+            # Ensure capabilities are populated (strips check extended multizone)
             await self._device._ensure_capabilities()
 
             # Configure based on type
