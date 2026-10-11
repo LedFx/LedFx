@@ -13,7 +13,7 @@ import pytest_asyncio
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.core import LedFxCore
-from ledfx.events import Event
+from ledfx.events import EffectSetEvent, SceneActivatedEvent
 from ledfx.silence_scene import (
     SilenceRecoverySnapshot,
     SilenceSceneController,
@@ -478,7 +478,18 @@ async def test_playlist_checkpoint_precedes_pause_and_scene_activation(
 
     core.playlists.recovery_checkpoint = checkpoint
     core.playlists.pause = pause
-    core.scenes.activate = lambda *_args, **_kwargs: operations.append("scene") or True
+
+    def activate_scene(
+        _scene_id: str,
+        *,
+        save_config_after: bool = True,
+        persist: bool = True,
+        strict: bool = False,
+    ) -> bool:
+        operations.append("scene")
+        return True
+
+    core.scenes.activate = activate_scene
     controller = SilenceSceneController(cast(LedFxCore, core))
     controller.start_monitoring()
     controller.report_source_silence("test_silence")
@@ -518,7 +529,7 @@ async def test_manual_action_cancels_activation_and_invalidates_journal(
     await pause_started.wait()
 
     controller._on_user_operation(
-        SimpleNamespace(event_type=Event.EFFECT_SET, _automated=False)
+        EffectSetEvent("manual", "effect", "v1", "bars", True, False)
     )
     cancellation = controller._operation
     assert cancellation is not None and cancellation is not activation
@@ -549,11 +560,10 @@ async def test_manual_effect_during_playlist_restoration_is_not_overwritten(
         def model_validate(config: dict[str, object]) -> dict[str, object]:
             return config
 
-    core.effects = SimpleNamespace(
-        get_class=lambda _effect_type: SimpleNamespace(
-            config_model=lambda: _ConfigModel
-        )
-    )
+    def get_effect_class(_effect_type: str) -> SimpleNamespace:
+        return SimpleNamespace(config_model=lambda: _ConfigModel)
+
+    core.effects = SimpleNamespace(get_class=get_effect_class)
 
     async def block_playlist_restore(_checkpoint: dict[str, object]) -> bool:
         restoring_playlist.set()
@@ -593,7 +603,7 @@ async def test_manual_effect_during_playlist_restoration_is_not_overwritten(
     virtual.active_effect = manual_effect
 
     controller._on_user_operation(
-        SimpleNamespace(event_type=Event.EFFECT_SET, _automated=False)
+        EffectSetEvent("manual", "effect", "v1", "bars", True, False)
     )
     cancellation = controller._operation
     assert cancellation is not None and cancellation is not restoration
@@ -611,13 +621,9 @@ async def test_controller_generated_scene_activation_is_ignored_as_manual_action
     core, _journal_path = controller_core
     controller = SilenceSceneController(cast(LedFxCore, core))
     controller._state = "silence_active"
-    controller._on_user_operation(
-        SimpleNamespace(
-            event_type=Event.SCENE_ACTIVATED,
-            scene_id="quiet",
-            _automated=True,
-        )
-    )
+    event = SceneActivatedEvent("quiet")
+    event._automated = True
+    controller._on_user_operation(event)
     assert controller.state == "silence_active"
     assert controller._operation is None
 

@@ -119,16 +119,26 @@ class TestStreamStartFinishesDecoder:
         assert stream._flac_decoder is None
 
 
+class _SilenceSceneStub:
+    def __init__(self, calls: list[tuple[str, str]]) -> None:
+        self.calls = calls
+
+    def report_source_silence(self, reason: str) -> None:
+        self.calls.append(("silence", reason))
+
+    def report_source_unknown(self, reason: str) -> None:
+        self.calls.append(("unknown", reason))
+
+    def report_source_active(self, reason: str) -> None:
+        self.calls.append(("active", reason))
+
+
 class TestSendspinSilenceClassification:
     def test_stream_start_reports_unknown_until_volume_is_measured(
         self, stream: "SendspinAudioStream"
     ):
         calls: list[tuple[str, str]] = []
-        controller = SimpleNamespace(
-            report_source_silence=lambda reason: calls.append(("silence", reason)),
-            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
-            report_source_active=lambda reason: calls.append(("active", reason)),
-        )
+        controller = _SilenceSceneStub(calls)
         stream._ledfx = SimpleNamespace(silence_scene=controller)
         stream._expecting_audio = True
 
@@ -142,11 +152,7 @@ class TestSendspinSilenceClassification:
         self, stream: "SendspinAudioStream"
     ):
         calls: list[tuple[str, str]] = []
-        controller = SimpleNamespace(
-            report_source_silence=lambda reason: calls.append(("silence", reason)),
-            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
-            report_source_active=lambda reason: calls.append(("active", reason)),
-        )
+        controller = _SilenceSceneStub(calls)
         stream._ledfx = SimpleNamespace(silence_scene=controller)
         stream._expecting_audio = True
 
@@ -164,11 +170,7 @@ class TestSendspinSilenceClassification:
         self, stream: "SendspinAudioStream"
     ):
         calls: list[tuple[str, str]] = []
-        controller = SimpleNamespace(
-            report_source_silence=lambda reason: calls.append(("silence", reason)),
-            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
-            report_source_active=lambda reason: calls.append(("active", reason)),
-        )
+        controller = _SilenceSceneStub(calls)
         stream._ledfx = SimpleNamespace(silence_scene=controller)
         stream._sendspin_disconnected = False
         stream._expecting_audio = False
@@ -185,11 +187,7 @@ class TestSendspinSilenceClassification:
         self, stream: "SendspinAudioStream"
     ):
         calls: list[tuple[str, str]] = []
-        controller = SimpleNamespace(
-            report_source_silence=lambda reason: calls.append(("silence", reason)),
-            report_source_unknown=lambda reason: calls.append(("unknown", reason)),
-            report_source_active=lambda reason: calls.append(("active", reason)),
-        )
+        controller = _SilenceSceneStub(calls)
         stream._ledfx = SimpleNamespace(silence_scene=controller)
         for attribute, value, reason in (
             ("_sendspin_paused", True, "paused"),

@@ -7,6 +7,9 @@ LedFx is a real-time LED visualization system syncing audio input to networked L
 **CRITICAL**: Always use `uv run`. Never use bare `python`, `pip`, or `pytest`.
 
 - Tests: `uv run pytest ...`
+- Type checking: `uv run python tools/pyrefly_check.py` (strict; includes tests). For
+    typed callbacks, use annotated `def` functions; use concrete event classes where
+    APIs require `Event`.
 - Scripts: `uv run python ...`
 - Linting: `uv run --group dev prek run --all-files` (ruff check --fix + ruff format; `uv run --group dev prek install -f` adds it as a git hook, replacing an old pre-commit hook)
 - Packages: `uv sync`, `uv add` (not `pip install`)
