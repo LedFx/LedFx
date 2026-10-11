@@ -12,6 +12,7 @@
    /developer/releasing_a_patch
    /developer/architecture
    /developer/guides
+   /developer/silence_scene
    /README
 
 .. toctree::

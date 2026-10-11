@@ -35,6 +35,7 @@ from aiosendspin.client.models import AudioFormat
 from aiosendspin.models import AudioCodec, PlayerCommand, Roles
 from aiosendspin.models.core import (
     DeviceInfo,
+    ServerCommandPayload,
     ServerStatePayload,
     StreamStartMessage,
 )
@@ -150,6 +151,11 @@ class SendspinAudioStream:
         # True so that idle / paused streams do not trigger constant reconnects.
         self._last_audio_chunk_time: float | None = None
         self._expecting_audio: bool = False
+        self._has_connected: bool = False
+        self._sendspin_paused = False
+        self._sendspin_muted = False
+        self._sendspin_volume = 100
+        self._sendspin_disconnected = False
         self._heartbeat_task: asyncio.Task[None] | None = None
         self._identity: Identity | None = None
         self._pairing_store: ClientPairingStore | None = None
@@ -566,6 +572,9 @@ class SendspinAudioStream:
         # Arm the watchdog: we now expect audio chunks to arrive.
         self._expecting_audio = True
         self._last_audio_chunk_time = time.monotonic()
+        self._sendspin_paused = False
+        self._sendspin_disconnected = False
+        self._report_sendspin_state("sendspin_stream_started")
 
     def _stream_end_handler(self, roles: list[str] | None) -> None:
         """Called when the stream ends (track stopped, paused, or server idle).
@@ -582,6 +591,7 @@ class SendspinAudioStream:
         _LOGGER.info("Sendspin stream ended (id=%s)", id(self))
         self._expecting_audio = False
         self._last_audio_chunk_time = None
+        self._sendspin_paused = True
         # Flush buffered audio so visualisation stops immediately.
         buf_len = self._clear_playback_buffer()
         if buf_len:
@@ -590,6 +600,7 @@ class SendspinAudioStream:
                 buf_len,
                 id(self),
             )
+        self._report_sendspin_state("sendspin_stream_ended")
 
     def _stream_clear_handler(self, roles: list[str] | None) -> None:
         """Called on stream/clear (e.g. seek). Flush the playback buffer.
@@ -606,6 +617,22 @@ class SendspinAudioStream:
             roles,
             buf_len,
         )
+
+    def _report_sendspin_state(self, reason: str) -> None:
+        controller = getattr(self._ledfx, "silence_scene", None)
+        if controller is None:
+            return
+        if (
+            self._sendspin_disconnected
+            or self._sendspin_paused
+            or self._sendspin_muted
+            or self._sendspin_volume == 0
+        ):
+            controller.report_source_silence(reason)
+        elif self._expecting_audio:
+            controller.report_source_active(reason)
+        else:
+            controller.report_source_unknown(reason)
 
     def _metadata_pause_handler(self, server_state_payload: ServerStatePayload) -> None:
         """Belt-and-suspenders flush when metadata reports playback_speed == 0.
@@ -629,7 +656,11 @@ class SendspinAudioStream:
         if isinstance(progress, UndefinedField) or progress is None:
             return
 
-        if progress.playback_speed != 0:
+        self._sendspin_paused = progress.playback_speed == 0
+        self._report_sendspin_state(
+            "sendspin_paused" if self._sendspin_paused else "sendspin_playback_resumed"
+        )
+        if not self._sendspin_paused:
             return
 
         # playback_speed == 0 → paused: flush buffered audio immediately.
@@ -851,6 +882,8 @@ class SendspinAudioStream:
                     # Disarm until the reconnected stream sends stream_start again.
                     self._expecting_audio = False
                     self._last_audio_chunk_time = None
+                    self._sendspin_disconnected = True
+                    self._report_sendspin_state("sendspin_audio_timeout")
                     # Cancel the reconnect task so the loop retries the connection
                     # immediately instead of sleeping through a long backoff.
                     if self._reconnect_task and not self._reconnect_task.done():
@@ -1060,7 +1093,24 @@ class SendspinAudioStream:
                     "Sendspin server disconnected (id=%s), triggering reconnect",
                     id(self),
                 )
+                if self._has_connected:
+                    self._sendspin_disconnected = True
+                    self._expecting_audio = False
+                    self._report_sendspin_state("sendspin_disconnected")
                 _disconnect_event.set()
+
+            def _server_command_handler(command_payload: ServerCommandPayload) -> None:
+                player_command = getattr(command_payload, "player", None)
+                if player_command is None:
+                    return
+                if player_command.command == PlayerCommand.MUTE:
+                    self._sendspin_muted = bool(player_command.mute)
+                    self._report_sendspin_state(
+                        "sendspin_muted" if self._sendspin_muted else "sendspin_unmuted"
+                    )
+                elif player_command.command == PlayerCommand.VOLUME:
+                    self._sendspin_volume = int(player_command.volume or 0)
+                    self._report_sendspin_state("sendspin_volume_changed")
 
             # Register event handlers
             client.add_audio_chunk_listener(self._audio_chunk_handler)
@@ -1069,11 +1119,15 @@ class SendspinAudioStream:
             client.add_stream_clear_listener(self._stream_clear_handler)
             client.add_disconnect_listener(_disconnect_handler)
             client.add_metadata_listener(self._metadata_pause_handler)
+            client.add_server_command_listener(_server_command_handler)
             if self._now_playing_provider is not None:
                 client.add_metadata_listener(self._now_playing_provider.on_metadata)
 
             # Connect to server
             await client.connect(server_url)
+            self._has_connected = True
+            self._sendspin_disconnected = False
+            self._report_sendspin_state("sendspin_connected")
 
             _LOGGER.info(
                 "Connected to Sendspin server",
