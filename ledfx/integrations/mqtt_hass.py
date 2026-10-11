@@ -558,6 +558,9 @@ class MQTT_HASS(Integration):
                     if str(payload) == value:
                         index = key
 
+                if index == -1:
+                    return
+
                 cfg = self._ledfx.config
                 cfg.audio = cfg.audio.model_copy(
                     update={
