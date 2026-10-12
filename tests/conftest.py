@@ -33,6 +33,10 @@ LEDFX_OUT = os.path.join(TEST_CONFIG_DIR, "ledfx-stdout.log")
 lifx_emulator_thread = None
 lifx_emulator_loop = None
 lifx_emulator_server = None
+# The emulator binds an OS-assigned port, so it can't collide with anything
+# (e.g. a Windows winnat reservation over 56700). Set once it is listening;
+# LIFX test devices pass it as their (non-schema) "port" config value.
+lifx_emulator_port: int | None = None
 
 # Test device configuration (deterministic for test assertions)
 # Serial is 12 hex chars with prefix (d073d9 = matrix)
@@ -67,7 +71,7 @@ def _run_lifx_emulator():
         devices,
         manager,
         bind_address="127.0.0.1",
-        port=56700,
+        port=0,
         track_activity=False,
     )
 
@@ -88,12 +92,14 @@ def _run_lifx_emulator():
 
 def _start_lifx_emulator():
     """Start the LIFX emulator in a background thread."""
-    global lifx_emulator_thread
+    global lifx_emulator_thread, lifx_emulator_port
     lifx_emulator_thread = threading.Thread(target=_run_lifx_emulator, daemon=True)
     lifx_emulator_thread.start()
     # Wait for emulator to bind to port
     for _ in range(50):  # 5 second timeout
-        if lifx_emulator_server and lifx_emulator_server.transport:
+        endpoint = lifx_emulator_server and lifx_emulator_server.ipv4_endpoint
+        if endpoint:
+            lifx_emulator_port = endpoint[1]
             break
         time.sleep(0.1)
     else:
