@@ -29,6 +29,7 @@ from ledfx.events import (
     Event,
     Events,
     LedFxShutdownEvent,
+    VirtualUpdateEvent,
     VisualisationUpdateEvent,
 )
 from ledfx.http_manager import HttpServer
@@ -40,6 +41,7 @@ from ledfx.nowplaying.providers.smtc import SMTCNowPlayingProvider
 from ledfx.playlists import PlaylistManager
 from ledfx.scenes import Scenes
 from ledfx.sendspin.config import eager_start as sendspin_eager_start
+from ledfx.silence_scene import SilenceSceneController, StartupRecoveryOutcome
 from ledfx.utils import (
     RollingQueueHandler,
     UpdateChecker,
@@ -83,6 +85,7 @@ class LedFxCore:
     ):
 
         self.audio: AudioAnalysisSource | None = None
+        self.silence_scene: SilenceSceneController | None = None
         self.icon = icon
         self.config_dir = config_dir
 
@@ -342,14 +345,13 @@ class LedFxCore:
                 time_now + min_time_since - (time_now - due) % min_time_since
             )
 
-            # grab rows from up in virtual land
+            # Prefer dimensions captured with the frame. The virtual may have
+            # been deactivated before this deferred event is handled.
             virtual = self.virtuals.get(vis_id)
-            # protect against deleted virtuals
-            if virtual:
-                # protect against rows = 0
-                rows = max(1, virtual.rows)
-            else:
-                rows = 1
+            rows = event.rows if isinstance(event, VirtualUpdateEvent) else None
+            if rows is None:
+                rows = virtual.rows if virtual else 1
+            rows = max(1, rows)
 
             pixels = event.pixels
             pixels_len = len(pixels)
@@ -505,6 +507,7 @@ class LedFxCore:
         self.integrations = Integrations(self)
         self.scenes = Scenes(self)
         self.playlists = PlaylistManager(self)
+        self.silence_scene = SilenceSceneController(self)
         self.colors, self.gradients = build_user_collections(self)
 
         # Now Playing drives virtuals through the manager, so it starts once
@@ -575,9 +578,12 @@ class LedFxCore:
             # The check makes a blocking HTTP request.
             await asyncio.to_thread(self.check_and_notify_updates)
 
-        self._activate_startup_scene()
-
-        await self._handle_startup_playlist()
+        recovery_outcome = await self.silence_scene.recover_startup()
+        if recovery_outcome == StartupRecoveryOutcome.NO_RECOVERY:
+            self._activate_startup_scene()
+            await self._handle_startup_playlist()
+        if self.silence_scene.state in ("normal", "recovery_failed"):
+            self.silence_scene.start_monitoring()
 
         if pause_all:
             # pause at the virtuals level

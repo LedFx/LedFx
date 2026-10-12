@@ -85,6 +85,21 @@ def test_a_refusing_virtual_leaks_nothing_and_the_scene_completes(
     ledfx.config_store.request_save.assert_called()
 
 
+def test_non_persisting_activation_does_not_change_saved_virtual_effects(
+    ledfx: MagicMock, scenes: Scenes
+) -> None:
+    virtual = ledfx.virtuals.get_or_raise(BIRD)
+    entry = virtual.entry
+    assert entry is not None
+    saved_effect = entry.effect
+    ledfx.config_store.request_save.reset_mock()
+
+    assert scenes.activate("plain", save_config_after=False, persist=False)
+
+    assert entry.effect == saved_effect
+    ledfx.config_store.request_save.assert_not_called()
+
+
 def test_safe_mode_refuses_the_whole_call_and_changes_nothing(
     ledfx: MagicMock, scenes: Scenes
 ) -> None:
@@ -149,7 +164,9 @@ def test_scenes_only_use_the_manager(
         (BIRD, "singleColor"),
     ]
     assert [c.args for c in clear_effect.call_args_list] == [(BIRD,)] * 2
-    assert all(c.kwargs == {"fallback": None} for c in set_effect.call_args_list)
+    assert all(
+        c.kwargs == {"fallback": None, "store": True} for c in set_effect.call_args_list
+    )
 
 
 def test_scenes_source_has_no_direct_effect_calls() -> None:

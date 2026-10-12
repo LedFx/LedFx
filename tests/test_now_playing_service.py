@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from ledfx.configuration.fields import VirtualIdStr
 from ledfx.configuration.plugin import PluginConfig
 from ledfx.effects import DummyEffect, Effect
-from ledfx.events import Event
+from ledfx.events import EffectSetEvent, EffectUpdatedEvent, Event, Events
 from ledfx.nowplaying.models import (
     ArtworkReference,
     NowPlayingState,
@@ -663,6 +663,30 @@ class TestGradientApplicationConfig:
 class TestApplyGradientToVirtuals:
     """Tests for apply_gradient_to_virtuals(), which goes through the manager."""
 
+    def test_effect_updates_are_marked_automated(
+        self, service_v, ledfx_with_virtuals
+    ) -> None:
+        _start(ledfx_with_virtuals, BIRD, "gradient")
+        service_v._state.current_gradient = GRADIENT
+        events = Events(ledfx_with_virtuals)
+        fired: list[Event] = []
+        fire_event = events.fire_event
+
+        def record_event(event: Event) -> None:
+            fire_event(event)
+            fired.append(event)
+
+        events.fire_event = record_event
+        ledfx_with_virtuals.events = events
+
+        assert service_v.apply_gradient_to_virtuals() == 1
+
+        effect_events = [
+            event for event in fired if isinstance(event, EffectUpdatedEvent)
+        ]
+        assert len(effect_events) == 1
+        assert effect_events[0]._automated is True
+
     def test_no_gradient_returns_zero(self, service_v):
         assert service_v.apply_gradient_to_virtuals() == 0
 
@@ -1069,6 +1093,28 @@ def set_effect_spy(ledfx_with_virtuals, monkeypatch):
 
 class TestApplyAlbumArtToVirtuals:
     """Tests for NowPlayingService._apply_album_art_to_virtuals()."""
+
+    def test_effect_set_is_marked_automated(
+        self, service_v, ledfx_with_virtuals
+    ) -> None:
+        _enable(service_v, "album_art", [BIRD])
+        _set_artwork_on_service(service_v)
+        events = Events(ledfx_with_virtuals)
+        fired: list[Event] = []
+        fire_event = events.fire_event
+
+        def record_event(event: Event) -> None:
+            fire_event(event)
+            fired.append(event)
+
+        events.fire_event = record_event
+        ledfx_with_virtuals.events = events
+
+        assert service_v._apply_album_art_to_virtuals() == 1
+
+        effect_events = [event for event in fired if isinstance(event, EffectSetEvent)]
+        assert len(effect_events) == 1
+        assert effect_events[0]._automated is True
 
     def test_disabled_returns_zero(self, service_v, ledfx_with_virtuals):
         _enable(service_v, "album_art", [BIRD])

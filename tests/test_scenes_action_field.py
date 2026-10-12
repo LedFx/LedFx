@@ -37,7 +37,7 @@ class _DummyVirtual:
         self._cleared = False
         self._set_effect_calls = []
 
-    def clear_effect(self):
+    def clear_effect(self, *, store: bool = True):
         self._cleared = True
         self.active_effect = None
 
@@ -106,11 +106,12 @@ class _DummyVirtuals:
         config: PluginConfig,
         *,
         fallback: float | None = None,
+        store: bool = True,
     ) -> None:
         effect = self._effects.create(None, type_id, config.as_dict())
         self._virtuals[virtual_id].set_effect(effect)
 
-    def clear_effect(self, virtual_id: str) -> None:
+    def clear_effect(self, virtual_id: str, *, store: bool = True) -> None:
         self._virtuals[virtual_id].clear_effect()
 
 
