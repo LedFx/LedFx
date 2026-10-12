@@ -27,6 +27,9 @@ source lifecycle event arrives.
 current audio classification, pending timeout, active override, restoration,
 and recovery-journal status. When no scene is selected, each virtual emits its
 normal final zero-pixel visualization frame before deactivation.
+WebSocket clients may subscribe to `silence_scene_entered` and
+`silence_scene_exited`. These are signal-only events; clients can fetch current
+status or virtual configuration as needed.
 
 ## Runtime Behavior
 
@@ -82,3 +85,27 @@ A deliberate scene/effect/playlist operation supersedes the temporary override
 and invalidates its journal. Disabling the feature or changing/deleting the
 selected silence scene restores the prior state first. Runtime status is not
 written to `config.json`.
+
+## Frontend Follow-up
+
+The frontend implementation belongs in a separate PR. Its configuration UI
+should expose the existing `silence_scene` settings:
+
+- `enabled`: toggle, default off.
+- `scene_id`: optional scene selection. `null` means clear effects and
+  deactivate all virtuals after the timeout.
+- `timeout_seconds`: non-negative duration, default 5 seconds.
+
+Do not add a second audio threshold control. Silence classification uses the
+existing filtered volume and `audio.min_volume` setting. Save settings through
+`PUT /api/config`.
+
+For live status, read `silence_scene` from `GET /api/info`. It contains
+`enabled`, `scene_id`, `timeout_seconds`, `audio_silent`, `timeout_pending`,
+`silence_scene_active`, `restoring`, `state`, `reason`, and `recovery_pending`.
+
+Subscribe to `silence_scene_entered` and `silence_scene_exited`. These are
+signal-only events containing only `event_type`; do not expect a status payload.
+On either event, refetch `/api/info` and `/api/virtuals` so virtual active/effect
+state and matrix layout/configuration are authoritative. Do not rely on
+`scene_activated` for this refresh: it is a separate named-scene notification.

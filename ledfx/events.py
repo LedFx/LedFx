@@ -56,6 +56,8 @@ class Event:
     NOW_PLAYING_GRADIENT_CHANGED = "now_playing_gradient_changed"
     NOW_PLAYING_CLEARED = "now_playing_cleared"
     AUDIO_SOURCE_ERROR = "audio_source_error"
+    SILENCE_SCENE_ENTERED = "silence_scene_entered"
+    SILENCE_SCENE_EXITED = "silence_scene_exited"
 
     def __init__(self, type: str):
         """
@@ -417,6 +419,20 @@ class SceneDeletedEvent(Event):
     def __init__(self, scene_id):
         super().__init__(Event.SCENE_DELETED)
         self.scene_id = scene_id
+
+
+class SilenceSceneEnteredEvent(Event):
+    """Event emitted after a silence-scene override becomes active."""
+
+    def __init__(self) -> None:
+        super().__init__(Event.SILENCE_SCENE_ENTERED)
+
+
+class SilenceSceneExitedEvent(Event):
+    """Event emitted after a silence-scene override ends."""
+
+    def __init__(self) -> None:
+        super().__init__(Event.SILENCE_SCENE_EXITED)
 
 
 class PlaylistStartedEvent(Event):

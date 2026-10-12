@@ -17,6 +17,8 @@ from ledfx.events import (
     EffectSetEvent,
     Event,
     SceneActivatedEvent,
+    SilenceSceneEnteredEvent,
+    SilenceSceneExitedEvent,
 )
 from ledfx.silence_scene import (
     SilenceRecoverySnapshot,
@@ -189,6 +191,13 @@ async def test_threshold_silence_persists_before_scene_then_restores(
     await _elapse_timeout(controller)
     assert core.scenes.activation_saw_durable_snapshot is True
     assert controller.state == "silence_active"
+    entered = [
+        event
+        for event in core.events.fired
+        if isinstance(event, SilenceSceneEnteredEvent)
+    ]
+    assert len(entered) == 1
+    assert entered[0].to_dict() == {"event_type": Event.SILENCE_SCENE_ENTERED}
     persisted = json.loads(journal_path.read_text(encoding="utf-8"))
     assert persisted["version"] == 1
     assert persisted["phase"] == "active"
@@ -199,6 +208,13 @@ async def test_threshold_silence_persists_before_scene_then_restores(
         await controller._operation
     assert controller.state == "normal"
     assert not journal_path.exists()
+    exited = [
+        event
+        for event in core.events.fired
+        if isinstance(event, SilenceSceneExitedEvent)
+    ]
+    assert len(exited) == 1
+    assert exited[0].to_dict() == {"event_type": Event.SILENCE_SCENE_EXITED}
 
 
 @pytest.mark.asyncio
@@ -251,6 +267,9 @@ async def test_no_selected_scene_deactivates_then_restores_virtuals(
     assert core.scenes.activation_saw_durable_snapshot is False
     assert controller.state == "silence_active"
     assert clear_frames == ["v1"]
+    assert any(
+        isinstance(event, SilenceSceneEnteredEvent) for event in core.events.fired
+    )
 
     controller.report_source_active("test_active")
     await asyncio.sleep(0)
@@ -263,6 +282,9 @@ async def test_no_selected_scene_deactivates_then_restores_virtuals(
     assert virtual.active_effect.config.as_dict() == original_config
     assert controller.state == "normal"
     assert not journal_path.exists()
+    assert any(
+        isinstance(event, SilenceSceneExitedEvent) for event in core.events.fired
+    )
 
 
 @pytest.mark.asyncio

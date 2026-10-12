@@ -18,6 +18,8 @@ from ledfx.events import (
     BaseConfigUpdateEvent,
     Event,
     SceneDeletedEvent,
+    SilenceSceneEnteredEvent,
+    SilenceSceneExitedEvent,
 )
 from ledfx.fsutil import fsync_directory
 from ledfx.playlists import PlaylistRecoveryCheckpoint
@@ -66,6 +68,7 @@ class SilenceSceneController:
         self._operation_lock = asyncio.Lock()
         self._monitoring = False
         self._audio_source: AudioAnalysisSource | None = None
+        self._override_active = False
         self._resume_after_activation = False
         self._journal: SilenceRecoverySnapshot | None = None
         self._recovery_failed = False
@@ -710,3 +713,9 @@ class SilenceSceneController:
         old_state = self._state
         self._state = state
         _LOGGER.info("Silence scene state: %s -> %s", old_state, state)
+        if state == "silence_active":
+            self._override_active = True
+            self._ledfx.events.fire_event(SilenceSceneEnteredEvent())
+        elif state == "normal" and self._override_active:
+            self._override_active = False
+            self._ledfx.events.fire_event(SilenceSceneExitedEvent())
