@@ -57,6 +57,11 @@ _LOGGER = logging.getLogger(__name__)
 # (e.g. 44100/60 = 735 for local mic, 48000/60 = 800 for Sendspin).
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
 
+# Late sub-chunks are dropped silently unless they are this far behind,
+# in which case a throttled warning is logged (timing is likely broken).
+_LATE_WARN_THRESHOLD_US = 1_000_000
+_LATE_WARN_INTERVAL_S = 30.0
+
 
 class _LedFxConfig(LedFxNowPlaying, Protocol):
     """LedFx fields needed to persist Sendspin state."""
@@ -101,6 +106,10 @@ class SendspinAudioStream:
         instance_id: str = "",
         ledfx: _LedFxConfig | None = None,
     ) -> None:
+        """Set up stream state; see the class docstring for the arguments.
+
+        ``ledfx`` is optional and enables the Now Playing bridge.
+        """
         self.config = config
         self.callback = callback
         self._instance_id = instance_id
@@ -143,6 +152,10 @@ class SendspinAudioStream:
         # callback receives exactly _SUB_CHUNK_SAMPLES samples.
         self._leftover: NDArray[np.float32] = np.array([], dtype=np.float32)
         self._leftover_ts: int = 0  # play-time (us) of leftover samples
+
+        # Throttling state for the "sub-chunks dropped as late" warning.
+        self._late_dropped: int = 0
+        self._late_warn_time: float | None = None
 
         # Heartbeat/watchdog state.
         # _last_audio_chunk_time is None until the first audio chunk after a
@@ -232,6 +245,43 @@ class SendspinAudioStream:
                 exc_info=True,
             )
 
+    def _now_us(self, loop: asyncio.AbstractEventLoop) -> int:
+        """Return "now" in the same clock domain as ``compute_play_time()``.
+
+        aiosendspin computes play times with the client's own clock
+        (``RawMonotonicClock`` = CLOCK_MONOTONIC_RAW on Linux), while
+        ``loop.time()`` is CLOCK_MONOTONIC, which is slewed by NTP.  On
+        long-running hosts the two drift apart by seconds, so comparing
+        a play time against ``loop.time()`` drops every chunk with less
+        lead time than the drift, or delays chunks by the drift.
+        The loop clock is only a fallback when no client exists.
+        """
+        client = self._client
+        if client is not None:
+            return client.now_us()
+        return int(loop.time() * 1_000_000)
+
+    def _warn_late_drop(self, late_us: int) -> None:
+        """Log a throttled warning when sub-chunks arrive far too late."""
+        self._late_dropped += 1
+        if late_us < _LATE_WARN_THRESHOLD_US:
+            return
+        now = time.monotonic()
+        if (
+            self._late_warn_time is not None
+            and now - self._late_warn_time < _LATE_WARN_INTERVAL_S
+        ):
+            return
+        self._late_warn_time = now
+        _LOGGER.warning(
+            "Sendspin audio arriving %.1f s past its play time; "
+            "dropped %d late sub-chunks (id=%s)",
+            late_us / 1_000_000,
+            self._late_dropped,
+            id(self),
+        )
+        self._late_dropped = 0
+
     def _schedule_mono_samples(
         self,
         samples: NDArray[np.float32],
@@ -259,7 +309,7 @@ class SendspinAudioStream:
         loop = self._loop
         if loop is None:
             return
-        now_us = int(loop.time() * 1_000_000)
+        now_us = self._now_us(loop)
 
         # Prepend any leftover samples from the previous frame and use
         # the leftover's original timestamp as the base so carryover
@@ -282,6 +332,7 @@ class SendspinAudioStream:
                 for i in range(n_full):
                     sub_play = base_ts + i * sub_duration_us
                     if sub_play < now_us:
+                        self._warn_late_drop(now_us - sub_play)
                         continue
                     start = i * _SUB_CHUNK_SAMPLES
                     end = start + _SUB_CHUNK_SAMPLES
@@ -651,7 +702,7 @@ class SendspinAudioStream:
                     loop = self._loop
                     if loop is None:
                         break
-                    now_us = int(loop.time() * 1_000_000)
+                    now_us = self._now_us(loop)
                     if play_time_us <= now_us:
                         _, _, chunk = heapq.heappop(self._chunk_buffer)
 
