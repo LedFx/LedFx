@@ -111,5 +111,8 @@ For live status, read `silence_scene` from `GET /api/info`. It contains
 Subscribe to `silence_scene_entered` and `silence_scene_exited`. These are
 signal-only events containing only `event_type`; do not expect a status payload.
 On either event, refetch `/api/info` and `/api/virtuals` so virtual active/effect
-state and matrix layout/configuration are authoritative. Do not rely on
+state and matrix layout/configuration are authoritative. Also refresh playlist
+runtime state with `PUT /api/playlists` and `{"action":"state"}` so playlist
+widgets reflect the pause or resumed checkpoint. Refetch playlist definitions
+with `GET /api/playlists` only if the UI needs them. Do not rely on
 `scene_activated` for this refresh: it is a separate named-scene notification.

@@ -691,6 +691,12 @@ class SendspinAudioStream:
         if controller is not None:
             controller.report_source_unknown(reason)
 
+    def _handle_sendspin_volume(self, volume: int | None) -> None:
+        if volume is None:
+            return
+        self._sendspin_volume = int(volume)
+        self._report_sendspin_state("sendspin_volume_changed")
+
     def _metadata_pause_handler(self, server_state_payload: ServerStatePayload) -> None:
         """Belt-and-suspenders flush when metadata reports playback_speed == 0.
 
@@ -1166,8 +1172,7 @@ class SendspinAudioStream:
                         "sendspin_muted" if self._sendspin_muted else "sendspin_unmuted"
                     )
                 elif player_command.command == PlayerCommand.VOLUME:
-                    self._sendspin_volume = int(player_command.volume or 0)
-                    self._report_sendspin_state("sendspin_volume_changed")
+                    self._handle_sendspin_volume(player_command.volume)
 
             # Register event handlers
             client.add_audio_chunk_listener(self._audio_chunk_handler)

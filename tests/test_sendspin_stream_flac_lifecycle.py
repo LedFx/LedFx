@@ -134,6 +134,30 @@ class _SilenceSceneStub:
 
 
 class TestSendspinSilenceClassification:
+    def test_missing_server_volume_preserves_previous_value_and_state(
+        self, stream: "SendspinAudioStream"
+    ):
+        calls: list[tuple[str, str]] = []
+        stream._ledfx = SimpleNamespace(silence_scene=_SilenceSceneStub(calls))
+        stream._sendspin_volume = 75
+
+        stream._handle_sendspin_volume(None)
+
+        assert stream._sendspin_volume == 75
+        assert calls == []
+
+    def test_explicit_zero_server_volume_reports_silence(
+        self, stream: "SendspinAudioStream"
+    ):
+        calls: list[tuple[str, str]] = []
+        stream._ledfx = SimpleNamespace(silence_scene=_SilenceSceneStub(calls))
+        stream._sendspin_volume = 75
+
+        stream._handle_sendspin_volume(0)
+
+        assert stream._sendspin_volume == 0
+        assert calls == [("silence", "sendspin_volume_changed")]
+
     def test_stream_start_reports_unknown_until_volume_is_measured(
         self, stream: "SendspinAudioStream"
     ):
