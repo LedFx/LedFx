@@ -776,7 +776,11 @@ class Virtual:
             frame = self.assembled_frame
 
         self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
+            VirtualUpdateEvent(
+                self.id,
+                self._effective_to_physical_pixels(frame),
+                rows=self.rows,
+            )
         )
 
     def set_calibration(self, calibration):

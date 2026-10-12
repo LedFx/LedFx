@@ -2,7 +2,7 @@
 
 import asyncio
 import json
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,7 +13,11 @@ import pytest_asyncio
 
 from ledfx.configuration.models import LedFxConfig
 from ledfx.core import LedFxCore
-from ledfx.events import EffectSetEvent, SceneActivatedEvent
+from ledfx.events import (
+    EffectSetEvent,
+    Event,
+    SceneActivatedEvent,
+)
 from ledfx.silence_scene import (
     SilenceRecoverySnapshot,
     SilenceSceneController,
@@ -22,15 +26,41 @@ from ledfx.silence_scene import (
 
 
 class _Events:
+    def __init__(self) -> None:
+        self.fired = []
+
     def add_listener(self, *_args, **_kwargs):
         return lambda: None
 
-    def fire_event(self, _event):
-        pass
+    def fire_event(self, event: Event) -> None:
+        self.fired.append(event)
 
     @contextmanager
     def automated(self):
         yield
+
+
+class _AudioSource:
+    def __init__(self) -> None:
+        self._has_volume_measurement = False
+        self._subscriber_threshold = 1
+        self._callbacks: list[Callable[[], None]] = [self._analysis_callback]
+        self.active = True
+
+    def _analysis_callback(self) -> None:
+        pass
+
+    def volume(self) -> float | None:
+        return None
+
+    def subscribe(self, callback: Callable[[], None]) -> None:
+        self._callbacks.append(callback)
+        self.active = True
+
+    def unsubscribe(self, callback: Callable[[], None]) -> None:
+        self._callbacks.remove(callback)
+        if len(self._callbacks) <= self._subscriber_threshold:
+            self.active = False
 
 
 class _Playlists:
@@ -104,7 +134,7 @@ async def controller_core(tmp_path: Path) -> tuple[SimpleNamespace, Path]:
     core = SimpleNamespace(
         config_dir=str(tmp_path),
         config=config,
-        audio=None,
+        audio=_AudioSource(),
         loop=asyncio.get_running_loop(),
         events=_Events(),
         playlists=_Playlists(),
@@ -119,6 +149,29 @@ async def _elapse_timeout(controller: SilenceSceneController) -> None:
     controller._timeout_elapsed()
     if controller._operation is not None:
         await controller._operation
+
+
+def test_audio_monitor_keeps_source_alive_after_effect_unsubscribes(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, _journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    audio = core.audio
+    controller.start_monitoring()
+
+    def effect_callback() -> None:
+        pass
+
+    audio.subscribe(effect_callback)
+    audio.unsubscribe(effect_callback)
+
+    assert audio.active is True
+    assert controller._keep_audio_source_active in audio._callbacks
+
+    controller.stop_monitoring()
+
+    assert audio.active is False
+    assert controller._keep_audio_source_active not in audio._callbacks
 
 
 @pytest.mark.asyncio
@@ -164,6 +217,18 @@ async def test_no_selected_scene_deactivates_then_restores_virtuals(
         ),
     )
     core.virtuals = _Virtuals([virtual])
+    clear_frames: list[str] = []
+
+    def flush_pending_clear_frame() -> None:
+        pass
+
+    def clear_frame() -> None:
+        assert virtual.active is True
+        clear_frames.append(virtual.id)
+        virtual.active = False
+
+    virtual.flush_pending_clear_frame = flush_pending_clear_frame
+    virtual.clear_frame = clear_frame
 
     class _ConfigModel:
         @staticmethod
@@ -185,6 +250,7 @@ async def test_no_selected_scene_deactivates_then_restores_virtuals(
     assert journal_path.exists()
     assert core.scenes.activation_saw_durable_snapshot is False
     assert controller.state == "silence_active"
+    assert clear_frames == ["v1"]
 
     controller.report_source_active("test_active")
     await asyncio.sleep(0)

@@ -29,6 +29,7 @@ from ledfx.events import (
     Event,
     Events,
     LedFxShutdownEvent,
+    VirtualUpdateEvent,
     VisualisationUpdateEvent,
 )
 from ledfx.http_manager import HttpServer
@@ -344,14 +345,13 @@ class LedFxCore:
                 time_now + min_time_since - (time_now - due) % min_time_since
             )
 
-            # grab rows from up in virtual land
+            # Prefer dimensions captured with the frame. The virtual may have
+            # been deactivated before this deferred event is handled.
             virtual = self.virtuals.get(vis_id)
-            # protect against deleted virtuals
-            if virtual:
-                # protect against rows = 0
-                rows = max(1, virtual.rows)
-            else:
-                rows = 1
+            rows = event.rows if isinstance(event, VirtualUpdateEvent) else None
+            if rows is None:
+                rows = virtual.rows if virtual else 1
+            rows = max(1, rows)
 
             pixels = event.pixels
             pixels_len = len(pixels)

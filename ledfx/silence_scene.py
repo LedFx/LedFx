@@ -24,6 +24,7 @@ from ledfx.playlists import PlaylistRecoveryCheckpoint
 
 if TYPE_CHECKING:
     from ledfx.core import LedFxCore
+    from ledfx.effects.audio import AudioAnalysisSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class SilenceSceneController:
         self._operation: asyncio.Task[None] | None = None
         self._operation_lock = asyncio.Lock()
         self._monitoring = False
+        self._audio_source: AudioAnalysisSource | None = None
         self._resume_after_activation = False
         self._journal: SilenceRecoverySnapshot | None = None
         self._recovery_failed = False
@@ -111,6 +113,8 @@ class SilenceSceneController:
 
     def start_monitoring(self) -> None:
         self._monitoring = True
+        if self._ledfx.config.silence_scene.enabled:
+            self._ensure_audio_monitor()
         if self._source_forced_silence:
             self._handle_activity(
                 False, self._last_reason or "audio_source_unavailable"
@@ -128,15 +132,56 @@ class SilenceSceneController:
     def stop_monitoring(self) -> None:
         self._monitoring = False
         self._cancel_timer()
+        self._release_audio_monitor()
+
+    def _ensure_audio_monitor(self) -> None:
+        source = self._ledfx.audio
+        if source is None:
+            try:
+                from ledfx.effects.audio import AudioAnalysisSource
+
+                source = AudioAnalysisSource(
+                    self._ledfx, self._ledfx.config.audio.model_dump()
+                )
+                self._ledfx.audio = source
+            except Exception:
+                _LOGGER.exception("Could not start audio monitoring for silence scene")
+                return
+        if source is self._audio_source:
+            return
+        self._release_audio_monitor()
+        try:
+            source.subscribe(self._keep_audio_source_active)
+        except Exception:
+            _LOGGER.exception("Could not subscribe to audio for silence monitoring")
+            return
+        self._audio_source = source
+
+    def _release_audio_monitor(self) -> None:
+        if self._audio_source is None:
+            return
+        self._audio_source.unsubscribe(self._keep_audio_source_active)
+        self._audio_source = None
+
+    def _keep_audio_source_active(self) -> None:
+        pass
 
     def report_volume(self, volume: float | None) -> None:
         """Called by the audio callback; dispatch only classification changes."""
         if volume is None or self._source_forced_silence:
             return
-        active = volume > self._ledfx.config.audio.min_volume
+        min_volume = self._ledfx.config.audio.min_volume
+        active = volume > min_volume
         if active == getattr(self, "_last_reported_active", None):
             return
         self._last_reported_active = active
+        _LOGGER.info(
+            "Silence scene audio classified as %s (filtered volume %.3f, "
+            "audio.min_volume %.3f)",
+            "active" if active else "silent",
+            volume,
+            min_volume,
+        )
         loop = self._ledfx.loop
         if loop.is_running():
             loop.call_soon_threadsafe(self._handle_activity, active, "audio")
@@ -313,7 +358,10 @@ class SilenceSceneController:
                     for virtual in self._ledfx.virtuals.values():
                         virtual_id = VirtualIdStr(virtual.id)
                         self._ledfx.virtuals.clear_effect(virtual_id, store=False)
-                        self._ledfx.virtuals.set_runtime_active(virtual_id, False)
+                        # Flush the final zero frame while the virtual is still
+                        # active; deactivation first would suppress its update.
+                        virtual.flush_pending_clear_frame()
+                        virtual.clear_frame()
             await asyncio.sleep(0)
             snapshot["phase"] = "active"
             self._write_journal(snapshot)
@@ -591,6 +639,11 @@ class SilenceSceneController:
             return
         self._cancel_timer()
         settings = self._ledfx.config.silence_scene
+        if self._monitoring:
+            if settings.enabled:
+                self._ensure_audio_monitor()
+            else:
+                self._release_audio_monitor()
         if self._state in ("silence_active", "activating") and (
             not settings.enabled
             or self._journal is not None

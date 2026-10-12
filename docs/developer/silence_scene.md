@@ -25,7 +25,8 @@ source lifecycle event arrives.
 `GET /api/config` includes the typed settings. `GET /api/info` includes a
 `silence_scene` status object with enabled state, selected scene, timeout,
 current audio classification, pending timeout, active override, restoration,
-and recovery-journal status.
+and recovery-journal status. When no scene is selected, each virtual emits its
+normal final zero-pixel visualization frame before deactivation.
 
 ## Runtime Behavior
 

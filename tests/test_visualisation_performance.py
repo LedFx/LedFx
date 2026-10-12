@@ -59,6 +59,19 @@ def test_preview_work_tracks_late_subscribe_and_unsubscribe(
     assert resize.call_count == 1
 
 
+def test_preview_uses_rows_captured_before_virtual_deactivation() -> None:
+    core = make_core()
+    virtual = SimpleNamespace(rows=1)
+    core.virtuals["matrix"] = virtual
+    received: list[VisualisationUpdateEvent] = []
+    core.events.add_listener(received.append, Event.VISUALISATION_UPDATE)
+
+    event = VirtualUpdateEvent("matrix", np.zeros((64, 3)), rows=8)
+    core.visualisation_update_listener(event)
+
+    assert received[0].shape == (8, 8)
+
+
 @pytest.mark.parametrize("event_type", [DeviceUpdateEvent, VirtualUpdateEvent])
 @pytest.mark.parametrize("dtype", [np.float64, np.uint8])
 def test_preview_preserves_strided_rgb_bytes(

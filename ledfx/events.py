@@ -255,10 +255,11 @@ class DevicesUpdatedEvent(Event):
 class VirtualUpdateEvent(Event):
     """Event emitted when a virtual's pixels are updated"""
 
-    def __init__(self, virtual_id: str, pixels: np.ndarray):
+    def __init__(self, virtual_id: str, pixels: np.ndarray, rows: int | None = None):
         super().__init__(Event.VIRTUAL_UPDATE)
         self.virtual_id = virtual_id
         self.pixels = pixels
+        self.rows = rows
 
 
 class GlobalPauseEvent(Event):
