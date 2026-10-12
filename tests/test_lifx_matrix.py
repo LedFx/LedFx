@@ -32,7 +32,11 @@ def test_new_matrix_device_virtual_has_matrix_rows() -> None:
         f"{API}/devices",
         json={
             "type": "lifx",
-            "config": {"name": DEVICE_NAME, "ip_address": "127.0.0.1"},
+            "config": {
+                "name": DEVICE_NAME,
+                "ip_address": "127.0.0.1",
+                "port": conftest.lifx_emulator_port,
+            },
         },
         timeout=30,
     ).json()
