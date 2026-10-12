@@ -3,8 +3,8 @@
 aiosendspin's ``compute_play_time()`` returns times in the client's clock
 domain (CLOCK_MONOTONIC_RAW on Linux), while ``loop.time()`` is
 CLOCK_MONOTONIC.  On long-running hosts these drift apart by seconds; mixing
-them silently dropped every audio sub-chunk (effects froze after a few
-seconds) or released chunks far too late.
+them silently dropped every sub-chunk with less lead time than the drift
+(effects froze after a few seconds) or released chunks far too late.
 """
 
 import asyncio
@@ -27,7 +27,8 @@ _SKEW_US = 21_000_000
 
 
 @pytest.fixture()
-def _skip_if_no_aiosendspin():
+def _skip_if_no_aiosendspin() -> None:
+    """Skip the test when the optional aiosendspin dependency is missing."""
     try:
         from aiosendspin.client import SendspinClient  # noqa: F401
     except ImportError:
@@ -38,23 +39,27 @@ class _FakeClient:
     """Stand-in for SendspinClient exposing only the client clock."""
 
     def __init__(self, now_us: int) -> None:
+        """Start the fake client clock at *now_us* microseconds."""
         self.now_us_value = now_us
 
     def now_us(self) -> int:
+        """Return the fake client clock in microseconds."""
         return self.now_us_value
 
 
 def _as_client(fake: _FakeClient) -> "SendspinClient":
+    """Type the fake as a SendspinClient for assignment to ``_client``."""
     return cast("SendspinClient", fake)
 
 
 def _discard(*_args: object) -> None:
-    pass
+    """Audio callback that ignores every chunk."""
 
 
 def _make_stream(
     callback: Callable[..., None] = _discard,
 ) -> "SendspinAudioStream":
+    """Create a SendspinAudioStream without a real SendspinClient."""
     from ledfx.sendspin.stream import SendspinAudioStream
 
     with patch("ledfx.sendspin.stream.SendspinClient", MagicMock()):
@@ -66,6 +71,7 @@ def _make_stream(
 
 
 def _loop_at(time_us: int) -> MagicMock:
+    """Return a fake event loop whose ``time()`` reads *time_us*."""
     loop = MagicMock()
     loop.time.return_value = time_us / 1_000_000
     return loop
@@ -73,7 +79,9 @@ def _loop_at(time_us: int) -> MagicMock:
 
 @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
 class TestScheduleUsesClientClock:
-    def test_loop_clock_ahead_does_not_drop_chunks(self):
+    """``_schedule_mono_samples`` judges lateness on the client clock."""
+
+    def test_loop_clock_ahead_does_not_drop_chunks(self) -> None:
         """Loop clock 21 s ahead of the client clock: nothing is dropped."""
         from ledfx.sendspin.stream import _SUB_CHUNK_SAMPLES
 
@@ -111,6 +119,7 @@ class TestScheduleUsesClientClock:
     def test_slightly_late_chunks_do_not_warn(
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
+        """Chunks under 1 s late are dropped without a warning."""
         from ledfx.sendspin.stream import _SUB_CHUNK_SAMPLES
 
         client_now = 1_000_000_000
@@ -125,7 +134,8 @@ class TestScheduleUsesClientClock:
         assert stream._chunk_buffer == []
         assert not [r for r in caplog.records if "late sub-chunks" in r.message]
 
-    def test_falls_back_to_loop_clock_without_client(self):
+    def test_falls_back_to_loop_clock_without_client(self) -> None:
+        """Without a client, "now" comes from the event loop clock."""
         stream = _make_stream()
         stream._client = None
         assert stream._now_us(_loop_at(123_000_000)) == 123_000_000
@@ -133,16 +143,20 @@ class TestScheduleUsesClientClock:
 
 @pytest.mark.usefixtures("_skip_if_no_aiosendspin")
 class TestPlaybackSchedulerUsesClientClock:
-    def test_loop_clock_behind_releases_on_client_time(self):
+    """``_playback_scheduler`` releases chunks on the client clock."""
+
+    def test_loop_clock_behind_releases_on_client_time(self) -> None:
         """Loop clock 21 s behind: chunks due on the client clock are released."""
         from ledfx.sendspin.stream import _SUB_CHUNK_SAMPLES
 
         released: list[np.ndarray] = []
 
         async def run() -> None:
+            """Run the scheduler briefly with the loop clock behind."""
             loop = asyncio.get_running_loop()
 
             def capture(chunk: np.ndarray, *_args: object) -> None:
+                """Record each chunk the scheduler releases."""
                 released.append(chunk)
 
             stream = _make_stream(capture)

@@ -106,6 +106,10 @@ class SendspinAudioStream:
         instance_id: str = "",
         ledfx: _LedFxConfig | None = None,
     ) -> None:
+        """Set up stream state; see the class docstring for the arguments.
+
+        ``ledfx`` is optional and enables the Now Playing bridge.
+        """
         self.config = config
         self.callback = callback
         self._instance_id = instance_id
@@ -248,7 +252,8 @@ class SendspinAudioStream:
         (``RawMonotonicClock`` = CLOCK_MONOTONIC_RAW on Linux), while
         ``loop.time()`` is CLOCK_MONOTONIC, which is slewed by NTP.  On
         long-running hosts the two drift apart by seconds, so comparing
-        a play time against ``loop.time()`` drops (or delays) every chunk.
+        a play time against ``loop.time()`` drops every chunk with less
+        lead time than the drift, or delays chunks by the drift.
         The loop clock is only a fallback when no client exists.
         """
         client = self._client
