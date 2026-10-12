@@ -203,7 +203,10 @@ class SendspinAudioStream:
         # True while chunks are arriving (guards against a missed stream_start).
         now_mono = time.monotonic()
         self._last_audio_chunk_time = now_mono
+        was_expecting_audio = self._expecting_audio
         self._expecting_audio = True
+        if not was_expecting_audio:
+            self._report_sendspin_state("sendspin_audio_received")
 
         try:
             play_time_us = self._client.compute_play_time(timestamp)
@@ -678,9 +681,14 @@ class SendspinAudioStream:
             or self._sendspin_paused
             or self._sendspin_muted
             or self._sendspin_volume == 0
-        ):
+        ) or not self._expecting_audio:
             controller.report_source_silence(reason)
         else:
+            self._report_sendspin_unknown(reason)
+
+    def _report_sendspin_unknown(self, reason: str) -> None:
+        controller = getattr(self._ledfx, "silence_scene", None)
+        if controller is not None:
             controller.report_source_unknown(reason)
 
     def _metadata_pause_handler(self, server_state_payload: ServerStatePayload) -> None:

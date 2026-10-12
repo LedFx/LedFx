@@ -166,7 +166,7 @@ class TestSendspinSilenceClassification:
             ("unknown", "sendspin_stream_started"),
         ]
 
-    def test_reconnection_and_unmute_do_not_claim_audio_activity(
+    def test_idle_connection_and_unmute_without_stream_report_silence(
         self, stream: "SendspinAudioStream"
     ):
         calls: list[tuple[str, str]] = []
@@ -179,8 +179,8 @@ class TestSendspinSilenceClassification:
         stream._report_sendspin_state("sendspin_unmuted")
 
         assert calls == [
-            ("unknown", "sendspin_connected"),
-            ("unknown", "sendspin_unmuted"),
+            ("silence", "sendspin_connected"),
+            ("silence", "sendspin_unmuted"),
         ]
 
     def test_explicit_pause_mute_zero_volume_and_disconnect_report_silence(
@@ -189,6 +189,7 @@ class TestSendspinSilenceClassification:
         calls: list[tuple[str, str]] = []
         controller = _SilenceSceneStub(calls)
         stream._ledfx = SimpleNamespace(silence_scene=controller)
+        stream._expecting_audio = True
         for attribute, value, reason in (
             ("_sendspin_paused", True, "paused"),
             ("_sendspin_paused", False, "unpaused"),
@@ -200,6 +201,13 @@ class TestSendspinSilenceClassification:
             setattr(stream, attribute, value)
             stream._report_sendspin_state(reason)
 
+        stream._sendspin_disconnected = False
+        stream._sendspin_volume = 100
+        stream._sendspin_paused = False
+        stream._report_sendspin_state("sendspin_playback_resumed")
+        stream._sendspin_muted = False
+        stream._report_sendspin_state("sendspin_unmuted")
+
         assert calls == [
             ("silence", "paused"),
             ("unknown", "unpaused"),
@@ -207,6 +215,8 @@ class TestSendspinSilenceClassification:
             ("unknown", "unmuted"),
             ("silence", "zero_volume"),
             ("silence", "disconnected"),
+            ("unknown", "sendspin_playback_resumed"),
+            ("unknown", "sendspin_unmuted"),
         ]
 
 

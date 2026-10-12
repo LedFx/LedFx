@@ -522,6 +522,26 @@ async def test_unknown_resets_volume_deduplication_after_forced_silence(
 
 
 @pytest.mark.asyncio
+async def test_audio_device_change_clears_forced_silence_for_next_source(
+    controller_core: tuple[SimpleNamespace, Path],
+):
+    core, _journal_path = controller_core
+    controller = SilenceSceneController(cast(LedFxCore, core))
+    controller.start_monitoring()
+    controller.report_source_silence("sendspin_connected")
+    await asyncio.sleep(0)
+    assert controller._source_forced_silence is True
+
+    controller._on_audio_device_change(None)
+    await asyncio.sleep(0)
+    controller.report_volume(core.config.audio.min_volume + 0.01)
+    await asyncio.sleep(0)
+
+    assert controller._source_forced_silence is False
+    assert controller.status()["audio_silent"] is False
+
+
+@pytest.mark.asyncio
 async def test_resumed_silent_volume_does_not_restore_until_audio_exceeds_threshold(
     controller_core: tuple[SimpleNamespace, Path],
 ):

@@ -538,10 +538,11 @@ class NowPlayingService:
             if virtuals.get(vid) is not None
         ]
         try:
-            result = virtuals.apply_global_config(
-                GlobalEffectUpdate(gradient=gradient_str),
-                ids if self._gradient_virtual_ids else None,
-            )
+            with self._ledfx.events.automated():
+                result = virtuals.apply_global_config(
+                    GlobalEffectUpdate(gradient=gradient_str),
+                    ids if self._gradient_virtual_ids else None,
+                )
         except SafeMode:
             _LOGGER.debug("Now Playing gradient not applied: safe mode")
             return 0
@@ -705,13 +706,14 @@ class NowPlayingService:
                 )
                 continue
             try:
-                virtuals.set_effect(
-                    VirtualIdStr(virtual_id),
-                    type_id,
-                    config,
-                    fallback=None if duration == 0 else float(duration),
-                    store=False,
-                )
+                with self._ledfx.events.automated():
+                    virtuals.set_effect(
+                        VirtualIdStr(virtual_id),
+                        type_id,
+                        config,
+                        fallback=None if duration == 0 else float(duration),
+                        store=False,
+                    )
                 updated += 1
             except SafeMode:
                 _LOGGER.debug("Now Playing %s not applied: safe mode", label)

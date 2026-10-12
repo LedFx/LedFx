@@ -178,13 +178,6 @@ class SilenceSceneController:
         if active == getattr(self, "_last_reported_active", None):
             return
         self._last_reported_active = active
-        _LOGGER.info(
-            "Silence scene audio classified as %s (filtered volume %.3f, "
-            "audio.min_volume %.3f)",
-            "active" if active else "silent",
-            volume,
-            min_volume,
-        )
         loop = self._ledfx.loop
         if loop.is_running():
             loop.call_soon_threadsafe(self._handle_activity, active, "audio")
@@ -609,7 +602,10 @@ class SilenceSceneController:
             == self._ledfx.config.silence_scene.scene_id
         ):
             return
-        _LOGGER.info("Silence override superseded by user operation")
+        _LOGGER.info(
+            "Silence override superseded by user operation (event=%s)",
+            event.event_type,
+        )
         if self._operation and not self._operation.done():
             self._operation.cancel()
         if self._state == "restoring":
@@ -690,7 +686,7 @@ class SilenceSceneController:
             self._operation = asyncio.create_task(self._restore_for_config_change())
 
     def _on_audio_device_change(self, _event) -> None:
-        self._handle_activity(None, "audio_source_changed")
+        self.report_source_unknown("audio_source_changed")
 
     def _on_audio_source_error(self, event: AudioSourceErrorEvent) -> None:
         if event.error_type in (

@@ -36,8 +36,12 @@ status or virtual configuration as needed.
 A continuous silent classification starts one monotonic timeout. Activity cancels
 the pending timeout and restores the captured state immediately if an override
 is active. Sendspin stream end, pause metadata, mute, established-connection
-loss, and audio watchdog timeout feed the same controller. Source initialization
-and device changes do not count as silence by themselves.
+loss, and audio watchdog timeout feed the same controller. An established
+Sendspin connection with no active stream is silent; stream start or reconnection
+does not claim activity. Classification remains unknown until measured volume is
+available, and the first received chunk also clears idle silence if a stream-start
+notification was missed. Source initialization and device changes alone do not
+count as silence.
 
 Before changing runtime state, the controller captures every virtual's actual
 active effect type/configuration and active state, plus playlist runtime state.
