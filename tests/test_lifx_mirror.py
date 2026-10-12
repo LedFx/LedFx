@@ -130,7 +130,11 @@ def test_mirror_end_to_end(emulated_mirror: EmulatedLifxDevice) -> None:
         f"{API}/devices",
         json={
             "type": "lifx",
-            "config": {"name": DEVICE_NAME, "ip_address": "127.0.0.1"},
+            "config": {
+                "name": DEVICE_NAME,
+                "ip_address": "127.0.0.1",
+                "port": conftest.lifx_emulator_port,
+            },
         },
         timeout=30,
     )
