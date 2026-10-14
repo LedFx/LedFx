@@ -325,7 +325,9 @@ def _animator_warning(caplog: pytest.LogCaptureFixture) -> logging.LogRecord:
     return record
 
 
-async def test_an_unreachable_device_logs_one_line_without_a_traceback(caplog):
+async def test_an_unreachable_device_logs_one_line_without_a_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
     device = _mirror_device_to_connect()
 
     with (
@@ -343,7 +345,9 @@ async def test_an_unreachable_device_logs_one_line_without_a_traceback(caplog):
     assert not record.exc_info
 
 
-async def test_an_unexpected_connection_error_keeps_its_traceback(caplog):
+async def test_an_unexpected_connection_error_keeps_its_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
     device = _mirror_device_to_connect()
 
     with (
@@ -359,7 +363,9 @@ async def test_an_unexpected_connection_error_keeps_its_traceback(caplog):
     assert _animator_warning(caplog).exc_info
 
 
-def test_a_frame_send_timeout_logs_without_a_traceback(caplog):
+def test_a_frame_send_timeout_logs_without_a_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
     device, animator = _mirror_device_with_animator()
     device._config = LifxDevice.config_model().model_construct(name=DEVICE_NAME)
     animator.send_frame.side_effect = LifxTimeoutError("no response")
