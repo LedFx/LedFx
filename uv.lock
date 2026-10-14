@@ -3,10 +3,10 @@ revision = 5
 requires-python = ">=3.11, <3.15"
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
     "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version < '3.12' and platform_machine != 'x86_64') or (python_full_version < '3.12' and sys_platform != 'darwin')",
@@ -19,6 +19,7 @@ exclude-newer-span = "P14D"
 [options.exclude-newer-package]
 aubio-ledfx = false
 ledfx-senders = false
+lifx-async = false
 lifx-emulator-core = false
 pyfastnoiselite-ledfx = false
 samplerate-ledfx = false
@@ -397,10 +398,10 @@ version = "3.10.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
 ]
 dependencies = [
@@ -1475,7 +1476,7 @@ requires-dist = [
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
     { name = "ledfx-senders", specifier = ">=0.3.0,<0.4.0" },
-    { name = "lifx-async", specifier = ">=7.4.0" },
+    { name = "lifx-async", specifier = ">=7.11.2" },
     { name = "mss", specifier = "~=10.2.0" },
     { name = "multidict", specifier = ">=6.0.4" },
     { name = "netifaces2", specifier = ">=0.0.22" },
@@ -1581,11 +1582,11 @@ wheels = [
 
 [[package]]
 name = "lifx-async"
-version = "7.5.1"
+version = "7.11.2"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/76/744b47cbd0dc17dddc16b9b8366060182c686a065f458f9b5474e1817dc9/lifx_async-7.5.1.tar.gz", hash = "sha256:5875f9cd56d36538e74e28cc6a56329f0e29b0d30220c08e0aadcdb19938af84", size = 11456251, upload-time = "2026-09-27T03:56:58.81Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/75/50/eb3b6811bc612c96a153b119408baac49443181024f19e97003cfb176334/lifx_async-7.11.2.tar.gz", hash = "sha256:9dd58095e5a5f3dc6897e4e6a3a7c54a6580e7b8040524b52779f56fe558dac0", size = 11687305, upload-time = "2026-10-14T08:43:09.299Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/0c/d3b0de5130c87eb3c30504fd64168b89e639391e809c3f9723fd72e047b2/lifx_async-7.5.1-py3-none-any.whl", hash = "sha256:4730d571a9551c77144418bbc1bf9747181b00d0eb4a9b5cc8bea8f300eb9227", size = 422964, upload-time = "2026-09-27T03:56:57.049Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/c9/89503e3ab45f14e0d60a1515e11974e5882a52263fa2267f87c35d1e2d36/lifx_async-7.11.2-py3-none-any.whl", hash = "sha256:00a4fd3818a06101075336af4ddfcc3314332b96f36aef2a51535ecff4e90f3c", size = 510632, upload-time = "2026-10-14T08:43:07.635Z" },
 ]
 
 [[package]]
@@ -2096,10 +2097,10 @@ version = "2.5.3"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/13/01/11703282db468b85f6f7b8c7f22d058de5970d5c7e60a3a8aaa313c3de36/numpy-2.5.3.tar.gz", hash = "sha256:df2d5874ff183595a4ba404edd04f6bd9b5505c1d7708573f6a6c17489a67563", size = 20791231, upload-time = "2026-09-06T16:27:47.073Z" }
@@ -3679,10 +3680,10 @@ version = "9.1.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version >= '3.14' and platform_machine != 'x86_64') or (python_full_version >= '3.14' and sys_platform != 'darwin')",
+    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.13.*' and platform_machine != 'x86_64') or (python_full_version == '3.13.*' and sys_platform != 'darwin')",
+    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
     "(python_full_version == '3.12.*' and platform_machine != 'x86_64') or (python_full_version == '3.12.*' and sys_platform != 'darwin')",
 ]
 dependencies = [
