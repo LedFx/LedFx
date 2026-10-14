@@ -12,6 +12,7 @@ deleted the DDP test jig and the Ceiling device that share that address.
 """
 
 import asyncio
+import logging
 import time
 from collections.abc import Coroutine, Iterator
 from typing import TypeVar
@@ -20,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import numpy as np
 import pytest
 import requests
-from lifx.exceptions import LifxError
+from lifx.exceptions import LifxError, LifxTimeoutError
 from lifx.products import get_mirror_layout
 from lifx_emulator import EmulatedLifxServer
 from lifx_emulator.devices import EmulatedLifxDevice
@@ -313,3 +314,65 @@ async def test_a_failed_mirror_connection_drops_the_position_map():
     assert device._animator is None
     assert device._mirror_positions is None
     assert not device._connected
+
+
+def _animator_warning(caplog: pytest.LogCaptureFixture) -> logging.LogRecord:
+    (record,) = [
+        r
+        for r in caplog.records
+        if r.name == "ledfx.devices.lifx" and r.levelno == logging.WARNING
+    ]
+    return record
+
+
+async def test_an_unreachable_device_logs_one_line_without_a_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
+    device = _mirror_device_to_connect()
+
+    with (
+        caplog.at_level(logging.WARNING, logger="ledfx.devices.lifx"),
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(side_effect=LifxTimeoutError("no response")),
+        ),
+    ):
+        await device._create_animator()
+
+    record = _animator_warning(caplog)
+    assert "Animator creation failed: no response" in record.getMessage()
+    assert not record.exc_info
+
+
+async def test_an_unexpected_connection_error_keeps_its_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
+    device = _mirror_device_to_connect()
+
+    with (
+        caplog.at_level(logging.WARNING, logger="ledfx.devices.lifx"),
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(side_effect=LifxError("no reply")),
+        ),
+    ):
+        await device._create_animator()
+
+    assert _animator_warning(caplog).exc_info
+
+
+def test_a_frame_send_timeout_logs_without_a_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
+    device, animator = _mirror_device_with_animator()
+    device._config = LifxDevice.config_model().model_construct(name=DEVICE_NAME)
+    animator.send_frame.side_effect = LifxTimeoutError("no response")
+
+    with caplog.at_level(logging.WARNING, logger="ledfx.devices.lifx"):
+        device.flush(np.full((50, 3), 255.0))
+
+    record = _animator_warning(caplog)
+    assert "Frame send error: no response" in record.getMessage()
+    assert not record.exc_info

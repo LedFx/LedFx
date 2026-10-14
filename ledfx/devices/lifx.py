@@ -447,7 +447,9 @@ class LifxDevice(NetworkedDevice):
                 "LIFX %s: Animator creation failed: %s",
                 self.name,
                 e,
-                exc_info=True,
+                # An offline device is expected; only unexpected errors
+                # need a traceback
+                exc_info=not isinstance(e, LifxTimeoutError),
             )
             if self._device:
                 try:
@@ -745,7 +747,7 @@ class LifxDevice(NetworkedDevice):
                     "LIFX %s: Frame send error: %s",
                     self.name,
                     e,
-                    exc_info=True,
+                    exc_info=not isinstance(e, LifxTimeoutError),
                 )
 
         elif self._device and self._connected:
