@@ -192,3 +192,23 @@ def test_close_is_idempotent_and_stops_delivery():
 
     assert host.loop.run_ready() == 0
     assert received == []
+
+
+def test_failing_source_does_not_starve_others_and_logs_once_a_second(
+    caplog: pytest.LogCaptureFixture,
+):
+    sampler, host = make_sampler()
+    received, _ = listen(host)
+    caplog.set_level("ERROR", logger="ledfx.preview")
+
+    # More rows than pixels, over visualisation_maxlen: shape_to_fit_len divides by zero.
+    for _ in range(120):
+        sampler.submit(False, "bad", np.zeros((100, 3)), 200)
+        sampler.submit(False, "good", np.zeros((10, 3)), 1)
+        host.loop.advance(1 / 60)
+
+    assert {event.vis_id for event in received} == {"good"}
+    assert len(received) >= 119
+    errors = [r for r in caplog.records if r.name == "ledfx.preview"]
+    assert 2 <= len(errors) <= 3
+    assert all(r.exc_info for r in errors)

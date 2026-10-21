@@ -55,6 +55,9 @@ the core-owned `PreviewSampler` (`ledfx/preview.py`):
   `visualisation_fps` times a second per source. The schedule advances on a
   fixed grid, so a 62 FPS source still previews at 60 FPS, and a source that
   was idle does not get a burst of old frames. Only that tick creates timers.
+- If one source's frame fails to encode, the tick skips it and still sends
+  the others. The failure is logged at ERROR at most once a second per
+  exception type, with a count of the failures in between.
 - `visualisation_maxlen`, `ui_brightness_boost` and `transmission_mode` are
   read when encoding, so changing them needs no restart.
 - When the last matching subscriber leaves, the pending frame is dropped at

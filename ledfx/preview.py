@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import threading
 from typing import Protocol
 
@@ -14,6 +15,8 @@ from ledfx.configuration.models import LedFxConfig
 from ledfx.configuration.paths import Transmission
 from ledfx.events import Event, Events, VisualisationUpdateEvent
 from ledfx.utils import pixels_boost, resize_pixels, shape_to_fit_len
+
+_LOGGER = logging.getLogger(__name__)
 
 _Key = tuple[bool, str]
 
@@ -45,6 +48,8 @@ class PreviewSampler:
         self._due: dict[_Key, float] = {}
         self._scheduled = False
         self._closed = False
+        # Loop-only: (last report time, failures since) per exception class.
+        self._errors: dict[str, tuple[float, int]] = {}
 
     def wants(self, is_device: bool, source_id: str) -> bool:
         """Whether a ``visualisation_update`` subscriber could match this source."""
@@ -101,10 +106,30 @@ class PreviewSampler:
         if next_due is not None:
             self._ledfx.loop.call_at(next_due, self._tick)
         for (is_device, source_id), pixels, rows in ready:
-            if self.wants(is_device, source_id):
-                self._ledfx.events.fire_event(
-                    self._encode(is_device, source_id, pixels, rows)
-                )
+            if not self.wants(is_device, source_id):
+                continue
+            try:
+                event = self._encode(is_device, source_id, pixels, rows)
+            except Exception as error:  # noqa: BLE001 - one bad source must not starve the rest
+                self._report_error(source_id, error, now)
+                continue
+            self._ledfx.events.fire_event(event)
+
+    def _report_error(self, source_id: str, exc: Exception, now: float) -> None:
+        """Log at most once per second per exception class, like Events listeners."""
+        category = type(exc).__name__
+        last_report, count = self._errors.get(category, (None, 0))
+        count += 1
+        if last_report is not None and now - last_report < 1.0:
+            self._errors[category] = (last_report, count)
+            return
+        self._errors[category] = (now, 0)
+        _LOGGER.error(
+            "Preview for %s failed to encode (%d errors since last report)",
+            source_id,
+            count,
+            exc_info=exc,
+        )
 
     def _encode(
         self, is_device: bool, source_id: str, pixels: NDArray[np.generic], rows: int
