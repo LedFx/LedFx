@@ -119,6 +119,9 @@ class HueDevice(NetworkedDevice):
         self._lifecycle_lock = asyncio.Lock()
         self._generation = 0
         self._requested = False
+        # Generation whose activation is running, so repeat activate() calls
+        # during a multi-second zone start do not restart the zone.
+        self._activating: int | None = None
         self._shutting_down = False
         self._sender: HueSender | None = None
         self._candidate: HueSender | None = None
@@ -307,7 +310,11 @@ class HueDevice(NetworkedDevice):
 
     def activate(self) -> None:
         with self._publication_lock:
-            if self._shutting_down or self._sender is not None:
+            if (
+                self._shutting_down
+                or self._sender is not None
+                or self._activating == self._generation
+            ):
                 return
             self._requested = True
             self._generation += 1
@@ -334,6 +341,17 @@ class HueDevice(NetworkedDevice):
         return True
 
     async def _activate_generation(self, generation: int) -> None:
+        with self._publication_lock:
+            if generation == self._generation:
+                self._activating = generation
+        try:
+            await self._activate_generation_locked(generation)
+        finally:
+            with self._publication_lock:
+                if self._activating == generation:
+                    self._activating = None
+
+    async def _activate_generation_locked(self, generation: int) -> None:
         async with self._lifecycle_lock:
             await self._drain_retirements()
             with self._publication_lock:

@@ -1107,3 +1107,22 @@ async def test_initialization_does_not_publish_replaced_bridge_results(
     assert all(bridge == "127.0.0.1" for bridge, _, _ in calls)
     assert not device.is_active()
     await device.async_shutdown()
+
+
+async def test_repeat_activation_during_connect_keeps_one_zone_start(
+    hue_device: HueFixture,
+) -> None:
+    failed, blocked = ControlledSender(failure=ConnectionError("x")), ControlledSender(
+        blocked=True
+    )
+    hue_device.senders.extend([failed, blocked])
+    hue_device.activate()
+    await idle(hue_device)
+    hue_device.activate()
+    assert await asyncio.to_thread(blocked.entered.wait, 2)
+    hue_device.activate()
+    blocked.release.set()
+    await idle(hue_device)
+    assert hue_device._sender is blocked
+    assert hue_device.zone_actions == ["start", "stop", "start"]
+
