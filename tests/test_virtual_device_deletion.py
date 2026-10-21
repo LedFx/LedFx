@@ -92,6 +92,9 @@ class _DummyDevice:
     def is_active(self):
         return self._active
 
+    def is_activation_requested(self) -> bool:
+        return self.is_active()
+
     def activate(self):
         self._active = True
         self._pixels = np.zeros((self.pixel_count, 3))

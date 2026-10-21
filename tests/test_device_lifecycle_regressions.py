@@ -315,23 +315,39 @@ async def test_mdns_rescan_closes_the_previous_zeroconf() -> None:
     assert runner.aiozc is second_zc
 
 
-def test_hue_stops_handshaking_after_success() -> None:
-    device = object.__new__(HueDevice)
-    device._config = HueDevice.config_model().model_construct(
-        entertainment_id="e",
-        ip_address="10.0.0.4",
-        udp_port=2100,
+async def test_hue_publishes_only_after_native_candidate_connects() -> None:
+    device = HueDevice(
+        MagicMock(),
+        HueDevice.config_model().model_validate(
+            {
+                "name": "Hue",
+                "ip_address": "127.0.0.1",
+                "group_name": "Room",
+                "username": "user",
+                "clientkey": "11" * 16,
+                "hue_application_id": "opaque",
+                "pixel_count": 2,
+                "entertainment_id": "12345678-1234-1234-1234-123456789abc",
+                "channel_ids": [7, 12],
+            }
+        ),
     )
-    device._dtls_client_context = MagicMock()
+    device._ledfx.loop = asyncio.get_running_loop()
+    device._ledfx.thread_executor = None
+    device._destination = "127.0.0.1"
+    sender = MagicMock()
     with (
-        patch.object(HueDevice, "_hue_request"),
-        patch("ledfx.devices.hue.socket.socket"),
-        patch("ledfx.devices.hue.time.sleep"),
-        patch("ledfx.devices.NetworkedDevice.activate"),
+        patch.object(device, "_zone_action", new=AsyncMock()),
+        patch.object(device, "_sender_for_settings", return_value=sender),
     ):
         device.activate()
-    wrapped = device._dtls_client_context.wrap_socket.return_value
-    assert wrapped.do_handshake.call_count == 1
+        assert not device.is_active()
+        await asyncio.sleep(0)
+        await asyncio.gather(*tuple(device._lifecycle_tasks))
+        sender.connect.assert_called_once()
+        assert device._sender is sender
+        assert device.is_active()
+        await device.async_shutdown()
 
 
 def test_govee_second_deactivate_does_not_release_socket_again() -> None:
@@ -400,3 +416,28 @@ def test_e131_sender_does_not_need_the_sacn_port() -> None:
         assert device._sender is not None
         # No frame was sent: cleanup emits no data/control traffic.
         device.deactivate()
+
+
+def test_stale_initialization_update_preserves_current_destination() -> None:
+    core = MagicMock()
+    core.virtuals = dict[str, object]()
+    device = DDPDevice(
+        core,
+        DDPDevice.config_model().model_validate(
+            {"name": "DDP", "ip_address": "10.0.0.1"}
+        ),
+    )
+    device._virtuals_objs = []
+    old_config = device.config
+    device.update_config({"ip_address": "10.0.0.2"})
+    device._destination = "10.0.0.2"
+    assert (
+        device.update_config(
+            {"ip_address": "10.0.0.1", "pixel_count": 99},
+            _expected_config=old_config,
+        )
+        is None
+    )
+    assert device.config.ip_address == "10.0.0.2"
+    assert device._destination == "10.0.0.2"
+    assert device.pixel_count != 99

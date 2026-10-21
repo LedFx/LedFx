@@ -3,7 +3,7 @@ authors = [{ name = "LedFx Developers" }]
 license = { text = "GPL-3.0 License" }
 requires-python = ">=3.11,<3.15"
 dependencies = [
-    "ledfx-senders>=0.3.0,<0.4.0",
+    "ledfx-senders>=0.4.0,<0.5.0",
     "numpy>=2.0.0,<3.0.0",
     "cffi>=0.16.0",
     "wheel>=0.36.2",
@@ -102,9 +102,7 @@ build-backend = "pdm.backend"
 
 
 [project.optional-dependencies]
-hue = [
-    "python-mbedtls==2.9.2; python_version <= \"3.12\" and ((platform_machine != \"aarch64\" and platform_machine != \"armv7l\") and sys_platform == \"linux\" or sys_platform == \"win32\" or sys_platform == \"darwin\")",
-]
+hue = []
 
 [project.scripts]
 ledfx = "ledfx.__main__:main"

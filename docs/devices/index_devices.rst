@@ -10,6 +10,7 @@ Devices
    artnet
    ddp
    govee
+   hue
    lifx
    nanoleaf
    osc
