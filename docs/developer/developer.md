@@ -50,6 +50,11 @@ sender package builds belong to that separate repository. LedFx's uv configurati
 requires a sender wheel; an unsupported platform fails installation instead of
 starting a Rust source build.
 
+Sender wheels cover Linux x86-64, AArch64 and ARMv7 (glibc, including 64-bit and
+32-bit Raspberry Pi OS), Windows x86-64 and macOS Intel and ARM64. There are no
+musl, Windows ARM64 or ARMv6 wheels. On ARMv6 (Raspberry Pi Zero and 1), pip
+installs use the wheel piwheels builds for Raspberry Pi OS's system Python.
+
 ### Performance measurements
 
 Reusable whole-application benchmarks and profiling tools live in
