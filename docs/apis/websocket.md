@@ -12,6 +12,117 @@ The documentation on websockets need a LOT of legacy implementation.
 New sections are added as new events are commited, but all the pre-existing behaviour is currently not documented
 :::
 
+## Event subscriptions
+
+Every client message is a JSON object with an integer `id` and a `type`.
+Replies and event deliveries carry the same `id`, so a client correlates
+them with its own request.
+
+### subscribe_event
+
+``` json
+{"id": 9004, "type": "subscribe_event", "event_type": "effect_set", "event_filter": {"virtual_id": "desk"}}
+```
+
+- `event_type`: required, a nonempty string naming the event.
+- `event_filter`: optional object. An event is delivered only when every
+  key matches the same field of the event. Omit it, or send `{}` or `null`,
+  for every event of that type.
+- `ack`: optional boolean, default `false`. See
+  [Subscription acknowledgements](#subscription-acknowledgements).
+
+The `id` names the subscription. Subscribing again with the same `id`
+replaces the earlier subscription, including its filter, and discards any
+of its deliveries that were still queued.
+
+Each matching event arrives as:
+
+``` json
+{"id": 9004, "type": "event", "event_type": "effect_set", "...": "event fields"}
+```
+
+### unsubscribe_event
+
+``` json
+{"id": 9004, "type": "unsubscribe_event"}
+```
+
+Removes the subscription and discards its queued deliveries. An unknown
+`id` is ignored.
+
+### Error replies
+
+A rejected request gets a reply with `success: false`:
+
+``` json
+{"id": 9004, "success": false, "error": {"message": "event_type must be a nonempty string"}}
+```
+
+`subscribe_event` is rejected when `event_type` is missing or not a
+string, `event_filter` is neither an object nor `null`, `ack` is not a
+boolean, or the
+event cannot be subscribed to (the message names what to use instead).
+An unknown `type` gets `Unknown command type.`.
+
+A JSON object without an integer `id` and a `type` gets
+`Invalid message format.` when it carried an `id`, and the server closes
+the connection after giving that reply up to a second to be sent. Text
+that is not JSON closes the connection without a reply.
+
+### Subscription acknowledgements
+
+By default a subscription is silent: nothing confirms it was installed.
+A client that fetches current state over REST and then relies on events
+for changes can miss an event fired in between. Acknowledgements close
+that gap: subscribe with `ack: true`, wait for the result, then fetch.
+
+Check that the server supports them first. Servers without this feature
+answer `get_event_capabilities` with `Unknown command type.`.
+
+``` json
+{"id": 1, "type": "get_event_capabilities"}
+```
+
+``` json
+{"id": 1, "type": "result", "success": true, "result": {"subscription_ack": 1}}
+```
+
+`subscription_ack` is the version of the acknowledgement protocol. Then:
+
+``` json
+{"id": 9004, "type": "subscribe_event", "event_type": "effect_set", "ack": true}
+```
+
+``` json
+{"id": 9004, "type": "result", "success": true, "result": {"subscription_id": 9004, "event_type": "effect_set", "installed": true}}
+```
+
+Once the result arrives, the listener is installed: every later matching
+event is eligible for delivery on that subscription while it stays
+active. Replacing or unsubscribing it discards deliveries still queued.
+
+### Backlog and close code 1013
+
+Messages to a client wait in a bounded queue of 256. Visualisation and
+device frames do not count against it: only the newest frame for each
+target is kept.
+
+The server closes the connection with code **1013**
+(`control backlog; reconnect and resync`) when:
+
+- a `result` reply has to be queued and the queue is full, whatever it
+  holds; or
+- an ordinary message arrives at a full queue that already holds a
+  `result` reply or final error reply.
+
+When an ordinary message arrives at a full queue holding neither, the
+server drops the queued messages, as it always has, and carries on. An
+acknowledgement is therefore either delivered or the connection closes;
+it is never silently lost.
+
+On a 1013 close, reconnect, subscribe again, and fetch current state
+again over REST.
+
 
 ## Websocket client UIDs
 

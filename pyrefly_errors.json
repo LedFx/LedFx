@@ -925,13 +925,6 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/api/websocket.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_error` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
@@ -939,38 +932,10 @@
       "severity": "error"
     },
     {
-      "column": 26,
-      "path": "ledfx/api/websocket.py",
-      "name": "implicit-any-parameter",
-      "concise_description": "`send_event` is missing an annotation for parameter `id`",
-      "severity": "error"
-    },
-    {
       "column": 30,
       "path": "ledfx/api/websocket.py",
       "name": "implicit-any-parameter",
       "concise_description": "`send_event` is missing an annotation for parameter `event`",
-      "severity": "error"
-    },
-    {
-      "column": 19,
-      "path": "ledfx/api/websocket.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `closed`",
-      "severity": "error"
-    },
-    {
-      "column": 27,
-      "path": "ledfx/api/websocket.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send_json`",
-      "severity": "error"
-    },
-    {
-      "column": 31,
-      "path": "ledfx/api/websocket.py",
-      "name": "missing-attribute",
-      "concise_description": "Object of class `NoneType` has no attribute `send_json`",
       "severity": "error"
     },
     {
@@ -1699,20 +1664,6 @@
       "path": "ledfx/core.py",
       "name": "implicit-any-attribute",
       "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
-      "severity": "error"
-    },
-    {
-      "column": 13,
-      "path": "ledfx/core.py",
-      "name": "not-callable",
-      "concise_description": "Expected a callable, got `None`",
       "severity": "error"
     },
     {
@@ -12626,13 +12577,6 @@
       "path": "ledfx/events.py",
       "name": "bad-argument-type",
       "concise_description": "Argument `EventListener` is not assignable to parameter `listener` with type `(...) -> Unknown` in function `Events._remove_listener`",
-      "severity": "error"
-    },
-    {
-      "column": 16,
-      "path": "ledfx/events.py",
-      "name": "bad-return",
-      "concise_description": "Returned type `() -> None` is not assignable to declared return type `None`",
       "severity": "error"
     },
     {

@@ -944,8 +944,16 @@ Choose the correct `broadcast_type` to help receivers handle messages appropriat
 
 ### 6. Subscribe to events
 Subscribe to `clients_updated` to keep your client list synchronized.
+If you fetch current state over REST after subscribing, subscribe with
+`ack: true` and fetch only once the result arrives, so no event falls
+between the two. See
+[Subscription acknowledgements](../apis/websocket.md#subscription-acknowledgements).
 
 ### 7. Implement Reconnection Logic
+After any reconnect, subscribe again and fetch current state again.
+The server closes with code 1013 when it cannot deliver a required reply;
+treat that like any other dropped connection.
+
 ```
 function connectWithRetry(maxRetries = 5, delay = 1000) {
   let retries = 0;
