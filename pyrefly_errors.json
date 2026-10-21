@@ -13987,13 +13987,6 @@
       "severity": "error"
     },
     {
-      "column": 76,
-      "path": "ledfx/nowplaying/service.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `str | None` is not assignable to parameter `content_type` with type `str` in function `NowPlayingService._store_artwork`",
-      "severity": "error"
-    },
-    {
       "column": 25,
       "path": "ledfx/nowplaying/service.py",
       "name": "implicit-any-type-argument",
