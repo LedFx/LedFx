@@ -775,13 +775,15 @@ class Virtual:
         if frame is None:
             frame = self.assembled_frame
 
-        self._ledfx.events.fire_event(
-            VirtualUpdateEvent(
-                self.id,
-                self._effective_to_physical_pixels(frame),
-                rows=self.rows,
+        physical = self._effective_to_physical_pixels(frame)
+        sampler = self._ledfx.preview_sampler
+        if sampler.wants(False, self.id):
+            # The renderer reuses its buffer, so the sampler gets its own copy.
+            sampler.submit(False, self.id, physical.copy(), self.rows)
+        if self._ledfx.events.has_listeners(Event.VIRTUAL_UPDATE):
+            self._ledfx.events.fire_event(
+                VirtualUpdateEvent(self.id, physical, rows=self.rows)
             )
-        )
 
     def set_calibration(self, calibration):
         self._calibration = calibration
@@ -1680,6 +1682,7 @@ class Virtuals:
         if id not in self._virtuals:
             raise AttributeError(f"Object with id '{id}' does not exist.")
         del self._virtuals[id]
+        self._ledfx.preview_sampler.forget(False, id)
 
     def __iter__(self):
         return iter(self._virtuals)
