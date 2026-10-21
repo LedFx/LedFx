@@ -1126,3 +1126,46 @@ async def test_repeat_activation_during_connect_keeps_one_zone_start(
     assert hue_device._sender is blocked
     assert hue_device.zone_actions == ["start", "stop", "start"]
 
+
+async def test_rejected_credentials_pair_again(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    device = HueDevice(
+        MagicMock(
+            loop=asyncio.get_running_loop(), thread_executor=None, virtuals=MagicMock()
+        ),
+        config(),
+    )
+    monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
+
+    def request(
+        bridge: str,
+        username: str | None,
+        method: str,
+        endpoint: str,
+        data: dict[str, object] | None = None,
+    ) -> tuple[object, Mapping[str, str]]:
+        if endpoint == "api/user":
+            return [{"error": {"type": 1, "description": "unauthorized user"}}], {}
+        if method == "POST":
+            return [{"success": {"username": "paired", "clientkey": "22" * 16}}], {}
+        if endpoint == "api/config":
+            return {"swversion": "1948086000"}, {}
+        if endpoint == "/auth/v1":
+            assert username == "paired"
+            return dict[str, object](), {"hue-application-id": "new-identity"}
+        if endpoint.endswith(ZONE):
+            return {
+                "data": [
+                    {"channels": [{"channel_id": 7, "position": {"x": 0, "y": 0, "z": 0}}]}
+                ]
+            }, {}
+        return {"data": [{"id": ZONE, "metadata": {"name": "Room"}}]}, {}
+
+    monkeypatch.setattr(device, "_https_request", request)
+    await device.async_initialize()
+    stored = device.config.as_dict()
+    assert stored["username"] == "paired"
+    assert stored["clientkey"] == "22" * 16
+    assert stored["hue_application_id"] == "new-identity"
+    await device.async_shutdown()

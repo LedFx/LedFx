@@ -691,7 +691,8 @@ class HueDevice(NetworkedDevice):
         if isinstance(response, list) and any(
             "error" in _object(item) for item in _items(response)
         ):
-            raise ValueError("Press the Hue Bridge Link Button and register again")
+            # The bridge revoked the stored credentials: pair again.
+            return self._hue_register(replace(settings, username=None, clientkey=None))
         return {}
 
     def _check_hue_bridge(self, settings: HueControlSettings) -> None:
@@ -763,6 +764,8 @@ class HueDevice(NetworkedDevice):
                 settings,
                 username=_text(credentials.get("username")),
                 clientkey=_text(credentials.get("clientkey")),
+                # The application id belongs to the old username.
+                application_id=None,
             )
         self._check_hue_bridge(settings)
         return credentials | self._discover(settings)
