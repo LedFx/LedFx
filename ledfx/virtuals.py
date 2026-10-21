@@ -776,7 +776,11 @@ class Virtual:
             frame = self.assembled_frame
 
         self._ledfx.events.fire_event(
-            VirtualUpdateEvent(self.id, self._effective_to_physical_pixels(frame))
+            VirtualUpdateEvent(
+                self.id,
+                self._effective_to_physical_pixels(frame),
+                rows=self.rows,
+            )
         )
 
     def set_calibration(self, calibration):
@@ -1798,6 +1802,12 @@ class Virtuals:
         self._ledfx.config_store.request_save()
         return virtual
 
+    def set_runtime_active(self, virtual_id: VirtualIdStr, active: bool) -> Virtual:
+        """Set a virtual's runtime active flag without changing its stored entry."""
+        virtual = self.get_or_raise(virtual_id)
+        virtual.active = active
+        return virtual
+
     def patch(self, virtual_id: VirtualIdStr, changes: VirtualChanges) -> Virtual:
         """Apply the parts of changes that are set: segments, config, active.
 
@@ -2128,15 +2138,16 @@ class Virtuals:
         except ValidationError as err:
             raise _invalid_config(err) from err
 
-    def clear_effect(self, virtual_id: VirtualIdStr) -> Virtual:
+    def clear_effect(self, virtual_id: VirtualIdStr, *, store: bool = True) -> Virtual:
         """Stop the running effect (it stays in the history)."""
         ensure_writable(self._ledfx)
         virtual = self.get_or_raise(virtual_id)
         virtual.clear_effect()
-        entry = virtual.entry
-        if entry is not None:
-            entry.effect = None
-        self._ledfx.config_store.request_save()
+        if store:
+            entry = virtual.entry
+            if entry is not None:
+                entry.effect = None
+            self._ledfx.config_store.request_save()
         return virtual
 
     def effect_history(

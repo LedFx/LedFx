@@ -35,6 +35,7 @@ from aiosendspin.client.models import AudioFormat
 from aiosendspin.models import AudioCodec, PlayerCommand, Roles
 from aiosendspin.models.core import (
     DeviceInfo,
+    ServerCommandPayload,
     ServerStatePayload,
     StreamStartMessage,
 )
@@ -56,6 +57,11 @@ _LOGGER = logging.getLogger(__name__)
 # matching sounddevice's blocksize = device_rate / sample_rate
 # (e.g. 44100/60 = 735 for local mic, 48000/60 = 800 for Sendspin).
 _SUB_CHUNK_SAMPLES = 800  # ~16.7 ms at 48 kHz → 60 Hz update rate
+
+# Late sub-chunks are dropped silently unless they are this far behind,
+# in which case a throttled warning is logged (timing is likely broken).
+_LATE_WARN_THRESHOLD_US = 1_000_000
+_LATE_WARN_INTERVAL_S = 30.0
 
 
 class _LedFxConfig(LedFxNowPlaying, Protocol):
@@ -101,6 +107,10 @@ class SendspinAudioStream:
         instance_id: str = "",
         ledfx: _LedFxConfig | None = None,
     ) -> None:
+        """Set up stream state; see the class docstring for the arguments.
+
+        ``ledfx`` is optional and enables the Now Playing bridge.
+        """
         self.config = config
         self.callback = callback
         self._instance_id = instance_id
@@ -144,12 +154,21 @@ class SendspinAudioStream:
         self._leftover: NDArray[np.float32] = np.array([], dtype=np.float32)
         self._leftover_ts: int = 0  # play-time (us) of leftover samples
 
+        # Throttling state for the "sub-chunks dropped as late" warning.
+        self._late_dropped: int = 0
+        self._late_warn_time: float | None = None
+
         # Heartbeat/watchdog state.
         # _last_audio_chunk_time is None until the first audio chunk after a
         # stream_start event.  The watchdog only fires when _expecting_audio is
         # True so that idle / paused streams do not trigger constant reconnects.
         self._last_audio_chunk_time: float | None = None
         self._expecting_audio: bool = False
+        self._has_connected: bool = False
+        self._sendspin_paused = False
+        self._sendspin_muted = False
+        self._sendspin_volume = 100
+        self._sendspin_disconnected = False
         self._heartbeat_task: asyncio.Task[None] | None = None
         self._identity: Identity | None = None
         self._pairing_store: ClientPairingStore | None = None
@@ -184,7 +203,10 @@ class SendspinAudioStream:
         # True while chunks are arriving (guards against a missed stream_start).
         now_mono = time.monotonic()
         self._last_audio_chunk_time = now_mono
+        was_expecting_audio = self._expecting_audio
         self._expecting_audio = True
+        if not was_expecting_audio:
+            self._report_sendspin_state("sendspin_audio_received")
 
         try:
             play_time_us = self._client.compute_play_time(timestamp)
@@ -232,6 +254,43 @@ class SendspinAudioStream:
                 exc_info=True,
             )
 
+    def _now_us(self, loop: asyncio.AbstractEventLoop) -> int:
+        """Return "now" in the same clock domain as ``compute_play_time()``.
+
+        aiosendspin computes play times with the client's own clock
+        (``RawMonotonicClock`` = CLOCK_MONOTONIC_RAW on Linux), while
+        ``loop.time()`` is CLOCK_MONOTONIC, which is slewed by NTP.  On
+        long-running hosts the two drift apart by seconds, so comparing
+        a play time against ``loop.time()`` drops every chunk with less
+        lead time than the drift, or delays chunks by the drift.
+        The loop clock is only a fallback when no client exists.
+        """
+        client = self._client
+        if client is not None:
+            return client.now_us()
+        return int(loop.time() * 1_000_000)
+
+    def _warn_late_drop(self, late_us: int) -> None:
+        """Log a throttled warning when sub-chunks arrive far too late."""
+        self._late_dropped += 1
+        if late_us < _LATE_WARN_THRESHOLD_US:
+            return
+        now = time.monotonic()
+        if (
+            self._late_warn_time is not None
+            and now - self._late_warn_time < _LATE_WARN_INTERVAL_S
+        ):
+            return
+        self._late_warn_time = now
+        _LOGGER.warning(
+            "Sendspin audio arriving %.1f s past its play time; "
+            "dropped %d late sub-chunks (id=%s)",
+            late_us / 1_000_000,
+            self._late_dropped,
+            id(self),
+        )
+        self._late_dropped = 0
+
     def _schedule_mono_samples(
         self,
         samples: NDArray[np.float32],
@@ -259,7 +318,7 @@ class SendspinAudioStream:
         loop = self._loop
         if loop is None:
             return
-        now_us = int(loop.time() * 1_000_000)
+        now_us = self._now_us(loop)
 
         # Prepend any leftover samples from the previous frame and use
         # the leftover's original timestamp as the base so carryover
@@ -282,6 +341,7 @@ class SendspinAudioStream:
                 for i in range(n_full):
                     sub_play = base_ts + i * sub_duration_us
                     if sub_play < now_us:
+                        self._warn_late_drop(now_us - sub_play)
                         continue
                     start = i * _SUB_CHUNK_SAMPLES
                     end = start + _SUB_CHUNK_SAMPLES
@@ -566,6 +626,9 @@ class SendspinAudioStream:
         # Arm the watchdog: we now expect audio chunks to arrive.
         self._expecting_audio = True
         self._last_audio_chunk_time = time.monotonic()
+        self._sendspin_paused = False
+        self._sendspin_disconnected = False
+        self._report_sendspin_state("sendspin_stream_started")
 
     def _stream_end_handler(self, roles: list[str] | None) -> None:
         """Called when the stream ends (track stopped, paused, or server idle).
@@ -582,6 +645,7 @@ class SendspinAudioStream:
         _LOGGER.info("Sendspin stream ended (id=%s)", id(self))
         self._expecting_audio = False
         self._last_audio_chunk_time = None
+        self._sendspin_paused = True
         # Flush buffered audio so visualisation stops immediately.
         buf_len = self._clear_playback_buffer()
         if buf_len:
@@ -590,6 +654,7 @@ class SendspinAudioStream:
                 buf_len,
                 id(self),
             )
+        self._report_sendspin_state("sendspin_stream_ended")
 
     def _stream_clear_handler(self, roles: list[str] | None) -> None:
         """Called on stream/clear (e.g. seek). Flush the playback buffer.
@@ -606,6 +671,31 @@ class SendspinAudioStream:
             roles,
             buf_len,
         )
+
+    def _report_sendspin_state(self, reason: str) -> None:
+        controller = getattr(self._ledfx, "silence_scene", None)
+        if controller is None:
+            return
+        if (
+            self._sendspin_disconnected
+            or self._sendspin_paused
+            or self._sendspin_muted
+            or self._sendspin_volume == 0
+        ) or not self._expecting_audio:
+            controller.report_source_silence(reason)
+        else:
+            self._report_sendspin_unknown(reason)
+
+    def _report_sendspin_unknown(self, reason: str) -> None:
+        controller = getattr(self._ledfx, "silence_scene", None)
+        if controller is not None:
+            controller.report_source_unknown(reason)
+
+    def _handle_sendspin_volume(self, volume: int | None) -> None:
+        if volume is None:
+            return
+        self._sendspin_volume = int(volume)
+        self._report_sendspin_state("sendspin_volume_changed")
 
     def _metadata_pause_handler(self, server_state_payload: ServerStatePayload) -> None:
         """Belt-and-suspenders flush when metadata reports playback_speed == 0.
@@ -629,7 +719,11 @@ class SendspinAudioStream:
         if isinstance(progress, UndefinedField) or progress is None:
             return
 
-        if progress.playback_speed != 0:
+        self._sendspin_paused = progress.playback_speed == 0
+        self._report_sendspin_state(
+            "sendspin_paused" if self._sendspin_paused else "sendspin_playback_resumed"
+        )
+        if not self._sendspin_paused:
             return
 
         # playback_speed == 0 → paused: flush buffered audio immediately.
@@ -651,7 +745,7 @@ class SendspinAudioStream:
                     loop = self._loop
                     if loop is None:
                         break
-                    now_us = int(loop.time() * 1_000_000)
+                    now_us = self._now_us(loop)
                     if play_time_us <= now_us:
                         _, _, chunk = heapq.heappop(self._chunk_buffer)
 
@@ -851,6 +945,8 @@ class SendspinAudioStream:
                     # Disarm until the reconnected stream sends stream_start again.
                     self._expecting_audio = False
                     self._last_audio_chunk_time = None
+                    self._sendspin_disconnected = True
+                    self._report_sendspin_state("sendspin_audio_timeout")
                     # Cancel the reconnect task so the loop retries the connection
                     # immediately instead of sleeping through a long backoff.
                     if self._reconnect_task and not self._reconnect_task.done():
@@ -1060,7 +1156,23 @@ class SendspinAudioStream:
                     "Sendspin server disconnected (id=%s), triggering reconnect",
                     id(self),
                 )
+                if self._has_connected:
+                    self._sendspin_disconnected = True
+                    self._expecting_audio = False
+                    self._report_sendspin_state("sendspin_disconnected")
                 _disconnect_event.set()
+
+            def _server_command_handler(command_payload: ServerCommandPayload) -> None:
+                player_command = getattr(command_payload, "player", None)
+                if player_command is None:
+                    return
+                if player_command.command == PlayerCommand.MUTE:
+                    self._sendspin_muted = bool(player_command.mute)
+                    self._report_sendspin_state(
+                        "sendspin_muted" if self._sendspin_muted else "sendspin_unmuted"
+                    )
+                elif player_command.command == PlayerCommand.VOLUME:
+                    self._handle_sendspin_volume(player_command.volume)
 
             # Register event handlers
             client.add_audio_chunk_listener(self._audio_chunk_handler)
@@ -1069,11 +1181,15 @@ class SendspinAudioStream:
             client.add_stream_clear_listener(self._stream_clear_handler)
             client.add_disconnect_listener(_disconnect_handler)
             client.add_metadata_listener(self._metadata_pause_handler)
+            client.add_server_command_listener(_server_command_handler)
             if self._now_playing_provider is not None:
                 client.add_metadata_listener(self._now_playing_provider.on_metadata)
 
             # Connect to server
             await client.connect(server_url)
+            self._has_connected = True
+            self._sendspin_disconnected = False
+            self._report_sendspin_state("sendspin_connected")
 
             _LOGGER.info(
                 "Connected to Sendspin server",

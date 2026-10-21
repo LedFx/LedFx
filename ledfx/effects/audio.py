@@ -150,21 +150,35 @@ class AudioInputSource:
 
     def _update_device_config(self, device_idx):
         """
-        Update device index and name in both local and central configs.
+        Update the runtime-resolved device index without changing preference.
 
         Args:
             device_idx: The device index to set, or None to clear
         """
-        # Also persist the device name for cross-session recovery
-        devices = self.input_devices()
-        self._set_config(
-            audio_device=device_idx,
-            audio_device_name=devices.get(device_idx, "")
-            if device_idx is not None
-            else "",
-        )
-        # Persist to disk so recovered device survives restarts
+        self._set_config(audio_device=device_idx)
         self._persist_config()
+
+    def _persist_active_device_config(self):
+        """Persist the active index, upgrading name-less legacy configs once."""
+        with AudioInputSource._class_lock:
+            current_name = AudioInputSource._last_device_name
+            current_idx = AudioInputSource._last_active
+
+        if not current_name or current_idx is None:
+            return
+
+        changes = {"audio_device": current_idx}
+        if not self._config.audio_device_name:
+            changes["audio_device_name"] = current_name
+
+        if any(getattr(self._config, key) != value for key, value in changes.items()):
+            self._set_config(**changes)
+            if self._persist_config():
+                _LOGGER.info(
+                    "Persisted active audio index %s (device '%s')",
+                    current_idx,
+                    current_name,
+                )
 
     def handle_device_list_change(self):
         """
@@ -182,50 +196,35 @@ class AudioInputSource:
         # Stop any active stream and refresh the device list
         was_active = self.refresh_device_list()
 
-        # If no stream was active, nothing to recover
-        if not was_active:
-            _LOGGER.debug(
-                "Device list changed but no audio stream was active - no recovery needed"
-            )
-            return
-
-        # Try to find the previously active device by name
-        # (device indices may have shifted after plug/unplug)
+        # The preferred name wins over the last active name, which may belong
+        # to a temporary fallback used while that preference was unavailable.
         with AudioInputSource._class_lock:
             last_device_name = AudioInputSource._last_device_name
             last_device_idx = AudioInputSource._last_active
+        preferred_name = self._config.audio_device_name or last_device_name
 
-        if not last_device_name:
+        if not preferred_name:
             _LOGGER.warning(
                 "Cannot recover audio stream: previous device name not tracked"
             )
-            # Try to reactivate with current config anyway
-            try:
-                self.activate()
-            except Exception as e:  # noqa: BLE001
-                _LOGGER.error(
-                    "Failed to reactivate audio stream after device change: %s",
-                    e,
-                )
             return
 
-        # Find device at its new index
         _LOGGER.info(
             "Attempting to recover audio device '%s' (was at index %s)",
-            last_device_name,
+            preferred_name,
             last_device_idx,
         )
-        found_idx = self.get_device_index_by_name(last_device_name)
+        found_idx = self.get_device_index_by_name(preferred_name)
 
         if found_idx == -1:
             # For Sendspin virtual devices, never silently switch to a real
             # audio device — they may simply be temporarily unreachable rather
             # than permanently removed.  Notify the frontend instead.
-            if last_device_name and last_device_name.startswith("SENDSPIN:"):
+            if preferred_name.startswith("SENDSPIN:"):
                 _LOGGER.warning(
                     "Sendspin audio device '%s' not found after device list "
                     "change. Not falling back to default audio device.",
-                    last_device_name,
+                    preferred_name,
                 )
 
                 self._ledfx.events.fire_event(
@@ -233,11 +232,11 @@ class AudioInputSource:
                         error_type="sendspin_device_not_found",
                         message=(
                             f"Sendspin audio source "
-                            f"'{last_device_name[len('SENDSPIN:') :].strip()}' "
+                            f"'{preferred_name[len('SENDSPIN:') :].strip()}' "
                             "is no longer available. Check your Sendspin server "
                             "or select a different audio source."
                         ),
-                        device_name=last_device_name,
+                        device_name=preferred_name,
                     )
                 )
                 return
@@ -245,20 +244,15 @@ class AudioInputSource:
             _LOGGER.warning(
                 "Previously active device '%s' no longer available after device list change. "
                 "Will use default device.",
-                last_device_name,
+                preferred_name,
             )
-            # Clear the stored device info since it's gone
-            with AudioInputSource._class_lock:
-                AudioInputSource._last_device_name = None
-                AudioInputSource._last_active = None
-
             # Use default device logic (prefers loopback of default output, then default input)
             fallback_idx = AudioInputSource.default_device_index()
             if fallback_idx is not None:
                 _LOGGER.info("Using fallback device at index %s", fallback_idx)
                 self._update_device_config(fallback_idx)
             else:
-                # No valid devices at all - clear config to trigger validator
+                # Keep the preferred name even when no device is currently usable.
                 _LOGGER.warning("No fallback device available")
                 self._update_device_config(None)
         else:
@@ -266,28 +260,29 @@ class AudioInputSource:
             if found_idx != current_config_idx:
                 _LOGGER.info(
                     "Device list changed: '%s' moved from index %s to %s",
-                    last_device_name,
+                    preferred_name,
                     current_config_idx,
                     found_idx,
                 )
             else:
                 _LOGGER.info(
                     "Device list changed: '%s' still at index %s",
-                    last_device_name,
+                    preferred_name,
                     found_idx,
                 )
 
-            # Always update config with found index to ensure consistency
             self._update_device_config(found_idx)
 
-        # Reactivate the stream with the updated configuration
-        try:
-            _LOGGER.info("Reactivating audio stream after device list refresh")
-            self.activate()
-        except Exception as e:  # noqa: BLE001
-            _LOGGER.error(
-                "Failed to reactivate audio stream after device change: %s", e
-            )
+        # Refresh closes an active stream; do not open a new one for an
+        # inactive source. Its resolved index will be used on next activation.
+        if was_active:
+            try:
+                _LOGGER.info("Reactivating audio stream after device list refresh")
+                self.activate()
+            except Exception as e:  # noqa: BLE001
+                _LOGGER.error(
+                    "Failed to reactivate audio stream after device change: %s", e
+                )
 
     @staticmethod
     def device_index_validator(val):
@@ -449,6 +444,7 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.lock = threading.Lock()
+        self._has_volume_measurement = False
         # We must not inherit legacy _callbacks from prior instances
         self._callbacks = []
         self.update_config(config)
@@ -506,7 +502,8 @@ class AudioInputSource:
             self._persist_config()
             return
 
-        # Device not found by name at all.
+        # Device not found by name at all. Keep the preference and use a
+        # temporary runtime index until it becomes available again.
         # For Sendspin virtual devices: do NOT fall back to a real audio device.
         # Silently switching to a microphone/loopback when the user intended
         # Sendspin is confusing and hard to diagnose.  Report the error and
@@ -532,24 +529,25 @@ class AudioInputSource:
             )
             return
 
-        # For regular devices: reset to default so we don't silently open a
-        # different device that now occupies the stale index.
+        # Do not discard the preferred name or persist the fallback as identity.
         default_idx = self.default_device_index()
         _LOGGER.warning(
             "Saved audio device '%s' not found in current device list. "
-            "Resetting to default device (index %s).",
+            "Using temporary default device (index %s).",
             saved_name,
             default_idx,
         )
-        self._set_config(audio_device=default_idx, audio_device_name="")
-        # Clear runtime tracking so hotplug won't try to recover the old device
-        with AudioInputSource._class_lock:
-            AudioInputSource._last_device_name = None
-            AudioInputSource._last_active = None
+        self._set_config(audio_device=default_idx)
         self._persist_config()
 
     def update_config(self, config):
         """Deactivate the audio, update the config, then reactivate"""
+        explicit_index_change = (
+            hasattr(self, "_config")
+            and "audio_device" in config
+            and "audio_device_name" not in config
+            and config["audio_device"] != self._config.audio_device
+        )
         # Merge the incoming (possibly partial) update over the existing config
         # before validation. Without this, a partial update such as
         # {"delay_ms": N} re-validates a bare dict and the schema injects
@@ -559,6 +557,10 @@ class AudioInputSource:
         # already been cleared.
         if hasattr(self, "_config"):
             config = {**self._config.model_dump(), **config}
+            if explicit_index_change:
+                config["audio_device_name"] = self.input_devices().get(
+                    config["audio_device"], ""
+                )
         new_config = AudioConfig.model_validate(config, context=RUNTIME_CONTEXT)
 
         device_changing = False
@@ -670,8 +672,12 @@ class AudioInputSource:
             valid_device_indexes,
         )
 
+        configured_name = self._config.audio_device_name
+        if configured_name.startswith("SENDSPIN:"):
+            sendspin_idx = self.get_device_index_by_name(configured_name)
+            device_idx = sendspin_idx if sendspin_idx != -1 else None
+
         if device_idx not in valid_device_indexes:
-            configured_name = self._config.audio_device_name
             # For Sendspin virtual devices, never fall back to a real audio
             # device — notify the frontend so the user can take action.
             if configured_name.startswith("SENDSPIN:"):
@@ -874,40 +880,12 @@ class AudioInputSource:
                 _LOGGER.warning("Audio device [%s] failed: %s", dev_idx, err)
                 return False
 
-        def persist_device_name_if_needed():
-            """
-            Ensure device index and name are persisted for cross-session
-            recovery.  Also handles seamless upgrade from legacy configs
-            (index-only) and fallback-open scenarios where the actual
-            device differs from the configured one.
-            """
-            with AudioInputSource._class_lock:
-                current_name = AudioInputSource._last_device_name
-                current_idx = AudioInputSource._last_active
-
-            if not current_name or current_idx is None:
-                return
-
-            name_changed = self._config.audio_device_name != current_name
-            idx_changed = self._config.audio_device != current_idx
-
-            if name_changed or idx_changed:
-                self._set_config(
-                    audio_device=current_idx, audio_device_name=current_name
-                )
-                if self._persist_config():
-                    _LOGGER.info(
-                        "Persisted audio device '%s' (index %s) for cross-session recovery",
-                        current_name,
-                        current_idx,
-                    )
-
         # Audio device startup sequence:
         # PortAudio's internal state may be poisoned at startup
         # (e.g. WDM-KS devices interfere during initial enumeration).
         # Recovery: try configured → reinit + retry configured → reinit + fallback
         if try_open_device(device_idx):
-            persist_device_name_if_needed()
+            self._persist_active_device_config()
             return
 
         _LOGGER.info("Reinitializing PortAudio and retrying device [%s]...", device_idx)
@@ -916,7 +894,7 @@ class AudioInputSource:
                 "Audio device [%s] opened successfully after PortAudio reinit.",
                 device_idx,
             )
-            persist_device_name_if_needed()
+            self._persist_active_device_config()
             return
 
         fallback_device = self.default_device_index()
@@ -924,7 +902,7 @@ class AudioInputSource:
         if fallback_device is not None and try_open_device(
             fallback_device, reinit=True
         ):
-            persist_device_name_if_needed()
+            self._persist_active_device_config()
             return
 
         _LOGGER.warning(
@@ -1114,10 +1092,14 @@ class AudioInputSource:
         self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
         self._volume = max(0, min(1, self._volume))
         self._volume_filter.update(self._volume)
+        self._has_volume_measurement = True
 
         # Calculate the frequency domain from the filtered data and
         # force all zeros when below the volume threshold
         volume = self._volume_filter.value
+        silence_controller = getattr(self._ledfx, "silence_scene", None)
+        if silence_controller is not None:
+            silence_controller.report_volume(volume)
         if volume is not None and volume > self._config.min_volume:
             self._processed_audio_sample = self._raw_audio_sample
 

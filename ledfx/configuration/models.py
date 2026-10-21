@@ -166,6 +166,21 @@ class AudioConfig(AudioInputConfig, AudioAnalysisConfig):
     model_config = ConfigDict(extra="allow", frozen=True)
 
 
+class SilenceSceneConfig(LedFxModel):
+    """Settings for temporarily activating a scene while audio is silent."""
+
+    enabled: bool = Field(False, description="Enable automatic silence scene handling")
+    scene_id: str | None = Field(
+        None, description="Scene to activate after the configured silence timeout"
+    )
+    timeout_seconds: CoercedFloat = Field(
+        5.0,
+        ge=0.0,
+        allow_inf_nan=False,
+        description="Continuous silence duration before activating the scene",
+    )
+
+
 class MelbankConfig(LedFxModel):
     model_config = ConfigDict(extra="allow", frozen=True)
 
@@ -543,6 +558,13 @@ class LedFxConfig(LedFxModel):
     )
     audio: AudioConfig = Field(
         AudioConfig(), json_schema_extra=_legacy_type("dict", {})
+    )
+    silence_scene: SilenceSceneConfig = Field(
+        SilenceSceneConfig(),
+        json_schema_extra={
+            **_legacy_type("dict", {}),
+            X_LEGACY: {"omit": True},
+        },
     )
     melbank_collection: list[MelbankCollectionEntry] = Field(
         list[MelbankCollectionEntry](),

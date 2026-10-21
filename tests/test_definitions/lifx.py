@@ -1,5 +1,6 @@
 # LIFX device tests using lifx-emulator-core
-# The emulator runs a Ceiling matrix device (8x8 = 64 pixels) at 127.0.0.1:56700
+# The emulator runs a Ceiling matrix device (8x8 = 64 pixels) on 127.0.0.1, at
+# an OS-assigned port that the device config passes as "port"
 # LIFX devices auto-detect type on connect and update config accordingly
 #
 # These tests run last because the LIFX emulator is bound to 127.0.0.1
@@ -11,6 +12,7 @@
 # 3. Check the LIFX device exists
 # 4. Delete the LIFX device
 # 5. Test find_lifx endpoint validation (missing ip_address)
+from tests import conftest
 from tests.test_utilities.test_utils import APITestCase, SystemInfo
 
 _available_fps = SystemInfo.calc_available_fps()
@@ -43,6 +45,7 @@ lifx_tests = {
                 "pixel_count": 1,
                 "name": "CI LIFX Test",
                 "ip_address": "127.0.0.1",
+                "port": conftest.lifx_emulator_port,
             },
         },
         expected_response_keys=["status", "payload", "device"],
@@ -59,6 +62,7 @@ lifx_tests = {
                         "pixel_count": 64,
                         "name": "CI LIFX Test",
                         "ip_address": "127.0.0.1",
+                        "port": conftest.lifx_emulator_port,
                         "serial": "d073d9000001",
                         "lifx_class": "CeilingLight",
                         "lifx_type": "matrix",
@@ -89,6 +93,7 @@ lifx_tests = {
                             "pixel_count": 64,
                             "name": "CI LIFX Test",
                             "ip_address": "127.0.0.1",
+                            "port": conftest.lifx_emulator_port,
                             "serial": "d073d9000001",
                             "lifx_class": "CeilingLight",
                             "lifx_type": "matrix",

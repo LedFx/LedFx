@@ -20,6 +20,7 @@ Reference notes covering architecture decisions, investigations, and implementat
 dev_notes/now_playing_architecture
 dev_notes/linux_now_playing
 dev_notes/albumart_musicbrainz
+silence_scene
 dev_notes/sendspin_network_resilience_test_plan
 dev_notes/audio-device-persistence-strategy
 dev_notes/audio-fallback-investigation

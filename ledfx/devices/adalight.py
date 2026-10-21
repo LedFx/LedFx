@@ -2,11 +2,12 @@ import logging
 from typing import Annotated
 
 import serial
+from ledfx_senders.encoders import encode_adalight
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED, OneOf
 from ledfx.configuration.plugin import TypedConfig
-from ledfx.devices import SerialDevice, packets
+from ledfx.devices import SerialDevice
 from ledfx.events import DevicesUpdatedEvent
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ class AdalightDevice(SerialDevice):
 
     def flush(self, data):
         try:
-            self.serial.write(packets.build_adalight_packet(data, self.color_order))
+            self.serial.write(encode_adalight(data, self.color_order))
 
         except serial.SerialException:
             # If we have lost connection, log it, go offline, and fire an event to the frontend

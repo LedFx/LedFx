@@ -10,7 +10,7 @@ from typing_extensions import override
 
 from ledfx.configuration.fields import X_REQUIRED, OneOf
 from ledfx.configuration.plugin import TypedConfig
-from ledfx.devices import UDPDevice
+from ledfx.devices import NetworkedDevice
 from ledfx.devices.native_packet import NativePacketDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ SUPPORTED_PACKETS = [
 class UDPRealtimeDevice(NativePacketDevice):
     """Generic UDP Realtime device support"""
 
-    class Config(UDPDevice.Config):
+    class Config(NetworkedDevice.Config):
         pixel_count: int = Field(
             1,
             description="Number of individual pixels",

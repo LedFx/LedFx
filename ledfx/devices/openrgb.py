@@ -2,12 +2,13 @@ import logging
 import socket
 
 import numpy as np
+from ledfx_senders.encoders import encode_openrgb
 from openrgb import OpenRGBClient
 from pydantic import Field
 
 from ledfx.configuration.fields import X_REQUIRED
 from ledfx.configuration.plugin import TypedConfig
-from ledfx.devices import NetworkedDevice, packets
+from ledfx.devices import NetworkedDevice
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -172,6 +173,6 @@ class OpenRGB(NetworkedDevice):
             data (np.ndarray): The data to be sent.
             device_id (int): The ID of the device to send the data to.
         """
-        packet = packets.build_openrgb_packet(data, device_id)
+        packet = encode_openrgb(data, device_id)
         # TCP may accept only part of a large frame in one send().
         sock.sendall(packet)

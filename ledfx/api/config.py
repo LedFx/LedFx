@@ -19,6 +19,7 @@ from ledfx.configuration.models import (
     AudioConfig,
     LedFxConfig,
     MelbanksConfig,
+    SilenceSceneConfig,
     WledPreferences,
     validate_dict,
 )
@@ -169,9 +170,11 @@ class ConfigEndpoint(RestEndpoint):
         """Validate the whole patch first, then apply it. Returns changed fields."""
         cfg = self._ledfx.config
         audio = _object(patch.pop("audio", {}), "audio")
+        silence_scene = _object(patch.pop("silence_scene", {}), "silence_scene")
         wled = _object(patch.pop("wled_preferences", {}), "wled_preferences")
         melbanks = _object(patch.pop("melbanks", {}), "melbanks")
         _check_keys(audio, "audio")
+        _check_keys(silence_scene, "silence_scene")
         _check_keys(wled, "wled_preferences")
         _check_keys(melbanks, "melbanks")
         for key in patch:
@@ -190,6 +193,10 @@ class ConfigEndpoint(RestEndpoint):
                 )
             candidate.audio = AudioConfig.model_validate(
                 {**cfg.audio.model_dump(), **audio}
+            )
+        if silence_scene:
+            candidate.silence_scene = SilenceSceneConfig.model_validate(
+                {**cfg.silence_scene.model_dump(), **silence_scene}
             )
         if wled:
             current = cfg.wled_preferences.model_dump()
@@ -228,7 +235,13 @@ class ConfigEndpoint(RestEndpoint):
             if melbanks and getattr(self._ledfx, "audio", None) is not None:
                 self._ledfx.audio.melbanks.update_config(cfg.melbanks.model_dump())
             self._ledfx.events.fire_event(
-                BaseConfigUpdateEvent({**patch, **({"audio": audio} if audio else {})})
+                BaseConfigUpdateEvent(
+                    {
+                        **patch,
+                        **({"audio": audio} if audio else {}),
+                        **({"silence_scene": silence_scene} if silence_scene else {}),
+                    }
+                )
             )
         except Exception:
             # The request fails, so none of the patch may stay (audio writes too).

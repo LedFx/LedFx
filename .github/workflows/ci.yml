@@ -140,7 +140,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - run: uv sync --group dev
@@ -171,7 +171,7 @@ jobs:
           persist-credentials: false
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y gcc libatlas3-base portaudio19-dev
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
@@ -235,7 +235,7 @@ jobs:
           persist-credentials: false
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y gcc libatlas3-base portaudio19-dev
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
@@ -274,23 +274,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
         run: uv sync --all-extras --dev
       - uses: LABSN/sound-ci-helpers@d08c889a7bba7d9b1b059f8f76dac4672ea3a9cf # v1.0.4
-      # The LIFX emulator (tests/conftest.py) binds UDP 56700, inside Windows'
-      # dynamic port range. winnat reserves random blocks of that range at
-      # boot; when one covers 56700 the bind fails with WinError 10013.
-      # Reserve the port while winnat is stopped so it can't be taken.
-      - name: Reserve UDP 56700 for the LIFX emulator
-        run: |
-          net stop winnat
-          netsh int ipv4 add excludedportrange protocol=udp startport=56700 numberofports=1
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          net start winnat
-          netsh int ipv4 show excludedportrange protocol=udp
       - name: Run tests
         run: uv run pytest -v --timeout=120
         timeout-minutes: 10
@@ -321,7 +310,7 @@ jobs:
           persist-credentials: false
       - name: Install system dependencies
         run: brew install portaudio
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
@@ -352,7 +341,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install NSIS
@@ -406,7 +395,7 @@ jobs:
           persist-credentials: false
       - name: Install system dependencies
         run: brew install portaudio
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Install LedFx
@@ -503,7 +492,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: ${{ needs.plan.outputs.release != 'true' }} # zizmor: ignore[cache-poisoning] off on release runs
       - name: Write ledfx.env
@@ -537,7 +526,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: python-dist
-      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
         with:
           enable-cache: false
       - name: Install and run LedFx
@@ -744,7 +733,7 @@ jobs:
         id: prepare
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: prepare
           project: release-tools
@@ -766,7 +755,7 @@ jobs:
         id: upload
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: check-upload
           project: release-tools
@@ -799,7 +788,7 @@ jobs:
         id: promote
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: promote
           project: release-tools
@@ -840,7 +829,7 @@ jobs:
       - name: Verify provenance and publish the GitHub draft
         env:
           GH_TOKEN: ${{ steps.release-token.outputs.token }}
-        uses: LedFx/release-ci/actions/release@442e00705d4e5edd589021851e756761363f9d84 # v0.3.1
+        uses: LedFx/release-ci/actions/release@12ea4ced7288cb6b0f3a8aafbac3e825969c17ca # v0.4.2
         with:
           phase: finalize
           project: release-tools

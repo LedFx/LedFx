@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import socket
 import threading
 from abc import abstractmethod
 from collections.abc import Iterator, Mapping
@@ -712,37 +711,6 @@ class NetworkedDevice(Device):
             return self._destination
 
 
-@BaseRegistry.no_registration
-class UDPDevice(NetworkedDevice):
-    class Config(NetworkedDevice.Config):
-        port: int = Field(
-            description="Port for the UDP device",
-            ge=1,
-            le=65535,
-            json_schema_extra={X_REQUIRED: True},
-        )
-
-    config = TypedConfig(Config)
-
-    def activate(self):
-        self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        _LOGGER.debug(
-            "%s sender for %s started.",
-            self._device_type,
-            self.config.name,
-        )
-        super().activate()
-
-    def deactivate(self):
-        super().deactivate()
-        _LOGGER.debug(
-            "%s sender for %s stopped.",
-            self._device_type,
-            self.config.name,
-        )
-        self._sock = None
-
-
 def available_com_ports() -> list[str]:
     """No port ("") plus the serial ports present now."""
     return ["", *(p.device for p in serial.tools.list_ports.comports())]
@@ -1010,6 +978,12 @@ class Devices(RegistryLoader):
 
         if device_type == "wled" and "matrix" in led_info and "h" in led_info["matrix"]:
             virtual_config["rows"] = led_info["matrix"]["h"]
+
+        # Devices that detect a matrix in async_initialize (e.g. LIFX) do so
+        # before this virtual exists, so they cannot set its rows themselves.
+        matrix_height = getattr(device, "matrix_height", 0)
+        if matrix_height > 1:
+            virtual_config["rows"] = matrix_height
 
         segments = [[device.id, 0, device_config["pixel_count"] - 1, False]]
 

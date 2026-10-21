@@ -13,4 +13,4 @@ concurrency:
 
 jobs:
   autofix:
-    uses: LedFx/.github/.github/workflows/autofix.yml@ca0fe21917a0ea7b7cbf6b065139f22be7561e12 # main
+    uses: LedFx/.github/.github/workflows/autofix.yml@0e36d944516fe8bd95be7afd5cf9a117f08d5652 # main

@@ -1,5 +1,6 @@
 import asyncio
 import json
+from pathlib import Path
 
 import pytest
 from aiohttp import web
@@ -53,6 +54,40 @@ async def test_events_include_timing_fields(tmp_path):
     await manager.pause()
     await asyncio.sleep(0.01)
     assert any(hasattr(ev, "remaining_ms") for ev in core.events.fired)
+    await manager.stop()
+
+
+@pytest.mark.asyncio
+async def test_recovery_checkpoint_preserves_playlist_position_and_order(
+    tmp_path: Path,
+):
+    core = DummyCoreWithEvents(str(tmp_path))
+    manager = PlaylistManager(core)
+    await manager.create_or_replace(
+        {
+            "id": "recovery",
+            "name": "Recovery",
+            "items": [
+                {"scene_id": f"scene-{index}", "duration_ms": 10000}
+                for index in range(4)
+            ],
+            "mode": "shuffle",
+        }
+    )
+    await manager.start("recovery")
+    await asyncio.sleep(0.02)
+    checkpoint = manager.recovery_checkpoint()
+    await manager.pause()
+
+    assert checkpoint["active"] is True
+    assert checkpoint["playlist_id"] == "recovery"
+    assert len(checkpoint["order"]) == 4
+    assert checkpoint["remaining_ms"] is not None
+    assert await manager.restore_checkpoint(checkpoint)
+    state = await manager.get_state()
+    assert state["active_playlist"] == "recovery"
+    assert state["index"] == checkpoint["index"]
+    assert state["order"] == checkpoint["order"]
     await manager.stop()
 
 

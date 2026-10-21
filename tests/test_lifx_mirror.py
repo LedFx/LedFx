@@ -2,8 +2,9 @@
 
 The Mirror reports a 4x13 matrix, but its 52 buffer positions hold two
 interleaved 25-zone rings plus two unused positions. LedFx drives it as a
-50-pixel strip in zone order and scatters each frame into the buffer, so a
-zone's colour must land at the buffer position lifx-async's layout gives it.
+50-pixel strip (front ring, then back ring reversed so both run the same
+way) and scatters each frame into the buffer, so each pixel's colour must
+land at the buffer position lifx-async's layout gives its zone.
 
 The end-to-end test swaps the session's emulated Ceiling for a Mirror on
 127.0.0.1, so it runs last: after the LIFX API tests in test_apis.py have
@@ -11,6 +12,7 @@ deleted the DDP test jig and the Ceiling device that share that address.
 """
 
 import asyncio
+import logging
 import time
 from collections.abc import Coroutine, Iterator
 from typing import TypeVar
@@ -19,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import numpy as np
 import pytest
 import requests
-from lifx.exceptions import LifxError
+from lifx.exceptions import LifxError, LifxTimeoutError
 from lifx.products import get_mirror_layout
 from lifx_emulator import EmulatedLifxServer
 from lifx_emulator.devices import EmulatedLifxDevice
@@ -129,7 +131,11 @@ def test_mirror_end_to_end(emulated_mirror: EmulatedLifxDevice) -> None:
         f"{API}/devices",
         json={
             "type": "lifx",
-            "config": {"name": DEVICE_NAME, "ip_address": "127.0.0.1"},
+            "config": {
+                "name": DEVICE_NAME,
+                "ip_address": "127.0.0.1",
+                "port": conftest.lifx_emulator_port,
+            },
         },
         timeout=30,
     )
@@ -180,7 +186,8 @@ def _mirror_device_with_animator() -> tuple[LifxDevice, MagicMock]:
     device._lifx_type = "mirror"
     device._zone_count = MIRROR_LAYOUT.zone_count
     device._mirror_positions = np.array(
-        MIRROR_LAYOUT.front_positions + MIRROR_LAYOUT.back_positions, dtype=np.intp
+        MIRROR_LAYOUT.front_positions + MIRROR_LAYOUT.back_positions[::-1],
+        dtype=np.intp,
     )
     animator = MagicMock()
     animator.pixel_count = BUFFER_SIZE
@@ -263,10 +270,33 @@ async def test_connecting_a_mirror_maps_each_zone_to_its_buffer_position():
     assert device._zone_count == 50
     positions = device._mirror_positions
     assert positions is not None
-    # Zone order: front zones 0-24, then back zones 25-49
+    # Front zones 0-24, then back zones 49-25 so both rings run the same way
     assert positions.tolist() == list(
-        MIRROR_LAYOUT.front_positions + MIRROR_LAYOUT.back_positions
+        MIRROR_LAYOUT.front_positions + MIRROR_LAYOUT.back_positions[::-1]
     )
+
+
+async def test_connecting_a_mirror_runs_both_rings_in_the_same_direction():
+    device = _mirror_device_to_connect()
+    animator = MagicMock(canvas_width=4, canvas_height=13, pixel_count=BUFFER_SIZE)
+
+    with (
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(return_value=animator),
+        ),
+    ):
+        await device._create_animator()
+
+    positions = device._mirror_positions
+    assert positions is not None
+    # Columns 0-1 carry the front ring and columns 2-3 the back ring, so
+    # pixel k of each ring must sit in the same row, two columns apart
+    for k in range(25):
+        front_row, front_col = divmod(int(positions[k]), 4)
+        back_row, back_col = divmod(int(positions[25 + k]), 4)
+        assert (back_row, back_col) == (front_row, front_col + 2), k
 
 
 async def test_a_failed_mirror_connection_drops_the_position_map():
@@ -284,3 +314,65 @@ async def test_a_failed_mirror_connection_drops_the_position_map():
     assert device._animator is None
     assert device._mirror_positions is None
     assert not device._connected
+
+
+def _animator_warning(caplog: pytest.LogCaptureFixture) -> logging.LogRecord:
+    (record,) = [
+        r
+        for r in caplog.records
+        if r.name == "ledfx.devices.lifx" and r.levelno == logging.WARNING
+    ]
+    return record
+
+
+async def test_an_unreachable_device_logs_one_line_without_a_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
+    device = _mirror_device_to_connect()
+
+    with (
+        caplog.at_level(logging.WARNING, logger="ledfx.devices.lifx"),
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(side_effect=LifxTimeoutError("no response")),
+        ),
+    ):
+        await device._create_animator()
+
+    record = _animator_warning(caplog)
+    assert "Animator creation failed: no response" in record.getMessage()
+    assert not record.exc_info
+
+
+async def test_an_unexpected_connection_error_keeps_its_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
+    device = _mirror_device_to_connect()
+
+    with (
+        caplog.at_level(logging.WARNING, logger="ledfx.devices.lifx"),
+        patch("ledfx.devices.lifx.MirrorLight", _mocked_mirror_light()),
+        patch(
+            "ledfx.devices.lifx.Animator.for_matrix",
+            AsyncMock(side_effect=LifxError("no reply")),
+        ),
+    ):
+        await device._create_animator()
+
+    assert _animator_warning(caplog).exc_info
+
+
+def test_a_frame_send_timeout_logs_without_a_traceback(
+    caplog: pytest.LogCaptureFixture,
+):
+    device, animator = _mirror_device_with_animator()
+    device._config = LifxDevice.config_model().model_construct(name=DEVICE_NAME)
+    animator.send_frame.side_effect = LifxTimeoutError("no response")
+
+    with caplog.at_level(logging.WARNING, logger="ledfx.devices.lifx"):
+        device.flush(np.full((50, 3), 255.0))
+
+    record = _animator_warning(caplog)
+    assert "Frame send error: no response" in record.getMessage()
+    assert not record.exc_info

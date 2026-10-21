@@ -1982,34 +1982,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/devices/__init__.py",
-      "name": "bad-override",
-      "concise_description": "Class member `UDPDevice.activate` overrides parent class `NetworkedDevice` in an inconsistent manner",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/__init__.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `UDPDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/__init__.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `UDPDevice.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 22,
-      "path": "ledfx/devices/__init__.py",
-      "name": "implicit-any-attribute",
-      "concise_description": "This expression is implicitly inferred to be `Any | None`. Please provide an explicit type annotation.",
-      "severity": "error"
-    },
-    {
       "column": 24,
       "path": "ledfx/devices/__init__.py",
       "name": "implicit-any-parameter",
