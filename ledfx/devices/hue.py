@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 import threading
 from collections.abc import Callable, Coroutine, Generator, Mapping
 from contextlib import contextmanager
@@ -749,7 +750,11 @@ class HueDevice(NetworkedDevice):
             point: list[float] = []
             for axis in ("x", "y", "z"):
                 value = position.get(axis)
-                if isinstance(value, bool) or not isinstance(value, (int, float)):
+                if (
+                    isinstance(value, bool)
+                    or not isinstance(value, (int, float))
+                    or not math.isfinite(value)
+                ):
                     raise TypeError("Invalid Hue channel position")
                 point.append(float(value))
             lights[str(channel_id)] = point

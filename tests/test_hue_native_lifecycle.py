@@ -1181,7 +1181,7 @@ async def test_rejected_credentials_pair_again(
     await device.async_shutdown()
 
 
-@pytest.mark.parametrize("bad", [None, "1.5", True])
+@pytest.mark.parametrize("bad", [None, "1.5", True, float("nan"), float("inf")])
 def test_discovery_rejects_non_numeric_channel_positions(
     monkeypatch: pytest.MonkeyPatch, bad: object
 ) -> None:
