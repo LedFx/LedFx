@@ -1112,8 +1112,9 @@ async def test_initialization_does_not_publish_replaced_bridge_results(
 async def test_repeat_activation_during_connect_keeps_one_zone_start(
     hue_device: HueFixture,
 ) -> None:
-    failed, blocked = ControlledSender(failure=ConnectionError("x")), ControlledSender(
-        blocked=True
+    failed, blocked = (
+        ControlledSender(failure=ConnectionError("x")),
+        ControlledSender(blocked=True),
     )
     hue_device.senders.extend([failed, blocked])
     hue_device.activate()
@@ -1157,7 +1158,11 @@ async def test_rejected_credentials_pair_again(
         if endpoint.endswith(ZONE):
             return {
                 "data": [
-                    {"channels": [{"channel_id": 7, "position": {"x": 0, "y": 0, "z": 0}}]}
+                    {
+                        "channels": [
+                            {"channel_id": 7, "position": {"x": 0, "y": 0, "z": 0}}
+                        ]
+                    }
                 ]
             }, {}
         return {"data": [{"id": ZONE, "metadata": {"name": "Room"}}]}, {}
