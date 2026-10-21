@@ -13,6 +13,7 @@ import requests
 from ledfx_senders import HueSender
 from numpy.typing import NDArray
 from pydantic import Field
+from typing_extensions import override
 
 from ledfx.configuration.fields import X_REQUIRED
 from ledfx.configuration.plugin import PluginConfig, TypedConfig
@@ -137,12 +138,14 @@ class HueDevice(NetworkedDevice):
         self._online = False
 
     @contextmanager
+    @override
     def _config_update_context(
         self, config: dict[str, object]
     ) -> Generator[None, None, None]:
         with self._publication_lock, super()._config_update_context(config):
             yield
 
+    @override
     def config_updated(self, config: Config) -> None:
         if self._output_changed():
             requested = self._requested
@@ -184,6 +187,7 @@ class HueDevice(NetworkedDevice):
             raise asyncio.CancelledError
         return result
 
+    @override
     async def resolve_address(
         self, success_callback: Callable[[], None] | None = None
     ) -> None:
@@ -308,7 +312,8 @@ class HueDevice(NetworkedDevice):
 
         await self._executor(request)
 
-    def activate(self) -> None:
+    @override
+    def activate(self, *args: object, **kwargs: object) -> None:
         with self._publication_lock:
             if (
                 self._shutting_down
@@ -526,10 +531,12 @@ class HueDevice(NetworkedDevice):
     async def _close_candidate(self, candidate: HueSender) -> None:
         await self._executor(candidate.close)
 
+    @override
     def is_activation_requested(self) -> bool:
         with self._publication_lock:
             return self._requested
 
+    @override
     def deactivate(self) -> None:
         with self._publication_lock:
             generation = self._generation
@@ -641,6 +648,7 @@ class HueDevice(NetworkedDevice):
                 self._sender_failed(sender, generation)
                 return
 
+    @override
     async def async_shutdown(self) -> None:
         with self._publication_lock:
             self._shutting_down = True
@@ -770,6 +778,7 @@ class HueDevice(NetworkedDevice):
         self._check_hue_bridge(settings)
         return credentials | self._discover(settings)
 
+    @override
     async def async_initialize(self) -> None:
         # Capture before DNS/executor awaits: the registry already exposes this
         # device to API updates. Never read live bridge credentials in a worker.

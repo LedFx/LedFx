@@ -2465,34 +2465,6 @@
       "severity": "error"
     },
     {
-      "column": 9,
-      "path": "ledfx/devices/hue.py",
-      "name": "bad-override",
-      "concise_description": "Class member `HueDevice.activate` overrides parent class `NetworkedDevice` in an inconsistent manner",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/hue.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `HueDevice.activate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 9,
-      "path": "ledfx/devices/hue.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `HueDevice.deactivate` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
-      "column": 15,
-      "path": "ledfx/devices/hue.py",
-      "name": "missing-override-decorator",
-      "concise_description": "Class member `HueDevice.async_initialize` overrides a member in a parent class but is missing an `@override` decorator",
-      "severity": "error"
-    },
-    {
       "column": 25,
       "path": "ledfx/devices/launchpad.py",
       "name": "implicit-any-type-argument",
