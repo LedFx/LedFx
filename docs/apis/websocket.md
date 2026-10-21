@@ -691,8 +691,8 @@ is sent at most `visualisation_fps` times a second per virtual or device, and
 is downsampled to at most `visualisation_maxlen` pixels.
 
 The internal `virtual_update` and `device_update` events fire on every frame
-and cannot be subscribed to over the websocket; subscribing to them returns
-an error. Use `visualisation_update` instead, filtered to one virtual with
+for in-process listeners only, and cannot be subscribed to over the
+websocket; subscribing to them returns an error. Use `visualisation_update` instead, filtered to one virtual with
 `"event_filter": {"vis_id": "my_virtual_id"}`.
 
 **Payload Example:**
