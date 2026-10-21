@@ -1420,26 +1420,7 @@ dependencies = [
     { name = "dbus-fast", marker = "sys_platform == 'linux'" },
     { name = "flux-led" },
     { name = "icmplib" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl" }, marker = "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" }, marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" }, marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'" },
-    { name = "ledfx-senders", version = "0.3.1", source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" }, marker = "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'" },
+    { name = "ledfx-senders" },
     { name = "lifx-async" },
     { name = "mss" },
     { name = "multidict" },
@@ -1522,26 +1503,7 @@ requires-dist = [
     { name = "dbus-fast", marker = "sys_platform == 'linux'", specifier = ">=5.0.22,<6.0.0" },
     { name = "flux-led", specifier = ">=1.0.4" },
     { name = "icmplib", specifier = ">=3.0.4" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'darwin'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.11.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" },
-    { name = "ledfx-senders", marker = "python_full_version == '3.14.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" },
+    { name = "ledfx-senders", specifier = ">=0.4.0,<0.5.0" },
     { name = "lifx-async", specifier = ">=7.11.2" },
     { name = "mss", specifier = "~=10.2.0" },
     { name = "multidict", specifier = ">=6.0.4" },
@@ -1610,343 +1572,40 @@ docs = [
 
 [[package]]
 name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl" }
-resolution-markers = [
-    "python_full_version < '3.12' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-]
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/32/0b/cba8f7553968fc27baf406586375697fb6687b7d9bcc9edc4e54d0d22024/ledfx_senders-0.4.0.tar.gz", hash = "sha256:8b21dbc3d0037b4e09325472c565a913e4ac8e4ca1a64069bcc18e484b52f2d9", size = 204711, upload-time = "2026-10-10T05:05:56.616Z" }
 wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:17137e32d9f8c1677ab45eae30d6c028a5052675005ac300dcd833ddbea634ba" },
+    { url = "https://files.pythonhosted.org/packages/c8/82/d505f3a25b8b81c281e0ddcd35ef59b5d1595c5956b730af6e826f226867/ledfx_senders-0.4.0-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:b869b7f7b736b411b352649c6357b0b71c6c5a307e710af8ee5a49a7671cc758", size = 1323032, upload-time = "2026-10-10T05:04:55.778Z" },
+    { url = "https://files.pythonhosted.org/packages/ed/a2/4947782b0f831aaa3de987a5d65d2a86c9263ed76b2c4f38f75d474dd270/ledfx_senders-0.4.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:2467f3ff91a09e691d1b87cf4299a7047c8867e31bc1c9a3292b2c073cd593d9", size = 1261986, upload-time = "2026-10-10T05:04:57.787Z" },
+    { url = "https://files.pythonhosted.org/packages/ef/8b/826974b853f82918053ebfb64af05a21fb3b50b42d1e6152dea3439524d7/ledfx_senders-0.4.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:488660006f7c245bba40cfe8d010d7c9e5378bfc5d98607d05dc6d64ff7ce063", size = 6720317, upload-time = "2026-10-10T05:04:59.481Z" },
+    { url = "https://files.pythonhosted.org/packages/c1/3f/faa994dbe6b2c0ff1f27d8ba9ccc6fb95a612c48e517fe4e94f58c439063/ledfx_senders-0.4.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:fcab6e22d13894e2124feb7b86168bea75d51e5849690043821d8f664ef3c96a", size = 7852799, upload-time = "2026-10-10T05:05:01.47Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/6b/60c27f96699a862402f88915697ef50fea23dcdce4e22db8815e41da2163/ledfx_senders-0.4.0-cp311-cp311-win_amd64.whl", hash = "sha256:5e786ff17e3d145b0c7133f5f26b5dfb3cbf6006366fae061f821ad94c80b70d", size = 1072080, upload-time = "2026-10-10T05:05:03.388Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/12/48bbdf6bb3c02dd49a1dfc6eafdae50e88df8bb9f35282a5f579beb8fef4/ledfx_senders-0.4.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:4efc5a74c473ec466d308d3d44824eb0558fd4e5b77e5db11b43dae98e1a532c", size = 1325787, upload-time = "2026-10-10T05:05:04.857Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/0d/4da4f951036588d1f4224b7dc97d4810b67b001c7efb8cf9867407b49ba4/ledfx_senders-0.4.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:e2985d58fc13002edda02fbb7c9dd14eec3af151e86694759e48fdc2d22bd7eb", size = 1252482, upload-time = "2026-10-10T05:05:06.688Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/56/f615e41828cb23637079d86d5d6da57db05bb685e716d76c053ec90793d8/ledfx_senders-0.4.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:a51d319294acb28bd823cbd32acd18b2245bfae8827a635486b404fe147814bd", size = 6708577, upload-time = "2026-10-10T05:05:08.338Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/2c/7fc1e4b1a4b9276ef402909f7ad18afce83c32a886d45ba9a67b1b792c64/ledfx_senders-0.4.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:d97b551dbad5de7443d5ad68579167b3d53cf76032eb318f327d88de79ee253a", size = 7849950, upload-time = "2026-10-10T05:05:10.097Z" },
+    { url = "https://files.pythonhosted.org/packages/b1/f0/60c1522b337733c9bbbfd5281a4723a8c63bb6f2b7118a372b32fa6736fc/ledfx_senders-0.4.0-cp312-cp312-win_amd64.whl", hash = "sha256:49c8154be27f7ea2dd3de32d4a8de176ea7833a228171e9629e8796f5e133e6c", size = 1067804, upload-time = "2026-10-10T05:05:12.138Z" },
+    { url = "https://files.pythonhosted.org/packages/94/44/2b9d845a1fc802e880fe80281d7230d075d66aa5a41de8bfecb5eeb30e5a/ledfx_senders-0.4.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:19a7e0548930a479cc8eca79775ee754ba23bf214dcc924900442b08d0b04153", size = 1322264, upload-time = "2026-10-10T05:05:13.566Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/da/f3e59d39e89e12a323060e76521baa42b607adb20564946a4aa2a7e5f069/ledfx_senders-0.4.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:bf5b58a4d17e20105f4fdcdf916aaca94f7f7b8a0b41ba86c2a3178a6d784dfa", size = 1251374, upload-time = "2026-10-10T05:05:14.921Z" },
+    { url = "https://files.pythonhosted.org/packages/5c/bf/b47f5b737a4eb5f2150fdb5ce8808b1bee08da97ff37bdbb594a94a751cb/ledfx_senders-0.4.0-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:42408384d93aa720a632ff8a27d1f0991856e1d309a83ab49fc31e2950891e16", size = 6705350, upload-time = "2026-10-10T05:05:16.401Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/05/0dc4fb3360bb291be032ff4a897c8e2843a45bc169d26f552a775e22eba1/ledfx_senders-0.4.0-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:0cd18cbd5ff73d0c1cad91f9a4c1d8be4ed5b8a09c5da9f24eacf94059cf6a4c", size = 7845144, upload-time = "2026-10-10T05:05:18.051Z" },
+    { url = "https://files.pythonhosted.org/packages/d9/2a/a4647aefbff185ee7562b2ff7088c1e32f8f8277a4837f8448f52accf3a6/ledfx_senders-0.4.0-cp313-cp313-win_amd64.whl", hash = "sha256:cc918e6418bba40bd9475b75569da5e7c9507f9b472dd9e59e8bc6495f369b0b", size = 1066783, upload-time = "2026-10-10T05:05:19.981Z" },
+    { url = "https://files.pythonhosted.org/packages/00/b1/d890615a99c608ad5c5c19d0524df83d4b8a09be2e4df75637911d25e959/ledfx_senders-0.4.0-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:ecd3137610930d60b8f0bd3f2750177065ca155f99116987f5b888f56be99f22", size = 1324169, upload-time = "2026-10-10T05:05:21.404Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/db/0bcb0399fdd0a3a41a67261b7586d571f9ac4d6ba195e40dd74f3fa87a7a/ledfx_senders-0.4.0-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:08aa19e513213a46a23bb7b554fd91bd44077bb1af7a9e8663b9aeec83b69a05", size = 1252455, upload-time = "2026-10-10T05:05:22.968Z" },
+    { url = "https://files.pythonhosted.org/packages/19/19/1fb46aaa04e93ca1dad85836389cc2ce177d30c7c328dabf9db0d805ce02/ledfx_senders-0.4.0-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:d9752cc8b972dfd1df977928628a46e6930f5512bfd432b94b89c0564eed4c15", size = 6704078, upload-time = "2026-10-10T05:05:24.928Z" },
+    { url = "https://files.pythonhosted.org/packages/48/19/766274ceaed2df1d081a5d4cb0bf4b02ef9524d13c81799501d2e8d7e8ed/ledfx_senders-0.4.0-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:1fc4b2c19a5f0ffd90855c3911de281822ed4fc4fff22b62ad54a78dda4e9a88", size = 7853597, upload-time = "2026-10-10T05:05:26.844Z" },
+    { url = "https://files.pythonhosted.org/packages/83/26/5d69d32eca7f612769a61f5f7b678836c2ce1af1cbc56fcbcd8117123cf7/ledfx_senders-0.4.0-cp314-cp314-win_amd64.whl", hash = "sha256:e415bb21fd923f10fb642b816fe7e538a891b6c6adc967d5de53866f00653315", size = 1096976, upload-time = "2026-10-10T05:05:28.724Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/94/1394167ce1a8d4205723c11af360c5886d367127fd95941acab12dc8081f/ledfx_senders-0.4.0-cp314-cp314t-macosx_10_15_x86_64.whl", hash = "sha256:1e03b8669a97f5932cad42a82c137ec92940658456cace57ec5af88703bc14e2", size = 1324226, upload-time = "2026-10-10T05:05:30.262Z" },
+    { url = "https://files.pythonhosted.org/packages/72/4a/94dcaf7a2793922e38d8841755454498fae47c2208b12779e228f9f4a50d/ledfx_senders-0.4.0-cp314-cp314t-macosx_11_0_arm64.whl", hash = "sha256:a71fe89f386041a3fa1c178a6e6f68a1a60f0ac1b09d5558b4ff471ed2d36ceb", size = 1250574, upload-time = "2026-10-10T05:05:31.987Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/8b/eb8edefbd645ed2c5e348bd37254dcc1e08022d05b9ece1f3a5c34fad33c/ledfx_senders-0.4.0-cp314-cp314t-manylinux_2_28_aarch64.whl", hash = "sha256:74b996c9af060a736be14678c7f4251eced2523d58bf1d4713685f225e167ec0", size = 6709403, upload-time = "2026-10-10T05:05:33.685Z" },
+    { url = "https://files.pythonhosted.org/packages/f0/5d/0db0b56c6d8efb4e6473b6fec7a284956fc5505f2f437884984344bd40b7/ledfx_senders-0.4.0-cp314-cp314t-manylinux_2_28_x86_64.whl", hash = "sha256:4ee5720d86d3e937303ccc23a7ad059311cf80498f78ea9f1ff82fe33c33ad55", size = 7859470, upload-time = "2026-10-10T05:05:35.461Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/61/e51ee090e3e0611573478d48124aa15f924b7ea5a4097a755771e2aa42fc/ledfx_senders-0.4.0-cp314-cp314t-win_amd64.whl", hash = "sha256:343c971710616bc36d9ae5cdaaadeb8e47a2b2840d4305a406a0430a586563b3", size = 1096317, upload-time = "2026-10-10T05:05:37.484Z" },
 ]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl" }
-resolution-markers = [
-    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:93ce9455182c752f1dcc5a308dff031d0519d4f24d5ee0bdcac8eeac25b41509" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl" }
-resolution-markers = [
-    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:7de67fbf553d701ea1a05f6c53a9c308505ca0218aef46b015e42a7cc1c8223a" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl" }
-resolution-markers = [
-    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:f0ced4b39c026ba10bc1b9beb915d23266ac5f0d4190f5b829c85e52e160e51a" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl" }
-resolution-markers = [
-    "python_full_version < '3.12' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
-]
-dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:8a62bee469232116565feb9d8beb403aa4fcc4421dd3ad0df51491c272a1ee6b" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl" }
-resolution-markers = [
-    "python_full_version == '3.12.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:79ebd239d0c4ef75dd6bf5c482aefb5a24a19ee7b795c79b8263f16a6b70f9d3" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl" }
-resolution-markers = [
-    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:b138f830aad79dd8cd87556543d53437afbe50ba35c8b8cbe79acd7a569bf354" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl" }
-resolution-markers = [
-    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:cbd7a12078c70a647e592240ec60785507b5c6367388e858621c4ad8601deed7" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl" }
-resolution-markers = [
-    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:01c268649b1c64b959d7956a66b9821291f97732a1208dc9cdb053c8aeff6eee" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl" }
-resolution-markers = [
-    "python_full_version == '3.12.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp312-cp312-win_amd64.whl", hash = "sha256:ecd26f51a65d7a76b2f4bffd005e47b48c688f690b3881b88dbd0facb8306c44" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl" }
-resolution-markers = [
-    "python_full_version == '3.13.*' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:463e2ee404bf3afea4d8e39ba0e3e71c49196508ee626d79d2912079a0e06bcf" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl" }
-resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ed124c9790da52fe1c7b2dd88239501f17762cbe0f5458f2185679ff96dc4457" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl" }
-resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_aarch64.whl", hash = "sha256:1815410d889b6b812b58152c8a92df0b3b93c173938d8fce595beb32d8081ee9" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl" }
-resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-manylinux_2_28_x86_64.whl", hash = "sha256:339c1dc003d67ec08e0f6a6a79d79e624aa8df920cdd42d3121b17b50a698f65" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl" }
-resolution-markers = [
-    "python_full_version == '3.13.*' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp313-cp313-win_amd64.whl", hash = "sha256:3afcf23812fdb95d3fa53e56a2e7f21104375e50ee45c54dad77e3d6764c4ee0" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl" }
-resolution-markers = [
-    "python_full_version >= '3.14' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:454461cbeb3fb397a12d6ac8e5e066aa0cbac1f7a3449ee9e0c4322252ff3174" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl" }
-resolution-markers = [
-    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'arm64' and sys_platform == 'darwin'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:0d8747deeac0e07125bab511150c08f7f0b1cade3775334873801dc78d903ef1" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl" }
-resolution-markers = [
-    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'aarch64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_aarch64.whl", hash = "sha256:5c7d9268e7a489af5283a2c2f6a9a2f95946a687c9b1b8636007b1711ebde96a" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl" }
-resolution-markers = [
-    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'x86_64' and sys_platform == 'linux'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-manylinux_2_28_x86_64.whl", hash = "sha256:143d89bdca91ca55436ec7cba96a720a44a18b85ff753ebc7418d6d635ee33b4" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
-
-[[package]]
-name = "ledfx-senders"
-version = "0.3.1"
-source = { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl" }
-resolution-markers = [
-    "python_full_version >= '3.14' and implementation_name == 'cpython' and platform_machine == 'AMD64' and sys_platform == 'win32'",
-]
-dependencies = [
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" } },
-]
-wheels = [
-    { url = "https://github.com/LedFx/ledfx-senders/releases/download/hue-preview-b208aca91d62a0a4daac9c51b5d1bffc6e9acf32/ledfx_senders-0.3.1-cp314-cp314-win_amd64.whl", hash = "sha256:ffbd26a07707c530bb956d0f1fcb1faa235b6439669b14ae1bb5235053318ed3" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "numpy", specifier = ">=2.0.0,<3.0.0" }]
 
 [[package]]
 name = "lifx-async"
