@@ -59,14 +59,15 @@ A rejected request gets a reply with `success: false`:
 ```
 
 `subscribe_event` is rejected when `event_type` is missing or not a
-string, `event_filter` is not an object, `ack` is not a boolean, or the
+string, `event_filter` is neither an object nor `null`, `ack` is not a
+boolean, or the
 event cannot be subscribed to (the message names what to use instead).
 An unknown `type` gets `Unknown command type.`.
 
 A JSON object without an integer `id` and a `type` gets
-`Invalid message format.` when it carried an `id`; text that is not JSON
-gets no reply. In both cases the server then closes the connection,
-after giving that reply up to a second to be sent.
+`Invalid message format.` when it carried an `id`, and the server closes
+the connection after giving that reply up to a second to be sent. Text
+that is not JSON closes the connection without a reply.
 
 ### Subscription acknowledgements
 
@@ -97,7 +98,8 @@ answer `get_event_capabilities` with `Unknown command type.`.
 ```
 
 Once the result arrives, the listener is installed: every later matching
-event is delivered on that subscription.
+event is eligible for delivery on that subscription while it stays
+active. Replacing or unsubscribing it discards deliveries still queued.
 
 ### Backlog and close code 1013
 
@@ -105,12 +107,18 @@ Messages to a client wait in a bounded queue of 256. Visualisation and
 device frames do not count against it: only the newest frame for each
 target is kept.
 
-When the queue fills and holds no `result` reply or final error reply,
-the server drops the queued messages, as it always has, and carries on.
-When it holds one of those replies, the server keeps it and closes the
-connection with code **1013** (`control backlog; reconnect and resync`)
-instead. An acknowledgement is therefore either delivered or the
-connection closes; it is never silently lost.
+The server closes the connection with code **1013**
+(`control backlog; reconnect and resync`) when:
+
+- a `result` reply has to be queued and the queue is full, whatever it
+  holds; or
+- an ordinary message arrives at a full queue that already holds a
+  `result` reply or final error reply.
+
+When an ordinary message arrives at a full queue holding neither, the
+server drops the queued messages, as it always has, and carries on. An
+acknowledgement is therefore either delivered or the connection closes;
+it is never silently lost.
 
 On a 1013 close, reconnect, subscribe again, and fetch current state
 again over REST.
