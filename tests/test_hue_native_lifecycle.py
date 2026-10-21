@@ -1204,3 +1204,15 @@ def test_discovery_rejects_non_numeric_channel_positions(
     settings = HueControlSettings("127.0.0.1", "Room", "user", "11" * 16, "app")
     with pytest.raises(TypeError, match="Invalid Hue channel position"):
         device._discover(settings)
+
+
+def test_config_update_log_omits_credentials(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    device = HueDevice(MagicMock(), config())
+    monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
+    with caplog.at_level("INFO", logger="ledfx.devices"):
+        device.update_config({"username": "secret-user", "clientkey": "ab" * 16})
+    assert "clientkey" in caplog.text
+    assert "secret-user" not in caplog.text
+    assert "ab" * 16 not in caplog.text

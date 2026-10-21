@@ -145,7 +145,10 @@ class Device(BaseRegistry):
                 if self._pixels is not None and len(self._pixels) != self.pixel_count:
                     self._pixels = np.zeros((self.pixel_count, 3))
 
-        _LOGGER.info("Device %s config updated to %s.", self.name, validated_config)
+        # Names only: configs can hold credentials such as a Hue DTLS key.
+        _LOGGER.info(
+            "Device %s config updated (changed keys: %s).", self.name, sorted(changed)
+        )
 
         for virtual_id in self._ledfx.virtuals:
             virtual = self._ledfx.virtuals.get(virtual_id)
