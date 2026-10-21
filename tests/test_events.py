@@ -1,8 +1,18 @@
 """Tests for ledfx/events.py - Event system"""
 
+import threading
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from ledfx.events import EventListener, Events
+import pytest
+
+from ledfx.events import Event, EventListener, Events
+from tests.test_utilities.fake_loop import FakeLoop
+
+
+def make_events() -> tuple[Events, FakeLoop]:
+    loop = FakeLoop()
+    return Events(SimpleNamespace(loop=loop)), loop
 
 
 class TestEventListener:
@@ -111,3 +121,91 @@ class TestEventsAddListener:
 
         listener = events._listeners["device_update"][0]
         assert listener.filter == {"device_id": "123"}
+
+
+class TestRevocation:
+    """Disposal, snapshot iteration and cross-thread firing"""
+
+    def test_disposal_revokes_already_queued_callback(self):
+        events, loop = make_events()
+        received: list[Event] = []
+        dispose = events.add_listener(received.append, "test")
+
+        events.fire_event(Event("test"))
+        dispose()
+        loop.run_ready()
+
+        assert received == []
+
+    def test_disposer_is_idempotent(self, caplog: pytest.LogCaptureFixture):
+        events, loop = make_events()
+        kept: list[Event] = []
+        events.add_listener(kept.append, "test")
+        dispose = events.add_listener(MagicMock(), "test")
+
+        with caplog.at_level("DEBUG", logger="ledfx.events"):
+            dispose()
+            dispose()
+        events.fire_event(Event("test"))
+        loop.run_ready()
+
+        assert caplog.records == []
+        assert events.has_listeners("test")
+        assert len(kept) == 1
+
+    def test_registration_changes_during_fire_use_captured_snapshot(self):
+        events, loop = make_events()
+        late: list[Event] = []
+        calls: list[Event] = []
+
+        def first(event: Event) -> None:
+            calls.append(event)
+            events.add_listener(late.append, "test")
+            dispose_first()
+
+        dispose_first = events.add_listener(first, "test")
+        events.fire_event(Event("test"))
+        events.fire_event(Event("test"))
+        loop.run_ready()
+
+        # The second queued call was revoked by the first one's disposal, and
+        # the listener added meanwhile was not registered for either event.
+        assert len(calls) == 1
+        assert late == []
+
+    def test_fire_event_from_thread_while_loop_mutates(self):
+        events, loop = make_events()
+        events.add_listener(MagicMock(), "test")
+        errors: list[BaseException] = []
+        started = threading.Event()
+
+        def fire() -> None:
+            started.set()
+            try:
+                for _ in range(10_000):
+                    events.fire_event(Event("test"))
+            except BaseException as error:  # noqa: BLE001 - report to the test
+                errors.append(error)
+
+        thread = threading.Thread(target=fire)
+        thread.start()
+        started.wait(timeout=5)
+        while thread.is_alive():
+            events.add_listener(MagicMock(), "test")()
+        thread.join(timeout=5)
+
+        assert not thread.is_alive()
+        assert errors == []
+        assert loop.run_ready() >= 10_000
+
+    def test_automated_flag_survives_dispatch(self):
+        events, loop = make_events()
+        received: list[Event] = []
+        events.add_listener(received.append, "test")
+
+        with events.automated():
+            events.fire_event(Event("test"))
+        events.fire_event(Event("test"))
+        loop.run_ready()
+
+        assert [event._automated for event in received] == [True, False]
