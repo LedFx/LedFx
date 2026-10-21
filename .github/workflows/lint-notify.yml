@@ -52,7 +52,8 @@ jobs:
         run: |
           lint="$(gh api "repos/$REPO/actions/runs/$RUN_ID/jobs" \
             --jq '.jobs[] | select(.name == "Lint (prek)") | {id, conclusion} | tostring')"
-          echo "lint=$lint" >> "$GITHUB_OUTPUT"
+          # A run with no Lint (prek) job yields nothing; fromJSON('') would fail.
+          echo "lint=${lint:-"{}"}" >> "$GITHUB_OUTPUT"
           echo "lint job: $lint"
 
       - name: Gate on lint failure
