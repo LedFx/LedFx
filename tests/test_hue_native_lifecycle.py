@@ -14,7 +14,12 @@ from ledfx_senders.frames import Frame
 
 from ledfx.core import LedFxCore
 from ledfx.devices import Devices
-from ledfx.devices.hue import HueDevice, HueRetirement, HueSettings
+from ledfx.devices.hue import (
+    HueControlSettings,
+    HueDevice,
+    HueRetirement,
+    HueSettings,
+)
 from ledfx.virtuals import Virtual
 
 ZONE = "12345678-1234-1234-1234-123456789abc"
@@ -1174,3 +1179,28 @@ async def test_rejected_credentials_pair_again(
     assert stored["clientkey"] == "22" * 16
     assert stored["hue_application_id"] == "new-identity"
     await device.async_shutdown()
+
+
+@pytest.mark.parametrize("bad", [None, "1.5", True])
+def test_discovery_rejects_non_numeric_channel_positions(
+    monkeypatch: pytest.MonkeyPatch, bad: object
+) -> None:
+    device = HueDevice(MagicMock(), config())
+
+    def request(
+        settings: HueControlSettings,
+        method: str,
+        endpoint: str,
+        data: dict[str, object] | None = None,
+    ) -> tuple[object, Mapping[str, str]]:
+        if endpoint.endswith(ZONE):
+            position = {"x": 0, "y": bad, "z": 0}
+            return {
+                "data": [{"channels": [{"channel_id": 7, "position": position}]}]
+            }, {}
+        return {"data": [{"id": ZONE, "metadata": {"name": "Room"}}]}, {}
+
+    monkeypatch.setattr(device, "_control_request", request)
+    settings = HueControlSettings("127.0.0.1", "Room", "user", "11" * 16, "app")
+    with pytest.raises(TypeError, match="Invalid Hue channel position"):
+        device._discover(settings)

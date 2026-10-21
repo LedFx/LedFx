@@ -746,9 +746,13 @@ class HueDevice(NetworkedDevice):
                 raise ValueError("Invalid Hue channel ID")
             ids.append(channel_id)
             position = _object(channel.get("position"))
-            lights[str(channel_id)] = [
-                float(cast(float, position[k])) for k in ("x", "y", "z")
-            ]
+            point: list[float] = []
+            for axis in ("x", "y", "z"):
+                value = position.get(axis)
+                if isinstance(value, bool) or not isinstance(value, (int, float)):
+                    raise TypeError("Invalid Hue channel position")
+                point.append(float(value))
+            lights[str(channel_id)] = point
         if not 1 <= len(ids) <= 256 or len(set(ids)) != len(ids):
             raise ValueError("Invalid Hue channel mapping")
         identity = settings.application_id
