@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -658,6 +659,8 @@ class Events:
         # Guards replacing the per-type tuples; user code never runs under it.
         self._lock = threading.Lock()
         self._listeners: dict[str, tuple[EventListener, ...]] = {}
+        # (callback name, exception class) -> (time of last report, failures since).
+        self._listener_errors: dict[tuple[str, str], tuple[float, int]] = {}
 
     def has_listeners(self, event_type: str) -> bool:
         """Whether an event has consumers, before preparing an expensive payload."""
@@ -670,13 +673,44 @@ class Events:
             listeners = self._listeners.get(event.event_type, ())
 
         for listener in listeners:
-            if not listener.filter_event(event):
+            try:
+                filtered = listener.filter_event(event)
+            except Exception as error:  # noqa: BLE001 - isolate consumer filters
+                self._report_error(event.event_type, listener, error)
+                continue
+            if not filtered:
                 self._ledfx.loop.call_soon_threadsafe(self._invoke, listener, event)
 
     def _invoke(self, listener: EventListener, event: Event) -> None:
         if not listener.active:
             return
-        listener.callback(event)
+        try:
+            listener.callback(event)
+        except Exception as error:  # noqa: BLE001 - isolate consumer code
+            self._report_error(event.event_type, listener, error)
+
+    def _report_error(
+        self, event_type: str, listener: EventListener, exc: Exception
+    ) -> None:
+        """Log at most once per second per listener and exception class."""
+        name = getattr(listener.callback, "__qualname__", repr(listener.callback))
+        category = (name, type(exc).__name__)
+        now = time.monotonic()
+        with self._lock:
+            last_report, count = self._listener_errors.get(category, (None, 0))
+            count += 1
+            if last_report is not None and now - last_report < 1.0:
+                self._listener_errors[category] = (last_report, count)
+                return
+            self._listener_errors[category] = (now, 0)
+        # ERROR with the traceback, as the loop exception handler logged it, so Sentry sees it.
+        _LOGGER.error(
+            "Event listener %s failed on %s (%d errors since last report)",
+            name,
+            event_type,
+            count,
+            exc_info=exc,
+        )
 
     @contextmanager
     def automated(self):

@@ -4,6 +4,7 @@ import threading
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import numpy as np
 import pytest
 
 from ledfx.events import Event, EventListener, Events
@@ -209,3 +210,90 @@ class TestRevocation:
         loop.run_ready()
 
         assert [event._automated for event in received] == [True, False]
+
+
+class PixelEvent(Event):
+    def __init__(self, pixels: np.ndarray) -> None:
+        super().__init__("pixels")
+        self.pixels = pixels
+
+
+class TestFailureIsolation:
+    """A failing listener or filter must not starve the others"""
+
+    def test_callback_exception_does_not_starve_next(self):
+        events, loop = make_events()
+        received: list[Event] = []
+
+        def broken(event: Event) -> None:
+            raise RuntimeError("listener bug")
+
+        events.add_listener(broken, "test")
+        events.add_listener(received.append, "test")
+        events.fire_event(Event("test"))
+        loop.run_ready()
+
+        assert len(received) == 1
+
+    def test_filter_comparison_failure_is_isolated(self):
+        events, loop = make_events()
+        received: list[Event] = []
+        # ndarray != 1 is an array, whose truth value raises.
+        events.add_listener(MagicMock(), "pixels", {"pixels": 1})
+        events.add_listener(received.append, "pixels")
+
+        events.fire_event(PixelEvent(np.zeros((4, 3))))
+        loop.run_ready()
+
+        assert len(received) == 1
+
+    def test_listener_failures_are_rate_limited(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ):
+        now = [1000.0]
+        monkeypatch.setattr("ledfx.events.time.monotonic", lambda: now[0])
+        events, loop = make_events()
+
+        def broken(event: Event) -> None:
+            raise ValueError("first listener bug")
+
+        def also_broken(event: Event) -> None:
+            raise ValueError("second listener bug")
+
+        events.add_listener(broken, "test")
+
+        with caplog.at_level("WARNING", logger="ledfx.events"):
+            for _ in range(100):
+                events.fire_event(Event("test"))
+            loop.run_ready()
+            assert len(caplog.records) == 1
+
+            # Same class from another listener, in the same window, is its own report.
+            events.add_listener(also_broken, "test")
+            events.fire_event(Event("test"))
+            loop.run_ready()
+            assert len(caplog.records) == 2
+
+            now[0] += 1.0
+            events.fire_event(Event("test"))
+            loop.run_ready()
+
+        assert len(caplog.records) == 4
+        for record in caplog.records:
+            # ERROR with the traceback reaches the log and Sentry like main's loop handler.
+            assert record.levelname == "ERROR"
+            assert record.exc_info is not None
+            assert record.exc_info[0] is ValueError
+        first, second, third, fourth = caplog.records
+        assert "broken" in first.getMessage()
+        assert "also_broken" in second.getMessage()
+        assert first.exc_info is not None and "first" in str(first.exc_info[1])
+        assert second.exc_info is not None and "second" in str(second.exc_info[1])
+        # 99 repeats suppressed in the first batch, one more when also_broken
+        # joined, plus the failure that opened the new window.
+        assert third.getMessage() == (
+            "Event listener TestFailureIsolation.test_listener_failures_are_rate_limited"
+            ".<locals>.broken failed on test (101 errors since last report)"
+        )
+        assert "also_broken" in fourth.getMessage()
+        assert "(1 errors since last report)" in fourth.getMessage()
