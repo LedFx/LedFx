@@ -77,6 +77,112 @@ def test_an_effect_is_applied(ledfx: MagicMock, integration: MQTT_HASS) -> None:
     assert running(ledfx, "dj bird") == "rainbow"
 
 
+@pytest.mark.parametrize(
+    ("state", "initial", "expected", "restore"),
+    [
+        ("off", True, False, False),
+        ("on", False, True, False),
+        (None, True, False, False),
+        ("on", False, True, True),
+    ],
+)
+def test_a_refused_colour_does_not_skip_the_state(
+    ledfx: MagicMock,
+    integration: MQTT_HASS,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    state: str | None,
+    initial: bool,
+    expected: bool,
+    restore: bool,
+) -> None:
+    send(integration, "dj bird", {"state": "on", "effect": "rainbow"})
+    ledfx.virtuals.set_active(BIRD, initial)
+    bird = ledfx.virtuals.get_or_raise(BIRD)
+    assert bird.entry is not None
+    stored_effect = bird.entry.effect
+    if restore:
+        ledfx.virtuals.clear_effect(BIRD, store=False)
+    # The real manager refuses this colour without replacing the old effect.
+    monkeypatch.delitem(ledfx.effects.classes(), "singleColor")
+    ledfx.config_store.request_save.reset_mock()
+    payload: dict[str, object] = {"color": [255, 0, 0]}
+    if state is not None:
+        payload["state"] = state
+
+    with caplog.at_level(logging.WARNING):
+        send(integration, "dj bird", payload)
+
+    assert "Unknown effect type: singleColor" in caplog.text
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+    assert bird.active is expected
+    assert bird.entry.active is expected
+    assert bird.entry.effect == stored_effect
+    assert running(ledfx, "dj bird") == "rainbow"
+    ledfx.config_store.request_save.assert_called()
+    restored = reload_virtual(ledfx, BIRD)
+    assert restored.active is expected
+
+
+def test_an_effect_activation_refusal_does_not_skip_off(
+    ledfx: MagicMock,
+    integration: MQTT_HASS,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    send(integration, "dj bird", {"state": "on", "effect": "rainbow"})
+    monkeypatch.setattr(
+        ledfx.effects.get_class("singleColor"),
+        "activate",
+        MagicMock(side_effect=RuntimeError("effect activation refused")),
+    )
+    ledfx.config_store.request_save.reset_mock()
+
+    with caplog.at_level(logging.WARNING):
+        send(integration, "dj bird", {"state": "off", "color": [255, 0, 0]})
+
+    bird = ledfx.virtuals.get_or_raise(BIRD)
+    assert "effect activation refused" in caplog.text
+    assert [r.levelno for r in caplog.records] == [logging.WARNING]
+    assert bird.active is False
+    assert bird.entry is not None and bird.entry.active is False
+    ledfx.config_store.request_save.assert_called_once()
+
+
+@pytest.mark.parametrize("state", ["off", "on"])
+def test_an_error_after_starting_a_colour_does_not_skip_the_state(
+    ledfx: MagicMock,
+    integration: MQTT_HASS,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+    state: str,
+) -> None:
+    send(integration, "dj bird", {"state": "on", "effect": "rainbow"})
+    bird = ledfx.virtuals.get_or_raise(BIRD)
+    assert bird.entry is not None
+    stored_effect = bird.entry.effect
+    monkeypatch.setattr(
+        bird, "update_effect_config", MagicMock(side_effect=ValueError("store failed"))
+    )
+    ledfx.config_store.request_save.reset_mock()
+
+    with caplog.at_level(logging.WARNING):
+        send(integration, "dj bird", {"state": state, "color": [255, 0, 0]})
+
+    expected = state == "on"
+    assert running(ledfx, "dj bird") == "singleColor"
+    assert bird.active is expected
+    assert bird.entry.active is expected
+    # The failed effect update is not rolled back or persisted by the state change.
+    assert bird.entry.effect == stored_effect
+    ledfx.config_store.request_save.assert_called_once()
+    assert [r.levelno for r in caplog.records] == [logging.ERROR]
+    assert caplog.records[0].exc_info is not None
+    restored = reload_virtual(ledfx, BIRD)
+    assert restored.active is expected
+    assert running(ledfx, "dj bird") == "rainbow"
+
+
 def test_a_system_preset_is_applied(ledfx: MagicMock, integration: MQTT_HASS) -> None:
     send(integration, "dj bird", {"state": "on", "effect": "rainbow"})
     bird = ledfx.virtuals.get_or_raise(BIRD)
@@ -121,7 +227,7 @@ def test_a_refusing_virtual_leaks_no_effect(
         for r in caplog.records
         if r.name == hass_module.__name__ and r.levelno >= logging.WARNING
     ]
-    assert [r.levelno for r in warnings] == [logging.WARNING, logging.WARNING]
+    assert [r.levelno for r in warnings] == [logging.WARNING] * 3
 
 
 def test_a_bad_colour_is_a_warning_and_changes_nothing(
@@ -302,8 +408,13 @@ def test_a_value_error_from_the_manager_is_not_a_refusal(
         send(integration, "dj bird", {"state": "on", "color": [255, 0, 0]})
 
     # An unexpected manager error keeps its traceback.
-    assert [r.levelno for r in caplog.records] == [logging.ERROR]
+    assert [r.levelno for r in caplog.records] == [
+        logging.ERROR,
+        logging.WARNING,
+        logging.WARNING,
+    ]
     assert caplog.records[0].exc_info is not None
+    assert "state of virtual dj bird" in caplog.records[2].getMessage()
 
 
 def test_a_colour_list_with_a_non_number_is_one_warning(
