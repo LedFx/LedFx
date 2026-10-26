@@ -22,12 +22,6 @@ _default_wled_settings = {
     "inactivity_timeout": 1,
 }
 
-# Collection of keys that are used for visualisation configuration - used to check if we need to restart the visualisation event listeners
-VISUALISATION_CONFIG_KEYS = [
-    "visualisation_fps",
-    "visualisation_maxlen",
-]
-
 
 # Transmission types for pixel visualisation on frontend
 class Transmission:
