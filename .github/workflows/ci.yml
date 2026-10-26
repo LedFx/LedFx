@@ -250,7 +250,7 @@ jobs:
         timeout-minutes: 10
         env:
           LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledfx-log-linux-py${{ matrix.python }}
@@ -285,7 +285,7 @@ jobs:
         timeout-minutes: 10
         env:
           LEDFX_TEST_CONFIG_DIR: ${{ runner.temp }}/ledfx-test
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledfx-log-windows-py${{ matrix.python }}
@@ -318,7 +318,7 @@ jobs:
           uv sync --all-extras --dev
       - name: Check LedFx launches
         run: uv run ledfx --ci-smoke-test -vv -c debug_config --offline
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:
           name: ledfx-log-macos-py${{ matrix.python }}
@@ -364,7 +364,7 @@ jobs:
           (cd dist && 7z a "../LedFx-$VERSION-win-x64.zip" "LedFx-$VERSION")
           mv "installer/ledfx-setup-win-$VERSION.exe" "LedFx-$VERSION-setup.exe"
           7z a "LedFx-$VERSION-win-x64-setup.zip" "LedFx-$VERSION-setup.exe"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-win-x64
           path: LedFx-${{ env.VERSION }}-win-x64*.zip
@@ -410,7 +410,7 @@ jobs:
           mv dist/LedFx "dist/LedFx-$VERSION.app"
           xattr -cr "dist/LedFx-$VERSION.app"
           tar -C dist -czf "LedFx-$VERSION-$SUFFIX.tar.gz" "LedFx-$VERSION.app"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ matrix.suffix }}
           path: LedFx-${{ env.VERSION }}-${{ matrix.suffix }}.tar.gz
@@ -503,7 +503,7 @@ jobs:
           echo "IS_RELEASE = $RELEASE" >> ledfx.env
       - name: Build wheel and sdist
         run: uv build
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: python-dist
           path: dist/
@@ -613,7 +613,7 @@ jobs:
           done
       # Releases promote these digests, not the edge tags: a main run of the
       # same commit may retag those with a cached image while approval waits.
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: env.PUBLISH == 'true'
         with:
           name: docker-${{ matrix.arch }}
@@ -816,7 +816,7 @@ jobs:
           push-to-registry: true
           create-storage-record: false
           github-token: ${{ steps.release-token.outputs.token }}
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always() && steps.prepare.outcome == 'success'
         with:
           name: provenance-${{ github.ref_name }}-${{ github.run_attempt }}
