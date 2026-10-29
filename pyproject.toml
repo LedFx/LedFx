@@ -124,11 +124,7 @@ required-version = ">=0.12.12"
 # security fix newer than this, exempt the package below until it ages in.
 exclude-newer = "14 days"
 # Our own packages: released and reviewed by us, so no wait.
-# lifx-emulator-core: TEMPORARY, for the Mirror fixture in 3.12.4 (uploaded
-# 2026-10-05). Remove once it ages in on 2026-10-19.
-# lifx-async: TEMPORARY, for the offline-device traceback fix in 7.11.2
-# (uploaded 2026-10-14). Remove once it ages in on 2026-10-28.
-exclude-newer-package = { ledfx-senders = false, aubio-ledfx = false, pyfastnoiselite-ledfx = false, samplerate-ledfx = false, lifx-emulator-core = false, lifx-async = false }
+exclude-newer-package = { ledfx-senders = false, aubio-ledfx = false, pyfastnoiselite-ledfx = false, samplerate-ledfx = false }
 # We want to use copy here, since symlink mode means we can't use our own portaudio dll
 # A bit slower, but it works for our use case
 link-mode = "copy"
