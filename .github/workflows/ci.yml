@@ -209,7 +209,7 @@ jobs:
           fi
       - name: No breaking API changes
         if: steps.base.outputs.check == 'true'
-        uses: oasdiff/oasdiff-action/breaking@5e81b5c380accc6b523f9d32a637ca630e33620b # v0.1.17
+        uses: oasdiff/oasdiff-action/breaking@514e22ec2f1d1654fb78ac3bb7dc00d8f3c6c4d9 # v0.1.19
         with:
           base: base-spec.json
           revision: openapi/ledfx-v2.json
