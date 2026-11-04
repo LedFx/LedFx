@@ -297,3 +297,54 @@ class TestFailureIsolation:
         )
         assert "also_broken" in fourth.getMessage()
         assert "(1 errors since last report)" in fourth.getMessage()
+
+
+class TestMayHaveListeners:
+    """Producers ask before building a payload; only a proven mismatch says no."""
+
+    def test_may_have_listeners_excludes_only_proven_mismatch(self):
+        events, _ = make_events()
+        assert not events.may_have_listeners("graph_update", {"graph_id": "melbank_0"})
+
+        dispose = events.add_listener(
+            MagicMock(), "graph_update", {"graph_id": "melbank_0"}
+        )
+        assert events.may_have_listeners("graph_update", {"graph_id": "melbank_0"})
+        assert not events.may_have_listeners("graph_update", {"graph_id": "melbank_1"})
+        # The listener for another event type never counts.
+        assert not events.may_have_listeners("virtual_diag", {"graph_id": "melbank_0"})
+
+        # A key the payload metadata does not mention cannot exclude.
+        dispose()
+        dispose = events.add_listener(MagicMock(), "graph_update", {"other": 1})
+        assert events.may_have_listeners("graph_update", {"graph_id": "melbank_1"})
+
+        dispose()
+        events.add_listener(MagicMock(), "graph_update", {})
+        assert events.may_have_listeners("graph_update", {"graph_id": "melbank_1"})
+
+    def test_may_have_listeners_filters_on_event_type(self):
+        events, _ = make_events()
+        events.add_listener(
+            MagicMock(), "graph_update", {"event_type": "something_else"}
+        )
+        assert not events.may_have_listeners("graph_update", {"graph_id": "x"})
+
+    def test_may_have_listeners_raising_comparison_is_conservative(
+        self, caplog: pytest.LogCaptureFixture
+    ):
+        class Unequal:
+            def __eq__(self, other: object) -> bool:
+                raise ValueError("cannot compare")
+
+            __hash__ = object.__hash__
+
+        events, _ = make_events()
+        events.add_listener(MagicMock(), "graph_update", {"graph_id": Unequal()})
+
+        with caplog.at_level("ERROR", logger="ledfx.events"):
+            assert events.may_have_listeners("graph_update", {"graph_id": "x"})
+
+        assert len(caplog.records) == 1
+        assert caplog.records[0].exc_info is not None
+        assert caplog.records[0].exc_info[0] is ValueError

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
 
@@ -666,6 +666,29 @@ class Events:
         """Whether an event has consumers, before preparing an expensive payload."""
         with self._lock:
             return bool(self._listeners.get(event_type))
+
+    def may_have_listeners(
+        self, event_type: str, metadata: Mapping[str, object]
+    ) -> bool:
+        """Whether a payload with these fields could pass some listener's filter.
+
+        Only a filter key present in ``metadata`` (or ``event_type``) whose value
+        differs excludes a listener, so the answer errs towards True.
+        """
+        with self._lock:
+            listeners = self._listeners.get(event_type, ())
+        fields = {"event_type": event_type, **metadata}
+        for listener in listeners:
+            try:
+                if not any(
+                    key in fields and fields[key] != value
+                    for key, value in listener.filter.items()
+                ):
+                    return True
+            except Exception as error:  # noqa: BLE001 - assume it could match
+                self._report_error(event_type, listener, error)
+                return True
+        return False
 
     def fire_event(self, event: Event) -> None:
         event._automated = _EVENT_AUTOMATED.get()
