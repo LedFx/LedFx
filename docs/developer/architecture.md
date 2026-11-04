@@ -64,3 +64,31 @@ the core-owned `PreviewSampler` (`ledfx/preview.py`):
   the next tick. Deleting a virtual or device drops its pending frame.
 - The raw `virtual_update` and `device_update` events are built only when an
   in-process listener has subscribed to them.
+
+## Threads and locks
+
+### Devices
+
+- The render thread of a device's priority virtual is the only caller of
+  `Device.flush`. Other virtuals sharing the device only write their segments
+  into its buffer.
+- `Device._frame_lock` guards the pixel buffer (`_pixels`) and `_active`. It
+  is a leaf: while it is held, nothing calls `flush`, subclass code, a
+  virtual, the preview sampler, the event bus or the logger, and no other
+  lock is taken.
+- `update_pixels` writes the segments and, for the priority virtual, composes
+  a new frame (rotated by `center_offset`) under `_frame_lock`. It then
+  releases the lock and, outside it, submits a preview copy, calls `flush`
+  and fires `device_update`. A slow sender never blocks a writer or a
+  lifecycle call on the frame lock, and the frame it sends is never written
+  to afterwards. `assemble_frame` returns the same kind of owned copy.
+- Subclass sender locks (`device_lock` in the E1.31, WLED, DDP, Art-Net,
+  Nanoleaf and native packet devices, `_publication_lock` in Hue) sit above
+  `_frame_lock`. A subclass may hold its sender lock while calling
+  `Device.activate` or `Device.deactivate`, which take `_frame_lock` only to
+  swap the buffer. `flush` may take the sender lock because no base lock is
+  held when it runs.
+- `Device.activate` and `Device.deactivate` hold no lock across IO. The
+  blocking work in subclasses (Govee's wake sleeps, Twinkly's HTTP calls,
+  Hue's HTTPS and DTLS setup) runs before or after the base call, so it never
+  holds `_frame_lock`.
