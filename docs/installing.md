@@ -169,6 +169,54 @@ Install Script](https://install.ledfx.app):
 $ curl -sSL https://install.ledfx.app/ | bash
 ```
 
+### Installing with pip on Raspberry Pi OS
+
+LedFx installs with pip on Raspberry Pi OS Bookworm and Trixie, 64-bit
+(recommended) or 32-bit, without a Rust toolchain. Raspberry Pi OS already
+includes the C compiler and the [piwheels](https://www.piwheels.org) package
+index, which provides most 32-bit wheels.
+
+1.  Install the system packages for your Raspberry Pi OS version.
+
+    64-bit:
+
+    ``` console
+    $ sudo apt update
+    $ sudo apt install -y python3-dev libasound2-dev libportaudio2
+    ```
+
+    32-bit:
+
+    ``` console
+    $ sudo apt update
+    $ sudo apt install -y python3-dev libportaudio2 libopenblas0 ffmpeg libwebpdemux2
+    ```
+
+    A few dependencies have no prebuilt wheel for the Raspberry Pi and are
+    compiled during installation, which needs `python3-dev` (and, on 64-bit
+    Trixie, `libasound2-dev` for MIDI support). `libportaudio2` provides audio
+    input. On 32-bit, the NumPy, aubio and Pillow wheels from piwheels use
+    shared libraries from the other packages.
+
+2.  Create a virtual environment and install LedFx:
+
+    ``` console
+    $ python3 -m venv ~/ledfx-venv
+    $ ~/ledfx-venv/bin/python -m pip install ledfx
+    ```
+
+3.  Run LedFx:
+
+    ``` console
+    $ ~/ledfx-venv/bin/ledfx --open-ui
+    ```
+
+LedFx's packet senders come from the `ledfx-senders` package. It has wheels for
+64-bit Raspberry Pi OS and for 32-bit Raspberry Pi OS on a Raspberry Pi 2 or
+newer. On a Raspberry Pi Zero or 1 (ARMv6), pip uses the wheel that piwheels
+builds for Raspberry Pi OS's own Python; with any other Python, pip falls back
+to building the package from source, which needs Rust.
+
 ## Docker
 
 LedFx can be run in a Docker container with some limitations – graphical entity-based features such as **Clone** will not work.
