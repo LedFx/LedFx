@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import threading
+import time
 from collections.abc import Callable
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -636,6 +638,8 @@ class EventListener:
     def __init__(self, callback: Callable, event_filter: dict | None = None):
         self.callback = callback
         self.filter = event_filter if event_filter is not None else {}
+        # Cleared on removal, so callbacks already queued on the loop are dropped.
+        self.active = True
 
     def filter_event(self, event):
         event_dict = event.to_dict()
@@ -645,28 +649,68 @@ class EventListener:
 
         return False
 
+    def revoke(self) -> None:
+        self.active = False
+
 
 class Events:
     def __init__(self, ledfx):
         self._ledfx = ledfx
-        self._listeners = {}
+        # Guards replacing the per-type tuples; user code never runs under it.
+        self._lock = threading.Lock()
+        self._listeners: dict[str, tuple[EventListener, ...]] = {}
+        # (callback name, exception class) -> (time of last report, failures since).
+        self._listener_errors: dict[tuple[str, str], tuple[float, int]] = {}
 
     def has_listeners(self, event_type: str) -> bool:
         """Whether an event has consumers, before preparing an expensive payload."""
-        return bool(self._listeners.get(event_type))
+        with self._lock:
+            return bool(self._listeners.get(event_type))
 
     def fire_event(self, event: Event) -> None:
         event._automated = _EVENT_AUTOMATED.get()
-        listeners = self._listeners.get(event.event_type, [])
-
-        if not listeners:
-            return
+        with self._lock:
+            listeners = self._listeners.get(event.event_type, ())
 
         for listener in listeners:
-            filtered = listener.filter_event(event)
-
+            try:
+                filtered = listener.filter_event(event)
+            except Exception as error:  # noqa: BLE001 - isolate consumer filters
+                self._report_error(event.event_type, listener, error)
+                continue
             if not filtered:
-                self._ledfx.loop.call_soon_threadsafe(listener.callback, event)
+                self._ledfx.loop.call_soon_threadsafe(self._invoke, listener, event)
+
+    def _invoke(self, listener: EventListener, event: Event) -> None:
+        if not listener.active:
+            return
+        try:
+            listener.callback(event)
+        except Exception as error:  # noqa: BLE001 - isolate consumer code
+            self._report_error(event.event_type, listener, error)
+
+    def _report_error(
+        self, event_type: str, listener: EventListener, exc: Exception
+    ) -> None:
+        """Log at most once per second per listener and exception class."""
+        name = getattr(listener.callback, "__qualname__", repr(listener.callback))
+        category = (name, type(exc).__name__)
+        now = time.monotonic()
+        with self._lock:
+            last_report, count = self._listener_errors.get(category, (None, 0))
+            count += 1
+            if last_report is not None and now - last_report < 1.0:
+                self._listener_errors[category] = (last_report, count)
+                return
+            self._listener_errors[category] = (now, 0)
+        # ERROR with the traceback, as the loop exception handler logged it, so Sentry sees it.
+        _LOGGER.error(
+            "Event listener %s failed on %s (%d errors since last report)",
+            name,
+            event_type,
+            count,
+            exc_info=exc,
+        )
 
     @contextmanager
     def automated(self):
@@ -684,27 +728,25 @@ class Events:
         event_filter: dict | None = None,
     ) -> Callable[[], None]:
         listener = EventListener(callback, event_filter)
-        if event_type in self._listeners:
-            self._listeners[event_type].append(listener)
-        else:
-            self._listeners[event_type] = [listener]
+        with self._lock:
+            self._listeners[event_type] = self._listeners.get(event_type, ()) + (
+                listener,
+            )
 
         def remove_listener() -> None:
             self._remove_listener(event_type, listener)
 
         return remove_listener
 
-    def _remove_listener(self, event_type: str, listener: Callable) -> None:
-        try:
-            self._listeners[event_type].remove(listener)
-            if not self._listeners[event_type]:
-                self._listeners.pop(event_type)
-        except (KeyError, ValueError):
-            _LOGGER.warning("Failed to remove event listener %s", listener)
-
-
-# def get_event_types():
-#     """Get a list of the types of events available"""
-#     return [event for event in vars(Event) if (not event.startswith('__')) and (event.isupper())]
-
-# print(get_event_types())
+    def _remove_listener(self, event_type: str, listener: EventListener) -> None:
+        with self._lock:
+            listener.revoke()
+            remaining = tuple(
+                item
+                for item in self._listeners.get(event_type, ())
+                if item is not listener
+            )
+            if remaining:
+                self._listeners[event_type] = remaining
+            else:
+                self._listeners.pop(event_type, None)
