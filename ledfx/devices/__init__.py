@@ -12,6 +12,7 @@ import serial
 import serial.tools.list_ports
 from ledfx_senders.e131_packet import DEFAULT_PORT
 from pydantic import Field
+from typing_extensions import override
 
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
@@ -232,9 +233,18 @@ class Device(BaseRegistry):
             if virtual_id == self.priority_virtual.id:
                 # Priority virtual flushes after all virtuals have updated their pixels
                 frame = self.assemble_frame()
+                if frame is None:  # deactivated by another thread meanwhile
+                    return
+                sampler = self._ledfx.preview_sampler
+                if sampler.wants(True, self.id):
+                    # Copy before flush: some senders convert the frame in place.
+                    virtual = self._ledfx.virtuals.get(self.id)
+                    rows = virtual.rows if virtual else 1
+                    sampler.submit(True, self.id, frame.copy(), rows)
                 self.flush(frame)
 
-                self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
+                if self._ledfx.events.has_listeners(Event.DEVICE_UPDATE):
+                    self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
         else:
             _LOGGER.warning("Flush skipped as %s has no priority_virtual", self.id)
 
@@ -804,6 +814,11 @@ class Devices(RegistryLoader):
             except Exception as e:  # noqa: BLE001
                 # be very prolific on ignoring devices if they are bad
                 _LOGGER.warning("Failed to load device %s: %s", device.id, e)
+
+    @override
+    def destroy(self, id: str) -> None:
+        super().destroy(id)
+        self._ledfx.preview_sampler.forget(True, id)
 
     def deactivate_devices(self):
         for device in self.values():
