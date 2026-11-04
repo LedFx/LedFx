@@ -35,8 +35,6 @@ exclude-newer-span = "P14D"
 [options.exclude-newer-package]
 aubio-ledfx = false
 ledfx-senders = false
-lifx-async = false
-lifx-emulator-core = false
 pyfastnoiselite-ledfx = false
 samplerate-ledfx = false
 
