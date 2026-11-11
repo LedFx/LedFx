@@ -1238,14 +1238,56 @@ def channel_order(**changes: object) -> tuple[int, ...]:
     return device._channel_ids()
 
 
-def test_pixel_order_defaults_to_channel_order() -> None:
-    assert (
-        HueDevice.Config.model_validate(
-            {"name": "Hue", "ip_address": "127.0.0.1", "group_name": "Room"}
-        ).pixel_order
-        == "channel"
-    )
+NEW_DEVICE = {"name": "Hue", "ip_address": "127.0.0.1", "group_name": "Room"}
+
+
+def test_new_devices_default_to_position_order() -> None:
+    assert HueDevice.Config.model_validate(NEW_DEVICE).pixel_order == "position"
+
+
+def test_existing_zones_keep_channel_order_on_upgrade() -> None:
+    # A device saved before pixel_order existed has an entertainment_id but no
+    # pixel_order: it must keep the bridge order it has always streamed in.
     assert channel_order() == (0, 1, 2, 3)
+    saved = HueDevice.Config.model_validate(
+        {**NEW_DEVICE, "entertainment_id": ZONE, "pixel_lights": POSITIONS}
+    )
+    assert saved.pixel_order == "channel"
+    # Once saved, the choice is explicit and survives a reload unchanged.
+    assert HueDevice.Config.model_validate(saved.as_dict()).pixel_order == "channel"
+
+
+@pytest.mark.parametrize("choice", ["channel", "position"])
+def test_explicit_pixel_order_always_wins(choice: str) -> None:
+    for data in (NEW_DEVICE, {**NEW_DEVICE, "entertainment_id": ZONE}):
+        assert (
+            HueDevice.Config.model_validate({**data, "pixel_order": choice}).pixel_order
+            == choice
+        )
+
+
+async def test_new_device_keeps_position_order_after_discovery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Discovery stores entertainment_id on a brand-new device; that must not
+    # flip it to channel order, because pixel_order is already set by then.
+    device = HueFixture(
+        MagicMock(
+            loop=asyncio.get_running_loop(), thread_executor=None, virtuals=MagicMock()
+        ),
+        HueDevice.Config.model_validate(NEW_DEVICE),
+    )
+    monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
+    device.update_config(
+        {
+            "entertainment_id": ZONE,
+            "pixel_count": 4,
+            "channel_ids": [0, 1, 2, 3],
+            "pixel_lights": POSITIONS,
+        }
+    )
+    assert device.config.pixel_order == "position"
+    assert device._channel_ids() == (1, 3, 2, 0)
 
 
 def test_position_order_sorts_left_to_right_then_by_depth() -> None:

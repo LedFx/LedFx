@@ -10419,8 +10419,8 @@
        "position"
       ],
       "title": "Pixel Order",
-      "description": "Order of the zone's lights as pixels. 'channel' follows the order the lights were added to the Entertainment area. 'position' sorts them left to right by the positions set in the Hue app (ties are broken by depth, then height)",
-      "default": "channel"
+      "description": "Order of the zone's lights as pixels. 'position' sorts them left to right by the positions set in the Hue app (ties are broken by depth, then height). 'channel' follows the order the lights were added to the Entertainment area",
+      "default": "position"
      }
     },
     "required": [

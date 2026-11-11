@@ -13,7 +13,7 @@ import numpy as np
 import requests
 from ledfx_senders import HueSender
 from numpy.typing import NDArray
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing_extensions import override
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -133,14 +133,28 @@ class HueDevice(NetworkedDevice):
         )
         udp_port: int = Field(2100, description="port")
         pixel_order: Literal["channel", "position"] = Field(
-            "channel",
+            "position",
             description=(
-                "Order of the zone's lights as pixels. 'channel' follows the order "
-                "the lights were added to the Entertainment area. 'position' sorts "
-                "them left to right by the positions set in the Hue app (ties are "
-                "broken by depth, then height)"
+                "Order of the zone's lights as pixels. 'position' sorts them left "
+                "to right by the positions set in the Hue app (ties are broken by "
+                "depth, then height). 'channel' follows the order the lights were "
+                "added to the Entertainment area"
             ),
         )
+
+        @model_validator(mode="before")
+        @classmethod
+        def _existing_zones_keep_channel_order(cls, data: object) -> object:
+            # Devices saved before pixel_order existed already store their
+            # entertainment_id. Keep their bridge channel order so an upgrade
+            # never rearranges a working setup; new devices sort by position.
+            if (
+                isinstance(data, Mapping)
+                and "pixel_order" not in data
+                and data.get("entertainment_id")
+            ):
+                return {**data, "pixel_order": "channel"}
+            return data
 
     config = TypedConfig(Config)
     OUTPUT_KEYS: ClassVar[tuple[str, ...]] = (
