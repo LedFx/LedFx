@@ -1,4 +1,4 @@
-"""transmission_mode: changeable live, binary by default, migrated once."""
+"""transmission_mode can be changed without a restart."""
 
 from ledfx.configuration.models import RESTART_FIELDS
 
