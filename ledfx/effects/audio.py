@@ -1144,10 +1144,10 @@ class AudioAnalysisSource(AudioInputSource):
 
         # Subscribe functions to be run on every frame of audio
         self.subscribe(self.melbanks)
-        self.subscribe(self.pitch)
+        self.subscribe(self._pitch_tick)
         self.subscribe(self.onset)
         self.subscribe(self.bar_oscillator)
-        self.subscribe(self.volume_beat_now)
+        self.subscribe(self._volume_beat_tick)
         self.subscribe(self.freq_power)
 
         # ensure any new analysis callbacks are above this line
@@ -1181,6 +1181,15 @@ class AudioAnalysisSource(AudioInputSource):
         self.beat_period = 2
 
         # freq power
+        # Demand-driven like Melbanks.want(): as a standing per-frame subscriber
+        # it computed four band averages, and forced melbank 2, whether or not
+        # anything read them. Measured on a Nexus 5: ~11% of the audio callback.
+        self._freq_power_frame = 0
+        self._freq_power_wanted = -(self.FREQ_POWER_TTL_FRAMES + 1)
+        self._pitch_frame = 0
+        self._pitch_wanted = -(self.PITCH_TTL_FRAMES + 1)
+        self._volume_beat_frame = 0
+        self._volume_beat_wanted = -(self.VOLUME_BEAT_TTL_FRAMES + 1)
         self.freq_power_raw = np.zeros(len(self.freq_max_mels))
         self.freq_power_filter = ExpFilter(
             np.zeros(len(self.freq_max_mels)), alpha_decay=0.2, alpha_rise=0.97
@@ -1232,19 +1241,40 @@ class AudioAnalysisSource(AudioInputSource):
         super()._invalidate_caches()
 
         self.pitch.cache_clear()
+        self._pitch_compute.cache_clear()
         self.onset.cache_clear()
         self.bpm_beat_now.cache_clear()
         self.volume_beat_now.cache_clear()
+        self._volume_beat_compute.cache_clear()
         self.bar_oscillator.cache_clear()
 
+    # Matches FREQ_POWER_TTL_FRAMES.
+    PITCH_TTL_FRAMES = 240
+
+    def _pitch_tick(self):
+        # Standing subscriber. Only pitchSpectrum reads pitch, so elsewhere this
+        # aubio DSP ran for nobody: 4.8% of the audio callback on a Nexus 5.
+        frame = self._pitch_frame = self._pitch_frame + 1
+        if frame - self._pitch_wanted > self.PITCH_TTL_FRAMES:
+            return
+        self._pitch_compute()
+
     @cache  # noqa: B019
-    def pitch(self):
+    def _pitch_compute(self):
         # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
         try:
             return self._pitch(self.audio_sample(raw=True))[0]
         except ValueError as e:
             _LOGGER.warning("%s", e)
             return 0
+
+    @cache  # noqa: B019
+    def pitch(self):
+        # Sole read path: registering here keeps _pitch_tick feeding aubio while
+        # anything reads pitch. aubio's window is 8 hops, so a read after the
+        # gate was shut is accurate again within ~8 frames.
+        self._pitch_wanted = self._pitch_frame
+        return self._pitch_compute()
 
     @cache  # noqa: B019
     def onset(self):
@@ -1265,8 +1295,30 @@ class AudioAnalysisSource(AudioInputSource):
             _LOGGER.warning("%s", e)
             return False
 
+    # Matches FREQ_POWER_TTL_FRAMES.
+    VOLUME_BEAT_TTL_FRAMES = 240
+
+    def _volume_beat_tick(self):
+        # Standing subscriber and the only caller of melbanks.want(0), so while
+        # it ran unconditionally melbank 0 was computed every frame: 15.1% of the
+        # audio callback on a Nexus 5, even when nothing read it.
+        frame = self._volume_beat_frame = self._volume_beat_frame + 1
+        if frame - self._volume_beat_wanted > self.VOLUME_BEAT_TTL_FRAMES:
+            return
+        self._volume_beat_compute()
+
     @cache  # noqa: B019
     def volume_beat_now(self):
+        # Sole read path. After the gate was shut, beat_power_history holds
+        # pre-gap audio whose ratios mean nothing, so it is dropped.
+        frame = self._volume_beat_frame
+        if frame - self._volume_beat_wanted > self.VOLUME_BEAT_TTL_FRAMES:
+            self.beat_power_history.clear()
+        self._volume_beat_wanted = frame
+        return self._volume_beat_compute()
+
+    @cache  # noqa: B019
+    def _volume_beat_compute(self):
         """
         Returns True if a beat is expected now based on volume of the beat freq region
         This algorithm is a bit weird, but works quite nicely.
@@ -1275,6 +1327,7 @@ class AudioAnalysisSource(AudioInputSource):
         """
 
         time_now = time.time()
+        self.melbanks.want(0)
         melbank = self.melbanks.melbanks[0][: self.beat_max_mel_index]
         beat_power = np.sum(melbank)
         melbank_max = np.max(melbank)
@@ -1300,9 +1353,17 @@ class AudioAnalysisSource(AudioInputSource):
         else:
             return False
 
+    # Matches Melbanks.WANT_TTL_FRAMES.
+    FREQ_POWER_TTL_FRAMES = 240
+
     def freq_power(self):
         # hard coded this bc i'm tired and it'll run faster
 
+        frame = self._freq_power_frame = self._freq_power_frame + 1
+        if frame - self._freq_power_wanted > self.FREQ_POWER_TTL_FRAMES:
+            # Nothing read a band power recently; this also skips want(2).
+            return
+        self.melbanks.want(2)
         melbank = self.melbanks.melbanks[2]
 
         self.freq_power_raw[0] = np.average(melbank[: self.freq_mel_indexes[0]])
@@ -1319,6 +1380,8 @@ class AudioAnalysisSource(AudioInputSource):
         self.freq_power_filter.update(self.freq_power_raw)
 
     def get_freq_power(self, i, filtered=True):
+        # Sole read path of every band power helper, so this registers them all.
+        self._freq_power_wanted = self._freq_power_frame
         if filtered:
             value = self.freq_power_filter.value[i]
         else:
@@ -1586,6 +1649,9 @@ class AudioReactiveEffect(Effect):
         size, int      : interpolate the melbank to the target size. value of 0 is no interpolation
         filtered, bool : melbank with smoothed attack and decay
         """
+        audio = self.audio
+        if audio is not None:
+            audio.melbanks.want(self._selected_melbank)
         if filtered:
             melbank = self.audio.melbanks.melbanks_filtered[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx
