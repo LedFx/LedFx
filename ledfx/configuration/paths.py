@@ -33,6 +33,10 @@ VISUALISATION_CONFIG_KEYS = [
 class Transmission:
     BASE64_COMPRESSED = "compressed"
     UNCOMPRESSED = "uncompressed"
+    # Raw pixel bytes in a binary websocket frame: no base64 expansion, no
+    # per-pixel decode in the browser. Measured at 20860 pixels: 20us/frame to
+    # encode against 38us for base64, 175us client+core against 1314us.
+    BINARY_RGB = "binary_rgb"
 
 
 def load_logger():

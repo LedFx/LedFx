@@ -588,7 +588,9 @@ class LedFxConfig(LedFxModel):
     )
     # No restart: read fresh for every visualisation frame, never captured when
     # the visualisation listeners are set up (unlike fps and maxlen).
-    transmission_mode: Literal["compressed", "uncompressed"] = "compressed"
+    transmission_mode: Literal["compressed", "uncompressed", "binary_rgb"] = (
+        "compressed"
+    )
     visualisation_fps: int = Field(30, ge=1, le=60)
     visualisation_maxlen: int = Field(81, ge=5, le=65536)
     global_transitions: bool = Field(
