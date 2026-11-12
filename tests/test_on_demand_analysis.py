@@ -1,19 +1,29 @@
 """Melbanks, band powers, pitch and volume beat are computed only on demand."""
 
+from collections import deque
 from types import SimpleNamespace
+from typing import cast
 from unittest.mock import MagicMock
 
 import numpy as np
+import pytest
 
 from ledfx.effects.audio import AudioAnalysisSource
 from ledfx.effects.melbank import Melbanks
 
 
+def _no_listeners(event_type: str) -> bool:
+    return False
+
+
+def _loud(filtered: bool = True) -> float:
+    return 1.0
+
+
 def _melbanks():
     m = Melbanks.__new__(Melbanks)
-    m._ledfx = SimpleNamespace(events=SimpleNamespace(has_listeners=lambda e: False))
-    m._audio = SimpleNamespace(_frequency_domain=None, volume=lambda filtered: 1.0)
-    m._publish = True
+    m._ledfx = SimpleNamespace(events=SimpleNamespace(has_listeners=_no_listeners))
+    m._audio = SimpleNamespace(_frequency_domain=None, volume=_loud)
     m.dev_enabled = False
     m.minimum_volume = 0.0
     m.melbank_processors = [MagicMock() for _ in range(3)]
@@ -59,11 +69,12 @@ def _source():
 
 def test_freq_power_runs_only_after_a_read():
     s = _source()
+    want = cast(MagicMock, s.melbanks).want
     s.freq_power()
-    s.melbanks.want.assert_not_called()
+    want.assert_not_called()
     s.get_freq_power(0)
     s.freq_power()
-    s.melbanks.want.assert_called_once_with(2)
+    want.assert_called_once_with(2)
 
 
 def test_pitch_runs_only_while_read():
@@ -79,12 +90,16 @@ def test_pitch_runs_only_while_read():
     assert s._pitch.call_count == 2
 
 
-def test_volume_beat_drops_stale_history(monkeypatch):
+def _beat(self: AudioAnalysisSource) -> bool:
+    return True
+
+
+def test_volume_beat_drops_stale_history(monkeypatch: pytest.MonkeyPatch):
     s = _source()
-    monkeypatch.setattr(AudioAnalysisSource, "_volume_beat_compute", lambda self: True)
-    s.beat_power_history = [1.0, 2.0]
+    monkeypatch.setattr(AudioAnalysisSource, "_volume_beat_compute", _beat)
+    s.beat_power_history = deque([1.0, 2.0])
     s._volume_beat_frame = 1000
     s._volume_beat_wanted = 0
     assert s.volume_beat_now() is True
-    assert s.beat_power_history == []
+    assert len(s.beat_power_history) == 0
     AudioAnalysisSource.volume_beat_now.cache_clear()

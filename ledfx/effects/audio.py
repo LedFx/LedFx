@@ -1649,7 +1649,9 @@ class AudioReactiveEffect(Effect):
         size, int      : interpolate the melbank to the target size. value of 0 is no interpolation
         filtered, bool : melbank with smoothed attack and decay
         """
-        self.audio.melbanks.want(self._selected_melbank)
+        audio = self.audio
+        if audio is not None:
+            audio.melbanks.want(self._selected_melbank)
         if filtered:
             melbank = self.audio.melbanks.melbanks_filtered[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx

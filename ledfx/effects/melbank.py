@@ -447,7 +447,7 @@ class Melbanks:
     # stale melbank, and a deactivated effect stops costing anything quickly.
     WANT_TTL_FRAMES = 240
 
-    def want(self, index):
+    def want(self, index: int) -> None:
         """Register that something is about to read this melbank.
 
         Called on every read path (effects via melbank(), the beat and
