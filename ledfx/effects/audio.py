@@ -1181,6 +1181,11 @@ class AudioAnalysisSource(AudioInputSource):
         self.beat_period = 2
 
         # freq power
+        # Demand-driven like Melbanks.want(): as a standing per-frame subscriber
+        # it computed four band averages, and forced melbank 2, whether or not
+        # anything read them. Measured on a Nexus 5: ~11% of the audio callback.
+        self._freq_power_frame = 0
+        self._freq_power_wanted = -(self.FREQ_POWER_TTL_FRAMES + 1)
         self.freq_power_raw = np.zeros(len(self.freq_max_mels))
         self.freq_power_filter = ExpFilter(
             np.zeros(len(self.freq_max_mels)), alpha_decay=0.2, alpha_rise=0.97
@@ -1301,9 +1306,16 @@ class AudioAnalysisSource(AudioInputSource):
         else:
             return False
 
+    # Matches Melbanks.WANT_TTL_FRAMES.
+    FREQ_POWER_TTL_FRAMES = 240
+
     def freq_power(self):
         # hard coded this bc i'm tired and it'll run faster
 
+        frame = self._freq_power_frame = self._freq_power_frame + 1
+        if frame - self._freq_power_wanted > self.FREQ_POWER_TTL_FRAMES:
+            # Nothing read a band power recently; this also skips want(2).
+            return
         self.melbanks.want(2)
         melbank = self.melbanks.melbanks[2]
 
@@ -1321,6 +1333,8 @@ class AudioAnalysisSource(AudioInputSource):
         self.freq_power_filter.update(self.freq_power_raw)
 
     def get_freq_power(self, i, filtered=True):
+        # Sole read path of every band power helper, so this registers them all.
+        self._freq_power_wanted = self._freq_power_frame
         if filtered:
             value = self.freq_power_filter.value[i]
         else:
