@@ -506,7 +506,13 @@ class WLED:
         """
         mode = mode.upper()
 
-        assert mode in WLED.SYNC_MODES
+        # Not an assert: python-for-android compiles with -OO, which strips
+        # asserts, and an unknown mode then failed later as a bare KeyError.
+        if mode not in WLED.SYNC_MODES:
+            raise ValueError(
+                f"Invalid WLED sync mode '{mode}', expected one of "
+                f"{sorted(WLED.SYNC_MODES)}"
+            )
 
         if mode == "udp":
             # if realtime udp is already enabled, we're good to go
