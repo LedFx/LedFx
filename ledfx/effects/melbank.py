@@ -16,7 +16,7 @@ from ledfx.configuration.models import (
 )
 from ledfx.effects import fast_blur_array, mel
 from ledfx.effects.math import ExpFilter
-from ledfx.events import GraphUpdateEvent
+from ledfx.events import Event, GraphUpdateEvent
 from ledfx.utils import generate_id
 
 # Since fft size and mic rate are tightly linked to melbank resolution,
@@ -467,6 +467,11 @@ class Melbanks:
             self.send_melbank_event(len(self.melbank_processors) - 1)
 
     def send_melbank_event(self, i):
+        # GraphUpdateEvent.__init__ does real .tolist() work on both arrays, up
+        # to once per audio callback: skip building it when nobody listens,
+        # as the visualisation pipeline already does.
+        if not self._ledfx.events.has_listeners(Event.GRAPH_UPDATE):
+            return
         self._ledfx.events.fire_event(
             GraphUpdateEvent(
                 f"melbank_{i}",
