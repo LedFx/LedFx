@@ -9617,7 +9617,8 @@
      "type": "string",
      "enum": [
       "compressed",
-      "uncompressed"
+      "uncompressed",
+      "binary_rgb"
      ],
      "title": "Transmission Mode",
      "default": "compressed"

@@ -365,7 +365,11 @@ class LedFxCore:
             if self.config.ui_brightness_boost != 0:
                 pixels = pixels_boost(pixels, self.config.ui_brightness_boost, 100)
 
-            if self.config.transmission_mode == Transmission.BASE64_COMPRESSED:
+            mode = self.config.transmission_mode
+            if mode == Transmission.BINARY_RGB:
+                # Sent as a binary websocket frame (api/websocket.py).
+                pixels = pixels.astype(np.uint8, copy=False).tobytes()
+            elif mode == Transmission.BASE64_COMPRESSED:
                 b_arr = pixels.astype(np.uint8, copy=False).tobytes()
                 pixels = pybase64.b64encode(b_arr).decode("ASCII")
             else:

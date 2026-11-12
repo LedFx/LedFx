@@ -8,7 +8,7 @@ import time
 import uuid
 from collections.abc import Callable, Mapping
 from concurrent import futures
-from typing import Annotated, ClassVar, Literal, get_args
+from typing import Annotated, ClassVar, Literal, SupportsInt, get_args
 
 import numpy as np
 import pybase64
@@ -30,6 +30,49 @@ from ledfx.events import (
 
 _LOGGER = logging.getLogger(__name__)
 MAX_PENDING_MESSAGES = 256
+
+# Binary vis frame (transmission_mode binary_rgb): 12-byte little-endian header,
+# then raw pixel bytes.
+#   0 magic  1 version  2 flags (bit0 = is_device)  3 bytes-per-pixel
+#   4:8 subscription id  8:10 rows  10:12 cols
+# The subscription id routes the frame client-side: a binary frame has no JSON
+# envelope for event_type/vis_id.
+VIS_BINARY_MAGIC = 0x4C
+VIS_BINARY_VERSION = 1
+VIS_BINARY_HEADER = "<BBBBIHH"
+
+
+def binary_vis_frame(message: dict[str, object]) -> bytes:
+    """Binary frame for a vis message whose pixels are raw bytes.
+
+    Built at send time, not when queued: the mailbox must keep dicts so
+    subscription removal can filter pending frames. Raises struct.error when
+    the id or a dimension does not fit its header field.
+    """
+    pixels = message.get("pixels")
+    if not isinstance(pixels, bytes):
+        raise struct.error("vis message pixels are not bytes")
+    match message.get("shape"):
+        case None:
+            rows, cols = 1, 0
+        case [SupportsInt() as rows_value, SupportsInt() as cols_value]:
+            rows, cols = int(rows_value), int(cols_value)
+        case _:
+            raise struct.error("vis message shape is not (rows, cols)")
+    count = rows * cols
+    header = struct.pack(
+        VIS_BINARY_HEADER,
+        VIS_BINARY_MAGIC,
+        VIS_BINARY_VERSION,
+        1 if message.get("is_device") else 0,
+        len(pixels) // count if count else 0,
+        message.get("id"),
+        rows,
+        cols,
+    )
+    return header + pixels
+
+
 FINAL_ERROR_REPLY_TIMEOUT = 1.0
 MAX_VAL = 32767
 
@@ -385,6 +428,16 @@ class WebsocketConnection:
                     if message is None:
                         continue
                     try:
+                        if isinstance(message.get("pixels"), bytes):
+                            try:
+                                frame = binary_vis_frame(message)
+                            except struct.error as err:
+                                _LOGGER.error(
+                                    "Unable to pack vis frame %s: %s", vis_id, err
+                                )
+                                continue
+                            await socket.send_bytes(frame)
+                            continue
                         await socket.send_json(message, dumps=dumps)
                     except TypeError as err:
                         _LOGGER.error(
