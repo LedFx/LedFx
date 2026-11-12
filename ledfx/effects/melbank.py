@@ -437,6 +437,24 @@ class Melbanks:
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
         self.minimum_volume = self._audio._config.min_volume
+        # Demand tracking - see want() and __call__. Reset here because the
+        # indices change when the collection is reconfigured; consumers
+        # re-register on their next read.
+        self._wanted = {}
+        self._frame = 0
+
+    # ~4s at a 60/s callback rate: an effect pausing between reads never sees a
+    # stale melbank, and a deactivated effect stops costing anything quickly.
+    WANT_TTL_FRAMES = 240
+
+    def want(self, index):
+        """Register that something is about to read this melbank.
+
+        Called on every read path (effects via melbank(), the beat and
+        freq_power helpers, the graph event). One dict store, because it runs
+        on every read of every frame.
+        """
+        self._wanted[index] = self._frame
 
     def __call__(self):
         # fastest way i could think of.
@@ -448,7 +466,16 @@ class Melbanks:
         volume_threshold = self._audio.volume(filtered=True) > self.minimum_volume
 
         if volume_threshold:
+            # Only melbanks something reads are computed. No consumer reads more
+            # than it asks for, so this never costs more than computing all of
+            # them. Measured on desktop: one pass is ~29us against ~22us for the
+            # phase vocoder feeding it.
+            frame = self._frame = self._frame + 1
+            wanted = self._wanted
+            ttl = self.WANT_TTL_FRAMES
             for i, proc in enumerate(self.melbank_processors):
+                if frame - wanted.get(i, -ttl - 1) > ttl:
+                    continue
                 proc(
                     frequency_domain,
                     self.melbanks[i],
@@ -472,6 +499,7 @@ class Melbanks:
         # as the visualisation pipeline already does.
         if not self._ledfx.events.has_listeners(Event.GRAPH_UPDATE):
             return
+        self.want(i)
         self._ledfx.events.fire_event(
             GraphUpdateEvent(
                 f"melbank_{i}",

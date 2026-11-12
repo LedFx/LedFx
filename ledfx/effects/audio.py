@@ -1275,6 +1275,7 @@ class AudioAnalysisSource(AudioInputSource):
         """
 
         time_now = time.time()
+        self.melbanks.want(0)
         melbank = self.melbanks.melbanks[0][: self.beat_max_mel_index]
         beat_power = np.sum(melbank)
         melbank_max = np.max(melbank)
@@ -1303,6 +1304,7 @@ class AudioAnalysisSource(AudioInputSource):
     def freq_power(self):
         # hard coded this bc i'm tired and it'll run faster
 
+        self.melbanks.want(2)
         melbank = self.melbanks.melbanks[2]
 
         self.freq_power_raw[0] = np.average(melbank[: self.freq_mel_indexes[0]])
@@ -1586,6 +1588,7 @@ class AudioReactiveEffect(Effect):
         size, int      : interpolate the melbank to the target size. value of 0 is no interpolation
         filtered, bool : melbank with smoothed attack and decay
         """
+        self.audio.melbanks.want(self._selected_melbank)
         if filtered:
             melbank = self.audio.melbanks.melbanks_filtered[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx

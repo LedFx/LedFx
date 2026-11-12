@@ -12,6 +12,8 @@ def _melbanks(events):
     melbanks._ledfx = SimpleNamespace(events=events)
     melbanks.melbanks_filtered = [MagicMock()]
     melbanks.melbank_processors = [SimpleNamespace(melbank_frequencies=MagicMock())]
+    melbanks._wanted = {}
+    melbanks._frame = 0
     return melbanks
 
 
