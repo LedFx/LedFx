@@ -591,6 +591,7 @@ class MQTT_HASS(Integration):
                             self._ledfx.virtuals.set_effect(
                                 VirtualIdStr(virtualid), "singleColor", settings
                             )
+                        with self._refusals(f"state of virtual {virtualid}"):
                             self._ledfx.virtuals.set_active(
                                 VirtualIdStr(virtualid),
                                 payload.get("state", "off") == "on",
