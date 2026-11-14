@@ -13,7 +13,7 @@ import numpy as np
 import requests
 from ledfx_senders import HueSender
 from numpy.typing import NDArray
-from pydantic import Field
+from pydantic import Field, model_validator
 from typing_extensions import override
 
 from ledfx.configuration.fields import X_REQUIRED
@@ -87,6 +87,38 @@ def _text(value: object) -> str:
     return value
 
 
+def _order_by_position(
+    channel_ids: tuple[int, ...], pixel_lights: object
+) -> tuple[int, ...]:
+    """Sort channels by their Entertainment-area position: x, then y, then z.
+
+    The bridge numbers channels in the order lights were added to the area, so
+    that order rarely matches the layout. Ties keep channel order. If any
+    channel has no usable stored position, keep the bridge order unchanged.
+    """
+    if not isinstance(pixel_lights, Mapping):
+        return channel_ids
+    lights = cast(Mapping[str, object], pixel_lights)
+    positions: dict[int, tuple[float, float, float]] = {}
+    for channel_id in channel_ids:
+        point = lights.get(str(channel_id))
+        if not isinstance(point, (list, tuple)) or len(point) != 3:
+            return channel_ids
+        axes = cast(list[object] | tuple[object, ...], point)
+        if any(
+            isinstance(axis, bool)
+            or not isinstance(axis, (int, float))
+            or not math.isfinite(axis)
+            for axis in axes
+        ):
+            return channel_ids
+        x, y, z = (float(cast(float, axis)) for axis in axes)
+        positions[channel_id] = (x, y, z)
+    return tuple(
+        sorted(channel_ids, key=lambda channel_id: (*positions[channel_id], channel_id))
+    )
+
+
 class HueDevice(NetworkedDevice):
     """Publish a sender only after its zone and native connection succeed."""
 
@@ -100,11 +132,35 @@ class HueDevice(NetworkedDevice):
             json_schema_extra={X_REQUIRED: True},
         )
         udp_port: int = Field(2100, description="port")
+        pixel_order: Literal["channel", "position"] = Field(
+            "position",
+            description=(
+                "Order of the zone's lights as pixels. 'position' sorts them left "
+                "to right by the positions set in the Hue app (ties are broken by "
+                "depth, then height). 'channel' follows the order the lights were "
+                "added to the Entertainment area"
+            ),
+        )
+
+        @model_validator(mode="before")
+        @classmethod
+        def _existing_zones_keep_channel_order(cls, data: object) -> object:
+            # Devices saved before pixel_order existed already store their
+            # entertainment_id. Keep their bridge channel order so an upgrade
+            # never rearranges a working setup; new devices sort by position.
+            if (
+                isinstance(data, Mapping)
+                and "pixel_order" not in data
+                and data.get("entertainment_id")
+            ):
+                return {**data, "pixel_order": "channel"}
+            return data
 
     config = TypedConfig(Config)
     OUTPUT_KEYS: ClassVar[tuple[str, ...]] = (
         "ip_address",
         "udp_port",
+        "pixel_order",
         "username",
         "clientkey",
         "hue_application_id",
@@ -214,13 +270,17 @@ class HueDevice(NetworkedDevice):
         stored = self.config.as_dict()
         channels = stored.get("channel_ids")
         if channels is None:
-            return tuple(int(k) for k in _object(stored.get("pixel_lights", {})))
-        if not isinstance(channels, (list, tuple)):
-            raise TypeError("Invalid Hue channel mapping")
-        values = cast(list[object] | tuple[object, ...], channels)
-        if any(type(value) is not int for value in values):
-            raise ValueError("Invalid Hue channel mapping")
-        return cast(tuple[int, ...], tuple(values))
+            ids = tuple(int(k) for k in _object(stored.get("pixel_lights", {})))
+        else:
+            if not isinstance(channels, (list, tuple)):
+                raise TypeError("Invalid Hue channel mapping")
+            values = cast(list[object] | tuple[object, ...], channels)
+            if any(type(value) is not int for value in values):
+                raise ValueError("Invalid Hue channel mapping")
+            ids = cast(tuple[int, ...], tuple(values))
+        if self.config.pixel_order == "position":
+            return _order_by_position(ids, stored.get("pixel_lights"))
+        return ids
 
     def _settings_snapshot(self) -> HueSettings:
         if self._destination is None:

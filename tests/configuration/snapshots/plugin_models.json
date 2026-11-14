@@ -9393,6 +9393,16 @@
     "description": "port",
     "title": "Udp Port",
     "type": "integer"
+   },
+   "pixel_order": {
+    "default": "position",
+    "description": "Order of the zone's lights as pixels. 'position' sorts them left to right by the positions set in the Hue app (ties are broken by depth, then height). 'channel' follows the order the lights were added to the Entertainment area",
+    "enum": [
+     "channel",
+     "position"
+    ],
+    "title": "Pixel Order",
+    "type": "string"
    }
   },
   "required": [

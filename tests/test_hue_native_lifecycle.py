@@ -1216,3 +1216,168 @@ def test_config_update_log_omits_credentials(
     assert "clientkey" in caplog.text
     assert "secret-user" not in caplog.text
     assert "ab" * 16 not in caplog.text
+
+
+# Entertainment-area positions as the bridge reports them, keyed by channel id.
+# Channels are numbered in the order lights were added, not by layout.
+POSITIONS = {
+    "0": [0.8, 0.0, 0.0],  # right
+    "1": [-0.8, 0.0, 0.0],  # left
+    "2": [0.0, 0.5, 0.0],  # middle, further along y
+    "3": [0.0, -0.5, 0.0],  # middle, nearer along y
+}
+
+
+def channel_order(**changes: object) -> tuple[int, ...]:
+    four_lights: dict[str, object] = {
+        "pixel_count": 4,
+        "channel_ids": [0, 1, 2, 3],
+        "pixel_lights": POSITIONS,
+    }
+    device = HueDevice(MagicMock(), config(**(four_lights | changes)))
+    return device._channel_ids()
+
+
+NEW_DEVICE = {"name": "Hue", "ip_address": "127.0.0.1", "group_name": "Room"}
+
+
+def test_new_devices_default_to_position_order() -> None:
+    assert HueDevice.Config.model_validate(NEW_DEVICE).pixel_order == "position"
+
+
+def test_existing_zones_keep_channel_order_on_upgrade() -> None:
+    # A device saved before pixel_order existed has an entertainment_id but no
+    # pixel_order: it must keep the bridge order it has always streamed in.
+    assert channel_order() == (0, 1, 2, 3)
+    saved = HueDevice.Config.model_validate(
+        {**NEW_DEVICE, "entertainment_id": ZONE, "pixel_lights": POSITIONS}
+    )
+    assert saved.pixel_order == "channel"
+    # Once saved, the choice is explicit and survives a reload unchanged.
+    assert HueDevice.Config.model_validate(saved.as_dict()).pixel_order == "channel"
+
+
+@pytest.mark.parametrize("choice", ["channel", "position"])
+def test_explicit_pixel_order_always_wins(choice: str) -> None:
+    for data in (NEW_DEVICE, {**NEW_DEVICE, "entertainment_id": ZONE}):
+        assert (
+            HueDevice.Config.model_validate({**data, "pixel_order": choice}).pixel_order
+            == choice
+        )
+
+
+async def test_new_device_keeps_position_order_after_discovery(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Discovery stores entertainment_id on a brand-new device; that must not
+    # flip it to channel order, because pixel_order is already set by then.
+    device = HueFixture(
+        MagicMock(
+            loop=asyncio.get_running_loop(), thread_executor=None, virtuals=MagicMock()
+        ),
+        HueDevice.Config.model_validate(NEW_DEVICE),
+    )
+    monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
+    device.update_config(
+        {
+            "entertainment_id": ZONE,
+            "pixel_count": 4,
+            "channel_ids": [0, 1, 2, 3],
+            "pixel_lights": POSITIONS,
+        }
+    )
+    assert device.config.pixel_order == "position"
+    assert device._channel_ids() == (1, 3, 2, 0)
+
+
+def test_position_order_sorts_left_to_right_then_by_depth() -> None:
+    assert channel_order(pixel_order="position") == (1, 3, 2, 0)
+
+
+def test_position_order_breaks_exact_ties_by_channel() -> None:
+    same = [0.0, 0.0, 0.0]
+    assert channel_order(
+        pixel_order="position",
+        channel_ids=[5, 2, 9],
+        pixel_count=3,
+        pixel_lights={"5": same, "2": same, "9": same},
+    ) == (2, 5, 9)
+
+
+def test_position_order_sorts_by_height_last() -> None:
+    assert channel_order(
+        pixel_order="position",
+        channel_ids=[0, 1],
+        pixel_count=2,
+        pixel_lights={"0": [0.0, 0.0, 1.0], "1": [0.0, 0.0, -1.0]},
+    ) == (1, 0)
+
+
+@pytest.mark.parametrize(
+    "pixel_lights",
+    [
+        None,
+        {"0": [0.8, 0.0, 0.0], "1": [-0.8, 0.0, 0.0]},  # channel 2 missing
+        {**POSITIONS, "2": [0.0, 0.5]},  # wrong arity
+        {**POSITIONS, "2": [0.0, float("nan"), 0.0]},
+        {**POSITIONS, "2": [True, 0.0, 0.0]},
+        {**POSITIONS, "2": "0,0,0"},
+    ],
+)
+def test_position_order_keeps_bridge_order_without_usable_positions(
+    pixel_lights: object,
+) -> None:
+    changes: dict[str, object] = {"pixel_order": "position"}
+    if pixel_lights is not None:
+        changes["pixel_lights"] = pixel_lights
+    device = HueDevice(
+        MagicMock(),
+        config(pixel_count=3, channel_ids=[0, 1, 2], **changes),
+    )
+    assert device._channel_ids() == (0, 1, 2)
+
+
+def test_position_order_applies_to_legacy_configs_without_channel_ids() -> None:
+    device = HueDevice(
+        MagicMock(),
+        HueDevice.Config.model_validate(
+            {
+                "name": "Hue",
+                "ip_address": "127.0.0.1",
+                "group_name": "Room",
+                "pixel_count": 4,
+                "pixel_lights": POSITIONS,
+                "pixel_order": "position",
+            }
+        ),
+    )
+    assert device._channel_ids() == (1, 3, 2, 0)
+
+
+def test_unknown_pixel_order_is_rejected() -> None:
+    with pytest.raises(ValueError):
+        config(pixel_order="random")
+
+
+async def test_changing_pixel_order_restarts_with_sorted_channels(
+    hue_device: HueFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(HueDevice, "_virtuals_objs", property(_no_virtuals))
+    hue_device.update_config(
+        {
+            "pixel_count": 4,
+            "channel_ids": [0, 1, 2, 3],
+            "pixel_lights": POSITIONS,
+        }
+    )
+    first, second = ControlledSender(), ControlledSender()
+    hue_device.senders.extend([first, second])
+    hue_device.activate()
+    await idle(hue_device)
+    assert hue_device.snapshots[0].channel_ids == (0, 1, 2, 3)
+
+    hue_device.update_config({"pixel_order": "position"})
+    await idle(hue_device)
+    assert first.closed
+    assert hue_device.snapshots[1].channel_ids == (1, 3, 2, 0)
+    assert hue_device._sender is second
