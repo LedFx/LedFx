@@ -586,9 +586,9 @@ class LedFxConfig(LedFxModel):
     integrations: list[IntegrationEntry] = Field(
         list[IntegrationEntry](), json_schema_extra=_legacy_type("array", [])
     )
-    transmission_mode: Literal["compressed", "uncompressed"] = Field(
-        "compressed", json_schema_extra={X_RESTART: True}
-    )
+    # No restart: read fresh for every visualisation frame, never captured when
+    # the visualisation listeners are set up (unlike fps and maxlen).
+    transmission_mode: Literal["compressed", "uncompressed"] = "compressed"
     visualisation_fps: int = Field(30, ge=1, le=60)
     visualisation_maxlen: int = Field(81, ge=5, le=65536)
     global_transitions: bool = Field(

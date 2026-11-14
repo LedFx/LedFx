@@ -72,7 +72,6 @@ def test_restart_fields_match_legacy_list() -> None:
         "port",
         "port_s",
         "dev_mode",
-        "transmission_mode",
         "global_transitions",
         "melbank_collection",
     }
