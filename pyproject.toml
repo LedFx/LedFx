@@ -45,7 +45,7 @@ dependencies = [
     "dbus-fast>=5.0.22,<6.0.0; sys_platform == \"linux\"",
 ]
 name = "LedFx"
-version = "2.2.0"
+version = "3.0.0"
 description = "A network based light effect controller"
 readme = "README.rst"
 
