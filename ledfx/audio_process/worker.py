@@ -34,6 +34,9 @@ class AudioWorker:
         self._sock = sock
         self._sd = audio_module
         self._analyzer = None
+        # The result groups LedFx reads (AudioAnalyzer.set_wanted); kept across
+        # a configure, which builds a new analyzer.
+        self._groups = None
         self._stream = None
         self._cond = threading.Condition()
         self._replies = collections.deque()
@@ -155,9 +158,16 @@ class AudioWorker:
     def handle(self, msg):
         kind = msg.get("t")
         if kind == "configure":
-            self._analyzer = AudioAnalyzer(
+            analyzer = AudioAnalyzer(
                 msg["audio_config"], msg["melbank_configs"], msg["coeffs_type"]
             )
+            analyzer.set_wanted(self._groups)
+            self._analyzer = analyzer
+        elif kind == "want":
+            groups = msg["groups"]
+            self._groups = None if groups is None else frozenset(groups)
+            if self._analyzer is not None:
+                self._analyzer.set_wanted(self._groups)
         elif kind == "next":
             self._want()
         elif kind == "block":

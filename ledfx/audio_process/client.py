@@ -181,6 +181,10 @@ class AudioProcessClient:
     def close(self):
         self._request({"t": "close"})
 
+    def want(self, groups):
+        """Compute only these result groups (AudioAnalyzer.set_wanted)."""
+        self._send({"t": "want", "groups": None if groups is None else sorted(groups)})
+
     def push(self, samples):
         """Analyse a block LedFx received itself (browser or Sendspin audio)."""
         data = np.ascontiguousarray(np.frombuffer(samples, dtype=np.float32)).tobytes()

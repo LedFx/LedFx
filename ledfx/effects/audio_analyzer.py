@@ -10,6 +10,8 @@ audio process (see ledfx.audio_process) without a second implementation.
 Every block runs the same steps, in the same order, that AudioAnalysisSource
 ran through its subscribed callbacks: melbanks, pitch, onset, bar oscillator
 (which drives the tempo tracker), volume beat, frequency power.
+
+Steps nothing reads can be skipped: see set_wanted() and ANALYSIS_GROUPS.
 """
 
 import logging
@@ -34,6 +36,17 @@ PRE_EMPHASIS_COEFFS = {
     "scott_mel": (1.3662, -1.9256, 0.5621, -1.9256, 0.9283),
 }
 PRE_EMPHASIS_DEFAULT = (0.85870, -1.71740, 0.85870, -1.71605, 0.71874)
+
+# What set_wanted() can switch off, one name per result group a reader asks
+# for. Onset and the tempo tracker always run: they drive events.
+ANALYSIS_GROUPS = (
+    "melbank0",
+    "melbank1",
+    "melbank2",
+    "pitch",
+    "volume_beat",
+    "freq_power",
+)
 
 
 class AudioAnalyzer:
@@ -119,6 +132,44 @@ class AudioAnalyzer:
         self.beat_prev_time = time.time()
         self.beat_power_history = deque(maxlen=self.beat_power_history_len)
 
+        self._wanted = None
+        self._melbanks_needed = None
+
+    def set_wanted(self, groups):
+        """Compute only the result groups something reads.
+
+        groups: names from ANALYSIS_GROUPS, or None to compute everything (the
+        default). A skipped group keeps its last values, except volume_beat_now,
+        which reads False so a skipped beat never fires as an event. The volume
+        beat needs melbank 0 and freq_power needs melbank 2, so those melbanks
+        are computed whenever their consumer is wanted.
+        """
+        if groups is None:
+            self._melbanks_needed = None
+            self._wanted = None
+            return
+        groups = frozenset(groups)
+        if (
+            self._wanted is not None
+            and "volume_beat" not in self._wanted
+            and "volume_beat" in groups
+        ):
+            # Powers from before the gap say nothing about the music now.
+            self.beat_power_history.clear()
+        needed = {
+            i for i in range(len(self.melbank_processors)) if f"melbank{i}" in groups
+        }
+        if "volume_beat" in groups:
+            needed.add(0)
+        if "freq_power" in groups:
+            needed.add(2)
+        self._melbanks_needed = frozenset(needed)
+        self._wanted = groups
+
+    def _wants(self, group):
+        wanted = self._wanted
+        return wanted is None or group in wanted
+
     @property
     def volume_filtered(self):
         return self.volume_filter.value
@@ -154,11 +205,16 @@ class AudioAnalyzer:
 
         self._pre_process()
         self._melbanks()
-        self.pitch = self._detect(self.pitch_detector, 0)
+        if self._wants("pitch"):
+            self.pitch = self._detect(self.pitch_detector, 0)
         self.onset = bool(self._detect(self.onset_detector, False))
         self._bar_oscillator()
-        self._volume_beat()
-        self._freq_power()
+        if self._wants("volume_beat"):
+            self._volume_beat()
+        else:
+            self.volume_beat_now = False
+        if self._wants("freq_power"):
+            self._freq_power()
         return True
 
     def _pre_process(self):
@@ -176,8 +232,14 @@ class AudioAnalyzer:
 
     def _melbanks(self):
         if self.volume_filter.value > self.min_volume:
+            needed = self._melbanks_needed
             for i, proc in enumerate(self.melbank_processors):
-                proc(self.frequency_domain, self.melbanks[i], self.melbanks_filtered[i])
+                if needed is None or i in needed:
+                    proc(
+                        self.frequency_domain,
+                        self.melbanks[i],
+                        self.melbanks_filtered[i],
+                    )
         else:
             for melbank in self.melbanks:
                 melbank[:] = 0

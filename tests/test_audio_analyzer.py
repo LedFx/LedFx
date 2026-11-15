@@ -11,7 +11,7 @@ import pytest
 
 from ledfx.configuration.models import AudioConfig
 from ledfx.effects.audio import AudioAnalysisSource
-from ledfx.effects.audio_analyzer import AudioAnalyzer
+from ledfx.effects.audio_analyzer import ANALYSIS_GROUPS, AudioAnalyzer
 from tests.test_utilities.fake_ledfx import fake_ledfx
 
 STREAM_RATE = 48000
@@ -147,8 +147,16 @@ def test_source_exposes_exactly_the_analyzer_results(monkeypatch, delay_ms):
     monkeypatch.setattr(time, "time", clock)
 
     src = make_source(audio_config)
+
+    def feed(block):
+        # source_values reads the melbank arrays directly, not through an
+        # effect's melbank(), so register every group the way readers do.
+        for group in ANALYSIS_GROUPS:
+            src.want(group)
+        src._audio_sample_callback(block, 1, None, None)
+
     from_source = run(
-        lambda b: src._audio_sample_callback(b, 1, None, None),
+        feed,
         lambda: source_values(src),
         blocks,
         clock,

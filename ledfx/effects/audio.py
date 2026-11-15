@@ -1136,6 +1136,10 @@ class AudioAnalysisSource(AudioInputSource):
     # beat, bass, mids, high
     freq_max_mels: ClassVar[list[int]] = list(FREQ_MAX_MELS)
 
+    # ~4s at 60 blocks/s: an effect pausing between reads never sees a stale
+    # group, and a deactivated effect stops costing anything quickly.
+    DEMAND_TTL_BLOCKS = 240
+
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.initialise_analysis()
@@ -1147,6 +1151,11 @@ class AudioAnalysisSource(AudioInputSource):
         self._subscriber_threshold = len(self._callbacks)
 
     def initialise_analysis(self):
+        if not hasattr(self, "_demand"):
+            # Demand tracking, see want().
+            self._demand = {}
+            self._demand_block = 0
+            self._demand_sent = None
         if not hasattr(self, "melbanks"):
             self.melbanks = Melbanks(
                 self._ledfx, self, self._ledfx.config.melbanks.model_dump()
@@ -1176,9 +1185,36 @@ class AudioAnalysisSource(AudioInputSource):
         self.initialise_analysis()
         self._rebuild_analyzer()
 
+    def want(self, group):
+        """Register that something is about to read this result group (a name
+        from ANALYSIS_GROUPS). Called on every read path, so it is one dict
+        store; groups nobody read for DEMAND_TTL_BLOCKS are no longer computed.
+        """
+        self._demand[group] = self._demand_block
+
+    def _send_demand(self):
+        """Tell the analysis, local or in the audio process, which groups were
+        read recently. Sent only when that set or the analysis changes."""
+        block = self._demand_block
+        ttl = self.DEMAND_TTL_BLOCKS
+        groups = frozenset(g for g, at in self._demand.items() if block - at <= ttl)
+        remote = self._remote
+        target = remote if remote is not None else self._analyzer
+        if target is None or (target, groups) == self._demand_sent:
+            return
+        if remote is not None:
+            if not remote.alive:
+                return
+            remote.want(groups)
+        else:
+            target.set_wanted(groups)
+        self._demand_sent = (target, groups)
+
     def _publish_results(self):
         """Copy the block's melbanks into the arrays effects read, then send
         the graph updates, as Melbanks.__call__ did."""
+        self._demand_block += 1
+        self._send_demand()
         results = self._results
         melbanks = self.melbanks
         try:
@@ -1193,12 +1229,18 @@ class AudioAnalysisSource(AudioInputSource):
             # block has the new shape.
             return
         if melbanks.dev_enabled:
-            for i in range(len(melbanks.melbank_processors)):
-                melbanks.send_melbank_event(i)
+            graphed = range(len(melbanks.melbank_processors))
         else:
-            melbanks.send_melbank_event(len(melbanks.melbank_processors) - 1)
+            graphed = (len(melbanks.melbank_processors) - 1,)
+        # The graphs read their melbanks too, but only while a page shows them.
+        graph_listened = self._ledfx.events.has_listeners(Event.GRAPH_UPDATE)
+        for i in graphed:
+            if graph_listened:
+                self.want(f"melbank{i}")
+            melbanks.send_melbank_event(i)
 
     def pitch(self):
+        self.want("pitch")
         results = self._results
         return results.pitch if results is not None else 0
 
@@ -1217,6 +1259,7 @@ class AudioAnalysisSource(AudioInputSource):
         """
         Returns True if a beat is expected now based on volume of the beat freq region
         """
+        self.want("volume_beat")
         results = self._results
         return results.volume_beat_now if results is not None else False
 
@@ -1232,6 +1275,8 @@ class AudioAnalysisSource(AudioInputSource):
         return results.tempo if results is not None else _IDLE_TEMPO
 
     def get_freq_power(self, i, filtered=True):
+        # Sole read path of every band power helper.
+        self.want("freq_power")
         results = self._results
         if results is None:
             return 0.0
@@ -1548,6 +1593,7 @@ class AudioReactiveEffect(Effect):
         size, int      : interpolate the melbank to the target size. value of 0 is no interpolation
         filtered, bool : melbank with smoothed attack and decay
         """
+        self.audio.want(f"melbank{self._selected_melbank}")
         if filtered:
             melbank = self.audio.melbanks.melbanks_filtered[self._selected_melbank][
                 self._melbank_min_idx : self._melbank_max_idx
