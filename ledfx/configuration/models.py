@@ -130,6 +130,10 @@ class AudioInputConfig(LedFxModel):
         le=5000,
         description="Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
     )
+    separate_process: bool = Field(
+        False,
+        description="Capture and analyse audio in a process of its own, so many active virtuals cannot make it drop audio.",
+    )
 
 
 class AudioAnalysisConfig(LedFxModel):

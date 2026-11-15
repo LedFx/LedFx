@@ -11,6 +11,7 @@ WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 
 import argparse
 import logging
+import multiprocessing
 import os
 import sys
 import threading
@@ -222,6 +223,9 @@ def main():
     """
     Main entry point allowing external calls
     """
+    # A frozen build starts the audio process (ledfx.audio_process) by
+    # re-running this executable; this turns that run into the worker.
+    multiprocessing.freeze_support()
 
     args = parse_args()
     if args.dump_schemas:

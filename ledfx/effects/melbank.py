@@ -437,6 +437,10 @@ class Melbanks:
             np.zeros(self.mel_len) for _ in range(self.mel_count)
         )
         self.minimum_volume = self._audio._config.min_volume
+        # The analysis builds its own melbank processors from this collection.
+        rebuild = getattr(self._audio, "_rebuild_analyzer", None)
+        if rebuild is not None:
+            rebuild()
 
     def __call__(self):
         # fastest way i could think of.

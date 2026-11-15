@@ -10,6 +10,7 @@ PERMITTED_KEYS = {
         "pitch_method",
         "onset_method",
         "pitch_tolerance",
+        "separate_process",
     ),
     "silence_scene": ("enabled", "scene_id", "timeout_seconds"),
     "melbanks": (

@@ -94,6 +94,12 @@
      "minimum": 0,
      "title": "Delay Ms",
      "type": "integer"
+    },
+    "separate_process": {
+     "default": false,
+     "description": "Capture and analyse audio in a process of its own, so many active virtuals cannot make it drop audio.",
+     "title": "Separate Process",
+     "type": "boolean"
     }
    },
    "title": "AudioConfig",
@@ -575,6 +581,12 @@
        "minimum": 0,
        "title": "Delay Ms",
        "type": "integer"
+      },
+      "separate_process": {
+       "default": false,
+       "description": "Capture and analyse audio in a process of its own, so many active virtuals cannot make it drop audio.",
+       "title": "Separate Process",
+       "type": "boolean"
       }
      },
      "title": "AudioConfig",
@@ -1683,7 +1695,8 @@
       "min_volume": 0.2,
       "audio_device": null,
       "audio_device_name": "",
-      "delay_ms": 0
+      "delay_ms": 0,
+      "separate_process": false
      },
      "title": "Audio"
     },

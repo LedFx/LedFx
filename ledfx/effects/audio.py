@@ -1,19 +1,16 @@
 import logging
-import queue
 import threading
 import time
-from collections import deque
 from collections.abc import Callable
 from functools import cache, cached_property, lru_cache
 from typing import ClassVar
 
-import aubio
 import numpy as np
-import samplerate
 import sounddevice as sd
 
 import ledfx.api.websocket
 from ledfx.api.websocket import WEB_AUDIO_CLIENTS, WebAudioStream
+from ledfx.audio_process.client import AudioProcessClient, AudioProcessError
 from ledfx.configuration.fields import (
     RUNTIME_CONTEXT,
     EnumSource,
@@ -21,8 +18,9 @@ from ledfx.configuration.fields import (
 )
 from ledfx.configuration.models import AudioConfig, replace_model
 from ledfx.effects import Effect
+from ledfx.effects.audio_analyzer import FREQ_MAX_MELS, AudioAnalyzer
 from ledfx.effects.math import ExpFilter
-from ledfx.effects.melbank import MIC_RATE, Melbanks
+from ledfx.effects.melbank import Melbanks
 from ledfx.events import AudioDeviceChangeEvent, AudioSourceErrorEvent, Event
 from ledfx.sendspin import SENDSPIN_AVAILABLE
 from ledfx.sendspin.config import is_always_on as is_sendspin_always_on
@@ -36,15 +34,59 @@ MIN_MIDI = 21
 MAX_MIDI = 108
 
 
+class RemoteAudioStream:
+    """A capture device opened in the audio process, with InputStream's
+    start/stop/close, so the activation code drives it like a local one."""
+
+    def __init__(self, client, **open_args):
+        self._client = client
+        self._open_args = open_args
+
+    def start(self):
+        self._client.open(**self._open_args)
+
+    def stop(self):
+        if self._client.alive:
+            try:
+                self._client.close()
+            except AudioProcessError:
+                _LOGGER.warning("The audio process did not confirm closing the device")
+
+    def close(self):
+        pass
+
+
+class _IdleTempo:
+    """What the tempo tracker reports before any audio has been analysed."""
+
+    @staticmethod
+    def get_bpm():
+        return 0.0
+
+    @staticmethod
+    def get_confidence():
+        return 0.0
+
+    @staticmethod
+    def get_period_s():
+        return 0.0
+
+
+_IDLE_TEMPO = _IdleTempo()
+
+
 class AudioInputSource:
     _audio_stream_active = False
     _audio = None
     _stream = None
     _callbacks: ClassVar[list[Callable[[], None]]] = []
     _audioWindowSize = 4
-    _processed_audio_sample = None
-    _volume = -90
-    _volume_filter = ExpFilter(-90, alpha_decay=0.99, alpha_rise=0.99)
+    _analyzer = None
+    _results = None
+    # Set while this source's capture and analysis run in the audio process.
+    _remote = None
+    # The audio process client, shared by every source instance.
+    _audio_process = None
     _subscriber_threshold = 0
     _timer = None
     _last_active = None
@@ -444,7 +486,6 @@ class AudioInputSource:
     def __init__(self, ledfx, config):
         self._ledfx = ledfx
         self.lock = threading.Lock()
-        self._has_volume_measurement = False
         # We must not inherit legacy _callbacks from prior instances
         self._callbacks = []
         self.update_config(config)
@@ -569,7 +610,7 @@ class AudioInputSource:
         if hasattr(self, "_config"):
             old_config = self._config
             # Pipeline-affecting keys require rebuilding internal audio objects even when the audio stream should stay active.
-            _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size")
+            _PIPELINE_KEYS = ("delay_ms", "sample_rate", "fft_size", "separate_process")
             pipeline_changing = any(
                 getattr(old_config, k) != getattr(new_config, k) for k in _PIPELINE_KEYS
             )
@@ -728,45 +769,12 @@ class AudioInputSource:
                 )
             device_idx = default_device
 
-        # Setup a pre-emphasis filter to balance the input volume of lows to highs
-        self.pre_emphasis = aubio.digital_filter(3)
-        # depending on the coeffs type, we need to use different pre_emphasis values to make em work better. allegedly.
-        selected_coeff = self._ledfx.config.melbanks.coeffs_type
-        if selected_coeff == "matt_mel":
-            _LOGGER.debug("Using matt_mel settings for pre-emphasis.")
-            self.pre_emphasis.set_biquad(0.8268, -1.6536, 0.8268, -1.6536, 0.6536)
-        elif selected_coeff == "scott_mel":
-            _LOGGER.debug("Using scott_mel settings for pre-emphasis.")
-            self.pre_emphasis.set_biquad(1.3662, -1.9256, 0.5621, -1.9256, 0.9283)
-        else:
-            _LOGGER.debug("Using generic settings for pre-emphasis")
-            self.pre_emphasis.set_biquad(0.85870, -1.71740, 0.85870, -1.71605, 0.71874)
-
-        freq_domain_length = (self._config.fft_size // 2) + 1
-
-        self._raw_audio_sample = np.zeros(
-            MIC_RATE // self._config.sample_rate,
-            dtype=np.float32,
-        )
-
-        # Setup the phase vocoder to perform a windowed FFT
-        self._phase_vocoder = aubio.pvoc(
-            self._config.fft_size,
-            MIC_RATE // self._config.sample_rate,
-        )
-        self._frequency_domain_null = aubio.cvec(self._config.fft_size)
-        self._frequency_domain = self._frequency_domain_null
-        self._frequency_domain_x = np.linspace(
-            0,
-            MIC_RATE,
-            freq_domain_length,
-        )
-
-        samples_to_delay = int(0.001 * self._config.delay_ms * self._config.sample_rate)
-        if samples_to_delay:
-            self.delay_queue = queue.Queue(maxsize=samples_to_delay)
-        else:
-            self.delay_queue = None
+        # The per-block signal chain (resampler, delay line, pre-emphasis, phase
+        # vocoder, melbanks, detectors) lives in AudioAnalyzer.
+        self._analyzer = self._create_analyzer()
+        self._remote = self._audio_process_client()
+        if self._remote is not None:
+            self._remote.configure(*self._analyzer_args())
 
         def update_device_tracking(device_idx):
             """
@@ -832,6 +840,17 @@ class AudioInputSource:
                     instance_id=self._ledfx.config.instance_id,
                     ledfx=self._ledfx,
                 )
+            elif self._remote is not None:
+                AudioInputSource._stream = RemoteAudioStream(
+                    self._remote,
+                    device=device_idx,
+                    device_name=f"{hostapis[device['hostapi']]['name']}: {device['name']}",
+                    samplerate=int(device["default_samplerate"]),
+                    blocksize=int(
+                        device["default_samplerate"] / self._config.sample_rate
+                    ),
+                    channels=channels,
+                )
             else:
                 AudioInputSource._stream = self._audio.InputStream(
                     samplerate=int(device["default_samplerate"]),
@@ -845,8 +864,6 @@ class AudioInputSource:
                     # only pass channels if we set it to something other than None
                     **({"channels": channels} if channels is not None else {}),
                 )
-
-            self.resampler = samplerate.Resampler("sinc_fastest", channels=1)
 
             _LOGGER.info(
                 "Audio source opened: %s: %s",
@@ -1025,304 +1042,203 @@ class AudioInputSource:
 
     def _audio_sample_callback(self, in_data, frame_count, time_info, status):
         """Callback for when a new audio sample is acquired"""
-        # time_start = time.time()
-        # self._raw_audio_sample = np.frombuffer(in_data, dtype=np.float32)
-        raw_sample = np.frombuffer(in_data, dtype=np.float32)
-
-        in_sample_len = len(raw_sample)
-        out_sample_len = MIC_RATE // self._config.sample_rate
-
-        if in_sample_len != out_sample_len:
-            # Simple resampling
-            processed_audio_sample = self.resampler.process(
-                raw_sample,
-                # MIC_RATE / self._stream.samplerate
-                out_sample_len / in_sample_len,
-                # end_of_input=True
-            )
-        else:
-            processed_audio_sample = raw_sample
-
-        if len(processed_audio_sample) != out_sample_len:
-            _LOGGER.debug(
-                "Discarded malformed audio frame - %s samples, expected %s",
-                len(processed_audio_sample),
-                out_sample_len,
-            )
+        remote = self._remote
+        if remote is not None:
+            # Browser or Sendspin audio arrives here; the audio process
+            # analyses it like its own capture.
+            if remote.alive:
+                remote.push(in_data)
             return
+        analyzer = self._analyzer
+        if analyzer is None or not analyzer.process(in_data):
+            return
+        self._apply_results(analyzer)
 
-        # handle delaying the audio with the queue
-        if self.delay_queue:
+    def _apply_results(self, results):
+        """Make one block's analysis results current and notify subscribers.
+
+        `results` is anything with AudioAnalyzer's result attributes: the
+        analyzer itself when analysis runs in this process.
+        """
+        self._results = results
+        silence_controller = getattr(self._ledfx, "silence_scene", None)
+        if silence_controller is not None:
+            silence_controller.report_volume(results.volume_filtered)
+        self._invoke_callbacks()
+
+    def _analyzer_args(self):
+        raise NotImplementedError
+
+    def _create_analyzer(self):
+        return AudioAnalyzer(*self._analyzer_args())
+
+    def _audio_process_client(self):
+        """The running audio process client when this source should use one.
+
+        Falls back to in-process analysis, with a warning, when the process
+        cannot be started.
+        """
+        if not self._config.separate_process:
+            return None
+        client = AudioInputSource._audio_process
+        if client is None or not client.alive:
+            client = AudioProcessClient(self._apply_results)
             try:
-                self.delay_queue.put_nowait(processed_audio_sample)
-            except queue.Full:
-                self._raw_audio_sample = self.delay_queue.get_nowait()
-                self.delay_queue.put_nowait(processed_audio_sample)
-                self.pre_process_audio()
-                self._invalidate_caches()
-                self._invoke_callbacks()
-        else:
-            self._raw_audio_sample = processed_audio_sample
-            self.pre_process_audio()
-            self._invalidate_caches()
-            self._invoke_callbacks()
-
-        # print(f"Core Audio Processing Latency {round(time.time()-time_start, 3)} s")
-        # return self._raw_audio_sample
+                client.start()
+            except OSError as e:
+                _LOGGER.warning(
+                    "Could not start the audio process (%s); analysing audio in-process.",
+                    e,
+                )
+                return None
+            AudioInputSource._audio_process = client
+        client.on_results = self._apply_results
+        return client
 
     def _invoke_callbacks(self):
         """Notifies all clients of the new data"""
         for callback in self._callbacks:
             callback()
 
-    def _invalidate_caches(self):
-        """Invalidates the necessary cache"""
-
-    def pre_process_audio(self):
-        """
-        Pre-processing stage that will run on every sample, only
-        core functionality that will be used for every audio effect
-        should be done here. Everything else should be deferred until
-        queried by an effect.
-        """
-        # clean up nans that have been mysteriously appearing..
-        self._raw_audio_sample[np.isnan(self._raw_audio_sample)] = 0
-
-        # Calculate the current volume for silence detection
-        self._volume = 1 + aubio.db_spl(self._raw_audio_sample) / 100
-        self._volume = max(0, min(1, self._volume))
-        self._volume_filter.update(self._volume)
-        self._has_volume_measurement = True
-
-        # Calculate the frequency domain from the filtered data and
-        # force all zeros when below the volume threshold
-        volume = self._volume_filter.value
-        silence_controller = getattr(self._ledfx, "silence_scene", None)
-        if silence_controller is not None:
-            silence_controller.report_volume(volume)
-        if volume is not None and volume > self._config.min_volume:
-            self._processed_audio_sample = self._raw_audio_sample
-
-            # Perform a pre-emphasis to balance the highs and lows
-            if self.pre_emphasis:
-                self._processed_audio_sample = self.pre_emphasis(self._raw_audio_sample)
-
-            # Pass into the phase vocoder to get a windowed FFT
-            self._frequency_domain = self._phase_vocoder(self._processed_audio_sample)
-        else:
-            self._frequency_domain = self._frequency_domain_null
+    @property
+    def _has_volume_measurement(self):
+        results = self._results
+        return results is not None and results.has_volume_measurement
 
     def audio_sample(self, raw=False):
         """Returns the raw audio sample"""
-
+        results = self._results
+        if results is None:
+            return None
         if raw:
-            return self._raw_audio_sample
-        return self._processed_audio_sample
+            return results.raw_sample
+        return results.processed_sample
 
     def frequency_domain(self):
-        return self._frequency_domain
+        results = self._results
+        return results.frequency_domain if results is not None else None
+
+    @property
+    def _frequency_domain(self):
+        return self.frequency_domain()
 
     def volume(self, filtered=True):
+        results = self._results
+        if results is None:
+            return -90
         if filtered:
-            return self._volume_filter.value
-        return self._volume
+            return results.volume_filtered
+        return results.volume_raw
 
 
 class AudioAnalysisSource(AudioInputSource):
     # some frequency constants
     # beat, bass, mids, high
-    freq_max_mels: ClassVar[list[int]] = [
-        100,
-        250,
-        3000,
-        10000,
-    ]
+    freq_max_mels: ClassVar[list[int]] = list(FREQ_MAX_MELS)
 
     def __init__(self, ledfx, config):
         super().__init__(ledfx, config)
         self.initialise_analysis()
 
-        # Subscribe functions to be run on every frame of audio
-        self.subscribe(self.melbanks)
-        self.subscribe(self.pitch)
-        self.subscribe(self.onset)
-        self.subscribe(self.bar_oscillator)
-        self.subscribe(self.volume_beat_now)
-        self.subscribe(self.freq_power)
+        # Publishes each block's results before any effect callback runs
+        self.subscribe(self._publish_results)
 
         # ensure any new analysis callbacks are above this line
         self._subscriber_threshold = len(self._callbacks)
 
     def initialise_analysis(self):
-        # melbanks
         if not hasattr(self, "melbanks"):
             self.melbanks = Melbanks(
                 self._ledfx, self, self._ledfx.config.melbanks.model_dump()
             )
 
-        fft_params = (
-            self._config.fft_size,
-            MIC_RATE // self._config.sample_rate,
-            MIC_RATE,
+    def _analyzer_args(self):
+        # A Sendspin source that is always on can activate from inside
+        # AudioInputSource.__init__, before initialise_analysis has run.
+        self.initialise_analysis()
+        return (
+            self._config.model_dump(),
+            [entry["config"] for entry in self.melbanks.melbank_collection],
+            self._ledfx.config.melbanks.coeffs_type,
         )
 
-        # pitch, tempo, onset
-        self._tempo = aubio.tempo(self._config.tempo_method, *fft_params)
-        self._onset = aubio.onset(self._config.onset_method, *fft_params)
-        self._pitch = aubio.pitch(self._config.pitch_method, *fft_params)
-        self._pitch.set_unit("midi")
-        self._pitch.set_tolerance(self._config.pitch_tolerance)
-
-        # bar oscillator
-        self.beat_counter = 0
-
-        # beat oscillator
-        self.beat_timestamp = time.time()
-        self.beat_period = 2
-
-        # freq power
-        self.freq_power_raw = np.zeros(len(self.freq_max_mels))
-        self.freq_power_filter = ExpFilter(
-            np.zeros(len(self.freq_max_mels)), alpha_decay=0.2, alpha_rise=0.97
-        )
-        self.freq_mel_indexes = []
-
-        for freq in self.freq_max_mels:
-            assert self.melbanks.melbanks_config.max_frequencies[2] >= freq
-
-            self.freq_mel_indexes.append(
-                next(
-                    (
-                        i
-                        for i, f in enumerate(
-                            self.melbanks.melbank_processors[2].melbank_frequencies
-                        )
-                        if f > freq
-                    ),
-                    len(self.melbanks.melbank_processors[2].melbank_frequencies),
-                )
-            )
-
-        # volume based beat detection
-        self.beat_max_mel_index = next(
-            (
-                i - 1
-                for i, f in enumerate(
-                    self.melbanks.melbank_processors[0].melbank_frequencies
-                )
-                if f > self.freq_max_mels[0]
-            ),
-            self.melbanks.melbank_processors[0].melbank_frequencies[-1],
-        )
-
-        self.beat_min_percent_diff = 0.5
-        self.beat_min_time_since = 0.1
-        self.beat_min_amplitude = 0.5
-        self.beat_power_history_len = int(self._config.sample_rate * 0.2)
-
-        self.beat_prev_time = time.time()
-        self.beat_power_history = deque(maxlen=self.beat_power_history_len)
+    def _rebuild_analyzer(self):
+        """Pick up changed analysis or melbank settings without reopening the
+        stream. Detector and filter state restart, as they always did."""
+        if self._analyzer is not None:
+            self._analyzer = self._create_analyzer()
+            remote = self._remote
+            if remote is not None and remote.alive:
+                remote.configure(*self._analyzer_args())
 
     def update_config(self, config):
         super().update_config(config)
         self.initialise_analysis()
+        self._rebuild_analyzer()
 
-    def _invalidate_caches(self):
-        """Invalidates the cache for all melbank related data"""
-        super()._invalidate_caches()
+    def _publish_results(self):
+        """Copy the block's melbanks into the arrays effects read, then send
+        the graph updates, as Melbanks.__call__ did."""
+        results = self._results
+        melbanks = self.melbanks
+        try:
+            for target, source in zip(melbanks.melbanks, results.melbanks, strict=True):
+                np.copyto(target, source)
+            for target, source in zip(
+                melbanks.melbanks_filtered, results.melbanks_filtered, strict=True
+            ):
+                np.copyto(target, source)
+        except ValueError:
+            # The melbank layout changed mid-block; the rebuilt analyzer's next
+            # block has the new shape.
+            return
+        if melbanks.dev_enabled:
+            for i in range(len(melbanks.melbank_processors)):
+                melbanks.send_melbank_event(i)
+        else:
+            melbanks.send_melbank_event(len(melbanks.melbank_processors) - 1)
 
-        self.pitch.cache_clear()
-        self.onset.cache_clear()
-        self.bpm_beat_now.cache_clear()
-        self.volume_beat_now.cache_clear()
-        self.bar_oscillator.cache_clear()
-
-    @cache  # noqa: B019
     def pitch(self):
-        # If our audio handler is returning null, then we just return 0 for midi_value and wait for the device starts sending audio.
-        try:
-            return self._pitch(self.audio_sample(raw=True))[0]
-        except ValueError as e:
-            _LOGGER.warning("%s", e)
-            return 0
+        results = self._results
+        return results.pitch if results is not None else 0
 
-    @cache  # noqa: B019
     def onset(self):
-        try:
-            return bool(self._onset(self.audio_sample(raw=True))[0])
-        except ValueError as e:
-            _LOGGER.warning("%s", e)
-            return 0
+        results = self._results
+        return results.onset if results is not None else False
 
-    @cache  # noqa: B019
     def bpm_beat_now(self):
         """
         Returns True if a beat is expected now based on BPM data
         """
-        try:
-            return bool(self._tempo(self.audio_sample(raw=True))[0])
-        except ValueError as e:
-            _LOGGER.warning("%s", e)
-            return False
+        results = self._results
+        return results.bpm_beat_now if results is not None else False
 
-    @cache  # noqa: B019
     def volume_beat_now(self):
         """
         Returns True if a beat is expected now based on volume of the beat freq region
-        This algorithm is a bit weird, but works quite nicely.
-        I've tried my best to optimise it from the original
-        implementation in systematic_leds
         """
+        results = self._results
+        return results.volume_beat_now if results is not None else False
 
-        time_now = time.time()
-        melbank = self.melbanks.melbanks[0][: self.beat_max_mel_index]
-        beat_power = np.sum(melbank)
-        melbank_max = np.max(melbank)
+    @property
+    def beat_counter(self):
+        results = self._results
+        return results.beat_counter if results is not None else 0
 
-        # calculates the % difference of the first value of the channel to the average for the channel
-        if sum(self.beat_power_history) > 0:
-            difference = (
-                beat_power * self.beat_power_history_len / sum(self.beat_power_history)
-                - 1
-            )
-        else:
-            difference = 0
-
-        self.beat_power_history.appendleft(beat_power)
-
-        if (
-            difference >= self.beat_min_percent_diff
-            and melbank_max >= self.beat_min_amplitude
-            and time_now - self.beat_prev_time > self.beat_min_time_since
-        ):
-            self.beat_prev_time = time_now
-            return True
-        else:
-            return False
-
-    def freq_power(self):
-        # hard coded this bc i'm tired and it'll run faster
-
-        melbank = self.melbanks.melbanks[2]
-
-        self.freq_power_raw[0] = np.average(melbank[: self.freq_mel_indexes[0]])
-        self.freq_power_raw[1] = np.average(
-            melbank[self.freq_mel_indexes[0] : self.freq_mel_indexes[1]]
-        )
-        self.freq_power_raw[2] = np.average(
-            melbank[self.freq_mel_indexes[1] : self.freq_mel_indexes[2]]
-        )
-        self.freq_power_raw[3] = np.average(
-            melbank[self.freq_mel_indexes[2] : self.freq_mel_indexes[3]]
-        )
-        np.minimum(self.freq_power_raw, 1, out=self.freq_power_raw)
-        self.freq_power_filter.update(self.freq_power_raw)
+    @property
+    def _tempo(self):
+        """The tempo tracker, for its get_bpm()/get_confidence()/get_period_s()."""
+        results = self._results
+        return results.tempo if results is not None else _IDLE_TEMPO
 
     def get_freq_power(self, i, filtered=True):
+        results = self._results
+        if results is None:
+            return 0.0
         if filtered:
-            value = self.freq_power_filter.value[i]
+            value = results.freq_power_filtered[i]
         else:
-            value = self.freq_power_raw[i]
+            value = results.freq_power_raw[i]
 
         return value if not np.isnan(value) else 0.0
 
@@ -1359,7 +1275,6 @@ class AudioAnalysisSource(AudioInputSource):
         """
         return self.get_freq_power(3, filtered)
 
-    @cache  # noqa: B019
     def bar_oscillator(self):
         """
         Returns a float (0<=x<4) corresponding to the position of the beat
@@ -1379,22 +1294,8 @@ class AudioAnalysisSource(AudioInputSource):
             value of
         beat grid pointer
         """
-        # update tempo and oscillator
-        # print(self._tempo.get_delay_s())
-        if self.bpm_beat_now():
-            self.beat_counter = (self.beat_counter + 1) % 4
-            self.beat_period = self._tempo.get_period_s()
-            # print("beat at:", self._tempo.get_delay_s())
-            self.beat_timestamp = time.time()
-            oscillator = self.beat_counter
-        else:
-            time_since_beat = time.time() - self.beat_timestamp
-            oscillator = (
-                1 - (self.beat_period - time_since_beat) / self.beat_period
-            ) + self.beat_counter
-            # ensure it's between [0 and 4). useful when audio cuts
-            oscillator = oscillator % 4
-        return oscillator
+        results = self._results
+        return results.bar_oscillator if results is not None else 0.0
 
     def beat_oscillator(self):
         """
@@ -1408,6 +1309,31 @@ class AudioAnalysisSource(AudioInputSource):
            oscillator
         """
         return self.bar_oscillator() % 1
+
+
+_EVENT_FLAGS = ("onset", "bpm_beat_now", "volume_beat_now")
+
+
+class _WithMissedEvents:
+    """The audio source as one effect's audio_data_updated sees it after it
+    missed blocks: the newest results, plus any onset or beat among the
+    missed ones, so a busy frame delays an event instead of losing it."""
+
+    def __init__(self, source, missed):
+        self._source = source
+        self._missed = missed
+
+    def __getattr__(self, name):
+        return getattr(self._source, name)
+
+    def onset(self):
+        return "onset" in self._missed or self._source.onset()
+
+    def bpm_beat_now(self):
+        return "bpm_beat_now" in self._missed or self._source.bpm_beat_now()
+
+    def volume_beat_now(self):
+        return "volume_beat_now" in self._missed or self._source.volume_beat_now()
 
 
 @Effect.no_registration
@@ -1432,6 +1358,9 @@ class AudioReactiveEffect(Effect):
         super().__init__(ledfx, config)
         # protect against possible deactivate race condition
         self.audio = None
+        self._audio_pending = False
+        self._missed_events = set()
+        self._pending_lock = threading.Lock()
 
     def activate(self, channel):
         _LOGGER.info("Activating AudioReactiveEffect.")
@@ -1467,9 +1396,42 @@ class AudioReactiveEffect(Effect):
 
     def _audio_data_updated(self):
         self.melbank.cache_clear()
-        with self.lock:
-            if self.is_active:
-                self.audio_data_updated(self.audio)
+        if self.lock.acquire(blocking=False):
+            try:
+                self._update_audio()
+            finally:
+                self.lock.release()
+            return
+        # The render thread holds the lock for a whole frame. Waiting for it
+        # here would hold up every other effect's update behind this one, so
+        # the render thread applies the newest results at the start of its
+        # next frame instead, with the onsets and beats of the blocks between.
+        audio = self.audio
+        if audio is None:
+            return
+        with self._pending_lock:
+            for name in _EVENT_FLAGS:
+                if getattr(audio, name)():
+                    self._missed_events.add(name)
+            self._audio_pending = True
+
+    def _update_audio(self):
+        """Run audio_data_updated on the newest results; needs self.lock."""
+        with self._pending_lock:
+            missed, self._missed_events = self._missed_events, set()
+            self._audio_pending = False
+        if self.is_active:
+            audio = self.audio
+            self.audio_data_updated(
+                _WithMissedEvents(audio, missed) if missed else audio
+            )
+
+    def _render(self):
+        if self._audio_pending:
+            with self.lock:
+                if self._audio_pending:
+                    self._update_audio()
+        super()._render()
 
     def audio_data_updated(self, data):
         """

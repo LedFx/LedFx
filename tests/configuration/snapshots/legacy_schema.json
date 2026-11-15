@@ -411,6 +411,12 @@
      "description": "Add a delay to LedFx's output to sync with your audio. Useful for Bluetooth devices which typically have a short audio lag.",
      "default": 0
     },
+    "separate_process": {
+     "type": "boolean",
+     "title": "Separate Process",
+     "description": "Capture and analyse audio in a process of its own, so many active virtuals cannot make it drop audio.",
+     "default": false
+    },
     "pitch_method": {
      "type": "string",
      "enum": [
@@ -456,7 +462,8 @@
     "delay_ms",
     "pitch_method",
     "onset_method",
-    "pitch_tolerance"
+    "pitch_tolerance",
+    "separate_process"
    ]
   }
  },
