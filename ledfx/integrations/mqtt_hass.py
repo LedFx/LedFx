@@ -482,6 +482,11 @@ class MQTT_HASS(Integration):
         """
         self.publish_discovery(client)
         self.publish_state(client)
+        # Home Assistant may still be creating the entities and
+        # subscribing to their state topics when the state arrives, and
+        # the messages are not retained, so send the state once more a
+        # few seconds later.
+        self._ledfx.loop.call_later(5, self.publish_state, client)
 
     def on_message(self, client, userdata, msg):
         """paho network thread: hand the message to the event loop."""

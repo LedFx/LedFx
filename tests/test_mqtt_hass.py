@@ -165,6 +165,20 @@ def test_an_online_birth_message_republishes_discovery_and_state(
     assert "ledfx/switch/ledfxplay/state" in topics
     assert "ledfx/sensor/ledfxpixelsensor/state" in topics
 
+    # The state is scheduled a second time a few seconds later: Home
+    # Assistant may still be subscribing when the first copy arrives,
+    # and the messages are not retained.
+    delay, callback, scheduled_client = (
+        birth_integration._ledfx.loop.call_later.call_args.args
+    )
+    assert delay == 5
+    assert callback == birth_integration.publish_state
+    callback(scheduled_client)
+
+    published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
+    assert published.count(("ledfx/select/ledfxsceneselect/state", "party")) == 2
+    assert [t for t, _p in published].count("ledfx/select/ledfxsceneselect/config") == 1
+
 
 def test_an_offline_birth_message_republishes_nothing(
     birth_integration: MQTT_HASS,
