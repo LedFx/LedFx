@@ -180,6 +180,24 @@ def test_an_online_birth_message_republishes_discovery_and_state(
     assert [t for t, _p in published].count("ledfx/select/ledfxsceneselect/config") == 1
 
 
+def test_publish_state_survives_a_missing_audio_device(
+    birth_integration: MQTT_HASS,
+) -> None:
+    # The configured device is gone (unplugged, or its index shifted):
+    # indexing the device map raised KeyError here, which cut the state
+    # publish short before the pixel sensor and the virtuals.
+    birth_integration._ledfx.config.audio.audio_device = 99
+    client = MagicMock()
+
+    birth_integration.publish_state(client)
+
+    published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
+    topics = [topic for topic, _payload in published]
+    assert ("ledfx/select/ledfxaudio/state", "") in published
+    assert "ledfx/sensor/ledfxpixelsensor/state" in topics
+    assert "ledfx/switch/ledfxplay/state" in topics
+
+
 def test_a_republish_does_not_subscribe_to_the_status_topic_again(
     birth_integration: MQTT_HASS,
 ) -> None:
