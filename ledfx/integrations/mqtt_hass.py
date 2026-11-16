@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 import socket
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -472,6 +473,16 @@ class MQTT_HASS(Integration):
             self.publish_virtual_config(virtual.id, client)
             self.publish_virtual_paused(virtual.id, client)
 
+    def _republish_for_home_assistant(self, client: mqtt.Client) -> None:
+        """Resend the discovery configs and the current state.
+
+        Home Assistant lost both when it restarted: the discovery
+        configs are not retained, and the entity states went
+        unavailable while it was down.
+        """
+        self.publish_discovery(client)
+        self.publish_state(client)
+
     def on_message(self, client, userdata, msg):
         """paho network thread: hand the message to the event loop."""
         self._call_on_loop(self._handle_message, msg)
@@ -521,8 +532,17 @@ class MQTT_HASS(Integration):
         # topic (such as "offline") need no action.
         if msg.topic == f"{self.config.topic}/status":
             if payload == "online":
-                self.publish_discovery(client)
-                self.publish_state(client)
+                # Home Assistant's MQTT guide asks publishers to spread
+                # their answers to a birth message over a short random
+                # delay, so the broker is not hit by every device at once.
+                try:
+                    self._ledfx.loop.call_later(
+                        random.uniform(0, 10),
+                        self._republish_for_home_assistant,
+                        client,
+                    )
+                except RuntimeError:  # the loop closed during shutdown
+                    _LOGGER.debug("Event loop closed; skipped MQTT republish")
             return
 
         # React to Internal State-Handler

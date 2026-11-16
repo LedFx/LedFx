@@ -146,6 +146,15 @@ def test_an_online_birth_message_republishes_discovery_and_state(
         SimpleNamespace(topic="ledfx/status", payload=b"online")
     )
 
+    # The republish is scheduled after a short random delay, as Home
+    # Assistant's MQTT guide recommends, not sent immediately.
+    client.publish.assert_not_called()
+    delay, callback, scheduled_client = (
+        birth_integration._ledfx.loop.call_later.call_args.args
+    )
+    assert 0 <= delay <= 10
+    callback(scheduled_client)
+
     published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
     topics = [topic for topic, _payload in published]
     # Discovery configs, so Home Assistant recreates the entities
@@ -167,4 +176,5 @@ def test_an_offline_birth_message_republishes_nothing(
         SimpleNamespace(topic="ledfx/status", payload=b"offline")
     )
 
+    birth_integration._ledfx.loop.call_later.assert_not_called()
     client.publish.assert_not_called()
