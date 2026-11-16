@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import ledfx.integrations.mqtt_hass as hass_module
 from ledfx.errors import SafeMode
 from ledfx.events import EffectSetEvent
 from ledfx.integrations.mqtt_hass import MQTT_HASS
@@ -108,3 +109,62 @@ def test_scene_select_in_safe_mode_is_logged_at_debug(
     integration._ledfx.scenes.activate.assert_called_once_with("party")
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
     assert any("safe mode" in r.getMessage() for r in caplog.records)
+
+
+def test_connect_subscribes_to_the_home_assistant_status_topic() -> None:
+    integration = _integration({})
+    integration._listeners = []
+    client = MagicMock()
+
+    integration._handle_connect(client, 0)
+
+    subscribed = [call.args[0] for call in client.subscribe.call_args_list]
+    assert "ledfx/status" in subscribed
+
+
+@pytest.fixture
+def birth_integration(monkeypatch: pytest.MonkeyPatch) -> MQTT_HASS:
+    monkeypatch.setattr(
+        hass_module.AudioInputSource,
+        "input_devices",
+        staticmethod(lambda: {0: "Mic"}),
+    )
+    integration = _integration({})
+    integration._ledfx.config.audio.audio_device = 0
+    integration._ledfx.scenes._scenes = {"party": SimpleNamespace()}
+    integration._ledfx.scenes.is_active.return_value = True
+    return integration
+
+
+def test_an_online_birth_message_republishes_discovery_and_state(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"online")
+    )
+
+    published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
+    topics = [topic for topic, _payload in published]
+    # Discovery configs, so Home Assistant recreates the entities
+    assert "ledfx/select/ledfxsceneselect/config" in topics
+    assert "ledfx/switch/ledfxplay/config" in topics
+    # Current state, including the scene selector
+    assert ("ledfx/select/ledfxsceneselect/state", "party") in published
+    assert "ledfx/switch/ledfxplay/state" in topics
+    assert "ledfx/sensor/ledfxpixelsensor/state" in topics
+
+
+def test_an_offline_birth_message_republishes_nothing(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"offline")
+    )
+
+    client.publish.assert_not_called()

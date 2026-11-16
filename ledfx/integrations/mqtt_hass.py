@@ -224,6 +224,19 @@ class MQTT_HASS(Integration):
             )
         )
 
+        self.publish_discovery(client)
+        client.publish("ledfx/state", "HomeAssistant initialized")
+
+    def publish_discovery(self, client: mqtt.Client) -> None:
+        """Publish every discovery config and command subscription.
+
+        The configs are not retained, so Home Assistant loses them when
+        it restarts. This runs on connect and again when Home Assistant
+        announces itself on its status topic after a restart.
+        """
+        # Home Assistant birth message: republish when it comes back online
+        client.subscribe(f"{self.config.topic}/status")
+
         # HomeAssistant Device Entity
         hass_device = {
             "identifiers": ["yzlights"],
@@ -400,7 +413,64 @@ class MQTT_HASS(Integration):
             )
 
             client.subscribe(f"{self.config.topic}/light/{virtual.id}/set")
-        client.publish("ledfx/state", "HomeAssistant initialized")
+
+    def publish_state(self, client: mqtt.Client) -> None:
+        """Publish the current state of every Home Assistant entity.
+
+        Runs through the ledfx/state loopback when the integration connects,
+        and directly when Home Assistant comes back online after a restart.
+        """
+        paused_state = "OFF"
+        if self._ledfx.virtuals._paused:
+            paused_state = "OFF"
+        else:
+            paused_state = "ON"
+
+        total_pixels = 0
+        for device in self._ledfx.devices.values():
+            total_pixels += device.pixel_count
+        active_pixels = 0
+        for virtual in self._ledfx.virtuals.values():
+            if virtual.active:
+                active_pixels += virtual.pixel_count
+
+        virtual = next(iter(self._ledfx.virtuals.values()), None)
+        if virtual is not None:
+            client.publish(
+                f"{self.config.topic}/select/ledfxtransitiontype/state",
+                virtual.config.transition_mode,
+            )
+            client.publish(
+                f"{self.config.topic}/number/ledfxtransitiontime/state",
+                virtual.config.transition_time,
+            )
+        # PausedState
+        client.publish(
+            f"{self.config.topic}/switch/ledfxplay/state",
+            paused_state,
+        )
+        # SceneSelector: the scene whose definition matches the live state
+        for scene_id in self._ledfx.scenes._scenes:
+            if self._ledfx.scenes.is_active(scene_id):
+                client.publish(
+                    f"{self.config.topic}/select/ledfxsceneselect/state",
+                    scene_id,
+                )
+                break
+        # AudioSelector
+        client.publish(
+            f"{self.config.topic}/select/ledfxaudio/state",
+            AudioInputSource.input_devices()[self._ledfx.config.audio.audio_device],
+        )
+        # Pixel-Sensor
+        client.publish(
+            f"{self.config.topic}/sensor/ledfxpixelsensor/state",
+            str(active_pixels) + " / " + str(total_pixels),
+        )
+        # publish all virtual data (meta and paused state)
+        for virtual in self._ledfx.virtuals.values():
+            self.publish_virtual_config(virtual.id, client)
+            self.publish_virtual_paused(virtual.id, client)
 
     def on_message(self, client, userdata, msg):
         """paho network thread: hand the message to the event loop."""
@@ -445,53 +515,20 @@ class MQTT_HASS(Integration):
         except json.decoder.JSONDecodeError:
             payload = msg.payload.decode("utf-8")
 
-        paused_state = "OFF"
-        if self._ledfx.virtuals._paused:
-            paused_state = "OFF"
-        else:
-            paused_state = "ON"
+        # Home Assistant birth message: it restarted and lost the
+        # discovery configs, which are not retained, so send the discovery
+        # configs and the current state again. Other payloads on this
+        # topic (such as "offline") need no action.
+        if msg.topic == f"{self.config.topic}/status":
+            if payload == "online":
+                self.publish_discovery(client)
+                self.publish_state(client)
+            return
 
         # React to Internal State-Handler
-        total_pixels = 0
-        for device in self._ledfx.devices.values():
-            total_pixels += device.pixel_count
-        active_pixels = 0
-        for virtual in self._ledfx.virtuals.values():
-            if virtual.active:
-                active_pixels += virtual.pixel_count
         if segs[0] == "ledfx":
             if payload == "HomeAssistant initialized":
-                virtual = next(iter(self._ledfx.virtuals.values()), None)
-                if virtual is not None:
-                    client.publish(
-                        f"{self.config.topic}/select/ledfxtransitiontype/state",
-                        virtual.config.transition_mode,
-                    )
-                    client.publish(
-                        f"{self.config.topic}/number/ledfxtransitiontime/state",
-                        virtual.config.transition_time,
-                    )
-                # PausedState
-                client.publish(
-                    f"{self.config.topic}/switch/ledfxplay/state",
-                    paused_state,
-                )
-                # AudioSelector
-                client.publish(
-                    f"{self.config.topic}/select/ledfxaudio/state",
-                    AudioInputSource.input_devices()[
-                        self._ledfx.config.audio.audio_device
-                    ],
-                )
-                # Pixel-Sensor
-                client.publish(
-                    f"{self.config.topic}/sensor/ledfxpixelsensor/state",
-                    str(active_pixels) + " / " + str(total_pixels),
-                )
-                # publish all virtual data on connect (meta)
-                for virtual in self._ledfx.virtuals.values():
-                    self.publish_virtual_config(virtual.id, client)
-                    self.publish_virtual_paused(virtual.id, client)
+                self.publish_state(client)
             return
 
         # React to SET commands
