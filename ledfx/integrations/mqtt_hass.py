@@ -97,6 +97,7 @@ class MQTT_HASS(Integration):
         self._config = config
         self._client = None
         self._pending_republish = []
+        self._deleted = False
         self._data = []
         self._listeners = []
 
@@ -485,6 +486,10 @@ class MQTT_HASS(Integration):
         configs are not retained, and the entity states went
         unavailable while it was down.
         """
+        # A timer can outlive the integration (on_delete cancels the
+        # ones it knows about): never recreate deleted entities.
+        if self._deleted:
+            return
         self.publish_discovery(client)
         self.publish_state(client)
         # Home Assistant may still be creating the entities and
@@ -541,7 +546,7 @@ class MQTT_HASS(Integration):
         # configs and the current state again. Other payloads on this
         # topic (such as "offline") need no action.
         if msg.topic == f"{self.config.topic}/status":
-            if payload == "online":
+            if payload == "online" and not self._deleted:
                 # Home Assistant's MQTT guide asks publishers to spread
                 # their answers to a birth message over a short random
                 # delay, so the broker is not hit by every device at once.
@@ -782,6 +787,11 @@ class MQTT_HASS(Integration):
 
     # Clean up HomeAssistant
     async def on_delete(self):
+        # Deleted: the client is never disconnected, so messages keep
+        # arriving on this object. Invalidate it before the cleanup, so
+        # a later birth message cannot schedule a republish and
+        # recreate the entities being removed here.
+        self._deleted = True
         # Never connected (e.g. created inactive): nothing to clean up in HA.
         if self._client is None:
             return

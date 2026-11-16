@@ -18,6 +18,7 @@ def _integration(effects: dict[str, object]) -> MQTT_HASS:
     integration = MQTT_HASS.__new__(MQTT_HASS)
     integration._active = False  # Integration.__del__ reads it
     integration._pending_republish = []
+    integration._deleted = False
     integration._config = SimpleNamespace(topic="ledfx")
     integration._ledfx = MagicMock()
     integration._ledfx.effects = effects
@@ -251,6 +252,35 @@ def test_on_delete_cancels_a_pending_republish(
         client.publish.assert_not_called()
     finally:
         loop.close()
+
+
+def test_a_birth_message_after_on_delete_republishes_nothing(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+    no_virtuals: list[object] = []
+    birth_integration._ledfx.virtuals.values.return_value = no_virtuals
+
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(birth_integration.on_delete())
+    finally:
+        loop.close()
+    client.reset_mock()
+
+    # The client is never disconnected on delete, so a later birth
+    # message still arrives here; it must not schedule a republish.
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"online")
+    )
+    birth_integration._ledfx.loop.call_later.assert_not_called()
+    client.publish.assert_not_called()
+
+    # And a republish timer that somehow survived the delete must not
+    # publish either: the entities are gone for good.
+    birth_integration._republish_for_home_assistant(client)
+    client.publish.assert_not_called()
 
 
 def test_an_offline_birth_message_republishes_nothing(
