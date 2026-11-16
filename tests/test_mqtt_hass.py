@@ -1,5 +1,6 @@
 """Tests for the MQTT Home Assistant integration."""
 
+import asyncio
 import json
 import logging
 from types import SimpleNamespace
@@ -16,6 +17,7 @@ from ledfx.integrations.mqtt_hass import MQTT_HASS
 def _integration(effects: dict[str, object]) -> MQTT_HASS:
     integration = MQTT_HASS.__new__(MQTT_HASS)
     integration._active = False  # Integration.__del__ reads it
+    integration._pending_republish = []
     integration._config = SimpleNamespace(topic="ledfx")
     integration._ledfx = MagicMock()
     integration._ledfx.effects = effects
@@ -218,6 +220,37 @@ def test_a_republish_does_not_subscribe_to_the_status_topic_again(
     subscribed = [call.args[0] for call in client.subscribe.call_args_list]
     assert subscribed
     assert "ledfx/status" not in subscribed
+
+
+def test_on_delete_cancels_a_pending_republish(
+    birth_integration: MQTT_HASS, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def uniform(_low: float, _high: float) -> float:
+        return 0.05
+
+    monkeypatch.setattr(hass_module, "random", SimpleNamespace(uniform=uniform))
+    loop = asyncio.new_event_loop()
+    birth_integration._ledfx.loop = loop
+    no_virtuals: list[object] = []
+    birth_integration._ledfx.virtuals.values.return_value = no_virtuals
+    client = MagicMock()
+    birth_integration._client = client
+    try:
+        birth_integration._handle_message(
+            SimpleNamespace(topic="ledfx/status", payload=b"online")
+        )
+        assert len(birth_integration._pending_republish) == 1
+
+        loop.run_until_complete(birth_integration.on_delete())
+        assert birth_integration._pending_republish == []
+
+        client.reset_mock()
+        loop.run_until_complete(asyncio.sleep(0.2))
+        # The scheduled republish was cancelled, so it never fires and
+        # cannot recreate the entities on_delete just removed.
+        client.publish.assert_not_called()
+    finally:
+        loop.close()
 
 
 def test_an_offline_birth_message_republishes_nothing(

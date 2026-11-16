@@ -96,6 +96,7 @@ class MQTT_HASS(Integration):
         self._ledfx = ledfx
         self._config = config
         self._client = None
+        self._pending_republish = []
         self._data = []
         self._listeners = []
 
@@ -545,10 +546,12 @@ class MQTT_HASS(Integration):
                 # their answers to a birth message over a short random
                 # delay, so the broker is not hit by every device at once.
                 try:
-                    self._ledfx.loop.call_later(
-                        random.uniform(0, 10),
-                        self._republish_for_home_assistant,
-                        client,
+                    self._pending_republish.append(
+                        self._ledfx.loop.call_later(
+                            random.uniform(0, 10),
+                            self._republish_for_home_assistant,
+                            client,
+                        )
                     )
                 except RuntimeError:  # the loop closed during shutdown
                     _LOGGER.debug("Event loop closed; skipped MQTT republish")
@@ -782,6 +785,13 @@ class MQTT_HASS(Integration):
         # Never connected (e.g. created inactive): nothing to clean up in HA.
         if self._client is None:
             return
+        # A birth republish may still be scheduled: cancel it, or it
+        # would publish the full discovery configs again right after
+        # this cleanup removed them, recreating the entities in Home
+        # Assistant until they are removed again.
+        for handle in self._pending_republish:
+            handle.cancel()
+        self._pending_republish.clear()
         self._client.publish(
             f"{self.config.topic}/light/ledfxscene/config", json.dumps({})
         )
