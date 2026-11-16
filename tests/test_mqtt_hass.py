@@ -180,6 +180,28 @@ def test_an_online_birth_message_republishes_discovery_and_state(
     assert [t for t, _p in published].count("ledfx/select/ledfxsceneselect/config") == 1
 
 
+def test_a_republish_does_not_subscribe_to_the_status_topic_again(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"online")
+    )
+    _delay, callback, scheduled_client = (
+        birth_integration._ledfx.loop.call_later.call_args.args
+    )
+    callback(scheduled_client)
+
+    # publish_discovery subscribes to the command topics again, but the
+    # status subscription belongs to the connect path only: subscribing
+    # again would make the broker resend a retained "online" and loop.
+    subscribed = [call.args[0] for call in client.subscribe.call_args_list]
+    assert subscribed
+    assert "ledfx/status" not in subscribed
+
+
 def test_an_offline_birth_message_republishes_nothing(
     birth_integration: MQTT_HASS,
 ) -> None:

@@ -165,6 +165,13 @@ class MQTT_HASS(Integration):
         # Internal State-Handler
         client.subscribe("ledfx/state")
 
+        # Home Assistant birth message: republish when it comes back
+        # online. Subscribed here, once per connection: publish_discovery
+        # runs again for every birth message, and re-subscribing there
+        # would make the broker resend a retained "online", which would
+        # schedule another republish and loop.
+        client.subscribe(f"{self.config.topic}/status")
+
         # Events
         def publish_scene_actived(event):
             client.publish(
@@ -235,9 +242,6 @@ class MQTT_HASS(Integration):
         it restarts. This runs on connect and again when Home Assistant
         announces itself on its status topic after a restart.
         """
-        # Home Assistant birth message: republish when it comes back online
-        client.subscribe(f"{self.config.topic}/status")
-
         # HomeAssistant Device Entity
         hass_device = {
             "identifiers": ["yzlights"],
