@@ -1,5 +1,6 @@
 """Tests for the MQTT Home Assistant integration."""
 
+import asyncio
 import json
 import logging
 from types import SimpleNamespace
@@ -7,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import ledfx.integrations.mqtt_hass as hass_module
 from ledfx.errors import SafeMode
 from ledfx.events import EffectSetEvent
 from ledfx.integrations.mqtt_hass import MQTT_HASS
@@ -15,6 +17,8 @@ from ledfx.integrations.mqtt_hass import MQTT_HASS
 def _integration(effects: dict[str, object]) -> MQTT_HASS:
     integration = MQTT_HASS.__new__(MQTT_HASS)
     integration._active = False  # Integration.__del__ reads it
+    integration._pending_republish = []
+    integration._deleted = False
     integration._config = SimpleNamespace(topic="ledfx")
     integration._ledfx = MagicMock()
     integration._ledfx.effects = effects
@@ -108,3 +112,186 @@ def test_scene_select_in_safe_mode_is_logged_at_debug(
     integration._ledfx.scenes.activate.assert_called_once_with("party")
     assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
     assert any("safe mode" in r.getMessage() for r in caplog.records)
+
+
+def test_connect_subscribes_to_the_home_assistant_status_topic() -> None:
+    integration = _integration({})
+    integration._listeners = []
+    client = MagicMock()
+
+    integration._handle_connect(client, 0)
+
+    subscribed = [call.args[0] for call in client.subscribe.call_args_list]
+    assert "ledfx/status" in subscribed
+
+
+@pytest.fixture
+def birth_integration(monkeypatch: pytest.MonkeyPatch) -> MQTT_HASS:
+    monkeypatch.setattr(
+        hass_module.AudioInputSource,
+        "input_devices",
+        staticmethod(lambda: {0: "Mic"}),
+    )
+    integration = _integration({})
+    integration._ledfx.config.audio.audio_device = 0
+    integration._ledfx.scenes._scenes = {"party": SimpleNamespace()}
+    integration._ledfx.scenes.is_active.return_value = True
+    return integration
+
+
+def test_an_online_birth_message_republishes_discovery_and_state(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"online")
+    )
+
+    # The republish is scheduled after a short random delay, as Home
+    # Assistant's MQTT guide recommends, not sent immediately.
+    client.publish.assert_not_called()
+    delay, callback, scheduled_client = (
+        birth_integration._ledfx.loop.call_later.call_args.args
+    )
+    assert 0 <= delay <= 10
+    callback(scheduled_client)
+
+    published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
+    topics = [topic for topic, _payload in published]
+    # Discovery configs, so Home Assistant recreates the entities
+    assert "ledfx/select/ledfxsceneselect/config" in topics
+    assert "ledfx/switch/ledfxplay/config" in topics
+    # Current state, including the scene selector
+    assert ("ledfx/select/ledfxsceneselect/state", "party") in published
+    assert "ledfx/switch/ledfxplay/state" in topics
+    assert "ledfx/sensor/ledfxpixelsensor/state" in topics
+
+    # The state is scheduled a second time a few seconds later: Home
+    # Assistant may still be subscribing when the first copy arrives,
+    # and the messages are not retained.
+    delay, callback, scheduled_client = (
+        birth_integration._ledfx.loop.call_later.call_args.args
+    )
+    assert delay == 5
+    assert callback == birth_integration.publish_state
+    callback(scheduled_client)
+
+    published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
+    assert published.count(("ledfx/select/ledfxsceneselect/state", "party")) == 2
+    assert [t for t, _p in published].count("ledfx/select/ledfxsceneselect/config") == 1
+
+
+def test_publish_state_survives_a_missing_audio_device(
+    birth_integration: MQTT_HASS,
+) -> None:
+    # The configured device is gone (unplugged, or its index shifted):
+    # indexing the device map raised KeyError here, which cut the state
+    # publish short before the pixel sensor and the virtuals.
+    birth_integration._ledfx.config.audio.audio_device = 99
+    client = MagicMock()
+
+    birth_integration.publish_state(client)
+
+    published = [(call.args[0], call.args[1]) for call in client.publish.call_args_list]
+    topics = [topic for topic, _payload in published]
+    assert ("ledfx/select/ledfxaudio/state", "") in published
+    assert "ledfx/sensor/ledfxpixelsensor/state" in topics
+    assert "ledfx/switch/ledfxplay/state" in topics
+
+
+def test_a_republish_does_not_subscribe_to_the_status_topic_again(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"online")
+    )
+    _delay, callback, scheduled_client = (
+        birth_integration._ledfx.loop.call_later.call_args.args
+    )
+    callback(scheduled_client)
+
+    # publish_discovery subscribes to the command topics again, but the
+    # status subscription belongs to the connect path only: subscribing
+    # again would make the broker resend a retained "online" and loop.
+    subscribed = [call.args[0] for call in client.subscribe.call_args_list]
+    assert subscribed
+    assert "ledfx/status" not in subscribed
+
+
+def test_on_delete_cancels_a_pending_republish(
+    birth_integration: MQTT_HASS, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def uniform(_low: float, _high: float) -> float:
+        return 0.05
+
+    monkeypatch.setattr(hass_module, "random", SimpleNamespace(uniform=uniform))
+    loop = asyncio.new_event_loop()
+    birth_integration._ledfx.loop = loop
+    no_virtuals: list[object] = []
+    birth_integration._ledfx.virtuals.values.return_value = no_virtuals
+    client = MagicMock()
+    birth_integration._client = client
+    try:
+        birth_integration._handle_message(
+            SimpleNamespace(topic="ledfx/status", payload=b"online")
+        )
+        assert len(birth_integration._pending_republish) == 1
+
+        loop.run_until_complete(birth_integration.on_delete())
+        assert birth_integration._pending_republish == []
+
+        client.reset_mock()
+        loop.run_until_complete(asyncio.sleep(0.2))
+        # The scheduled republish was cancelled, so it never fires and
+        # cannot recreate the entities on_delete just removed.
+        client.publish.assert_not_called()
+    finally:
+        loop.close()
+
+
+def test_a_birth_message_after_on_delete_republishes_nothing(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+    no_virtuals: list[object] = []
+    birth_integration._ledfx.virtuals.values.return_value = no_virtuals
+
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(birth_integration.on_delete())
+    finally:
+        loop.close()
+    client.reset_mock()
+
+    # The client is never disconnected on delete, so a later birth
+    # message still arrives here; it must not schedule a republish.
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"online")
+    )
+    birth_integration._ledfx.loop.call_later.assert_not_called()
+    client.publish.assert_not_called()
+
+    # And a republish timer that somehow survived the delete must not
+    # publish either: the entities are gone for good.
+    birth_integration._republish_for_home_assistant(client)
+    client.publish.assert_not_called()
+
+
+def test_an_offline_birth_message_republishes_nothing(
+    birth_integration: MQTT_HASS,
+) -> None:
+    client = MagicMock()
+    birth_integration._client = client
+
+    birth_integration._handle_message(
+        SimpleNamespace(topic="ledfx/status", payload=b"offline")
+    )
+
+    birth_integration._ledfx.loop.call_later.assert_not_called()
+    client.publish.assert_not_called()
