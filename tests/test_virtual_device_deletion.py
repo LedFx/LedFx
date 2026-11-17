@@ -44,6 +44,9 @@ class _DummyEvents:
     def fire_event(self, *_, **__):
         pass
 
+    def has_listeners(self, event_type: str) -> bool:
+        return False
+
     def add_listener(self, callback, event_type):
         self._listeners[event_type] = callback
 

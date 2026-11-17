@@ -364,6 +364,7 @@ async def test_core_drains_hue_before_global_cancellation(
     core = object.__new__(LedFxCore)
     core.loop = MagicMock()
     core.events = MagicMock()
+    core.preview_sampler = MagicMock()
     core.audio_device_monitor = None
     core._smtc_now_playing = core._mpris_now_playing = None
     core.http = MagicMock(stop=AsyncMock())
@@ -877,6 +878,7 @@ async def test_core_drains_owned_hue_work_after_earlier_shutdown_failure(
     core = object.__new__(LedFxCore)
     core.loop = MagicMock()
     core.events = MagicMock()
+    core.preview_sampler = MagicMock()
     core.audio_device_monitor = None
     core._smtc_now_playing = core._mpris_now_playing = None
     core.http = MagicMock(stop=AsyncMock())

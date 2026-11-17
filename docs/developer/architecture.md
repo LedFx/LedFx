@@ -40,3 +40,27 @@ sequenceDiagram
         Devices->>Devices: Flush frame to hardware
     end
 ```
+## Preview sampling
+
+Websocket clients see pixels through `visualisation_update` events, built by
+the core-owned `PreviewSampler` (`ledfx/preview.py`):
+
+- After rendering a frame, a virtual (in `_fire_update_event`) and a device
+  (in `update_pixels`, before `flush`) ask the sampler whether a
+  `visualisation_update` subscriber could match that source. Only then do
+  they copy the frame and submit the copy, from the render thread.
+- The sampler keeps only the newest frame per source, keyed by
+  `(is_device, id)`. Older frames that were not yet sent are dropped.
+- One tick on the event loop encodes each due frame and fires it, at most
+  `visualisation_fps` times a second per source. The schedule advances on a
+  fixed grid, so a 62 FPS source still previews at 60 FPS, and a source that
+  was idle does not get a burst of old frames. Only that tick creates timers.
+- If one source's frame fails to encode, the tick skips it and still sends
+  the others. The failure is logged at ERROR at most once a second per
+  exception type, with a count of the failures in between.
+- `visualisation_maxlen`, `ui_brightness_boost` and `transmission_mode` are
+  read when encoding, so changing them needs no restart.
+- When the last matching subscriber leaves, the pending frame is dropped at
+  the next tick. Deleting a virtual or device drops its pending frame.
+- The raw `virtual_update` and `device_update` events are built only when an
+  in-process listener has subscribed to them.

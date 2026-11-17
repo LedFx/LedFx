@@ -100,6 +100,7 @@ async def test_shutdown_completes_when_flush_raises() -> None:
     core = object.__new__(LedFxCore)
     core.loop = MagicMock()
     core.events = MagicMock()
+    core.preview_sampler = MagicMock()
     core.audio_device_monitor = None
     core._smtc_now_playing = None
     core._mpris_now_playing = None
