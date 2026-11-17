@@ -2,7 +2,7 @@ import asyncio
 import logging
 import threading
 from abc import abstractmethod
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import AbstractContextManager, contextmanager, nullcontext
 from functools import cached_property, partial
 from typing import Annotated, ClassVar
@@ -11,6 +11,7 @@ import numpy as np
 import serial
 import serial.tools.list_ports
 from ledfx_senders.e131_packet import DEFAULT_PORT
+from numpy.typing import NDArray
 from pydantic import Field
 from typing_extensions import override
 
@@ -48,8 +49,51 @@ _LOGGER = logging.getLogger(__name__)
 _MISSING = object()  # a key absent from the stored config
 
 
+PixelUpdate = (
+    tuple[NDArray[np.generic], NDArray[np.generic]]
+    | tuple[NDArray[np.generic], int, int]
+)
+
+
+def _write_segments(
+    buffer: NDArray[np.float64], data: Iterable[PixelUpdate]
+) -> list[tuple[NDArray[np.generic], NDArray[np.generic], Exception]]:
+    """Write one virtual's segments into a device buffer; returns scatter failures."""
+    failures: list[tuple[NDArray[np.generic], NDArray[np.generic], Exception]] = []
+    for item in data:
+        if len(item) == 2:
+            # New scatter mode: (pixels, dst_indices)
+            pixels, dst_indices = item
+            if pixels.shape[0] != 0:
+                try:
+                    buffer[dst_indices] = pixels
+                except (IndexError, ValueError, TypeError) as e:
+                    failures.append((dst_indices, pixels, e))
+        else:
+            # Legacy range mode: (pixels, start, end)
+            pixels, start, end = item
+            # protect against an empty race condition
+            if pixels.shape[0] != 0 and (
+                np.shape(pixels) == (3,)
+                or np.shape(buffer[start : end + 1]) == np.shape(pixels)
+            ):
+                buffer[start : end + 1] = pixels
+    return failures
+
+
 @BaseRegistry.no_registration
 class Device(BaseRegistry):
+    """An output device fed by one or more virtuals.
+
+    Lock order: a subclass sender lock (``device_lock``, Hue's
+    ``_publication_lock``) may be held while calling ``Device.activate`` or
+    ``Device.deactivate``, which take ``_frame_lock``. ``_frame_lock`` is a
+    leaf guarding ``_pixels`` and ``_active``: no flush, subclass, virtual,
+    sampler, bus or logging call and no other lock happens while it is held.
+    ``update_pixels`` composes an owned frame under it, releases it, then
+    calls ``flush`` (which may take the sender lock).
+    """
+
     class Config(PluginConfig):
         name: str = Field(
             description="Friendly name for the device",
@@ -82,11 +126,12 @@ class Device(BaseRegistry):
         self._ledfx = ledfx
         self._config = config
         self._segments = []
-        self._pixels = None
+        self._pixels: NDArray[np.float64] | None = None
         self._silence_start = None
         self._device_type = ""
         self._online = True
         self.lock = threading.Lock()
+        self._frame_lock = threading.Lock()
         self._built_settings = self._output_settings()
 
     def __del__(self):
@@ -143,8 +188,12 @@ class Device(BaseRegistry):
 
                 # The pixel buffer is sized on activate; resize a live one here so
                 # segment writes and clears match the new pixel count.
-                if self._pixels is not None and len(self._pixels) != self.pixel_count:
-                    self._pixels = np.zeros((self.pixel_count, 3))
+                with self._frame_lock:
+                    if (
+                        self._pixels is not None
+                        and len(self._pixels) != self.pixel_count
+                    ):
+                        self._pixels = np.zeros((self.pixel_count, 3))
 
         # Names only: configs can hold credentials such as a Hue DTLS key.
         _LOGGER.info(
@@ -196,78 +245,76 @@ class Device(BaseRegistry):
 
     def update_pixels(self, virtual_id, data):
         # update each segment from this virtual
-        if not self._active:
+        priority = self.priority_virtual
+        frame = None
+        failures: list[tuple[NDArray[np.generic], NDArray[np.generic], Exception]] = []
+        with self._frame_lock:
+            buffer = self._pixels if self._active else None
+            if buffer is not None:
+                failures = _write_segments(buffer, data)
+                if priority is not None and virtual_id == priority.id:
+                    # Priority virtual flushes after all virtuals have updated
+                    # their pixels, from its own copy of the buffer.
+                    frame = self._compose(buffer)
+
+        for dst_indices, pixels, error in failures:
+            _LOGGER.warning(
+                "Device %s: scatter assignment failed - "
+                "dst_indices shape: %s, "
+                "pixels shape: %s, error: %s",
+                self.name,
+                np.shape(dst_indices),
+                pixels.shape,
+                error,
+            )
+        if buffer is None:
             _LOGGER.warning("Cannot update pixels of inactive device %s", self.name)
             return
-
-        for item in data:
-            if len(item) == 2:
-                # New scatter mode: (pixels, dst_indices)
-                pixels, dst_indices = item
-                if pixels.shape[0] != 0:
-                    try:
-                        self._pixels[dst_indices] = pixels
-                    except (IndexError, ValueError, TypeError) as e:
-                        _LOGGER.warning(
-                            "Device %s: scatter assignment failed - "
-                            "dst_indices shape: %s, "
-                            "pixels shape: %s, error: %s",
-                            self.name,
-                            np.shape(dst_indices),
-                            pixels.shape,
-                            e,
-                        )
-            else:
-                # Legacy range mode: (pixels, start, end)
-                pixels, start, end = item
-                # protect against an empty race condition
-                if pixels.shape[0] != 0 and (
-                    np.shape(pixels) == (3,)
-                    or np.shape(self._pixels[start : end + 1]) == np.shape(pixels)
-                ):
-                    self._pixels[start : end + 1] = pixels
-
         # Only the priority virtual should flush to prevent multiple virtuals
         # from fighting over the device buffer
-        if self.priority_virtual:
-            if virtual_id == self.priority_virtual.id:
-                # Priority virtual flushes after all virtuals have updated their pixels
-                frame = self.assemble_frame()
-                if frame is None:  # deactivated by another thread meanwhile
-                    return
-                sampler = self._ledfx.preview_sampler
-                if sampler.wants(True, self.id):
-                    # Copy before flush: some senders convert the frame in place.
-                    virtual = self._ledfx.virtuals.get(self.id)
-                    rows = virtual.rows if virtual else 1
-                    sampler.submit(True, self.id, frame.copy(), rows)
-                self.flush(frame)
-
-                if self._ledfx.events.has_listeners(Event.DEVICE_UPDATE):
-                    self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
-        else:
+        if priority is None:
             _LOGGER.warning("Flush skipped as %s has no priority_virtual", self.id)
+            return
+        if frame is None:
+            return
 
-    def assemble_frame(self):
-        """
-        Assembles the frame to be flushed. Currently this will just return
-        the active channels pixels, but will eventually handle things like
-        merging multiple segments segments and alpha blending channels
-        """
-        frame = self._pixels
+        sampler = self._ledfx.preview_sampler
+        if sampler.wants(True, self.id):
+            # Copy before flush: some senders convert the frame in place.
+            virtual = self._ledfx.virtuals.get(self.id)
+            rows = virtual.rows if virtual else 1
+            sampler.submit(True, self.id, frame.copy(), rows)
+        self.flush(frame)
 
+        if self._ledfx.events.has_listeners(Event.DEVICE_UPDATE):
+            self._ledfx.events.fire_event(DeviceUpdateEvent(self.id, frame))
+
+    def _compose(self, buffer: NDArray[np.float64]) -> NDArray[np.float64]:
+        """A new frame from the buffer, so flush never shares it."""
         if self.config.center_offset:
-            frame = np.roll(frame, self.config.center_offset, axis=0)
-        return frame
+            return np.roll(buffer, self.config.center_offset, axis=0)
+        return buffer.copy()
+
+    def assemble_frame(self) -> NDArray[np.float64] | None:
+        """
+        Assembles the frame to be flushed: an owned copy of the device
+        buffer, rotated by center_offset. None while inactive.
+        """
+        with self._frame_lock:
+            if self._pixels is None:
+                return None
+            return self._compose(self._pixels)
 
     def activate(self):
-        self._pixels = np.zeros((self.pixel_count, 3))
-        self._active = True
+        pixels = np.zeros((self.pixel_count, 3))
+        with self._frame_lock:
+            self._pixels = pixels
+            self._active = True
 
     def deactivate(self):
-        self._pixels = None
-        self._active = False
-        # self.flush(np.zeros((self.pixel_count, 3)))
+        with self._frame_lock:
+            self._pixels = None
+            self._active = False
 
     async def async_shutdown(self) -> None:
         """Drain device-owned work before the core stops its executor."""
@@ -487,11 +534,12 @@ class Device(BaseRegistry):
         for segment in self._segments:
             if segment[0] != virtual_id:
                 new_segments.append(segment)
-            else:
-                if self._pixels is not None and self._ledfx.config.flush_on_deactivate:
-                    # A scalar fill: the buffer may already be resized to a
-                    # pixel count the old segment no longer fits.
-                    self._pixels[segment[1] : segment[2] + 1] = 0
+            elif self._ledfx.config.flush_on_deactivate:
+                with self._frame_lock:
+                    if self._pixels is not None:
+                        # A scalar fill: the buffer may already be resized to
+                        # a pixel count the old segment no longer fits.
+                        self._pixels[segment[1] : segment[2] + 1] = 0
         self._segments = new_segments
 
         if self.priority_virtual and virtual_id == self.priority_virtual.id:
