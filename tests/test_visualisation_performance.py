@@ -20,8 +20,8 @@ from ledfx.events import (
 
 
 def make_core() -> SimpleNamespace:
-    def dispatch(callback: Callable[[Event], None], event: Event) -> None:
-        callback(event)
+    def dispatch(callback: Callable[..., None], *args: object) -> None:
+        callback(*args)
 
     core = SimpleNamespace(
         config=SimpleNamespace(

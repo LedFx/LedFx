@@ -12482,20 +12482,6 @@
       "severity": "error"
     },
     {
-      "column": 47,
-      "path": "ledfx/events.py",
-      "name": "bad-argument-type",
-      "concise_description": "Argument `EventListener` is not assignable to parameter `listener` with type `(...) -> Unknown` in function `Events._remove_listener`",
-      "severity": "error"
-    },
-    {
-      "column": 59,
-      "path": "ledfx/events.py",
-      "name": "implicit-any-type-argument",
-      "concise_description": "Cannot determine the type parameter for generic class `Callable`",
-      "severity": "error"
-    },
-    {
       "column": 17,
       "path": "ledfx/http_manager.py",
       "name": "missing-attribute",
